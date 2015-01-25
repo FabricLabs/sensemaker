@@ -30,6 +30,7 @@
     "async": "^0.9.0",
     "bigint": "^0.4.2",
     "maki": "git://github.com/martindale/maki",
+    "mongoose": "^4.0.2",
     "mtwitter": "^1.6.4",
     "reheat": "^1.0.0-beta.10",
     "restler": "^3.2.2"
