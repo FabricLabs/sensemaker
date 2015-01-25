@@ -1,4 +1,5 @@
 module.exports = {
+  namespace: 'sensemaker',
   twitter: {
     consumerKey:       'acquire',
     consumerSecret:    'these',
