@@ -1,24 +1,23 @@
 {
   "name": "sensemaker",
-  "version": "0.0.0",
+  "version": "0.1.0-dev",
   "description": "crawl and aggregate data.",
-  "main": "index.js",
+  "main": "sensemaker.js",
   "scripts": {
-    "test": "mocha",
-    "coverage": "istanbul cover _mocha"
+    "test": "mocha tests"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/martindale/sensemaker.git"
   },
   "keywords": [
-    "data",
-    "social",
-    "media",
-    "social",
-    "aggregation",
-    "nsa",
-    "dragnet"
+    "ai",
+    "artificial intelligence",
+    "machine learning",
+    "neural networks",
+    "intelligence",
+    "networking",
+    "media"
   ],
   "author": "Eric Martindale",
   "license": "GPLv3",
@@ -27,20 +26,10 @@
   },
   "homepage": "https://github.com/martindale/sensemaker",
   "dependencies": {
-    "async": "^0.9.0",
-    "bigint": "^0.4.2",
-    "fabric": "github:martindale/fabric#http",
-    "maki": "git://github.com/martindale/maki",
-    "mongoose": "^4.0.2",
-    "mtwitter": "^1.6.4",
-    "reheat": "^1.0.0-beta.10",
-    "restler": "^3.2.2"
+    "@fabric/core": "FabricLabs/fabric#pruning",
+    "@fabric/http": "FabricLabs/web"
   },
   "devDependencies": {
-    "coveralls": "^2.11.2",
-    "debug-trace": "^0.2.4",
-    "istanbul": "^0.3.13",
-    "mocha": "^2.2.4",
-    "procure": "^0.1.4"
+    "mocha": "^2.2.4"
   }
 }

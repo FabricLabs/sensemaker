@@ -1,16 +1,24 @@
 'use strict';
 
-const config = require('./config');
-
-const Fabric = require('fabric');
-const Sensemaker = require('./lib/sensemaker');
+const settings = require('./settings');
+const Sensemaker = require('./types/sensemaker');
 
 async function main () {
-  let fabric = new Fabric(config);
-  let sensemaker = new Sensemaker(config);
-  
-  console.log('fabric:', fabric);
-  console.log('sensemaker:', sensemaker);
+  let sensemaker = new Sensemaker(settings);
+  let process = await sensemaker.start();
+
+  sensemaker.on('info', function (info) {
+    console.log('[INFO:SENSEMAKER]', info);
+  });
+
+  process.on('ready', function () {
+    console.log('[SENSEMAKER]', 'process claimed ready!');
+  });
+
+  console.log('[SENSEMAKER]', 'process', process);
+  console.log('[SENSEMAKER]', 'started!');
+
+  return process;
 }
 
 main();

@@ -1,0 +1,17 @@
+{
+  "name": "sensemaker",
+  "public": true,
+  "announce": ["/services/twitter"],
+  "settings": {
+    "services/twitter": {
+      "consumer": {
+        "key": "",
+        "secret": ""
+      },
+      "token": {
+        "key": "",
+        "secret": ""
+      }
+    }
+  }
+}
