@@ -1,7 +1,9 @@
 {
   "name": "sensemaker",
-  "public": true,
-  "announce": ["/services/twitter"],
+  "twilio": {
+    "sid": null,
+    "token": null
+  },
   "twitter": {
     "consumer": {
       "key": null,

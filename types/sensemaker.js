@@ -71,9 +71,15 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
-    this._registerService('matrix', Matrix);
-    this._registerService('twilio', Twilio);
-    this._registerService('twitter', Twitter);
+    await this._registerService('matrix', Matrix);
+    await this._registerService('twilio', Twilio);
+    await this._registerService('twitter', Twitter);
+
+    for (const [name, service] of Object.entries(this.services)) {
+      console.warn(`Starting service: ${name}`);
+      // await this.services[name]._bindStore(this.store);
+      await this.services[name].start();
+    }
 
     this.queue._addJob({ method: 'verify', params: [] });
 
