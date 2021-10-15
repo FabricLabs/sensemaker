@@ -4,6 +4,7 @@
   "description": "crawl and aggregate data.",
   "main": "types/sensemaker.js",
   "scripts": {
+    "coverage": "nyc npm test",
     "start": "node scripts/node.js",
     "test": "mocha tests"
   },
@@ -35,6 +36,7 @@
     "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
-    "mocha": "^2.2.4"
+    "mocha": "^2.2.4",
+    "nyc": "^15.1.0"
   }
 }

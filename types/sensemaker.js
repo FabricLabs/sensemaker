@@ -2,6 +2,7 @@
 
 // Dependencies
 const merge = require('lodash.merge');
+const definition = require('../package');
 
 // Fabric Types
 const App = require('@fabric/core/types/app');
@@ -54,6 +55,10 @@ class Sensemaker extends App {
     return this;
   }
 
+  get version () {
+    return definition.version;
+  }
+
   /**
    * Explicitly trust all events from a known source.
    * @param  {EventEmitter} source Emitter of events.
@@ -64,6 +69,10 @@ class Sensemaker extends App {
     source.on('warning', this._handleTrustedWarning.bind(this));
     source.on('error', this._handleTrustedError.bind(this));
     source.on('message', this._handleTrustedMessage.bind(this));
+  }
+
+  async ingest (data) {
+    await this.queue._addJob('ingest', [data]);
   }
 
   /**
