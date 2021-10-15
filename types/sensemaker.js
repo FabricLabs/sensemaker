@@ -7,13 +7,18 @@ const definition = require('../package');
 // Fabric Types
 const App = require('@fabric/core/types/app');
 const Queue = require('@fabric/core/types/queue');
+const Message = require('@fabric/core/types/message');
 const Worker = require('@fabric/core/types/worker');
 
 // HTTP
 const Server = require('@fabric/http/types/server');
 
 // Sources
+const Bitcoin = require('@fabric/core/services/bitcoin');
+const Discord = require('@fabric/discord');
+const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
+const Shyft = require('@shyft/core');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 
@@ -37,15 +42,18 @@ class Sensemaker extends App {
       http: {
         port: 4242
       },
+      interval: 60000,
       workers: 1
     }, settings);
 
+    this.clock = 0;
     this.queue = new Queue(this.settings);
     this.server = new Server(this.settings);
     this.sources = {};
     this.workers = [];
 
     this._state = {
+      clock: this.clock,
       status: 'ready',
       actors: {},
       messages: {},
@@ -57,6 +65,18 @@ class Sensemaker extends App {
 
   get version () {
     return definition.version;
+  }
+
+  tick () {
+    const timestamp = (new Date()).toISOString();
+    ++this.clock;
+    this._state.clock = this.clock;
+    const heartbeat = Message.fromVector(['Generic', {
+      clock: this.clock,
+      created: timestamp
+    }]);
+
+    this.emit('heartbeat', heartbeat);
   }
 
   /**
@@ -80,11 +100,17 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
+    await this._registerService('bitcoin', Bitcoin);
+    await this._registerService('discord', Discord);
+    await this._registerService('ethereum', Ethereum);
     await this._registerService('matrix', Matrix);
     await this._registerService('twilio', Twilio);
     await this._registerService('twitter', Twitter);
+    await this._registerService('shyft', Shyft);
 
     for (const [name, service] of Object.entries(this.services)) {
+      // TODO: check for service enabled in `this.settings.services`
+      // code can be copied from @fabric/core/types/cli OR @fabric/core/types/app
       console.warn(`Starting service: ${name}`);
       // await this.services[name]._bindStore(this.store);
       await this.services[name].start();

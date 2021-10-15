@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/martindale/sensemaker.git"
+    "url": "https://github.com/FabricLabs/sensemaker.git"
   },
   "keywords": [
     "ai",
@@ -21,18 +21,21 @@
     "networking",
     "media"
   ],
-  "author": "Eric Martindale",
+  "author": "FabricLabs",
   "license": "GPLv3",
   "bugs": {
-    "url": "https://github.com/martindale/sensemaker/issues"
+    "url": "https://github.com/FabricLabs/sensemaker/issues"
   },
-  "homepage": "https://github.com/martindale/sensemaker",
+  "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
     "@fabric/core": "martindale/fabric#message-relay",
     "@fabric/http": "FabricLabs/web",
+    "@fabric/discord": "FabricLabs/fabric-discord",
+    "@fabric/ethereum": "FabricLabs/fabric-ethereum",
     "@fabric/matrix": "FabricLabs/fabric-matrix",
     "@fabric/twilio": "FabricLabs/fabric-twilio",
     "@fabric/twitter": "FabricLabs/fabric-twitter",
+    "@shyft/core": "FabricLabs/shyft",
     "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
