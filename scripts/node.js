@@ -20,7 +20,7 @@ async function main (input = {}) {
 
   // Load Service
   const sensemaker = new Sensemaker(input);
-  const process = await sensemaker.start();
+  await sensemaker.start();
 
   sensemaker.on('info', function (info) {
     console.log('[SENSEMAKER:INFO]', info);
@@ -42,11 +42,11 @@ async function main (input = {}) {
     console.log('[FABRIC:MESSAGE]', msg);
   });
 
-  process.on('ready', function () {
-    console.log('[SENSEMAKER]', 'process claimed ready!');
+  sensemaker.on('ready', function () {
+    console.log('[SENSEMAKER]', 'Claimed ready!');
   });
 
-  return process.id;
+  return sensemaker.id;
 }
 
 main(input).catch((exception) => {

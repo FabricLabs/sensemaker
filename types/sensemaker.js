@@ -18,7 +18,7 @@ const Bitcoin = require('@fabric/core/services/bitcoin');
 const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
-const Shyft = require('@shyft/core');
+const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 
@@ -37,9 +37,11 @@ class Sensemaker extends App {
     super(settings);
 
     this.settings = merge({
+      debug: true,
       seed: null,
       port: 7777,
       http: {
+        listen: true,
         port: 4242
       },
       interval: 60000,
@@ -48,7 +50,19 @@ class Sensemaker extends App {
 
     this.clock = 0;
     this.queue = new Queue(this.settings);
-    this.server = new Server(this.settings);
+    this.http = new Server({
+      port: this.settings.http.port,
+      resources: {
+        Index: {
+          route: '/',
+          components: {
+            list: 'sensemaker-index',
+            view: 'sensemaker-index'
+          }
+        }
+      }
+    });
+
     this.sources = {};
     this.workers = [];
 
@@ -65,6 +79,22 @@ class Sensemaker extends App {
 
   get version () {
     return definition.version;
+  }
+
+  alert (msg) {
+    for (const [name, service] of Object.entries(this.services)) {
+      if (!this.settings.services.includes(name)) continue;
+      const service = this.services[name];
+      switch (name) {
+        case 'discord':
+        case 'matrix':
+        case 'twilio':
+          service.alert(msg);
+          break;
+        default:
+          break;
+      }
+    }
   }
 
   tick () {
@@ -86,9 +116,11 @@ class Sensemaker extends App {
    */
   trust (source) {
     source.on('log', this._handleTrustedLog.bind(this));
+    source.on('debug', this._handleTrustedDebug.bind(this));
     source.on('warning', this._handleTrustedWarning.bind(this));
     source.on('error', this._handleTrustedError.bind(this));
     source.on('message', this._handleTrustedMessage.bind(this));
+    source.on('ready', this._handleTrustedReady.bind(this));
   }
 
   async ingest (data) {
@@ -108,22 +140,24 @@ class Sensemaker extends App {
     await this._registerService('twitter', Twitter);
     await this._registerService('shyft', Shyft);
 
+    if (this.settings.http.listen) this.trust(this.http);
+
     for (const [name, service] of Object.entries(this.services)) {
-      // TODO: check for service enabled in `this.settings.services`
-      // code can be copied from @fabric/core/types/cli OR @fabric/core/types/app
-      console.warn(`Starting service: ${name}`);
-      // await this.services[name]._bindStore(this.store);
-      await this.services[name].start();
+      if (this.settings.services.includes(name)) {
+        this.trust(this.services[name]);
+        await this.services[name].start();
+      }
     }
 
     this.queue._addJob({ method: 'verify', params: [] });
+    this._heartbeat = setInterval(this.tick.bind(this), this.settings.interval);
 
     // 1. define trust model
     // await this.server.trust(this.fabric);
     // 2. wait for local node
     // await this.fabric.start();
     // 3. start the interface
-    await this.server.start();
+    if (this.settings.http.listen) await this.http.start();
 
     // set status...
     this.status = 'started';
@@ -131,8 +165,16 @@ class Sensemaker extends App {
     // commit to change
     this.commit();
 
+    // emit log events
+    this.emit('log', `[SENSEMAKER] Started!`);
+    this.emit('log', `[SENSEMAKER] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
+    this.emit('log', `[SENSEMAKER] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
+
     // emit ready event
     this.emit('ready');
+
+    // DEBUG
+    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
 
     // return the instance!
     return this;
@@ -144,6 +186,13 @@ class Sensemaker extends App {
    */
   async stop () {
     this.status = 'stopping';
+
+    for (const [name, service] of Object.entries(this.services)) {
+      if (this.settings.services.includes(name)) {
+        await this.services[name].stop();
+      }
+    }
+
     this.status = 'stopped';
     this.commit();
     this.emit('stopped');
@@ -163,21 +212,45 @@ class Sensemaker extends App {
     }
   }
 
-  async _handleTrustedLog (message) {
+  _registerService (name, type) {
+    super._registerService(name, type);
+    const service = this.services[name];
+    if (service.routes && service.routes.length) {
+      for (let i = 0; i < service.routes.length; i++) {
+        const route = service.routes[i];
+        this.http._addRoute(route.method, route.path, route.handler);
+      }
+    }
+  }
+
+  _handleTrustedLog (message) {
     this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
   }
 
-  async _handleTrustedMessage (message) {
+  _handleTrustedDebug (message) {
+    console.log('trusted debug:', message);
+    this.emit('debug', `[types/sensemaker] Trusted Source emitted debug: ${message}`);
+  }
+
+  _handleTrustedMessage (message) {
     this.emit('log', `[types/sensemaker] Trusted Source emitted message: ${message}`);
     this.emit('message', message);
   }
 
-  async _handleTrustedWarning (message) {
+  _handleTrustedWarning (message) {
     this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
   }
 
-  async _handleTrustedError (message) {
+  _handleTrustedError (message) {
     this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
+  }
+
+  _handleTrustedReady (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted ready: ${message}`);
+  }
+
+  _listServices () {
+    return Object.keys(this.services);
   }
 }
 
