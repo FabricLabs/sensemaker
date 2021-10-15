@@ -98,14 +98,13 @@ class Sensemaker extends App {
   }
 
   tick () {
-    const timestamp = (new Date()).toISOString();
+    const now = (new Date()).toISOString();
     ++this.clock;
     this._state.clock = this.clock;
     const heartbeat = Message.fromVector(['Generic', {
       clock: this.clock,
-      created: timestamp
+      created: now
     }]);
-
     this.emit('heartbeat', heartbeat);
   }
 
@@ -132,6 +131,10 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
+    this.on('heartbeat', async function (beat) {
+      this.alert(`Heartbeat: ${JSON.stringify(beat, null, '  ')}`);
+    });
+
     await this._registerService('bitcoin', Bitcoin);
     await this._registerService('discord', Discord);
     await this._registerService('ethereum', Ethereum);

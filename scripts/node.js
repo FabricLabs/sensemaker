@@ -22,6 +22,10 @@ async function main (input = {}) {
   const sensemaker = new Sensemaker(input);
   await sensemaker.start();
 
+  sensemaker.on('debug', function (debug) {
+    console.debug('[SENSEMAKER:DEBUG]', debug);
+  });
+
   sensemaker.on('info', function (info) {
     console.log('[SENSEMAKER:INFO]', info);
   });
