@@ -71,8 +71,6 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
-    this.twitter = new Twitter(this.settings.twitter);
-
     this._registerService('matrix', Matrix);
     this._registerService('twilio', Twilio);
     this._registerService('twitter', Twitter);
@@ -85,9 +83,6 @@ class Sensemaker extends App {
     // await this.fabric.start();
     // 3. start the interface
     await this.server.start();
-
-    // Start services
-    await this.twitter.start();
 
     // set status...
     this.status = 'started';

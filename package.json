@@ -32,8 +32,7 @@
     "@fabric/matrix": "FabricLabs/fabric-matrix",
     "@fabric/twilio": "martindale/fabric-twilio",
     "@fabric/twitter": "martindale/fabric-twitter",
-    "lodash.merge": "^4.6.2",
-    "twitter": "^1.7.1"
+    "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
     "mocha": "^2.2.4"
