@@ -27,11 +27,11 @@
   },
   "homepage": "https://github.com/martindale/sensemaker",
   "dependencies": {
-    "@fabric/core": "martindale/fabric#develop-exchange",
+    "@fabric/core": "martindale/fabric#message-relay",
     "@fabric/http": "FabricLabs/web",
     "@fabric/matrix": "FabricLabs/fabric-matrix",
-    "@fabric/twilio": "martindale/fabric-twilio",
-    "@fabric/twitter": "martindale/fabric-twitter",
+    "@fabric/twilio": "FabricLabs/fabric-twilio",
+    "@fabric/twitter": "FabricLabs/fabric-twitter",
     "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
