@@ -33,7 +33,6 @@
     "@fabric/discord": "FabricLabs/fabric-discord",
     "@fabric/ethereum": "FabricLabs/fabric-ethereum",
     "@fabric/matrix": "FabricLabs/fabric-matrix",
-    "@fabric/shyft": "FabricLabs/shyft",
     "@fabric/twilio": "FabricLabs/fabric-twilio",
     "@fabric/twitter": "FabricLabs/fabric-twitter",
     "lodash.merge": "^4.6.2"

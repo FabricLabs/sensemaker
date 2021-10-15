@@ -18,7 +18,7 @@ const Bitcoin = require('@fabric/core/services/bitcoin');
 const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
-const Shyft = require('@fabric/shyft');
+// const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 
@@ -131,17 +131,20 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
+    // Register Services
+    this._registerService('bitcoin', Bitcoin);
+    this._registerService('discord', Discord);
+    this._registerService('ethereum', Ethereum);
+    this._registerService('matrix', Matrix);
+    this._registerService('twilio', Twilio);
+    this._registerService('twitter', Twitter);
+    // this._registerService('shyft', Shyft);
+
+    // Internal Listeners
     this.on('heartbeat', async function (beat) {
       this.alert(`Heartbeat: ${JSON.stringify(beat, null, '  ')}`);
     });
 
-    await this._registerService('bitcoin', Bitcoin);
-    await this._registerService('discord', Discord);
-    await this._registerService('ethereum', Ethereum);
-    await this._registerService('matrix', Matrix);
-    await this._registerService('twilio', Twilio);
-    await this._registerService('twitter', Twitter);
-    await this._registerService('shyft', Shyft);
 
     if (this.settings.http.listen) this.trust(this.http);
 
