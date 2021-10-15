@@ -1,12 +1,20 @@
 'use strict';
 
+// Dependencies
 const merge = require('lodash.merge');
 
+// Fabric Types
 const App = require('@fabric/core/types/app');
+const Queue = require('@fabric/core/types/queue');
+const Worker = require('@fabric/core/types/worker');
+
+// HTTP
 const Server = require('@fabric/http/types/server');
 
-const Source = require('./source');
-const Twitter = require('../services/twitter');
+// Sources
+const Matrix = require('@fabric/matrix');
+const Twilio = require('@fabric/twilio');
+const Twitter = require('@fabric/twitter');
 
 /**
  * Sensemaker is a Fabric-powered application, capable of running autonomously
@@ -27,11 +35,14 @@ class Sensemaker extends App {
       port: 7777,
       http: {
         port: 4242
-      }
+      },
+      workers: 1
     }, settings);
 
+    this.queue = new Queue(this.settings);
     this.server = new Server(this.settings);
     this.sources = {};
+    this.workers = [];
 
     this._state = {
       status: 'ready',
@@ -55,29 +66,18 @@ class Sensemaker extends App {
     source.on('message', this._handleTrustedMessage.bind(this));
   }
 
-  async _handleTrustedLog (message) {
-    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
-  }
-
-  async _handleTrustedMessage (message) {
-    this.emit('log', `[types/sensemaker] Trusted Source emitted message: ${message}`);
-    this.emit('message', message);
-  }
-
-  async _handleTrustedWarning (message) {
-    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
-  }
-
-  async _handleTrustedError (message) {
-    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
-  }
-
   /**
    * Start the process.
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
     this.twitter = new Twitter(this.settings.twitter);
+
+    this._registerService('matrix', Matrix);
+    this._registerService('twilio', Twilio);
+    this._registerService('twitter', Twitter);
+
+    this.queue._addJob({ method: 'verify', params: [] });
 
     // 1. define trust model
     // await this.server.trust(this.fabric);
@@ -112,6 +112,36 @@ class Sensemaker extends App {
     this.commit();
     this.emit('stopped');
     return this;
+  }
+
+  async _attachWorkers () {
+    for (const i = 0; i < this.settings.workers; i++) {
+      const worker = new Worker();
+      this.workers.push(worker);
+    }
+  }
+
+  async _startWorkers () {
+    for (const i = 0; i < this.workers.length; i++) {
+      await this.workers[i].start();
+    }
+  }
+
+  async _handleTrustedLog (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
+  }
+
+  async _handleTrustedMessage (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted message: ${message}`);
+    this.emit('message', message);
+  }
+
+  async _handleTrustedWarning (message) {
+    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
+  }
+
+  async _handleTrustedError (message) {
+    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
   }
 }
 

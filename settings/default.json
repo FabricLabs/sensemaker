@@ -2,16 +2,14 @@
   "name": "sensemaker",
   "public": true,
   "announce": ["/services/twitter"],
-  "settings": {
-    "services/twitter": {
-      "consumer": {
-        "key": "",
-        "secret": ""
-      },
-      "token": {
-        "key": "",
-        "secret": ""
-      }
+  "twitter": {
+    "consumer": {
+      "key": null,
+      "secret": null
+    },
+    "token": {
+      "key": null,
+      "secret": null
     }
   }
 }

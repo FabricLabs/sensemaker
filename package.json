@@ -29,6 +29,9 @@
   "dependencies": {
     "@fabric/core": "martindale/fabric#develop-exchange",
     "@fabric/http": "FabricLabs/web",
+    "@fabric/matrix": "FabricLabs/fabric-matrix",
+    "@fabric/twilio": "martindale/fabric-twilio",
+    "@fabric/twitter": "martindale/fabric-twitter",
     "lodash.merge": "^4.6.2",
     "twitter": "^1.7.1"
   },
