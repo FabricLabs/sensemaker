@@ -3,9 +3,12 @@
 const EventEmitter = require('events').EventEmitter;
 
 class Source extends EventEmitter {
-  constructor (configuration = {}) {
-    super(configuration);
-    this.config = configuration;
+  constructor (settings = {}) {
+    super(settings);
+
+    this.settings = settings;
+
+    return this;
   }
 }
 

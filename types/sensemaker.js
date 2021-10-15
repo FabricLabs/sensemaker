@@ -1,15 +1,19 @@
 'use strict';
 
-const Fabric = require('@fabric/core');
-const Server = require('@fabric/http');
+const merge = require('lodash.merge');
+
+const App = require('@fabric/core/types/app');
+const Server = require('@fabric/http/types/server');
+
 const Source = require('./source');
+const Twitter = require('../services/twitter');
 
 /**
  * Sensemaker is a Fabric-powered application, capable of running autonomously
  * once started by the user.  By default, earnings are enabled.
  * @type {Object}
  */
-class Sensemaker extends Fabric.App {
+class Sensemaker extends App {
   /**
    * Constructor for the Sensemaker application.
    * @param  {Object} [settings={}] Map of configuration values.
@@ -17,9 +21,26 @@ class Sensemaker extends Fabric.App {
    */
   constructor (settings = {}) {
     super(settings);
-    this.config = settings;
-    this.fabric = new Fabric(settings);
-    this.server = new Server(settings);
+
+    this.settings = merge({
+      seed: null,
+      port: 7777,
+      http: {
+        port: 4242
+      }
+    }, settings);
+
+    this.server = new Server(this.settings);
+    this.sources = {};
+
+    this._state = {
+      status: 'ready',
+      actors: {},
+      messages: {},
+      objects: {}
+    };
+
+    return this;
   }
 
   /**
@@ -28,11 +49,27 @@ class Sensemaker extends Fabric.App {
    * @return {Sensemaker}          Instance of Sensemaker after binding events.
    */
   trust (source) {
-    source.on('message', this._handleMessage.bind(this));
+    source.on('log', this._handleTrustedLog.bind(this));
+    source.on('warning', this._handleTrustedWarning.bind(this));
+    source.on('error', this._handleTrustedError.bind(this));
+    source.on('message', this._handleTrustedMessage.bind(this));
   }
 
-  async _handleMessage (message) {
-    console.log('[types/sensemaker]', 'received message:', message);
+  async _handleTrustedLog (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
+  }
+
+  async _handleTrustedMessage (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted message: ${message}`);
+    this.emit('message', message);
+  }
+
+  async _handleTrustedWarning (message) {
+    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
+  }
+
+  async _handleTrustedError (message) {
+    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
   }
 
   /**
@@ -40,33 +77,26 @@ class Sensemaker extends Fabric.App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
-    // TODO: remove try/catch
-    try {
-      // TODO: use `fabric.bootstrap`
-      await this.fabric.define('Source', Source);
+    this.twitter = new Twitter(this.settings.twitter);
 
-      // 0. load services
-      // TODO: automate this
-      let Twitter = require('../services/twitter');
-      this.twitter = new Twitter(this.config.settings['services/twitter']);
+    // 1. define trust model
+    // await this.server.trust(this.fabric);
+    // 2. wait for local node
+    // await this.fabric.start();
+    // 3. start the interface
+    await this.server.start();
 
-      // 1. define trust model
-      await this.server.trust(this.fabric);
-      // 2. wait for local node
-      await this.fabric.start();
-      // 3. start the interface
-      await this.server.start();
+    // Start services
+    await this.twitter.start();
 
-      // set status...
-      this.status = 'started';
+    // set status...
+    this.status = 'started';
 
-      // commit to change
-      this.commit();
-      // emit ready event
-      this.emit('ready');
-    } catch (E) {
-      console.log('failed to start:', E);
-    }
+    // commit to change
+    this.commit();
+
+    // emit ready event
+    this.emit('ready');
 
     // return the instance!
     return this;
@@ -78,7 +108,6 @@ class Sensemaker extends Fabric.App {
    */
   async stop () {
     this.status = 'stopping';
-    await this.fabric.stop();
     this.status = 'stopped';
     this.commit();
     this.emit('stopped');

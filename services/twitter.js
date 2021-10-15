@@ -1,11 +1,16 @@
 'use strict';
 
-const Fabric = require('@fabric/core');
+const Service = require('@fabric/core/types/service');
 const Client = require('twitter');
 
-class Twitter extends Fabric.Service {
+class Twitter extends Service {
   constructor (settings = {}) {
     super(settings);
+
+    this.settings = Object.assign({
+      username: 'sensemaker'
+    }, settings);
+
     this.name = 'Twitter';
     this.twitter = new Client({
       consumer_key: settings.consumer.key,
@@ -13,6 +18,8 @@ class Twitter extends Fabric.Service {
       access_token_key: settings.token.key,
       access_token_secret: settings.token.secret
     });
+
+    return this;
   }
 
   /**
@@ -31,6 +38,23 @@ class Twitter extends Fabric.Service {
 
     this.stream.on('error', function (err) {
       console.log('stream error:', err);
+    });
+
+    return this;
+  }
+
+  start () {
+    this.connect();
+    return this;
+  }
+
+  getProfile () {
+    this.twitter.get('statuses/user_timeline', {
+      screen_name: this.settings.username
+    }, function (error, tweets, response) {
+      if (!error) {
+        console.log(tweets);
+      }
     });
   }
 }

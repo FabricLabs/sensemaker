@@ -2,8 +2,9 @@
   "name": "sensemaker",
   "version": "0.1.0-dev",
   "description": "crawl and aggregate data.",
-  "main": "sensemaker.js",
+  "main": "types/sensemaker.js",
   "scripts": {
+    "start": "node scripts/node.js",
     "test": "mocha tests"
   },
   "repository": {
@@ -26,8 +27,10 @@
   },
   "homepage": "https://github.com/martindale/sensemaker",
   "dependencies": {
-    "@fabric/core": "FabricLabs/fabric#pruning",
-    "@fabric/http": "FabricLabs/web"
+    "@fabric/core": "martindale/fabric#develop-exchange",
+    "@fabric/http": "FabricLabs/web",
+    "lodash.merge": "^4.6.2",
+    "twitter": "^1.7.1"
   },
   "devDependencies": {
     "mocha": "^2.2.4"
