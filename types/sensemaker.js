@@ -6,6 +6,7 @@ const definition = require('../package');
 
 // Fabric Types
 const App = require('@fabric/core/types/app');
+const Chain = require('@fabric/core/types/chain');
 const Queue = require('@fabric/core/types/queue');
 const Message = require('@fabric/core/types/message');
 const Worker = require('@fabric/core/types/worker');
@@ -31,13 +32,14 @@ class Sensemaker extends App {
   /**
    * Constructor for the Sensemaker application.
    * @param  {Object} [settings={}] Map of configuration values.
-   * @return {Sensemaker}           Instance of Sensemaker.
+   * @param  {Number} [settings.port=7777] Fabric messaging port.
+   * @return {Sensemaker} Resulting instance of Sensemaker.
    */
   constructor (settings = {}) {
     super(settings);
 
     this.settings = merge({
-      debug: true,
+      debug: false,
       seed: null,
       port: 7777,
       http: {
@@ -49,6 +51,7 @@ class Sensemaker extends App {
     }, settings);
 
     this.clock = 0;
+    this.chain = new Chain(this.settings);
     this.queue = new Queue(this.settings);
     this.http = new Server({
       port: this.settings.http.port,
@@ -99,13 +102,20 @@ class Sensemaker extends App {
 
   tick () {
     const now = (new Date()).toISOString();
-    ++this.clock;
-    this._state.clock = this.clock;
-    const heartbeat = Message.fromVector(['Generic', {
+
+    // Update clock
+    this._state.clock = ++this.clock;
+
+    const beat = Message.fromVector(['Generic', {
       clock: this.clock,
       created: now
     }]);
-    this.emit('heartbeat', heartbeat);
+
+    this.emit('heartbeat', beat);
+    this.emit('block', {
+      created: now,
+      transactions: []
+    });
   }
 
   /**
@@ -114,8 +124,8 @@ class Sensemaker extends App {
    * @return {Sensemaker}          Instance of Sensemaker after binding events.
    */
   trust (source) {
+    if (source.settings && source.settings.debug) source.on('debug', this._handleTrustedDebug.bind(this));
     source.on('log', this._handleTrustedLog.bind(this));
-    source.on('debug', this._handleTrustedDebug.bind(this));
     source.on('warning', this._handleTrustedWarning.bind(this));
     source.on('error', this._handleTrustedError.bind(this));
     source.on('message', this._handleTrustedMessage.bind(this));
@@ -142,12 +152,17 @@ class Sensemaker extends App {
 
     // Internal Listeners
     this.on('heartbeat', async function (beat) {
-      this.alert(`Heartbeat: ${JSON.stringify(beat, null, '  ')}`);
+      this.alert('Heartbeat: ```\n' + JSON.stringify(beat.toObject(), null, '  ') + '\n```');
     });
 
+    this.on('block', async function (block) {
+      this.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
+    });
 
+    // Listen for HTTP events, if enabled
     if (this.settings.http.listen) this.trust(this.http);
 
+    // Start all Services
     for (const [name, service] of Object.entries(this.services)) {
       if (this.settings.services.includes(name)) {
         this.trust(this.services[name]);
@@ -155,28 +170,25 @@ class Sensemaker extends App {
       }
     }
 
+    // Queue up a verification job
     this.queue._addJob({ method: 'verify', params: [] });
     this._heartbeat = setInterval(this.tick.bind(this), this.settings.interval);
 
-    // 1. define trust model
-    // await this.server.trust(this.fabric);
-    // 2. wait for local node
-    // await this.fabric.start();
-    // 3. start the interface
+    // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
 
-    // set status...
+    // Set status...
     this.status = 'started';
 
-    // commit to change
+    // Commit to change
     this.commit();
 
-    // emit log events
+    // Emit log events
     this.emit('log', `[SENSEMAKER] Started!`);
     this.emit('log', `[SENSEMAKER] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
     this.emit('log', `[SENSEMAKER] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
 
-    // emit ready event
+    // Emit ready event
     this.emit('ready');
 
     // DEBUG
@@ -234,7 +246,6 @@ class Sensemaker extends App {
   }
 
   _handleTrustedDebug (message) {
-    console.log('trusted debug:', message);
     this.emit('debug', `[types/sensemaker] Trusted Source emitted debug: ${message}`);
   }
 

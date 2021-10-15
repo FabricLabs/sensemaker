@@ -11,6 +11,7 @@ const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
 const input = merge({
+  debug: (!environment.readVariable('DEBUG')),
   seed: environment.readVariable('FABRIC_SEED')
 }, defaults, settings);
 
@@ -23,7 +24,7 @@ async function main (input = {}) {
   await sensemaker.start();
 
   sensemaker.on('debug', function (debug) {
-    console.debug('[SENSEMAKER:DEBUG]', debug);
+    if (input.debug) console.debug('[SENSEMAKER:DEBUG]', debug);
   });
 
   sensemaker.on('info', function (info) {
