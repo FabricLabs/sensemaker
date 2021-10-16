@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Source: sensemaker.js &middot; Docs</title>
+  <title>Source: services/sensemaker.js &middot; Docs</title>
   <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
   <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
   <div id="main">
-    <h1 class="page-title">Source: sensemaker.js</h1>
+    <h1 class="page-title">Source: services/sensemaker.js</h1>
 
 
 
@@ -50,6 +50,7 @@ const Learner = require('../types/learner');
  * Sensemaker is a Fabric-powered application, capable of running autonomously
  * once started by the user.  By default, earnings are enabled.
  * @type {Object}
+ * @extends {Service}
  */
 class Sensemaker extends App {
   /**
@@ -70,6 +71,7 @@ class Sensemaker extends App {
         port: 4242
       },
       constraints: {
+        tolerance: 100, // 100ms
         memory: {
           max: Math.pow(2, 26) // ~64MB RAM
         }
@@ -145,8 +147,6 @@ class Sensemaker extends App {
     this._state.clock = ++this.clock;
 
     const balance = await this.services.bitcoin._syncBalanceFromOracle();
-    console.log('balance:', balance);
-
     const beat = Message.fromVector(['Generic', {
       clock: this.clock,
       balance: balance.data.content,
@@ -177,20 +177,20 @@ class Sensemaker extends App {
     source.on('ready', this._handleTrustedReady.bind(this));
 
     source.on('actor', async function (actor) {
-      console.log('got actor:', actor);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got actor:', actor);
     });
 
     source.on('channel', async function (channel) {
-      console.log('got channel:', channel);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got channel:', channel);
     });
 
     source.on('message', async function (message) {
-      console.log('got message:', message);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got message:', message);
       await self._handleTrustedMessage(message);
     });
 
     source.on('beat', async function (beat) {
-      console.log('source heartbeat detected', beat);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'source heartbeat detected', beat);
     });
   }
 
@@ -369,6 +369,7 @@ module.exports = Sensemaker;
     <h3>Classes</h3>
     <ul>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
     </ul>
   </nav>
   <br class="clear" />

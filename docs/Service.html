@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Class: Sensemaker &middot; Docs</title>
+  <title>Class: Service &middot; Docs</title>
   <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
   <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
   <div id="main">
-    <h1 class="page-title">Class: Sensemaker</h1>
+    <h1 class="page-title">Class: Service</h1>
 
 
 
@@ -19,10 +19,16 @@
 
       <header>
 
-        <h2><span class="attribs"><span class="type-signature"></span></span>Sensemaker<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Service<span class="signature">(settings)</span><span class="type-signature"></span></h2>
 
-        <div class="class-description">Sensemaker is a Fabric-powered application, capable of running autonomously
-          once started by the user. By default, earnings are enabled.</div>
+        <div class="class-description">The "Service" is a simple model for processing messages in a distributed
+          system. <a href="Service.html">Service</a> instances are public interfaces for outside systems,
+          and typically advertise their presence to the network.
+
+          To implement a Service, you will typically need to implement all methods from
+          this prototype. In general, `connect` and `send` are the highest-priority
+          jobs, and by default the `fabric` property will serve as an I/O stream using
+          familiar semantics.</div>
 
 
       </header>
@@ -37,7 +43,7 @@
 
 
 
-          <h4 class="name" id="Sensemaker"><span class="type-signature"></span>new Sensemaker<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h4>
+          <h4 class="name" id="Service"><span class="type-signature"></span>new Service<span class="signature">(settings)</span><span class="type-signature"></span></h4>
 
 
 
@@ -45,7 +51,7 @@
 
 
           <div class="description">
-            Constructor for the Sensemaker application.
+            Create an instance of a Service.
           </div>
 
 
@@ -69,11 +75,7 @@
                 <th>Type</th>
 
 
-                <th>Attributes</th>
 
-
-
-                <th>Default</th>
 
 
                 <th class="last">Description</th>
@@ -98,26 +100,10 @@
                 </td>
 
 
-                <td class="attributes">
-
-                  &lt;optional><br>
 
 
 
-
-
-                </td>
-
-
-
-                <td class="default">
-
-                  {}
-
-                </td>
-
-
-                <td class="description last">Map of configuration values.
+                <td class="description last">Configuration for this service.
                   <h6>Properties</h6>
 
 
@@ -147,13 +133,13 @@
 
                       <tr>
 
-                        <td class="name"><code>port</code></td>
+                        <td class="name"><code>networking</code></td>
 
 
                         <td class="type">
 
 
-                          <span class="param-type">Number</span>
+                          <span class="param-type">Boolean</span>
 
 
 
@@ -174,12 +160,49 @@
 
                         <td class="default">
 
-                          7777
+                          true
 
                         </td>
 
 
-                        <td class="description last">Fabric messaging port.</td>
+                        <td class="description last">Whether or not to connect to the network.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>@data</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Object</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+                        <td class="default">
+
+                        </td>
+
+
+                        <td class="description last">Internal data to assign.</td>
                       </tr>
 
 
@@ -194,6 +217,53 @@
           </table>
 
 
+
+
+
+
+          <h5 class="subsection-title">Properties:</h5>
+
+
+
+          <table class="props">
+            <thead>
+              <tr>
+
+                <th>Name</th>
+
+
+                <th>Type</th>
+
+
+
+
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+
+              <tr>
+
+                <td class="name"><code>map</code></td>
+
+
+                <td class="type">
+
+                </td>
+
+
+
+
+
+                <td class="description last">The "map" is a hashtable of "key" => "value" pairs.</td>
+              </tr>
+
+
+            </tbody>
+          </table>
 
 
 
@@ -229,7 +299,7 @@
             <dd class="tag-source">
               <ul class="dummy">
                 <li>
-                  <a href="services_sensemaker.js.html">services/sensemaker.js</a>, <a href="services_sensemaker.js.html#line43">line 43</a>
+                  <a href="node_modules_@fabric_core_types_service.js.html">node_modules/@fabric/core/types/service.js</a>, <a href="node_modules_@fabric_core_types_service.js.html#line42">line 42</a>
                 </li>
               </ul>
             </dd>
@@ -256,28 +326,6 @@
 
 
 
-          <h5>Returns:</h5>
-
-
-          <div class="param-desc">
-            Resulting instance of Sensemaker.
-          </div>
-
-
-
-          <dl>
-            <dt>
-              Type
-            </dt>
-            <dd>
-
-              <span class="param-type"><a href="Sensemaker.html">Sensemaker</a></span>
-
-
-            </dd>
-          </dl>
-
-
 
 
 
@@ -285,17 +333,6 @@
 
 
         </div>
-
-
-        <h3 class="subsection-title">Extends</h3>
-
-
-
-
-        <ul>
-          <li><a href="Service.html">Service</a></li>
-        </ul>
-
 
 
 
@@ -400,15 +437,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#_GET">Service#_GET</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -663,15 +691,6 @@
 
 
 
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#_PUT">Service#_PUT</a>
-              </li>
-            </ul>
-          </dd>
-
 
 
 
@@ -834,15 +853,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#_registerActor">Service#_registerActor</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -1007,15 +1017,6 @@
 
 
 
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#_send">Service#_send</a>
-              </li>
-            </ul>
-          </dd>
-
 
 
 
@@ -1164,15 +1165,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#connect">Service#connect</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -1337,15 +1329,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#handler">Service#handler</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -1530,15 +1513,6 @@
 
 
 
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#lock">Service#lock</a>
-              </li>
-            </ul>
-          </dd>
-
 
 
 
@@ -1701,15 +1675,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#route">Service#route</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -1897,15 +1862,6 @@
 
 
 
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#send">Service#send</a>
-              </li>
-            </ul>
-          </dd>
-
 
 
 
@@ -1988,7 +1944,7 @@
 
 
 
-        <h4 class="name" id="start"><span class="type-signature">(async) </span>start<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+        <h4 class="name" id="start"><span class="type-signature">(async) </span>start<span class="signature">()</span><span class="type-signature"></span></h4>
 
 
 
@@ -1996,130 +1952,8 @@
 
 
         <div class="description">
-          Start the process.
-        </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <dl class="details">
-
-
-
-
-
-
-
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#start">Service#start</a>
-              </li>
-            </ul>
-          </dd>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          <dt class="tag-source">Source:</dt>
-          <dd class="tag-source">
-            <ul class="dummy">
-              <li>
-                <a href="services_sensemaker.js.html">services/sensemaker.js</a>, <a href="services_sensemaker.js.html#line186">line 186</a>
-              </li>
-            </ul>
-          </dd>
-
-
-
-
-
-
-
-        </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <h5>Returns:</h5>
-
-
-        <div class="param-desc">
-          Resolves once the process has been started.
-        </div>
-
-
-
-        <dl>
-          <dt>
-            Type
-          </dt>
-          <dd>
-
-            <span class="param-type">Promise</span>
-
-
-          </dd>
-        </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <h4 class="name" id="stop"><span class="type-signature">(async) </span>stop<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
-
-
-
-
-
-
-        <div class="description">
-          Stop the process.
+          Start the service, including the initiation of an outbound connection
+          to any peers designated in the service's configuration.
         </div>
 
 
@@ -2165,7 +1999,7 @@
           <dd class="tag-source">
             <ul class="dummy">
               <li>
-                <a href="services_sensemaker.js.html">services/sensemaker.js</a>, <a href="services_sensemaker.js.html#line259">line 259</a>
+                <a href="node_modules_@fabric_core_types_service.js.html">node_modules/@fabric/core/types/service.js</a>, <a href="node_modules_@fabric_core_types_service.js.html#line302">line 302</a>
               </li>
             </ul>
           </dd>
@@ -2190,28 +2024,6 @@
 
 
 
-
-
-        <h5>Returns:</h5>
-
-
-        <div class="param-desc">
-          Resolves once the process has been stopped.
-        </div>
-
-
-
-        <dl>
-          <dt>
-            Type
-          </dt>
-          <dd>
-
-            <span class="param-type">Promise</span>
-
-
-          </dd>
-        </dl>
 
 
 
@@ -2256,15 +2068,6 @@
 
 
 
-
-          <dt class="tag-overrides">Overrides:</dt>
-          <dd class="tag-overrides">
-            <ul class="dummy">
-              <li>
-                <a href="Service.html#tick">Service#tick</a>
-              </li>
-            </ul>
-          </dd>
 
 
 
@@ -2327,169 +2130,6 @@
           <dd>
 
             <span class="param-type">Number</span>
-
-
-          </dd>
-        </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <h4 class="name" id="trust"><span class="type-signature"></span>trust<span class="signature">(source)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h4>
-
-
-
-
-
-
-        <div class="description">
-          Explicitly trust all events from a known source.
-        </div>
-
-
-
-
-
-
-
-
-
-        <h5>Parameters:</h5>
-
-
-        <table class="params">
-          <thead>
-            <tr>
-
-              <th>Name</th>
-
-
-              <th>Type</th>
-
-
-
-
-
-              <th class="last">Description</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-
-            <tr>
-
-              <td class="name"><code>source</code></td>
-
-
-              <td class="type">
-
-
-                <span class="param-type">EventEmitter</span>
-
-
-
-              </td>
-
-
-
-
-
-              <td class="description last">Emitter of events.</td>
-            </tr>
-
-
-          </tbody>
-        </table>
-
-
-
-
-
-
-        <dl class="details">
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          <dt class="tag-source">Source:</dt>
-          <dd class="tag-source">
-            <ul class="dummy">
-              <li>
-                <a href="services_sensemaker.js.html">services/sensemaker.js</a>, <a href="services_sensemaker.js.html#line149">line 149</a>
-              </li>
-            </ul>
-          </dd>
-
-
-
-
-
-
-
-        </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <h5>Returns:</h5>
-
-
-        <div class="param-desc">
-          Instance of Sensemaker after binding events.
-        </div>
-
-
-
-        <dl>
-          <dt>
-            Type
-          </dt>
-          <dd>
-
-            <span class="param-type"><a href="Sensemaker.html">Sensemaker</a></span>
 
 
           </dd>

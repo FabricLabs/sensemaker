@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const definition = require('../package');
-const Sensemaker = require('../types/sensemaker');
+const Sensemaker = require('../services/sensemaker');
 const Learner = require('../types/learner');
 
 const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex');

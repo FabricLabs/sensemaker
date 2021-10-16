@@ -8,7 +8,7 @@
     "serve:docs": "ecstatic docs",
     "docs": "npm run make:docs && npm run serve:docs",
     "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
-    "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
+    "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "start": "node scripts/node.js",
     "test": "mocha tests"
   },

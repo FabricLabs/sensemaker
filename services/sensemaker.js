@@ -30,6 +30,7 @@ const Learner = require('../types/learner');
  * Sensemaker is a Fabric-powered application, capable of running autonomously
  * once started by the user.  By default, earnings are enabled.
  * @type {Object}
+ * @extends {Service}
  */
 class Sensemaker extends App {
   /**
@@ -50,6 +51,7 @@ class Sensemaker extends App {
         port: 4242
       },
       constraints: {
+        tolerance: 100, // 100ms
         memory: {
           max: Math.pow(2, 26) // ~64MB RAM
         }
@@ -148,19 +150,20 @@ class Sensemaker extends App {
     source.on('ready', this._handleTrustedReady.bind(this));
 
     source.on('actor', async function (actor) {
-      console.log('got actor:', actor);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got actor:', actor);
     });
 
     source.on('channel', async function (channel) {
-      console.log('got channel:', channel);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got channel:', channel);
     });
 
     source.on('message', async function (message) {
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got message:', message);
       await self._handleTrustedMessage(message);
     });
 
     source.on('beat', async function (beat) {
-      console.log('source heartbeat detected', beat);
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'source heartbeat detected', beat);
     });
   }
 

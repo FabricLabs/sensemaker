@@ -23,6 +23,7 @@ Sensemaker is a Fabric-powered application, capable of running autonomously
 once started by the user.  By default, earnings are enabled.
 
 **Kind**: global class  
+**Extends**: <code>Service</code>  
 
 * [Sensemaker](#Sensemaker) : <code>Object</code>
     * [new Sensemaker([settings])](#new_Sensemaker_new)
