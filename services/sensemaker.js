@@ -24,7 +24,7 @@ const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 
 // Internal Types
-const Learner = require('./learner');
+const Learner = require('../types/learner');
 
 /**
  * Sensemaker is a Fabric-powered application, capable of running autonomously
@@ -54,6 +54,9 @@ class Sensemaker extends App {
           max: Math.pow(2, 26) // ~64MB RAM
         }
       },
+      services: [
+        'bitcoin'
+      ],
       interval: 60000,
       workers: 1
     }, settings);
@@ -124,7 +127,7 @@ class Sensemaker extends App {
       created: now
     }]);
 
-    this.emit('heartbeat', beat);
+    this.emit('beat', beat);
     this.emit('block', {
       created: now,
       transactions: []
@@ -154,6 +157,10 @@ class Sensemaker extends App {
 
     source.on('message', async function (message) {
       await self._handleTrustedMessage(message);
+    });
+
+    source.on('beat', async function (beat) {
+      console.log('source heartbeat detected', beat);
     });
   }
 

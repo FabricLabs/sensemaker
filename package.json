@@ -5,6 +5,10 @@
   "main": "types/sensemaker.js",
   "scripts": {
     "coverage": "nyc npm test",
+    "serve:docs": "ecstatic docs",
+    "docs": "npm run make:docs && npm run serve:docs",
+    "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
+    "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "start": "node scripts/node.js",
     "test": "mocha tests"
   },
@@ -13,31 +17,45 @@
     "url": "https://github.com/FabricLabs/sensemaker.git"
   },
   "keywords": [
+    "aggregation",
     "ai",
     "artificial intelligence",
-    "machine learning",
-    "neural networks",
+    "bitcoin",
+    "cryptocurrency",
+    "ethereum",
+    "fabric",
     "intelligence",
+    "lightning",
+    "machine learning",
+    "media",
+    "network",
     "networking",
-    "media"
+    "neural networks",
+    "payments",
+    "social media",
+    "social network",
+    "social"
   ],
-  "author": "FabricLabs",
+  "author": "Fabric Labs",
   "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/FabricLabs/sensemaker/issues"
   },
   "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
-    "@fabric/core": "martindale/fabric#message-relay",
-    "@fabric/http": "FabricLabs/web",
+    "@fabric/core": "FabricLabs/fabric#message-relay",
+    "@fabric/http": "FabricLabs/web#portal-develop",
     "@fabric/discord": "FabricLabs/fabric-discord",
-    "@fabric/ethereum": "FabricLabs/fabric-ethereum",
+    "@fabric/ethereum": "FabricLabs/fabric-ethereum#0.1.0-dev",
     "@fabric/matrix": "FabricLabs/fabric-matrix",
     "@fabric/twilio": "FabricLabs/fabric-twilio",
     "@fabric/twitter": "FabricLabs/fabric-twitter",
     "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
+    "ecstatic": "^4.1.4",
+    "jsdoc": "FabricLabs/jsdoc#fabric",
+    "jsdoc-to-markdown": "^4.0.1",
     "mocha": "^2.2.4",
     "nyc": "^15.1.0"
   }

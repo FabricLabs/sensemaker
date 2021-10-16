@@ -3,7 +3,7 @@
 const merge = require('lodash.merge');
 const defaults = require('../settings/default');
 const settings = require('../settings/local.json');
-const Sensemaker = require('../types/sensemaker');
+const Sensemaker = require('../services/sensemaker');
 
 // Environment
 // TODO: re-evaluate, remove

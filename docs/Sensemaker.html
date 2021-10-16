@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Class: Sensemaker &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Class: Sensemaker</h1>
+
+
+
+
+    <section>
+
+      <header>
+
+        <h2><span class="attribs"><span class="type-signature"></span></span>Sensemaker<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h2>
+
+        <div class="class-description">Sensemaker is a Fabric-powered application, capable of running autonomously
+          once started by the user. By default, earnings are enabled.</div>
+
+
+      </header>
+
+      <article>
+        <div class="container-overview">
+
+
+
+
+          <h2>Constructor</h2>
+
+
+
+          <h4 class="name" id="Sensemaker"><span class="type-signature"></span>new Sensemaker<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h4>
+
+
+
+
+
+
+          <div class="description">
+            Constructor for the Sensemaker application.
+          </div>
+
+
+
+
+
+
+
+
+
+          <h5>Parameters:</h5>
+
+
+          <table class="params">
+            <thead>
+              <tr>
+
+                <th>Name</th>
+
+
+                <th>Type</th>
+
+
+                <th>Attributes</th>
+
+
+
+                <th>Default</th>
+
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+
+              <tr>
+
+                <td class="name"><code>settings</code></td>
+
+
+                <td class="type">
+
+
+                  <span class="param-type">Object</span>
+
+
+
+                </td>
+
+
+                <td class="attributes">
+
+                  &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+                <td class="default">
+
+                  {}
+
+                </td>
+
+
+                <td class="description last">Map of configuration values.
+                  <h6>Properties</h6>
+
+
+                  <table class="params">
+                    <thead>
+                      <tr>
+
+                        <th>Name</th>
+
+
+                        <th>Type</th>
+
+
+                        <th>Attributes</th>
+
+
+
+                        <th>Default</th>
+
+
+                        <th class="last">Description</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+
+
+                      <tr>
+
+                        <td class="name"><code>port</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Number</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+                        <td class="default">
+
+                          7777
+
+                        </td>
+
+
+                        <td class="description last">Fabric messaging port.</td>
+                      </tr>
+
+
+                    </tbody>
+                  </table>
+
+                </td>
+              </tr>
+
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+          <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="sensemaker.js.html">sensemaker.js</a>, <a href="sensemaker.js.html#line42">line 42</a>
+                </li>
+              </ul>
+            </dd>
+
+
+
+
+
+
+
+          </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <h5>Returns:</h5>
+
+
+          <div class="param-desc">
+            Resulting instance of Sensemaker.
+          </div>
+
+
+
+          <dl>
+            <dt>
+              Type
+            </dt>
+            <dd>
+
+              <span class="param-type"><a href="Sensemaker.html">Sensemaker</a></span>
+
+
+            </dd>
+          </dl>
+
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+
+        <h4 class="name" id="start"><span class="type-signature">(async) </span>start<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Start the process.
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="sensemaker.js.html">sensemaker.js</a>, <a href="sensemaker.js.html#line186">line 186</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Resolves once the process has been started.
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">Promise</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="stop"><span class="type-signature">(async) </span>stop<span class="signature">()</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Stop the process.
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="sensemaker.js.html">sensemaker.js</a>, <a href="sensemaker.js.html#line259">line 259</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Resolves once the process has been stopped.
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">Promise</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="trust"><span class="type-signature"></span>trust<span class="signature">(source)</span><span class="type-signature"> &rarr; {<a href="Sensemaker.html">Sensemaker</a>}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Explicitly trust all events from a known source.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>source</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">EventEmitter</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Emitter of events.</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="sensemaker.js.html">sensemaker.js</a>, <a href="sensemaker.js.html#line149">line 149</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Instance of Sensemaker after binding events.
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type"><a href="Sensemaker.html">Sensemaker</a></span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </article>
+
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>
