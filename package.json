@@ -22,7 +22,7 @@
     "media"
   ],
   "author": "FabricLabs",
-  "license": "GPLv3",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/FabricLabs/sensemaker/issues"
   },
