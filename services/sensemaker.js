@@ -2,17 +2,22 @@
 
 // Dependencies
 const merge = require('lodash.merge');
+const monitor = require('fast-json-patch');
 const definition = require('../package');
+
+// HTTP Bridge
+const Server = require('@fabric/http/types/server');
 
 // Fabric Types
 const App = require('@fabric/core/types/app');
+const Peer = require('@fabric/core/types/peer');
+const Actor = require('@fabric/core/types/actor');
 const Chain = require('@fabric/core/types/chain');
 const Queue = require('@fabric/core/types/queue');
-const Message = require('@fabric/core/types/message');
+const Logger = require('@fabric/core/types/logger');
 const Worker = require('@fabric/core/types/worker');
-
-// HTTP
-const Server = require('@fabric/http/types/server');
+const Message = require('@fabric/core/types/message');
+const Collection = require('@fabric/core/types/collection');
 
 // Sources
 const Bitcoin = require('@fabric/core/services/bitcoin');
@@ -46,10 +51,12 @@ class Sensemaker extends App {
       debug: false,
       seed: null,
       port: 7777,
+      path: './logs/sensemaker',
       http: {
         listen: true,
         port: 4242
       },
+      commitments: [],
       constraints: {
         tolerance: 100, // 100ms
         memory: {
@@ -60,13 +67,21 @@ class Sensemaker extends App {
         'bitcoin'
       ],
       interval: 60000,
+      verbosity: 2,
       workers: 1
     }, settings);
 
     this.clock = 0;
+
+    this.agent = new Peer(this.settings);
     this.chain = new Chain(this.settings);
     this.queue = new Queue(this.settings);
+    this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
+
+    this.actors = new Collection({ name: 'Actors' });
+    this.messages = new Collection({ name: 'Messages' });
+    this.objects = new Collection({ name: 'Objects' });
 
     this.http = new Server({
       port: this.settings.http.port,
@@ -83,11 +98,17 @@ class Sensemaker extends App {
 
     this.sources = {};
     this.workers = [];
+    this.changes = new Logger({
+      name: 'sensemaker',
+      path: './stores'
+    });
 
     this._state = {
       clock: this.clock,
-      status: 'ready',
+      status: 'STOPPED',
       actors: {},
+      audits: {},
+      epochs: [],
       messages: {},
       objects: {}
     };
@@ -115,13 +136,30 @@ class Sensemaker extends App {
     }
   }
 
-  // TODO: remove async, use local state instead
   async tick () {
     const now = (new Date()).toISOString();
-
-    // Update clock
+    this._lastTick = now;
     this._state.clock = ++this.clock;
+    return this.commit();
+  }
 
+  async ff (count = 0) {
+    for (let i = 0; i < count; i++) {
+      try {
+        await this.tick();
+      } catch (exception) {
+        this.emit('error', `Could not fast-forward: ${exception}`);
+      }
+    }
+
+    return this;
+  }
+
+  async beat () {
+    const now = (new Date()).toISOString();
+
+    // TODO: remove async, use local state instead
+    // i.e., queue worker job
     const balance = await this.services.bitcoin._syncBalanceFromOracle();
     const beat = Message.fromVector(['Generic', {
       clock: this.clock,
@@ -129,11 +167,31 @@ class Sensemaker extends App {
       created: now
     }]);
 
+    await this.tick();
+
+    let data = beat.data;
+
+    try {
+      data = JSON.parse(data);
+      data = JSON.stringify(data, null, '  ');
+    } catch (exception) {
+      this.emit('error', `Exception parsing beat: ${exception}`);
+    }
+
+    this.alert('Heartbeat: ```\n' + data + '\n```');
+
     this.emit('beat', beat);
     this.emit('block', {
       created: now,
       transactions: []
     });
+
+    return beat;
+  }
+
+  async restore () {
+    const last = await this.changes._getLastLine();
+    return this;
   }
 
   /**
@@ -141,29 +199,100 @@ class Sensemaker extends App {
    * @param  {EventEmitter} source Emitter of events.
    * @return {Sensemaker}          Instance of Sensemaker after binding events.
    */
-  trust (source) {
+  trust (source, name = source.constructor.name) {
+    // Constants
     const self = this;
+
+    // Attach Event Listeners
     if (source.settings && source.settings.debug) source.on('debug', this._handleTrustedDebug.bind(this));
-    source.on('log', this._handleTrustedLog.bind(this));
-    source.on('warning', this._handleTrustedWarning.bind(this));
-    source.on('error', this._handleTrustedError.bind(this));
-    source.on('ready', this._handleTrustedReady.bind(this));
+    if (source.settings && source.settings.verbosity >= 0) {
+      source.on('audit', async function _handleTrustedAudit (audit) {
+        const now = (new Date()).toISOString();
+        const template = {
+          content: audit,
+          created: now,
+          type: 'Audit'
+        };
+
+        const actor = new Actor(template);
+        self._state.audits[actor.id] = merge(template, actor.id);
+        self.audits.log(`[AUDIT] ${now} (${audit.length} bytes) ⇒ ${audit}\t[0x${actor.id}]`);
+      });
+    }
+
+    if (source.settings && source.settings.verbosity >= 3) {
+      source.on('log', async function _handleTrustedLog (log) {
+        console.log(`[SENSEMAKER] Source "${name}" emitted log:`, log);
+      });
+    }
+
+    source.on('ready', async function _handleTrustedReady (info) {
+      console.log(`[SENSEMAKER] Source "${name}" emitted ready:`, info);
+    });
+
+    source.on('warning', async function _handleTrustedWarning (warning) {
+      console.warn(`[SENSEMAKER] Source "${name}" emitted warning:`, warning);
+    });
+
+    source.on('error', async function _handleTrustedError (error) {
+      console.error(`[SENSEMAKER] Source "${name}" emitted error:`, error);
+    });
 
     source.on('actor', async function (actor) {
-      console.log(`[SENSEMAKER] Source ${source.name}`, 'got actor:', actor);
+      console.log(`[SENSEMAKER] Source "${name}" emitted actor:`, actor);
+    });
+
+    source.on('tip', async function (hash) {
+      self.alert(`[SENSEMAKER] New ${name} chaintip: ${hash}`);
+    });
+
+    source.on('patches', async function (patches) {
+      self.emit('debug', `[SENSEMAKER] [${name}] Service State:`, source._state);
+      const changeset = new Actor({
+        '@type': 'JSONPatch',
+        '@path': `/services/${name}`,
+        '@data': patches
+      });
+
+      self.changes.log({
+        id: changeset.id,
+        content: patches
+      });
+
+      await self.commit();
     });
 
     source.on('channel', async function (channel) {
-      console.log(`[SENSEMAKER] Source ${source.name}`, 'got channel:', channel);
-    });
-
-    source.on('message', async function (message) {
-      console.log(`[SENSEMAKER] Source ${source.name}`, 'got message:', message);
-      await self._handleTrustedMessage(message);
+      console.log(`[SENSEMAKER] Source "${name}" emitted channel:`, channel);
     });
 
     source.on('beat', async function (beat) {
-      console.log(`[SENSEMAKER] Source ${source.name}`, 'source heartbeat detected', beat);
+      self.emit('debug', `[SENSEMAKER] Source "${name}" emitted beat: ${JSON.stringify(beat, null, '  ')}`);
+      try {
+        const epoch = new Actor(beat);
+        const ops = [
+          { op: 'add', path: '/epochs', value: {} },
+          { op: 'add', path: `/epochs/${epoch.id}`, value: epoch.toObject() }
+        ];
+
+        monitor.applyPatch(self._state, ops);
+        await self.commit();
+      } catch (exception) {
+        self.emit('error', `Could not process beat: ${exception}`);
+      }
+    });
+
+    source.on('changes', async function (changes) {
+      console.log(`[SENSEMAKER] Source "${name}" emitted changes:`, changes);
+    });
+
+    source.on('commit', async function (commit) {
+      console.log(`[SENSEMAKER] Source "${name}" committed:`, commit);
+    });
+
+    source.on('message', async function (message) {
+      self.emit('debug', `[SENSEMAKER] Source "${name}" emitted message: ${JSON.stringify(message.toObject ? message.toObject() : message, null, '  ')}`);
+      await self._handleTrustedMessage(message);
     });
   }
 
@@ -176,59 +305,64 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been started.
    */
   async start () {
+    const self = this;
+
     // Register Services
-    this._registerService('bitcoin', Bitcoin);
-    this._registerService('discord', Discord);
-    this._registerService('ethereum', Ethereum);
-    this._registerService('matrix', Matrix);
-    this._registerService('twilio', Twilio);
-    this._registerService('twitter', Twitter);
-    // this._registerService('shyft', Shyft);
+    await this._registerService('bitcoin', Bitcoin);
+    await this._registerService('discord', Discord);
+    await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
+    await this._registerService('matrix', Matrix);
+    await this._registerService('twilio', Twilio);
+    await this._registerService('twitter', Twitter);
+    await this._registerService('shyft', Shyft);
 
-    // Internal Listeners
-    this.on('heartbeat', async function (beat) {
-      let data = beat.data;
+    // Start the logging service
+    await this.audits.start();
+    await this.changes.start();
 
-      try {
-        data = JSON.parse(data);
-        data = JSON.stringify(data, null, '  ');
-      } catch (exception) {
-        this.emit('error', `Exception parsing heartbeat: ${exception}`);
-      }
+    await this.restore();
 
-      this.alert('Heartbeat: ```\n' + data + '\n```');
+    // Record all future activity
+    this.on('commit', async function _handleInternalCommit (commit) {
+      await self.audits.log(commit);
+      self.alert('Commitment: ```\n' + JSON.stringify(commit, null, '  ') + '\n```');
     });
 
+    // TODO: remove
     this.on('block', async function (block) {
-      this.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
+      self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
     });
-
-    // Listen for HTTP events, if enabled
-    if (this.settings.http.listen) this.trust(this.http);
 
     // Start all Services
     for (const [name, service] of Object.entries(this.services)) {
       if (this.settings.services.includes(name)) {
-        this.trust(this.services[name]);
+        this.trust(this.services[name], name);
         await this.services[name].start();
       }
     }
 
+    // Listen for HTTP events, if enabled
+    if (this.settings.http.listen) this.trust(this.http);
+    this.trust(this.agent);
+
     // Queue up a verification job
     this.queue._addJob({ method: 'verify', params: [] });
-    this._heartbeat = setInterval(this.tick.bind(this), this.settings.interval);
+    this._heart = setInterval(this.tick.bind(this), this.settings.interval);
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    // Fabric Network
+    await this.agent.start();
 
     // Set status...
     this.status = 'started';
 
     // Commit to change
-    this.commit();
+    await this.commit();
 
     // Emit log events
-    this.emit('log', `[SENSEMAKER] Started!`);
+    this.emit('log', '[SENSEMAKER] Started!');
     this.emit('log', `[SENSEMAKER] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
     this.emit('log', `[SENSEMAKER] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
 
@@ -247,7 +381,7 @@ class Sensemaker extends App {
    * @return {Promise} Resolves once the process has been stopped.
    */
   async stop () {
-    this.status = 'stopping';
+    this.status = 'STOPPING';
 
     for (const [name, service] of Object.entries(this.services)) {
       if (this.settings.services.includes(name)) {
@@ -255,35 +389,89 @@ class Sensemaker extends App {
       }
     }
 
-    this.status = 'stopped';
-    this.commit();
-    this.emit('stopped');
+    if (this.settings.listen) await this.agent.stop();
+    if (this.settings.http.listen) await this.settings.http.stop();
+
+    this.status = 'STOPPED';
+    await this.commit();
+
+    this.emit('stopped', {
+      id: this.id
+    });
+
     return this;
   }
 
   async _attachWorkers () {
-    for (const i = 0; i < this.settings.workers; i++) {
+    for (let i = 0; i < this.settings.workers; i++) {
       const worker = new Worker();
       this.workers.push(worker);
     }
   }
 
   async _startWorkers () {
-    for (const i = 0; i < this.workers.length; i++) {
+    for (let i = 0; i < this.workers.length; i++) {
       await this.workers[i].start();
     }
   }
 
-  _registerService (name, type) {
-    super._registerService(name, type);
-    // TODO: move to @fabric/core/types/service, remove _registerService here
-    const service = this.services[name];
+  async _requestWork (name, method) {
+    this.queue._addJob({
+      method: name,
+      params: [JSON.stringify(method)]
+    });
+  }
+
+  async _registerService (name, Service) {
+    const self = this;
+    const settings = merge({}, this.settings, this.settings[name]);
+    const service = new Service(settings);
+
+    if (this.services[name]) {
+      return this._appendWarning(`Service already registered: ${name}`);
+    }
+
+    this.services[name] = service;
+    this.services[name].on('error', function (msg) {
+      self._appendError(`Service "${name}" emitted error: ${JSON.stringify(msg, null, '  ')}`);
+    });
+
+    this.services[name].on('warning', function (msg) {
+      self._appendWarning(`Service warning from ${name}: ${JSON.stringify(msg, null, '  ')}`);
+    });
+
+    this.services[name].on('message', function (msg) {
+      self._appendMessage(`Service message from ${name}: ${JSON.stringify(msg, null, '  ')}`);
+      self.node.relayFrom(self.node.id, Message.fromVector(['ChatMessage', JSON.stringify(msg)]));
+    });
+
+    this.on('identity', async function _registerActor (identity) {
+      if (this.settings.services.includes(name)) {
+        self._appendMessage(`Registering actor on service "${name}": ${JSON.stringify(identity)}`);
+
+        try {
+          let registration = await this.services[name]._registerActor(identity);
+          self._appendMessage(`Registered Actor: ${JSON.stringify(registration, null, '  ')}`);
+        } catch (exception) {
+          self._appendError(`Error from service "${name}" during _registerActor: ${exception}`);
+        }
+      }
+    });
+
     if (service.routes && service.routes.length) {
       for (let i = 0; i < service.routes.length; i++) {
         const route = service.routes[i];
         this.http._addRoute(route.method, route.path, route.handler);
       }
     }
+
+    await this.commit();
+
+    return this;
+  }
+
+  _handleServiceMessage (source, message) {
+
   }
 
   _handleTrustedLog (message) {
