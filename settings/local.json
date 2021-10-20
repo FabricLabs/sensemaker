@@ -1,12 +1,16 @@
 {
   "name": "sensemaker",
   "debug": false,
+  "peers": [
+    "localhost:7777"
+  ],
   "services": [
     "bitcoin",
     "discord",
     "ethereum",
     "matrix",
-    "shyft"
+    "shyft",
+    "twilio"
   ],
   "bitcoin": {
     "fullnode": true,
@@ -28,7 +32,7 @@
     "token": "your_discord_auth_token_here"
   },
   "ethereum": {
-    "authority": "YOUR_ETHEREUM_RPC_SERVER_URL"
+    "interval": 12000
   },
   "matrix": {
     "name": "@sensemaker/core",
@@ -60,5 +64,8 @@
     ]
   },
   "shyft": {
-  }
+    "name": "TYPHOON",
+    "interval": 5000
+  },
+  "verbosity": 2
 }

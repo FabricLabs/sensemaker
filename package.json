@@ -2,7 +2,7 @@
   "name": "sensemaker",
   "version": "0.1.0-dev",
   "description": "crawl and aggregate data.",
-  "main": "types/sensemaker.js",
+  "main": "services/sensemaker.js",
   "scripts": {
     "coverage": "nyc npm test",
     "serve:docs": "ecstatic docs",

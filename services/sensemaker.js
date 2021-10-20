@@ -24,7 +24,7 @@ const Bitcoin = require('@fabric/core/services/bitcoin');
 const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
-// const Shyft = require('@fabric/shyft');
+const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 
@@ -120,22 +120,6 @@ class Sensemaker extends App {
     return definition.version;
   }
 
-  alert (msg) {
-    for (const [name, service] of Object.entries(this.services)) {
-      if (!this.settings.services.includes(name)) continue;
-      const service = this.services[name];
-      switch (name) {
-        case 'discord':
-        case 'matrix':
-        case 'twilio':
-          service.alert(msg);
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
   async tick () {
     const now = (new Date()).toISOString();
     this._lastTick = now;
@@ -194,108 +178,6 @@ class Sensemaker extends App {
     return this;
   }
 
-  /**
-   * Explicitly trust all events from a known source.
-   * @param  {EventEmitter} source Emitter of events.
-   * @return {Sensemaker}          Instance of Sensemaker after binding events.
-   */
-  trust (source, name = source.constructor.name) {
-    // Constants
-    const self = this;
-
-    // Attach Event Listeners
-    if (source.settings && source.settings.debug) source.on('debug', this._handleTrustedDebug.bind(this));
-    if (source.settings && source.settings.verbosity >= 0) {
-      source.on('audit', async function _handleTrustedAudit (audit) {
-        const now = (new Date()).toISOString();
-        const template = {
-          content: audit,
-          created: now,
-          type: 'Audit'
-        };
-
-        const actor = new Actor(template);
-        self._state.audits[actor.id] = merge(template, actor.id);
-        self.audits.log(`[AUDIT] ${now} (${audit.length} bytes) ⇒ ${audit}\t[0x${actor.id}]`);
-      });
-    }
-
-    if (source.settings && source.settings.verbosity >= 3) {
-      source.on('log', async function _handleTrustedLog (log) {
-        console.log(`[SENSEMAKER] Source "${name}" emitted log:`, log);
-      });
-    }
-
-    source.on('ready', async function _handleTrustedReady (info) {
-      console.log(`[SENSEMAKER] Source "${name}" emitted ready:`, info);
-    });
-
-    source.on('warning', async function _handleTrustedWarning (warning) {
-      console.warn(`[SENSEMAKER] Source "${name}" emitted warning:`, warning);
-    });
-
-    source.on('error', async function _handleTrustedError (error) {
-      console.error(`[SENSEMAKER] Source "${name}" emitted error:`, error);
-    });
-
-    source.on('actor', async function (actor) {
-      console.log(`[SENSEMAKER] Source "${name}" emitted actor:`, actor);
-    });
-
-    source.on('tip', async function (hash) {
-      self.alert(`[SENSEMAKER] New ${name} chaintip: ${hash}`);
-    });
-
-    source.on('patches', async function (patches) {
-      self.emit('debug', `[SENSEMAKER] [${name}] Service State:`, source._state);
-      const changeset = new Actor({
-        '@type': 'JSONPatch',
-        '@path': `/services/${name}`,
-        '@data': patches
-      });
-
-      self.changes.log({
-        id: changeset.id,
-        content: patches
-      });
-
-      await self.commit();
-    });
-
-    source.on('channel', async function (channel) {
-      console.log(`[SENSEMAKER] Source "${name}" emitted channel:`, channel);
-    });
-
-    source.on('beat', async function (beat) {
-      self.emit('debug', `[SENSEMAKER] Source "${name}" emitted beat: ${JSON.stringify(beat, null, '  ')}`);
-      try {
-        const epoch = new Actor(beat);
-        const ops = [
-          { op: 'add', path: '/epochs', value: {} },
-          { op: 'add', path: `/epochs/${epoch.id}`, value: epoch.toObject() }
-        ];
-
-        monitor.applyPatch(self._state, ops);
-        await self.commit();
-      } catch (exception) {
-        self.emit('error', `Could not process beat: ${exception}`);
-      }
-    });
-
-    source.on('changes', async function (changes) {
-      console.log(`[SENSEMAKER] Source "${name}" emitted changes:`, changes);
-    });
-
-    source.on('commit', async function (commit) {
-      console.log(`[SENSEMAKER] Source "${name}" committed:`, commit);
-    });
-
-    source.on('message', async function (message) {
-      self.emit('debug', `[SENSEMAKER] Source "${name}" emitted message: ${JSON.stringify(message.toObject ? message.toObject() : message, null, '  ')}`);
-      await self._handleTrustedMessage(message);
-    });
-  }
-
   async ingest (data) {
     await this.queue._addJob('ingest', [data]);
   }
@@ -333,13 +215,7 @@ class Sensemaker extends App {
       self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
     });
 
-    // Start all Services
-    for (const [name, service] of Object.entries(this.services)) {
-      if (this.settings.services.includes(name)) {
-        this.trust(this.services[name], name);
-        await this.services[name].start();
-      }
-    }
+    await this._startAllServices();
 
     // Listen for HTTP events, if enabled
     if (this.settings.http.listen) this.trust(this.http);
@@ -478,12 +354,7 @@ class Sensemaker extends App {
     this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
   }
 
-  _handleTrustedDebug (message) {
-    this.emit('debug', `[types/sensemaker] Trusted Source emitted debug: ${message}`);
-  }
-
   _handleTrustedMessage (message) {
-    this.emit('log', `[types/sensemaker] Trusted Source emitted message: ${message}`);
     this.emit('message', message);
   }
 
