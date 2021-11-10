@@ -44,7 +44,7 @@
   },
   "twilio": {
     "sid": "add your twilio sid here",
-    "token": "add your twilio token here"
+    "token": "add your twilio token here",
     "from": "FROM_PHONE_HERE",
     "alerts": []
   },
