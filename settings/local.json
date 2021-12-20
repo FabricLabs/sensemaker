@@ -17,6 +17,12 @@
     "authority": "http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443",
     "network": "regtest"
   },
+  "github": {
+    "targets": [
+      "bitcoin/bitcoin",
+      "FabricLabs/fabric"
+    ]
+  },
   "discord": {
     "alerts": [
       "504047881427091472"

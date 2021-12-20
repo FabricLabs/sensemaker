@@ -27,6 +27,7 @@ const Matrix = require('@fabric/matrix');
 const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
+const GitHub = require('@fabric/github')
 
 // Internal Types
 const Learner = require('../types/learner');
@@ -197,6 +198,7 @@ class Sensemaker extends App {
     await this._registerService('twilio', Twilio);
     await this._registerService('twitter', Twitter);
     await this._registerService('shyft', Shyft);
+    await this._registerService('github', GitHub);
 
     // Start the logging service
     await this.audits.start();
