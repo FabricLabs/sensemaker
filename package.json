@@ -47,7 +47,7 @@
     "@fabric/discord": "FabricLabs/fabric-discord",
     "@fabric/ethereum": "FabricLabs/fabric-ethereum#0.1.0-dev",
     "@fabric/http": "FabricLabs/web#portal-develop",
-    "@fabric/matrix": "FabricLabs/fabric-matrix",
+    "@fabric/matrix": "FabricLabs/fabric-matrix#develop",
     "@fabric/twilio": "FabricLabs/fabric-twilio",
     "@fabric/twitter": "FabricLabs/fabric-twitter",
     "fast-json-patch": "^3.1.0",

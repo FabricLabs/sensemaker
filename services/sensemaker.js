@@ -1,15 +1,17 @@
 'use strict';
 
+// Package
+const definition = require('../package');
+
 // Dependencies
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
-const definition = require('../package');
 
 // HTTP Bridge
 const Server = require('@fabric/http/types/server');
 
 // Fabric Types
-const App = require('@fabric/core/types/app');
+// const App = require('@fabric/core/types/app');
 const Peer = require('@fabric/core/types/peer');
 const Actor = require('@fabric/core/types/actor');
 const Chain = require('@fabric/core/types/chain');
@@ -17,6 +19,7 @@ const Queue = require('@fabric/core/types/queue');
 const Logger = require('@fabric/core/types/logger');
 const Worker = require('@fabric/core/types/worker');
 const Message = require('@fabric/core/types/message');
+const Service = require('@fabric/core/types/service');
 const Collection = require('@fabric/core/types/collection');
 
 // Sources
@@ -24,10 +27,10 @@ const Bitcoin = require('@fabric/core/services/bitcoin');
 const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
-const Shyft = require('@fabric/shyft');
+// const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
-const GitHub = require('@fabric/github')
+// const GitHub = require('@fabric/github');
 
 // Internal Types
 const Learner = require('../types/learner');
@@ -38,7 +41,7 @@ const Learner = require('../types/learner');
  * @type {Object}
  * @extends {Service}
  */
-class Sensemaker extends App {
+class Sensemaker extends Service {
   /**
    * Constructor for the Sensemaker application.
    * @param  {Object} [settings={}] Map of configuration values.
@@ -97,6 +100,7 @@ class Sensemaker extends App {
       }
     });
 
+    this.services = {};
     this.sources = {};
     this.workers = [];
     this.changes = new Logger({
@@ -197,8 +201,8 @@ class Sensemaker extends App {
     await this._registerService('matrix', Matrix);
     await this._registerService('twilio', Twilio);
     await this._registerService('twitter', Twitter);
-    await this._registerService('shyft', Shyft);
-    await this._registerService('github', GitHub);
+    // await this._registerService('shyft', Shyft);
+    // await this._registerService('github', GitHub);
 
     // Start the logging service
     await this.audits.start();
