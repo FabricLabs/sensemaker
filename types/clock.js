@@ -1,12 +1,12 @@
 'use strict';
 
-const EventEmitter = require('events').EventEmitter;
+const Actor = require('@fabric/core/types/actor');
 
 /**
  * Simple clock.  Emits `tick` events at a specified interval.
  * @type {Object}
  */
-class Clock extends EventEmitter {
+class Clock extends Actor {
   constructor (settings = {}) {
     super(settings);
 
@@ -29,6 +29,8 @@ class Clock extends EventEmitter {
 
   async start () {
     this.timer = setInterval(this.tick.bind(this), this.config.interval);
+    this.emit('ready', { id: this.id });
+    return this;
   }
 }
 

@@ -1,8 +1,8 @@
 'use strict';
 
-const EventEmitter = require('events').EventEmitter;
+const Clock = require('./clock');
 
-class Source extends EventEmitter {
+class Source extends Clock {
   constructor (settings = {}) {
     super(settings);
 
