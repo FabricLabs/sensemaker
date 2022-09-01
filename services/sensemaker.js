@@ -6,11 +6,13 @@ const definition = require('../package');
 // Dependencies
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
+const levelgraph = require('levelgraph');
 
 // HTTP Bridge
-const Server = require('@fabric/http/types/server');
+const HTTPServer = require('@fabric/http/types/server');
 
 // Fabric Types
+// TODO: reduce to whole library import?
 // const App = require('@fabric/core/types/app');
 const Peer = require('@fabric/core/types/peer');
 const Actor = require('@fabric/core/types/actor');
@@ -21,16 +23,18 @@ const Worker = require('@fabric/core/types/worker');
 const Message = require('@fabric/core/types/message');
 const Service = require('@fabric/core/types/service');
 const Collection = require('@fabric/core/types/collection');
+const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
 const Bitcoin = require('@fabric/core/services/bitcoin');
-const Discord = require('@fabric/discord');
+// const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
 const Twilio = require('@fabric/twilio');
 const Twitter = require('@fabric/twitter');
 // const GitHub = require('@fabric/github');
+const Prices = require('@portal/feed');
 
 // Internal Types
 const Learner = require('../types/learner');
@@ -51,6 +55,7 @@ class Sensemaker extends Service {
   constructor (settings = {}) {
     super(settings);
 
+    // Settings
     this.settings = merge({
       debug: false,
       seed: null,
@@ -75,23 +80,37 @@ class Sensemaker extends Service {
       workers: 1
     }, settings);
 
+    // Vector Clock
     this.clock = 0;
 
+    // Internals
     this.agent = new Peer(this.settings);
     this.chain = new Chain(this.settings);
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
 
+    // Collections
     this.actors = new Collection({ name: 'Actors' });
     this.messages = new Collection({ name: 'Messages' });
     this.objects = new Collection({ name: 'Objects' });
 
-    this.http = new Server({
+    // TODO: use path
+    this.fs = new Filesystem({ path: './stores/sensemaker' });
+
+    // HTTP Interface
+    this.http = new HTTPServer({
       port: this.settings.http.port,
       resources: {
         Index: {
           route: '/',
+          components: {
+            list: 'sensemaker-index',
+            view: 'sensemaker-index'
+          }
+        },
+        Service: {
+          route: '/services',
           components: {
             list: 'sensemaker-index',
             view: 'sensemaker-index'
@@ -196,13 +215,14 @@ class Sensemaker extends Service {
 
     // Register Services
     await this._registerService('bitcoin', Bitcoin);
-    await this._registerService('discord', Discord);
+    // await this._registerService('discord', Discord);
     await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
     await this._registerService('matrix', Matrix);
     await this._registerService('twilio', Twilio);
     await this._registerService('twitter', Twitter);
     // await this._registerService('shyft', Shyft);
     // await this._registerService('github', GitHub);
+    await this._registerService('pricefeed', Prices);
 
     // Start the logging service
     await this.audits.start();
@@ -284,6 +304,11 @@ class Sensemaker extends Service {
     return this;
   }
 
+  async sync () {
+    await this.fs.sync();
+    return this;
+  }
+
   async _attachWorkers () {
     for (let i = 0; i < this.settings.workers; i++) {
       const worker = new Worker();
@@ -310,32 +335,32 @@ class Sensemaker extends Service {
     const service = new Service(settings);
 
     if (this.services[name]) {
-      return this._appendWarning(`Service already registered: ${name}`);
+      return this.emit('warning', `Service already registered: ${name}`);
     }
 
     this.services[name] = service;
     this.services[name].on('error', function (msg) {
-      self._appendError(`Service "${name}" emitted error: ${JSON.stringify(msg, null, '  ')}`);
+      self.emit('error', `Service "${name}" emitted error: ${JSON.stringify(msg, null, '  ')}`);
     });
 
     this.services[name].on('warning', function (msg) {
-      self._appendWarning(`Service warning from ${name}: ${JSON.stringify(msg, null, '  ')}`);
+      self.emit('warning', `Service warning from ${name}: ${JSON.stringify(msg, null, '  ')}`);
     });
 
     this.services[name].on('message', function (msg) {
-      self._appendMessage(`Service message from ${name}: ${JSON.stringify(msg, null, '  ')}`);
+      self.emit('log', `Service message from ${name}: ${JSON.stringify(msg, null, '  ')}`);
       self.node.relayFrom(self.node.id, Message.fromVector(['ChatMessage', JSON.stringify(msg)]));
     });
 
     this.on('identity', async function _registerActor (identity) {
       if (this.settings.services.includes(name)) {
-        self._appendMessage(`Registering actor on service "${name}": ${JSON.stringify(identity)}`);
+        self.emit('log', `Registering actor on service "${name}": ${JSON.stringify(identity)}`);
 
         try {
           let registration = await this.services[name]._registerActor(identity);
-          self._appendMessage(`Registered Actor: ${JSON.stringify(registration, null, '  ')}`);
+          self.emit('log', `Registered Actor: ${JSON.stringify(registration, null, '  ')}`);
         } catch (exception) {
-          self._appendError(`Error from service "${name}" during _registerActor: ${exception}`);
+          self.emit('error', `Error from service "${name}" during _registerActor: ${exception}`);
         }
       }
     });
@@ -353,7 +378,7 @@ class Sensemaker extends Service {
   }
 
   _handleServiceMessage (source, message) {
-
+    // TODO: direct store to graph database
   }
 
   _handleTrustedLog (message) {

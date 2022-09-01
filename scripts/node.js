@@ -1,11 +1,13 @@
 'use strict';
 
-const merge = require('lodash.merge');
-const defaults = require('../settings/default');
+// Settings
 const settings = require('../settings/local');
 
-const Sensemaker = require('../services/sensemaker');
+// Fabric Types
 const Node = require('@fabric/core/types/node');
+
+// Internal Service
+const Sensemaker = require('../services/sensemaker');
 
 async function main (input = {}) {
   // Create Node
@@ -15,7 +17,12 @@ async function main (input = {}) {
   });
 
   // Start Node
-  await sensemaker.start();
+  try {
+    await sensemaker.start();
+  } catch (exception) {
+    console.error('Exception on start:', exception);
+    process.exit();
+  }
 
   // Return Node
   return sensemaker;

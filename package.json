@@ -43,21 +43,29 @@
   },
   "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
-    "@fabric/core": "FabricLabs/fabric#swaps-develop",
-    "@fabric/discord": "FabricLabs/fabric-discord",
-    "@fabric/ethereum": "FabricLabs/fabric-ethereum#0.1.0-dev",
-    "@fabric/http": "FabricLabs/web#portal-develop",
+    "@fabric/core": "FabricLabs/fabric#feature/node-16",
+    "@fabric/ethereum": "FabricLabs/fabric-ethereum#feature/node-16",
     "@fabric/matrix": "FabricLabs/fabric-matrix#develop",
-    "@fabric/twilio": "FabricLabs/fabric-twilio",
-    "@fabric/twitter": "FabricLabs/fabric-twitter",
     "fast-json-patch": "^3.1.0",
+    "levelgraph": "^3.0.0",
     "lodash.merge": "^4.6.2"
   },
   "devDependencies": {
+    "@babel/preset-react": "^7.18.6",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@rollup/plugin-commonjs": "^22.0.1",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-url": "^7.0.0",
     "ecstatic": "^4.1.4",
     "jsdoc": "FabricLabs/jsdoc#fabric",
     "jsdoc-to-markdown": "^4.0.1",
     "mocha": "^2.2.4",
-    "nyc": "^15.1.0"
+    "nyc": "^15.1.0",
+    "rollup-plugin-import-css": "^3.0.3"
+  },
+  "peerDependencies": {
+    "@fabric/http": "FabricLabs/fabric-http#feature/node-16"
   }
 }

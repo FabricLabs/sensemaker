@@ -24,7 +24,11 @@ class Learner extends Actor {
 
     this.chain = new Chain();
     this.machine = new Machine();
-    this._state = { status: 'STOPPED' };
+    this._state = {
+      status: 'STOPPED',
+      content: {}
+    };
+
     this._memory = Buffer.alloc(this.settings.constraints.memory.max, 0, 'hex');
 
     return this;
