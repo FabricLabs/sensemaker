@@ -1,4 +1,7 @@
+dist: focal
 language: node_js
-node_js:
-  - "12.16"
-after_success: npm run report:coverage
+before_install:
+  - npm install -g codecov
+after_success:
+  - npm run report:coverage
+  - codecov
