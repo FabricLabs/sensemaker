@@ -28,6 +28,12 @@
     "coordinator": "!CcnochnehZgASDIexN:fabric.pub",
     "password": "ChangeThisLestYouBeCompletelyVulnerable"
   },
+  "shyft": {
+    "name": "SHYFT",
+    "servers": [
+      "shyft.fabric.pub:8545"
+    ]
+  },
   "twilio": {
     "sid": null,
     "token": null,
@@ -48,9 +54,5 @@
       "FabricLabs",
       "martindale"
     ]
-  },
-  "shyft": {
-    "name": "SHYFT",
-    "servers": []
   }
 }

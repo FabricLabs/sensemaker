@@ -29,12 +29,12 @@ const Filesystem = require('@fabric/core/types/filesystem');
 const Bitcoin = require('@fabric/core/services/bitcoin');
 // const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
-const Matrix = require('@fabric/matrix');
+// const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
-const Twilio = require('@fabric/twilio');
-const Twitter = require('@fabric/twitter');
+// const Twilio = require('@fabric/twilio');
+// const Twitter = require('@fabric/twitter');
 // const GitHub = require('@fabric/github');
-const Prices = require('@portal/feed');
+// const Prices = require('@portal/feed');
 
 // Internal Types
 const Learner = require('../types/learner');
@@ -75,7 +75,7 @@ class Sensemaker extends Service {
       services: [
         'bitcoin'
       ],
-      interval: 60000,
+      interval: 86400 * 1000,
       verbosity: 2,
       workers: 1
     }, settings);
@@ -217,12 +217,12 @@ class Sensemaker extends Service {
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
     await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
-    await this._registerService('matrix', Matrix);
-    await this._registerService('twilio', Twilio);
-    await this._registerService('twitter', Twitter);
+    // await this._registerService('matrix', Matrix);
+    // await this._registerService('twilio', Twilio);
+    // await this._registerService('twitter', Twitter);
     // await this._registerService('shyft', Shyft);
     // await this._registerService('github', GitHub);
-    await this._registerService('pricefeed', Prices);
+    // await this._registerService('pricefeed', Prices);
 
     // Start the logging service
     await this.audits.start();
@@ -233,7 +233,7 @@ class Sensemaker extends Service {
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
       await self.audits.log(commit);
-      self.alert('Commitment: ```\n' + JSON.stringify(commit, null, '  ') + '\n```');
+      // self.alert('Commitment: \n```\n' + JSON.stringify(commit, null, '  ') + '\n```');
     });
 
     // TODO: remove
@@ -255,7 +255,7 @@ class Sensemaker extends Service {
     if (this.settings.http.listen) await this.http.start();
 
     // Fabric Network
-    await this.agent.start();
+    // await this.agent.start();
 
     // Set status...
     this.status = 'started';
@@ -292,7 +292,7 @@ class Sensemaker extends Service {
     }
 
     if (this.settings.listen) await this.agent.stop();
-    if (this.settings.http.listen) await this.settings.http.stop();
+    if (this.settings.http.listen) await this.http.stop();
 
     this.status = 'STOPPED';
     await this.commit();

@@ -8,7 +8,15 @@ const Actor = require('@fabric/core/types/actor');
 const Chain = require('@fabric/core/types/chain');
 const Machine = require('@fabric/core/types/machine');
 
+/**
+ * Basic neural network support.
+ */
 class Learner extends Actor {
+  /**
+   * Create a neural network.
+   * @param {Object} [settings] Settings for the network.
+   * @returns {Learner} Instance of the network.
+   */
   constructor (settings = {}) {
     super(settings);
 
@@ -70,6 +78,25 @@ class Learner extends Actor {
 
   tick () {
     ++this.clock;
+  }
+
+  /**
+   * Read a memory cell.
+   * @param {Number} address Address of the cell.
+   * @returns {Buffer} Value of the memory cell.
+   */
+  readChunk (address) {
+    return this._readChunk(address);
+  }
+
+  /**
+   * Write a buffer to memory.
+   * @param {Number} address Address of the cell.
+   * @param {Buffer} value Data to write to memory.
+   * @returns {Number} Number of bytes written to the cell.
+   */
+  writeChunk (address, value) {
+    return this._writeChunk(address, value);
   }
 
   _readChunk (address) {

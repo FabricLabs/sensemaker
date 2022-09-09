@@ -14,14 +14,14 @@ module.exports = {
   ],
   services: [
     'bitcoin',
-    'discord',
-    'ethereum',
+    // 'discord',
+    // 'ethereum',
     'matrix',
-    'shyft',
-    'twilio'
+    // 'shyft',
+    // 'twilio'
   ],
   bitcoin: {
-    fullnode: true,
+    fullnode: false,
     authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',
     network: 'regtest'
   },
@@ -47,6 +47,9 @@ module.exports = {
   },
   ethereum: {
     interval: 12000
+  },
+  lightning: {
+    authority: 'unix:/SOME_PATH/lightning.sock'
   },
   matrix: {
     name: '@sensemaker/core',
