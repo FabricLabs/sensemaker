@@ -5,7 +5,7 @@
   "main": "services/sensemaker.js",
   "scripts": {
     "coverage": "c8 npm test",
-    "serve:docs": "ecstatic docs",
+    "serve:docs": "fabric-http docs",
     "docs": "npm run make:docs && npm run serve:docs",
     "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
     "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
@@ -51,5 +51,8 @@
     "fast-json-patch": "3.1.0",
     "levelgraph": "3.0.0",
     "lodash.merge": "4.6.2"
+  },
+  "devDependencies": {
+    "jsdoc-to-markdown": "^7.1.1"
   }
 }
