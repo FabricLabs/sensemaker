@@ -11,7 +11,9 @@ class Sensemaker extends React.Component {
   constructor (settings = {}) {
     super(settings);
 
-    this.settings = Object.assign({}, settings);
+    this.settings = Object.assign({
+
+    }, settings);
 
     this._state = {
       content: {}
@@ -29,8 +31,13 @@ class Sensemaker extends React.Component {
 
   }
 
-  render (state = this.state) {
-    return this._renderForReact();
+  render (format = 'html') {
+    switch (format) {
+      case 'json':
+        return JSON.stringify(this.state);
+      case 'html':
+        return this._renderForReact();
+    }
   }
 
   _renderForReact () {
@@ -39,8 +46,12 @@ class Sensemaker extends React.Component {
         <Segment>
           <Header>
             <h1>@sensemaker</h1>
+            <p>{this.props.state.message}</p>
           </Header>
         </Segment>
+        <Bridge authority="http://localhost:9999" path="/" channels={[
+          'bitcoin'
+        ]} />
       </fabric-content-page>
     );
   }

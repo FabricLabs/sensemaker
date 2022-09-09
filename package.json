@@ -4,7 +4,7 @@
   "description": "crawl and aggregate data.",
   "main": "services/sensemaker.js",
   "scripts": {
-    "coverage": "nyc npm test",
+    "coverage": "c8 npm test",
     "serve:docs": "ecstatic docs",
     "docs": "npm run make:docs && npm run serve:docs",
     "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
@@ -43,29 +43,13 @@
   },
   "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
-    "@fabric/core": "FabricLabs/fabric#feature/node-16",
+    "@fabric/core": "FabricLabs/fabric#master",
     "@fabric/ethereum": "FabricLabs/fabric-ethereum#feature/node-16",
+    "@fabric/http": "FabricLabs/fabric-http#feature/node-16",
     "@fabric/matrix": "FabricLabs/fabric-matrix#develop",
-    "fast-json-patch": "^3.1.0",
-    "levelgraph": "^3.0.0",
-    "lodash.merge": "^4.6.2"
-  },
-  "devDependencies": {
-    "@babel/preset-react": "^7.18.6",
-    "@rollup/plugin-babel": "^5.3.1",
-    "@rollup/plugin-commonjs": "^22.0.1",
-    "@rollup/plugin-json": "^4.1.0",
-    "@rollup/plugin-node-resolve": "^13.3.0",
-    "@rollup/plugin-replace": "^4.0.0",
-    "@rollup/plugin-url": "^7.0.0",
-    "ecstatic": "^4.1.4",
-    "jsdoc": "FabricLabs/jsdoc#fabric",
-    "jsdoc-to-markdown": "^4.0.1",
-    "mocha": "^2.2.4",
-    "nyc": "^15.1.0",
-    "rollup-plugin-import-css": "^3.0.3"
-  },
-  "peerDependencies": {
-    "@fabric/http": "FabricLabs/fabric-http#feature/node-16"
+    "@portal/feed": "FabricLabs/portal-feed#feature/federation",
+    "fast-json-patch": "3.1.0",
+    "levelgraph": "3.0.0",
+    "lodash.merge": "4.6.2"
   }
 }
