@@ -29,6 +29,7 @@ const Filesystem = require('@fabric/core/types/filesystem');
 const Bitcoin = require('@fabric/core/services/bitcoin');
 // const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
+const GitHub = require('@fabric/github');
 // const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
@@ -216,7 +217,8 @@ class Sensemaker extends Service {
     // Register Services
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
-    await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
+    await this._registerService('ethereum', Ethereum);
+    await this._registerService('github', GitHub);
     // await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);

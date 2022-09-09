@@ -16,6 +16,7 @@ module.exports = {
     'bitcoin',
     // 'discord',
     // 'ethereum',
+    'github',
     'matrix',
     // 'shyft',
     // 'twilio'
@@ -26,6 +27,7 @@ module.exports = {
     network: 'regtest'
   },
   github: {
+    interval: 10000,
     targets: [
       'bitcoin/bitcoin',
       'FabricLabs/fabric'
