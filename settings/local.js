@@ -29,7 +29,8 @@ module.exports = {
     targets: [
       'bitcoin/bitcoin',
       'FabricLabs/fabric'
-    ]
+    ],
+    token: null
   },
   discord: {
     alerts: [
