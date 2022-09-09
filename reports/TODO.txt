@@ -1,0 +1,10 @@
+./migrations/boot.js:  const patches = []; // TODO: get from state
+./components/Sensemaker.js:// TODO: inherit from @fabric/http/types/component
+./components/Sensemaker.js:  // TODO: inherit from Actor
+./package.json:    "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
+./services/sensemaker.js:// TODO: reduce to whole library import?
+./services/sensemaker.js:    // TODO: use path
+./services/sensemaker.js:    // TODO: remove async, use local state instead
+./services/sensemaker.js:    await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
+./services/sensemaker.js:    // TODO: remove
+./services/sensemaker.js:    // TODO: direct store to graph database
