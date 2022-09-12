@@ -57,6 +57,7 @@
     "lodash.merge": "4.6.2"
   },
   "devDependencies": {
-    "jsdoc-to-markdown": "^7.1.1"
+    "jsdoc-to-markdown": "7.1.1",
+    "mocha": "10.0.0"
   }
 }
