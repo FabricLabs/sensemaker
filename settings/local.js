@@ -9,6 +9,11 @@ module.exports = {
   name: 'sensemaker',
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
+  http: {
+    listen: true,
+    port: 9999
+  },
+  persistent: false,
   peers: [
     'localhost:7777'
   ],

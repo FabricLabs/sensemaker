@@ -27,6 +27,7 @@ const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
 const Bitcoin = require('@fabric/core/services/bitcoin');
+const WebHooks = require('@fabric/webhooks');
 // const Discord = require('@fabric/discord');
 const Ethereum = require('@fabric/ethereum');
 const GitHub = require('@fabric/github');
@@ -61,6 +62,7 @@ class Sensemaker extends Service {
       debug: false,
       seed: null,
       port: 7777,
+      persistent: true,
       path: './logs/sensemaker',
       http: {
         listen: true,
@@ -93,14 +95,18 @@ class Sensemaker extends Service {
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
+    this.feeds = new Collection({ name: 'Feeds '});
     this.messages = new Collection({ name: 'Messages' });
     this.objects = new Collection({ name: 'Objects' });
+    this.sources = new Collection({ name: 'Sources' });
 
     // TODO: use path
+    // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/sensemaker' });
 
     // HTTP Interface
     this.http = new HTTPServer({
+      path: 'assets',
       port: this.settings.http.port,
       resources: {
         Index: {
@@ -215,6 +221,7 @@ class Sensemaker extends Service {
     const self = this;
 
     // Register Services
+    await this._registerService('webhooks', WebHooks);
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
     await this._registerService('ethereum', Ethereum);
