@@ -7,12 +7,7 @@ import Sensemaker from '../components/Sensemaker';
 
 // Settings
 const settings = {
-  currency: 'USD',
-  symbols: [
-    'BTC',
-    'LTC',
-    'NMC'
-  ]
+  currency: 'BTC'
 };
 
 // Main Process Definition

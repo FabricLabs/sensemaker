@@ -5,7 +5,7 @@
   "main": "services/sensemaker.js",
   "scripts": {
     "build": "npm run build:semantic && npm run build:browser",
-    "build:browser": "rollup -c",
+    "build:browser": "node scripts/build.js",
     "build:semantic": "# cd libraries/fomantic && npx gulp build && cp -r dist/themes ../../assets && cd ../..",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",

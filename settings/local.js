@@ -13,6 +13,7 @@ module.exports = {
     listen: true,
     port: 9999
   },
+  interval: 1000, // 1 Hz
   persistent: false,
   peers: [
     'localhost:7777'
@@ -26,6 +27,11 @@ module.exports = {
     // 'shyft',
     // 'twilio'
   ],
+  triggers: {
+    'chief2ieshu2ig1kohquahngooQuoob3': {
+      method: '_notifyHoneyPotMonitor'
+    }
+  },
   bitcoin: {
     fullnode: false,
     authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',

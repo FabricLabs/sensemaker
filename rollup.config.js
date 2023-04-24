@@ -42,7 +42,7 @@ const builds = [
     input: 'scripts/browser.js',
     output: [
       {
-        file: 'assets/sensemaker.js',
+        file: 'assets/scripts/sensemaker.js',
         format: 'iife',
         name: 'PortalFeedMonitor',
         globals: {
