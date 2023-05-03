@@ -15,7 +15,7 @@
     "make:coverage": "npm run coverage && c8 report --reporter html",
     "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "report:coverage": "npm run make:coverage && c8 report --reporter=text-lcov > reports/coverage.lcov",
-    "report:install": "rm -rf node_modules && rm package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
+    "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
     "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
     "serve:docs": "fabric-http docs",
     "start": "node scripts/node.js",
@@ -54,7 +54,6 @@
   "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
     "@fabric/core": "FabricLabs/fabric#feature/validation",
-    "@fabric/ethereum": "FabricLabs/fabric-ethereum#feature/node-16",
     "@fabric/github": "FabricLabs/fabric-github#master",
     "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
     "@fabric/matrix": "FabricLabs/fabric-matrix#develop",

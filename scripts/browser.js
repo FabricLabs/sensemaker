@@ -12,10 +12,20 @@ const settings = {
 
 // Main Process Definition
 async function main (input = {}) {
+  console.log('[SENSEMAKER:BROWSER] main() executing...');
+
+  window.addEventListener('load', async () => {
+    console.log('loaded!');
+  });
+
   const container = document.getElementById('fabric-application-root');
   const root = createRoot(container);
 
-  root.render(<Sensemaker state={input} />);
+  const chatbar = document.createElement('fabric-chat-bar');
+  chatbar.style = 'position: absolute; bottom: 1em;';
+  document.append(chatbar);
+
+  // root.render(<Sensemaker state={input} />);
 
   return {
     react: { root }

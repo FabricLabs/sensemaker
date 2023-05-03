@@ -29,7 +29,7 @@ const Filesystem = require('@fabric/core/types/filesystem');
 const Bitcoin = require('@fabric/core/services/bitcoin');
 const WebHooks = require('@fabric/webhooks');
 // const Discord = require('@fabric/discord');
-const Ethereum = require('@fabric/ethereum');
+// const Ethereum = require('@fabric/ethereum');
 const GitHub = require('@fabric/github');
 // const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
@@ -107,6 +107,8 @@ class Sensemaker extends Service {
     // HTTP Interface
     this.http = new HTTPServer({
       path: 'assets',
+      hostname: this.settings.http.hostname,
+      interface: this.settings.http.interface,
       port: this.settings.http.port,
       resources: {
         Index: {
@@ -224,7 +226,7 @@ class Sensemaker extends Service {
     await this._registerService('webhooks', WebHooks);
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
-    await this._registerService('ethereum', Ethereum);
+    // await this._registerService('ethereum', Ethereum);
     await this._registerService('github', GitHub);
     // await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);

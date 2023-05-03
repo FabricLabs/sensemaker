@@ -11,6 +11,8 @@ module.exports = {
   seed:  environment.readVariable('FABRIC_SEED'),
   http: {
     listen: true,
+    hostname: 'localhost',
+    interface: '0.0.0.0',
     port: 9999
   },
   interval: 1000, // 1 Hz
