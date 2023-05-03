@@ -3,18 +3,12 @@
 // Settings
 const settings = require('../settings/local');
 
-// Fabric Types
-const Node = require('@fabric/core/types/node');
-
 // Internal Service
 const Sensemaker = require('../services/sensemaker');
 
 async function main (input = {}) {
   // Create Node
-  const sensemaker = new Node({
-    service: Sensemaker,
-    settings: input
-  });
+  const sensemaker = new Sensemaker(input);
 
   // Start Node
   try {
