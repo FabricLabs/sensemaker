@@ -1,0 +1,63 @@
+{
+  "name": "sensemaker",
+  "http": {
+    "hostname": "localhost",
+    "interface": "0.0.0.0",
+    "port": 9999
+  },
+  "bitcoin": {
+    "render": false,
+    "fullnode": true,
+    "authority": null,
+    "network": "regtest",
+    "verbosity": 3
+  },
+  "discord": {
+    "alerts": [],
+    "app": {
+      "id": null,
+      "key": null
+    },
+    "auth": {
+      "id": null,
+      "secret": null
+    },
+    "permissions": null,
+    "token": null
+  },
+  "matrix": {
+    "name": "@sensemaker/core",
+    "handle": "services/sensemaker",
+    "connect": true,
+    "homeserver": "https://grove.chat",
+    "coordinator": "!CcnochnehZgASDIexN:fabric.pub",
+    "password": "ChangeThisLestYouBeCompletelyVulnerable"
+  },
+  "shyft": {
+    "name": "SHYFT",
+    "servers": [
+      "shyft.fabric.pub:8545"
+    ]
+  },
+  "twilio": {
+    "sid": null,
+    "token": null,
+    "from": null,
+    "alerts": []
+  },
+  "twitter": {
+    "consumer": {
+      "key": null,
+      "secret": null
+    },
+    "token": {
+      "key": null,
+      "secret": null
+    },
+    "keywords": ["#bitcoin"],
+    "targets": [
+      "FabricLabs",
+      "martindale"
+    ]
+  }
+}

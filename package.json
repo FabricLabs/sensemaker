@@ -1,45 +1,86 @@
 {
   "name": "sensemaker",
-  "version": "0.0.0",
+  "version": "0.1.0-dev",
   "description": "crawl and aggregate data.",
-  "main": "index.js",
+  "main": "services/sensemaker.js",
   "scripts": {
-    "test": "mocha",
-    "coverage": "istanbul cover _mocha"
+    "build": "npm run build:semantic && npm run build:browser",
+    "build:browser": "node scripts/build.js",
+    "build:semantic": "# cd libraries/fomantic && npx gulp build && cp -r dist/themes ../../assets && cd ../..",
+    "coverage": "c8 npm test",
+    "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
+    "docs": "npm run make:docs && npm run serve:docs",
+    "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
+    "make:browser": "npm run build:browser",
+    "make:coverage": "npm run coverage && c8 report --reporter html",
+    "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
+    "report:coverage": "npm run make:coverage && c8 report --reporter=text-lcov > reports/coverage.lcov",
+    "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
+    "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
+    "serve:docs": "fabric-http docs",
+    "start": "node scripts/node.js",
+    "test": "mocha tests",
+    "watch": "rollup -c -w"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/martindale/sensemaker.git"
+    "url": "https://github.com/FabricLabs/sensemaker.git"
   },
   "keywords": [
-    "data",
-    "social",
-    "media",
-    "social",
     "aggregation",
-    "nsa",
-    "dragnet"
+    "ai",
+    "artificial intelligence",
+    "bitcoin",
+    "cryptocurrency",
+    "ethereum",
+    "fabric",
+    "intelligence",
+    "lightning",
+    "machine learning",
+    "media",
+    "network",
+    "networking",
+    "neural networks",
+    "payments",
+    "social media",
+    "social network",
+    "social"
   ],
-  "author": "Eric Martindale",
-  "license": "GPLv3",
+  "author": "Fabric Labs",
+  "license": "AGPL-3.0-or-later",
   "bugs": {
-    "url": "https://github.com/martindale/sensemaker/issues"
+    "url": "https://github.com/FabricLabs/sensemaker/issues"
   },
-  "homepage": "https://github.com/martindale/sensemaker",
+  "homepage": "https://github.com/FabricLabs/sensemaker",
   "dependencies": {
-    "async": "^0.9.0",
-    "bigint": "^0.4.2",
-    "maki": "git://github.com/martindale/maki",
-    "mongoose": "^4.0.2",
-    "mtwitter": "^1.6.4",
-    "reheat": "^1.0.0-beta.10",
-    "restler": "^3.2.2"
+    "@fabric/core": "FabricLabs/fabric#feature/validation",
+    "@fabric/github": "FabricLabs/fabric-github#master",
+    "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
+    "@fabric/matrix": "FabricLabs/fabric-matrix#develop",
+    "@fabric/webhooks": "FabricLabs/fabric-webhooks#master",
+    "@portal/feed": "FabricLabs/portal-feed#feature/federation",
+    "fast-json-patch": "3.1.0",
+    "levelgraph": "3.0.0",
+    "lodash.merge": "4.6.2",
+    "openai": "3.2.1"
   },
   "devDependencies": {
-    "coveralls": "^2.11.2",
-    "debug-trace": "^0.2.4",
-    "istanbul": "^0.3.13",
-    "mocha": "^2.2.4",
-    "procure": "^0.1.4"
+    "@babel/preset-react": "7.17.12",
+    "@observablehq/plot": "0.5.0",
+    "@rollup/plugin-babel": "5.3.1",
+    "@rollup/plugin-commonjs": "22.0.0",
+    "@rollup/plugin-json": "4.1.0",
+    "@rollup/plugin-node-resolve": "13.3.0",
+    "@rollup/plugin-replace": "4.0.0",
+    "@rollup/plugin-url": "7.0.0",
+    "c8": "7.13.0",
+    "gulp": "4.0.2",
+    "jsdoc-to-markdown": "7.1.1",
+    "mocha": "10.0.0",
+    "rollup": "2.74.1",
+    "rollup-plugin-import-css": "3.0.3",
+    "rollup-plugin-livereload": "2.0.5",
+    "rollup-plugin-polyfill-node": "0.9.0",
+    "rollup-plugin-serve": "1.1.0"
   }
 }

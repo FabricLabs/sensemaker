@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: services/sensemaker.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: services/sensemaker.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
+
+// Dependencies
+const merge = require('lodash.merge');
+const definition = require('../package');
+
+// Fabric Types
+const App = require('@fabric/core/types/app');
+const Chain = require('@fabric/core/types/chain');
+const Queue = require('@fabric/core/types/queue');
+const Message = require('@fabric/core/types/message');
+const Collection = require('@fabric/core/types/collection');
+const Worker = require('@fabric/core/types/worker');
+
+// HTTP
+const Server = require('@fabric/http/types/server');
+
+// Sources
+const Bitcoin = require('@fabric/core/services/bitcoin');
+const Discord = require('@fabric/discord');
+const Ethereum = require('@fabric/ethereum');
+const Matrix = require('@fabric/matrix');
+// const Shyft = require('@fabric/shyft');
+const Twilio = require('@fabric/twilio');
+const Twitter = require('@fabric/twitter');
+
+// Internal Types
+const Learner = require('../types/learner');
+
+/**
+ * Sensemaker is a Fabric-powered application, capable of running autonomously
+ * once started by the user.  By default, earnings are enabled.
+ * @type {Object}
+ * @extends {Service}
+ */
+class Sensemaker extends App {
+  /**
+   * Constructor for the Sensemaker application.
+   * @param  {Object} [settings={}] Map of configuration values.
+   * @param  {Number} [settings.port=7777] Fabric messaging port.
+   * @return {Sensemaker} Resulting instance of Sensemaker.
+   */
+  constructor (settings = {}) {
+    super(settings);
+
+    this.settings = merge({
+      debug: false,
+      seed: null,
+      port: 7777,
+      http: {
+        listen: true,
+        port: 4242
+      },
+      constraints: {
+        tolerance: 100, // 100ms
+        memory: {
+          max: Math.pow(2, 26) // ~64MB RAM
+        }
+      },
+      services: [
+        'bitcoin'
+      ],
+      interval: 60000,
+      workers: 1
+    }, settings);
+
+    this.clock = 0;
+    this.chain = new Chain(this.settings);
+    this.queue = new Queue(this.settings);
+    this.learner = new Learner(this.settings);
+
+    this.actors = new Collection({ name: 'Actors' });
+    this.messages = new Collection({ name: 'Messages' });
+    this.objects = new Collection({ name: 'Objects' });
+
+    this.http = new Server({
+      port: this.settings.http.port,
+      resources: {
+        Index: {
+          route: '/',
+          components: {
+            list: 'sensemaker-index',
+            view: 'sensemaker-index'
+          }
+        }
+      }
+    });
+
+    this.sources = {};
+    this.workers = [];
+
+    this._state = {
+      clock: this.clock,
+      status: 'ready',
+      actors: {},
+      messages: {},
+      objects: {}
+    };
+
+    return this;
+  }
+
+  get version () {
+    return definition.version;
+  }
+
+  alert (msg) {
+    for (const [name, service] of Object.entries(this.services)) {
+      if (!this.settings.services.includes(name)) continue;
+      const service = this.services[name];
+      switch (name) {
+        case 'discord':
+        case 'matrix':
+        case 'twilio':
+          service.alert(msg);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  // TODO: remove async, use local state instead
+  async tick () {
+    const now = (new Date()).toISOString();
+
+    // Update clock
+    this._state.clock = ++this.clock;
+
+    const balance = await this.services.bitcoin._syncBalanceFromOracle();
+    const beat = Message.fromVector(['Generic', {
+      clock: this.clock,
+      balance: balance.data.content,
+      created: now
+    }]);
+
+    this.emit('beat', beat);
+    this.emit('block', {
+      created: now,
+      transactions: []
+    });
+  }
+
+  /**
+   * Explicitly trust all events from a known source.
+   * @param  {EventEmitter} source Emitter of events.
+   * @return {Sensemaker}          Instance of Sensemaker after binding events.
+   */
+  trust (source) {
+    const self = this;
+    if (source.settings &amp;&amp; source.settings.debug) source.on('debug', this._handleTrustedDebug.bind(this));
+
+    console.log('trusting source:', source.name);
+
+    source.on('log', this._handleTrustedLog.bind(this));
+    source.on('warning', this._handleTrustedWarning.bind(this));
+    source.on('error', this._handleTrustedError.bind(this));
+    source.on('ready', this._handleTrustedReady.bind(this));
+
+    source.on('actor', async function (actor) {
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got actor:', actor);
+    });
+
+    source.on('channel', async function (channel) {
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got channel:', channel);
+    });
+
+    source.on('message', async function (message) {
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'got message:', message);
+      await self._handleTrustedMessage(message);
+    });
+
+    source.on('beat', async function (beat) {
+      console.log(`[SENSEMAKER] Source ${source.name}`, 'source heartbeat detected', beat);
+    });
+  }
+
+  async ingest (data) {
+    await this.queue._addJob('ingest', [data]);
+  }
+
+  /**
+   * Start the process.
+   * @return {Promise} Resolves once the process has been started.
+   */
+  async start () {
+    // Register Services
+    this._registerService('bitcoin', Bitcoin);
+    this._registerService('discord', Discord);
+    this._registerService('shyft', Ethereum);
+    this._registerService('matrix', Matrix);
+    this._registerService('twilio', Twilio);
+    this._registerService('twitter', Twitter);
+    // this._registerService('shyft', Shyft);
+
+    // Internal Listeners
+    this.on('heartbeat', async function (beat) {
+      let data = beat.data;
+
+      try {
+        data = JSON.parse(data);
+        data = JSON.stringify(data, null, '  ');
+      } catch (exception) {
+        this.emit('error', `Exception parsing heartbeat: ${exception}`);
+      }
+
+      this.alert('Heartbeat: ```\n' + data + '\n```');
+    });
+
+    this.on('block', async function (block) {
+      this.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
+    });
+
+    // Listen for HTTP events, if enabled
+    if (this.settings.http.listen) this.trust(this.http);
+
+    // Start all Services
+    for (const [name, service] of Object.entries(this.services)) {
+      if (this.settings.services.includes(name)) {
+        console.warn(`Starting service: ${name}`);
+        // await this.services[name]._bindStore(this.store);
+        this.trust(this.services[name]);
+        await this.services[name].start();
+      }
+    }
+
+    // Queue up a verification job
+    this.queue._addJob({ method: 'verify', params: [] });
+    this._heartbeat = setInterval(this.tick.bind(this), this.settings.interval);
+
+    // Start HTTP, if enabled
+    if (this.settings.http.listen) await this.http.start();
+
+    // Set status...
+    this.status = 'started';
+
+    // Commit to change
+    this.commit();
+
+    // Emit log events
+    this.emit('log', `[SENSEMAKER] Started!`);
+    this.emit('log', `[SENSEMAKER] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
+    this.emit('log', `[SENSEMAKER] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
+
+    // Emit ready event
+    this.emit('ready');
+
+    // DEBUG
+    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
+
+    // return the instance!
+    return this;
+  }
+
+  /**
+   * Stop the process.
+   * @return {Promise} Resolves once the process has been stopped.
+   */
+  async stop () {
+    this.status = 'stopping';
+
+    for (const [name, service] of Object.entries(this.services)) {
+      if (this.settings.services.includes(name)) {
+        // await this.services[name]._bindStore(this.store);
+        await this.services[name].stop();
+      }
+    }
+
+    this.status = 'stopped';
+    this.commit();
+    this.emit('stopped');
+    return this;
+  }
+
+  async _attachWorkers () {
+    for (const i = 0; i &lt; this.settings.workers; i++) {
+      const worker = new Worker();
+      this.workers.push(worker);
+    }
+  }
+
+  async _startWorkers () {
+    for (const i = 0; i &lt; this.workers.length; i++) {
+      await this.workers[i].start();
+    }
+  }
+
+  async _requestWork (name, method) {
+    this.queue._addJob({
+      method: name,
+      params: [JSON.stringify(method)]
+    });
+  }
+
+  _registerService (name, type) {
+    super._registerService(name, type);
+    // TODO: move to @fabric/core/types/service, remove _registerService here
+    const service = this.services[name];
+    if (service.routes &amp;&amp; service.routes.length) {
+      for (let i = 0; i &lt; service.routes.length; i++) {
+        const route = service.routes[i];
+        this.http._addRoute(route.method, route.path, route.handler);
+      }
+    }
+  }
+
+  _handleServiceMessage (source, message) {
+
+  }
+
+  _handleTrustedLog (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
+  }
+
+  _handleTrustedDebug (message) {
+    this.emit('debug', `[types/sensemaker] Trusted Source emitted debug: ${message}`);
+  }
+
+  _handleTrustedMessage (message) {
+    this.emit('message', message);
+  }
+
+  _handleTrustedWarning (message) {
+    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
+  }
+
+  _handleTrustedError (message) {
+    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
+  }
+
+  _handleTrustedReady (message) {
+    this.emit('log', `[types/sensemaker] Trusted Source emitted ready: ${message}`);
+  }
+
+  _listServices () {
+    return Object.keys(this.services);
+  }
+}
+
+module.exports = Sensemaker;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

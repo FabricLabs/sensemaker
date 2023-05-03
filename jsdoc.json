@@ -1,0 +1,10 @@
+{
+  "name": "@sensemaker/core",
+  "chat": "https://grove.chat/#/room/#sensemaker:fabric.pub",
+  "source": "https://github.com/FabricLabs/sensemaker",
+  "templates": {
+    "default": {
+      "layoutFile": "assets/docs.tmpl"
+    }
+  }
+}
