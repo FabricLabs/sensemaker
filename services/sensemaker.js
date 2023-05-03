@@ -38,6 +38,9 @@ const GitHub = require('@fabric/github');
 // const GitHub = require('@fabric/github');
 // const Prices = require('@portal/feed');
 
+// Services
+const OpenAI = require('./openai');
+
 // Internal Types
 const Learner = require('../types/learner');
 
@@ -92,6 +95,7 @@ class Sensemaker extends Service {
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
+    this.openai = new OpenAI(this.settings.openai);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -238,6 +242,7 @@ class Sensemaker extends Service {
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
+    await this.openai.start();
 
     await this.restore();
 
