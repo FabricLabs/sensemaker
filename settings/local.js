@@ -75,6 +75,9 @@ module.exports = {
     coordinator: '!CcnochnehZgASDIexN:fabric.pub',
     password: 'YOUR_MATRIX_PASSWORD_HERE'
   },
+  openai: {
+    key: 'GET FROM OPENAI'
+  },
   twilio: {
     sid: 'add your twilio sid here',
     token: 'add your twilio token here',
