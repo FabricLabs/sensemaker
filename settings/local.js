@@ -9,6 +9,14 @@ module.exports = {
   name: 'sensemaker',
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
+  http: {
+    listen: true,
+    hostname: 'localhost',
+    interface: '0.0.0.0',
+    port: 9999
+  },
+  interval: 1000, // 1 Hz
+  persistent: false,
   peers: [
     'localhost:7777'
   ],
@@ -16,20 +24,28 @@ module.exports = {
     'bitcoin',
     // 'discord',
     // 'ethereum',
+    'github',
     'matrix',
     // 'shyft',
     // 'twilio'
   ],
+  triggers: {
+    'chief2ieshu2ig1kohquahngooQuoob3': {
+      method: '_notifyHoneyPotMonitor'
+    }
+  },
   bitcoin: {
     fullnode: false,
     authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',
     network: 'regtest'
   },
   github: {
+    interval: 10000,
     targets: [
       'bitcoin/bitcoin',
       'FabricLabs/fabric'
-    ]
+    ],
+    token: null
   },
   discord: {
     alerts: [
@@ -58,6 +74,9 @@ module.exports = {
     homeserver: 'https://grove.chat',
     coordinator: '!CcnochnehZgASDIexN:fabric.pub',
     password: 'YOUR_MATRIX_PASSWORD_HERE'
+  },
+  openai: {
+    key: 'GET FROM OPENAI'
   },
   twilio: {
     sid: 'add your twilio sid here',

@@ -27,8 +27,10 @@ const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
 const Bitcoin = require('@fabric/core/services/bitcoin');
+const WebHooks = require('@fabric/webhooks');
 // const Discord = require('@fabric/discord');
-const Ethereum = require('@fabric/ethereum');
+// const Ethereum = require('@fabric/ethereum');
+const GitHub = require('@fabric/github');
 // const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
@@ -60,6 +62,7 @@ class Sensemaker extends Service {
       debug: false,
       seed: null,
       port: 7777,
+      persistent: true,
       path: './logs/sensemaker',
       http: {
         listen: true,
@@ -92,14 +95,20 @@ class Sensemaker extends Service {
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
+    this.feeds = new Collection({ name: 'Feeds '});
     this.messages = new Collection({ name: 'Messages' });
     this.objects = new Collection({ name: 'Objects' });
+    this.sources = new Collection({ name: 'Sources' });
 
     // TODO: use path
+    // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/sensemaker' });
 
     // HTTP Interface
     this.http = new HTTPServer({
+      path: 'assets',
+      hostname: this.settings.http.hostname,
+      interface: this.settings.http.interface,
       port: this.settings.http.port,
       resources: {
         Index: {
@@ -214,9 +223,11 @@ class Sensemaker extends Service {
     const self = this;
 
     // Register Services
+    await this._registerService('webhooks', WebHooks);
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
-    await this._registerService('ethereum', Ethereum); // TODO: swap back for Ethereum
+    // await this._registerService('ethereum', Ethereum);
+    await this._registerService('github', GitHub);
     // await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);

@@ -1,13 +1,13 @@
 'use strict';
 
-// Dependencies
-import React from 'react';
+// Fabric HTTP Types
+const Site = require('@fabric/http/types/site');
 
 // Styles
-import '../styles/sensemaker.css'
+// import '../styles/sensemaker.css'
 
 // TODO: inherit from @fabric/http/types/component
-class Sensemaker extends React.Component {
+class Sensemaker extends Site {
   constructor (settings = {}) {
     super(settings);
 
@@ -22,39 +22,22 @@ class Sensemaker extends React.Component {
     return this;
   }
 
-  // TODO: inherit from Actor
-  get state () {
-    return JSON.parse(JSON.stringify(this.state));
-  }
-
   componentDidMount () {
-
+    console.log('sensemaker mounted');
   }
 
-  render (format = 'html') {
-    switch (format) {
-      case 'json':
-        return JSON.stringify(this.state);
-      case 'html':
-        return this._renderForReact();
-    }
-  }
-
-  _renderForReact () {
-    return (
-      <fabric-content-page>
-        <Segment>
-          <Header>
+  _getHTML () {
+    return `
+      <fabric-site>
+        <fabric-card class="ui card">
+          <fabric-card-content class="content">
             <h1>@sensemaker</h1>
-            <p>{this.props.state.message}</p>
-          </Header>
-        </Segment>
-        <Bridge authority="http://localhost:9999" path="/" channels={[
-          'bitcoin'
-        ]} />
-      </fabric-content-page>
-    );
+            <p><code>alpha</code></p>
+          </fabric-card-content>
+        </fabric-card>
+      </fabric-site>
+    `.trim();
   }
 }
 
-export default Sensemaker;
+module.exports = Sensemaker;
