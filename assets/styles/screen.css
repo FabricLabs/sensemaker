@@ -1,0 +1,235 @@
+@media (min-width:961px)  {
+  .desktop-only {
+    display: block;
+  }
+}
+
+@media (max-width:960px)  {
+  .desktop-only {
+    display: none;
+  }
+}
+
+body {
+  /* background: #333; */
+  background: #000;
+}
+
+h1, h2, h3 {
+  text-transform: uppercase;
+}
+
+.hidden {
+  display: none;
+}
+
+fabric-site, #site {
+  padding: 0 1em 0 0;
+}
+
+fabric-card.dialogue {
+  width: 100%;
+  font-size: 1.2em;
+}
+
+fabric-chat-bar {
+  position: fixed;
+  margin: 0;
+  bottom: 1em;
+  left: 1em;
+  right: 1em;
+}
+
+fabric-chat-bar input {
+  color: #fff !important;
+}
+
+fabric-chat-entry {
+  color: #fff !important;
+}
+
+fabric-chat-log {
+  display: block;
+  overflow-y: scroll;
+}
+
+fabric-chat-view {
+  display: block;
+  margin-bottom: 3em;
+}
+
+fabric-console {
+  width: '100%';
+}
+
+fabric-footer {
+  position: fixed;
+  bottom: 1em;
+  left: 0;
+  right: 0;
+  margin: 1em 1em 0;
+  padding: 0;
+}
+
+fabric-motd {
+  color: #fff !important;
+}
+
+verse-character-list {
+  overflow: scroll;
+}
+
+verse-dialogue-stack {
+  position: fixed;
+  left: 1em;
+  right: 1em;
+  bottom: 7em;
+}
+
+#site .card {
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+}
+
+#site .card .content .header {
+  color: #fff;
+}
+
+#canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+#chat-log {
+  height: 30em;
+}
+
+#character-creator {
+  position: fixed;
+  margin: 1em 0 0;
+  left: 1em;
+  top: 7em;
+  right: 1em;
+  bottom: 7em;
+  width: calc(100% - 2em);
+}
+
+#character-creator .field label {
+  margin-top: 1em;
+}
+
+#character-creator label {
+  color: #fff;
+}
+
+#character-selection {
+  position: fixed;
+  margin: 1em 0 0;
+  left: 1em;
+  top: 7em;
+  right: 1em;
+  bottom: 7em;
+  width: calc(100% - 2em);
+}
+
+#character-selection img {
+  border: 1px solid white;
+  margin-bottom: 0;
+}
+
+#console {
+  position: fixed;
+  top: 4em;
+  left: 0;
+  right: 0;
+  margin: 5%;
+}
+
+#console fabric-card {
+  height: 100%;
+}
+
+#identity-manager {
+  position: fixed;
+  margin: 0;
+  left: 1em;
+  top: 1em;
+  right: 1em;
+  width: calc(100% - 2em);
+}
+
+#rpg-login-form {
+  max-width: 15em;
+  margin: 2em auto;
+}
+
+#settings {
+  z-index: 20;
+  background: #111 !important;
+  position: fixed;
+  top: 20%;
+  bottom: 20%;
+  left: 10%;
+  width: 80%
+}
+
+#tray {
+  position: fixed;
+  top: 0;
+  right: 0;
+  margin: 5%;
+}
+
+#tray > i {
+  cursor: pointer;
+}
+
+#modal {
+  position: fixed;
+  height: 20%;
+  width: 60%;
+  top: auto;
+  bottom: auto;
+  right: auto;
+  left: auto;
+}
+
+#footer {
+  height: 100%;
+}
+
+.dialogue .content {
+  display: inline-block;
+}
+
+#footer .content {
+  padding: 1em;
+}
+
+#footer form {
+  position: fixed;
+  bottom: 1em;
+  left: 1em;
+  right: 1em;
+}
+
+#overlay {
+  z-index: 10;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 15%;
+  margin-left: auto;
+  margin-right: auto;
+  width: 90%;
+  max-width: 30em;
+  max-height: 60%;
+  padding: 3em;
+}
+
+#overlay fabric-button.ui.button,
+#overlay .button {
+  text-align: left !important;
+  justify-content: left;
+}
