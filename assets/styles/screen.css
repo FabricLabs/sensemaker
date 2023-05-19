@@ -1,18 +1,17 @@
-@media (min-width:961px)  {
+@media (min-width: 961px)  {
   .desktop-only {
     display: block;
   }
 }
 
-@media (max-width:960px)  {
+@media (max-width: 960px)  {
   .desktop-only {
     display: none;
   }
 }
 
 body {
-  /* background: #333; */
-  background: #000;
+  background: #fff;
 }
 
 h1, h2, h3 {
@@ -75,17 +74,6 @@ fabric-motd {
   color: #fff !important;
 }
 
-verse-character-list {
-  overflow: scroll;
-}
-
-verse-dialogue-stack {
-  position: fixed;
-  left: 1em;
-  right: 1em;
-  bottom: 7em;
-}
-
 #site .card {
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
@@ -105,39 +93,6 @@ verse-dialogue-stack {
   height: 30em;
 }
 
-#character-creator {
-  position: fixed;
-  margin: 1em 0 0;
-  left: 1em;
-  top: 7em;
-  right: 1em;
-  bottom: 7em;
-  width: calc(100% - 2em);
-}
-
-#character-creator .field label {
-  margin-top: 1em;
-}
-
-#character-creator label {
-  color: #fff;
-}
-
-#character-selection {
-  position: fixed;
-  margin: 1em 0 0;
-  left: 1em;
-  top: 7em;
-  right: 1em;
-  bottom: 7em;
-  width: calc(100% - 2em);
-}
-
-#character-selection img {
-  border: 1px solid white;
-  margin-bottom: 0;
-}
-
 #console {
   position: fixed;
   top: 4em;
@@ -148,20 +103,6 @@ verse-dialogue-stack {
 
 #console fabric-card {
   height: 100%;
-}
-
-#identity-manager {
-  position: fixed;
-  margin: 0;
-  left: 1em;
-  top: 1em;
-  right: 1em;
-  width: calc(100% - 2em);
-}
-
-#rpg-login-form {
-  max-width: 15em;
-  margin: 2em auto;
 }
 
 #settings {
