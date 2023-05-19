@@ -14,7 +14,10 @@ const Jeeves = require('../components/Jeeves');
 async function main (input = {}) {
   const site = new Jeeves(input);
   const compiler = new Compiler({
-    document: site
+    document: site,
+    webpack: {
+      mode: 'production'
+    }
   });
 
   await compiler.compileTo('assets/index.html');

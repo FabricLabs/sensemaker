@@ -3,7 +3,7 @@
 // import { createRoot } from 'react-dom/client';
 
 // Components
-import Jeeves from '../components/Jeeves';
+// import Jeeves from '../components/Jeeves';
 
 // Settings
 const settings = {
@@ -16,18 +16,18 @@ async function main (input = {}) {
 
   window.addEventListener('load', async () => {
     console.log('loaded!');
+
+    const chatbar = document.createElement('fabric-chat-bar');
+    chatbar.style = 'position: absolute; bottom: 1em;';
+    document.body.append(chatbar);
   });
 
   // const container = document.getElementById('fabric-application-root');
   // const root = createRoot(container);
   // root.render(<Jeeves state={input} />);
 
-  const chatbar = document.createElement('fabric-chat-bar');
-  chatbar.style = 'position: absolute; bottom: 1em;';
-  document.append(chatbar);
-
   return {
-    react: { root }
+    // react: { root }
   }
 }
 

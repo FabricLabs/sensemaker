@@ -12,6 +12,7 @@ class JeevesUI extends Site {
     super(settings);
 
     this.settings = Object.assign({
+      domain: 'jeeves.dev',
       handle: `jeeves-application`
     }, settings);
 
@@ -22,19 +23,33 @@ class JeevesUI extends Site {
     return this;
   }
 
+  get permalink () {
+    return `https://${this.settings.domain}`;
+  }
+
   componentDidMount () {
     console.log('sensemaker mounted');
   }
 
   _getHTML () {
     return `
-      <${this.handle} id="${this.id}">
-        <fabric-card class="ui card">
-          <fabric-card-content class="content">
-            <h1>JEEVES</h1>
-            <p><code>alpha</code></p>
-          </fabric-card-content>
-        </fabric-card>
+      <${this.handle} id="${this.id}" class="fabric-site">
+        <fabric-container class="ui primary action fluid text container">
+          <fabric-card class="ui fluid card">
+            <fabric-card-content class="center aligned content">
+              <img src="/images/jeeves-brand.png" class="ui image" />
+              <h1>JEEVES</h1>
+              <p><code>alpha</code></p>
+              <p class="supersize"><em>coming soon</em></p>
+            </fabric-card-content>
+            <fabric-card-content class="extra content">
+              <a href="${this.permalink}" class="ui left labeled icon button clipped">
+                <i class="linkify icon"></i>
+                <abbr title="sha256: ${this.id}"><code data-bind="hash">${this.id}</code></abbr>
+              </a>
+            </fabric-card-content>
+          </fabric-card>
+        </fabric-container>
       </${this.handle}>
     `.trim();
   }

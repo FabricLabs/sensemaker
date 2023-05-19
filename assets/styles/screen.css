@@ -18,8 +18,32 @@ h1, h2, h3 {
   text-transform: uppercase;
 }
 
+.clipped {
+  display: inline-block;
+  overflow: hidden;
+  max-width: 20em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .hidden {
   display: none;
+}
+
+.supersize {
+  font-size: 1.2em;
+}
+
+.fabric-site {
+  margin: 1em;
+}
+
+.ui.primary.action {
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 36em;
+  max-width: 20em;
+  padding-top: 2em;
 }
 
 fabric-site, #site {
