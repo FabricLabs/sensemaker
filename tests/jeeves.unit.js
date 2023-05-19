@@ -2,32 +2,32 @@
 
 const assert = require('assert');
 const definition = require('../package');
-const Sensemaker = require('../services/sensemaker');
+const Jeeves = require('../services/jeeves');
 const Learner = require('../types/learner');
 
 const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex');
 
-describe('Sensemaker', function () {
-  describe('@sensemaker/core', function () {
+describe('Jeeves', function () {
+  describe('@jeeves/core', function () {
     it('should be instantiable', function () {
-      assert.strictEqual(typeof Sensemaker, 'function');
+      assert.strictEqual(typeof Jeeves, 'function');
     });
 
     it('should have a correct version attribute', function () {
-      const sensemaker = new Sensemaker();
-      assert.strictEqual(sensemaker.version, definition.version);
+      const jeeves = new Jeeves();
+      assert.strictEqual(jeeves.version, definition.version);
     });
 
     xit('should implement enable', function () {
-      assert.ok(Sensemaker.prototype.enable);
+      assert.ok(Jeeves.prototype.enable);
     });
 
     it('should implement ingest', function () {
-      assert.ok(Sensemaker.prototype.ingest);
+      assert.ok(Jeeves.prototype.ingest);
     });
   });
 
-  describe('@sensemaker/core/types/learner', function () {
+  describe('@jeeves/core/types/learner', function () {
     it('should instantiate without error', function () {
       const learner = new Learner();
       assert.ok(learner);
