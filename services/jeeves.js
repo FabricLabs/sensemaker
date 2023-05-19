@@ -45,17 +45,17 @@ const OpenAI = require('./openai');
 const Learner = require('../types/learner');
 
 /**
- * Sensemaker is a Fabric-powered application, capable of running autonomously
+ * Jeeves is a Fabric-powered application, capable of running autonomously
  * once started by the user.  By default, earnings are enabled.
  * @type {Object}
  * @extends {Service}
  */
-class Sensemaker extends Service {
+class Jeeves extends Service {
   /**
-   * Constructor for the Sensemaker application.
+   * Constructor for the Jeeves application.
    * @param  {Object} [settings={}] Map of configuration values.
    * @param  {Number} [settings.port=7777] Fabric messaging port.
-   * @return {Sensemaker} Resulting instance of Sensemaker.
+   * @return {Jeeves} Resulting instance of Jeeves.
    */
   constructor (settings = {}) {
     super(settings);
@@ -66,7 +66,7 @@ class Sensemaker extends Service {
       seed: null,
       port: 7777,
       persistent: true,
-      path: './logs/sensemaker',
+      path: './logs/jeeves',
       http: {
         listen: true,
         port: 4242
@@ -106,7 +106,7 @@ class Sensemaker extends Service {
 
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
-    this.fs = new Filesystem({ path: './stores/sensemaker' });
+    this.fs = new Filesystem({ path: './stores/jeeves' });
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -118,15 +118,15 @@ class Sensemaker extends Service {
         Index: {
           route: '/',
           components: {
-            list: 'sensemaker-index',
-            view: 'sensemaker-index'
+            list: 'jeeves-index',
+            view: 'jeeves-index'
           }
         },
         Service: {
           route: '/services',
           components: {
-            list: 'sensemaker-index',
-            view: 'sensemaker-index'
+            list: 'jeeves-index',
+            view: 'jeeves-index'
           }
         }
       }
@@ -136,7 +136,7 @@ class Sensemaker extends Service {
     this.sources = {};
     this.workers = [];
     this.changes = new Logger({
-      name: 'sensemaker',
+      name: 'jeeves',
       path: './stores'
     });
 
@@ -280,15 +280,15 @@ class Sensemaker extends Service {
     await this.commit();
 
     // Emit log events
-    this.emit('log', '[SENSEMAKER] Started!');
-    this.emit('log', `[SENSEMAKER] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
-    this.emit('log', `[SENSEMAKER] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
+    this.emit('log', '[JEEVES] Started!');
+    this.emit('log', `[JEEVES] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
+    this.emit('log', `[JEEVES] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
 
     // Emit ready event
     this.emit('ready');
 
     // DEBUG
-    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
+    this.alert(`Jeeves started.  Agent ID: ${this.id}`);
 
     // return the instance!
     return this;
@@ -398,7 +398,7 @@ class Sensemaker extends Service {
   }
 
   _handleTrustedLog (message) {
-    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
+    this.emit('log', `[types/jeeves] Trusted Source emitted log: ${message}`);
   }
 
   _handleTrustedMessage (message) {
@@ -406,15 +406,15 @@ class Sensemaker extends Service {
   }
 
   _handleTrustedWarning (message) {
-    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
+    this.emit('warning', `[types/jeeves] Trusted Source emitted warning: ${message}`);
   }
 
   _handleTrustedError (message) {
-    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
+    this.emit('error', `[types/jeeves] Trusted Source emitted error: ${message}`);
   }
 
   _handleTrustedReady (message) {
-    this.emit('log', `[types/sensemaker] Trusted Source emitted ready: ${message}`);
+    this.emit('log', `[types/jeeves] Trusted Source emitted ready: ${message}`);
   }
 
   _listServices () {
@@ -422,4 +422,4 @@ class Sensemaker extends Service {
   }
 }
 
-module.exports = Sensemaker;
+module.exports = Jeeves;
