@@ -1,8 +1,8 @@
 {
-  "name": "sensemaker",
+  "name": "@jeeves/core",
   "version": "0.1.0-dev",
   "description": "crawl and aggregate data.",
-  "main": "services/sensemaker.js",
+  "main": "services/jeeves.js",
   "scripts": {
     "build": "npm run build:semantic && npm run build:browser",
     "build:browser": "node scripts/build.js",
