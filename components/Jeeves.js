@@ -31,7 +31,7 @@ class JeevesUI extends Site {
       <${this.handle} id="${this.id}">
         <fabric-card class="ui card">
           <fabric-card-content class="content">
-            <h1>@sensemaker</h1>
+            <h1>JEEVES</h1>
             <p><code>alpha</code></p>
           </fabric-card-content>
         </fabric-card>

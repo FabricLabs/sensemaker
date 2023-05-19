@@ -18,7 +18,7 @@
     "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
     "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
     "serve:docs": "fabric-http docs",
-    "start": "node scripts/node.js",
+    "start": "npm run build && node scripts/node.js",
     "test": "mocha tests",
     "watch": "rollup -c -w"
   },

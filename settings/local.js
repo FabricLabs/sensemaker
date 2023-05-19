@@ -14,7 +14,7 @@ module.exports = {
     listen: true,
     hostname: 'localhost',
     interface: '0.0.0.0',
-    port: 9999
+    port: 3045
   },
   interval: 1000, // 1 Hz
   persistent: false,
