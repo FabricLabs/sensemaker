@@ -4,7 +4,7 @@
 const Site = require('@fabric/http/types/site');
 
 // Styles
-// import '../styles/sensemaker.css'
+// import '../styles/jeeves.css'
 
 // TODO: inherit from @fabric/http/types/component
 class JeevesUI extends Site {

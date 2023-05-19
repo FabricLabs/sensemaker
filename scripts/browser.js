@@ -1,9 +1,9 @@
 // Dependencies
-import * as React from 'react';
-import { createRoot } from 'react-dom/client';
+// import * as React from 'react';
+// import { createRoot } from 'react-dom/client';
 
 // Components
-import Sensemaker from '../components/Sensemaker';
+import Jeeves from '../components/Jeeves';
 
 // Settings
 const settings = {
@@ -12,20 +12,19 @@ const settings = {
 
 // Main Process Definition
 async function main (input = {}) {
-  console.log('[SENSEMAKER:BROWSER] main() executing...');
+  console.log('[JEEVES:BROWSER] main() executing...');
 
   window.addEventListener('load', async () => {
     console.log('loaded!');
   });
 
-  const container = document.getElementById('fabric-application-root');
-  const root = createRoot(container);
+  // const container = document.getElementById('fabric-application-root');
+  // const root = createRoot(container);
+  // root.render(<Jeeves state={input} />);
 
   const chatbar = document.createElement('fabric-chat-bar');
   chatbar.style = 'position: absolute; bottom: 1em;';
   document.append(chatbar);
-
-  // root.render(<Sensemaker state={input} />);
 
   return {
     react: { root }
@@ -34,7 +33,7 @@ async function main (input = {}) {
 
 // Run Main Process
 main(settings).catch((exception) => {
-  console.error('[SENSEMAKER:BROWSER] Main Process Exception:', exception);
+  console.error('[JEEVES:BROWSER] Main Process Exception:', exception);
 }).then((output) => {
-  console.log('[SENSEMAKER:BROWSER] Main Process Output:', output);
+  console.log('[JEEVES:BROWSER] Main Process Output:', output);
 });
