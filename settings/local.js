@@ -6,7 +6,8 @@ const environment = new Environment();
 environment.start();
 
 module.exports = {
-  name: 'sensemaker',
+  alias: 'JEEVES',
+  name: 'jeeves',
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   http: {
@@ -68,8 +69,8 @@ module.exports = {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
   matrix: {
-    name: '@sensemaker/core',
-    handle: 'sensemaker',
+    name: '@jeeves/core',
+    handle: 'jeeves',
     connect: true,
     homeserver: 'https://grove.chat',
     coordinator: '!CcnochnehZgASDIexN:fabric.pub',
