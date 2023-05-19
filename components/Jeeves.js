@@ -7,12 +7,12 @@ const Site = require('@fabric/http/types/site');
 // import '../styles/sensemaker.css'
 
 // TODO: inherit from @fabric/http/types/component
-class Sensemaker extends Site {
+class JeevesUI extends Site {
   constructor (settings = {}) {
     super(settings);
 
     this.settings = Object.assign({
-
+      handle: `jeeves-application`
     }, settings);
 
     this._state = {
@@ -28,16 +28,16 @@ class Sensemaker extends Site {
 
   _getHTML () {
     return `
-      <fabric-site>
+      <${this.handle} id="${this.id}">
         <fabric-card class="ui card">
           <fabric-card-content class="content">
             <h1>@sensemaker</h1>
             <p><code>alpha</code></p>
           </fabric-card-content>
         </fabric-card>
-      </fabric-site>
+      </${this.handle}>
     `.trim();
   }
 }
 
-module.exports = Sensemaker;
+module.exports = JeevesUI;

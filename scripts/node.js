@@ -4,26 +4,26 @@
 const settings = require('../settings/local');
 
 // Internal Service
-const Sensemaker = require('../services/sensemaker');
+const Jeeves = require('../services/jeeves');
 
 async function main (input = {}) {
   // Create Node
-  const sensemaker = new Sensemaker(input);
+  const jeeves = new Jeeves(input);
 
   // Start Node
   try {
-    await sensemaker.start();
+    await jeeves.start();
   } catch (exception) {
     console.error('Exception on start:', exception);
     process.exit();
   }
 
   // Return Node
-  return sensemaker;
+  return jeeves;
 }
 
 main(settings).catch((exception) => {
-  console.error('[SENSEMAKER]', exception);
+  console.error('[JEEVES]', exception);
 }).then((output) => {
-  console.log('[SENSEMAKER]', 'Started!  Agent ID:', output.id);
+  console.log('[JEEVES]', 'Started!  Agent ID:', output.id);
 });

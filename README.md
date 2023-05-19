@@ -3,6 +3,8 @@
 source code for [`jeeves.dev`][jeeves-dev]
 
 ## Sensemaker
+Sensemaker is the original intelligence gathering platform around which Jeeves is based.
+
 **General Purpose:** provide a common library for consuming data from various 
 remote APIs, caching that data in a local database, stitching that information
 together to extrapolate additional context for previously sparse data, and 
