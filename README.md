@@ -26,4 +26,11 @@ npm start # run node
 
 A basic web interface should now be provided at http://localhost
 
+## Training
+
+### Tokenization
+See the `./stores` directory.
+
+Please note that embedding the entire file contents as a single sequence might not be practical or efficient for large files, depending on the available memory and the model's maximum sequence length. You may need to split the content into smaller chunks or use more advanced techniques like windowing or dynamic batching.
+
 [jeeves-dev]: https://jeeves.dev

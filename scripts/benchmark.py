@@ -1,9 +1,17 @@
 import time
 import os
 import torch
+from transformers import GPT2Tokenizer, GPT2LMHeadModel
 
 # Set up GPU for training
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load pre-trained model tokenizer (vocabulary)
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+
+# Load pre-trained model (weights)
+model = GPT2LMHeadModel.from_pretrained("gpt2")
+model = model.to(device)
 
 # Time for benchmarking
 start_time = time.time()
@@ -21,19 +29,25 @@ for filename in os.listdir(directory):
         with open(file_path, "rb") as file:
             content = file.read()
 
-            # Assuming content is in hexadecimal bytes representation,
-            # decode it to bytes
-            try:
-                byte_content = bytes.fromhex(content.decode())
-            except ValueError:
-                print(f"Skipping file: {file_path}. Not in hexadecimal format.")
-                continue
+            # Convert raw content to hexadecimal bytes
+            hex_content = content.hex()
 
-            # Process the content as needed
-            # Here, we can assume each byte as a sequence
+            # Create metadata dictionary with file name and other details
+            metadata = {"file_name": filename}
 
-            # Example: Count the number of sequences
-            num_sequences += len(byte_content)
+            # Embed metadata in the content string
+            content_with_metadata = json.dumps(metadata) + hex_content
+
+            # Tokenize the content with metadata
+            inputs = tokenizer(content_with_metadata, return_tensors="pt", truncation=True, padding=True)
+            inputs = {k: v.to(device) for k, v in inputs.items()}
+
+            # Perform a forward pass (evaluate the model on this input)
+            outputs = model(**inputs)
+
+            # Don't perform a backward pass (we're not actually training)
+            # Increment sequence count
+            num_sequences += 1
 
 # Calculate sequences per second
 end_time = time.time()
