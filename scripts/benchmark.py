@@ -3,9 +3,7 @@ import os
 import torch
 import json
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
-
-# Set up GPU for training
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from multiprocessing import Pool
 
 # Load pre-trained model tokenizer (vocabulary)
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -15,46 +13,51 @@ tokenizer.pad_token = tokenizer.eos_token
 
 # Load pre-trained model (weights)
 model = GPT2LMHeadModel.from_pretrained("gpt2")
-model = model.to(device)
 
-# Time for benchmarking
-start_time = time.time()
-
-# Number of sequences processed
-num_sequences = 0
+# Number of processes (equal to the number of available GPUs)
+num_processes = torch.cuda.device_count()
 
 # Target directory
 directory = "./stores/corpus"
 
-# Process each file in the directory
-for filename in os.listdir(directory):
-    file_path = os.path.join(directory, filename)
-    if os.path.isfile(file_path):
-        with open(file_path, "rb") as file:
-            content = file.read()
 
-            # Convert raw content to hexadecimal bytes
-            hex_content = content.hex()
+def process_file(file_path):
+    with open(file_path, "rb") as file:
+        content = file.read()
 
-            # Create metadata dictionary with file name and other details
-            metadata = {"file_name": filename}
+        # Convert raw content to hexadecimal bytes
+        hex_content = content.hex()
 
-            # Embed metadata in the content string
-            content_with_metadata = json.dumps(metadata) + hex_content
+        # Create metadata dictionary with file name and other details
+        metadata = {"file_name": os.path.basename(file_path)}
 
-            # Tokenize the content with metadata
-            inputs = tokenizer(content_with_metadata, return_tensors="pt", truncation=True, padding=True)
-            inputs = {k: v.to(device) for k, v in inputs.items()}
+        # Embed metadata in the content string
+        content_with_metadata = json.dumps(metadata) + hex_content
 
-            # Perform a forward pass (evaluate the model on this input)
-            outputs = model(**inputs)
+        # Tokenize the content with metadata
+        inputs = tokenizer(content_with_metadata, return_tensors="pt", truncation=True, padding=True)
 
-            # Don't perform a backward pass (we're not actually training)
-            # Increment sequence count
-            num_sequences += 1
+        # Perform a forward pass (evaluate the model on this input)
+        outputs = model(**inputs)
 
-# Calculate sequences per second
-end_time = time.time()
-sequences_per_second = num_sequences / (end_time - start_time)
 
-print(f"Sequences per second: {sequences_per_second}")
+if __name__ == "__main__":
+    # Time for benchmarking
+    start_time = time.time()
+
+    # Create a pool of processes
+    pool = Pool(processes=num_processes)
+
+    # Process each file in the directory in parallel
+    file_paths = [os.path.join(directory, filename) for filename in os.listdir(directory) if os.path.isfile(os.path.join(directory, filename))]
+    pool.map(process_file, file_paths)
+
+    # Close the pool
+    pool.close()
+    pool.join()
+
+    # Calculate sequences per second
+    end_time = time.time()
+    sequences_per_second = len(file_paths) / (end_time - start_time)
+
+    print(f"Sequences per second: {sequences_per_second}")
