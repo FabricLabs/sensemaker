@@ -10,6 +10,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Load pre-trained model tokenizer (vocabulary)
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
+# Set the pad_token explicitly
+tokenizer.pad_token = tokenizer.eos_token
+
 # Load pre-trained model (weights)
 model = GPT2LMHeadModel.from_pretrained("gpt2")
 model = model.to(device)
