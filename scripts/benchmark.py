@@ -1,76 +1,68 @@
+import os
+import argparse
 import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification
 from torch.utils.data import Dataset, DataLoader
+from multiprocessing import Process
 
-# Check if PyTorch sees your GPUs
-print(torch.cuda.device_count())
-
-class GPT2Dataset(Dataset):
-    # Simple Dataset class for GPT-2
-    def __init__(self, txt_list, tokenizer, max_length):
-        self.tokenizer = tokenizer
-        self.input_ids = []
-        self.attn_masks = []
-        for txt in txt_list:
-            encodings_dict = tokenizer(txt, truncation=True, max_length=max_length, padding="max_length")
-            self.input_ids.append(torch.tensor(encodings_dict['input_ids']))
-            self.attn_masks.append(torch.tensor(encodings_dict['attention_mask']))
-    
+# Custom dataset for training
+class TextDataset(Dataset):
+    def __init__(self, corpus):
+        self.corpus = corpus
     def __len__(self):
-        return len(self.input_ids)
-
+        return len(self.corpus)
     def __getitem__(self, idx):
-        return self.input_ids[idx], self.attn_masks[idx]
+        return self.corpus[idx]
 
-def train_on_gpu(device_id):
-    # Select GPU
-    device = torch.device(f"cuda:{device_id}" if torch.cuda.is_available() else "cpu")
-    print(f"Training on: {device}")
-    
-    # Load tokenizer and model
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    model = GPT2LMHeadModel.from_pretrained('gpt2')
-    model.to(device)
+# Task function to be run on each GPU
+def gpu_task(gpu_id, corpus, duration):
+    device = torch.device(f'cuda:{gpu_id}')
+    model = BertForSequenceClassification.from_pretrained('bert-base-uncased').to(device)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    data = TextDataset(corpus)
+    data_loader = DataLoader(data, batch_size=16)
 
-    # Adding a pad token to the GPT2 Tokenizer
-    if tokenizer.pad_token is None:
-        tokenizer.add_tokens(['<PAD>'])
-        model.resize_token_embeddings(len(tokenizer))
-        tokenizer.pad_token = '<PAD>'
-    
-    # Initialize dataset
-    text_data = ["Some text to train on", "Some other text"]
-    max_length = 128
-    dataset = GPT2Dataset(text_data, tokenizer, max_length)
-    loader = DataLoader(dataset, batch_size=1, shuffle=True)
-    
-    optimizer = AdamW(model.parameters(), lr=1e-4)
-    
-    model.train()
-    for epoch in range(2):
-        print(f"Epoch: {epoch}")
-        for idx, batch in enumerate(loader):
-            input_ids, attention_mask = [b.to(device) for b in batch]
-            outputs = model(input_ids, attention_mask=attention_mask, labels=input_ids)
-            loss = outputs.loss
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+    # Tokenize and train
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
 
-            if idx % 10 == 0:
-                print(f"Loss: {loss.item()}")
+    start.record()
+    for i, text in enumerate(data_loader):
+        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True).to(device)
+        outputs = model(**inputs)
+        loss = outputs.loss
+        loss.backward()
+
+        # Check if duration is exceeded
+        if start.elapsed_time(end)/1000 >= duration:
+            break
+
+    print(f'GPU {gpu_id} finished')
 
 def main():
-    mode = input("Select mode ([1] single, [2] parallel): ")
-    
-    if mode == '1':
-        gpu_id = input("Select GPU ID: ")
-        train_on_gpu(gpu_id)
-    elif mode == '2':
-        for gpu_id in range(torch.cuda.device_count()):
-            train_on_gpu(gpu_id)
-    else:
-        print("Invalid mode. Please enter either '1' for single or '2' for parallel.")
-        
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--duration', type=int, default=60, help='benchmark duration in seconds')
+    args = parser.parse_args()
+
+    # Load corpus
+    corpus = []
+    for file in os.listdir('stores/corpus'):
+        with open(os.path.join('stores/corpus', file), 'r') as f:
+            corpus.extend(f.readlines())
+
+    # Get number of GPUs
+    n_gpus = torch.cuda.device_count()
+
+    # Create a process for each GPU
+    processes = []
+    for gpu_id in range(n_gpus):
+        p = Process(target=gpu_task, args=(gpu_id, corpus, args.duration))
+        p.start()
+        processes.append(p)
+
+    # Wait for all processes to finish
+    for p in processes:
+        p.join()
+
 if __name__ == '__main__':
     main()
