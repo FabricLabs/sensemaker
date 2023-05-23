@@ -3,7 +3,7 @@ import argparse
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 from torch.utils.data import Dataset, DataLoader
-from multiprocessing import Process
+from multiprocessing import Process, set_start_method
 
 # Custom dataset for training
 class TextDataset(Dataset):
@@ -55,6 +55,7 @@ def main():
 
     # Create a process for each GPU
     processes = []
+    set_start_method('spawn')
     for gpu_id in range(n_gpus):
         p = Process(target=gpu_task, args=(gpu_id, corpus, args.duration))
         p.start()
