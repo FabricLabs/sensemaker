@@ -31,6 +31,12 @@ def train_on_gpu(device_id):
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
     model = GPT2LMHeadModel.from_pretrained('gpt2')
     model.to(device)
+
+    # Adding a pad token to the GPT2 Tokenizer
+    if tokenizer.pad_token is None:
+        tokenizer.add_tokens(['<PAD>'])
+        model.resize_token_embeddings(len(tokenizer))
+        tokenizer.pad_token = '<PAD>'
     
     # Initialize dataset
     text_data = ["Some text to train on", "Some other text"]
