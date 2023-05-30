@@ -75,12 +75,18 @@ module.exports = {
     name: '@jeeves/core',
     handle: '@jeeves:fabric.pub',
     connect: true,
+    constraints: {
+      sync: {
+        limit: 10
+      }
+    },
     homeserver: 'https://fabric.pub',
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'GET FROM MATRIX'
   },
   openai: {
-    key: 'GET FROM OPENAI'
+    key: 'GET FROM OPENAI',
+    model: 'gpt-3.5-turbo'
   },
   twilio: {
     sid: 'add your twilio sid here',
