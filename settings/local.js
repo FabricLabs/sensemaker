@@ -5,6 +5,9 @@ const environment = new Environment();
 
 environment.start();
 
+/**
+ * Provides the user's local settings.
+ */
 module.exports = {
   alias: 'JEEVES',
   name: 'jeeves',
@@ -70,11 +73,11 @@ module.exports = {
   },
   matrix: {
     name: '@jeeves/core',
-    handle: 'jeeves',
+    handle: '@jeeves:fabric.pub',
     connect: true,
-    homeserver: 'https://grove.chat',
-    coordinator: '!CcnochnehZgASDIexN:fabric.pub',
-    password: 'YOUR_MATRIX_PASSWORD_HERE'
+    homeserver: 'https://fabric.pub',
+    coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
+    token: 'GET FROM MATRIX'
   },
   openai: {
     key: 'GET FROM OPENAI'

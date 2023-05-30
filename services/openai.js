@@ -43,6 +43,7 @@ class OpenAI extends Service {
 
   async _handleRequest (request) {
     const completion = await this.openai.createCompletion({
+      max_tokens: 1000,
       model: this.settings.model,
       prompt: request.prompt
     });

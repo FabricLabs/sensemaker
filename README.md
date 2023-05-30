@@ -24,7 +24,12 @@ npm i # install dependencies
 npm start # run node
 ```
 
-A basic web interface should now be provided at http://localhost
+A basic web interface should now be provided at http://localhost:3045
+
+Enjoy!
+
+## Configuring
+Settings may be provided by modifying `settings/local.js`
 
 ## Training
 

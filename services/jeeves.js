@@ -236,17 +236,22 @@ class Jeeves extends Service {
     // await this._registerService('discord', Discord);
     // await this._registerService('ethereum', Ethereum);
     // await this._registerService('github', GitHub);
-    await this._registerService('matrix', Matrix);
+    // await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);
     // await this._registerService('shyft', Shyft);
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
+    this.matrix.on('activity', this._handleMatrixActivity.bind(this));
+
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
+
+    // Internal Services
     await this.openai.start();
+    await this.matrix.start();
 
     await this.restore();
 
@@ -338,6 +343,28 @@ class Jeeves extends Service {
     }
   }
 
+  async _handleMatrixActivity (activity) {
+    // console.log('matrix activity:', activity);
+    if (activity.actor == this.matrix.id) return;
+
+    const computingReaction = await this.matrix._react(activity.object.id, '⌛');
+    const response = await this._handleRequest({
+      actor: activity.actor,
+      input: activity.object.content
+    });
+
+    // console.log('response:', response);
+    await this.matrix._send({
+      object: response.object
+    });
+
+    // Set reactions to reflect completed status
+    this.matrix._react(activity.object.id, '✅');
+    this.matrix._redact(computingReaction.object.id);
+
+    return true;
+  }
+
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
 
@@ -345,13 +372,18 @@ class Jeeves extends Service {
       prompt: request.input
     });
 
+    const text = (typeof openai !== 'undefined') ? openai.completion.choices[0].text.trim() : 'Generic response.';
+
     this.emit('response', {
       prompt: request.input,
-      response: openai.completion.choices[0].text.trim()
+      response: text
     });
 
     return {
-      openai: openai
+      openai: openai,
+      object: {
+        content: text
+      }
     };
   }
 
