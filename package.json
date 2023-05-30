@@ -57,7 +57,7 @@
     "@fabric/core": "FabricLabs/fabric#feature/validation",
     "@fabric/github": "FabricLabs/fabric-github#master",
     "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
-    "@fabric/matrix": "FabricLabs/fabric-matrix#develop",
+    "@fabric/matrix": "FabricLabs/fabric-matrix#feature/node-16",
     "@fabric/webhooks": "FabricLabs/fabric-webhooks#master",
     "@portal/feed": "FabricLabs/portal-feed#feature/federation",
     "bitcoinjs-lib": "5.2.0",
