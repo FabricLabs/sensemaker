@@ -6,9 +6,20 @@ const settings = require('../settings/local');
 // Internal Service
 const Jeeves = require('../services/jeeves');
 
+// Contracts
+const handleJeevesError = require('../contracts/handleJeevesError');
+
+// Main Function
 async function main (input = {}) {
   // Create Node
   const jeeves = new Jeeves(input);
+
+  // Handlers
+  jeeves.on('error', handleJeevesError);
+
+  jeeves.on('debug', (debug) => {
+    console.debug('[JEEVES]', '[DEBUG]', debug);
+  });
 
   // Start Node
   try {
@@ -22,6 +33,7 @@ async function main (input = {}) {
   return jeeves;
 }
 
+// Execute Main
 main(settings).catch((exception) => {
   console.error('[JEEVES]', exception);
 }).then((output) => {

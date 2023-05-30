@@ -41,6 +41,23 @@ class OpenAI extends Service {
     return this;
   }
 
+  async _handleConversationRequest (request) {
+    try {
+      const completion = await this.openai.createChatCompletion({
+        max_tokens: 1000,
+        messages: request.messages,
+        model: this.settings.model
+      });
+
+      return {
+        completion: completion.data
+      };
+    } catch (exception) {
+      this.emit('error', `Could not create Conversation: ${exception}`);
+      return null;
+    }
+  }
+
   async _handleRequest (request) {
     const completion = await this.openai.createCompletion({
       max_tokens: 1000,

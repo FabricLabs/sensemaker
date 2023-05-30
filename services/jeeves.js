@@ -244,6 +244,9 @@ class Jeeves extends Service {
     // await this._registerService('pricefeed', Prices);
 
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
+    this.matrix.on('ready', this._handleMatrixReady.bind(this));
+
+    this.openai.on('error', this._handleOpenAIError.bind(this));
 
     // Start the logging service
     await this.audits.start();
@@ -347,7 +350,14 @@ class Jeeves extends Service {
     // console.log('matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
 
-    const computingReaction = await this.matrix._react(activity.object.id, '⌛');
+    let computingReaction = null;
+
+    try {
+      computingReaction = await this.matrix._react(activity.object.id, '⌛');
+    } catch (exception) {
+
+    }
+
     const response = await this._handleRequest({
       actor: activity.actor,
       input: activity.object.content
@@ -360,19 +370,50 @@ class Jeeves extends Service {
 
     // Set reactions to reflect completed status
     this.matrix._react(activity.object.id, '✅');
-    this.matrix._redact(computingReaction.object.id);
+    if (computingReaction) this.matrix._redact(computingReaction.object.id);
 
     return true;
+  }
+
+  async _handleOpenAIError (error) {
+    this.emit('error', `[SERVICES:OPENAI] ${error}`);
+  }
+
+  async _getConversationMessages (channelID) {
+    const messages = [];
+    const room = this.matrix.client.getRoom(channelID);
+
+    for (let i = 0; i < room.timeline.length; i++) {
+      const event = room.timeline[i];
+
+      if (event.getType() === 'm.room.message') {
+        messages.push({
+          role: (event.event.sender === this.settings.matrix.handle) ? 'assistant' : 'user',
+          content: event.event.content.body,
+          // name: event.event.
+        });
+      }
+    }
+
+    return messages;
+  }
+
+  async _handleMatrixReady () {
   }
 
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
 
-    const openai = await this.openai._handleRequest({
-      prompt: request.input
+    const messages = await this._getConversationMessages(this.settings.matrix.coordinator);
+    const openai = await this.openai._handleConversationRequest({
+      messages: messages
     });
 
-    const text = (typeof openai !== 'undefined') ? openai.completion.choices[0].text.trim() : 'Generic response.';
+    // If we get a preferred response, use it.  Otherwise fall back to a generic response.
+    const text = (typeof openai !== 'undefined' && openai)
+      ? openai.completion.choices[0].message.content.trim()
+      : 'Generic response.'
+      ;
 
     this.emit('response', {
       prompt: request.input,
