@@ -31,7 +31,7 @@ const WebHooks = require('@fabric/webhooks');
 // const Discord = require('@fabric/discord');
 // const Ethereum = require('@fabric/ethereum');
 const GitHub = require('@fabric/github');
-// const Matrix = require('@fabric/matrix');
+const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
@@ -68,6 +68,7 @@ class Jeeves extends Service {
       persistent: true,
       path: './logs/jeeves',
       http: {
+        hostname: 'localhost',
         listen: true,
         port: 4242
       },
@@ -95,6 +96,9 @@ class Jeeves extends Service {
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
+
+    // Services
+    this.matrix = new Matrix(this.settings.matrix);
     this.openai = new OpenAI(this.settings.openai);
 
     // Collections
@@ -227,12 +231,12 @@ class Jeeves extends Service {
     const self = this;
 
     // Register Services
-    await this._registerService('webhooks', WebHooks);
-    await this._registerService('bitcoin', Bitcoin);
+    // await this._registerService('webhooks', WebHooks);
+    // await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
     // await this._registerService('ethereum', Ethereum);
-    await this._registerService('github', GitHub);
-    // await this._registerService('matrix', Matrix);
+    // await this._registerService('github', GitHub);
+    await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);
     // await this._registerService('shyft', Shyft);
@@ -257,7 +261,7 @@ class Jeeves extends Service {
       self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
     });
 
-    await this._startAllServices();
+    // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
     if (this.settings.http.listen) this.trust(this.http);
@@ -301,6 +305,8 @@ class Jeeves extends Service {
   async stop () {
     this.status = 'STOPPING';
 
+    clearInterval(this._heart);
+
     for (const [name, service] of Object.entries(this.services)) {
       if (this.settings.services.includes(name)) {
         await this.services[name].stop();
@@ -330,6 +336,23 @@ class Jeeves extends Service {
       const worker = new Worker();
       this.workers.push(worker);
     }
+  }
+
+  async _handleRequest (request) {
+    this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
+
+    const openai = await this.openai._handleRequest({
+      prompt: request.input
+    });
+
+    this.emit('response', {
+      prompt: request.input,
+      response: openai.completion.choices[0].text.trim()
+    });
+
+    return {
+      openai: openai
+    };
   }
 
   async _startWorkers () {
@@ -365,7 +388,7 @@ class Jeeves extends Service {
 
     this.services[name].on('message', function (msg) {
       self.emit('log', `Service message from ${name}: ${JSON.stringify(msg, null, '  ')}`);
-      self.node.relayFrom(self.node.id, Message.fromVector(['ChatMessage', JSON.stringify(msg)]));
+      // self.node.relayFrom(self.node.id, Message.fromVector(['ChatMessage', JSON.stringify(msg)]));
     });
 
     this.on('identity', async function _registerActor (identity) {
