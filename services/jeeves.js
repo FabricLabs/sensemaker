@@ -350,14 +350,26 @@ class Jeeves extends Service {
     // console.log('matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
 
+    const roomID = activity.target.split('/')[2];
+    const computingIcon = '⌛';
+    const completedIcon = '✅';
+
     let computingReaction = null;
+    let completedReaction = null;
 
-    try {
-      computingReaction = await this.matrix._react(activity.object.id, '⌛');
-    } catch (exception) {
+    const reactions = await this.matrix._getReactions(activity.object.id);
 
+    if (!reactions.filter((x) => {
+      return (x.key == computingIcon);
+    }).length) {
+      try {
+        computingReaction = await this.matrix._react(activity.object.id, computingIcon);
+      } catch (exception) {
+
+      }
     }
 
+    const computedReactions = await this.matrix._getReactions(activity.object.id);
     const response = await this._handleRequest({
       actor: activity.actor,
       input: activity.object.content
@@ -366,10 +378,20 @@ class Jeeves extends Service {
     // console.log('response:', response);
     await this.matrix._send({
       object: response.object
-    });
+    }, roomID);
 
     // Set reactions to reflect completed status
-    this.matrix._react(activity.object.id, '✅');
+    const latestReactions = await this.matrix._getReactions(activity.object.id);
+    if (!latestReactions.filter((x) => {
+      return (x.key === completedIcon);
+    }).length) {
+      try {
+        completedReaction = this.matrix._react(activity.object.id, completedIcon);
+      } catch (exception) {
+
+      }
+    }
+
     if (computingReaction) this.matrix._redact(computingReaction.object.id);
 
     return true;
@@ -399,6 +421,7 @@ class Jeeves extends Service {
   }
 
   async _handleMatrixReady () {
+    this.emit('debug', '[JEEVES:CORE] Matrix connected and ready!');
   }
 
   async _handleRequest (request) {

@@ -77,7 +77,7 @@ module.exports = {
     connect: true,
     constraints: {
       sync: {
-        limit: 10
+        limit: 100
       }
     },
     homeserver: 'https://fabric.pub',
