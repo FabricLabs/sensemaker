@@ -358,10 +358,7 @@ class Jeeves extends Service {
     let completedReaction = null;
 
     const reactions = await this.matrix._getReactions(activity.object.id);
-
-    if (!reactions.filter((x) => {
-      return (x.key == computingIcon);
-    }).length) {
+    if (!reactions.filter((x) => (x.key == computingIcon)).length) {
       try {
         computingReaction = await this.matrix._react(activity.object.id, computingIcon);
       } catch (exception) {
@@ -372,27 +369,26 @@ class Jeeves extends Service {
     const computedReactions = await this.matrix._getReactions(activity.object.id);
     const response = await this._handleRequest({
       actor: activity.actor,
-      input: activity.object.content
+      input: activity.object.content,
+      room: roomID // TODO: replace with a generic property (not specific to Matrix)
+      // target: activity.target // candidate 1
     });
 
-    // console.log('response:', response);
     await this.matrix._send({
       object: response.object
     }, roomID);
 
+    if (computingReaction) await this.matrix._redact(computingReaction.object.id);
+
     // Set reactions to reflect completed status
     const latestReactions = await this.matrix._getReactions(activity.object.id);
-    if (!latestReactions.filter((x) => {
-      return (x.key === completedIcon);
-    }).length) {
+    if (!latestReactions.filter((x) => (x.key === completedIcon)).length) {
       try {
-        completedReaction = this.matrix._react(activity.object.id, completedIcon);
+        completedReaction = await this.matrix._react(activity.object.id, completedIcon);
       } catch (exception) {
 
       }
     }
-
-    if (computingReaction) this.matrix._redact(computingReaction.object.id);
 
     return true;
   }
@@ -427,7 +423,11 @@ class Jeeves extends Service {
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
 
-    const messages = await this._getConversationMessages(this.settings.matrix.coordinator);
+    const messages = await this._getConversationMessages(request.room);
+
+    // Prompt
+    messages.unshift({ role: 'user', content: this.settings.prompt });
+
     const openai = await this.openai._handleConversationRequest({
       messages: messages
     });

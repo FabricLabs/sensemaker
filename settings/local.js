@@ -24,6 +24,7 @@ module.exports = {
   peers: [
     'localhost:7777'
   ],
+  prompt: 'You are JeevesAI, an artificial intelligence designed to assist with legal research, case preparation, and brief drafting.',
   services: [
     'bitcoin',
     // 'discord',
