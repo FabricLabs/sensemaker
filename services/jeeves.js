@@ -397,6 +397,10 @@ class Jeeves extends Service {
     this.emit('error', `[SERVICES:OPENAI] ${error}`);
   }
 
+  /**
+   * Retrieve a conversation's messages.
+   * @returns {Array} List of the conversation's messages.
+   */
   async _getConversationMessages (channelID) {
     const messages = [];
     const room = this.matrix.client.getRoom(channelID);
@@ -417,9 +421,17 @@ class Jeeves extends Service {
   }
 
   async _handleMatrixReady () {
+    const name = `${this.settings.alias} (${this.settings.moniker} v${this.settings.version})`;
+    if (this.matrix._getAgentDisplayName() !== name) await this.matrix._setAgentDisplayName(name);
     this.emit('debug', '[JEEVES:CORE] Matrix connected and ready!');
   }
 
+  /**
+   * Generate a response to a request.
+   * @param {JeevesRequest} request The request.
+   * @param {String} [request.room] Matrix room to retrieve conversation history from.
+   * @returns {JeevesResponse}
+   */
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
 

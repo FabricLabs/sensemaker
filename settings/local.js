@@ -1,15 +1,25 @@
 'use strict';
 
+const fs = require('fs');
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
 environment.start();
 
+// TODO: @chrisinajar
+// PROJECT: @fabric/core
+// Determine output of various inputs.
+// Output should be deterministic, HTML-encoded applications.
+
+const NAME = 'ALPHA';
+const prompt = fs.readFileSync('./prompts/alpha.txt', 'utf8');
+
 /**
  * Provides the user's local settings.
  */
 module.exports = {
-  alias: 'JEEVES',
+  alias: 'JeevesAI',
+  moniker: NAME,
   name: 'jeeves',
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
@@ -24,7 +34,7 @@ module.exports = {
   peers: [
     'localhost:7777'
   ],
-  prompt: 'You are JeevesAI, an artificial intelligence designed to assist with legal research, case preparation, and brief drafting.',
+  prompt: prompt.toString('utf8'),
   services: [
     'bitcoin',
     // 'discord',
@@ -114,5 +124,6 @@ module.exports = {
     name: 'TYPHOON',
     interval: 5000
   },
-  verbosity: 2
+  verbosity: 2,
+  version: '0.2.0'
 }
