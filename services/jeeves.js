@@ -26,11 +26,11 @@ const Collection = require('@fabric/core/types/collection');
 const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
-const Bitcoin = require('@fabric/core/services/bitcoin');
-const WebHooks = require('@fabric/webhooks');
+// const Bitcoin = require('@fabric/core/services/bitcoin');
+// const WebHooks = require('@fabric/webhooks');
 // const Discord = require('@fabric/discord');
 // const Ethereum = require('@fabric/ethereum');
-const GitHub = require('@fabric/github');
+// const GitHub = require('@fabric/github');
 const Matrix = require('@fabric/matrix');
 // const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
@@ -216,6 +216,7 @@ class Jeeves extends Service {
 
   async restore () {
     const last = await this.changes._getLastLine();
+    // TODO: load from STATE file
     return this;
   }
 
@@ -252,11 +253,12 @@ class Jeeves extends Service {
     await this.audits.start();
     await this.changes.start();
 
+    // Load State
+    await this.restore();
+
     // Internal Services
     await this.openai.start();
     await this.matrix.start();
-
-    await this.restore();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
@@ -423,6 +425,17 @@ class Jeeves extends Service {
   async _handleMatrixReady () {
     const name = `${this.settings.alias} (${this.settings.moniker} v${this.settings.version})`;
     if (this.matrix._getAgentDisplayName() !== name) await this.matrix._setAgentDisplayName(name);
+
+    const roomResult = await this.matrix.client.getJoinedRooms();
+
+    for (let i = 0; i < roomResult.joined_rooms.length; i++) {
+      const room = roomResult.joined_rooms[i];
+      const members = await this.matrix.client.getJoinedRoomMembers(room);
+      if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
+        await this.matrix.client.invite(room, '@eric:fabric.pub');
+      }
+    }
+
     this.emit('debug', '[JEEVES:CORE] Matrix connected and ready!');
   }
 

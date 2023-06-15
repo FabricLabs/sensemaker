@@ -1,5 +1,11 @@
 'use strict';
 
+require('@babel/register');
+
+const React = require('react');
+const ReactDOM = require('react-dom');
+const ReactDOMServer = require('react-dom/server');
+
 // Settings
 const settings = require('../settings/local');
 
@@ -8,15 +14,33 @@ const settings = require('../settings/local');
 const Compiler = require('@fabric/http/types/compiler');
 
 // Types
-const Jeeves = require('../components/Jeeves');
+const JeevesUI = require('../components/JeevesUI');
 
 // Program Body
 async function main (input = {}) {
-  const site = new Jeeves(input);
+  const site = new JeevesUI(input);
   const compiler = new Compiler({
     document: site,
     webpack: {
-      mode: 'production'
+      mode: 'development',
+      module: {
+        rules: [
+          {
+            test: /\.(js|jsx)$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env', '@babel/preset-react']
+              }
+            }
+          },
+          {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader']
+          }
+        ]
+      }
     }
   });
 

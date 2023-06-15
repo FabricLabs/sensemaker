@@ -12,6 +12,7 @@ environment.start();
 // Output should be deterministic, HTML-encoded applications.
 
 const NAME = 'ALPHA';
+const VERSION = '0.2.0'; // TODO: 0.2.1-pre
 const prompt = fs.readFileSync('./prompts/alpha.txt', 'utf8');
 
 /**
@@ -88,12 +89,18 @@ module.exports = {
     connect: true,
     constraints: {
       sync: {
-        limit: 100
+        limit: 20
       }
     },
     homeserver: 'https://fabric.pub',
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'GET FROM MATRIX'
+  },
+  mysql: {
+    host: 'localhost',
+    port: 3306,
+    username: 'dbuser_jeeves_dev',
+    password: ''
   },
   openai: {
     key: 'GET FROM OPENAI',
@@ -125,5 +132,5 @@ module.exports = {
     interval: 5000
   },
   verbosity: 2,
-  version: '0.2.0'
+  version: VERSION
 }

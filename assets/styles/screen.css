@@ -198,3 +198,7 @@ fabric-motd {
   text-align: left !important;
   justify-content: left;
 }
+
+.ui.labeled.icon.menu .item div {
+  text-align: left;
+}

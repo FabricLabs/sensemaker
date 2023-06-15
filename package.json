@@ -47,26 +47,32 @@
     "social network",
     "social"
   ],
-  "author": "Fabric Labs",
-  "license": "AGPL-3.0-or-later",
+  "author": "Legal Tools & Technology, Inc.",
+  "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/FabricLabs/sensemaker/issues"
+    "url": "https://github.com/lttinc/jeeves.dev/issues"
   },
-  "homepage": "https://github.com/FabricLabs/sensemaker",
+  "homepage": "https://jeeves.dev",
   "dependencies": {
-    "@fabric/core": "FabricLabs/fabric#feature/validation",
-    "@fabric/github": "FabricLabs/fabric-github#master",
+    "@babel/register": "7.22.5",
+    "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
     "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
     "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",
-    "@fabric/webhooks": "FabricLabs/fabric-webhooks#master",
-    "@portal/feed": "FabricLabs/portal-feed#feature/federation",
+    "babel-loader": "8.2.5",
     "bitcoinjs-lib": "5.2.0",
     "fast-json-patch": "3.1.0",
     "levelgraph": "3.0.0",
     "lodash.merge": "4.6.2",
-    "openai": "3.2.1"
+    "openai": "3.2.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-redux": "8.1.0",
+    "react-router-dom": "6.13.0",
+    "react-top-loading-bar": "2.3.1",
+    "redux": "4.2.1"
   },
   "devDependencies": {
+    "@babel/preset-env": "7.22.5",
     "@babel/preset-react": "7.17.12",
     "@observablehq/plot": "0.5.0",
     "@rollup/plugin-babel": "5.3.1",
@@ -83,6 +89,8 @@
     "rollup-plugin-import-css": "3.0.3",
     "rollup-plugin-livereload": "2.0.5",
     "rollup-plugin-polyfill-node": "0.9.0",
-    "rollup-plugin-serve": "1.1.0"
+    "rollup-plugin-serve": "1.1.0",
+    "semantic-ui-css": "2.5.0",
+    "semantic-ui-react": "2.1.4"
   }
 }
