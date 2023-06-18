@@ -5,30 +5,35 @@
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>@fabric/http</title>
   <!-- <link rel="manifest" href="/manifest.json"> -->
-  <link rel="stylesheet" type="text/css" href="/styles/semantic.css" />
+  <link rel="stylesheet" type="text/css" href="/styles/semantic.min.css" />
   <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
   <script src="/scripts/jquery-3.4.1.js"></script>
-  <script src="/scripts/semantic.js"></script>
-  <script src="/bundles/browser.js"></script>
+  <script src="/scripts/semantic.min.js"></script>
 </head>
-<body data-bind="ec96affaa10ba985b2132249ef6252162f3d895e7b3a0e8c90bfc5b01311da11" data-hash="ec96affaa10ba985b2132249ef6252162f3d895e7b3a0e8c90bfc5b01311da11">
-  <jeeves-application id="a5b08f19adfd2918e354af8c11e1b4efd963b5f5a525900d63a01cd2fd28176f" class="fabric-site">
-    <fabric-container class="ui primary action fluid text container">
-      <fabric-card class="ui fluid card">
-        <fabric-card-content class="center aligned content">
-          <img src="/images/jeeves-brand.png" class="ui image" />
-          <h1>JEEVES</h1>
-          <p><code>alpha</code></p>
-          <p class="supersize"><em>coming soon</em></p>
-        </fabric-card-content>
-        <fabric-card-content class="extra content">
-          <a href="https://jeeves.dev" class="ui left labeled icon button clipped">
-            <i class="linkify icon"></i>
-            <abbr title="sha256: a5b08f19adfd2918e354af8c11e1b4efd963b5f5a525900d63a01cd2fd28176f"><code data-bind="hash">a5b08f19adfd2918e354af8c11e1b4efd963b5f5a525900d63a01cd2fd28176f</code></abbr>
-          </a>
-        </fabric-card-content>
-      </fabric-card>
-    </fabric-container>
-  </jeeves-application>
+<body>
+  <div data-bind="f3560e8dbbe8cc17c80123cd0a1b6e66f12a503d219d1fc5b439feb26a7b74ed" data-hash="f3560e8dbbe8cc17c80123cd0a1b6e66f12a503d219d1fc5b439feb26a7b74ed" id="application-target">
+    <jeeves-ui class="fabric-site">
+      <fabric-container id="react-application"></fabric-container>
+      <fabric-react-component id="jeeves-application">
+        <jeeves-splash>
+          <fabric-card-content><img src="/images/jeeves-brand.png" class="ui medium centered image" />
+            <div style="text-align:center">
+              <div class="ui header">JEEVES</div>
+              <div class="ui label"><code>alpha</code></div>
+            </div>
+          </fabric-card-content>
+          <fabric-card-content>
+            <fabric-react-component class="ui primary action fluid text container">
+              <form class="ui large form">
+                <div class="field"><label>Username</label><input placeholder="Username" name="username" autoComplete="username" value="" /></div>
+                <div class="field"><label>Password</label><input type="password" autoComplete="current-password" placeholder="Password" name="password" value="" /></div><button class="ui large fluid primary right floated button" type="submit">Login</button>
+              </form>
+            </fabric-react-component>
+          </fabric-card-content>
+        </jeeves-splash>
+      </fabric-react-component>
+    </jeeves-ui>
+  </div>
+  <script src="/bundles/browser.js"></script>
 </body>
 </html>

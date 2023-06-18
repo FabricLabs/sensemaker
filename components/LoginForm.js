@@ -43,11 +43,11 @@ class JeevesLoginForm extends React.Component {
         <Form onSubmit={this.handleSubmit} size={this.props.size}>
           <Form.Field>
             <label>Username</label>
-            <input placeholder="Username" name="username" autocomplete="username" value={this.state.username} onChange={this.handleInputChange} />
+            <input placeholder="Username" name="username" autoComplete="username" value={this.state.username} onChange={this.handleInputChange} />
           </Form.Field>
           <Form.Field>
             <label>Password</label>
-            <input type="password" autocomplete="current-password" placeholder="Password" name="password" value={this.state.password} onChange={this.handleInputChange} />
+            <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={this.state.password} onChange={this.handleInputChange} />
           </Form.Field>
           <Button floated='right' fluid primary loading={this.state.loading} type="submit" size={this.props.size}>Login</Button>
         </Form>

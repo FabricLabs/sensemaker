@@ -45,6 +45,9 @@ module.exports = {
     // 'shyft',
     // 'twilio'
   ],
+  site: {
+    title: 'Jeeves &middot; Your Legal Assistant'
+  },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {
       method: '_notifyHoneyPotMonitor'

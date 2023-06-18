@@ -2,8 +2,8 @@
 
 // Dependencies
 const React = require('react');
-const ReactDOMServer = require('react-dom/server');
 const { BrowserRouter } = require('react-router-dom');
+const { renderToString } = require('react-dom/server');
 
 // Components
 const Splash = require('./Splash');
@@ -17,7 +17,9 @@ class JeevesUI extends React.Component {
     super(props);
 
     this.state = {
-      isAuthenticated: false
+      isAuthenticated: false,
+      isLoading: true,
+      isLoggingOut: false
     }
   }
 
@@ -37,16 +39,20 @@ class JeevesUI extends React.Component {
 
   render () {
     return (
-      <BrowserRouter>
-        <fabric-react-component id='jeeves-application'>
-          {this.state.isAuthenticated ? <Dashboard onLogoutSuccess={this.handleLogoutSuccess} /> : <Splash onLoginSuccess={this.handleLoginSuccess} />}
-        </fabric-react-component>
-      </BrowserRouter>
+      <jeeves-ui id={this.id} class="fabric-site">
+        <fabric-container id="react-application"></fabric-container>
+        <BrowserRouter>
+          <fabric-react-component id='jeeves-application'>
+            {this.state.isAuthenticated ? <Dashboard onLogoutSuccess={this.handleLogoutSuccess} /> : <Splash onLoginSuccess={this.handleLoginSuccess} />}
+          </fabric-react-component>
+        </BrowserRouter>
+      </jeeves-ui>
     )
   }
 
   _getHTML () {
-    return ReactDOMServer.renderToString(this.render());
+    const component = this.render();
+    return renderToString(component);
   }
 }
 

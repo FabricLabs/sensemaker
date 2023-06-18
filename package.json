@@ -61,6 +61,7 @@
     "babel-loader": "8.2.5",
     "bitcoinjs-lib": "5.2.0",
     "fast-json-patch": "3.1.0",
+    "jsdom": "22.1.0",
     "levelgraph": "3.0.0",
     "lodash.merge": "4.6.2",
     "openai": "3.2.1",

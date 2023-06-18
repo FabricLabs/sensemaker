@@ -40,7 +40,8 @@ async function main (input = {}) {
             use: ['style-loader', 'css-loader']
           }
         ]
-      }
+      },
+      target: 'web'
     }
   });
 

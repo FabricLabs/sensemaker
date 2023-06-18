@@ -22,8 +22,8 @@ class JeevesSplash extends React.Component {
         <fabric-card-content>
           <Image src="/images/jeeves-brand.png" size='medium' centered />
           <div style={{textAlign: 'center'}}>
-            <Header centered>JEEVES</Header>
-            <Label centered><code>alpha</code></Label>
+            <Header>JEEVES</Header>
+            <Label><code>alpha</code></Label>
           </div>
         </fabric-card-content>
         <fabric-card-content>
@@ -31,10 +31,6 @@ class JeevesSplash extends React.Component {
         </fabric-card-content>
       </jeeves-splash>
     );
-  }
-
-  _getHTML () {
-    return ReactDOMServer.renderToString(this.render());
   }
 }
 

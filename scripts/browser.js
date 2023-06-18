@@ -27,7 +27,7 @@ async function main (input = {}) {
   });
 
   // React
-  const container = document.getElementById('react-application');
+  const container = document.getElementById('application-target');
   const root = ReactDOM.createRoot(container);
   const live = connect((state) => ({
     isAuthenticated: state.isAuthenticated
