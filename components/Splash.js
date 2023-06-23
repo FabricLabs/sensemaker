@@ -22,7 +22,7 @@ class Splash extends React.Component {
     const { login, error, onLoginSuccess } = this.props;
 
     return (
-      <jeeves-splash>
+      <jeeves-splash class="fade-in">
         <fabric-card-content>
           <Image src="/images/jeeves-brand.png" size='small' centered />
           <div style={{textAlign: 'center'}}>
@@ -35,7 +35,7 @@ class Splash extends React.Component {
             <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} size='large' />
           ) : null}
         </fabric-card-content>
-        <fabric-card-content>
+        <fabric-card-content class='fade-in'>
           <p style={{ fontSize: '0.8em', textAlign: 'center', marginTop: '4em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
         </fabric-card-content>
       </jeeves-splash>
