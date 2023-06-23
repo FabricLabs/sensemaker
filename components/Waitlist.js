@@ -15,6 +15,8 @@ const {
   Message
 } = require('semantic-ui-react');
 
+const LoginForm = require('./LoginForm');
+
 class Waitlist extends React.Component {
   constructor(props) {
     super(props);
@@ -82,45 +84,57 @@ class Waitlist extends React.Component {
 
   resetForm = (event) => {
     event.preventDefault();
-    this.setState({
-      email: '',
-      joined: false
-    });
+    this.setState({ loading: true });
+    setTimeout(() => {
+      this.setState({
+        email: '',
+        joined: false,
+        loading: false
+      });
+    }, 375);
+  }
+
+  revealLoginForm = (event) => {
+    event.preventDefault();
+    $('#login-form').slideDown();
   }
 
   render() {
     const { email, error, joined } = this.state;
+    const { login, onLoginSuccess } = this.props;
 
     return (
-      <fabric-react-component class="ui primary action fluid container">
-        <Card>
-          <Card.Content>
-            {joined ? (
-              <div className="fade-in">
-                <Header as="h3">You're on the list!</Header>
-                <p>Thanks for your interest!  We'll notify you as soon as Jeeves is available.</p>
-                <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
-              </div>
-            ) : (
-              <div className="fade-in">
-                <Header>Join the Waitlist!</Header>
-                <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-                <p>Be among the first to try Jeeves:</p>
-                <Form onSubmit={this.handleSubmit}>
-                  <Form.Field>
-                    <label>Email Address</label>
-                    <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} />
-                  </Form.Field>
-                  <div>
-                    <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>
-                    {error && <Message error visible content={error} className="fade-in" />}
-                  </div>
-                </Form>
-              </div>
-            )}
-          </Card.Content>
-        </Card>
-      </fabric-react-component>
+      <Card>
+        <Card.Content>
+          {joined ? (
+            <div className="fade-in">
+              <Header as="h3">You're on the list!</Header>
+              <p>Thanks for your interest!  We'll notify you as soon as Jeeves is available.</p>
+              <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
+            </div>
+          ) : (
+            <div className="fade-in">
+              <Header>Join the Waitlist!</Header>
+              <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+              <p>Be among the first to try Jeeves:</p>
+              <Form onSubmit={this.handleSubmit}>
+                <Form.Field>
+                  <label>Email Address</label>
+                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} />
+                </Form.Field>
+                <div>
+                  <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>
+                  {error && <Message error visible content={error} className="fade-in" />}
+                  {/* <Button fluid color='blue' onClick={this.revealLoginForm}>I already have a login</Button> */}
+                </div>
+                <div id="login-form" style={{ display: 'none' }}>
+                  <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} />
+                </div>
+              </Form>
+            </div>
+          )}
+        </Card.Content>
+      </Card>
     );
   }
 }

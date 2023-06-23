@@ -7,6 +7,7 @@ const React = require('react');
 
 // Semantic UI
 const {
+  Card,
   Header,
   Image,
   Label,
@@ -23,21 +24,28 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in">
-        <fabric-card-content>
+        <fabric-component>
           <Image src="/images/jeeves-brand.png" size='small' centered />
           <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
           </div>
-        </fabric-card-content>
-        <fabric-card-content>
-          <Waitlist />
+        </fabric-component>
+        <fabric-component class="ui primary action fluid container">
           {LOGIN_ENABLED ? (
-            <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} size='large' />
-          ) : null}
-        </fabric-card-content>
-        <fabric-card-content class='fade-in'>
-          <p style={{ fontSize: '0.8em', textAlign: 'center', marginTop: '4em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
-        </fabric-card-content>
+            <Card>
+              <Card.Content>
+                <Header as='h3'>Sign In</Header>
+                <p>Provide your username and password.</p>
+                <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} size='large' />
+              </Card.Content>
+            </Card>
+          ) : (
+            <Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />
+          )}
+        </fabric-component>
+        <fabric-component class='fade-in' style={{ clear: 'both' }}>
+          <p style={{ fontSize: '0.8em', textAlign: 'center', marginTop: '4em', clear: 'both' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
+        </fabric-component>
       </jeeves-splash>
     );
   }

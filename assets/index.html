@@ -10,38 +10,45 @@
   <script src="/scripts/semantic.min.js"></script>
 </head>
 <body>
-  <div data-hash="b7a57e0b512db2131636b2691709d54d6e1e9dae853bb0131e1271f62dce344d" id="application-target">
+  <div data-hash="535ac1726f2450be5af465daf974b4cc37022933a6efe6e5dad9e99a21677933" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application">
         <jeeves-splash class="fade-in">
-          <fabric-card-content><img src="/images/jeeves-brand.png" class="ui small centered image" />
+          <fabric-component><img src="/images/jeeves-brand.png" class="ui small centered image" />
             <div style="text-align:center">
               <div class="ui header">JEEVES</div>
             </div>
-          </fabric-card-content>
-          <fabric-card-content>
-            <fabric-react-component class="ui primary action fluid container">
-              <div class="ui card">
-                <div class="content">
-                  <div class="fade-in">
-                    <div class="ui header">Join the Waitlist!</div>
-                    <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-                    <p>Be among the first to try Jeeves:</p>
-                    <form class="ui form">
-                      <div class="field"><label>Email Address</label>
-                        <div class="ui input"><input required="" placeholder="Your email address" name="email" type="text" value="" /></div>
-                      </div>
-                      <div><button class="ui green fluid button right labeled icon" type="submit">Add Me To The Waitlist <i aria-hidden="true" class="right chevron icon"></i></button></div>
-                    </form>
-                  </div>
+          </fabric-component>
+          <fabric-component class="ui primary action fluid container">
+            <div class="ui card">
+              <div class="content">
+                <div class="fade-in">
+                  <div class="ui header">Join the Waitlist!</div>
+                  <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+                  <p>Be among the first to try Jeeves:</p>
+                  <form class="ui form">
+                    <div class="field"><label>Email Address</label>
+                      <div class="ui input"><input required="" placeholder="Your email address" name="email" type="text" value="" /></div>
+                    </div>
+                    <div><button class="ui green fluid button right labeled icon" type="submit">Add Me To The Waitlist <i aria-hidden="true" class="right chevron icon"></i></button></div>
+                    <div id="login-form" style="display:none">
+                      <fabric-react-component class="ui primary action fluid text container">
+                        <form method="POST" class="ui form">
+                          <div class="field"><label>Username</label><input placeholder="Username" name="username" autoComplete="username" value="" /></div>
+                          <div class="field"><label>Password</label><input type="password" autoComplete="current-password" placeholder="Password" name="password" value="" /></div>
+                          <div><button class="ui fluid primary right floated button" type="submit">Login</button> </div>
+                        </form>
+                      </fabric-react-component>
+                    </div>
+                  </form>
                 </div>
               </div>
-            </fabric-react-component>
-          </fabric-card-content>
-          <fabric-card-content class="fade-in">
-            <p style="font-size:0.8em;text-align:center;margin-top:4em">© 2023 Legal Tools &amp; Technology, Inc.</p>
-          </fabric-card-content>
+            </div>
+          </fabric-component>
+          <fabric-component class="fade-in" style="clear:both">
+            <p style="font-size:0.8em;text-align:center;margin-top:4em;clear:both">© 2023 Legal Tools &amp; Technology, Inc.</p>
+          </fabric-component>
         </jeeves-splash>
       </fabric-react-component>
     </jeeves-ui>
