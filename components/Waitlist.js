@@ -2,13 +2,14 @@
 
 // Dependencies
 const React = require('react');
+const $ = require('jquery');
 
 // Semantic UI
 const {
   Card,
   Form,
   Button,
-  Checkbox,
+  Icon,
   Header,
   Input,
   Message
@@ -24,6 +25,10 @@ class Waitlist extends React.Component {
       loading: false,
       joined: false
     };
+  }
+
+  componentDidMount = () => {
+    $('input[name=email]').focus();
   }
 
   handleChange = (e, { name, value }) => {
@@ -75,6 +80,14 @@ class Waitlist extends React.Component {
     }
   };
 
+  resetForm = (event) => {
+    event.preventDefault();
+    this.setState({
+      email: '',
+      joined: false
+    });
+  }
+
   render() {
     const { email, error, joined } = this.state;
 
@@ -86,9 +99,10 @@ class Waitlist extends React.Component {
               <div className="fade-in">
                 <Header as="h3">You're on the list!</Header>
                 <p>Thanks for your interest!  We'll notify you as soon as Jeeves is available.</p>
+                <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
               </div>
             ) : (
-              <div>
+              <div className="fade-in">
                 <Header>Join the Waitlist!</Header>
                 <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
                 <p>Be among the first to try Jeeves:</p>
@@ -98,8 +112,8 @@ class Waitlist extends React.Component {
                     <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} />
                   </Form.Field>
                   <div>
-                    {error && <Message error visible content={error} />}
-                    <Button fluid color='green' loading={this.state.loading} type="submit">Add Me To The Waitlist</Button>
+                    <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>
+                    {error && <Message error visible content={error} className="fade-in" />}
                   </div>
                 </Form>
               </div>

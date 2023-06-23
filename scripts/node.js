@@ -29,6 +29,10 @@ async function main (input = {}) {
     process.exit();
   }
 
+  // Bind
+  process.on('SIGINT', jeeves.stop);
+  process.on('SIGTERM', jeeves.stop);
+
   // Return Node
   return jeeves;
 }

@@ -22,7 +22,7 @@ async function main (input = {}) {
   const compiler = new Compiler({
     document: site,
     webpack: {
-      mode: 'development',
+      mode: 'production',
       module: {
         rules: [
           {

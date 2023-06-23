@@ -4,14 +4,13 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>@fabric/http</title>
-  <!-- <link rel="manifest" href="/manifest.json"> -->
   <link rel="stylesheet" type="text/css" href="/styles/semantic.min.css" />
   <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
   <script src="/scripts/jquery-3.4.1.js"></script>
   <script src="/scripts/semantic.min.js"></script>
 </head>
 <body>
-  <div data-hash="5a8f51fd99a357667869cd3fc419fb653b4ae67e10b5065cee15fdf04ccbb075" id="application-target">
+  <div data-hash="d11643be363f258ea5c8673c52b95c82c8654f8d1ac52924afab6837352b0bab" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application">
@@ -25,7 +24,7 @@
             <fabric-react-component class="ui primary action fluid container">
               <div class="ui card">
                 <div class="content">
-                  <div>
+                  <div class="fade-in">
                     <div class="ui header">Join the Waitlist!</div>
                     <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
                     <p>Be among the first to try Jeeves:</p>
@@ -33,12 +32,15 @@
                       <div class="field"><label>Email Address</label>
                         <div class="ui input"><input required="" placeholder="Your email address" name="email" type="text" value="" /></div>
                       </div>
-                      <div><button class="ui green fluid button" type="submit">Add Me To The Waitlist</button></div>
+                      <div><button class="ui green fluid button right labeled icon" type="submit">Add Me To The Waitlist <i aria-hidden="true" class="right chevron icon"></i></button></div>
                     </form>
                   </div>
                 </div>
               </div>
             </fabric-react-component>
+          </fabric-card-content>
+          <fabric-card-content>
+            <p style="font-size:0.8em;text-align:center;margin-top:4em">© 2023 Legal Tools &amp; Technology, Inc.</p>
           </fabric-card-content>
         </jeeves-splash>
       </fabric-react-component>
