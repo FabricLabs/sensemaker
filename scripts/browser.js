@@ -1,18 +1,24 @@
+'use strict';
+
 // Dependencies
 const React = require('react');
 const ReactDOM = require('react-dom/client');
 const { Provider, connect } = require('react-redux');
 
-// Redux
-const store = require('../stores/redux');
-
 // Components
 const JeevesUI = require('../components/JeevesUI');
+
+// Actions
+const { fetchConversations } = require('../actions/fetchConversations');
+const { login } = require('../actions/authActions');
 
 // Settings
 const settings = {
   currency: 'BTC'
 };
+
+// Redux
+const store = require('../stores/redux');
 
 // Main Process Definition
 async function main (input = {}) {
@@ -27,15 +33,31 @@ async function main (input = {}) {
   });
 
   // React
-  const container = document.getElementById('application-target');
-  const root = ReactDOM.createRoot(container);
-  const live = connect((state) => ({
-    isAuthenticated: state.isAuthenticated
-  }))(JeevesUI);
+  const mapStateToProps = (state) => ({
+    auth: state.auth,
+    error: state.auth.error,
+    isAuthenticated: state.auth.isAuthenticated,
+    token: state.auth.token
+  });
+
+  const mapDispatchToProps = {
+    fetchConversations: fetchConversations,
+    login: login
+  };
+
+  const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);
 
   // Render
-  root.render(React.createElement(Provider, { store }, React.createElement(live)));
+  const container = document.getElementById('application-target');
+  const root = ReactDOM.createRoot(container);
 
+  root.render(
+    <Provider store={store}>
+      <ConnectedUI />
+    </Provider>
+  );
+
+  // Return
   return {
     react: { root }
   }

@@ -4,9 +4,12 @@
 const definition = require('../package');
 
 // Dependencies
+const { hashSync, compareSync } = require('bcrypt');
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
 const levelgraph = require('levelgraph');
+const mysql = require('mysql2/promise');
+const knex = require('knex');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -67,6 +70,12 @@ class Jeeves extends Service {
       port: 7777,
       persistent: true,
       path: './logs/jeeves',
+      db: {
+        host: 'localhost',
+        user: 'db_user_jeeves',
+        password: '',
+        database: 'db_jeeves'
+      },
       http: {
         hostname: 'localhost',
         listen: true,
@@ -111,6 +120,10 @@ class Jeeves extends Service {
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/jeeves' });
+    this.db = knex({
+      client: 'mysql2',
+      connection: this.settings.db
+    });
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -269,6 +282,99 @@ class Jeeves extends Service {
     // TODO: remove
     this.on('block', async function (block) {
       self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
+    });
+
+    // Internal APIs
+    this.http._addRoute('POST', '/inquiries', async (req, res) => {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email is required.' });
+      }
+
+      try {
+        // Check if the username already exists
+        const existingInquiry = await this.db('inquiries').where('email', email).first();
+        if (existingInquiry) {
+          return res.status(409).json({ message: "You're already on the waitlist!" });
+        }
+
+        // Insert the new user into the database
+        const newInquiry = await this.db('inquiries').insert({
+          email: email
+        });
+
+        return res.json({ message: "You've been added to the waitlist!" });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.  Try again later.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/users', async (req, res) => {
+      const { username, password } = req.body;
+
+      // Check if the username and password are provided
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required.' });
+      }
+
+      try {
+        // Check if the username already exists
+        const existingUser = await this.db('users').where('username', username).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Username already exists.' });
+        }
+
+        // Generate a salt and hash the password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(password, salt);
+
+        // Insert the new user into the database
+        const newUser = await this.db('users').insert({
+          username: username,
+          password: hashedPassword
+        });
+        console.log('New user registered:', username);
+
+        return res.json({ message: 'User registered successfully.' });
+      } catch (error) {
+        console.error('Error registering user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/sessions', async (req, res, next) => {
+      const { username, password } = req.body;
+
+      console.log('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
+
+      // Check if the username and password are provided
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required.' });
+      }
+
+      try {
+        // Query the database to find the user
+        const user = await this.db('users').where('username', username).first();
+        if (!user || !compareSync(password, user.password)) {
+          return res.status(401).json({ message: 'Invalid username or password.' });
+        }
+
+        // Authentication successful
+        return res.json({ message: 'Authentication successful.', token: 'foop' });
+      } catch (error) {
+        console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('GET', '/conversations', (req, res, next) => {
+      const conversations = [
+        { _id: 'foo', title: 'Rando Convo', participants: [], log: [] }
+      ];
+
+      res.send(conversations);
     });
 
     // await this._startAllServices();

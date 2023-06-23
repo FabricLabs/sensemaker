@@ -1,16 +1,17 @@
-const redux = require('redux');
+'use strict';
 
-const initialState = {
-  isAuthenticated: false
-};
+// Dependencies
+const { createStore, combineReducers, applyMiddleware } = require('redux');
+const thunkMiddleware = require('redux-thunk').default;
 
-function rootReducer (state = initialState, action) {
-  switch (action.type) {
-    case 'LOGIN_SUCCESS':
-      return { ...state, isAuthenticated: true };
-    default:
-      return state;
-  }
-}
+// Reducers
+const authReducer = require('../reducers/authReducer');
+const conversationsReducer = require('../reducers/conversationReducer');
 
-module.exports = redux.createStore(rootReducer);
+// Root
+const rootReducer = combineReducers({
+  auth: authReducer,
+  conversations: conversationsReducer,
+});
+
+module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));

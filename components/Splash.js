@@ -2,11 +2,9 @@
 
 // Dependencies
 const React = require('react');
-const { connect } = require('react-redux');
 
 // Semantic UI
 const {
-  Button,
   Header,
   Image,
   Label
@@ -14,24 +12,27 @@ const {
 
 // Components
 const LoginForm = require('./LoginForm');
+const Waitlist = require('./Waitlist');
 
-class JeevesSplash extends React.Component {
+class Splash extends React.Component {
   render () {
+    const { login, error, onLoginSuccess } = this.props;
+
     return (
       <jeeves-splash>
         <fabric-card-content>
-          <Image src="/images/jeeves-brand.png" size='medium' centered />
+          <Image src="/images/jeeves-brand.png" size='small' centered />
           <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
-            <Label><code>alpha</code></Label>
           </div>
         </fabric-card-content>
         <fabric-card-content>
-          <LoginForm onLoginSuccess={this.props.onLoginSuccess} size='large' />
+          {/* <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} size='large' /> */}
+          <Waitlist />
         </fabric-card-content>
       </jeeves-splash>
     );
   }
 }
 
-module.exports = JeevesSplash;
+module.exports = Splash;

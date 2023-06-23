@@ -11,7 +11,7 @@ module.exports = class JeevesHome extends React.Component {
   render () {
     return (
       <jeeves-home>
-        <QueryForm />
+        <QueryForm fetchConversations={this.props.fetchConversations} />
         <jeeves-conversations-recent>
           <Header>Recent Conversations</Header>
         </jeeves-conversations-recent>

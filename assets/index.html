@@ -11,23 +11,33 @@
   <script src="/scripts/semantic.min.js"></script>
 </head>
 <body>
-  <div data-bind="f3560e8dbbe8cc17c80123cd0a1b6e66f12a503d219d1fc5b439feb26a7b74ed" data-hash="f3560e8dbbe8cc17c80123cd0a1b6e66f12a503d219d1fc5b439feb26a7b74ed" id="application-target">
+  <div data-hash="5a8f51fd99a357667869cd3fc419fb653b4ae67e10b5065cee15fdf04ccbb075" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application">
         <jeeves-splash>
-          <fabric-card-content><img src="/images/jeeves-brand.png" class="ui medium centered image" />
+          <fabric-card-content><img src="/images/jeeves-brand.png" class="ui small centered image" />
             <div style="text-align:center">
               <div class="ui header">JEEVES</div>
-              <div class="ui label"><code>alpha</code></div>
             </div>
           </fabric-card-content>
           <fabric-card-content>
-            <fabric-react-component class="ui primary action fluid text container">
-              <form class="ui large form">
-                <div class="field"><label>Username</label><input placeholder="Username" name="username" autoComplete="username" value="" /></div>
-                <div class="field"><label>Password</label><input type="password" autoComplete="current-password" placeholder="Password" name="password" value="" /></div><button class="ui large fluid primary right floated button" type="submit">Login</button>
-              </form>
+            <fabric-react-component class="ui primary action fluid container">
+              <div class="ui card">
+                <div class="content">
+                  <div>
+                    <div class="ui header">Join the Waitlist!</div>
+                    <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+                    <p>Be among the first to try Jeeves:</p>
+                    <form class="ui form">
+                      <div class="field"><label>Email Address</label>
+                        <div class="ui input"><input required="" placeholder="Your email address" name="email" type="text" value="" /></div>
+                      </div>
+                      <div><button class="ui green fluid button" type="submit">Add Me To The Waitlist</button></div>
+                    </form>
+                  </div>
+                </div>
+              </div>
             </fabric-react-component>
           </fabric-card-content>
         </jeeves-splash>

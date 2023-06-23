@@ -47,6 +47,8 @@ class Dashboard extends React.Component {
   componentDidMount () {
     // this.startProgress();
 
+    this.props.fetchConversations();
+
     // Simulate a loading delay
     setTimeout(() => {
       // this.completeProgress();
@@ -98,6 +100,10 @@ class Dashboard extends React.Component {
   completeProgress = () => {
     this.ref.current.complete();
   };
+  
+  handleSearchChange = (e) => {
+    console.log('search change:', e);
+  };
 
   render () {
     const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto' } : {};
@@ -106,15 +112,15 @@ class Dashboard extends React.Component {
       <jeeves-dashboard>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh' }}>
-          <Sidebar as={Menu} animation='push' icon='labeled' inverted vertical left visible style={sidebarStyle} width='wide' size='huge'>
+          <Sidebar as={Menu} animation='push' icon='labeled' inverted vertical visible style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
               <Header inverted>J{this.state.sidebarCollapsed ? '' : 'EEVES'}</Header>
             </Menu.Item>
             <Menu.Item>
-              <jeeves-search fluid disabled placeholder='Find...' class="ui disabled search">
-                <div class="ui icon fluid input">
-                  <input autocomplete="off" placeholder="Find..." type="text" tabindex="0" class="prompt" value="" />
-                  <i aria-hidden="true" class="search icon"></i>
+              <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search">
+                <div className="ui icon fluid input">
+                  <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value="" onChange={this.handleSearchChange} />
+                  <i aria-hidden="true" className="search icon"></i>
                 </div>
               </jeeves-search>
             </Menu.Item>
@@ -153,7 +159,7 @@ class Dashboard extends React.Component {
             <Container fluid>
               {this.state.isLoading ? null : (
                 <Routes>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<Home fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/conversations" element={<Conversations />} />
                   <Route path="/settings" element={<Settings />} />
