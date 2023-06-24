@@ -1,6 +1,10 @@
 'use strict';
 
-const LOGIN_ENABLED = false;
+// Constants
+const {
+  ENABLE_LOGIN,
+  ENABLE_REGISTRATION
+} = require('../constants');
 
 // Dependencies
 const React = require('react');
@@ -9,18 +13,17 @@ const React = require('react');
 const {
   Card,
   Header,
-  Image,
-  Label,
-  Footer
+  Image
 } = require('semantic-ui-react');
 
 // Components
+const AccountCreator = require('./AccountCreator');
 const LoginForm = require('./LoginForm');
 const Waitlist = require('./Waitlist');
 
 class Splash extends React.Component {
   render () {
-    const { login, error, onLoginSuccess } = this.props;
+    const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
       <jeeves-splash class="fade-in">
@@ -31,7 +34,15 @@ class Splash extends React.Component {
           </div>
         </fabric-component>
         <fabric-component class="ui primary action fluid container">
-          {LOGIN_ENABLED ? (
+          {ENABLE_REGISTRATION ? (
+            <Card>
+              <Card.Content>
+                <Header as='h3'>Register</Header>
+                <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} size='large' />
+              </Card.Content>
+            </Card>
+          ) : null}
+          {ENABLE_LOGIN ? (
             <Card>
               <Card.Content>
                 <Header as='h3'>Sign In</Header>

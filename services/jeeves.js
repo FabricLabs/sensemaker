@@ -4,7 +4,7 @@
 const definition = require('../package');
 
 // Dependencies
-const { hashSync, compareSync } = require('bcrypt');
+const { hashSync, compareSync, genSaltSync } = require('bcrypt');
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
 const levelgraph = require('levelgraph');
@@ -333,7 +333,8 @@ class Jeeves extends Service {
         // Insert the new user into the database
         const newUser = await this.db('users').insert({
           username: username,
-          password: hashedPassword
+          password: hashedPassword,
+          salt: salt
         });
         console.log('New user registered:', username);
 

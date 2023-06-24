@@ -29,6 +29,16 @@ class JeevesUI extends React.Component {
     this.setState({ isAuthenticated: true });
   }
 
+  handleMessageSuccess = (result) => {
+    console.log('message success! result:', result);
+    this.setState({ incomingMessage: result });
+  }
+
+  handleRegisterSuccess = () => {
+    console.log('registered = true ...');
+    this.setState({ registered: true });
+  }
+
   handleLogoutSuccess = () => {
     console.log('setting isAuthenticated = false ...');
     this.setState({
@@ -70,13 +80,17 @@ class JeevesUI extends React.Component {
             {this.props.isAuthenticated ? (
               <Dashboard
                 onLogoutSuccess={this.handleLogoutSuccess}
+                onMessageSuccess={this.handleMessageSuccess}
                 fetchConversations={this.props.fetchConversations}
                 handleConversationSubmit={this.handleConversationSubmit}
+                submitMessage={this.props.submitMessage}
               />
             ) : (
               <Splash
                 onLoginSuccess={this.handleLoginSuccess}
-                login={this.props.login} // Pass login as a prop
+                onRegisterSuccess={this.handleRegisterSuccess}
+                login={this.props.login}
+                register={this.props.register}
                 error={this.props.error}
               />
             )}

@@ -8,10 +8,6 @@ const { Provider, connect } = require('react-redux');
 // Components
 const JeevesUI = require('../components/JeevesUI');
 
-// Actions
-const { fetchConversations } = require('../actions/fetchConversations');
-const { login } = require('../actions/authActions');
-
 // Settings
 const settings = {
   currency: 'BTC'
@@ -19,6 +15,11 @@ const settings = {
 
 // Redux
 const store = require('../stores/redux');
+
+// Actions
+const { fetchConversations } = require('../actions/fetchConversations');
+const { login, register } = require('../actions/authActions');
+const { submitMessage } = require('../actions/chatActions');
 
 // Main Process Definition
 async function main (input = {}) {
@@ -35,14 +36,18 @@ async function main (input = {}) {
   // React
   const mapStateToProps = (state) => ({
     auth: state.auth,
+    chat: state.chat,
     error: state.auth.error,
     isAuthenticated: state.auth.isAuthenticated,
+    isSending: state.chat.isSending,
     token: state.auth.token
   });
 
   const mapDispatchToProps = {
     fetchConversations: fetchConversations,
-    login: login
+    login: login,
+    register: register,
+    submitMessage: submitMessage
   };
 
   const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);

@@ -7,15 +7,21 @@ const {
 
 const QueryForm = require('./QueryForm');
 
-module.exports = class JeevesHome extends React.Component {
+class JeevesHome extends React.Component {
   render () {
     return (
-      <jeeves-home>
-        <QueryForm fetchConversations={this.props.fetchConversations} />
-        <jeeves-conversations-recent>
+      <jeeves-home class="fade-in">
+        <QueryForm
+          fetchConversations={this.props.fetchConversations}
+          submitMessage={this.props.submitMessage}
+          onMessageSuccess={this.props.onMessageSuccess}
+        />
+        {/* <jeeves-conversations-recent>
           <Header>Recent Conversations</Header>
-        </jeeves-conversations-recent>
+        </jeeves-conversations-recent> */}
       </jeeves-home>
     );
   }
 }
+
+module.exports = JeevesHome;

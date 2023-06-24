@@ -32,6 +32,7 @@ class Dashboard extends React.Component {
     this.state = {
       loading: false,
       username: '(guest account)',
+      search: '',
       sidebarCollapsed: false,
       sidebarVisible: true,
       progress: 0,
@@ -103,6 +104,7 @@ class Dashboard extends React.Component {
   
   handleSearchChange = (e) => {
     console.log('search change:', e);
+    this.setState({ search: e.target.value });
   };
 
   render () {
@@ -119,7 +121,7 @@ class Dashboard extends React.Component {
             <Menu.Item>
               <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search">
                 <div className="ui icon fluid input">
-                  <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value="" onChange={this.handleSearchChange} />
+                  <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
                   <i aria-hidden="true" className="search icon"></i>
                 </div>
               </jeeves-search>
@@ -159,7 +161,13 @@ class Dashboard extends React.Component {
             <Container fluid>
               {this.state.isLoading ? null : (
                 <Routes>
-                  <Route path="/" element={<Home fetchConversations={this.props.fetchConversations} />} />
+                  <Route path="/" element={
+                    <Home
+                      fetchConversations={this.props.fetchConversations}
+                      submitMessage={this.props.submitMessage}
+                      onMessageSuccess={this.props.onMessageSuccess}
+                    />
+                  } />
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/conversations" element={<Conversations />} />
                   <Route path="/settings" element={<Settings />} />

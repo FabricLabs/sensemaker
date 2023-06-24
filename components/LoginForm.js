@@ -22,10 +22,10 @@ class LoginForm extends React.Component {
   }
 
   componentDidUpdate (prevProps) {
-  // If a new login request has been initiated or an error has occurred, stop loading
-  if ((this.props.error === null && prevProps.error !== null) || (this.props.error && prevProps.error !== this.props.error)) {
-    this.setState({ loading: false });
-  }
+    // If a new login request has been initiated or an error has occurred, stop loading
+    if ((this.props.error === null && prevProps.error !== null) || (this.props.error && prevProps.error !== this.props.error)) {
+      this.setState({ loading: false });
+    }
   }
 
   handleUsernameChange = (event) => {
@@ -41,9 +41,9 @@ class LoginForm extends React.Component {
   handleSubmit = async (event) => {
     event.preventDefault();
     const { username, password } = this.state;
-    
+
     this.setState({ loading: true });
-    
+
     // Call login action creator
     this.props.login(username, password);
   };
@@ -56,9 +56,7 @@ class LoginForm extends React.Component {
 
   render () {
     const { username, password, loading } = this.state;
-    const { error } = this.props;  // Get the error from the props
-
-    console.log('Rendering LoginForm with error:', this.props.error);
+    const { error } = this.props;
 
     return (
       <fabric-react-component class="ui primary action fluid text container">
