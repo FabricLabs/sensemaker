@@ -14,13 +14,16 @@ const messageFailure = error => ({ type: CHAT_FAILURE, payload: error, error: er
 
 // Async Action Creator (Thunk)
 const submitMessage = (message) => {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     dispatch(messageRequest());
+
+    const token = getState().auth.token;
 
     try {
       const response = await fetch('/messages', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(message),

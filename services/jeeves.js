@@ -17,7 +17,9 @@ const HTTPServer = require('@fabric/http/types/server');
 // Fabric Types
 // TODO: reduce to whole library import?
 // const App = require('@fabric/core/types/app');
+const Key = require('@fabric/core/types/key');
 const Peer = require('@fabric/core/types/peer');
+const Token = require('@fabric/core/types/token');
 const Actor = require('@fabric/core/types/actor');
 const Chain = require('@fabric/core/types/chain');
 const Queue = require('@fabric/core/types/queue');
@@ -125,12 +127,51 @@ class Jeeves extends Service {
       connection: this.settings.db
     });
 
+    // Fabric Setup
+    this._rootKey = new Key({ xprv: this.settings.xprv });
+    this._fabric = {
+      ephemera: this._rootKey,
+      token: new Token({ issuer: this._rootKey })
+    };
+
     // HTTP Interface
     this.http = new HTTPServer({
       path: 'assets',
       hostname: this.settings.http.hostname,
       interface: this.settings.http.interface,
       port: this.settings.http.port,
+      middlewares: {
+        userIdentifier: function (req, res, next) {
+          req.user = {
+            id: null
+          };
+
+          if (req.headers.authorization) {
+            const header = req.headers.authorization.split(' ');
+
+            if (header[0] == 'Bearer' && header[1]) {
+              const token = header[1];
+              const parts = token.split('.');
+
+              if (parts && parts.length == 3) {
+                const headers = parts[0];
+                const payload = parts[1];
+                const signature = parts[2];
+                const inner = Token.base64UrlDecode(payload);
+
+                try {
+                  const obj = JSON.parse(inner);
+                  req.user.id = obj.sub;
+                } catch (exception) {
+                  console.error('Invalid Bearer Token:', inner)
+                }
+              }
+            }
+          }
+
+          next();
+        }
+      },
       resources: {
         Index: {
           route: '/',
@@ -146,7 +187,8 @@ class Jeeves extends Service {
             view: 'jeeves-index'
           }
         }
-      }
+      },
+      sessions: false
     });
 
     this.services = {};
@@ -350,32 +392,78 @@ class Jeeves extends Service {
 
       console.log('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
 
-      // Check if the username and password are provided
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
       }
 
       try {
-        // Query the database to find the user
         const user = await this.db('users').where('username', username).first();
         if (!user || !compareSync(password, user.password)) {
           return res.status(401).json({ message: 'Invalid username or password.' });
         }
 
-        // Authentication successful
-        return res.json({ message: 'Authentication successful.', token: 'foop' });
+        const token = new Token({
+          capability: 'OP_IDENTITY',
+          issuer: null,
+          subject: user.id
+        });
+
+        return res.json({ message: 'Authentication successful.', token: token.toString() });
       } catch (error) {
         console.error('Error authenticating user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
 
-    this.http._addRoute('GET', '/conversations', (req, res, next) => {
-      const conversations = [
-        { _id: 'foo', title: 'Rando Convo', participants: [], log: [] }
-      ];
-
+    this.http._addRoute('GET', '/conversations', async (req, res, next) => {
+      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('created_at');
       res.send(conversations);
+    });
+
+    this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
+      const inquiries = await this.db('inquiries').select('id');
+      const invitations = await this.db('invitations').select('id').from('invitations');
+      const stats = {
+        inquiries: {
+          total: inquiries.length
+        },
+        invitations: {
+          total: invitations.length
+        }
+      };
+
+      res.send(stats);
+    });
+
+    this.http._addRoute('POST', '/messages', async (req, res, next) => {
+      let { conversation_id, content } = req.body;
+      if (!conversation_id) {
+        const now = new Date();
+        const created = await this.db('conversations').insert({
+          creator_id: req.user.id,
+          title: `Conversation Started ${now.toISOString()}`
+        });
+
+        // TODO: document why array only for Postgres
+        // all others return the numeric id (Postgres returns an array with a numeric element)
+        conversation_id = created[0];
+      }
+
+      try {
+        const conversation = await this.db('conversations').where({ id: conversation_id });
+        if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
+
+        const newMessage = await this.db('messages').insert({
+          content: content,
+          user_id: 1 // TODO: real user ID
+        });
+
+        return res.json({ message: 'Message sent.' });
+      } catch (error) {
+        console.error('ERROR:', error);
+        this.emit('error', `Failed to create message: ${error}`);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
     });
 
     // await this._startAllServices();

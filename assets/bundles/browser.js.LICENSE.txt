@@ -16,6 +16,25 @@
  */
 
 /*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <https://feross.org>
+ * @license  MIT
+ */
+
+/*!
+ * https://github.com/Starcounter-Jack/JSON-Patch
+ * (c) 2017-2021 Joachim Wester
+ * MIT license
+ */
+
+/*!
+ * https://github.com/Starcounter-Jack/JSON-Patch
+ * (c) 2017-2022 Joachim Wester
+ * MIT licensed
+ */
+
+/*!
  * jQuery JavaScript Library v3.6.4
  * https://jquery.com/
  *
@@ -29,7 +48,11 @@
  * Date: 2023-03-08T15:28Z
  */
 
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+
 /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
+
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
 
 /**
  * @license React

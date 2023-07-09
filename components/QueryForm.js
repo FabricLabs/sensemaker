@@ -12,7 +12,14 @@ const {
   Search
 } = require('semantic-ui-react');
 
-module.exports = class JeevesQueryForm extends React.Component {
+class Chat extends React.Component {
+  constructor (props) {
+    super(props);
+    this.state = {
+      query: ''
+    };
+  }
+
   componentDidMount () {
     $('#primary-query').on('focus', () => {
       $('#query-helpers').slideDown();
@@ -25,7 +32,7 @@ module.exports = class JeevesQueryForm extends React.Component {
 
   render () {
     return (
-      <jeeves-query-form className='ui card fluid'>
+      <fabric-component class='ui card fluid'>
         <Card.Content>
           <Image src='/images/jeeves-brand.png' size='small' floated='left' />
           <div style={{ paddingTop: '5em' }}>
@@ -58,7 +65,10 @@ module.exports = class JeevesQueryForm extends React.Component {
             </div>
           </div>
         </Card.Content>
-      </jeeves-query-form>
+      </fabric-component>
     );
   }
 }
+
+module.exports = Chat;
+

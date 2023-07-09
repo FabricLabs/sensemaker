@@ -3,7 +3,7 @@
 // Dependencies
 const React = require('react');
 const { Link, Route, Routes } = require('react-router-dom');
-const LoadingBar = require('react-top-loading-bar');
+// const LoadingBar = require('react-top-loading-bar');
 
 // Semantic UI
 const {
@@ -24,6 +24,9 @@ const Home = require('./Home');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const Settings = require('./Settings');
+const AdminSettings = require('./AdminSettings');
+
+const Bridge = require('./Bridge');
 
 class Dashboard extends React.Component {
   constructor (props) {
@@ -150,11 +153,16 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/settings">
               <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
             </Menu.Item>
-            <Menu.Item disabled>
+            <Menu.Item as={Link} to="/settings/admin">
               <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
             </Menu.Item>
             <Menu.Item as={Link} to="/" onClick={this.handleLogout}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
+            </Menu.Item>
+            <Menu.Item>
+              <div>
+                <Bridge />
+              </div>
             </Menu.Item>
           </Sidebar>
           <Sidebar.Pusher style={{ margin: '1em', paddingRight: '350px' }}>
@@ -169,8 +177,9 @@ class Dashboard extends React.Component {
                     />
                   } />
                   <Route path="/workspaces" element={<Workspaces />} />
-                  <Route path="/conversations" element={<Conversations />} />
+                  <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings/admin" element={<AdminSettings />} />
                 </Routes>
               )}
             </Container>

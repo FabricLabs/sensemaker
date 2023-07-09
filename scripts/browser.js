@@ -17,9 +17,10 @@ const settings = {
 const store = require('../stores/redux');
 
 // Actions
-const { fetchConversations } = require('../actions/fetchConversations');
 const { login, register } = require('../actions/authActions');
+const { fetchAdminStats } = require('../actions/adminActions');
 const { submitMessage } = require('../actions/chatActions');
+const { fetchConversations } = require('../actions/conversationActions');
 
 // Main Process Definition
 async function main (input = {}) {
@@ -34,17 +35,21 @@ async function main (input = {}) {
   });
 
   // React
-  const mapStateToProps = (state) => ({
-    auth: state.auth,
-    chat: state.chat,
-    error: state.auth.error,
-    isAuthenticated: state.auth.isAuthenticated,
-    isSending: state.chat.isSending,
-    token: state.auth.token
-  });
+  const mapStateToProps = (state) => {
+    return {
+      auth: state.auth,
+      chat: state.chat,
+      conversations: state.conversations.conversations,
+      error: state.auth.error,
+      isAuthenticated: state.auth.isAuthenticated,
+      isSending: state.chat.isSending,
+      token: state.auth.token
+    }
+  };
 
   const mapDispatchToProps = {
     fetchConversations: fetchConversations,
+    fetchAdminStats: fetchAdminStats,
     login: login,
     register: register,
     submitMessage: submitMessage

@@ -82,8 +82,10 @@ class JeevesUI extends React.Component {
                 onLogoutSuccess={this.handleLogoutSuccess}
                 onMessageSuccess={this.handleMessageSuccess}
                 fetchConversations={this.props.fetchConversations}
+                fetchAdminStats={this.props.fetchAdminStats}
                 handleConversationSubmit={this.handleConversationSubmit}
                 submitMessage={this.props.submitMessage}
+                conversations={this.props.conversations}
               />
             ) : (
               <Splash
