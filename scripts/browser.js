@@ -19,8 +19,16 @@ const store = require('../stores/redux');
 // Actions
 const { login, register } = require('../actions/authActions');
 const { fetchAdminStats } = require('../actions/adminActions');
-const { submitMessage } = require('../actions/chatActions');
-const { fetchConversations } = require('../actions/conversationActions');
+
+const {
+  submitMessage,
+  getMessages
+} = require('../actions/chatActions');
+
+const {
+  fetchConversations,
+  fetchConversation
+} = require('../actions/conversationActions');
 
 // Main Process Definition
 async function main (input = {}) {
@@ -39,6 +47,7 @@ async function main (input = {}) {
     return {
       auth: state.auth,
       chat: state.chat,
+      conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
       error: state.auth.error,
       isAuthenticated: state.auth.isAuthenticated,
@@ -48,11 +57,13 @@ async function main (input = {}) {
   };
 
   const mapDispatchToProps = {
+    fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
     fetchAdminStats: fetchAdminStats,
     login: login,
     register: register,
-    submitMessage: submitMessage
+    submitMessage: submitMessage,
+    getMessages: getMessages
   };
 
   const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);

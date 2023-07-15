@@ -72,6 +72,7 @@ class Jeeves extends Service {
       port: 7777,
       persistent: true,
       path: './logs/jeeves',
+      coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
       db: {
         host: 'localhost',
         user: 'db_user_jeeves',
@@ -416,8 +417,37 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
-      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('created_at');
+      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
       res.send(conversations);
+    });
+
+    this.http._addRoute('GET', '/messages', async (req, res, next) => {
+      let messages = [];
+
+      if (req.params.conversation_id) {
+        messages = await this.db.select('id', 'created_at', 'content').from('messages').where({
+          conversation_id: req.params.conversation_id
+        }).orderBy('created_at', 'asc');
+      } else {
+        messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
+      }
+
+      messages = messages.map((m) => {
+        return { ...m, author: 'User #' + m.user_id };
+      });
+
+      res.send(messages);
+    });
+
+    this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
+      const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations').where({ id: req.params.id }).first();
+      const messages = await knex('messages')
+        .whereIn('id', conversation.log)
+        .select('id', 'content', 'created_at');
+
+      conversation.messages = messages;
+
+      res.send(conversation);
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
@@ -439,9 +469,16 @@ class Jeeves extends Service {
       let { conversation_id, content } = req.body;
       if (!conversation_id) {
         const now = new Date();
+        const name = `Conversation Started ${now.toISOString()}`;
+        const room = await this.matrix.client.createRoom({
+          name: name
+        });
+
         const created = await this.db('conversations').insert({
           creator_id: req.user.id,
-          title: `Conversation Started ${now.toISOString()}`
+          log: JSON.stringify([]),
+          title: name,
+          matrix_room_id: room.room_id
         });
 
         // TODO: document why array only for Postgres
@@ -450,15 +487,42 @@ class Jeeves extends Service {
       }
 
       try {
-        const conversation = await this.db('conversations').where({ id: conversation_id });
+        const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
 
         const newMessage = await this.db('messages').insert({
           content: content,
-          user_id: 1 // TODO: real user ID
+          conversation_id: conversation_id,
+          user_id: req.user.id
         });
 
-        return res.json({ message: 'Message sent.' });
+        const newRequest = await this.db('requests').insert({
+          message_id: newMessage[0]
+        });
+
+        this._handleRequest({
+          conversation_id: conversation_id,
+          input: content,
+        }).then((output) => {
+          this.db('messages').insert({
+            content: output.object.content,
+            conversation_id: conversation_id,
+            user_id: 1 // TODO: real user ID
+          }).then((response) => {
+            console.log('response created:', response);
+          });
+        });
+
+        // Attach new message to the conversation
+        await this.db('conversations').update({ log: JSON.stringify(conversation.log.push(newMessage[0])) }).where({ id: conversation_id });
+
+        return res.json({
+          message: 'Message sent.',
+          object: {
+            id: newMessage[0],
+            conversation: conversation_id
+          }
+        });
       } catch (error) {
         console.error('ERROR:', error);
         this.emit('error', `Failed to create message: ${error}`);
@@ -563,7 +627,6 @@ class Jeeves extends Service {
       }
     }
 
-    const computedReactions = await this.matrix._getReactions(activity.object.id);
     const response = await this._handleRequest({
       actor: activity.actor,
       input: activity.object.content,
@@ -598,9 +661,11 @@ class Jeeves extends Service {
    * Retrieve a conversation's messages.
    * @returns {Array} List of the conversation's messages.
    */
-  async _getConversationMessages (channelID) {
+  async _getRoomMessages (channelID) {
     const messages = [];
     const room = this.matrix.client.getRoom(channelID);
+
+    if (!room) return messages;
 
     for (let i = 0; i < room.timeline.length; i++) {
       const event = room.timeline[i];
@@ -643,7 +708,21 @@ class Jeeves extends Service {
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
 
-    const messages = await this._getConversationMessages(request.room);
+    let messages = [];
+
+    if (request.room) {
+      const matrixMessages = await this._getRoomMessages(request.room);
+      messages = messages.concat(matrixMessages);
+    } else if (request.conversation_id) {
+      const prev = await this.db('messages').where({ conversation_id: request.conversation_id });
+      messages = prev.map((x) => {
+        return { role: 'user', content: x.content }
+      });
+
+      messages = messages.concat([{ role: 'user', content: request.input }]);
+    } else {
+      messages = messages.concat([{ role: 'user', content: request.input }]);
+    }
 
     // Prompt
     messages.unshift({ role: 'user', content: this.settings.prompt });

@@ -6,11 +6,17 @@ const fetch = require('cross-fetch');
 const CHAT_REQUEST = 'CHAT_REQUEST';
 const CHAT_SUCCESS = 'CHAT_SUCCESS';
 const CHAT_FAILURE = 'CHAT_FAILURE';
+const GET_MESSAGES_REQUEST = 'GET_MESSAGES_REQUEST';
+const GET_MESSAGES_SUCCESS = 'GET_MESSAGES_SUCCESS';
+const GET_MESSAGES_FAILURE = 'GET_MESSAGES_FAILURE';
 
 // Sync Action Creators
 const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
-const messageSuccess = message => ({ type: CHAT_SUCCESS, payload: { message }, isSending: false });
-const messageFailure = error => ({ type: CHAT_FAILURE, payload: error, error: error, isSending: false });
+const messageSuccess = (message) => ({ type: CHAT_SUCCESS, payload: { message }, isSending: false });
+const messageFailure = (error) => ({ type: CHAT_FAILURE, payload: error, error: error, isSending: false });
+const getMessagesRequest = () => ({ type: GET_MESSAGES_REQUEST, isSending: true });
+const getMessagesSuccess = (messages) => ({ type: GET_MESSAGES_SUCCESS, payload: { messages }, isSending: false });
+const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: error, error: error, isSending: false });
 
 // Async Action Creator (Thunk)
 const submitMessage = (message) => {
@@ -26,7 +32,7 @@ const submitMessage = (message) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(message),
+        body: JSON.stringify(message)
       });
 
       if (!response.ok) {
@@ -35,17 +41,49 @@ const submitMessage = (message) => {
       }
 
       const result = await response.json();
-      console.log('got result:', result);
-      dispatch(messageSuccess(result.message));
+      dispatch(messageSuccess(result));
     } catch (error) {
       dispatch(messageFailure(error.message));
     }
   };
 };
 
+const getMessages = (params) => {
+  return async (dispatch, getState) => {
+    dispatch(getMessagesRequest());
+
+    const token = getState().auth.token;
+
+    try {
+      const response = await fetch('/messages?' + new URLSearchParams(params), {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      console.log('messages result:', result);
+      dispatch(getMessagesSuccess(result));
+    } catch (error) {
+      dispatch(getMessagesFailure(error.message));
+    }
+  };
+};
+
 module.exports = {
   submitMessage,
+  getMessages,
   CHAT_SUCCESS,
   CHAT_FAILURE,
-  CHAT_REQUEST
+  CHAT_REQUEST,
+  GET_MESSAGES_REQUEST,
+  GET_MESSAGES_SUCCESS,
+  GET_MESSAGES_FAILURE
 };

@@ -2,7 +2,7 @@
 
 // Dependencies
 const React = require('react');
-const { Link, Route, Routes } = require('react-router-dom');
+const { Link, Route, Routes, Switch } = require('react-router-dom');
 // const LoadingBar = require('react-top-loading-bar');
 
 // Semantic UI
@@ -23,9 +23,11 @@ const {
 const Home = require('./Home');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
+const Room = require('./Room');
 const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
 
+// Fabric Bridge
 const Bridge = require('./Bridge');
 
 class Dashboard extends React.Component {
@@ -172,11 +174,14 @@ class Dashboard extends React.Component {
                   <Route path="/" element={
                     <Home
                       fetchConversations={this.props.fetchConversations}
+                      getMessages={this.props.getMessages}
                       submitMessage={this.props.submitMessage}
                       onMessageSuccess={this.props.onMessageSuccess}
+                      chat={this.props.chat}
                     />
                   } />
                   <Route path="/workspaces" element={<Workspaces />} />
+                  <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} />} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/settings/admin" element={<AdminSettings />} />

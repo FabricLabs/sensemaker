@@ -1,14 +1,15 @@
+'use strict';
+
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 class Conversations extends React.Component {
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchConversations();
   }
 
-  render() {
+  render () {
     const { loading, error, conversations } = this.props;
-
-    console.log('props:', this.props);
 
     if (loading) {
       return <div>Loading...</div>;
@@ -23,7 +24,7 @@ class Conversations extends React.Component {
         <h2>Conversations</h2>
         {conversations && conversations.length > 0 && conversations.map(conversation => (
           <div key={conversation.id}>
-            <h3>{conversation.title}</h3>
+            <h3><Link to={'/conversations/' + conversation.id}>{conversation.title}</Link></h3>
             <p>{conversation.content}</p>
           </div>
         ))}

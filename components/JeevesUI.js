@@ -2,8 +2,11 @@
 
 // Dependencies
 const React = require('react');
-const { BrowserRouter } = require('react-router-dom');
 const { renderToString } = require('react-dom/server');
+const {
+  BrowserRouter,
+  useNavigate
+} = require('react-router-dom');
 
 // Components
 const Splash = require('./Splash');
@@ -54,7 +57,7 @@ class JeevesUI extends React.Component {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.props.token}`, // Assuming you store token in Redux state
+          'Authorization': `Bearer ${this.props.token}`
         },
         body: JSON.stringify({ message }),
       });
@@ -62,7 +65,7 @@ class JeevesUI extends React.Component {
       const data = await response.json();
 
       if (data.success) {
-        this.props.fetchConversations(); // Fetch new conversation list after posting a message
+        this.props.fetchConversations();
       } else {
         throw new Error(data.message || 'Message submission failed');
       }
@@ -81,11 +84,15 @@ class JeevesUI extends React.Component {
               <Dashboard
                 onLogoutSuccess={this.handleLogoutSuccess}
                 onMessageSuccess={this.handleMessageSuccess}
+                fetchConversation={this.props.fetchConversation}
                 fetchConversations={this.props.fetchConversations}
                 fetchAdminStats={this.props.fetchAdminStats}
                 handleConversationSubmit={this.handleConversationSubmit}
                 submitMessage={this.props.submitMessage}
                 conversations={this.props.conversations}
+                conversation={this.props.conversation}
+                chat={this.props.chat}
+                {...this.props}
               />
             ) : (
               <Splash
@@ -108,4 +115,8 @@ class JeevesUI extends React.Component {
   }
 }
 
-module.exports = JeevesUI;
+function Application (props) {
+  return <JeevesUI {...props} />;
+}
+
+module.exports = Application;

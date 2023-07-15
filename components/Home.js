@@ -13,12 +13,12 @@ class JeevesHome extends React.Component {
       <jeeves-home class="fade-in">
         <QueryForm
           fetchConversations={this.props.fetchConversations}
+          getMessages={this.props.getMessages}
           submitMessage={this.props.submitMessage}
           onMessageSuccess={this.props.onMessageSuccess}
+          chat={this.props.chat}
+          placeholder="Ask me anything..."
         />
-        {/* <jeeves-conversations-recent>
-          <Header>Recent Conversations</Header>
-        </jeeves-conversations-recent> */}
       </jeeves-home>
     );
   }
