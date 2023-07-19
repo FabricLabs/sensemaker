@@ -6,15 +6,25 @@ const {
   useParams
 } = require('react-router-dom');
 
+const {
+  Card,
+  Header,
+  Segment
+} = require('semantic-ui-react');
+
+const QueryForm = require('./QueryForm');
+const Feed = require('./Feed');
+
 class Conversation extends React.Component {
   componentDidMount () {
     const { id } = this.props;
-    console.log('conversation id:', id);
-    this.props.fetchConversation(id);
+    const { message } = this.props.chat;
+
+    this.props.getMessages({ conversation_id: id });
   }
 
   render () {
-    const { loading, error, room } = this.props;
+    const { id, loading, error, chat, messages } = this.props;
 
     if (loading) {
       return <div>Loading...</div>;
@@ -25,16 +35,13 @@ class Conversation extends React.Component {
     }
 
     return (
-      <div>
-        <h2>Room</h2>
-        <code>{room}</code>
-        <code>{room?.log}</code>
-        {room && room.messages && room.messages.length > 0 && room.messages.map(message => (
-          <div key={message.id}>
-            <p>{message.content}</p>
-          </div>
-        ))}
-      </div>
+      <fabric-container>
+        <Segment fluid>
+          <Header as='h2'>Conversation #{id}</Header>
+          <Feed chat={chat} messages={messages} />
+        </Segment>
+        {/* <QueryForm chat={chat} conversationID={id} submitMessage={this.props.submitMessage} getMessages={this.props.getMessages} /> */}
+      </fabric-container>
     );
   }
 }

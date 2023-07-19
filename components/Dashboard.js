@@ -2,7 +2,7 @@
 
 // Dependencies
 const React = require('react');
-const { Link, Route, Routes, Switch } = require('react-router-dom');
+const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
 // const LoadingBar = require('react-top-loading-bar');
 
 // Semantic UI
@@ -116,9 +116,9 @@ class Dashboard extends React.Component {
     const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto' } : {};
 
     return (
-      <jeeves-dashboard>
+      <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
-        <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh' }}>
+        <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} animation='push' icon='labeled' inverted vertical visible style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
               <Header inverted>J{this.state.sidebarCollapsed ? '' : 'EEVES'}</Header>
@@ -126,7 +126,7 @@ class Dashboard extends React.Component {
             <Menu.Item>
               <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search">
                 <div className="ui icon fluid input">
-                  <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
+                  <input disabled autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
                   <i aria-hidden="true" className="search icon"></i>
                 </div>
               </jeeves-search>
@@ -143,9 +143,9 @@ class Dashboard extends React.Component {
             <Menu.Item disabled>
               <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item>
-            <Menu.Item disabled>
+            {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item>
+            </Menu.Item> */}
             <Menu.Item disabled as={Link} to="/workspaces">
               <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Workspaces'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item>
@@ -167,10 +167,11 @@ class Dashboard extends React.Component {
               </div>
             </Menu.Item>
           </Sidebar>
-          <Sidebar.Pusher style={{ margin: '1em', paddingRight: '350px' }}>
+          <Sidebar.Pusher style={{ margin: '1em', paddingRight: '340px' }}>
             <Container fluid>
               {this.state.isLoading ? null : (
                 <Routes>
+                  <Route path="*" element={<Navigate to='/' replace />} />
                   <Route path="/" element={
                     <Home
                       fetchConversations={this.props.fetchConversations}
@@ -181,10 +182,10 @@ class Dashboard extends React.Component {
                     />
                   } />
                   <Route path="/workspaces" element={<Workspaces />} />
-                  <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} />} />
+                  <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} />} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/settings/admin" element={<AdminSettings />} />
+                  <Route path="/settings/admin" element={<AdminSettings fetchAdminStats={this.props.fetchAdminStats} />} />
                 </Routes>
               )}
             </Container>

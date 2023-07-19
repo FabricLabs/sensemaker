@@ -4,10 +4,12 @@
 const definition = require('../package');
 
 // Dependencies
+const fs = require('fs');
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
 const levelgraph = require('levelgraph');
+const marked = require('marked');
 const mysql = require('mysql2/promise');
 const knex = require('knex');
 
@@ -424,12 +426,12 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
       let messages = [];
 
-      if (req.params.conversation_id) {
-        messages = await this.db.select('id', 'created_at', 'content').from('messages').where({
-          conversation_id: req.params.conversation_id
+      if (req.query.conversation_id) {
+        messages = await this.db.select('id', 'user_id', 'created_at', 'content').from('messages').where({
+          conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
-        messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
+        // messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
       }
 
       messages = messages.map((m) => {
@@ -448,6 +450,11 @@ class Jeeves extends Service {
       conversation.messages = messages;
 
       res.send(conversation);
+    });
+
+    this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
+      const contract = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
+      res.send(contract);
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
@@ -470,15 +477,17 @@ class Jeeves extends Service {
       if (!conversation_id) {
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
-        const room = await this.matrix.client.createRoom({
+        /* const room = await this.matrix.client.createRoom({ 
           name: name
         });
+
+        console.log('created room:', room);*/
 
         const created = await this.db('conversations').insert({
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
-          matrix_room_id: room.room_id
+          // matrix_room_id: room.room_id
         });
 
         // TODO: document why array only for Postgres
@@ -504,6 +513,10 @@ class Jeeves extends Service {
           conversation_id: conversation_id,
           input: content,
         }).then((output) => {
+          this.db('responses').insert({
+            content: output.object.content
+          });
+
           this.db('messages').insert({
             content: output.object.content,
             conversation_id: conversation_id,
@@ -513,8 +526,16 @@ class Jeeves extends Service {
           });
         });
 
+        if (!conversation.log) conversation.log = [];
+
         // Attach new message to the conversation
-        await this.db('conversations').update({ log: JSON.stringify(conversation.log.push(newMessage[0])) }).where({ id: conversation_id });
+        conversation.log.push(newMessage[0]);
+
+        await this.db('conversations').update({
+          log: JSON.stringify(conversation.log)
+        }).where({
+          id: conversation_id
+        });
 
         return res.json({
           message: 'Message sent.',
@@ -576,7 +597,7 @@ class Jeeves extends Service {
 
     clearInterval(this._heart);
 
-    for (const [name, service] of Object.entries(this.services)) {
+    for (const [name, service] of Object.entries(this.services || {})) {
       if (this.settings.services.includes(name)) {
         await this.services[name].stop();
       }
@@ -718,8 +739,6 @@ class Jeeves extends Service {
       messages = prev.map((x) => {
         return { role: 'user', content: x.content }
       });
-
-      messages = messages.concat([{ role: 'user', content: request.input }]);
     } else {
       messages = messages.concat([{ role: 'user', content: request.input }]);
     }

@@ -1,9 +1,11 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 
+// Semantic UI
 const {
   Card,
   Feed,
@@ -21,9 +23,10 @@ class Chat extends React.Component {
       query: '',
       hasSubmittedMessage: false
     };
-  }
 
-  messagesEndRef = React.createRef();
+    this.messagesEndRef = React.createRef();
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
 
   componentDidMount () {
     $('#primary-query').focus();
@@ -49,21 +52,24 @@ class Chat extends React.Component {
 
     this.setState({ loading: true });
 
+    // dispatch submitMessage
     this.props.submitMessage({
-      conversation_id: message?.object?.conversation_id,
+      conversation_id: message?.conversation,
       content: query
     }).then((output) => {
-      this.props.getMessages({ conversation_id: message?.object?.conversation_id });
+      // dispatch getMessages
+      this.props.getMessages({ conversation_id: message?.conversation });
 
       if (!this.watcher) {
         this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: this.state.chat?.message?.conversation_id });
-        }, 1000);
+          this.props.getMessages({ conversation_id: message?.conversation });
+        }, 15000);
       }
 
       this.setState({ loading: false });
     });
 
+    // Clear the input after sending the message
     this.setState({ query: '' });
   }
 
@@ -72,21 +78,28 @@ class Chat extends React.Component {
     const { isSending, placeholder } = this.props;
     const { message, messages } = this.props.chat;
 
-    const messageContainerStyle = this.state.hasSubmittedMessage ? { flexGrow: 1, overflowY: 'auto', paddingBottom: '1rem', transition: 'height 1s' } : { height: 0, overflow: 'hidden', transition: 'height 1s' };
+    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+      flexGrow: 1,
+    } : {
+    };
 
     return (
-      <fabric-component class='ui fluid segment' style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
-        <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-        <div style={{ paddingTop: '5em' }}>
-          <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
-          <Header>How can I help you today?</Header>
-        </div>
+      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={{ height: '100vh', display: 'flex', flexDirection: 'column', marginBottom: '2em' }}>
         <Feed style={messageContainerStyle}>
+          <Feed.Event>
+            <Feed.Extra text>
+              <Image src='/images/jeeves-brand.png' size='small' floated='left' />
+              <div style={{ paddingTop: '5em' }}>
+                <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
+              </div>
+              <Header style={{ marginTop: '3em' }}>How can I help you today?</Header>
+            </Feed.Extra>
+          </Feed.Event>
           {messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
                 <Feed.Summary>
-                  <Feed.User>{message.author}</Feed.User>
+                  <Feed.User>{message.author || message.user_id}</Feed.User>
                   <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
                 </Feed.Summary>
                 <Feed.Extra text>
@@ -96,7 +109,7 @@ class Chat extends React.Component {
             </Feed.Event>
           ))}
         </Feed>
-        <Form size='huge' onSubmit={this.handleSubmit} loading={loading}>
+        <Form size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading}>
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
@@ -107,10 +120,9 @@ class Chat extends React.Component {
 
   scrollToBottom = () => {
     if (this.messagesEndRef.current) {
-      this.messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      // this.messagesEndRef.current.querySelector('feed').scrollIntoView({ behavior: "smooth" });
     }
   }
 }
 
 module.exports = Chat;
-

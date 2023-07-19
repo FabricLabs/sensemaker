@@ -32,6 +32,12 @@ h1, h2, h3 {
   text-transform: uppercase;
 }
 
+.pusher {
+  margin: 1em 0;
+  height: 100%;
+  overflow: scroll !important;
+}
+
 .clipped {
   display: inline-block;
   overflow: hidden;

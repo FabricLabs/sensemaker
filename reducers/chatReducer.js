@@ -33,7 +33,7 @@ function chatReducer (state = initialState, action) {
       console.debug('chat success:', state, action);
       return {
         ...state,
-        message: action.payload.message,
+        message: action.payload.message.object,
         isMessageSent: true,
         isSending: false
       };

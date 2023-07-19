@@ -3,6 +3,10 @@
 const React = require('react');
 const { Link } = require('react-router-dom');
 
+const {
+  Segment
+} = require('semantic-ui-react');
+
 class Conversations extends React.Component {
   componentDidMount () {
     this.props.fetchConversations();
@@ -20,7 +24,7 @@ class Conversations extends React.Component {
     }
 
     return (
-      <div>
+      <Segment fluid>
         <h2>Conversations</h2>
         {conversations && conversations.length > 0 && conversations.map(conversation => (
           <div key={conversation.id}>
@@ -28,7 +32,7 @@ class Conversations extends React.Component {
             <p>{conversation.content}</p>
           </div>
         ))}
-      </div>
+      </Segment>
     );
   }
 }

@@ -1,7 +1,12 @@
 'use strict';
 
+const {
+  ENABLE_LOGIN
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
+const { Link } = require('react-router-dom');
 const $ = require('jquery');
 
 // Semantic UI
@@ -61,7 +66,6 @@ class Waitlist extends React.Component {
         })
       ]);
 
-      console.log('results:', results);
       const response = results[1];
 
       if (!response.ok) {
@@ -126,9 +130,6 @@ class Waitlist extends React.Component {
                   <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>
                   {error && <Message error visible content={error} className="fade-in" />}
                   {/* <Button fluid color='blue' onClick={this.revealLoginForm}>I already have a login</Button> */}
-                </div>
-                <div id="login-form" style={{ display: 'none' }}>
-                  <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} />
                 </div>
               </Form>
             </div>

@@ -48,11 +48,18 @@ const submitMessage = (message) => {
   };
 };
 
-const getMessages = (params) => {
+const getMessages = (params = {}) => {
   return async (dispatch, getState) => {
+    console.log('GETTING MESSAGES...');
+    console.trace('with params:', params);
+    console.debug('with state:', getState());
+
     dispatch(getMessagesRequest());
 
-    const token = getState().auth.token;
+    const state = getState();
+    const token = state.auth.token;
+
+    if (!params.conversation_id) params.conversation_id = state.chat.message.conversation;
 
     try {
       const response = await fetch('/messages?' + new URLSearchParams(params), {

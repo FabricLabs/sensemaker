@@ -13,7 +13,7 @@ async function fetchFromAPI (path, token = null) {
 }
 
 async function fetchConversationsFromAPI (token) {
-  return fetchFromAPI('/conversations');
+  return fetchFromAPI('/conversations', token);
 }
 
 // Action types

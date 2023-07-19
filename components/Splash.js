@@ -8,6 +8,7 @@ const {
 
 // Dependencies
 const React = require('react');
+const { Link, Route, Routes, Switch } = require('react-router-dom');
 
 // Semantic UI
 const {
@@ -18,7 +19,8 @@ const {
 
 // Components
 const AccountCreator = require('./AccountCreator');
-const LoginForm = require('./LoginForm');
+const LoginPage = require('./LoginPage');
+const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 
 class Splash extends React.Component {
@@ -34,6 +36,11 @@ class Splash extends React.Component {
           </div>
         </fabric-component>
         <fabric-component class="ui primary action fluid container">
+          <Routes>
+            <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+            <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+            <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} />} />
+          </Routes>
           {ENABLE_REGISTRATION ? (
             <Card>
               <Card.Content>
@@ -42,20 +49,10 @@ class Splash extends React.Component {
               </Card.Content>
             </Card>
           ) : null}
-          {ENABLE_LOGIN ? (
-            <Card>
-              <Card.Content>
-                <Header as='h3'>Sign In</Header>
-                <p>Provide your username and password.</p>
-                <LoginForm login={login} error={error} onLoginSuccess={onLoginSuccess} size='large' />
-              </Card.Content>
-            </Card>
-          ) : (
-            <Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />
-          )}
         </fabric-component>
-        <fabric-component class='fade-in' style={{ clear: 'both' }}>
-          <p style={{ fontSize: '0.8em', textAlign: 'center', marginTop: '4em', clear: 'both' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
+        <fabric-component className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
+          {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
+          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc. &middot; <Link to='/contracts/terms-of-use'>Terms of Use</Link></p>
         </fabric-component>
       </jeeves-splash>
     );
