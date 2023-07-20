@@ -316,7 +316,7 @@ class Jeeves extends Service {
 
     // Internal Services
     await this.openai.start();
-    await this.matrix.start();
+    // await this.matrix.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
