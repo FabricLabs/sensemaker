@@ -1,16 +1,6 @@
 'use strict';
 
-async function fetchFromAPI (path, token = null) {
-  const response = await fetch(path, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': (token) ? `Bearer ${token}` : undefined
-    },
-  });
-
-  return await response.json();
-}
+const { fetchFromAPI } = require('./apiActions');
 
 async function fetchConversationsFromAPI (token) {
   return fetchFromAPI('/conversations', token);

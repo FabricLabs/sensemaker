@@ -411,7 +411,11 @@ class Jeeves extends Service {
           subject: user.id
         });
 
-        return res.json({ message: 'Authentication successful.', token: token.toString() });
+        return res.json({
+          message: 'Authentication successful.',
+          token: token.toString(),
+          isAdmin: user.is_admin
+        });
       } catch (error) {
         console.error('Error authenticating user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
@@ -419,6 +423,8 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
+      console.log('conversation list request:', req.user.id);
+      // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
       const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
       res.send(conversations);
     });
@@ -427,7 +433,7 @@ class Jeeves extends Service {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db.select('id', 'user_id', 'created_at', 'content').from('messages').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -435,7 +441,7 @@ class Jeeves extends Service {
       }
 
       messages = messages.map((m) => {
-        return { ...m, author: 'User #' + m.user_id };
+        return { ...m, author: m.username || 'User #' + m.user_id };
       });
 
       res.send(messages);
@@ -454,7 +460,9 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
       const contract = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
-      res.send(contract);
+      res.send({
+        content: contract
+      });
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {

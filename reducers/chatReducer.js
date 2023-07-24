@@ -7,7 +7,8 @@ const {
   CHAT_FAILURE,
   GET_MESSAGES_REQUEST,
   GET_MESSAGES_SUCCESS,
-  GET_MESSAGES_FAILURE
+  GET_MESSAGES_FAILURE,
+  RESET_CHAT_STATE
 } = require('../actions/chatActions');
 
 // State
@@ -30,7 +31,6 @@ function chatReducer (state = initialState, action) {
         isSending: true
       };
     case CHAT_SUCCESS:
-      console.debug('chat success:', state, action);
       return {
         ...state,
         message: action.payload.message.object,
@@ -38,7 +38,6 @@ function chatReducer (state = initialState, action) {
         isSending: false
       };
     case CHAT_FAILURE:
-      console.debug('chat failure:', state, action);
       return {
         ...state,
         error: action.payload,
@@ -52,7 +51,10 @@ function chatReducer (state = initialState, action) {
         isSending: false,
         loading: false
       };
+    case RESET_CHAT_STATE:
+      return initialState;
     default:
+      // console.warn('unhandled chat reducer action:', action);
       return state;
   }
 }

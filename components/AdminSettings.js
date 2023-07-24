@@ -10,6 +10,8 @@ const {
   Table
 } = require('semantic-ui-react');
 
+const AccountCreator = require('./AccountCreator');
+
 class AdminSettings extends React.Component {
   constructor (props) {
     super(props);
@@ -23,6 +25,7 @@ class AdminSettings extends React.Component {
   }
 
   render () {
+    const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
     const { waitlistSignupCount } = this.state;
 
     return (
@@ -60,6 +63,7 @@ class AdminSettings extends React.Component {
             </Table.Row>
           </Table.Body>
         </Table>
+        <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
       </jeeves-admin-settings>
     );
   }

@@ -14,7 +14,8 @@ class Bridge extends React.Component {
     this.settings = Object.assign({
       host: 'localhost',
       port: 3045,
-      secure: false
+      secure: false,
+      debug: false
     });
 
     this.state = {
@@ -54,12 +55,12 @@ class Bridge extends React.Component {
       const now = Date.now();
       const message = Message.fromVector(['Ping', now.toString()]);
       const ping = JSON.stringify(message.toObject());
-      console.log('ping:', typeof ping, ping);
+      if (this.settings.debug) console.debug('ping:', typeof ping, ping);
       ws.send(message.asRaw());
     };
 
     ws.onmessage = (message) => {
-      console.log('received ws message:', message);
+      if (this.settings.debug) console.debug('received ws message:', message);
 
       try {
         const data = JSON.parse(message);
@@ -90,19 +91,23 @@ class Bridge extends React.Component {
   render () {
     const { data, error } = this.state;
 
-    if (error) {
+    if (error && this.settings.debug) {
       return <div>Error: {error.message}</div>;
     }
 
-    if (!data) {
+    if (!data && this.settings.debug) {
       return <div>Loading...</div>;
     }
 
     return (
-      <div>
-        <h1>Data Received:</h1>
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </div>
+      <fabric-bridge>
+        {this.settings.debug ? (
+          <div>
+            <h1>Data Received:</h1>
+            <pre>{JSON.stringify(data, null, 2)}</pre>
+          </div>
+        ) : null}
+      </fabric-bridge>
     );
   }
 }

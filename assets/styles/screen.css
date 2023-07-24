@@ -35,7 +35,7 @@ h1, h2, h3 {
 .pusher {
   margin: 1em 0;
   height: 100%;
-  overflow: scroll !important;
+  /* overflow: scroll !important; */
 }
 
 .clipped {
@@ -56,6 +56,11 @@ h1, h2, h3 {
 
 .fabric-site {
   /* margin: 1em; */
+}
+
+.ui.segment {
+  overflow: scroll;
+  height: 100vh;
 }
 
 .ui.primary.action {

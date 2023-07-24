@@ -29,7 +29,7 @@ function conversationReducer (state = initialState, action) {
     case FETCH_CONVERSATIONS_FAILURE:
       return { ...state, loading: false, error: action.payload };
     default:
-      console.warn('Unhandled action in conversation reducer:', action);
+      // console.warn('Unhandled action in conversation reducer:', action);
       return state;
   }
 }

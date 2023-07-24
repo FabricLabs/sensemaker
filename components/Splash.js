@@ -39,20 +39,20 @@ class Splash extends React.Component {
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
-            <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} />} />
+            <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
           </Routes>
-          {ENABLE_REGISTRATION ? (
+          {/* ENABLE_REGISTRATION ? (
             <Card>
               <Card.Content>
                 <Header as='h3'>Register</Header>
                 <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} size='large' />
               </Card.Content>
             </Card>
-          ) : null}
+          ) : null */}
         </fabric-component>
         <fabric-component className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
-          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc. &middot; <Link to='/contracts/terms-of-use'>Terms of Use</Link></p>
+          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
         </fabric-component>
       </jeeves-splash>
     );

@@ -1,4 +1,8 @@
+'use strict';
+
+// Dependencies
 const React = require('react');
+const { useLocation } = require('react-router-dom');
 
 const {
   Card,
@@ -7,15 +11,28 @@ const {
 
 const QueryForm = require('./QueryForm');
 
-class JeevesHome extends React.Component {
+class Home extends React.Component {
+  componentDidUpdate (prevProps) {
+    if (this.props.location?.key !== prevProps.location?.key) {
+      console.debug('[!!!]', 'location changed:', this.props.location, '!==', prevProps.location);
+      this.setState({
+        chat: {
+          message: null
+        },
+        message: null
+      });
+    }
+  }
+
   render () {
     return (
-      <jeeves-home class="fade-in">
+      <jeeves-home class="fade-in" style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
           submitMessage={this.props.submitMessage}
           onMessageSuccess={this.props.onMessageSuccess}
+          resetChat={this.props.resetChat}
           chat={this.props.chat}
           placeholder="Ask me anything..."
         />
@@ -24,4 +41,9 @@ class JeevesHome extends React.Component {
   }
 }
 
-module.exports = JeevesHome;
+function HomeWithLocation (props) {
+  const location = useLocation();
+  return <Home {...props} location={location} />;
+}
+
+module.exports = HomeWithLocation;

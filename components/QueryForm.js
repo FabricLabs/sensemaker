@@ -7,10 +7,12 @@ const marked = require('marked');
 
 // Semantic UI
 const {
+  Button,
   Card,
   Feed,
   Form,
   Header,
+  Icon,
   Image,
   Input,
   Search
@@ -35,6 +37,7 @@ class Chat extends React.Component {
   componentDidUpdate (prevProps) {
     if (prevProps.chat.messages.length !== this.props.chat.messages.length) {
       this.scrollToBottom();
+      // Set hasSubmittedMessage to true if a message has been submitted
       if (!this.state.hasSubmittedMessage) {
         this.setState({ hasSubmittedMessage: true });
       }
@@ -45,10 +48,26 @@ class Chat extends React.Component {
     this.setState({ [name]: value });
   }
 
+  handleClick = (e) => {
+    console.debug('clicked reset button', e);
+    this.props.resetChat();
+    this.setState({ message: null, chat: { message: null } });
+  }
+
   handleSubmit = (event) => {
     event.preventDefault();
+
     const { query } = this.state;
     const { message } = this.props.chat;
+
+    // console.log('handling submit...');
+
+    // console.log('initial message:', message);
+    // console.log('initial conversation:', message?.conversation);
+
+    // console.log('handling submit state:', this.state);
+    // console.log('handling submit props:', this.props);
+    // console.log('handling submit message:', message);
 
     this.setState({ loading: true });
 
@@ -57,6 +76,9 @@ class Chat extends React.Component {
       conversation_id: message?.conversation,
       content: query
     }).then((output) => {
+      // console.log('got output:', output);
+      // console.log('getting messages for conversation:', message?.conversation);
+
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -78,13 +100,24 @@ class Chat extends React.Component {
     const { isSending, placeholder } = this.props;
     const { message, messages } = this.props.chat;
 
+    // console.log('current state:', this.state);
+    // console.log('current props:', this.props);
+    // console.log('current message:', message);
+
     const messageContainerStyle = this.state.hasSubmittedMessage ? {
       flexGrow: 1,
+      // overflowY: 'auto',
+      // paddingBottom: '1rem',
+      // transition: 'height 1s'
     } : {
+      // height: 0,
+      // overflow: 'hidden',
+      // transition: 'height 1s'
     };
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={{ height: '100vh', display: 'flex', flexDirection: 'column', marginBottom: '2em' }}>
+        <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button>
         <Feed style={messageContainerStyle}>
           <Feed.Event>
             <Feed.Extra text>
@@ -111,15 +144,22 @@ class Chat extends React.Component {
         </Feed>
         <Form size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading}>
           <Form.Field>
-            <Form.Input id='primary-query' fluid name='query' placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
+            <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
         </Form>
+        <div>
+
+        </div>
       </fabric-component>
     );
   }
 
   scrollToBottom = () => {
+    console.log('scrolling to bottom...');
+    console.log('ref:', this.messagesEndRef);
+
     if (this.messagesEndRef.current) {
+      console.log('feed:', this.messagesEndRef.current.querySelector('feed'));
       // this.messagesEndRef.current.querySelector('feed').scrollIntoView({ behavior: "smooth" });
     }
   }

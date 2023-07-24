@@ -1,7 +1,7 @@
 'use strict';
 
 const ENABLE_LOGIN = true;
-const ENABLE_REGISTRATION = false;
+const ENABLE_REGISTRATION = true;
 
 module.exports = {
   ENABLE_LOGIN,

@@ -21,9 +21,14 @@ const { login, register } = require('../actions/authActions');
 const { fetchAdminStats } = require('../actions/adminActions');
 
 const {
+  resetChat,
   submitMessage,
   getMessages
 } = require('../actions/chatActions');
+
+const {
+  fetchContract
+} = require('../actions/contractActions');
 
 const {
   fetchConversations,
@@ -47,21 +52,25 @@ async function main (input = {}) {
     return {
       auth: state.auth,
       chat: state.chat,
+      contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
       error: state.auth.error,
       isAuthenticated: state.auth.isAuthenticated,
+      isAdmin: state.auth.isAdmin,
       isSending: state.chat.isSending,
       token: state.auth.token
     }
   };
 
   const mapDispatchToProps = {
+    fetchContract: fetchContract,
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
     fetchAdminStats: fetchAdminStats,
     login: login,
     register: register,
+    resetChat: resetChat,
     submitMessage: submitMessage,
     getMessages: getMessages
   };

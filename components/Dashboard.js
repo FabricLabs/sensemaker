@@ -26,6 +26,7 @@ const Conversations = require('./Conversations');
 const Room = require('./Room');
 const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
+const TermsOfUse = require('./TermsOfUse');
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
@@ -121,7 +122,7 @@ class Dashboard extends React.Component {
         <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} animation='push' icon='labeled' inverted vertical visible style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
-              <Header inverted>J{this.state.sidebarCollapsed ? '' : 'EEVES'}</Header>
+              <Header inverted><img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}</Header>
             </Menu.Item>
             <Menu.Item>
               <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search">
@@ -146,24 +147,26 @@ class Dashboard extends React.Component {
             {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item> */}
-            <Menu.Item disabled as={Link} to="/workspaces">
+            {/* <Menu.Item disabled as={Link} to="/workspaces">
               <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Workspaces'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item>
+            </Menu.Item> */}
             {/* <Menu.Item as={Link} to="/" onClick={this.handleSidebarToggle}>
               <div><Icon name={this.state.sidebarCollapsed ? 'arrow right' : 'arrow left'} /> {this.state.sidebarCollapsed ? '' : 'Collapse'}</div>
             </Menu.Item> */}
             <Menu.Item as={Link} to="/settings">
               <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
             </Menu.Item>
-            <Menu.Item as={Link} to="/settings/admin">
+            {(this.state.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
               <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
-            </Menu.Item>
+            </Menu.Item>) : null}
             <Menu.Item as={Link} to="/" onClick={this.handleLogout}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
             </Menu.Item>
             <Menu.Item>
+              <Bridge />
               <div>
-                <Bridge />
+                <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p>
+                <p><small>&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
               </div>
             </Menu.Item>
           </Sidebar>
@@ -185,7 +188,8 @@ class Dashboard extends React.Component {
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} />} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/settings" element={<Settings />} />
-                  <Route path="/settings/admin" element={<AdminSettings fetchAdminStats={this.props.fetchAdminStats} />} />
+                  <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
+                  <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
                 </Routes>
               )}
             </Container>
