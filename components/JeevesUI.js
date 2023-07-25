@@ -123,8 +123,4 @@ class JeevesUI extends React.Component {
   }
 }
 
-function Application (props) {
-  return <JeevesUI {...props} />;
-}
-
-module.exports = Application;
+module.exports = JeevesUI;

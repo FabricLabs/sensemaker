@@ -1,68 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G4NJT3T2KL"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-
-    function gtag() {
-      dataLayer.push(arguments);
-    }
-    gtag('js', new Date());
-
-    gtag('config', 'G-G4NJT3T2KL');
-  </script>
-
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>@fabric/http</title>
-  <!-- <link rel="manifest" href="/manifest.json"> -->
   <link rel="stylesheet" type="text/css" href="/styles/semantic.min.css" />
   <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
   <script src="/scripts/jquery-3.4.1.js"></script>
   <script src="/scripts/semantic.min.js"></script>
 </head>
 <body>
-  <div data-hash="a3273265beb30a8d66ba700896dcce5ee5bc1141b0a5baa823a9858c0ecd42ed" id="application-target">
-    <fabric-site class="ui container" id="site">
-      <fabric-bridge host="localhost" port="9999" secure="false"></fabric-bridge>
-      <fabric-console id="console" style="display: none;">
-        <fabric-card class="ui fluid card">
-          <fabric-card-content class="content">
-            <p>Console...</p>
-          </fabric-card-content>
-        </fabric-card>
-      </fabric-console>
-      <fabric-menu id="tray">
-        <i id="tray-settings" class="ui large inverted cog icon"></i>
-      </fabric-menu>
-      <fabric-menu>
-        <fabric-card id="settings" class="ui fluid card" style="display: none;">
-          <fabric-card-header class="ui header">Settings</fabric-card-header>
-          <fabric-card-content class="ui content">
-            <p>Foo</p>
-          </fabric-card-content>
-        </fabric-card>
-      </fabric-menu>
-      <fabric-grid class="ui centered grid">
-        <fabric-column class="twelve wide column">
-          <fabric-card class="ui fluid card" id="overlay">
-            <fabric-card-content class="content" style="text-align: center;">
-              <h1 class="ui huge header" data-bind="/title"><code>Default Site</code></h1>
-              <p>file browser</p>
-            </fabric-card-content>
-            <fabric-card-content class="extra hidden" style="display: none;">
-              <h2>Debug</h2>
-            </fabric-card-content>
-            <fabric-card-content class="bottom attached" style="display: none;">
-              <fabric-button-group class="ui small bottom attached left aligned buttons">
-                <fabric-button class="ui labeled icon button"><i class="ui linkify icon"></i> <code>8700ab5a56d65779594a5997ff74a565d2e401a8a2bc64fdc793b2278403bacf</code></fabric-button>
-              </fabric-button-group>
-            </fabric-card-content>
-          </fabric-card>
-        </fabric-column>
-      </fabric-grid>
-    </fabric-site>
+  <div data-hash="1aecb8a863d9f31ac82cbeb7d51523d170996ae67696b16767c154432fd0f2eb" id="application-target">
+    <jeeves-ui class="fabric-site">
+      <fabric-container id="react-application"></fabric-container>
+      <fabric-react-component id="jeeves-application" style="height:100vh;display:flex;flex-direction:column">
+        <jeeves-splash class="fade-in">
+          <fabric-component><img src="/images/jeeves-brand.png" class="ui small centered image" />
+            <div style="text-align:center">
+              <div class="ui header">JEEVES</div>
+            </div>
+          </fabric-component>
+          <fabric-component class="ui primary action fluid container"></fabric-component>
+          <fabric-component className="fade-in" style="clear:both;text-align:center">
+            <p style="margin-top:2em">Already have an account? <a href="/sessions/new">Log In »</a></p>
+            <p style="clear:both;margin-top:4em;font-size:0.8em">© 2023 Legal Tools &amp; Technology, Inc.</p>
+          </fabric-component>
+        </jeeves-splash>
+      </fabric-react-component>
+    </jeeves-ui>
   </div>
   <script src="/bundles/browser.js"></script>
 </body>

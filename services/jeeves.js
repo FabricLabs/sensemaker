@@ -611,7 +611,7 @@ class Jeeves extends Service {
       }
     }
 
-    if (this.settings.listen) await this.agent.stop();
+    if (this.settings.listen && this.agent) await this.agent.stop();
     if (this.settings.http.listen) await this.http.stop();
 
     this.status = 'STOPPED';
