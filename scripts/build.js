@@ -42,7 +42,8 @@ async function main (input = {}) {
         ]
       },
       target: 'web'
-    }
+    },
+    ...input
   });
 
   await compiler.compileTo('assets/index.html');
