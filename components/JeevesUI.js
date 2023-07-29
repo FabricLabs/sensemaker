@@ -12,6 +12,7 @@ const {
 // Components
 const Splash = require('./Splash');
 const Dashboard = require('./Dashboard');
+const TermsOfUseModal = require('./TermsOfUseModal');
 const Waitlist = require('./Waitlist');
 
 /**
@@ -84,8 +85,25 @@ class JeevesUI extends React.Component {
         <fabric-container id="react-application"></fabric-container>
         <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
           <BrowserRouter>
-            {this.props.isAuthenticated ? (
+            {!this.props.isAuthenticated ? (
+              <Splash
+                onLoginSuccess={this.handleLoginSuccess}
+                onRegisterSuccess={this.handleRegisterSuccess}
+                login={this.props.login}
+                register={this.props.register}
+                error={this.props.error}
+              />
+            ) : !this.props.auth.isCompliant ? (
+              <TermsOfUseModal
+                {...this.props}
+                auth={this.props.auth}
+                signContract={this.props.signContract}
+                logout={this.props.logout}
+                isCompliant={this.props.isCompliant}
+                />
+            ) : (
               <Dashboard
+                auth={this.props.auth}
                 onLogoutSuccess={this.handleLogoutSuccess}
                 onMessageSuccess={this.handleMessageSuccess}
                 fetchContract={this.props.fetchContract}
@@ -100,15 +118,9 @@ class JeevesUI extends React.Component {
                 conversations={this.props.conversations}
                 conversation={this.props.conversation}
                 chat={this.props.chat}
+                isAdmin={this.props.auth.isAdmin}
+                isCompliant={this.props.auth.isCompliant}
                 {...this.props}
-              />
-            ) : (
-              <Splash
-                onLoginSuccess={this.handleLoginSuccess}
-                onRegisterSuccess={this.handleRegisterSuccess}
-                login={this.props.login}
-                register={this.props.register}
-                error={this.props.error}
               />
             )}
           </BrowserRouter>

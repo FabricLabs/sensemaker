@@ -414,7 +414,8 @@ class Jeeves extends Service {
         return res.json({
           message: 'Authentication successful.',
           token: token.toString(),
-          isAdmin: user.is_admin
+          isAdmin: user.is_admin,
+          isCompliant: user.is_compliant
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);
@@ -478,6 +479,25 @@ class Jeeves extends Service {
       };
 
       res.send(stats);
+    });
+
+    this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
+      let result = {};
+
+      if (req.user.id) {
+        await this.db('users').update({
+          is_compliant: true
+        }).where({
+          id: req.user.id
+        });
+
+        result.message = 'Update complete.';
+        result.isCompliant = true;
+      } else {
+        result.message = 'Failed.'
+      }
+
+      res.send(result);
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
@@ -711,6 +731,11 @@ class Jeeves extends Service {
     return messages;
   }
 
+  async _getConversationMessages (conversationID) {
+    const messages = await this.db('messages').where({ conversation_id: conversationID });
+    return messages;
+  }
+
   async _handleMatrixReady () {
     const name = `${this.settings.alias} (${this.settings.moniker} v${this.settings.version})`;
     if (this.matrix._getAgentDisplayName() !== name) await this.matrix._setAgentDisplayName(name);
@@ -743,16 +768,17 @@ class Jeeves extends Service {
       const matrixMessages = await this._getRoomMessages(request.room);
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
-      const prev = await this.db('messages').where({ conversation_id: request.conversation_id });
+      const prev = await this._getConversationMessages(request.conversation_id);
+      // TODO: contextualize the output
       messages = prev.map((x) => {
-        return { role: 'user', content: x.content }
+        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
     } else {
       messages = messages.concat([{ role: 'user', content: request.input }]);
     }
 
     // Prompt
-    messages.unshift({ role: 'user', content: this.settings.prompt });
+    messages.unshift({ role: 'system', content: this.settings.prompt });
 
     const openai = await this.openai._handleConversationRequest({
       messages: messages

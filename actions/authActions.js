@@ -12,7 +12,7 @@ const REGISTER_FAILURE = 'REGISTER_FAILURE';
 
 // Sync Action Creators
 const loginRequest = () => ({ type: LOGIN_REQUEST });
-const loginSuccess = token => ({ type: LOGIN_SUCCESS, payload: { token } });
+const loginSuccess = (session) => ({ type: LOGIN_SUCCESS, payload: session });
 const loginFailure = error => ({ type: LOGIN_FAILURE, payload: error, error: error });
 const registerRequest = () => ({ type: REGISTER_REQUEST });
 const registerSuccess = token => ({ type: REGISTER_SUCCESS, payload: { token } });
@@ -37,8 +37,8 @@ const login = (username, password) => {
         throw new Error(error.message);
       }
 
-      const { token } = await response.json();
-      dispatch(loginSuccess(token));
+      const session = await response.json();
+      dispatch(loginSuccess(session));
     } catch (error) {
       dispatch(loginFailure(error.message));
     }

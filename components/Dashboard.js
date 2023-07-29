@@ -51,8 +51,14 @@ class Dashboard extends React.Component {
     return React.createRef()
   }
 
+  clickSelfIcon = () => {
+    return (<Navigate to='/settings' />);
+  }
+
   componentDidMount () {
     // this.startProgress();
+
+    // $('.ui.sidebar').sidebar();
 
     this.props.fetchConversations();
 
@@ -113,6 +119,10 @@ class Dashboard extends React.Component {
     this.setState({ search: e.target.value });
   };
 
+  toggleSidebar = (e) => {
+    $('.ui.sidebar').sidebar('toggle');
+  }
+
   render () {
     const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto' } : {};
 
@@ -120,12 +130,14 @@ class Dashboard extends React.Component {
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
-          <Sidebar as={Menu} animation='push' icon='labeled' inverted vertical visible style={sidebarStyle} width='wide' size='huge'>
+          <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
-              <Header inverted><img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}</Header>
+              <Header inverted>
+                <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
+              </Header>
             </Menu.Item>
             <Menu.Item>
-              <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search">
+              <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
                 <div className="ui icon fluid input">
                   <input disabled autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
                   <i aria-hidden="true" className="search icon"></i>
@@ -156,10 +168,10 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/settings">
               <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
             </Menu.Item>
-            {(this.state.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
+            {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
               <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
             </Menu.Item>) : null}
-            <Menu.Item as={Link} to="/" onClick={this.handleLogout}>
+            <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
             </Menu.Item>
             <Menu.Item>
@@ -169,6 +181,9 @@ class Dashboard extends React.Component {
                 <p><small>&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
               </div>
             </Menu.Item>
+            <div style={{float: 'right' }}>
+              <Icon name='left chevron' />
+            </div>
           </Sidebar>
           <Sidebar.Pusher style={{ margin: '1em', paddingRight: '340px' }}>
             <Container fluid>
@@ -177,10 +192,12 @@ class Dashboard extends React.Component {
                   <Route path="*" element={<Navigate to='/' replace />} />
                   <Route path="/" element={
                     <Home
+                      auth={this.props.auth}
                       fetchConversations={this.props.fetchConversations}
                       getMessages={this.props.getMessages}
                       submitMessage={this.props.submitMessage}
                       onMessageSuccess={this.props.onMessageSuccess}
+                      resetChat={this.props.resetChat}
                       chat={this.props.chat}
                     />
                   } />

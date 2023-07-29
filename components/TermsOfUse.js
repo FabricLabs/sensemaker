@@ -18,13 +18,9 @@ class TermsOfUse extends React.Component {
 
     return (
       <fabric-component>
-        <Segment fluid>
+        <Segment fluid style={{ height: '100%' }}>
           <fabric-contract>
-            <fabric-contract-body dangerouslySetInnerHTML={{ __html: marked.parse(contracts?.contract?.content || '') }} />
-            <hr />
-            <Button.Group style={{ marginTop: '1em' }}>
-              <Button color='green' disabled>I Agree</Button>
-            </Button.Group>
+            <fabric-contract-body className='legal-contract' dangerouslySetInnerHTML={{ __html: marked.parse(contracts?.contract?.content || '') }} />
           </fabric-contract>
         </Segment>
       </fabric-component>

@@ -23,6 +23,7 @@ const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: er
 const resetChat = (message) => {
   return async (dispatch, getState) => {
     console.log('reset chat called.');
+    dispatch(messageSuccess({  }));
   };
 }
 
