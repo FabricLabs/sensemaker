@@ -26,7 +26,7 @@ const fetchConversationFailure = (error) => ({ type: FETCH_CONVERSATION_FAILURE,
 const fetchConversations = () => {
   return async (dispatch, getState) => {
     dispatch(fetchConversationsRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try {
       const conversations = await fetchConversationsFromAPI(token);
       dispatch(fetchConversationsSuccess(conversations));

@@ -425,8 +425,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
       console.log('conversation list request:', req.user.id);
-      // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
-      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
+      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
       res.send(conversations);
     });
 
