@@ -8,7 +8,8 @@ const {
   GET_MESSAGES_REQUEST,
   GET_MESSAGES_SUCCESS,
   GET_MESSAGES_FAILURE,
-  RESET_CHAT_STATE
+  RESET_CHAT_STATE,
+  RESET_CHAT_SUCCESS
 } = require('../actions/chatActions');
 
 // State
@@ -52,6 +53,7 @@ function chatReducer (state = initialState, action) {
         loading: false
       };
     case RESET_CHAT_STATE:
+    case RESET_CHAT_SUCCESS:
       return initialState;
     default:
       // console.warn('unhandled chat reducer action:', action);

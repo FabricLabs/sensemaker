@@ -10,6 +10,7 @@ const GET_MESSAGES_REQUEST = 'GET_MESSAGES_REQUEST';
 const GET_MESSAGES_SUCCESS = 'GET_MESSAGES_SUCCESS';
 const GET_MESSAGES_FAILURE = 'GET_MESSAGES_FAILURE';
 const RESET_CHAT_STATE = 'RESET_CHAT_STATE';
+const RESET_CHAT_SUCCESS = 'RESET_CHAT_SUCCESS';
 
 // Sync Action Creators
 const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
@@ -18,12 +19,12 @@ const messageFailure = (error) => ({ type: CHAT_FAILURE, payload: error, error: 
 const getMessagesRequest = () => ({ type: GET_MESSAGES_REQUEST, isSending: true });
 const getMessagesSuccess = (messages) => ({ type: GET_MESSAGES_SUCCESS, payload: { messages }, isSending: false });
 const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: error, error: error, isSending: false });
+const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
 
 // Async Action Creator (Thunk)
 const resetChat = (message) => {
   return async (dispatch, getState) => {
-    console.log('reset chat called.');
-    dispatch(messageSuccess({  }));
+    dispatch(resetChatSuccess());
   };
 }
 
@@ -98,5 +99,6 @@ module.exports = {
   GET_MESSAGES_REQUEST,
   GET_MESSAGES_SUCCESS,
   GET_MESSAGES_FAILURE,
-  RESET_CHAT_STATE
+  RESET_CHAT_STATE,
+  RESET_CHAT_SUCCESS
 };

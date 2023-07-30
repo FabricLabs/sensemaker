@@ -91,7 +91,6 @@ h1, h2, h3 {
 
 .ui.segment {
   overflow-y: scroll;
-  /* height: 100vh; */
 }
 
 .ui.primary.action {
@@ -257,4 +256,16 @@ fabric-motd {
 
 .ui.labeled.icon.menu .item div {
   text-align: left;
+}
+
+.legal-contract {
+  font-family: "Times New Roman", Times, serif !important;
+}
+
+.ui.inverted.menu .item:before {
+  background: none !important;
+}
+
+.subtle {
+  color: #ccc;
 }

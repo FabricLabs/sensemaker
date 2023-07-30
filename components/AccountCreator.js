@@ -67,7 +67,7 @@ class AccountCreator extends React.Component {
         <Header as='h4'>Ready to Get Started?</Header>
         <p>To better serve you, Jeeves will require some additional information.</p>
         <Button fluid className='right labeled icon'>Get Started <Icon name='right chevron' /></Button>
-        <Form onSubmit={this.handleSubmit} size={this.props.size} method="POST">
+        <Form onSubmit={this.handleSubmit} size={this.props.size} method="POST" autocomplete="off">
           <Form.Field>
             <label>Username</label>
             <input placeholder="Username" name="username" autoComplete="username" value={username} onChange={this.handleUsernameChange} />

@@ -20,15 +20,12 @@ class Conversation extends React.Component {
     const { id } = this.props;
     const { message } = this.props.chat;
 
+    // this.props.fetchConversation(id);
     this.props.getMessages({ conversation_id: id });
   }
 
   render () {
     const { id, loading, error, chat, messages } = this.props;
-
-    if (loading) {
-      return <div>Loading...</div>;
-    }
 
     if (error) {
       return <div>Error: {error}</div>;
@@ -36,11 +33,11 @@ class Conversation extends React.Component {
 
     return (
       <fabric-container>
-        <Segment fluid>
+        <Segment fluid loading={loading}>
           <Header as='h2'>Conversation #{id}</Header>
           <Feed chat={chat} messages={messages} />
+          {/* <QueryForm chat={chat} conversationID={id} submitMessage={this.props.submitMessage} getMessages={this.props.getMessages} includeFeed={false} /> */}
         </Segment>
-        {/* <QueryForm chat={chat} conversationID={id} submitMessage={this.props.submitMessage} getMessages={this.props.getMessages} /> */}
       </fabric-container>
     );
   }

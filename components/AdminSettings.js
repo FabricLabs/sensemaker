@@ -1,6 +1,7 @@
 'use strict';
 
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 const {
   Button,
@@ -11,13 +12,19 @@ const {
 } = require('semantic-ui-react');
 
 const AccountCreator = require('./AccountCreator');
+// const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
   constructor (props) {
     super(props);
-    this.state = {
-      waitlistSignupCount: 0
-    };
+
+    this.settings = Object.assign({
+      state: {
+        waitlistSignupCount: 0
+      }
+    }, props);
+
+    this.state = this.settings.state;
   }
 
   componentDidMount () {
@@ -25,12 +32,12 @@ class AdminSettings extends React.Component {
   }
 
   render () {
-    const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
+    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
     const { waitlistSignupCount } = this.state;
 
     return (
       <jeeves-admin-settings>
-        <Header>Admin</Header>
+        <Header as='h2'>Admin</Header>
         <Segment>
           <Header as='h3'>Metrics</Header>
           <Statistic>
@@ -38,9 +45,17 @@ class AdminSettings extends React.Component {
             <Statistic.Label>Waiting</Statistic.Label>
           </Statistic>
         </Segment>
-        <Header>Settings</Header>
-        <Header>Collections</Header>
-        <Header as='h3'>Invitations</Header>
+        <Header as='h3'>Settings</Header>
+        <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
+        <Header as='h3'>Collections</Header>
+        <Header as='h4'>Conversations</Header>
+        {conversations && conversations.length > 0 && conversations.map(conversation => (
+          <div key={conversation.id}>
+            <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
+            <p>{conversation.content}</p>
+          </div>
+        ))}
+        <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>
             <Table.Row>

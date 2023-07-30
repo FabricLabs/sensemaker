@@ -500,16 +500,15 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
+      let isNew = false;
       let { conversation_id, content } = req.body;
+
       if (!conversation_id) {
+        isNew = true;
+
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
-        /* const room = await this.matrix.client.createRoom({ 
-          name: name
-        });
-
-        console.log('created room:', room);*/
-
+        /* const room = await this.matrix.client.createRoom({ name: name }); */
         const created = await this.db('conversations').insert({
           creator_id: req.user.id,
           log: JSON.stringify([]),
@@ -548,8 +547,17 @@ class Jeeves extends Service {
             content: output.object.content,
             conversation_id: conversation_id,
             user_id: 1 // TODO: real user ID
-          }).then((response) => {
+          }).then(async (response) => {
             console.log('response created:', response);
+
+            if (isNew) {
+              const messages = await this._getConversationMessages(conversation_id);
+              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+              }));
+
+              await this.db('conversations').update({ title }).where({ id: conversation_id });
+            }
           });
         });
 
@@ -768,7 +776,6 @@ class Jeeves extends Service {
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
       const prev = await this._getConversationMessages(request.conversation_id);
-      // TODO: contextualize the output
       messages = prev.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
@@ -781,6 +788,39 @@ class Jeeves extends Service {
 
     const openai = await this.openai._handleConversationRequest({
       messages: messages
+    });
+
+    // If we get a preferred response, use it.  Otherwise fall back to a generic response.
+    const text = (typeof openai !== 'undefined' && openai)
+      ? openai.completion.choices[0].message.content.trim()
+      : "I'm sorry, but something went wrong.  Try again later."
+      ;
+
+    this.emit('response', {
+      prompt: request.input,
+      response: text
+    });
+
+    return {
+      openai: openai,
+      object: {
+        content: text
+      }
+    };
+  }
+
+  async _generateResponse (request) {
+    let messages = [];
+
+    messages = request.messages.concat(messages);
+    messages.push({ role: 'user', content: request.input });
+
+    // Prompt
+    messages.unshift({ role: 'system', content: this.settings.prompt });
+
+    const openai = await this.openai._handleConversationRequest({
+      messages: messages
+      // prompt: request.input
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
@@ -806,6 +846,17 @@ class Jeeves extends Service {
     for (let i = 0; i < this.workers.length; i++) {
       await this.workers[i].start();
     }
+  }
+
+  async _summarizeMessagesToTitle (messages, max = 100) {
+    const query = `Summarize our conversation into a ${max}-character maximum as a title`;
+    const request = {
+      input: query,
+      messages: messages
+    };
+
+    const response = await this._generateResponse(request);
+    return response.object.content;
   }
 
   async _requestWork (name, method) {

@@ -8,6 +8,7 @@ const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
+  Card,
   Container,
   Header,
   Icon,
@@ -35,16 +36,31 @@ class Dashboard extends React.Component {
   constructor (props) {
     super(props);
 
-    this.state = {
-      loading: false,
-      username: '(guest account)',
-      search: '',
-      sidebarCollapsed: false,
-      sidebarVisible: true,
-      progress: 0,
-      isLoading: true,
-      isLoggingOut: false
-    };
+    this.settings = Object.assign({
+      debug: false,
+      state: {
+        loading: false,
+        username: '(guest account)',
+        search: '',
+        sidebarCollapsed: false,
+        sidebarVisible: true,
+        progress: 0,
+        isLoading: true,
+        isLoggingOut: false,
+        steps: [
+          {
+            target: '.my-first-step',
+            content: 'This is my awesome feature!',
+          },
+          {
+            target: '.my-other-step',
+            content: 'This another awesome feature!',
+          }
+        ]
+      }
+    }, props);
+
+    this.state = this.settings.state;
   }
 
   ref = () => {
@@ -148,7 +164,7 @@ class Dashboard extends React.Component {
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
             <Menu.Item as={Link} to="/conversations">
-              <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} <Label size='mini' color='red'>!</Label></div>
+              <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
             <Menu.Item disabled>
               <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <Label size='mini' color='orange'>disabled</Label></div>
@@ -176,14 +192,9 @@ class Dashboard extends React.Component {
             </Menu.Item>
             <Menu.Item>
               <Bridge />
-              <div>
-                <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p>
-                <p><small>&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
-              </div>
+              {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
+              <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
             </Menu.Item>
-            <div style={{float: 'right' }}>
-              <Icon name='left chevron' />
-            </div>
           </Sidebar>
           <Sidebar.Pusher style={{ margin: '1em', paddingRight: '340px' }}>
             <Container fluid>

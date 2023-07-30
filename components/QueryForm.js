@@ -21,6 +21,7 @@ const {
 class Chat extends React.Component {
   constructor (props) {
     super(props);
+
     this.state = {
       query: '',
       hasSubmittedMessage: false
@@ -32,6 +33,7 @@ class Chat extends React.Component {
 
   componentDidMount () {
     $('#primary-query').focus();
+    this.props.resetChat();
   }
 
   componentDidUpdate (prevProps) {
@@ -42,6 +44,20 @@ class Chat extends React.Component {
         this.setState({ hasSubmittedMessage: true });
       }
     }
+  }
+
+  componentWillUnmount () {
+    this.props.resetChat();
+
+    this.setState({
+      chat: {
+        message: null,
+        messages: []
+      },
+      conversations: [],
+      message: null,
+      messages: []
+    });
   }
 
   handleChange = (e, { name, value }) => {
@@ -117,7 +133,7 @@ class Chat extends React.Component {
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={{ height: '100vh', display: 'flex', flexDirection: 'column', marginBottom: '2em' }}>
-        <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button>
+        {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
         <Feed style={messageContainerStyle}>
           <Feed.Event>
             <Feed.Extra text>
@@ -128,7 +144,7 @@ class Chat extends React.Component {
               <Header style={{ marginTop: '3em' }}>How can I help you today?</Header>
             </Feed.Extra>
           </Feed.Event>
-          {messages && messages.length > 0 && messages.map(message => (
+          {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
                 <Feed.Summary>
@@ -147,19 +163,16 @@ class Chat extends React.Component {
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
         </Form>
-        <div>
-
-        </div>
       </fabric-component>
     );
   }
 
   scrollToBottom = () => {
-    console.log('scrolling to bottom...');
-    console.log('ref:', this.messagesEndRef);
+    // console.log('scrolling to bottom...');
+    // console.log('ref:', this.messagesEndRef);
 
     if (this.messagesEndRef.current) {
-      console.log('feed:', this.messagesEndRef.current.querySelector('feed'));
+      // console.log('feed:', this.messagesEndRef.current.querySelector('feed'));
       // this.messagesEndRef.current.querySelector('feed').scrollIntoView({ behavior: "smooth" });
     }
   }

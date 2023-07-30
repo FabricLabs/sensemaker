@@ -14,10 +14,11 @@ const QueryForm = require('./QueryForm');
 class Home extends React.Component {
   componentDidUpdate (prevProps) {
     if (this.props.location?.key !== prevProps.location?.key) {
-      console.debug('[!!!]', 'location changed:', this.props.location, '!==', prevProps.location);
+      // console.debug('[!!!]', 'location changed:', this.props.location, '!==', prevProps.location);
       this.setState({
         chat: {
-          message: null
+          message: null,
+          messages: []
         },
         message: null
       });
@@ -35,7 +36,14 @@ class Home extends React.Component {
           resetChat={this.props.resetChat}
           chat={this.props.chat}
           placeholder="Ask me anything..."
+          includeFeed={true}
         />
+        {/* <Header as='h4'>You can try&hellip;</Header>
+        <Card.Group>
+          <Card>
+            <Card.Content>Cite 10 interesting cases related to the <Dropdown value="the 4th" /> amendment.</Card.Content>
+          </Card>
+        </Card.Group> */}
       </jeeves-home>
     );
   }
