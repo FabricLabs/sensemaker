@@ -1,7 +1,5 @@
-/**
- * @param { import("knex").Knex } knex
- * @returns { Promise<void> } 
- */
+'use strict';
+
 exports.seed = async function (knex) {
   // Deletes ALL existing entries
   await knex('requests').del();
