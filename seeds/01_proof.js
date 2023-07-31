@@ -5,7 +5,7 @@
 exports.seed = async function (knex) {
   await knex('users').insert([
     { id: 5, username: 'Ryan_Baasch', password: '$2b$10$UgDC5pPhb6WFehZzmxhiN.OPm6B6v4GqlhG2/iCASlK3l2wwxf0NK', salt: '$2b$10$UgDC5pPhb6WFehZzmxhiN.' },
-    // Charles
+    { id: 6, username: 'Charles_Porges', password: '$2b$10$bC3.LdyZ3vwspSS9xJ2BTeueAm.7cyzEBGWmO7mmoUYe1IvKdVqzS', salt: '$2b$10$bC3.LdyZ3vwspSS9xJ2BTe' },
     // 7
     // Jason
     // Nigel
