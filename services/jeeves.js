@@ -562,6 +562,9 @@ class Jeeves extends Service {
         });
 
         if (!conversation.log) conversation.log = [];
+        if (typeof conversation.log == 'string') {
+          conversation.log = JSON.parse(conversation.log);
+        }
 
         // Attach new message to the conversation
         conversation.log.push(newMessage[0]);
