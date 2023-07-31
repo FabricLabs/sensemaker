@@ -24,7 +24,9 @@ module.exports = {
   name: 'jeeves',
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
+  workers: 8,
   db: {
+    type: 'mysql',
     host: 'localhost',
     port: 3306,
     user: 'db_user_jeeves',

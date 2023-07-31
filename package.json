@@ -72,11 +72,13 @@
     "openai": "3.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-joyride": "^2.5.5",
     "react-redux": "8.1.0",
     "react-router-dom": "6.13.0",
     "react-top-loading-bar": "2.3.1",
     "redux": "4.2.1",
-    "redux-thunk": "2.4.2"
+    "redux-thunk": "2.4.2",
+    "sqlite3": "5.1.6"
   },
   "devDependencies": {
     "@babel/preset-env": "7.22.5",
