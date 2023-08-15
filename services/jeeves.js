@@ -127,7 +127,13 @@ class Jeeves extends Service {
     this.fs = new Filesystem({ path: './stores/jeeves' });
     this.db = knex({
       client: 'mysql2',
-      connection: this.settings.db
+      connection: {
+        host: this.settings.db.host,
+        port: this.settings.db.port,
+        user: this.settings.db.user,
+        password: this.settings.db.password,
+        database: this.settings.db.database
+      }
     });
 
     // Fabric Setup

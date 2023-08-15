@@ -1,59 +1,63 @@
 'use strict';
 
-const input = {
+// Settings
+const settings = require('../settings/local');
+const input = Object.assign({
   authority: 'jeeves.dev'
-};
+}, settings);
 
 // Dependencies
-const fetch = require('cross-fetch');
+const knex = require('knex');
 
 // Fabric Types
 const Actor = require('@fabric/core/types/actor');
 
-// Fabric HTTP Types
-const Remote = require('@fabric/http/types/remote');
+// Internal Types
+const Scraper = require('../types/scraper');
 
-class Scraper {
-  constructor (settings = {}) {
-    this.settings = Object.assign({
-      authority: 'jeeves.dev',
-      state: {
-        cases: {}
-      }
-    }, settings);
-
-    this.remote = new Remote({
-      authority: 'api.case.law',
-      hostname: 'api.case.law'
-    });
-
-    this._state = {
-      content: this.settings.state
-    };
-  }
-
-  async crawl (url) {
-    const initial = await fetch(url);
-    const obj = initial.json();
-    console.log('obj:', obj);
-  }
-
-  async start () {
-    const index = await this.remote._GET('/v1/cases');
-    console.log('got index:', index);
-    for (let i = 0; i < index.results.length; i++) {
-      const candidate = index.results[i];
-      const actor = new Actor(candidate);
-      this._state.content.cases[actor.id] = candidate;
-    }
-
-    this.commit();
-  }
-}
-
+// Main Process
 async function main (settings = {}) {
   const scraper = new Scraper(settings);
+  const db = knex({
+    client: 'mysql2',
+    connection: {
+      host: settings.db.host,
+      port: settings.db.port,
+      user: settings.db.user,
+      password: settings.db.password,
+      database: settings.db.database
+    }
+  });
+
+  scraper.on('case', function (item) {
+    const tableName = 'cases';
+    const actor = new Actor({ harvard_case_law_id: item.content.id });
+    const data = {
+      fabric_id: actor.id,
+      harvard_case_law_id: item.content.id,
+      harvard_case_law_pdf: item.content.frontend_pdf_url,
+      harvard_case_law_court_name: item.content.court.name,
+      title: item.content.name,
+      short_name: item.content.name_abbreviation,
+      decision_date: item.content.decision_date
+    };
+
+    const columns = Object.keys(data);
+    const values = Object.values(data);
+    const columnPlaceholders = columns.map(() => '??').join(', ');
+    const valuePlaceholders = values.map(() => '?').join(', ');
+    const updateStatements = columns.map(column => `${column} = VALUES(${column})`).join(', ');
+    const query = `INSERT INTO ?? (${columnPlaceholders}) VALUES (${valuePlaceholders}) ON DUPLICATE KEY UPDATE ${updateStatements}`;
+
+    db.raw(query, [tableName, ...columns, ...values]).then(result => {
+      console.debug('Created local case:', result);
+    }).catch(error => {
+      console.error('Could not create local case:', error);
+    });
+  });
+
   await scraper.start();
+
   return {
     // id: this.id,
     scraper: scraper

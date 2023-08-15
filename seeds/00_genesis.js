@@ -2,9 +2,9 @@
 
 exports.seed = async function (knex) {
   // Deletes ALL existing entries
-  // await knex('requests').del();
-  // await knex('messages').del();
-  // await knex('conversations').del();
+  await knex('requests').del();
+  await knex('messages').del();
+  await knex('conversations').del();
   await knex('users').del();
   await knex('users').insert([
     { id: 1, username: 'JeevesAI', email: 'jeeves@jeeves.dev' },

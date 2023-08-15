@@ -8,7 +8,7 @@ exports.seed = async function (knex) {
     { id: 6, username: 'Charles_Porges', password: '$2b$10$bC3.LdyZ3vwspSS9xJ2BTeueAm.7cyzEBGWmO7mmoUYe1IvKdVqzS', salt: '$2b$10$bC3.LdyZ3vwspSS9xJ2BTe' },
     // 7
     // Jason
-    // Nigel
+    { id: 9, username: 'Nigel_Kostic', password: '$2b$10$PBwwnDy83EPZvFwokUhLEOwXF9D9tlTn1j3wXY26rIa1DTWZZAVPK', salt: '$2b$10$PBwwnDy83EPZvFwokUhLEO' }
     { id: 10, username: 'Alex_Hoffman', password: '$2b$10$wFp8QrAudeImUcKOu9slRe.BI2Le5s1Q2xpJg8tIMAYdjI5yk1G/W', salt: '$2b$10$wFp8QrAudeImUcKOu9slRe' }
   ]);
 };
