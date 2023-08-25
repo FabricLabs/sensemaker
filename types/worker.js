@@ -21,7 +21,7 @@ class Worker extends Service {
     }, settings);
 
     this._timer = setInterval(() => {
-      console.debug('...keepalive');
+      // console.debug('...keepalive');
     }, 5000);
 
     this._state = {
@@ -66,16 +66,15 @@ class Worker extends Service {
     const work = method.apply(this.state, job.params);
 
     work.then((output) => {
-      console.debug('work output:', output);
-      this._state.working = false
+      this._state.working = false;
     });
   }
 
   async start () {
     this._ticker = setInterval(async () => {
-      console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
+      // console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
       await this._takeJob();
-    }, this.settings.frequency * 1000);
+    }, (1 / this.settings.frequency) * 1000);
 
     this.commit();
 
