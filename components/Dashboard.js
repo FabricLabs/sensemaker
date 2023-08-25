@@ -22,6 +22,8 @@ const {
 
 // Components
 const Home = require('./Home');
+const CaseHome = require('./CaseHome');
+const CaseView = require('./CaseView');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const Room = require('./Room');
@@ -152,25 +154,25 @@ class Dashboard extends React.Component {
                 <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
               </Header>
             </Menu.Item>
-            <Menu.Item>
+            {/* <Menu.Item>
               <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
                 <div className="ui icon fluid input">
                   <input disabled autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
                   <i aria-hidden="true" className="search icon"></i>
                 </div>
               </jeeves-search>
-            </Menu.Item>
+            </Menu.Item> */}
             <Menu.Item as={Link} to="/">
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
+            </Menu.Item>
+            <Menu.Item as={Link} to='/cases'>
+              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'}</div>
             </Menu.Item>
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
             <Menu.Item disabled>
               <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <Label size='mini' color='orange'>disabled</Label></div>
-            </Menu.Item>
-            <Menu.Item disabled>
-              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item>
             {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
@@ -190,7 +192,7 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
             </Menu.Item>
-            <Menu.Item>
+            <Menu.Item style={{ borderBottom: 0 }}>
               <Bridge />
               {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
               <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
@@ -198,6 +200,16 @@ class Dashboard extends React.Component {
           </Sidebar>
           <Sidebar.Pusher style={{ margin: '1em', paddingRight: '340px' }}>
             <Container fluid>
+              {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
+              {this.state.debug ? (
+                <div>
+                  <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
+                  <strong><code>isCompliant</code>:</strong> <span>{(this.props.isCompliant) ? 'yes' : 'no'}</span><br />
+                  <strong><code>auth</code>:</strong> <code>{(this.props.auth) ? JSON.stringify(this.props.auth, null, '  ') : 'undefined'}</code>
+                  {/* <strong><code>state.auth.isAdmin</code></strong> <span>{this.state.auth.isAdmin}</span>
+                  <strong><code>state.auth.isCompliant</code></strong> <span>{this.state.auth.isCompliant}</span> */}
+                </div>
+              ) : null}
               {this.state.isLoading ? null : (
                 <Routes>
                   <Route path="*" element={<Navigate to='/' replace />} />
@@ -213,6 +225,8 @@ class Dashboard extends React.Component {
                     />
                   } />
                   <Route path="/workspaces" element={<Workspaces />} />
+                  <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} />} />
+                  <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} />} />
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} />} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
                   <Route path="/settings" element={<Settings />} />

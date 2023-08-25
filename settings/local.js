@@ -22,6 +22,7 @@ module.exports = {
   alias: 'JeevesAI',
   moniker: NAME,
   name: 'jeeves',
+  crawl: true,
   debug: environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
@@ -45,6 +46,11 @@ module.exports = {
     'localhost:7777'
   ],
   prompt: prompt.toString('utf8'),
+  sandbox: {
+    browser: {
+      headless: true
+    }
+  },
   services: [
     'bitcoin',
     // 'discord',
@@ -74,6 +80,9 @@ module.exports = {
       'FabricLabs/fabric'
     ],
     token: null
+  },
+  harvard: {
+    token: 'GET FROM CASE.LAW'
   },
   discord: {
     alerts: [
@@ -116,7 +125,7 @@ module.exports = {
   },
   openai: {
     key: 'GET FROM OPENAI',
-    model: 'gpt-3.5-turbo'
+    model: 'gpt-3.5-turbo-16k'
   },
   twilio: {
     sid: 'add your twilio sid here',

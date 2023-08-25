@@ -8,6 +8,8 @@ const Jeeves = require('../services/jeeves');
 
 // Contracts
 const handleJeevesError = require('../contracts/handleJeevesError');
+const handleJeevesLog = require('../contracts/handleJeevesLog');
+const handleJeevesWarning = require('../contracts/handleJeevesWarning');
 
 // Main Function
 async function main (input = {}) {
@@ -16,7 +18,8 @@ async function main (input = {}) {
 
   // Handlers
   jeeves.on('error', handleJeevesError);
-
+  jeeves.on('log', handleJeevesLog);
+  jeeves.on('warning', handleJeevesWarning);
   jeeves.on('debug', (debug) => {
     console.debug('[JEEVES]', '[DEBUG]', debug);
   });

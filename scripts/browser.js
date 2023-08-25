@@ -21,6 +21,11 @@ const { login, register } = require('../actions/authActions');
 const { fetchAdminStats } = require('../actions/adminActions');
 
 const {
+  fetchCases,
+  fetchCase
+} = require('../actions/caseActions');
+
+const {
   resetChat,
   submitMessage,
   getMessages
@@ -53,6 +58,7 @@ async function main (input = {}) {
     return {
       auth: state.auth,
       chat: state.chat,
+      cases: state.cases,
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
@@ -66,6 +72,8 @@ async function main (input = {}) {
   };
 
   const mapDispatchToProps = {
+    fetchCases: fetchCases,
+    fetchCase: fetchCase,
     fetchContract: fetchContract,
     signContract: signContract,
     fetchConversation: fetchConversation,

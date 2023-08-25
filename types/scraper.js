@@ -46,17 +46,49 @@ class Scraper extends Service {
     return this._state.stack;
   }
 
-  addToCrawlQueue (job) {
-    this._state.stack.unshift(job);
+  _takeJob () {
+    const job = this.jobStack.pop();
   }
 
+  addToCrawlQueue (job) {
+    this.jobStack.push(job);
+  }
+
+  // TODO: rename to process or work
   async crawl (url) {
     const job = this.jobStack.pop();
     console.debug('beginning crawl job:', job);
 
     if (job) {
-      const initial = await fetch(job.hyperlink);
-      const obj = await initial.json();
+      let initial = null
+
+      try {
+        initial = await fetch(job.hyperlink);
+      } catch (exception) {
+        console.debug('Could not fetch job:', job);
+        this.addToCrawlQueue(job);
+        return;
+      }
+
+      let obj = null;
+
+      try {
+        obj = await initial.json();
+      } catch (exception) {
+        console.debug('Could not convert to JSON:', initial);
+        this.addToCrawlQueue(job);
+        return;
+      }
+
+      if (!obj) {
+        console.error('Response was not JSON:', obj);
+        return;
+      }
+
+      if (!obj.results) {
+        console.error('no result in API response:', obj);
+        return;
+      }
 
       for (let i = 0; i < obj.results.length; i++) {
         const candidate = obj.results[i];
@@ -67,8 +99,8 @@ class Scraper extends Service {
           content: candidate
         });
 
-        this._state.content.objects[object.id] = object;
-        this._state.content.cases[actor.id] = candidate;
+        // this._state.content.objects[object.id] = object;
+        // this._state.content.cases[actor.id] = candidate;
 
         console.log('found case:', mine.toJSON());
 
@@ -77,22 +109,44 @@ class Scraper extends Service {
 
       // Queue the next page
       if (obj.next) {
-        this.jobStack.push({
+        this.addToCrawlQueue({
           hyperlink: obj.next
         });
       }
     }
   }
 
+  async download (url, outputPath) {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch ${url}. Status: ${response.status}`);
+    }
+
+    return new Promise((resolve, reject) => {
+      const fileStream = fs.createWriteStream(outputPath);
+
+      response.body.pipe(fileStream);
+      response.body.on('error', (err) => {
+        reject(err);
+      });
+
+      fileStream.on('finish', function() {
+        resolve();
+      });
+    });
+  }
+
   async start () {
     this._ticker = setInterval(async () => {
       console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
       const crawl = await this.crawl();
-      console.debug('Total Cases:', Object.keys(this._state.content.cases).length);
+      // console.debug('Total Cases:', Object.keys(this._state.content.cases).length);
     }, this.settings.frequency * 1000);
 
     this.addToCrawlQueue({
-      hyperlink: 'https://api.case.law/v1/cases'
+      hyperlink: 'https://api.case.law/v1/cases?full_case=true'
+      // hyperlink: 'https://api.case.law/v1/cases?full_case=true&ordering=random'
     });
 
     this.commit();

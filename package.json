@@ -66,6 +66,7 @@
     "fast-json-patch": "3.1.0",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
+    "langchain": "^0.0.128",
     "levelgraph": "3.0.0",
     "lodash.merge": "4.6.2",
     "mysql2": "3.4.0",

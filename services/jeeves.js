@@ -5,7 +5,10 @@ const definition = require('../package');
 
 // Dependencies
 const fs = require('fs');
+
+// External Dependencies
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
+const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
 const monitor = require('fast-json-patch');
 const levelgraph = require('levelgraph');
@@ -15,6 +18,7 @@ const knex = require('knex');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
+const Sandbox = require('@fabric/http/types/sandbox');
 
 // Fabric Types
 // TODO: reduce to whole library import?
@@ -26,7 +30,7 @@ const Actor = require('@fabric/core/types/actor');
 const Chain = require('@fabric/core/types/chain');
 const Queue = require('@fabric/core/types/queue');
 const Logger = require('@fabric/core/types/logger');
-const Worker = require('@fabric/core/types/worker');
+// const Worker = require('@fabric/core/types/worker');
 const Message = require('@fabric/core/types/message');
 const Service = require('@fabric/core/types/service');
 const Collection = require('@fabric/core/types/collection');
@@ -50,6 +54,7 @@ const OpenAI = require('./openai');
 
 // Internal Types
 const Learner = require('../types/learner');
+const Worker = require('../types/worker');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -69,6 +74,7 @@ class Jeeves extends Service {
 
     // Settings
     this.settings = merge({
+      crawl: false,
       debug: false,
       seed: null,
       port: 7777,
@@ -110,6 +116,8 @@ class Jeeves extends Service {
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
+    this.sandbox = new Sandbox(this.settings.sandbox);
+    this.worker = new Worker(this.settings);
 
     // Services
     this.matrix = new Matrix(this.settings.matrix);
@@ -150,36 +158,7 @@ class Jeeves extends Service {
       interface: this.settings.http.interface,
       port: this.settings.http.port,
       middlewares: {
-        userIdentifier: function (req, res, next) {
-          req.user = {
-            id: null
-          };
-
-          if (req.headers.authorization) {
-            const header = req.headers.authorization.split(' ');
-
-            if (header[0] == 'Bearer' && header[1]) {
-              const token = header[1];
-              const parts = token.split('.');
-
-              if (parts && parts.length == 3) {
-                const headers = parts[0];
-                const payload = parts[1];
-                const signature = parts[2];
-                const inner = Token.base64UrlDecode(payload);
-
-                try {
-                  const obj = JSON.parse(inner);
-                  req.user.id = obj.sub;
-                } catch (exception) {
-                  console.error('Invalid Bearer Token:', inner)
-                }
-              }
-            }
-          }
-
-          next();
-        }
+        userIdentifier: this._userMiddleware.bind(this)
       },
       resources: {
         Index: {
@@ -308,6 +287,38 @@ class Jeeves extends Service {
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
+    this.worker.register('Ingest', async (...params) => {
+      const doc = await fetch(params[0], {
+        headers: {
+          'Authorization': `Token ${this.settings.harvard.token}`
+        }
+      });
+
+      const blob = await doc.blob();
+      const buffer = await blob.arrayBuffer();
+      const body = Buffer.from(buffer);
+
+      try {
+        fs.writeFileSync(params[1], body);
+      } catch (exception) {
+        this.emit('error', `Worker could not write file ${params[1]} ${params[2]} ${exception}`);
+        return;
+      }
+
+      try {
+        await this.db('cases').update({
+          pdf_acquired: true
+        }).where('id', params[2].id);
+      } catch (exception) {
+        this.emit('error', `Worker could not update database: ${params} ${exception}`);
+      }
+    });
+
+    this.worker.on('debug', (...debug) => console.debug(...debug));
+    this.worker.on('log', (...log) => console.log(...log));
+    this.worker.on('warning', (...warning) => console.warn(...warning));
+    this.worker.on('error', (...error) => console.error(...error));
+
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
@@ -334,6 +345,27 @@ class Jeeves extends Service {
     this.on('block', async function (block) {
       self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
     });
+
+    await this.sandbox.start();
+
+    // Worker
+    await this.worker.start();
+
+    if (this.settings.crawl) {
+      this._crawler = setInterval(async () => {
+        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'asc').first();
+        if (!unknown || !unknown.harvard_case_law_pdf) return;
+
+        this.worker.addJob({
+          type: 'Ingest',
+          params: [
+            unknown.harvard_case_law_pdf,
+            `stores/harvard/${unknown.harvard_case_law_id}.pdf`,
+            { id: unknown.id }
+          ]
+        });
+      }, 60000);
+    }
 
     // Internal APIs
     this.http._addRoute('POST', '/inquiries', async (req, res) => {
@@ -429,8 +461,28 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/cases', async (req, res, next) => {
+      const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date').from('cases').where({
+
+      }).orderBy('decision_date', 'desc').limit(30);
+
+      res.send(cases);
+    });
+
+    this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary').from('cases').where({
+        id: req.params.id
+      }).first();
+
+      if (!instance.summary) {
+        const summary = await this._summarizeCaseToLength(instance);
+        console.debug('summarized to:', summary);
+      }
+
+      res.send(instance);
+    });
+
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
-      console.log('conversation list request:', req.user.id);
       const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
       res.send(conversations);
     });
@@ -868,6 +920,20 @@ class Jeeves extends Service {
     return response.object.content;
   }
 
+  async _summarizeCaseToLength (instance, max = 2048) {
+    const query = `Summarize the case into a paragraph of text with a ${max}-character maximum.`;
+    const request = {
+      input: query,
+      messages: [
+        { role: 'user', content: instance.title }
+      ]
+    };
+
+    const response = await this._generateResponse(request);
+
+    return response.object.content;
+  }
+
   async _requestWork (name, method) {
     this.queue._addJob({
       method: name,
@@ -949,6 +1015,38 @@ class Jeeves extends Service {
 
   _listServices () {
     return Object.keys(this.services);
+  }
+
+  _userMiddleware (req, res, next) {
+    // const ephemera = new Key();
+    req.user = {
+      id: null
+    };
+
+    if (req.headers.authorization) {
+      const header = req.headers.authorization.split(' ');
+
+      if (header[0] == 'Bearer' && header[1]) {
+        const token = header[1];
+        const parts = token.split('.');
+
+        if (parts && parts.length == 3) {
+          const headers = parts[0];
+          const payload = parts[1];
+          const signature = parts[2];
+          const inner = Token.base64UrlDecode(payload);
+
+          try {
+            const obj = JSON.parse(inner);
+            req.user.id = obj.sub;
+          } catch (exception) {
+            console.error('Invalid Bearer Token:', inner)
+          }
+        }
+      }
+    }
+
+    next();
   }
 }
 
