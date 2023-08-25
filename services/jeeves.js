@@ -18,7 +18,7 @@ const knex = require('knex');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
-const Sandbox = require('@fabric/http/types/sandbox');
+// const Sandbox = require('@fabric/http/types/sandbox');
 
 // Fabric Types
 // TODO: reduce to whole library import?
@@ -116,7 +116,7 @@ class Jeeves extends Service {
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
-    this.sandbox = new Sandbox(this.settings.sandbox);
+    // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
     // Services
@@ -346,7 +346,8 @@ class Jeeves extends Service {
       self.emit('log', `Proposed Block: ${JSON.stringify(block, null, '  ')}`);
     });
 
-    await this.sandbox.start();
+    // Sandbox
+    // await this.sandbox.start();
 
     // Worker
     await this.worker.start();
@@ -692,6 +693,7 @@ class Jeeves extends Service {
     this.status = 'STOPPING';
 
     clearInterval(this._heart);
+    clearInterval(this._crawler);
 
     for (const [name, service] of Object.entries(this.services || {})) {
       if (this.settings.services.includes(name)) {
