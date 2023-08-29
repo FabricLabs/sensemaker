@@ -14,8 +14,8 @@ const QueryCounter = require('./QueryCounter');
 class JeevesUserSettings extends React.Component {
   render () {
     return (
-      <jeeves-user-settings>
-        <Segment>
+      <jeeves-user-settings class='fade-in'>
+        <Segment fluid style={{ marginRight: '1em' }}>
           <Header as='h1'>Settings</Header>
           <Header as='h2'>Billing</Header>
           <Card>

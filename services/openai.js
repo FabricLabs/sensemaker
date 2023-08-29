@@ -27,6 +27,15 @@ class OpenAI extends Service {
     return this;
   }
 
+  async generateEmbedding (text = '', model = 'text-embedding-ada-002') {
+    const result = await this.openai.createEmbedding({
+      input: text,
+      model: model
+    });
+
+    return result.data;
+  }
+
   async start () {
     this._state.content.status = 'STARTING';
     this._state.content.status = 'STARTED';

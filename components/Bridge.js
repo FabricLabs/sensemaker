@@ -4,6 +4,11 @@
 const React = require('react');
 const WebSocket = require('isomorphic-ws');
 
+// Semantic
+const {
+  Label
+} = require('semantic-ui-react');
+
 // Fabric Types
 const Message = require('@fabric/core/types/message');
 

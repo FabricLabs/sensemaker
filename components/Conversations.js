@@ -24,7 +24,7 @@ class Conversations extends React.Component {
     }
 
     return (
-      <Segment fluid>
+      <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h2>Conversations</h2>
         {conversations && conversations.length > 0 && conversations.map(conversation => (
           <div key={conversation.id}>

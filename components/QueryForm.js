@@ -124,17 +124,42 @@ class Chat extends React.Component {
       flexGrow: 1,
       // overflowY: 'auto',
       // paddingBottom: '1rem',
-      // transition: 'height 1s'
+      transition: 'height 1s'
     } : {
       // height: 0,
       // overflow: 'hidden',
       // transition: 'height 1s'
+      paddingBottom: '5em'
+    };
+
+    const componentStyle = this.state.hasSubmittedMessage ? {
+      display: 'block',
+      top: '1em',
+      left: 'calc(350px + 1em)',
+      bottom: '1em',
+      right: '1em',
+      inset: 0
+    } : {
+      height: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+    };
+
+    const inputStyle = this.state.hasSubmittedMessage ? {
+      position: 'fixed',
+      bottom: '1.25em',
+      right: '1.25em',
+      left: 'calc(350px + 1.25em)'
+    } : {
+      bottom: '1em',
+      right: '1em',
+      left: '1em'
     };
 
     return (
-      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={{ height: '100vh', display: 'flex', flexDirection: 'column', marginBottom: '2em' }}>
+      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
-        <Feed style={messageContainerStyle}>
+        <Feed style={messageContainerStyle} className='chat-feed'>
           <Feed.Event>
             <Feed.Extra text>
               <Image src='/images/jeeves-brand.png' size='small' floated='left' />
@@ -147,6 +172,12 @@ class Chat extends React.Component {
           {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
+                <div style={{ float: 'right', display: 'none' }} className='controls'>
+                  <Button.Group size='tiny'>
+                    <Button icon='thumbs down' />
+                    <Button icon='thumbs up' />
+                  </Button.Group>
+                </div>
                 <Feed.Summary>
                   <Feed.User>{message.author || message.user_id}</Feed.User>
                   <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
@@ -158,7 +189,7 @@ class Chat extends React.Component {
             </Feed.Event>
           ))}
         </Feed>
-        <Form size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading}>
+        <Form id="input-controls" size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>

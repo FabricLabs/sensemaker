@@ -147,7 +147,7 @@ class Dashboard extends React.Component {
     return (
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
-        <Sidebar.Pushable attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
+        <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
               <Header inverted>
@@ -198,8 +198,9 @@ class Dashboard extends React.Component {
               <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
             </Menu.Item>
           </Sidebar>
-          <Sidebar.Pusher style={{ margin: '1em', paddingRight: '340px' }}>
-            <Container fluid>
+        </div>
+        <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}>
+            <Container fluid style={{ margin: '1em' }}>
               {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
               {this.state.debug ? (
                 <div>
@@ -235,8 +236,7 @@ class Dashboard extends React.Component {
                 </Routes>
               )}
             </Container>
-          </Sidebar.Pusher>
-        </Sidebar.Pushable>
+          </div>
       </jeeves-dashboard>
     );
   }
