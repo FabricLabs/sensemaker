@@ -13,6 +13,7 @@ const {
 const fs = require('fs');
 
 // External Dependencies
+// const { ApolloServer, gql } = require('apollo-server-express');
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
 const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
@@ -60,8 +61,12 @@ const Matrix = require('@fabric/matrix');
 const OpenAI = require('./openai');
 
 // Internal Types
+// const Brain = require('../types/brain');
 const Learner = require('../types/learner');
 const Worker = require('../types/worker');
+
+// Components
+const CaseHome = require('../components/CaseHome');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -119,6 +124,7 @@ class Jeeves extends Service {
 
     // Internals
     this.agent = new Peer(this.settings);
+    // this.brain = new Brain(this.settings);
     this.chain = new Chain(this.settings);
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
@@ -187,6 +193,28 @@ class Jeeves extends Service {
       },
       sessions: false
     });
+
+    /* const resolvers = require('../resolvers');
+    const typeDefs = gql`
+      type User {
+        id: ID!
+        email: String!
+      }
+
+      type Query {
+        users: [User]
+      }
+    `; */
+
+    this.apollo = null; /* new ApolloServer({
+      typeDefs,
+      resolvers,
+      context: ({ req }) => {
+        return {
+          db: this.db
+        };
+      }
+    }); */
 
     this.services = {};
     this.sources = {};
@@ -438,6 +466,11 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+
+
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
 
@@ -493,7 +526,7 @@ class Jeeves extends Service {
           let output = page._getInnerHTML();
           return res.send(this.http.app._renderWith(output));
         }
-      })
+      });
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
@@ -593,6 +626,15 @@ class Jeeves extends Service {
       }
 
       res.send(result);
+    });
+
+    this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
+      const { content } = req.body;
+      const result = await this._searchCases(content);
+      res.send({
+        type: 'SearchCasesResult',
+        content: result
+      });
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
@@ -697,6 +739,12 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    // GraphQL
+    /* this.apollo.applyMiddleware({
+      app: this.http.express,
+      path: '/services/graphql'
+    }); */
 
     // Fabric Network
     // await this.agent.start();
@@ -885,6 +933,16 @@ class Jeeves extends Service {
 
     // Prompt
     messages.unshift({ role: 'system', content: this.settings.prompt });
+
+    const moderator = new Actor({ name: '@jeeves/moderator' });
+    const agents = {};
+
+    const agentCount = 8;
+
+    for (let i = 0; i < agentCount; i++) {
+      const agent = new Actor({ name: `agent/${i}` });
+      agents[agent.id] = agent;
+    }
 
     const openai = await this.openai._handleConversationRequest({
       messages: messages

@@ -36,7 +36,7 @@ class CaseHome extends React.Component {
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
-        <List as={Card.Group} loading={loading} style={{ marginTop: '1em' }}>
+        <List as={Card.Group} doubling loading={loading} style={{ marginTop: '1em' }}>
           {cases.cases && cases.cases.length > 0 && cases.cases.map(instance => (
             <List.Item as={Card} key={instance.id}>
               <Card.Content>

@@ -64,8 +64,7 @@ class AccountCreator extends React.Component {
 
     return (
       <fabric-react-component class="ui primary action fluid text container">
-        <Header as='h4'>Ready to Get Started?</Header>
-        <p>To better serve you, Jeeves will require some additional information.</p>
+        <Header as='h4'>Create Account</Header>
         <Button fluid className='right labeled icon'>Get Started <Icon name='right chevron' /></Button>
         <Form onSubmit={this.handleSubmit} size={this.props.size} method="POST" autocomplete="off">
           <Form.Field>

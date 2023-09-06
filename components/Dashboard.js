@@ -15,6 +15,7 @@ const {
   Image,
   Label,
   Menu,
+  Popup,
   Search,
   Segment,
   Sidebar,
@@ -151,7 +152,21 @@ class Dashboard extends React.Component {
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
               <Header inverted>
+                <Popup trigger={
+                  <Icon name='help' size='small' style={{ float: 'right' }} />
+                }>
+                  <Popup.Header>Need Help?</Popup.Header>
+                  <Popup.Content>
+                    <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
+                    {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
+                  </Popup.Content>
+                </Popup>
                 <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
+                <Popup trigger={
+                  <Label>alpha</Label>
+                }>
+                  <Popup.Content>Exclusive access!</Popup.Content>
+                </Popup>
               </Header>
             </Menu.Item>
             {/* <Menu.Item>
@@ -172,7 +187,11 @@ class Dashboard extends React.Component {
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
             <Menu.Item disabled>
-              <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <Label size='mini' color='orange'>disabled</Label></div>
+              <div>
+                <Icon name='book' />
+                {!this.state.sidebarCollapsed && 'Library'}
+                &nbsp;<Label size='mini' color='orange'>disabled</Label>
+              </div>
             </Menu.Item>
             {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
@@ -230,7 +249,7 @@ class Dashboard extends React.Component {
                   <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} />} />
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} />} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} />} />
-                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                   <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                   <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
                 </Routes>
