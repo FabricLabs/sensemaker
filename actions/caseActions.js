@@ -15,12 +15,12 @@ const FETCH_CASE_SUCCESS = 'FETCH_CASE_SUCCESS';
 const FETCH_CASE_FAILURE = 'FETCH_CASE_FAILURE';
 
 // Action creators
-const fetchCasesRequest = () => ({ type: FETCH_CASES_REQUEST });
-const fetchCasesSuccess = (cases) => ({ type: FETCH_CASES_SUCCESS, payload: cases });
-const fetchCasesFailure = (error) => ({ type: FETCH_CASES_FAILURE, payload: error });
-const fetchCaseRequest = () => ({ type: FETCH_CASE_REQUEST });
-const fetchCaseSuccess = (instance) => ({ type: FETCH_CASE_SUCCESS, payload: instance });
-const fetchCaseFailure = (error) => ({ type: FETCH_CASE_FAILURE, payload: error });
+const fetchCasesRequest = () => ({ type: FETCH_CASES_REQUEST, loading: true });
+const fetchCasesSuccess = (cases) => ({ type: FETCH_CASES_SUCCESS, payload: cases, loading: false });
+const fetchCasesFailure = (error) => ({ type: FETCH_CASES_FAILURE, payload: error, loading: false  });
+const fetchCaseRequest = () => ({ type: FETCH_CASE_REQUEST, loading: true });
+const fetchCaseSuccess = (instance) => ({ type: FETCH_CASE_SUCCESS, payload: instance, loading: false });
+const fetchCaseFailure = (error) => ({ type: FETCH_CASE_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchCases = () => {

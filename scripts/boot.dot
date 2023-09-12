@@ -1,0 +1,7 @@
+digraph Boot {
+  "START" -> "IS_STARTING" [label=" start(input)"]
+  "IS_STARTING" -> "LOADING_DATABASE" [label=" importDatabase(db)"]
+  "LOADING_DATABASE" -> "MEMORY_LOADED" [label=" notifyImportComplete(dbstate)"]
+  "MEMORY_LOADED" -> "STARTING_NODE" [label=" startNode()"]
+  "STARTING_NODE" -> "VALIDATING_STATE" [label=" validateState(dbstate)"]
+}

@@ -1,5 +1,7 @@
 'use strict';
 
+const marked = require('marked');
+
 const React = require('react');
 const {
   Link,
@@ -36,6 +38,7 @@ class Conversation extends React.Component {
           <Header as='h2'><code>Jeeves Case ID: {id}</code></Header>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
+          <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
         </Segment>
       </fabric-container>
     );

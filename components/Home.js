@@ -27,7 +27,7 @@ class Home extends React.Component {
 
   render () {
     return (
-      <jeeves-home class="fade-in" style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
+      <jeeves-home class='fade-in' style={{ marginRight: '1em' }}>
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}

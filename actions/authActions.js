@@ -71,6 +71,14 @@ const register = (username, password) => {
   };
 };
 
+const logout = () => {
+  return async dispatch => {
+    const transaction = db.transaction(["tokens"], "readwrite");
+    const store = transaction.objectStore("tokens");
+    store.delete("authToken");
+  }
+};
+
 module.exports = {
   login,
   register,

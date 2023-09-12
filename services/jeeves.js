@@ -1,12 +1,19 @@
 'use strict';
 
+require('@babel/register');
+
 // Package
 const definition = require('../package');
+const {
+  PER_PAGE_LIMIT,
+  PER_PAGE_DEFAULT
+} = require('../constants');
 
 // Dependencies
 const fs = require('fs');
 
 // External Dependencies
+// const { ApolloServer, gql } = require('apollo-server-express');
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
 const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
@@ -15,6 +22,7 @@ const levelgraph = require('levelgraph');
 const marked = require('marked');
 const mysql = require('mysql2/promise');
 const knex = require('knex');
+const { attachPaginate } = require('knex-paginate');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -53,8 +61,12 @@ const Matrix = require('@fabric/matrix');
 const OpenAI = require('./openai');
 
 // Internal Types
+// const Brain = require('../types/brain');
 const Learner = require('../types/learner');
 const Worker = require('../types/worker');
+
+// Components
+const CaseHome = require('../components/CaseHome');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -112,6 +124,7 @@ class Jeeves extends Service {
 
     // Internals
     this.agent = new Peer(this.settings);
+    // this.brain = new Brain(this.settings);
     this.chain = new Chain(this.settings);
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
@@ -143,6 +156,8 @@ class Jeeves extends Service {
         database: this.settings.db.database
       }
     });
+
+    attachPaginate();
 
     // Fabric Setup
     this._rootKey = new Key({ xprv: this.settings.xprv });
@@ -178,6 +193,28 @@ class Jeeves extends Service {
       },
       sessions: false
     });
+
+    /* const resolvers = require('../resolvers');
+    const typeDefs = gql`
+      type User {
+        id: ID!
+        email: String!
+      }
+
+      type Query {
+        users: [User]
+      }
+    `; */
+
+    this.apollo = null; /* new ApolloServer({
+      typeDefs,
+      resolvers,
+      context: ({ req }) => {
+        return {
+          db: this.db
+        };
+      }
+    }); */
 
     this.services = {};
     this.sources = {};
@@ -429,6 +466,11 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+
+
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
 
@@ -463,21 +505,49 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
-      const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date').from('cases').where({
+      res.format({
+        json: async () => {
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date').from('cases').where({
+            // TODO: filter by public/private value
+          }).orderBy('decision_date', 'desc').paginate({
+            perPage: 30,
+            currentPage: 1
+          });
 
-      }).orderBy('decision_date', 'desc').limit(30);
+          res.setHeader('X-Pagination', true);
+          res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
+          res.setHeader('X-Pagination-Per', cases.pagination.perPage);
+          res.setHeader('X-Pagination-Total', cases.pagination.total);
 
-      res.send(cases);
+          res.send(cases.data);
+        },
+        html: () => {
+          const page = new CaseHome({});
+          let output = page._getInnerHTML();
+          return res.send(this.http.app._renderWith(output));
+        }
+      });
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name').from('cases').where({
         id: req.params.id
       }).first();
+
+      const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
+
+      // Embeddings
+      /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
+      /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
         console.debug('summarized to:', summary);
+        if (summary) {
+          await this.db('cases').update({
+            summary: summary
+          }).where('id', instance.id);
+        }
       }
 
       res.send(instance);
@@ -556,6 +626,15 @@ class Jeeves extends Service {
       }
 
       res.send(result);
+    });
+
+    this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
+      const { content } = req.body;
+      const result = await this._searchCases(content);
+      res.send({
+        type: 'SearchCasesResult',
+        content: result
+      });
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
@@ -660,6 +739,12 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    // GraphQL
+    /* this.apollo.applyMiddleware({
+      app: this.http.express,
+      path: '/services/graphql'
+    }); */
 
     // Fabric Network
     // await this.agent.start();
@@ -849,6 +934,16 @@ class Jeeves extends Service {
     // Prompt
     messages.unshift({ role: 'system', content: this.settings.prompt });
 
+    const moderator = new Actor({ name: '@jeeves/moderator' });
+    const agents = {};
+
+    const agentCount = 8;
+
+    for (let i = 0; i < agentCount; i++) {
+      const agent = new Actor({ name: `agent/${i}` });
+      agents[agent.id] = agent;
+    }
+
     const openai = await this.openai._handleConversationRequest({
       messages: messages
     });
@@ -875,7 +970,7 @@ class Jeeves extends Service {
   async _generateResponse (request) {
     let messages = [];
 
-    messages = request.messages.concat(messages);
+    if (request.messages) messages = request.messages.concat(messages);
     messages.push({ role: 'user', content: request.input });
 
     // Prompt
@@ -912,7 +1007,7 @@ class Jeeves extends Service {
   }
 
   async _summarizeMessagesToTitle (messages, max = 100) {
-    const query = `Summarize our conversation into a ${max}-character maximum as a title`;
+    const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
     const request = {
       input: query,
       messages: messages
@@ -923,17 +1018,36 @@ class Jeeves extends Service {
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
-    const query = `Summarize the case into a paragraph of text with a ${max}-character maximum.`;
-    const request = {
-      input: query,
-      messages: [
-        { role: 'user', content: instance.title }
-      ]
-    };
+    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum: ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
 
+    const request = { input: query };
     const response = await this._generateResponse(request);
 
     return response.object.content;
+  }
+
+  async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
+    const embedding = await this.openai.generateEmbedding(text, model);
+    const inserted = await this.db('embeddings').insert({
+      text: text,
+      model: embedding.model,
+      content: JSON.stringify(embedding.data)
+    });
+
+    return {
+      id: inserted[0]
+    };
+  }
+
+  async _searchCases (query) {
+    const result = await fetch(`https://api.case.law/v1/cases/?search=${query}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': (this.settings.harvard.token) ? `Bearer ${this.settings.harvard.token}` : undefined
+      }
+    });
+
+    return result.json();
   }
 
   async _requestWork (name, method) {
