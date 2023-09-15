@@ -1,12 +1,12 @@
 const readline = require('readline');
-
+const input = require('../settings/local');
 const knex = require('knex')({
   client: 'mysql2',
   connection: {
-    host: 'localhost',
-    user: 'db_user_jeeves',
-    password: 'password',
-    database: 'db_jeeves'
+    host: input.db.host,
+    user: input.db.user,
+    password: input.db.password,
+    database: input.db.database
   }
 });
 
