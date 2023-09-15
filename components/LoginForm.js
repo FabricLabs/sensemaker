@@ -68,9 +68,9 @@ class LoginForm extends React.Component {
             <label>Password</label>
             <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={password} onChange={this.handlePasswordChange} />
           </Form.Field>
+          {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
           <Button.Group vertical fluid>
             <Button fluid primary loading={loading} type="submit" size={this.props.size}>Login</Button>
-            {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
             <Button as={Link} to='/' fluid size='small'>Back to the Waitlist</Button>
           </Button.Group>
         </Form>
