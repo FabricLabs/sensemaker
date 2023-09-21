@@ -21,6 +21,8 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
+// const Joyride = require('react-joyride');
+
 // Components
 const Home = require('./Home');
 const CaseHome = require('./CaseHome');
@@ -148,6 +150,7 @@ class Dashboard extends React.Component {
     return (
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
+        {/* <Joyride steps={this.state.steps} /> */}
         <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
@@ -215,6 +218,7 @@ class Dashboard extends React.Component {
               <Bridge />
               {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
               <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
+              <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>
             </Menu.Item>
           </Sidebar>
         </div>

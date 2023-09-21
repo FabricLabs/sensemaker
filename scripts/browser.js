@@ -48,6 +48,26 @@ async function main (input = {}) {
   window.addEventListener('load', async () => {
     console.log('loaded!');
 
+    let db;
+
+    const request = indexedDB.open('JeevesDB', 1);
+
+    request.onerror = function (event) {
+      console.error('Error opening IndexedDB:', event.target.errorCode);
+    };
+
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+
+      if (!db.objectStoreNames.contains('tokens')) {
+        db.createObjectStore('tokens');
+      }
+    };
+
+    request.onsuccess = function (event) {
+      db = event.target.result;
+    };
+
     // const chatbar = document.createElement('fabric-chat-bar');
     // chatbar.style = 'position: absolute; bottom: 1em;';
     // document.body.append(chatbar);

@@ -1,5 +1,6 @@
 'use strict';
 
+const debounce = require('lodash.debounce');
 const fetch = require('cross-fetch');
 
 const React = require('react');
@@ -22,6 +23,20 @@ class CaseHome extends React.Component {
   }
 
   handleSearchChange = (e) => {
+    console.debug('search change:', e.target.value);
+    // this.setState({ [name]: value });
+
+    fetch('/cases', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'SEARCH',
+      body: JSON.stringify({ query: e.target.value })
+    }).then(async (result) => {
+      const obj = await result.json();
+      console.debug('result of search:', obj);
+    });
   }
 
   render () {
@@ -30,9 +45,9 @@ class CaseHome extends React.Component {
     return (
       <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h1>Cases</h1>
-        <jeeves-search fluid placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
-          <div className="ui icon fluid input">
-            <input name="query" autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" /* value={this.state.search} */ onChange={this.handleSearchChange} />
+        <jeeves-search fluid placeholder='Find...' className="ui search">
+          <div className="ui huge icon fluid input">
+            <input name="query" autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" /* value={this.state.search} */ onChange={debounce(this.handleSearchChange, 1000)} />
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
