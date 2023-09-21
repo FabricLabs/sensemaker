@@ -22,8 +22,8 @@ module.exports = {
   alias: 'JeevesAI',
   moniker: NAME,
   name: 'jeeves',
-  crawl: true,
-  debug: environment.readVariable('DEBUG') || false,
+  crawl: false,
+  debug: true, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
   db: {
@@ -31,8 +31,9 @@ module.exports = {
     host: 'localhost',
     port: 3306,
     user: 'db_user_jeeves',
-    password: 'YOUR MYSQL PASSWORD',
-    database: 'db_jeeves'
+    password: 'chahcieYishi1wuu',
+    database: 'db_jeeves',
+    client: 'mysql2'
   },
   http: {
     listen: true,
@@ -82,7 +83,7 @@ module.exports = {
     token: null
   },
   harvard: {
-    token: 'GET FROM CASE.LAW'
+    token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },
   discord: {
     alerts: [
@@ -115,7 +116,7 @@ module.exports = {
     },
     homeserver: 'https://fabric.pub',
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
-    token: 'GET FROM MATRIX'
+    token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   mysql: {
     host: 'localhost',
@@ -124,8 +125,8 @@ module.exports = {
     password: ''
   },
   openai: {
-    key: 'GET FROM OPENAI',
-    model: 'gpt-3.5-turbo-16k'
+    key: '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',
+    model: 'gpt-4'
   },
   twilio: {
     sid: 'add your twilio sid here',

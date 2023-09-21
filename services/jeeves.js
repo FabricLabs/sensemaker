@@ -1,5 +1,6 @@
 'use strict';
 
+// Prepare transpilation
 require('@babel/register');
 
 // Package
@@ -17,10 +18,7 @@ const fs = require('fs');
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
 const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
-const monitor = require('fast-json-patch');
 const levelgraph = require('levelgraph');
-const marked = require('marked');
-const mysql = require('mysql2/promise');
 const knex = require('knex');
 const { attachPaginate } = require('knex-paginate');
 
@@ -325,6 +323,7 @@ class Jeeves extends Service {
     // await this._registerService('pricefeed', Prices);
 
     this.worker.register('Ingest', async (...params) => {
+      console.debug('Handling Ingest job:', params);
       const doc = await fetch(params[0], {
         headers: {
           'Authorization': `Token ${this.settings.harvard.token}`
@@ -334,6 +333,10 @@ class Jeeves extends Service {
       const blob = await doc.blob();
       const buffer = await blob.arrayBuffer();
       const body = Buffer.from(buffer);
+
+      console.debug('blob:', blob);
+      console.debug('buffer:', buffer);
+      console.debug('body:', body);
 
       try {
         fs.writeFileSync(params[1], body);
@@ -349,6 +352,8 @@ class Jeeves extends Service {
       } catch (exception) {
         this.emit('error', `Worker could not update database: ${params} ${exception}`);
       }
+
+      console.debug('Ingest complete:', params[1]);
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -392,6 +397,7 @@ class Jeeves extends Service {
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
         const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'asc').first();
+        console.debug('got unknown case:', unknown);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         this.worker.addJob({
@@ -550,12 +556,28 @@ class Jeeves extends Service {
         }
       }
 
+      fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
+
+      }).catch((exception) => {
+        console.error('FETCH FULL CASE ERROR:', exception);
+      }).then(async (output) => {
+        console.debug('FETCH FULL CASE OUTPUT:', await output.json());
+      });
+
       res.send(instance);
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
-      const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
-      res.send(conversations);
+      res.format({
+        json: async () => {
+          const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
+          // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
+          res.send(conversations);
+        },
+        html: () => {
+          
+        }
+      });
     });
 
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
@@ -612,6 +634,8 @@ class Jeeves extends Service {
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
       let result = {};
 
+      console.debug('[COMPLIANCE]', 'Signer', req.user.id, 'signed Terms of Use');
+
       if (req.user.id) {
         await this.db('users').update({
           is_compliant: true
@@ -629,15 +653,30 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
-      const { content } = req.body;
-      const result = await this._searchCases(content);
-      res.send({
-        type: 'SearchCasesResult',
-        content: result
-      });
+
+      try {
+        const request = req.body;
+        const cases = await this._searchCases(request);
+        const result = {
+          cases: cases || []
+        };
+
+        return res.send({
+          type: 'SearchCasesResult',
+          content: result
+        });
+      } catch (exception) {
+        res.status(503);
+        return res.send({
+          type: 'SearchCasesError',
+          content: exception
+        });
+      }
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
+      console.debug('Handling inbound message:', req.body);
+
       let isNew = false;
       let { conversation_id, content } = req.body;
 
@@ -674,9 +713,14 @@ class Jeeves extends Service {
         });
 
         this._handleRequest({
+          // actor: activity.actor,
           conversation_id: conversation_id,
           input: content,
+          // room: roomID // TODO: replace with a generic property (not specific to Matrix)
+          // target: activity.target // candidate 1
         }).then((output) => {
+          console.log('got request output:', output);
+
           this.db('responses').insert({
             content: output.object.content
           });
@@ -693,7 +737,7 @@ class Jeeves extends Service {
               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
               }));
-
+    
               await this.db('conversations').update({ title }).where({ id: conversation_id });
             }
           });
@@ -777,21 +821,31 @@ class Jeeves extends Service {
   async stop () {
     this.status = 'STOPPING';
 
+    // Stop HTTP Listener
+    if (this.settings.http.listen) await this.http.stop();
+
+    // Stop Fabric Listener
+    if (this.settings.listen && this.agent) await this.agent.stop();
+
+    // Stop the Worker
+    await this.worker.stop();
+
+    // Stop Heartbeat, Crawler
     clearInterval(this._heart);
     clearInterval(this._crawler);
 
+    // Stop Services
     for (const [name, service] of Object.entries(this.services || {})) {
       if (this.settings.services.includes(name)) {
         await this.services[name].stop();
       }
     }
 
-    if (this.settings.listen && this.agent) await this.agent.stop();
-    if (this.settings.http.listen) await this.http.stop();
-
-    this.status = 'STOPPED';
+    // Write
     await this.commit();
 
+    // Notify
+    this.status = 'STOPPED';
     this.emit('stopped', {
       id: this.id
     });
@@ -812,7 +866,7 @@ class Jeeves extends Service {
   }
 
   async _handleMatrixActivity (activity) {
-    // console.log('matrix activity:', activity);
+    console.log('matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
 
     const roomID = activity.target.split('/')[2];
@@ -900,6 +954,7 @@ class Jeeves extends Service {
     for (let i = 0; i < roomResult.joined_rooms.length; i++) {
       const room = roomResult.joined_rooms[i];
       const members = await this.matrix.client.getJoinedRoomMembers(room);
+      console.log(`room ${room} has ${Object.keys(members.joined).length}`);
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
         await this.matrix.client.invite(room, '@eric:fabric.pub');
       }
@@ -916,10 +971,10 @@ class Jeeves extends Service {
    */
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
-
     let messages = [];
 
     if (request.room) {
+      console.debug('request has room:', request.room);
       const matrixMessages = await this._getRoomMessages(request.room);
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
@@ -928,6 +983,7 @@ class Jeeves extends Service {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
     } else {
+      console.debug('request without room, input:', request.input);
       messages = messages.concat([{ role: 'user', content: request.input }]);
     }
 
@@ -946,6 +1002,7 @@ class Jeeves extends Service {
 
     const openai = await this.openai._handleConversationRequest({
       messages: messages
+      // prompt: request.input
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
@@ -976,6 +1033,8 @@ class Jeeves extends Service {
     // Prompt
     messages.unshift({ role: 'system', content: this.settings.prompt });
 
+    console.debug('conversation to respond to:', messages);
+
     const openai = await this.openai._handleConversationRequest({
       messages: messages
       // prompt: request.input
@@ -1000,6 +1059,16 @@ class Jeeves extends Service {
     };
   }
 
+  async _searchCases (request) {
+    console.debug('searching cases:', request);
+    const candidates = [];
+
+    return {
+      type: 'CaseSearchResult',
+      content: candidates
+    };
+  }
+
   async _startWorkers () {
     for (let i = 0; i < this.workers.length; i++) {
       await this.workers[i].start();
@@ -1014,11 +1083,15 @@ class Jeeves extends Service {
     };
 
     const response = await this._generateResponse(request);
+
+    console.debug('title debug:', response.object.content);
+
     return response.object.content;
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
     const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum: ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
+    console.debug('Case to summarize:', instance);
 
     const request = { input: query };
     const response = await this._generateResponse(request);
@@ -1028,26 +1101,39 @@ class Jeeves extends Service {
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
     const embedding = await this.openai.generateEmbedding(text, model);
+    console.debug('got embedding:', embedding);
+
     const inserted = await this.db('embeddings').insert({
       text: text,
       model: embedding.model,
       content: JSON.stringify(embedding.data)
     });
 
+    console.debug('inserted:', inserted);
+
     return {
       id: inserted[0]
     };
   }
 
-  async _searchCases (query) {
-    const result = await fetch(`https://api.case.law/v1/cases/?search=${query}`, {
+  async _searchCases (request) {
+    // TODO: multiple case search sources
+    // Retrieve Harvard's suggestions
+    const result = await fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': (this.settings.harvard.token) ? `Bearer ${this.settings.harvard.token}` : undefined
       }
     });
 
-    return result.json();
+    const harvard = await result.json();
+    const ids = harvard.results.map(x => x.id);
+    const harvardCases = await this.db('cases').select('id', 'title').whereIn('harvard_case_law_id', ids);
+
+    // TODO: queue crawl jobs for missing cases
+    const cases = [].concat(harvardCases);
+
+    return cases;
   }
 
   async _requestWork (name, method) {

@@ -1,0 +1,11 @@
+digraph Architecture {
+  "Jeeves Service"
+
+  "Bitcoin Node"
+  "Fabric Node"
+  "HTTP Server"
+
+  "Agent Manager" -> {
+    "OpenAI API"
+  }
+}
