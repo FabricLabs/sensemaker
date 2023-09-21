@@ -72,5 +72,8 @@ iptables -A INPUT -p tcp --dport 7777 -j ACCEPT
 iptables -A INPUT -i lo -j ACCEPT
 iptables -A OUTPUT -o lo -j ACCEPT
 
+# Disable UFW
+ufw disable
+
 # Report to User
 echo "Setup complete!  Reboot, then proceed with ./scripts/install.sh after logging in as "$USERNAME"."

@@ -15,8 +15,10 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-const QueryForm = require('./QueryForm');
-const Feed = require('./Feed');
+// const QueryForm = require('./QueryForm');
+// const Feed = require('./Feed');
+
+const formatDate = require('../contracts/formatDate');
 
 class Conversation extends React.Component {
   componentDidMount () {
@@ -38,6 +40,10 @@ class Conversation extends React.Component {
         <Segment fluid loading={loading}>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
+          <Label.Group>
+            <Label icon='calendar'>{formatDate(cases.current.decision_date)}</Label>
+            <Label icon='law'>{cases.current.court_name}</Label>
+          </Label.Group>
           <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
           <div style={{ marginTop: '1em' }}>
             <Header as='h6'>Metadata</Header>
