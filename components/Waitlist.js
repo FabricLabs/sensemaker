@@ -52,18 +52,29 @@ class Waitlist extends React.Component {
 
     const { email } = this.state;
 
+  
     try {
+
+      const fetchPromise = fetch('/inquiries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Request timed out. Please check your internet connection.'));
+        }, 15000); 
+      });
+
       const results = await Promise.all([
         new Promise((resolve, reject) => {
           setTimeout(resolve, 1500);
         }),
-        fetch('/inquiries', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email }),
-        })
+        //Whichever promise completes first will determine the outcome.
+        await Promise.race([fetchPromise, timeoutPromise])
       ]);
 
       const response = results[1];

@@ -13,7 +13,10 @@ environment.start();
 
 const NAME = 'ALPHA';
 const VERSION = '0.2.2'; // TODO: 0.2.1-pre
-const prompt = fs.readFileSync('./prompts/alpha.txt', 'utf8');
+const path = require('path');
+const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
+const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
+
 
 /**
  * Provides the user's local settings.
