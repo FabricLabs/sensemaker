@@ -15,8 +15,12 @@ const {
   Icon,
   Image,
   Input,
-  Search
+  Search,
+  Modal,
+  TextArea
 } = require('semantic-ui-react');
+
+const {Rating} = require('react-simple-star-rating');
 
 class Chat extends React.Component {
   constructor (props) {
@@ -24,7 +28,12 @@ class Chat extends React.Component {
 
     this.state = {
       query: '',
-      hasSubmittedMessage: false
+      hasSubmittedMessage: false,
+      modalOpen : false,
+      rating: 0,
+      comment: '',
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,
     };
 
     this.messagesEndRef = React.createRef();
@@ -111,6 +120,77 @@ class Chat extends React.Component {
     this.setState({ query: '' });
   }
 
+  handleModalClose = () => {
+    this.setState({ 
+      modalOpen: false,
+      thumbsDownClicked : false,
+      thumbsUpClicked : false,
+      rating : 0,
+      comment : ''   
+    });
+  };
+
+  handleModalUp = () => {
+    this.setState({ 
+      modalOpen: true, 
+      thumbsDownClicked : false, 
+      thumbsUpClicked : true 
+    });
+  };
+
+  handleModalDown = () => {
+    this.setState({ 
+      modalOpen: true, 
+      thumbsDownClicked : true, 
+      thumbsUpClicked : false 
+    });
+  };
+
+  handleRatingChange = (rate) => {
+    this.setState({ rating: rate });    
+  };
+
+  handleCommentChange = (e, { value }) => {
+    this.setState({ comment: value });
+  }
+
+  handleModalSend = () => {
+    const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
+        
+    const dataToSend = {
+      rating,
+      comment,
+      thumbsUpClicked,
+      thumbsDownClicked,
+    };
+
+    fetch('API-Endpoint', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dataToSend),
+    })
+      .then(response => {
+        if (response.ok) {
+          // API request was successful
+        } else {
+          console.error('API request failed');
+        }
+      })
+      .catch(error => {
+        console.error('Error while sending data to the API:', error);
+      });
+
+    this.setState({
+      modalOpen: false,
+      rating: 0,
+      comments: '',
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,      
+    });
+  };
+
   render () {
     const { loading } = this.state;
     const { isSending, placeholder } = this.props;
@@ -174,8 +254,8 @@ class Chat extends React.Component {
               <Feed.Content>
                 <div style={{ float: 'right', display: 'none' }} className='controls'>
                   <Button.Group size='tiny'>
-                    <Button icon='thumbs down' />
-                    <Button icon='thumbs up' />
+                    <Button icon='thumbs down' onClick={this.handleModalDown}/>
+                    <Button icon='thumbs up' onClick={this.handleModalUp}/>
                   </Button.Group>
                 </div>
                 <Feed.Summary>
@@ -188,6 +268,47 @@ class Chat extends React.Component {
               </Feed.Content>
             </Feed.Event>
           ))}
+          <Modal
+            onClose={this.handleModalClose}
+            onOpen={() => this.setState({ modalOpen: true })}
+            open={this.state.modalOpen}            
+            size='tiny'
+          >
+            <Modal.Header>Feedback</Modal.Header>
+            <Modal.Content>              
+              <Modal.Description>            
+                <p>Let us know your opinion!</p>         
+              </Modal.Description>            
+              <Form>
+              <Rating size={25} transition={true} onClick={this.handleRatingChange} />
+              <Form.Field>
+              <Header style={{ marginTop: '0.5em'}}>Comment</Header>
+              <TextArea
+                placeholder='Enter your comment...'
+                onChange={this.handleCommentChange}             
+              />
+              </Form.Field>
+              </Form>
+            </Modal.Content>
+            <Modal.Actions>                     
+              <Button
+                 content="Close"                  
+                 icon='close'
+                 onClick={this.handleModalClose}
+                 labelPosition='right'
+                 size='small'
+                 secondary
+             />
+              <Button
+                 content="Send"
+                 icon='checkmark'
+                 onClick={this.handleModalSend}
+                 labelPosition='right'    
+                 size='small'              
+                 positive                 
+               />                
+            </Modal.Actions>
+          </Modal>
         </Feed>
         <Form id="input-controls" size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
