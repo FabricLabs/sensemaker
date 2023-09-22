@@ -59,7 +59,7 @@ class CaseHome extends React.Component {
             <List.Item as={Card} key={instance.id}>
               <Card.Content>
                 <h3><Link to={'/cases/' + instance.id}>{instance.short_name}</Link></h3>
-                <Label.Group>
+                <Label.Group basic>
                   <Label icon='calendar'>{formatDate(instance.decision_date)}</Label>
                   <Label icon='law'>{instance.court_name}</Label>
                 </Label.Group>
