@@ -661,7 +661,8 @@ class Jeeves extends Service {
           creator: req.user.id,
           rating: request.rating,
           comment: request.comment,
-          intended_sentiment: (request.thumbsUpClicked) ? 'positive' : 'negative'
+          intended_sentiment: (request.thumbsUpClicked) ? 'positive' : 'negative',
+          message_id: request.message
         });
 
         return res.send({
