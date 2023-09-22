@@ -5,6 +5,8 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 
+const store = require('../stores/redux');
+
 // Semantic UI
 const {
   Button,
@@ -164,15 +166,22 @@ class Chat extends React.Component {
 
   handleModalSend = () => {
     const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
-    
+    const { message } = this.props.chat;
+    const mssageId = message.id; 
+    const state = store.getState();
+    const token = state.auth.token;
+
     //data to send to the API
     const dataToSend = {
       rating,
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
+      message: mssageId,
+      token
     };
     
+  
     //shows loading button
     this.setState({ modalLoading: true });    
 
@@ -183,7 +192,7 @@ class Chat extends React.Component {
       }, 1500);
     });
 
-    Promise.all([delayPromise, fetch('API-Endpoint', {
+    Promise.all([delayPromise, fetch('/reviews', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
