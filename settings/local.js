@@ -33,10 +33,9 @@ module.exports = {
     type: 'mysql',
     host: 'localhost',
     port: 3306,
-    user: 'db_user_jeeves',
-    password: 'chahcieYishi1wuu',
-    database: 'db_jeeves',
-    client: 'mysql2'
+    user: 'db_user',
+    password: 'password',
+    database: 'db_name'
   },
   http: {
     listen: true,

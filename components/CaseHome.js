@@ -10,8 +10,11 @@ const { Link } = require('react-router-dom');
 const {
   Card,
   Segment,
+  Label,
   List
 } = require('semantic-ui-react');
+
+const formatDate = require('../contracts/formatDate');
 
 class CaseHome extends React.Component {
   constructor (settings = {}) {
@@ -55,7 +58,11 @@ class CaseHome extends React.Component {
           {cases.cases && cases.cases.length > 0 && cases.cases.map(instance => (
             <List.Item as={Card} key={instance.id}>
               <Card.Content>
-                <h3><Link to={'/cases/' + instance.id}>{instance.short_name} ({instance.decision_date})</Link></h3>
+                <h3><Link to={'/cases/' + instance.id}>{instance.short_name}</Link></h3>
+                <Label.Group basic>
+                  <Label icon='calendar'>{formatDate(instance.decision_date)}</Label>
+                  <Label icon='law'>{instance.court_name}</Label>
+                </Label.Group>
                 <p>{instance.content}</p>
               </Card.Content>
             </List.Item>

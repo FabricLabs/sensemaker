@@ -513,7 +513,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date').from('cases').where({
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
             // TODO: filter by public/private value
           }).orderBy('decision_date', 'desc').paginate({
             perPage: 30,
@@ -536,7 +536,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name').from('cases').where({
         id: req.params.id
       }).first();
 
