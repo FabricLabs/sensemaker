@@ -177,8 +177,7 @@ class Chat extends React.Component {
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: mssageId,
-      token
+      message: mssageId      
     };
     
   
@@ -195,6 +194,7 @@ class Chat extends React.Component {
     Promise.all([delayPromise, fetch('/reviews', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(dataToSend),
