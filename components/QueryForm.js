@@ -177,10 +177,11 @@ class Chat extends React.Component {
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      mssageId,
+      message: mssageId,
       token
     };
     
+  
     //shows loading button
     this.setState({ modalLoading: true });    
 
