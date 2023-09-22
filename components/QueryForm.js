@@ -213,12 +213,14 @@ class Chat extends React.Component {
     };
 
     const componentStyle = this.state.hasSubmittedMessage ? {
+      // position: 'fixed',
       display: 'block',
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
       right: '1em',
-      inset: 0
+      inset: 0,
+      marginBottom: '5em'
     } : {
       height: 'auto',
       display: 'flex',

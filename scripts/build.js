@@ -11,9 +11,11 @@ const settings = require('../settings/local');
 
 // Fabric HTTP Types
 // const Site = require('@fabric/http/types/site');
-const Compiler = require('@fabric/http/types/compiler');
 
 // Types
+const Compiler = require('../types/compiler');
+
+// Components
 const JeevesUI = require('../components/JeevesUI');
 
 // Program Body
@@ -37,7 +39,10 @@ async function main (input = {}) {
           },
           {
             test: /\.css$/,
-            use: ['style-loader', 'css-loader']
+            use: [
+              { loader: 'style-loader' },
+              { loader: 'css-loader' }
+            ]
           }
         ]
       },
