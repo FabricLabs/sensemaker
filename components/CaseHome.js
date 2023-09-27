@@ -32,7 +32,7 @@ class CaseHome extends React.Component {
   }
 
   handleSearchChange = debounce((query) => {
-    console.debug('search change:', query);
+    //console.debug('search change:', query);
 
     this.setState({ searching: true });
 
@@ -45,14 +45,10 @@ class CaseHome extends React.Component {
       body: JSON.stringify({ query })
     }).then(async (result) => {
       const obj = await result.json();
-      console.debug('result of search:', obj);
-  
-      // Update the filtered cases state with the results
+        
       this.setState({
         filteredCases: obj.content,
         searchQuery: query,
-      }, () => {
-      //  console.debug('filtered cases:', this.state.filteredCases); // Log filtered cases inside the callback
       });
     })
     .catch((error) => {
@@ -67,10 +63,6 @@ class CaseHome extends React.Component {
     const { loading, error } = this.props;
     const { filteredCases, searchQuery, searching } = this.state;
 
-    // Check if the searchQuery is empty, if so, display all cases
-   // const displayCases = searchQuery ? filteredCases.cases : this.props.cases.cases;
-
-   console.log('State just before render:', this.state);
     return (
       <Segment className="fade-in" fluid style={{ marginRight: "1em" }}>
         <h1>Cases</h1>
@@ -98,7 +90,7 @@ class CaseHome extends React.Component {
         {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
-          searchQuery ? //if searching goes this way
+          searchQuery ? //if searching, goes this way
             (filteredCases && filteredCases.cases && filteredCases.cases.length > 0 ? (
               filteredCases.cases.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
