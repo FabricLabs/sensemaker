@@ -652,6 +652,34 @@ class Jeeves extends Service {
       res.send(result);
     });
 
+    this.http._addRoute('POST', '/reviews', async (req, res, next) => {
+      // TODO: check token
+      const request = req.body;
+
+      try {
+        await this.db('reviews').insert({
+          creator: req.user.id,
+          rating: request.rating,
+          comment: request.comment,
+          intended_sentiment: (request.thumbsUpClicked) ? 'positive' : 'negative',
+          message_id: request.message
+        });
+
+        return res.send({
+          type: 'ReviewMessageResult',
+          content: {
+            message: 'Success!',
+            status: 'success'
+          }
+        });
+      } catch (exception) {
+        return res.send({
+          type: 'ReviewMessageError',
+          content: exception
+        });
+      }
+    });
+
     this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
 
       try {
@@ -1128,7 +1156,7 @@ class Jeeves extends Service {
 
     const harvard = await result.json();
     const ids = harvard.results.map(x => x.id);
-    const harvardCases = await this.db('cases').select('id', 'title').whereIn('harvard_case_law_id', ids);
+    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'court_name', 'decision_date').whereIn('harvard_case_law_id', ids);
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
