@@ -103,7 +103,7 @@ class CaseHome extends React.Component {
               filteredCases.cases.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/cases/" + instance.id}>{instance.title}</Link></h3>
+                    <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
                       <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
                       <Label icon="law">{instance.court_name}</Label>
