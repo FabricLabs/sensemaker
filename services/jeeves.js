@@ -1087,16 +1087,6 @@ class Jeeves extends Service {
     };
   }
 
-  async _searchCases (request) {
-    console.debug('searching cases:', request);
-    const candidates = [];
-
-    return {
-      type: 'CaseSearchResult',
-      content: candidates
-    };
-  }
-
   async _startWorkers () {
     for (let i = 0; i < this.workers.length; i++) {
       await this.workers[i].start();
@@ -1156,7 +1146,7 @@ class Jeeves extends Service {
 
     const harvard = await result.json();
     const ids = harvard.results.map(x => x.id);
-    const harvardCases = await this.db('cases').select('id', 'title').whereIn('harvard_case_law_id', ids);
+    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids);
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
