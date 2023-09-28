@@ -46,6 +46,8 @@ class CaseHome extends React.Component {
     }).then(async (result) => {
       const obj = await result.json();
         
+      console.log('fetch result: ', obj);
+      
       this.setState({
         filteredCases: obj.content,
         searchQuery: query,
