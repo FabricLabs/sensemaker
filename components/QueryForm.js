@@ -251,9 +251,7 @@ class Chat extends React.Component {
     } : {
       height: 'auto',
       display: 'flex',
-      flexDirection: 'column',
-      paddingBottom: '5em',
-
+      flexDirection: 'column',  
     };
 
     const inputStyle = this.state.hasSubmittedMessage ? {
