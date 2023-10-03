@@ -226,39 +226,50 @@ class Chat extends React.Component {
 
     const messageContainerStyle = this.state.hasSubmittedMessage ? {
       flexGrow: 1,
-      // overflowY: 'auto',
-      // paddingBottom: '1rem',
-      transition: 'height 1s'
+      paddingBottom: '3rem',
+      transition: 'height 1s',
+      maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      overflowY: 'auto',
+      transition: 'max-height 1s',
+
     } : {
       // height: 0,
       // overflow: 'hidden',
-      // transition: 'height 1s'
-      paddingBottom: '5em'
+      transition: 'height 1s',
+      paddingBottom: '5em',
+      height: '100%',
+      
     };
 
     const componentStyle = this.state.hasSubmittedMessage ? {
-      display: 'block',
+      display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
       right: '1em',
-      inset: 0
+      inset: 0,
     } : {
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',
+      paddingBottom: '5em',
+
     };
 
     const inputStyle = this.state.hasSubmittedMessage ? {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
-      left: 'calc(350px + 1.25em)'
+      left: 'calc(350px + 1.25em)',
+      paddingRight: '1.5rem'
+      
     } : {
       bottom: '1em',
       right: '1em',
-      left: '1em'
+      left: '1em',
+      height: 'auto',
     };
+    
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
@@ -351,7 +362,7 @@ class Chat extends React.Component {
             </Modal.Actions>
           </Modal>
         </Feed>
-        <Form id="input-controls" size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+        <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
@@ -361,14 +372,16 @@ class Chat extends React.Component {
   }
 
   scrollToBottom = () => {
-    // console.log('scrolling to bottom...');
-    // console.log('ref:', this.messagesEndRef);
-
     if (this.messagesEndRef.current) {
-      // console.log('feed:', this.messagesEndRef.current.querySelector('feed'));
-      // this.messagesEndRef.current.querySelector('feed').scrollIntoView({ behavior: "smooth" });
+      const feedElement = this.messagesEndRef.current.querySelector('.chat-feed');
+      const lastMessage = feedElement.lastElementChild;
+  
+      if (lastMessage) {
+        lastMessage.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-  }
+  };
+  
 }
 
 module.exports = Chat;
