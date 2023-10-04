@@ -63,6 +63,7 @@ class Chat extends React.Component {
 
   componentWillUnmount () {
     this.props.resetChat();
+    clearInterval(this.watcher); //ends de sync in case you switch to other component
 
     this.setState({
       chat: {
