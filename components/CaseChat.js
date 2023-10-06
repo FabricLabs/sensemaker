@@ -25,7 +25,7 @@ const {
 
 const {Rating} = require('react-simple-star-rating');
 
-class Chat extends React.Component {
+class CaseChat extends React.Component {
   constructor (props) {
     super(props);
 
@@ -74,7 +74,6 @@ class Chat extends React.Component {
       message: null,
       messages: [],
       hasSubmittedMessage: false,
-
     });
   }
 
@@ -90,28 +89,19 @@ class Chat extends React.Component {
 
   handleSubmit = (event) => {
     event.preventDefault();
-
     const { query } = this.state;
-    const { message } = this.props.chat;
+    const { message } = this.props.chat;  
+    const {caseTitle , caseId} = this.props;
 
-    // console.log('handling submit...');
-
-    // console.log('initial message:', message);
-    // console.log('initial conversation:', message?.conversation);
-
-    // console.log('handling submit state:', this.state);
-    // console.log('handling submit props:', this.props);
-    // console.log('handling submit message:', message);
 
     this.setState({ loading: true });
 
     // dispatch submitMessage
     this.props.submitMessage({
       conversation_id: message?.conversation,
-      content: query
+      content: query,
+      case: caseTitle+'_'+caseId,
     }).then((output) => {
-      // console.log('got output:', output);
-      // console.log('getting messages for conversation:', message?.conversation);
 
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
@@ -249,7 +239,7 @@ class Chat extends React.Component {
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
-      right: '1em',
+      right: '0em',
       inset: 0,
     } : {
       height: 'auto',
@@ -278,11 +268,7 @@ class Chat extends React.Component {
         <Feed style={messageContainerStyle} className='chat-feed'>
           <Feed.Event>
             <Feed.Extra text>
-              <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-              <div style={{ paddingTop: '5em' }}>
-                <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
-              </div>
-              <Header style={{ marginTop: '3em' }}>How can I help you today?</Header>
+              <Header>Can I help you with this case?</Header>
             </Feed.Extra>
           </Feed.Event>
           {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
@@ -385,4 +371,4 @@ class Chat extends React.Component {
   
 }
 
-module.exports = Chat;
+module.exports = CaseChat;

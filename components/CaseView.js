@@ -18,14 +18,16 @@ const {
 // const QueryForm = require('./QueryForm');
 // const Feed = require('./Feed');
 
+const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');
 
 class Conversation extends React.Component {
   componentDidMount () {
     const { id } = this.props;
     const { message } = this.props.cases;
-
+    
     this.props.fetchCase(id);
+    console.log(this.props);
   }
 
   render () {
@@ -37,7 +39,7 @@ class Conversation extends React.Component {
 
     return (
       <fabric-container>
-        <Segment fluid loading={loading}>
+        <Segment fluid loading={loading} style={{ marginRight: '1em' }}>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>
@@ -53,7 +55,26 @@ class Conversation extends React.Component {
               </pre>
             </code>
           </div>
+        
+
         </Segment>
+
+        <CaseChat
+            fetchConversations={this.props.fetchConversations}
+            getMessages={this.props.getMessages}
+            submitMessage={this.props.submitMessage}
+            onMessageSuccess={this.props.onMessageSuccess}
+            resetChat={this.props.resetChat}
+            chat={this.props.chat}
+            includeFeed={true}
+            isSending={loading}
+            placeholder="Ask me anything about this case..."
+            caseTitle={cases.current.title}
+            caseId={id}
+         //   chat={{ message: null, messages: [] }}  // Pass appropriate chat props if needed
+          //  submitMessage={this.props.submitMessage}
+          //  getMessages={this.props.getMessages}
+          />
       </fabric-container>
     );
   }
