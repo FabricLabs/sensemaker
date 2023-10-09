@@ -480,7 +480,7 @@ class Jeeves extends Service {
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
 
-      console.log('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
+      console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
 
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
@@ -501,6 +501,8 @@ class Jeeves extends Service {
         return res.json({
           message: 'Authentication successful.',
           token: token.toString(),
+          username: user.username,
+          email: user.email,
           isAdmin: user.is_admin,
           isCompliant: user.is_compliant
         });

@@ -21,7 +21,9 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
-// const Joyride = require('react-joyride');
+const {
+  ENABLE_CASE_SEARCH
+} = require('../constants');
 
 // Components
 const Home = require('./Home');
@@ -183,11 +185,11 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/">
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
-            <Menu.Item as={Link} to='/cases'>
-              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'}</div>
-            </Menu.Item>
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
+            </Menu.Item>
+            <Menu.Item as={Link} to='/cases' disabled={!ENABLE_CASE_SEARCH}>
+              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'>coming soon!</Label></div>
             </Menu.Item>
             <Menu.Item disabled>
               <div>

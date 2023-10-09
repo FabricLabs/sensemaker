@@ -46,10 +46,13 @@ async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
 
   window.addEventListener('load', async () => {
-    console.log('loaded!');
+    console.debug('[JEEVES]', 'Window loaded!');
 
     let db;
 
+    // TODO: consider localforage
+    // TODO: consider schema from Knex / MySQL
+    // TODO: consider GraphQL to pass schema
     const request = indexedDB.open('JeevesDB', 1);
 
     request.onerror = function (event) {
@@ -106,12 +109,14 @@ async function main (input = {}) {
     getMessages: getMessages
   };
 
+  console.debug('[JEEVES]', 'Connecting UI...');
   const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);
 
   // Render
   const container = document.getElementById('application-target');
   const root = ReactDOM.createRoot(container);
 
+  console.debug('[JEEVES]', 'Rendering UI...');
   root.render(
     <Provider store={store}>
       <ConnectedUI />
