@@ -285,25 +285,27 @@ class Chat extends React.Component {
           {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
-                <div style={{ float: 'right', display: 'none' }} className='controls'>
-                  <Button.Group size='mini'>
-                    <Popup trigger={
-                      <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
-                    }>
-                      <Popup.Content>
-                        <p>Report something wrong with this statement.</p>
-                      </Popup.Content>
-                    </Popup>
-                    <Popup trigger={
-                      <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
-                    }>
-                      <Popup.Header>Tell Us What You Liked!</Popup.Header>
-                      <Popup.Content>
-                        <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-                      </Popup.Content>
-                    </Popup>
-                  </Button.Group>
-                </div>
+                {message.role === 'assistant' && (
+                  <div style={{ float: 'right', display: 'none' }} className='controls'>
+                    <Button.Group size='mini'>
+                      <Popup trigger={
+                        <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
+                      }>
+                        <Popup.Content>
+                          <p>Report something wrong with this statement.</p>
+                        </Popup.Content>
+                      </Popup>
+                      <Popup trigger={
+                        <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
+                      }>
+                        <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                        <Popup.Content>
+                          <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                        </Popup.Content>
+                      </Popup>
+                    </Button.Group>
+                  </div>
+                )}
                 <Feed.Summary>
                   <Feed.User>{message.author || message.user_id}</Feed.User>
                   <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
@@ -352,7 +354,7 @@ class Chat extends React.Component {
                 </Message>
               )}
               <Button
-                 content="Close"
+                 content='Close'
                  icon='close'
                  onClick={this.handleModalClose}
                  labelPosition='right'
@@ -362,7 +364,7 @@ class Chat extends React.Component {
              {/*This button is shown only if Feedback wasnt sent yet */}
              {!this.state.feedbackSent && (
               <Button
-                 content="Send"
+                 content='Send'
                  icon={this.state.modalLoading ? 'spinner' : 'checkmark'}
                  onClick={this.handleModalSend}
                  labelPosition='right'
@@ -373,7 +375,7 @@ class Chat extends React.Component {
             </Modal.Actions>
           </Modal>
         </Feed>
-        <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+        <Form id='input-controls' size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>

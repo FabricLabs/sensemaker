@@ -158,9 +158,7 @@ class Dashboard extends React.Component {
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/">
               <Header inverted>
-                <Popup trigger={
-                  <Icon name='help' size='tiny' style={{ float: 'right', marginTop: '1em' }} />
-                }>
+                <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', marginTop: '1em' }} />}>
                   <Popup.Header>Need Help?</Popup.Header>
                   <Popup.Content>
                     <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
