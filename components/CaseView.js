@@ -39,7 +39,7 @@ class Conversation extends React.Component {
 
     return (
       <fabric-container>
-        <Segment fluid loading={loading} style={{ marginRight: '1em' }}>
+        <Segment fluid loading={loading} style={{ marginRight: '1em'}}>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>

@@ -221,13 +221,12 @@ class CaseChat extends React.Component {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
-      maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      // maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      height: 'auto',
       overflowY: 'auto',
       transition: 'max-height 1s',
 
     } : {
-      // height: 0,
-      // overflow: 'hidden',
       transition: 'height 1s',
       paddingBottom: '5em',
       height: '100%',
@@ -235,12 +234,13 @@ class CaseChat extends React.Component {
     };
 
     const componentStyle = this.state.hasSubmittedMessage ? {
-      display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
       right: '0em',
       inset: 0,
+      display: 'flex',
+      flexDirection: 'column',
     } : {
       height: 'auto',
       display: 'flex',
@@ -251,16 +251,15 @@ class CaseChat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
+      left: '0.2em',
       left: 'calc(350px + 1.25em)',
-      paddingRight: '1.5rem'
-      
+      boxShadow: '0px 2rem 4rem rgba(255, 255, 255, 1)',
     } : {
       bottom: '1em',
       right: '1em',
       left: '1em',
       height: 'auto',
     };
-    
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
