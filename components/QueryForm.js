@@ -17,6 +17,7 @@ const {
   Icon,
   Image,
   Input,
+  Popup,
   Search,
   Modal,
   Message,
@@ -63,6 +64,7 @@ class Chat extends React.Component {
 
   componentWillUnmount () {
     this.props.resetChat();
+    clearInterval(this.watcher); //ends de sync in case you switch to other component
 
     this.setState({
       chat: {
@@ -127,7 +129,7 @@ class Chat extends React.Component {
   }
 
   handleModalClose = () => {
-    this.setState({ 
+    this.setState({
       modalOpen: false,
       thumbsDownClicked : false,
       thumbsUpClicked : false,
@@ -141,10 +143,10 @@ class Chat extends React.Component {
   };
 
   handleModalUp = () => {
-    this.setState({ 
-      modalOpen: true, 
-      thumbsDownClicked : false, 
-      thumbsUpClicked : true 
+    this.setState({
+      modalOpen: true,
+      thumbsDownClicked : false,
+      thumbsUpClicked : true
     });
   };
 
@@ -157,7 +159,7 @@ class Chat extends React.Component {
   };
 
   handleRatingChange = (rate) => {
-    this.setState({ rating: rate });    
+    this.setState({ rating: rate });
   };
 
   handleCommentChange = (e, { value }) => {
@@ -177,12 +179,12 @@ class Chat extends React.Component {
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: mssageId      
+      message: mssageId
     };
     
   
     //shows loading button
-    this.setState({ modalLoading: true });    
+    this.setState({ modalLoading: true });
 
     //artificial delay
     const delayPromise = new Promise((resolve) => {
@@ -199,7 +201,7 @@ class Chat extends React.Component {
       },
       body: JSON.stringify(dataToSend),
     })])
-      .then(([delayResult, fetchResponse]) => {        
+      .then(([delayResult, fetchResponse]) => {
         if (delayResult === true) {
           if (fetchResponse.ok) {
             this.setState({feedbackSent : true, modalLoading: false });
@@ -226,23 +228,27 @@ class Chat extends React.Component {
 
     const messageContainerStyle = this.state.hasSubmittedMessage ? {
       flexGrow: 1,
-      // overflowY: 'auto',
-      // paddingBottom: '1rem',
-      transition: 'height 1s'
+      paddingBottom: '3rem',
+      transition: 'height 1s',
+      maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      overflowY: 'auto',
+      transition: 'max-height 1s',
     } : {
       // height: 0,
       // overflow: 'hidden',
-      // transition: 'height 1s'
-      paddingBottom: '5em'
+      transition: 'height 1s',
+      paddingBottom: '5em',
+      height: '100%',
+      
     };
 
     const componentStyle = this.state.hasSubmittedMessage ? {
-      display: 'block',
+      display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
       right: '1em',
-      inset: 0
+      inset: 0,
     } : {
       height: 'auto',
       display: 'flex',
@@ -253,11 +259,14 @@ class Chat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
-      left: 'calc(350px + 1.25em)'
+      left: 'calc(350px + 1.25em)',
+      paddingRight: '1.5rem'
+      
     } : {
       bottom: '1em',
       right: '1em',
-      left: '1em'
+      left: '1em',
+      height: 'auto',
     };
 
     return (
@@ -277,9 +286,22 @@ class Chat extends React.Component {
             <Feed.Event key={message.id}>
               <Feed.Content>
                 <div style={{ float: 'right', display: 'none' }} className='controls'>
-                  <Button.Group size='tiny'>
-                    <Button icon='thumbs down' onClick={this.handleModalDown}/>
-                    <Button icon='thumbs up' onClick={this.handleModalUp}/>
+                  <Button.Group size='mini'>
+                    <Popup trigger={
+                      <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
+                    }>
+                      <Popup.Content>
+                        <p>Report something wrong with this statement.</p>
+                      </Popup.Content>
+                    </Popup>
+                    <Popup trigger={
+                      <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
+                    }>
+                      <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                      <Popup.Content>
+                        <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                      </Popup.Content>
+                    </Popup>
                   </Button.Group>
                 </div>
                 <Feed.Summary>
@@ -295,26 +317,26 @@ class Chat extends React.Component {
           <Modal
             onClose={this.handleModalClose}
             onOpen={() => this.setState({ modalOpen: true })}
-            open={this.state.modalOpen}            
+            open={this.state.modalOpen}
             size='tiny'
           >
             <Modal.Header>Feedback</Modal.Header>
-            <Modal.Content>              
-              <Modal.Description>            
-                <p>Let us know your opinion!</p>         
-              </Modal.Description>            
+            <Modal.Content>
+              <Modal.Description>
+                <p>Let us know your opinion!</p>
+              </Modal.Description>
               <Form>
               <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={this.state.rating}/>
               <Form.Field>
               <Header style={{ marginTop: '0.5em'}}>Comment</Header>
               <TextArea
                 placeholder='Enter your comment...'
-                onChange={this.handleCommentChange}             
+                onChange={this.handleCommentChange}
               />
               </Form.Field>
               </Form>
             </Modal.Content>
-            <Modal.Actions> 
+            <Modal.Actions>
               {/*When the feedback is sent it shows this message  */}
               {this.state.feedbackSent && (
                 <Message positive>
@@ -328,9 +350,9 @@ class Chat extends React.Component {
                   <Message.Header>Feedback could not be sent</Message.Header>
                   <p>Please try again later.</p>
                 </Message>
-              )}               
+              )}
               <Button
-                 content="Close"                  
+                 content="Close"
                  icon='close'
                  onClick={this.handleModalClose}
                  labelPosition='right'
@@ -343,15 +365,15 @@ class Chat extends React.Component {
                  content="Send"
                  icon={this.state.modalLoading ? 'spinner' : 'checkmark'}
                  onClick={this.handleModalSend}
-                 labelPosition='right'    
-                 size='small'     
-                 loading={this.state.modalLoading}         
-                 positive                 
-               />)}                
+                 labelPosition='right'
+                 size='small'
+                 loading={this.state.modalLoading}
+                 positive
+               />)}
             </Modal.Actions>
           </Modal>
         </Feed>
-        <Form id="input-controls" size='huge' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+        <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
@@ -361,14 +383,16 @@ class Chat extends React.Component {
   }
 
   scrollToBottom = () => {
-    // console.log('scrolling to bottom...');
-    // console.log('ref:', this.messagesEndRef);
-
     if (this.messagesEndRef.current) {
-      // console.log('feed:', this.messagesEndRef.current.querySelector('feed'));
-      // this.messagesEndRef.current.querySelector('feed').scrollIntoView({ behavior: "smooth" });
+      const feedElement = this.messagesEndRef.current.querySelector('.chat-feed');
+      const lastMessage = feedElement.lastElementChild;
+  
+      if (lastMessage) {
+        lastMessage.scrollIntoView({ behavior: 'smooth' });
+      }
     }
-  }
+  };
+  
 }
 
 module.exports = Chat;

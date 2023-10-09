@@ -1,5 +1,6 @@
 #!/bin/bash
 # Run in your home folder, from the repository root.
+# Target: Ubuntu LTS
 
 # Check script is run with sudo
 if [[ $EUID -ne 0 ]]; then
@@ -43,34 +44,34 @@ apt -o Acquire::https::AllowRedirect=false update
 apt -o Acquire::https::AllowRedirect=false upgrade -y
 apt -o Acquire::https::AllowRedirect=false install -y build-essential curl git iptables iptables-persistent jq nginx tor unzip vim mysql-server
 
-# Default all firewalls to policy: DROP
-iptables -P INPUT DROP
-iptables -P OUTPUT DROP
-iptables -P FORWARD DROP
-
 # Allow RELATED/ESTABLISHED traffic
-iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# iptables -A OUTPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+# iptables -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+
+# Default all firewalls to policy: DROP
+# iptables -P INPUT DROP
+# iptables -P OUTPUT DROP
+# iptables -P FORWARD DROP
 
 # Allow SSH
-iptables -A INPUT -p tcp --dport 22 -j ACCEPT
-iptables -A OUTPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+# iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+# iptables -A OUTPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
 
 # Allow outbound DNS traffic
 # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
-iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+# iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
 
 # Allow HTTP traffic
-iptables -A INPUT -p tcp --dport 80 -j ACCEPT # legacy connections
-iptables -A INPUT -p tcp --dport 443 -j ACCEPT # TLS connections
-iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT # outbound TLS connections (not inbound)
+# iptables -A INPUT -p tcp --dport 80 -j ACCEPT # legacy connections
+# iptables -A INPUT -p tcp --dport 443 -j ACCEPT # TLS connections
+# iptables -A OUTPUT -p tcp --dport 443 -j ACCEPT # outbound TLS connections (not inbound)
 
 # Allow Fabric traffic
-iptables -A INPUT -p tcp --dport 7777 -j ACCEPT
+# iptables -A INPUT -p tcp --dport 7777 -j ACCEPT
 
 # Accept connections on loopback address
-iptables -A INPUT -i lo -j ACCEPT
-iptables -A OUTPUT -o lo -j ACCEPT
+# iptables -A INPUT -i lo -j ACCEPT
+# iptables -A OUTPUT -o lo -j ACCEPT
 
 # Disable UFW
 ufw disable

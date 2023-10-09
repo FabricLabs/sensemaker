@@ -21,7 +21,10 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
-// const Joyride = require('react-joyride');
+const {
+  ENABLE_CASE_SEARCH,
+  ENABLE_LIBRARY
+} = require('../constants');
 
 // Components
 const Home = require('./Home');
@@ -156,7 +159,7 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/">
               <Header inverted>
                 <Popup trigger={
-                  <Icon name='help' size='small' style={{ float: 'right' }} />
+                  <Icon name='help' size='tiny' style={{ float: 'right', marginTop: '1em' }} />
                 }>
                   <Popup.Header>Need Help?</Popup.Header>
                   <Popup.Content>
@@ -166,7 +169,7 @@ class Dashboard extends React.Component {
                 </Popup>
                 <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
                 <Popup trigger={
-                  <Label>alpha</Label>
+                  <Label color='black'>alpha</Label>
                 }>
                   <Popup.Content>Exclusive access!</Popup.Content>
                 </Popup>
@@ -183,19 +186,23 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/">
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
-            <Menu.Item as={Link} to='/cases'>
-              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'}</div>
-            </Menu.Item>
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
-            <Menu.Item disabled>
-              <div>
-                <Icon name='book' />
-                {!this.state.sidebarCollapsed && 'Library'}
-                &nbsp;<Label size='mini' color='orange'>disabled</Label>
-              </div>
-            </Menu.Item>
+            {ENABLE_CASE_SEARCH && (
+              <Menu.Item as={Link} to='/cases'>
+                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'>coming soon!</Label></div>
+              </Menu.Item>
+            )}
+            {ENABLE_LIBRARY && (
+              <Menu.Item disabled>
+                <div>
+                  <Icon name='book' />
+                  {!this.state.sidebarCollapsed && 'Library'}
+                  &nbsp;<Label size='mini' color='orange'>disabled</Label>
+                </div>
+              </Menu.Item>
+            )}
             {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item> */}
@@ -218,7 +225,7 @@ class Dashboard extends React.Component {
               <Bridge />
               {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
               <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
-              <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>
+              {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
             </Menu.Item>
           </Sidebar>
         </div>

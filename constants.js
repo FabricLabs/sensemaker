@@ -2,6 +2,8 @@
 
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
+const ENABLE_CASE_SEARCH = false;
+const ENABLE_LIBRARY = false;
 
 const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
@@ -9,6 +11,8 @@ const PER_PAGE_DEFAULT = 30;
 module.exports = {
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
+  ENABLE_CASE_SEARCH,
+  ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT
 };

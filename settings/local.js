@@ -17,7 +17,6 @@ const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
 
-
 /**
  * Provides the user's local settings.
  */
@@ -26,7 +25,7 @@ module.exports = {
   moniker: NAME,
   name: 'jeeves',
   crawl: false,
-  debug: true, // environment.readVariable('DEBUG') || false,
+  debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
   db: {
