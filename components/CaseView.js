@@ -71,9 +71,6 @@ class Conversation extends React.Component {
             placeholder="Ask me anything about this case..."
             caseTitle={cases.current.title}
             caseId={id}
-         //   chat={{ message: null, messages: [] }}  // Pass appropriate chat props if needed
-          //  submitMessage={this.props.submitMessage}
-          //  getMessages={this.props.getMessages}
           />
       </fabric-container>
     );

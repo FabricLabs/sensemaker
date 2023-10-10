@@ -253,7 +253,7 @@ class CaseChat extends React.Component {
       right: '1.25em',
       left: '0.2em',
       left: 'calc(350px + 1.25em)',
-      boxShadow: '0px 2rem 4rem rgba(255, 255, 255, 1)',
+      boxShadow: '0em 1.2em 0em rgba(255, 255, 255, 1)',
     } : {
       bottom: '1em',
       right: '1em',
