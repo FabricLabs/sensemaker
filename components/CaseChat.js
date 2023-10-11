@@ -213,15 +213,11 @@ class CaseChat extends React.Component {
     const { isSending, placeholder } = this.props;
     const { message, messages } = this.props.chat;
 
-    // console.log('current state:', this.state);
-    // console.log('current props:', this.props);
-    // console.log('current message:', message);
-
     const messageContainerStyle = this.state.hasSubmittedMessage ? {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
-      // maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      maxHeight: 'calc(60vh - 6rem)', // Set a maximum height
       height: 'auto',
       overflowY: 'auto',
       transition: 'max-height 1s',
@@ -240,7 +236,7 @@ class CaseChat extends React.Component {
       right: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: 'column',      
     } : {
       height: 'auto',
       display: 'flex',
@@ -251,9 +247,8 @@ class CaseChat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
-      left: '0.2em',
       left: 'calc(350px + 1.25em)',
-      boxShadow: '0em 1.2em 0em rgba(255, 255, 255, 1)',
+      paddingRight: '1.5rem'
     } : {
       bottom: '1em',
       right: '1em',
