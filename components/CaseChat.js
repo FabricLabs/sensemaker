@@ -270,7 +270,7 @@ class CaseChat extends React.Component {
             <Feed.Event key={message.id}>
               <Feed.Content>
                 {message.role === 'assistant' && (
-                  <div style={{ float: 'right', display: 'none' }} className='controls'>
+                  <div style={{ float: 'right', display: 'none', marginRight:'1em' }} className='controls'>
                     <Button.Group size='mini'>
                       <Popup trigger={
                         <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
