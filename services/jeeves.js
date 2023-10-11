@@ -65,6 +65,7 @@ const Worker = require('../types/worker');
 
 // Components
 const CaseHome = require('../components/CaseHome');
+const Conversations = require('../components/Conversations');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -530,8 +531,9 @@ class Jeeves extends Service {
           res.send(cases.data);
         },
         html: () => {
+          // TODO: import auth token, load data
           const page = new CaseHome({});
-          let output = page._getInnerHTML();
+          const output = page.toHTML();
           return res.send(this.http.app._renderWith(output));
         }
       });
@@ -573,11 +575,15 @@ class Jeeves extends Service {
       res.format({
         json: async () => {
           const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
+          // TODO: update the conversation upon change (new user message, new agent message)
+          // TODO: sort conversations by updated_at (below line)
           // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
           res.send(conversations);
         },
         html: () => {
-          
+          const page = new Conversations({});
+          const html = page._toHTML();
+          return res.send(this.http.app._renderWith(html));
         }
       });
     });
@@ -594,7 +600,7 @@ class Jeeves extends Service {
       }
 
       messages = messages.map((m) => {
-        return { ...m, author: m.username || 'User #' + m.user_id };
+        return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
       });
 
       res.send(messages);
