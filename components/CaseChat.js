@@ -20,7 +20,8 @@ const {
   Search,
   Modal,
   Message,
-  TextArea
+  TextArea,
+  Popup
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -268,12 +269,27 @@ class CaseChat extends React.Component {
           {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
-                <div style={{ float: 'right', display: 'none' }} className='controls'>
-                  <Button.Group size='tiny'>
-                    <Button icon='thumbs down' onClick={this.handleModalDown}/>
-                    <Button icon='thumbs up' onClick={this.handleModalUp}/>
-                  </Button.Group>
-                </div>
+                {message.role === 'assistant' && (
+                  <div style={{ float: 'right', display: 'none' }} className='controls'>
+                    <Button.Group size='mini'>
+                      <Popup trigger={
+                        <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
+                      }>
+                        <Popup.Content>
+                          <p>Report something wrong with this statement.</p>
+                        </Popup.Content>
+                      </Popup>
+                      <Popup trigger={
+                        <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
+                      }>
+                        <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                        <Popup.Content>
+                          <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                        </Popup.Content>
+                      </Popup>
+                    </Button.Group>
+                  </div>
+                )}
                 <Feed.Summary>
                   <Feed.User>{message.author || message.user_id}</Feed.User>
                   <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
