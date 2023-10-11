@@ -17,7 +17,6 @@ const {
   Icon,
   Image,
   Input,
-  Popup,
   Search,
   Modal,
   Message,
@@ -26,7 +25,7 @@ const {
 
 const {Rating} = require('react-simple-star-rating');
 
-class Chat extends React.Component {
+class CaseChat extends React.Component {
   constructor (props) {
     super(props);
 
@@ -64,6 +63,7 @@ class Chat extends React.Component {
 
   componentWillUnmount () {
     this.props.resetChat();
+    clearInterval(this.watcher); //ends de sync in case you switch to other component
 
     this.setState({
       chat: {
@@ -74,7 +74,6 @@ class Chat extends React.Component {
       message: null,
       messages: [],
       hasSubmittedMessage: false,
-
     });
   }
 
@@ -90,28 +89,19 @@ class Chat extends React.Component {
 
   handleSubmit = (event) => {
     event.preventDefault();
-
     const { query } = this.state;
-    const { message } = this.props.chat;
+    const { message } = this.props.chat;  
+    const {caseTitle , caseId} = this.props;
 
-    // console.log('handling submit...');
-
-    // console.log('initial message:', message);
-    // console.log('initial conversation:', message?.conversation);
-
-    // console.log('handling submit state:', this.state);
-    // console.log('handling submit props:', this.props);
-    // console.log('handling submit message:', message);
 
     this.setState({ loading: true });
 
     // dispatch submitMessage
     this.props.submitMessage({
       conversation_id: message?.conversation,
-      content: query
+      content: query,
+      case: caseTitle+'_'+caseId,
     }).then((output) => {
-      // console.log('got output:', output);
-      // console.log('getting messages for conversation:', message?.conversation);
 
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
@@ -130,7 +120,7 @@ class Chat extends React.Component {
   }
 
   handleModalClose = () => {
-    this.setState({
+    this.setState({ 
       modalOpen: false,
       thumbsDownClicked : false,
       thumbsUpClicked : false,
@@ -144,10 +134,10 @@ class Chat extends React.Component {
   };
 
   handleModalUp = () => {
-    this.setState({
-      modalOpen: true,
-      thumbsDownClicked : false,
-      thumbsUpClicked : true
+    this.setState({ 
+      modalOpen: true, 
+      thumbsDownClicked : false, 
+      thumbsUpClicked : true 
     });
   };
 
@@ -160,7 +150,7 @@ class Chat extends React.Component {
   };
 
   handleRatingChange = (rate) => {
-    this.setState({ rating: rate });
+    this.setState({ rating: rate });    
   };
 
   handleCommentChange = (e, { value }) => {
@@ -180,12 +170,12 @@ class Chat extends React.Component {
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: mssageId
+      message: mssageId      
     };
     
   
     //shows loading button
-    this.setState({ modalLoading: true });
+    this.setState({ modalLoading: true });    
 
     //artificial delay
     const delayPromise = new Promise((resolve) => {
@@ -202,7 +192,7 @@ class Chat extends React.Component {
       },
       body: JSON.stringify(dataToSend),
     })])
-      .then(([delayResult, fetchResponse]) => {
+      .then(([delayResult, fetchResponse]) => {        
         if (delayResult === true) {
           if (fetchResponse.ok) {
             this.setState({feedbackSent : true, modalLoading: false });
@@ -231,12 +221,12 @@ class Chat extends React.Component {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
-      maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      // maxHeight: 'calc(100vh - 5rem)', // Set a maximum height
+      height: 'auto',
       overflowY: 'auto',
       transition: 'max-height 1s',
+
     } : {
-      // height: 0,
-      // overflow: 'hidden',
       transition: 'height 1s',
       paddingBottom: '5em',
       height: '100%',
@@ -244,12 +234,13 @@ class Chat extends React.Component {
     };
 
     const componentStyle = this.state.hasSubmittedMessage ? {
-      display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
-      right: '1em',
+      right: '0em',
       inset: 0,
+      display: 'flex',
+      flexDirection: 'column',
     } : {
       height: 'auto',
       display: 'flex',
@@ -260,16 +251,15 @@ class Chat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
+      left: '0.2em',
       left: 'calc(350px + 1.25em)',
-      paddingRight: '1.5rem'
-      
+      boxShadow: '0em 1.2em 0em rgba(255, 255, 255, 1)',
     } : {
       bottom: '1em',
       right: '1em',
       left: '1em',
       height: 'auto',
     };
-    
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
@@ -277,33 +267,16 @@ class Chat extends React.Component {
         <Feed style={messageContainerStyle} className='chat-feed'>
           <Feed.Event>
             <Feed.Extra text>
-              <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-              <div style={{ paddingTop: '5em' }}>
-                <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
-              </div>
-              <Header style={{ marginTop: '3em' }}>How can I help you today?</Header>
+              <Header>Can I help you with this case?</Header>
             </Feed.Extra>
           </Feed.Event>
           {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
             <Feed.Event key={message.id}>
               <Feed.Content>
                 <div style={{ float: 'right', display: 'none' }} className='controls'>
-                  <Button.Group size='mini'>
-                    <Popup trigger={
-                      <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
-                    }>
-                      <Popup.Content>
-                        <p>Report something wrong with this statement.</p>
-                      </Popup.Content>
-                    </Popup>
-                    <Popup trigger={
-                      <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
-                    }>
-                      <Popup.Header>Tell Us What You Liked!</Popup.Header>
-                      <Popup.Content>
-                        <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-                      </Popup.Content>
-                    </Popup>
+                  <Button.Group size='tiny'>
+                    <Button icon='thumbs down' onClick={this.handleModalDown}/>
+                    <Button icon='thumbs up' onClick={this.handleModalUp}/>
                   </Button.Group>
                 </div>
                 <Feed.Summary>
@@ -319,26 +292,26 @@ class Chat extends React.Component {
           <Modal
             onClose={this.handleModalClose}
             onOpen={() => this.setState({ modalOpen: true })}
-            open={this.state.modalOpen}
+            open={this.state.modalOpen}            
             size='tiny'
           >
             <Modal.Header>Feedback</Modal.Header>
-            <Modal.Content>
-              <Modal.Description>
-                <p>Let us know your opinion!</p>
-              </Modal.Description>
+            <Modal.Content>              
+              <Modal.Description>            
+                <p>Let us know your opinion!</p>         
+              </Modal.Description>            
               <Form>
               <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={this.state.rating}/>
               <Form.Field>
               <Header style={{ marginTop: '0.5em'}}>Comment</Header>
               <TextArea
                 placeholder='Enter your comment...'
-                onChange={this.handleCommentChange}
+                onChange={this.handleCommentChange}             
               />
               </Form.Field>
               </Form>
             </Modal.Content>
-            <Modal.Actions>
+            <Modal.Actions> 
               {/*When the feedback is sent it shows this message  */}
               {this.state.feedbackSent && (
                 <Message positive>
@@ -352,9 +325,9 @@ class Chat extends React.Component {
                   <Message.Header>Feedback could not be sent</Message.Header>
                   <p>Please try again later.</p>
                 </Message>
-              )}
+              )}               
               <Button
-                 content="Close"
+                 content="Close"                  
                  icon='close'
                  onClick={this.handleModalClose}
                  labelPosition='right'
@@ -367,11 +340,11 @@ class Chat extends React.Component {
                  content="Send"
                  icon={this.state.modalLoading ? 'spinner' : 'checkmark'}
                  onClick={this.handleModalSend}
-                 labelPosition='right'
-                 size='small'
-                 loading={this.state.modalLoading}
-                 positive
-               />)}
+                 labelPosition='right'    
+                 size='small'     
+                 loading={this.state.modalLoading}         
+                 positive                 
+               />)}                
             </Modal.Actions>
           </Modal>
         </Feed>
@@ -397,4 +370,4 @@ class Chat extends React.Component {
   
 }
 
-module.exports = Chat;
+module.exports = CaseChat;
