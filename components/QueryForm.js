@@ -100,7 +100,7 @@ class Chat extends React.Component {
     this.setState({ message: null, chat: { message: null } });
   }
 
-  handleSubmit = async (event) => {
+  handleSubmit = (event) => {
     event.preventDefault();
 
     const { query } = this.state;
@@ -137,9 +137,6 @@ class Chat extends React.Component {
 
       this.setState({ loading: false });
     });
-    // .finally(() => {
-    //   this.setState({ generatingReponse: false });
-    // });
 
     // Clear the input after sending the message
     this.setState({ query: '' });
@@ -264,7 +261,7 @@ class Chat extends React.Component {
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
-      right: '1em',
+      paddingRight: '0em',
       inset: 0,
     } : {
       height: 'auto',
@@ -304,7 +301,7 @@ class Chat extends React.Component {
             <Feed.Event key={message.id}>
               <Feed.Content>
                 {message.role === 'assistant' && (
-                  <div style={{ float: 'right', display: 'none' , marginRight: '1em'}} className='controls'>
+                  <div style={{ float: 'right', display: 'none' , marginRight: '1em', paddingTop:'1em'}} className='controls'>
                     <Button.Group size='mini'>
                       <Popup trigger={
                         <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
@@ -334,10 +331,7 @@ class Chat extends React.Component {
               </Feed.Content>
             </Feed.Event>
           ))}
-          {/* {generatingReponse && (
-                  <Message id='generating-msg'>
-                    <Message.Header><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
-                  </Message>)} */}
+         
           <Modal
             onClose={this.handleModalClose}
             onOpen={() => this.setState({ modalOpen: true })}
@@ -398,10 +392,10 @@ class Chat extends React.Component {
           </Modal>
         </Feed>
         <Form id='input-controls' size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
-        {generatingReponse && (
-                  <Message size='tiny' style={{ float: 'right'}}>
-                    <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
-                  </Message>)}
+          {generatingReponse && (
+            <Message size='tiny' style={{ float: 'right'}}>
+              <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
+            </Message>)}
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>

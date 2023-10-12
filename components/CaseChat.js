@@ -40,7 +40,8 @@ class CaseChat extends React.Component {
       modalOpen : false,
       modalLoading : false,
       feedbackSent : false,
-      feedbackFail : false
+      feedbackFail : false,
+      generatingReponse: false
     };
 
     this.messagesEndRef = React.createRef();
@@ -53,11 +54,20 @@ class CaseChat extends React.Component {
   }
 
   componentDidUpdate (prevProps) {
+    const { messages } = this.props.chat;
     if (prevProps.chat.messages.length !== this.props.chat.messages.length) {
       this.scrollToBottom();
       // Set hasSubmittedMessage to true if a message has been submitted
       if (!this.state.hasSubmittedMessage) {
         this.setState({ hasSubmittedMessage: true });
+      }
+      if (messages && messages.length > 0){
+        const lastMessage = messages[messages.length - 1];      
+        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant') {
+          this.setState({ generatingReponse: false });
+        } else {
+          this.setState({ generatingReponse: true });
+        }
       }
     }
   }
@@ -210,7 +220,7 @@ class CaseChat extends React.Component {
 
 
   render () {
-    const { loading } = this.state;
+    const { loading, generatingReponse } = this.state;
     const { isSending, placeholder } = this.props;
     const { message, messages } = this.props.chat;
 
@@ -234,7 +244,7 @@ class CaseChat extends React.Component {
       top: '1em',
       left: 'calc(350px + 1em)',
       bottom: '1em',
-      right: '0em',
+      paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column',      
@@ -270,7 +280,7 @@ class CaseChat extends React.Component {
             <Feed.Event key={message.id}>
               <Feed.Content>
                 {message.role === 'assistant' && (
-                  <div style={{ float: 'right', display: 'none', marginRight:'1em' }} className='controls'>
+                  <div style={{ float: 'right', display: 'none', marginRight:'1em', paddingTop:'1em' }} className='controls'>
                     <Button.Group size='mini'>
                       <Popup trigger={
                         <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
@@ -360,6 +370,10 @@ class CaseChat extends React.Component {
           </Modal>
         </Feed>
         <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+          {generatingReponse && (
+            <Message size='tiny' style={{ float: 'right'}}>
+              <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
+            </Message>)}
           <Form.Field>
             <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
           </Form.Field>
