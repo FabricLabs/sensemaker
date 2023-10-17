@@ -581,8 +581,9 @@ class Jeeves extends Service {
           res.send(conversations);
         },
         html: () => {
+          // TODO: provide state
           const page = new Conversations({});
-          const html = page._toHTML();
+          const html = page.toHTML();
           return res.send(this.http.app._renderWith(html));
         }
       });

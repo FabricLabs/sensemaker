@@ -36,11 +36,7 @@ class Conversations extends React.Component {
     );
   }
 
-  /**
-   * Generate HTML.
-   * @returns {String} HTML string.
-   */
-  _toHTML () {
+  toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
 }
