@@ -15,8 +15,6 @@ const {
   Header,
 } = require('semantic-ui-react');
 
-const {Rating} = require('react-simple-star-rating');
-
 class CaseChat extends React.Component {
   constructor (props) {
     super(props);
