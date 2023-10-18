@@ -306,3 +306,8 @@ fabric-motd {
 .chat-feed .event:hover .controls {
   display: block !important;
 }
+.case-info {
+  margin-right: 1em !important; 
+  max-height: 40vh;
+  min-height: 40vh;
+}
