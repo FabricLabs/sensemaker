@@ -22,6 +22,7 @@ const {
 } = require('semantic-ui-react');
 
 const {
+  RELEASE_NAME,
   ENABLE_CASE_SEARCH,
   ENABLE_LIBRARY
 } = require('../constants');
@@ -166,9 +167,7 @@ class Dashboard extends React.Component {
                   </Popup.Content>
                 </Popup>
                 <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
-                <Popup trigger={
-                  <Label color='black'>alpha</Label>
-                }>
+                <Popup trigger={<Label color='black'>alpha</Label>}>
                   <Popup.Content>Exclusive access!</Popup.Content>
                 </Popup>
               </Header>
@@ -189,7 +188,7 @@ class Dashboard extends React.Component {
             </Menu.Item>
             {ENABLE_CASE_SEARCH && (
               <Menu.Item as={Link} to='/cases'>
-                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'>coming soon!</Label></div>
+                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
             {ENABLE_LIBRARY && (

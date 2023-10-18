@@ -101,19 +101,18 @@ class CaseChat extends React.Component {
   handleSubmit = (event) => {
     event.preventDefault();
     const { query } = this.state;
-    const { message } = this.props.chat;  
-    const {caseTitle , caseId} = this.props;
-
+    const { message } = this.props.chat;
+    const { caseTitle, caseID } = this.props;
 
     this.setState({ loading: true });
 
     // dispatch submitMessage
     this.props.submitMessage({
+      case_id: caseID,
       conversation_id: message?.conversation,
       content: query,
-      case: caseTitle+'_'+caseId,
+      case: caseTitle+'_'+caseID,
     }).then((output) => {
-
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 

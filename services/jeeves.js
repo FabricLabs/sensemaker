@@ -715,7 +715,12 @@ class Jeeves extends Service {
       console.debug('Handling inbound message:', req.body);
 
       let isNew = false;
-      let { conversation_id, content } = req.body;
+      let subject = null;
+      let {
+        case_id,
+        conversation_id,
+        content
+      } = req.body;
 
       if (!conversation_id) {
         isNew = true;
@@ -735,6 +740,10 @@ class Jeeves extends Service {
         conversation_id = created[0];
       }
 
+      if (case_id) {
+        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+      }
+
       try {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
@@ -752,6 +761,7 @@ class Jeeves extends Service {
         this._handleRequest({
           // actor: activity.actor,
           conversation_id: conversation_id,
+          subject: (subject) ? `${subject.title}, ${subject.court_name}, ${subject.decision_date}` : null,
           input: content,
           // room: roomID // TODO: replace with a generic property (not specific to Matrix)
           // target: activity.target // candidate 1
@@ -1022,6 +1032,10 @@ class Jeeves extends Service {
     } else {
       console.debug('request without room, input:', request.input);
       messages = messages.concat([{ role: 'user', content: request.input }]);
+    }
+
+    if (request.subject) {
+      messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
     }
 
     // Prompt

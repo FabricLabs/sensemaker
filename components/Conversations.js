@@ -1,6 +1,7 @@
 'use strict';
 
 const React = require('react');
+const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
