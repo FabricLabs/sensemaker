@@ -51,7 +51,7 @@ class ChatBox extends React.Component {
     if (prevProps.chat.messages.length !== this.props.chat.messages.length) {
       this.scrollToBottom();
       // Set hasSubmittedMessage to true if a message has been submitted
-      if (!this.state.hasSubmittedMessage) {
+      if (!this.props.hasSubmittedMessage) {
         this.props.updateHasSubmittedMessage(true);
       }
       if (messages && messages.length > 0){
