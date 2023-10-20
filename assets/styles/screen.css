@@ -303,6 +303,13 @@ fabric-motd {
   color: #ccc;
 }
 
+.thumbs-group{
+  float: right;
+  display: none;
+  margin-right: 1em;
+  padding-top: 1em; 
+}
+
 .chat-feed .event:hover .controls {
   display: block !important;
 }
@@ -310,4 +317,18 @@ fabric-motd {
   margin-right: 1em !important; 
   max-height: 40vh;
   min-height: 40vh;
+}
+.home-dropdowns{
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 2em !important;
+}
+
+@media (max-width: 768px) {
+  .home-dropdowns {
+    flex-direction: column;
+  }
 }

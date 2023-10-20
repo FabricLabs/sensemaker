@@ -17,7 +17,9 @@ const {
   Modal,
   Message,
   TextArea,
-  Popup
+  Popup,
+  Dropdown,
+  Container
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -39,11 +41,14 @@ class ChatBox extends React.Component {
       generatingReponse: false
     };
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
+
   }
 
   componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
+    this.props.updateHasSubmittedMessage(false);
   }
 
   componentDidUpdate (prevProps) {
@@ -84,6 +89,39 @@ class ChatBox extends React.Component {
   handleChange = (e, { name, value }) => {
     this.setState({ [name]: value });
   }
+  handleChangeDropdown = (e, { name, value }) => {
+
+    this.setState({ query: value });     
+    const { message } = this.props.chat;  
+    let dataToSubmit;
+    
+    this.setState({ loading: true });
+
+      dataToSubmit = {
+        conversation_id: message?.conversation,
+        content: value,        
+      }  
+
+    // dispatch submitMessage
+    this.props.submitMessage(
+      dataToSubmit
+    ).then((output) => {
+
+      // dispatch getMessages
+      this.props.getMessages({ conversation_id: message?.conversation });
+
+      if (!this.watcher) {
+        this.watcher = setInterval(() => {
+          this.props.getMessages({ conversation_id: message?.conversation });
+        }, 15000);
+      }
+
+      this.setState({ loading: false });
+    });
+
+    // Clear the input after sending the message
+    this.setState({ query: '' });         
+  }
 
   handleClick = (e) => {
     console.debug('clicked reset button', e);
@@ -112,6 +150,7 @@ class ChatBox extends React.Component {
         content: query,        
       }
     }
+    console.log('data to submit: ', dataToSubmit);
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit
@@ -224,8 +263,24 @@ class ChatBox extends React.Component {
 
   render () {
     const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle } = this.props;
+    const { isSending, placeholder,messageContainerStyle,inputStyle, caseId } = this.props;
     const { message, messages } = this.props.chat;    
+
+    const dropdownOptions = [
+      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
+      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
+      // Add more options as needed
+    ];
+    const dropdownDraft = [
+      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
+      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
+      // Add more options as needed
+    ];
+    const dropdownOutline = [
+      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
+      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
+      // Add more options as needed
+    ];
 
     return (
         <div>
@@ -234,7 +289,7 @@ class ChatBox extends React.Component {
                     <Feed.Event key={message.id}>
                     <Feed.Content>
                         {message.role === 'assistant' && (
-                        <div style={{ float: 'right', display: 'none', marginRight:'1em', paddingTop:'1em' }} className='controls'>
+                        <div className='controls thumbs-group'>
                             <Button.Group size='mini'>
                             <Popup trigger={
                                 <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
@@ -330,6 +385,33 @@ class ChatBox extends React.Component {
             <Form.Field>
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
             </Form.Field>
+            {(!this.props.hasSubmittedMessage && !caseId) && (
+              <Container className='home-dropdowns'>                
+                 <Dropdown
+                  size='tiny'
+                  placeholder='Select an option'    
+                  selection                  
+                  labeled                  
+                  text='Find all case that...'
+                  options={dropdownOptions}
+                  onChange={this.handleChangeDropdown}
+                 />
+                 <Dropdown
+                  size='tiny'
+                  placeholder='Select an option'                  
+                  selection
+                  options={dropdownOptions}
+                  onChange={(e, { value }) => console.log('Selected value:', value)} // Handle dropdown value change
+                 />
+                 <Dropdown
+                  size='tiny'
+                  placeholder='Select an option'                  
+                  selection
+                  options={dropdownOptions}
+                  onChange={(e, { value }) => console.log('Selected value:', value)} // Handle dropdown value change
+                 />
+                </Container>
+              )}
             </Form>
         </div>
     );

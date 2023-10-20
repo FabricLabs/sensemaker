@@ -98,7 +98,7 @@ class CaseChat extends React.Component {
             inputStyle={inputStyle} 
             hasSubmittedMessage={this.state.hasSubmittedMessage}
             updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
-            placeholder={this.placeholder}
+            placeholder={this.props.placeholder}
             messagesEndRef={this.messagesEndRef}
             />        
       </fabric-component>

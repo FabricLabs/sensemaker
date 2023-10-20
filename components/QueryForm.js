@@ -47,8 +47,8 @@ class Chat extends React.Component {
       transition: 'max-height 1s',
     } : {
       transition: 'height 1s',
-      paddingBottom: '5em',
-      height: '100%',
+      // paddingBottom: '5em',
+      // height: '100%',
       
     };
 
@@ -63,7 +63,7 @@ class Chat extends React.Component {
       display: 'flex',
       flexDirection: 'column', 
     } : {
-      height: 'auto',
+      height: 'calc(100vh - 3rem)',
       display: 'flex',
       flexDirection: 'column',  
     };
@@ -76,10 +76,11 @@ class Chat extends React.Component {
       paddingRight: '1.5rem'
       
     } : {
-      bottom: '1em',
-      right: '1em',
-      left: '1em',
-      height: 'auto',
+      // bottom: '10em',
+      // right: '1em',
+      // left: '1em',
+      // height: 'auto',
+      position: 'relative',
     };
     
 
@@ -90,20 +91,20 @@ class Chat extends React.Component {
          <Feed.Extra text style={{ display: 'flex'}}>
             <Image src='/images/jeeves-brand.png' size='small' floated='left' />
             <div style={{ paddingTop: '4em',maxWidth: '10em' }}>
-            <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
+              <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
             </div>
           </Feed.Extra>
-           <Header style={{ marginTop: '1em' }}>How can I help you today?</Header> 
+          <Header style={{ marginTop: '1em'}}>How can I help you today?</Header> 
 
-           <ChatBox 
-              {...this.props}   
-              messageContainerStyle={messageContainerStyle}
-              inputStyle={inputStyle} 
-              hasSubmittedMessage={this.state.hasSubmittedMessage}
-              updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
-              placeholder={this.placeholder}
-              messagesEndRef={this.messagesEndRef}
-            />        
+          <ChatBox 
+             {...this.props}   
+             messageContainerStyle={messageContainerStyle}
+             inputStyle={inputStyle} 
+             hasSubmittedMessage={this.state.hasSubmittedMessage}
+             updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
+             placeholder={this.props.placeholder}
+             messagesEndRef={this.messagesEndRef}
+           />        
 
        </fabric-component>
     );
