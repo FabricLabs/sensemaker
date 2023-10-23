@@ -319,16 +319,23 @@ fabric-motd {
   min-height: 40vh;
 }
 .home-dropdowns{
+  font-family: 'Roboto Mono', sans-serif;
   text-align: center;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 2em !important;
+  flex-wrap: wrap;
+  gap: 2em;
+  margin-top: 2em;
+}
+.home-dropdowns .ui.dropdown{
+  min-width: 20em !important;
 }
 
 @media (max-width: 768px) {
   .home-dropdowns {
     flex-direction: column;
+    gap: 1em !important;
   }
 }

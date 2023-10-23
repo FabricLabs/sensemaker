@@ -6,6 +6,7 @@ const $ = require('jquery');
 const marked = require('marked');
 
 const store = require('../stores/redux');
+const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./dropdownOptions');
 
 // Semantic UI
 const {
@@ -18,8 +19,7 @@ const {
   Message,
   TextArea,
   Popup,
-  Dropdown,
-  Container
+  Dropdown  
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -38,7 +38,7 @@ class ChatBox extends React.Component {
       modalLoading : false,
       feedbackSent : false,
       feedbackFail : false,
-      generatingReponse: false
+      generatingReponse: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -90,37 +90,38 @@ class ChatBox extends React.Component {
     this.setState({ [name]: value });
   }
   handleChangeDropdown = (e, { name, value }) => {
+    if(value!=''){
+      this.setState({ query: value });     
+      const { message } = this.props.chat;  
+      let dataToSubmit;
+      
+      this.setState({ loading: true });
 
-    this.setState({ query: value });     
-    const { message } = this.props.chat;  
-    let dataToSubmit;
-    
-    this.setState({ loading: true });
+        dataToSubmit = {
+          conversation_id: message?.conversation,
+          content: value,        
+        }  
 
-      dataToSubmit = {
-        conversation_id: message?.conversation,
-        content: value,        
-      }  
+      // dispatch submitMessage
+      this.props.submitMessage(
+        dataToSubmit
+      ).then((output) => {
 
-    // dispatch submitMessage
-    this.props.submitMessage(
-      dataToSubmit
-    ).then((output) => {
+        // dispatch getMessages
+        this.props.getMessages({ conversation_id: message?.conversation });
 
-      // dispatch getMessages
-      this.props.getMessages({ conversation_id: message?.conversation });
+        if (!this.watcher) {
+          this.watcher = setInterval(() => {
+            this.props.getMessages({ conversation_id: message?.conversation });
+          }, 15000);
+        }
 
-      if (!this.watcher) {
-        this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: message?.conversation });
-        }, 15000);
-      }
+        this.setState({ loading: false });
+      });
 
-      this.setState({ loading: false });
-    });
-
-    // Clear the input after sending the message
-    this.setState({ query: '' });         
+      // Clear the input after sending the message
+      this.setState({ query: '' });
+   }         
   }
 
   handleClick = (e) => {
@@ -264,24 +265,8 @@ class ChatBox extends React.Component {
   render () {
     const { loading, generatingReponse } = this.state;
     const { isSending, placeholder,messageContainerStyle,inputStyle, caseId } = this.props;
-    const { message, messages } = this.props.chat;    
-
-    const dropdownOptions = [
-      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
-      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
-      // Add more options as needed
-    ];
-    const dropdownDraft = [
-      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
-      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
-      // Add more options as needed
-    ];
-    const dropdownOutline = [
-      { text: 'Find a case that involves a car accident', value: 'Find a case that involves a car accident' },
-      { text: 'Find a case related to the "the 4th" amendment', value: 'Find a case related to the "the 4th" amendment'},
-      // Add more options as needed
-    ];
-
+    const { message, messages } = this.props.chat;   
+    
     return (
         <div>
             <Feed style={messageContainerStyle} className='chat-feed'>
@@ -377,42 +362,46 @@ class ChatBox extends React.Component {
                     </Modal.Actions>
                 </Modal>
             </Feed>
-            <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+            <Form id="" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
             {generatingReponse && (
                 <Message size='tiny' style={{ float: 'right'}}>
                 <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
                 </Message>)}
             <Form.Field>
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
-            </Form.Field>
-            {(!this.props.hasSubmittedMessage && !caseId) && (
-              <Container className='home-dropdowns'>                
-                 <Dropdown
-                  size='tiny'
-                  placeholder='Select an option'    
-                  selection                  
-                  labeled                  
-                  text='Find all case that...'
-                  options={dropdownOptions}
-                  onChange={this.handleChangeDropdown}
-                 />
-                 <Dropdown
-                  size='tiny'
-                  placeholder='Select an option'                  
-                  selection
-                  options={dropdownOptions}
-                  onChange={(e, { value }) => console.log('Selected value:', value)} // Handle dropdown value change
-                 />
-                 <Dropdown
-                  size='tiny'
-                  placeholder='Select an option'                  
-                  selection
-                  options={dropdownOptions}
-                  onChange={(e, { value }) => console.log('Selected value:', value)} // Handle dropdown value change
-                 />
-                </Container>
-              )}
+            </Form.Field>            
             </Form>
+            {(!this.props.hasSubmittedMessage && !caseId) && (        
+               <container >           
+                <Header as='h3' style={{textAlign: 'center', marginTop:'2em'}}>Chat suggestions you can try:</Header> 
+                <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
+                 <Dropdown
+                  size='small'
+                  placeholder='Find all case that...'  
+                  selection       
+                  text='Find all case that...'                                    
+                  options={caseDropOptions}
+                  onChange={this.handleChangeDropdown}                         
+                 />              
+                 <Dropdown
+                  size='small'
+                  placeholder='Draft a brief...'  
+                  selection
+                  text='Draft a brief...' 
+                  options={draftDropOptions}
+                  onChange={this.handleChangeDropdown}                   
+                 />
+                 <Dropdown
+                  size='small'
+                  placeholder='Outline a motion...'                  
+                  selection
+                  text='Outline a motion...'                  
+                  options={outlineDropOptions}
+                  onChange={this.handleChangeDropdown}                   
+                 />
+                 </div>
+                </container>
+              )}
         </div>
     );
   }

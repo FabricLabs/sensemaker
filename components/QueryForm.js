@@ -76,14 +76,10 @@ class Chat extends React.Component {
       paddingRight: '1.5rem'
       
     } : {
-      // bottom: '10em',
-      // right: '1em',
-      // left: '1em',
-      // height: 'auto',
+      left: '0',
+      maxWidth: '80vw !important',
       position: 'relative',
-    };
-    
-
+    };    
     return (
      
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>

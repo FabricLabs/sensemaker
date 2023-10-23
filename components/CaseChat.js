@@ -83,6 +83,7 @@ class CaseChat extends React.Component {
       right: '1em',
       left: '1em',
       height: 'auto',
+      position:'absolute'
     };
 
     return (
