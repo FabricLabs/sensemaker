@@ -134,16 +134,16 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;  
-    const {caseTitle , caseId} = this.props;
+    const {caseTitle , caseID} = this.props;
     let dataToSubmit;
     
     this.setState({ loading: true });
 
-    if(caseId){
+    if(caseID){
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
-        case: caseTitle+'_'+caseId,
+        case: caseTitle+'_'+caseID,
       }
     }else{
       dataToSubmit = {
@@ -264,7 +264,7 @@ class ChatBox extends React.Component {
 
   render () {
     const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, caseId } = this.props;
+    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID } = this.props;
     const { message, messages } = this.props.chat;   
     
     return (
@@ -371,7 +371,7 @@ class ChatBox extends React.Component {
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
             </Form.Field>            
             </Form>
-            {(!this.props.hasSubmittedMessage && !caseId) && (        
+            {(!this.props.hasSubmittedMessage && !caseID) && (        
                <container >           
                 <Header as='h3' style={{textAlign: 'center', marginTop:'2em'}}>Chat suggestions you can try:</Header> 
                 <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>

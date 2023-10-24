@@ -70,7 +70,7 @@ class Conversation extends React.Component {
             isSending={loading}
             placeholder="Ask me anything about this case..."
             caseTitle={cases.current.title}
-            caseId={id}
+            caseID={id}
           />
       </fabric-container>
     );
