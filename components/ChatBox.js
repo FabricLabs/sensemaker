@@ -6,7 +6,7 @@ const $ = require('jquery');
 const marked = require('marked');
 
 const store = require('../stores/redux');
-const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./dropdownOptions');
+const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./suggestionOptions');
 
 // Semantic UI
 const {
