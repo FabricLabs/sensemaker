@@ -39,7 +39,7 @@ class Conversation extends React.Component {
 
     return (
       <fabric-container>
-        <Segment fluid loading={loading} className='case-info' >
+        <Segment fluid loading={loading} className='case-info'>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>
@@ -55,10 +55,7 @@ class Conversation extends React.Component {
               </pre>
             </code>
           </div>
-        
-
         </Segment>
-
         <CaseChat
             fetchConversations={this.props.fetchConversations}
             getMessages={this.props.getMessages}
@@ -68,7 +65,7 @@ class Conversation extends React.Component {
             chat={this.props.chat}
             includeFeed={true}
             isSending={loading}
-            placeholder="Ask me anything about this case..."
+            placeholder='Ask me anything about this case...'
             caseTitle={cases.current.title}
             caseID={id}
           />

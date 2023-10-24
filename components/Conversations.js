@@ -1,6 +1,7 @@
 'use strict';
 
 const React = require('react');
+const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
@@ -36,11 +37,7 @@ class Conversations extends React.Component {
     );
   }
 
-  /**
-   * Generate HTML.
-   * @returns {String} HTML string.
-   */
-  _toHTML () {
+  toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
 }

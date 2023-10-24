@@ -37,6 +37,136 @@ class CaseChat extends React.Component {
     });
   }
 
+  handleChange = (e, { name, value }) => {
+    this.setState({ [name]: value });
+  }
+
+  handleClick = (e) => {
+    console.debug('clicked reset button', e);
+    this.props.resetChat();
+    this.setState({ message: null, chat: { message: null } });
+  }
+
+  handleSubmit = (event) => {
+    event.preventDefault();
+    const { query } = this.state;
+    const { message } = this.props.chat;
+    const { caseTitle, caseID } = this.props;
+
+    this.setState({ loading: true });
+
+    // dispatch submitMessage
+    this.props.submitMessage({
+      case_id: caseID,
+      conversation_id: message?.conversation,
+      content: query,
+      case: caseTitle+'_'+caseID,
+    }).then((output) => {
+      // dispatch getMessages
+      this.props.getMessages({ conversation_id: message?.conversation });
+
+      if (!this.watcher) {
+        this.watcher = setInterval(() => {
+          this.props.getMessages({ conversation_id: message?.conversation });
+        }, 15000);
+      }
+
+      this.setState({ loading: false });
+    });
+
+    // Clear the input after sending the message
+    this.setState({ query: '' });
+  }
+
+  handleModalClose = () => {
+    this.setState({ 
+      modalOpen: false,
+      thumbsDownClicked : false,
+      thumbsUpClicked : false,
+      rating : 0,
+      comment : '',
+      modalLoading: false,
+      feedbackSent: false,
+      feedbackFail: false
+         
+    });
+  };
+
+  handleModalUp = () => {
+    this.setState({ 
+      modalOpen: true, 
+      thumbsDownClicked : false, 
+      thumbsUpClicked : true 
+    });
+  };
+
+  handleModalDown = () => {
+    this.setState({ 
+      modalOpen: true, 
+      thumbsDownClicked : true, 
+      thumbsUpClicked : false 
+    });
+  };
+
+  handleRatingChange = (rate) => {
+    this.setState({ rating: rate });    
+  };
+
+  handleCommentChange = (e, { value }) => {
+    this.setState({ comment: value });
+  }
+
+  handleModalSend = () => {
+    const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
+    const { message } = this.props.chat;
+    const mssageId = message.id; 
+    const state = store.getState();
+    const token = state.auth.token;
+
+    //data to send to the API
+    const dataToSend = {
+      rating,
+      comment,
+      thumbsUpClicked,
+      thumbsDownClicked,
+      message: mssageId      
+    };
+    
+  
+    //shows loading button
+    this.setState({ modalLoading: true });    
+
+    //artificial delay
+    const delayPromise = new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true);
+      }, 1500);
+    });
+
+    Promise.all([delayPromise, fetch('/reviews', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(dataToSend),
+    })])
+      .then(([delayResult, fetchResponse]) => {        
+        if (delayResult === true) {
+          if (fetchResponse.ok) {
+            this.setState({feedbackSent : true, modalLoading: false });
+          } else {
+            this.setState({feedbackFail : true, modalLoading: false });
+            console.error('API request failed');
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error while sending data to the API:', error);
+      })
+  };
+
+
   render () {
     const { loading, generatingReponse } = this.state;
     const { isSending, placeholder } = this.props;
