@@ -42,7 +42,7 @@ class ChatBox extends React.Component {
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
-
+    console.log('chat: ',this.props.chat);
   }
 
   componentDidMount () {
@@ -264,7 +264,7 @@ class ChatBox extends React.Component {
 
   render () {
     const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID } = this.props;
+    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID , previousChat} = this.props;
     const { message, messages } = this.props.chat;   
     
     return (
@@ -371,7 +371,7 @@ class ChatBox extends React.Component {
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
             </Form.Field>            
             </Form>
-            {(!this.props.hasSubmittedMessage && !caseID) && (        
+            {(!this.props.hasSubmittedMessage && !caseID && !previousChat) && (        
                <container >           
                 <Header as='h3' style={{textAlign: 'center', marginTop:'2em'}}>Chat suggestions you can try:</Header> 
                 <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
