@@ -319,7 +319,7 @@ fabric-motd {
   min-height: 40vh;
 }
 .home-dropdowns{
-  font-family: 'Roboto Mono', sans-serif;
+  
   text-align: center;
   display: flex;
   flex-direction: row;
@@ -330,6 +330,7 @@ fabric-motd {
   margin-top: 2em;
 }
 .home-dropdowns .ui.dropdown{
+  font-family: 'Roboto Mono', sans-serif !important;
   min-width: 20em !important;
 }
 

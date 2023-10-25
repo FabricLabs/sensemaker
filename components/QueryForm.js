@@ -39,7 +39,10 @@ class Chat extends React.Component {
   }
 
   render () {
-    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+    
+    const { messages } = this.props.chat;
+
+    const messageContainerStyle = messages.length>0 ? {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
@@ -52,7 +55,7 @@ class Chat extends React.Component {
       
     };
 
-    const componentStyle = this.state.hasSubmittedMessage ? {
+    const componentStyle = messages.length>0 ? {
       display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
@@ -68,7 +71,7 @@ class Chat extends React.Component {
       flexDirection: 'column',  
     };
 
-    const inputStyle = this.state.hasSubmittedMessage ? {
+    const inputStyle = messages.length>0 ? {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
@@ -79,7 +82,8 @@ class Chat extends React.Component {
       left: '0',
       maxWidth: '80vw !important',
       position: 'relative',
-    };    
+    };
+ 
     return (
      
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
@@ -100,6 +104,7 @@ class Chat extends React.Component {
              updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
              placeholder={this.props.placeholder}
              messagesEndRef={this.messagesEndRef}
+             homePage={true}
            />        
 
        </fabric-component>

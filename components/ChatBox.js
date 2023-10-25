@@ -6,7 +6,7 @@ const $ = require('jquery');
 const marked = require('marked');
 
 const store = require('../stores/redux');
-const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./suggestionOptions');
+const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./SuggestionOptions');
 
 // Semantic UI
 const {
@@ -39,10 +39,11 @@ class ChatBox extends React.Component {
       feedbackSent : false,
       feedbackFail : false,
       generatingReponse: false,
+      //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
+      previousFlag: false,  
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
-    console.log('chat: ',this.props.chat);
   }
 
   componentDidMount () {
@@ -64,7 +65,10 @@ class ChatBox extends React.Component {
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant') {
           this.setState({ generatingReponse: false });
         } else {
-          this.setState({ generatingReponse: true });
+          //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
+          if(!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)){
+            this.setState({ generatingReponse: true });
+          }
         }
       }
     }
@@ -137,7 +141,7 @@ class ChatBox extends React.Component {
     const {caseTitle , caseID} = this.props;
     let dataToSubmit;
     
-    this.setState({ loading: true });
+    this.setState({ loading: true, previousFlag: true });    
 
     if(caseID){
       dataToSubmit = {
@@ -146,9 +150,16 @@ class ChatBox extends React.Component {
         case: caseTitle+'_'+caseID,
       }
     }else{
-      dataToSubmit = {
-        conversation_id: message?.conversation,
-        content: query,        
+      if(!this.props.previousChat){
+        dataToSubmit = {
+          conversation_id: message?.conversation,
+          content: query,
+        }        
+      }else{
+        dataToSubmit = {
+          conversation_id: this.props.conversationID,
+          content: query,
+        }        
       }
     }
     console.log('data to submit: ', dataToSubmit);
@@ -264,7 +275,7 @@ class ChatBox extends React.Component {
 
   render () {
     const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID , previousChat} = this.props;
+    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID , homePage} = this.props;
     const { message, messages } = this.props.chat;   
     
     return (
@@ -362,7 +373,8 @@ class ChatBox extends React.Component {
                     </Modal.Actions>
                 </Modal>
             </Feed>
-            <Form id="" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+            {/* <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
+            <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
             {generatingReponse && (
                 <Message size='tiny' style={{ float: 'right'}}>
                 <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
@@ -371,7 +383,7 @@ class ChatBox extends React.Component {
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
             </Form.Field>            
             </Form>
-            {(!this.props.hasSubmittedMessage && !caseID && !previousChat) && (        
+            {(messages.length === 0 && homePage) && (        
                <container >           
                 <Header as='h3' style={{textAlign: 'center', marginTop:'2em'}}>Chat suggestions you can try:</Header> 
                 <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>

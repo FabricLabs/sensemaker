@@ -21,7 +21,7 @@ class Conversation extends React.Component {
     super(props);
 
     this.state = {
-      hasSubmittedMessage: true,
+      hasSubmittedMessage: false,
     };
 
     this.messagesEndRef = React.createRef();
@@ -35,23 +35,26 @@ class Conversation extends React.Component {
     this.props.getMessages({ conversation_id: id });
   }
 
+  componentWillUnmount () {
+    this.setState({
+      hasSubmittedMessage: false,
+    });
+  }
+
   render () {
     const { id, loading, error, chat, messages } = this.props;
 
-    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+    const messageContainerStyle = true ? {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
       overflowY: 'auto',
       transition: 'max-height 1s',
     } : {
-      transition: 'height 1s',
-      // paddingBottom: '5em',
-      // height: '100%',
-      
+      transition: 'height 1s',   
     };
 
-    const componentStyle = this.state.hasSubmittedMessage ? {
+    const componentStyle = true ? {
       display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
@@ -61,16 +64,16 @@ class Conversation extends React.Component {
       inset: 0,
       display: 'flex',
       flexDirection: 'column', 
-    } : {
       height: 'calc(100vh - 3rem)',
+    } : {
       display: 'flex',
       flexDirection: 'column',  
     };
 
-    const inputStyle = this.state.hasSubmittedMessage ? {
+    const inputStyle = true ? {
       position: 'fixed',
       bottom: '1.25em',
-      right: '1.25em',
+      right: '1.25em',  
       left: 'calc(350px + 1.25em)',
       paddingRight: '1.5rem'
       
@@ -80,9 +83,9 @@ class Conversation extends React.Component {
       position: 'relative',
     };    
 
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
+    // if (error) {
+    //   return <div>Error: {error}</div>;
+    // }
 
     return (
        
@@ -98,7 +101,9 @@ class Conversation extends React.Component {
             inputStyle={inputStyle} 
             hasSubmittedMessage={this.state.hasSubmittedMessage}
             updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
-            previousChat={true}          
+            placeholder={'Ask me anything...'}
+            previousChat={true}
+            conversationID={id}          
           />
 
        </fabric-component>

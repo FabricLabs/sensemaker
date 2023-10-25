@@ -40,9 +40,9 @@ class CaseChat extends React.Component {
   render () {
     const { loading, generatingReponse } = this.state;
     const { isSending, placeholder } = this.props;
-    const { message, messages } = this.props.chat;
+    const { message, messages } = this.props.chat;    
 
-    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+    const messageContainerStyle = messages.length>0 ? {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
@@ -57,7 +57,7 @@ class CaseChat extends React.Component {
       
     };
 
-    const componentStyle = this.state.hasSubmittedMessage ? {
+    const componentStyle = messages.length>0 ? {
       top: '1em',
       left: 'calc(350px + 1em)',
       maxHeight: 'calc(60vh - 4rem)', // Set a maximum height
@@ -72,7 +72,7 @@ class CaseChat extends React.Component {
       flexDirection: 'column',  
     };
 
-    const inputStyle = this.state.hasSubmittedMessage ? {
+    const inputStyle = messages.length>0 ? {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
