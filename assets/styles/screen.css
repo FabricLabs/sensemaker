@@ -1,7 +1,5 @@
 #main-content #input-controls {
   position: absolute;
-  /* right: 1.25em !important; */
-  /* bottom: 1.25em !important; */
 }
 
 @media (min-width: 961px) {
@@ -315,7 +313,7 @@ fabric-motd {
   padding-top: 1em; 
 }
 
- .event:hover .controls {
+ .chat-feed .event:hover .controls {
   display: block !important;
 }
 .case-info {
