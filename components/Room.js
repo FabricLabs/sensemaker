@@ -21,7 +21,7 @@ class Conversation extends React.Component {
     super(props);
 
     this.state = {
-      hasSubmittedMessage: true,
+      hasSubmittedMessage: false,
     };
 
     this.messagesEndRef = React.createRef();
@@ -33,25 +33,33 @@ class Conversation extends React.Component {
 
     // this.props.fetchConversation(id);
     this.props.getMessages({ conversation_id: id });
+    window.addEventListener('resize', this.handleResize);
   }
+
+  componentWillUnmount () {
+    this.setState({
+      hasSubmittedMessage: false,
+    });
+    window.removeEventListener('resize', this.handleResize);
+
+  }
+  handleResize = () => {
+    // Force a re-render when the window resizes
+    this.forceUpdate();
+  };
 
   render () {
     const { id, loading, error, chat, messages } = this.props;
 
-    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+    const messageContainerStyle = {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
       overflowY: 'auto',
       transition: 'max-height 1s',
-    } : {
-      transition: 'height 1s',
-      // paddingBottom: '5em',
-      // height: '100%',
-      
     };
 
-    const componentStyle = this.state.hasSubmittedMessage ? {
+    const componentStyle = {
       display: 'absolute',
       top: '1em',
       left: 'calc(350px + 1em)',
@@ -61,28 +69,25 @@ class Conversation extends React.Component {
       inset: 0,
       display: 'flex',
       flexDirection: 'column', 
-    } : {
       height: 'calc(100vh - 3rem)',
-      display: 'flex',
-      flexDirection: 'column',  
     };
 
-    const inputStyle = this.state.hasSubmittedMessage ? {
+    const inputStyle = {
       position: 'fixed',
       bottom: '1.25em',
-      right: '1.25em',
+      right: '1.25em',  
       left: 'calc(350px + 1.25em)',
       paddingRight: '1.5rem'
       
-    } : {
-      left: '0',
-      maxWidth: '80vw !important',
-      position: 'relative',
-    };    
+    }; 
 
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
+    if(inputStyle.position === 'fixed'){
+      if (window.matchMedia('(max-width: 820px)').matches){
+        inputStyle.left = '1.25em';
+      }else{
+        inputStyle.left = 'calc(350px + 1.25em)';      
+      }
+    } 
 
     return (
        
@@ -98,7 +103,9 @@ class Conversation extends React.Component {
             inputStyle={inputStyle} 
             hasSubmittedMessage={this.state.hasSubmittedMessage}
             updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
-            previousChat={true}          
+            placeholder={'Ask me anything...'}
+            previousChat={true}
+            conversationID={id}          
           />
 
        </fabric-component>

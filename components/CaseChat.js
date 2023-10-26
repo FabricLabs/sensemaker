@@ -29,20 +29,26 @@ class CaseChat extends React.Component {
   componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
+    window.addEventListener('resize', this.handleResize);
   } 
 
   componentWillUnmount () {
     this.setState({
       hasSubmittedMessage: false,
     });
+    window.removeEventListener('resize', this.handleResize);
   }
+  handleResize = () => {
+    // Force a re-render when the window resizes
+    this.forceUpdate();
+  };
 
   render () {
     const { loading, generatingReponse } = this.state;
     const { isSending, placeholder } = this.props;
-    const { message, messages } = this.props.chat;
+    const { message, messages } = this.props.chat;    
 
-    const messageContainerStyle = this.state.hasSubmittedMessage ? {
+    const messageContainerStyle = messages.length>0 ? {
       flexGrow: 1,
       paddingBottom: '3rem',
       transition: 'height 1s',
@@ -57,7 +63,7 @@ class CaseChat extends React.Component {
       
     };
 
-    const componentStyle = this.state.hasSubmittedMessage ? {
+    const componentStyle = messages.length>0 ? {
       top: '1em',
       left: 'calc(350px + 1em)',
       maxHeight: 'calc(60vh - 4rem)', // Set a maximum height
@@ -72,11 +78,10 @@ class CaseChat extends React.Component {
       flexDirection: 'column',  
     };
 
-    const inputStyle = this.state.hasSubmittedMessage ? {
+    const inputStyle = messages.length>0 ? {
       position: 'fixed',
       bottom: '1.25em',
-      right: '1.25em',
-      left: 'calc(350px + 1.25em)',
+      right: '1.25em',         
       paddingRight: '1.5rem'
     } : {
       bottom: '1em',
@@ -86,6 +91,13 @@ class CaseChat extends React.Component {
       position:'absolute'
     };
 
+    if(inputStyle.position === 'fixed'){
+      if (window.matchMedia('(max-width: 820px)').matches){
+        inputStyle.left = '1.25em';
+      }else{
+        inputStyle.left = 'calc(350px + 1.25em)';      
+      }
+    } 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
