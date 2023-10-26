@@ -30,14 +30,20 @@ class Chat extends React.Component {
   componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
+    window.addEventListener('resize', this.handleResize);
   } 
 
   componentWillUnmount () {
     this.setState({
       hasSubmittedMessage: false,
     });
-  }
+    window.removeEventListener('resize', this.handleResize);
 
+  }
+  handleResize = () => {
+    // Force a re-render when the window resizes
+    this.forceUpdate();
+  };
   render () {
     
     const { messages } = this.props.chat;
@@ -49,10 +55,7 @@ class Chat extends React.Component {
       overflowY: 'auto',
       transition: 'max-height 1s',
     } : {
-      transition: 'height 1s',
-      // paddingBottom: '5em',
-      // height: '100%',
-      
+      transition: 'height 1s',      
     };
 
     const componentStyle = messages.length>0 ? {
@@ -75,15 +78,20 @@ class Chat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
-      left: 'calc(350px + 1.25em)',
-      paddingRight: '1.5rem'
-      
+      paddingRight: '1.5rem'      
     } : {
       left: '0',
       maxWidth: '80vw !important',
       position: 'relative',
     };
- 
+       
+      if(inputStyle.position === 'fixed'){
+        if (window.matchMedia('(max-width: 820px)').matches){
+          inputStyle.left = '1.25em';
+        }else{
+          inputStyle.left = 'calc(350px + 1.25em)';      
+        }
+      } 
     return (
      
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>

@@ -1,3 +1,9 @@
+#main-content #input-controls {
+  position: absolute;
+  /* right: 1.25em !important; */
+  /* bottom: 1.25em !important; */
+}
+
 @media (min-width: 961px) {
   .desktop-only {
     display: block;
@@ -33,7 +39,10 @@
     /* inset: 1em !important; */
   }
 
-  #main-content #input-controls {
+  /* #main-content #input-controls {
+    left: 1.25em !important;
+  } */
+  #main-content {
     left: 1.25em !important;
   }
 
@@ -180,11 +189,7 @@ fabric-motd {
   margin-right: 1em;
 }
 
-#main-content #input-controls {
-  position: absolute;
-  /* right: 1.25em !important; */
-  /* bottom: 1.25em !important; */
-}
+
 
 #site .card {
   background: rgba(0, 0, 0, 0.5);
@@ -310,7 +315,7 @@ fabric-motd {
   padding-top: 1em; 
 }
 
-.chat-feed .event:hover .controls {
+ .event:hover .controls {
   display: block !important;
 }
 .case-info {
