@@ -78,7 +78,7 @@ class Chat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',
-      paddingRight: '1.5rem'      
+      paddingRight: '0.2em'      
     } : {
       left: '0',
       maxWidth: '80vw !important',

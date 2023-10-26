@@ -77,7 +77,7 @@ class Conversation extends React.Component {
       bottom: '1.25em',
       right: '1.25em',  
       left: 'calc(350px + 1.25em)',
-      paddingRight: '1.5rem'
+      paddingRight: '0.2em' 
       
     }; 
 

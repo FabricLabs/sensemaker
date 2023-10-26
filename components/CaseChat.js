@@ -82,7 +82,7 @@ class CaseChat extends React.Component {
       position: 'fixed',
       bottom: '1.25em',
       right: '1.25em',         
-      paddingRight: '1.5rem'
+      paddingRight: '0.2em' 
     } : {
       bottom: '1em',
       right: '1em',
