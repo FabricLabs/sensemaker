@@ -36,6 +36,7 @@ class SPA extends FabricSPA {
     <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
     <script src="/scripts/jquery-3.4.1.js"></script>
     <script src="/scripts/semantic.min.js"></script>
+    <link rel="icon" href="/images/favicon.ico" />
   </head>
   <body>
     <div data-hash="${hash}" id="application-target">${html}</div>
