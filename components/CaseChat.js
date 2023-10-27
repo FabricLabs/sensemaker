@@ -55,6 +55,7 @@ class CaseChat extends React.Component {
       height: 'auto',
       overflowY: 'auto',
       transition: 'max-height 1s',
+      maxWidth: '98%', 
 
     } : {
       transition: 'height 1s',
