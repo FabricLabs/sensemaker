@@ -1,3 +1,7 @@
+#main-content #input-controls {
+  position: absolute;
+}
+
 @media (min-width: 961px) {
   .desktop-only {
     display: block;
@@ -33,7 +37,10 @@
     /* inset: 1em !important; */
   }
 
-  #main-content #input-controls {
+  /* #main-content #input-controls {
+    left: 1.25em !important;
+  } */
+  #main-content {
     left: 1.25em !important;
   }
 
@@ -180,11 +187,7 @@ fabric-motd {
   margin-right: 1em;
 }
 
-#main-content #input-controls {
-  position: absolute;
-  /* right: 1.25em !important; */
-  /* bottom: 1.25em !important; */
-}
+
 
 #site .card {
   background: rgba(0, 0, 0, 0.5);
@@ -303,11 +306,40 @@ fabric-motd {
   color: #ccc;
 }
 
-.chat-feed .event:hover .controls {
+.thumbs-group{
+  float: right;
+  display: none;
+  margin-right: 1em;
+  padding-top: 1em; 
+}
+
+ .chat-feed .event:hover .controls {
   display: block !important;
 }
 .case-info {
   margin-right: 1em !important; 
   max-height: 40vh;
   min-height: 40vh;
+}
+.home-dropdowns{
+  
+  text-align: center;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2em;
+  margin-top: 2em;
+}
+.home-dropdowns .ui.dropdown{
+  font-family: 'Roboto Mono', sans-serif !important;
+  min-width: 20em !important;
+}
+
+@media (max-width: 768px) {
+  .home-dropdowns {
+    flex-direction: column;
+    gap: 1em !important;
+  }
 }

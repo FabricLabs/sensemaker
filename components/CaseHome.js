@@ -127,7 +127,7 @@ class CaseHome extends React.Component {
     );
   }
 
-  toHTML () {
+  _toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
 }
