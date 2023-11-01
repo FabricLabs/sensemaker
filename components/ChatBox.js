@@ -274,7 +274,7 @@ class ChatBox extends React.Component {
 
   render () {
     const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID , homePage} = this.props;
+    const { isSending, placeholder,messageContainerStyle,inputStyle, homePage} = this.props;
     const { message, messages } = this.props.chat;   
     
     return (
