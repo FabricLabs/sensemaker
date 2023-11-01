@@ -41,6 +41,7 @@ class ChatBox extends React.Component {
       generatingReponse: false,
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,  
+      connectionProblem: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -192,7 +193,8 @@ class ChatBox extends React.Component {
       comment : '',
       modalLoading: false,
       feedbackSent: false,
-      feedbackFail: false
+      feedbackFail: false,
+      connectionProblem: false
          
     });
   };
@@ -220,55 +222,70 @@ class ChatBox extends React.Component {
   handleCommentChange = (e, { value }) => {
     this.setState({ comment: value });
   }
-
-  handleModalSend = () => {
+  
+  handleModalSend = async () => {
     const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
     const { message } = this.props.chat;
-    const mssageId = message.id; 
+    const messageId = message.id;
     const state = store.getState();
     const token = state.auth.token;
-
-    //data to send to the API
+  
     const dataToSend = {
       rating,
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: mssageId      
+      message: messageId,
     };
-    
   
-    //shows loading button
-    this.setState({ modalLoading: true });    
-
-    //artificial delay
-    const delayPromise = new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 1500);
-    });
-
-    Promise.all([delayPromise, fetch('/reviews', {
-      method: 'POST',
+    this.setState({ modalLoading: true });
+  
+    const fetchPromise = fetch("/reviews", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(dataToSend),
-    })])
-      .then(([delayResult, fetchResponse]) => {        
-        if (delayResult === true) {
-          if (fetchResponse.ok) {
-            this.setState({feedbackSent : true, modalLoading: false });
-          } else {
-            this.setState({feedbackFail : true, modalLoading: false });
-            console.error('API request failed');
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error while sending data to the API:', error);
-      })
+    });
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Fetch timed out"));
+      }, 15000);
+    });
+    try {
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (response.ok) {
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      } else {
+        console.error("API request failed with status:", response.status);
+      }
+      // This block is executed after the fetch and delay
+      this.setState({
+        feedbackSent: true,
+        feedbackFail: false,
+        modalLoading: false,
+        connectionProblem: false,
+      });
+    } catch (error) {
+      if (error.message === "Fetch timed out") {
+        this.setState({
+          feedbackSent: false,
+          feedbackFail: false,
+          modalLoading: false,
+          connectionProblem: true,
+        });
+      } else {
+        this.setState({
+          feedbackSent: false,
+          feedbackFail: true,
+          modalLoading: false,
+          connectionProblem: false,
+        });
+        console.error("Error while sending data to the API:", error);
+      }
+    }
   };
 
 
@@ -349,7 +366,13 @@ class ChatBox extends React.Component {
                             <Message.Header>Feedback could not be sent</Message.Header>
                             <p>Please try again later.</p>
                         </Message>
-                    )}               
+                    )}
+                    {this.state.connectionProblem && (
+                        <Message error> 
+                            <Message.Header>Feedback could not be sent</Message.Header>
+                            <p>Please check your internet connection.</p>
+                        </Message>
+                    )}                  
                     <Button
                         content="Close"                  
                         icon='close'
