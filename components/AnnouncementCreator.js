@@ -15,7 +15,6 @@ const {
   Message,
   Segment,
   Container,
-  Confirm,
   Modal
 } = require('semantic-ui-react');
 
@@ -36,6 +35,7 @@ class AnnouncementCreator extends React.Component {
       announSent: false,
       errorMessage: ''
     };
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   componentDidUpdate(prevProps) {
@@ -44,12 +44,12 @@ class AnnouncementCreator extends React.Component {
       this.setState({ loading: false });
     }
   }
-  handleTitleChange = (event) => {    
+  handleTitleChange = (event) => {
     this.setState({ title: event.target.value });
   };
 
-  handleBodyChange = (event) => {    
-    this.setState({ body: event.target.value });
+  handleBodyChange = (event) => {
+    this.setState({ body: event.target.value });   
   };
 
   handleSubmit = async (event) => {
@@ -58,8 +58,6 @@ class AnnouncementCreator extends React.Component {
 
     if (title || body) {
       this.setState({ modalOpen: true });
-    }else{
-      alert('There announcement is empty');
     }
   };
 
@@ -68,39 +66,39 @@ class AnnouncementCreator extends React.Component {
     this.setState({ title: '', body: '' });
   }
   handleModalClose = () => {
-    this.setState({  
+    this.setState({
       modalOpen: false,
       modalLoading: false,
       connectionProblem: false,
       announFail: false,
       announSent: false,
-      errorMessage: '' 
+      errorMessage: ''
     });
   }
-  handleModalSend = async () => {   
+  handleModalSend = async () => {
 
-    const { title,body, } = this.state;
+    const { title, body, } = this.state;
     const state = store.getState();
     const token = state.auth.token;
 
     const dataToSend = {
       title,
-      body      
+      body
     };
-    
+
     this.setState({ modalLoading: true });
 
-    const fetchPromise = fetch("/announcements", {
-      method: "POST",
+    const fetchPromise = fetch('/announcements', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(dataToSend),
     });
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
-        reject(new Error("Fetch timed out"));
+        reject(new Error('Fetch timed out'));
       }, 15000);
     });
     try {
@@ -122,48 +120,49 @@ class AnnouncementCreator extends React.Component {
           modalLoading: false,
           connectionProblem: false,
           errorMessage: 'API request failed with status:' + response.status
-        });        
-        console.error('API request failed with status:', response.status);        
-      }     
-      
+        });
+        console.error('API request failed with status:', response.status);
+      }
+
     } catch (error) {
-      if (error.message === "Fetch timed out") {
+      if (error.message === 'Fetch timed out') {
         this.setState({
           announSent: false,
           announFail: false,
           modalLoading: false,
           connectionProblem: true,
         });
-      } 
+      }
     }
   }
 
   render() {
-    const { 
-      title, 
-      body, 
-      loading, 
-      modalLoading, 
-      modalOpen, 
-      announSent, 
-      announFail, 
+
+    const {
+      title,
+      body,
+      loading,
+      modalLoading,
+      modalOpen,
+      announSent,
+      announFail,
       connectionProblem,
-      errorMessage 
-    } = this.state; 
-    
+      errorMessage
+    } = this.state;
+
 
     return (
       <Container fluid style={{ paddingTop: '2em', }}>
         <Header as='h4'>Create an Announcement - Markdown is allowed</Header>
         <Segment>
-          <Form fluid onSubmit={this.handleSubmit} method="POST" autocomplete="off">
+          <Form fluid onSubmit={this.handleSubmit} method='POST' autocomplete='off'>
             <Form.Field>
               <label>Title (optional)</label>
               <input placeholder='Title' name='title' autoComplete='title' value={title} onChange={this.handleTitleChange} />
             </Form.Field>
             <Form.Field>
               <label><p>Body</p></label>
-              <Form.TextArea placeholder='Write your announcement here' style={{ minHeight: '8em' }} value={body} onChange={this.handleBodyChange} required={true}/>
+              <Form.TextArea placeholder='Write your announcement here' style={{ minHeight: '8em' }} value={body} onChange={this.handleBodyChange} required={true} />
             </Form.Field>
             <Button primary loading={loading} type='submit' size='small' style={{ width: '7em' }} >Submit</Button>
             <Button loading={loading} size='small' onClick={this.handleClear} style={{ width: '7em' }} >Clear</Button>
@@ -189,8 +188,8 @@ class AnnouncementCreator extends React.Component {
           open={modalOpen}
           size='mini'>
           <Modal.Header>
-            Publishing&nbsp; 
-            <Icon name='announcement' size='small'/>
+            Publishing&nbsp;
+            <Icon name='announcement' />
           </Modal.Header>
           <Modal.Content>
             <Modal.Description>
@@ -219,7 +218,7 @@ class AnnouncementCreator extends React.Component {
               </Message>
             )}
             <Button
-              content="Close"
+              content='Close'
               icon='close'
               onClick={this.handleModalClose}
               labelPosition='right'
@@ -229,7 +228,7 @@ class AnnouncementCreator extends React.Component {
             {/*This button is shown only if Feedback wasnt sent yet */}
             {!announSent && (
               <Button
-                content="Publish"
+                content='Publish'
                 icon={modalLoading ? 'spinner' : 'checkmark'}
                 onClick={this.handleModalSend}
                 labelPosition='right'
@@ -239,13 +238,6 @@ class AnnouncementCreator extends React.Component {
               />)}
           </Modal.Actions>
         </Modal>
-        {/* <Confirm
-          open={this.state.modalOpen}
-          onCancel={this.handleConfirmClose}
-          onConfirm={this.handleConfirm}
-          content='Do you want to publish this announcement?'
-          size='tiny'
-        /> */}
       </Container>
     );
   }

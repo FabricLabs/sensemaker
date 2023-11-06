@@ -12,7 +12,8 @@ const ChatBox = require('./ChatBox');
 const {
   Header,
   Image, 
-  Feed,  
+  Feed,
+  Message  
 } = require('semantic-ui-react');
 
 
@@ -22,16 +23,20 @@ class Chat extends React.Component {
 
     this.state = {
       hasSubmittedMessage: false,
+      announTitle:'',
+      announBody:''
     };
 
     this.messagesEndRef = React.createRef();
   }
-
-  componentDidMount () {
+ 
+  componentDidMount() {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
-  } 
+
+    this.fetchAnnouncement();
+  }  
 
   componentWillUnmount () {
     this.setState({
@@ -40,12 +45,52 @@ class Chat extends React.Component {
     window.removeEventListener('resize', this.handleResize);
 
   }
+
+  fetchAnnouncement = async () => {
+
+    const state = store.getState();
+    const token = state.auth.token;
+
+    try {
+      const fetchPromise = fetch('/announcementsHome', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 15000);
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      if (result.title) {
+        this.setState({ announTitle: result.title })
+      }
+      if (result.body) {
+        this.setState({ announBody: result.body })
+      }
+    } catch (error) {
+      console.log('Error fetching announcements from API:', error);
+    }
+  };
+
   handleResize = () => {
     // Force a re-render when the window resizes
     this.forceUpdate();
   };
   render () {
-    
+    const {announTitle, announBody} = this.state;
     const { messages } = this.props.chat;
 
     const messageContainerStyle = messages.length>0 ? {
@@ -85,25 +130,44 @@ class Chat extends React.Component {
       maxWidth: '80vw !important',
       position: 'relative',
     };
+
+    const announcementStyle =  {  
+      maxHeight: '14em',
+      overflow: 'auto',    
+    };
        
-      if(inputStyle.position === 'fixed'){
-        if (window.matchMedia('(max-width: 820px)').matches){
-          inputStyle.left = '1.25em';
-        }else{
-          inputStyle.left = 'calc(350px + 1.25em)';      
-        }
-      } 
-    return (
-     
+    if(inputStyle.position === 'fixed'){
+      if (window.matchMedia('(max-width: 820px)').matches){
+        inputStyle.left = '1.25em';
+      }else{
+        inputStyle.left = 'calc(350px + 1.25em)';      
+      }
+    } 
+    
+    // const textToTry = '**this is the body**  # this is another pharagraph lorem asdsadas **this is the body**  ';
+
+    return (  
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
          {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
-         <Feed.Extra text style={{ display: 'flex'}}>
+         {((announTitle || announBody) && (messages.length == 0) ) && (             
+                <Message info style={announcementStyle}>
+                  <Message.Header >
+                    <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle) }} />
+                  </Message.Header>
+                  <Message.Content >
+                    <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
+                  </Message.Content>
+                </Message>              
+            )
+            }
+          <Feed.Extra text style={{ display: 'flex' }}>
             <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-            <div style={{ paddingTop: '4em',maxWidth: '10em' }}>
+            <div style={{ paddingTop: '2em', maxWidth: '10em' }}>
               <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
             </div>
+
           </Feed.Extra>
-          <Header style={{ marginTop: '1em'}}>How can I help you today?</Header> 
+          <Header style={{ marginTop: '0em'}}>How can I help you today?</Header> 
 
           <ChatBox 
              {...this.props}   
