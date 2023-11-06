@@ -176,7 +176,6 @@ class ChatBox extends React.Component {
           this.props.getMessages({ conversation_id: message?.conversation });
         }, 15000);
       }
-
       this.setState({ loading: false });
     });
 
@@ -258,16 +257,23 @@ class ChatBox extends React.Component {
       if (response.ok) {
         //forced delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        this.setState({
+          feedbackSent: true,
+          feedbackFail: false,
+          modalLoading: false,
+          connectionProblem: false,
+        });
       } else {
+        this.setState({
+          feedbackSent: false,
+          feedbackFail: true,
+          modalLoading: false,
+          connectionProblem: false,
+        });        
         console.error("API request failed with status:", response.status);
-      }
-      // This block is executed after the fetch and delay
-      this.setState({
-        feedbackSent: true,
-        feedbackFail: false,
-        modalLoading: false,
-        connectionProblem: false,
-      });
+      }    
+
     } catch (error) {
       if (error.message === "Fetch timed out") {
         this.setState({
@@ -276,22 +282,33 @@ class ChatBox extends React.Component {
           modalLoading: false,
           connectionProblem: true,
         });
-      } else {
-        this.setState({
-          feedbackSent: false,
-          feedbackFail: true,
-          modalLoading: false,
-          connectionProblem: false,
-        });
-        console.error("Error while sending data to the API:", error);
-      }
+      } 
     }
   };
 
 
   render () {
-    const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, homePage} = this.props;
+    
+    const { 
+      loading, 
+      generatingReponse, 
+      modalOpen, 
+      rating, 
+      feedbackSent, 
+      feedbackFail, 
+      connectionProblem, 
+      modalLoading,
+      query 
+    } = this.state;
+
+    const { 
+      isSending, 
+      placeholder,
+      messageContainerStyle,
+      inputStyle, 
+      homePage
+    } = this.props;
+
     const { message, messages } = this.props.chat;   
     
     return (
@@ -334,7 +351,7 @@ class ChatBox extends React.Component {
                 <Modal
                     onClose={this.handleModalClose}
                     onOpen={() => this.setState({ modalOpen: true })}
-                    open={this.state.modalOpen}            
+                    open={modalOpen}            
                     size='tiny'>
                     <Modal.Header>Feedback</Modal.Header>
                     <Modal.Content>              
@@ -342,7 +359,7 @@ class ChatBox extends React.Component {
                         <p>Let us know your opinion!</p>         
                     </Modal.Description>            
                     <Form>
-                        <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={this.state.rating}/>
+                        <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={rating}/>
                         <Form.Field>
                             <Header style={{ marginTop: '0.5em'}}>Comment</Header>
                             <TextArea
@@ -354,20 +371,20 @@ class ChatBox extends React.Component {
                     </Modal.Content>
                     <Modal.Actions> 
                     {/*When the feedback is sent it shows this message  */}
-                    {this.state.feedbackSent && (
+                    {feedbackSent && (
                         <Message positive>
                             <Message.Header>Feedback Sent!</Message.Header>
                             <p>Your comment has been successfully sent.</p>
                         </Message>
                     )}
                     {/*When the feedback could not be sent it shows this message  */}
-                    {this.state.feedbackFail && (
+                    {feedbackFail && (
                         <Message error> 
                             <Message.Header>Feedback could not be sent</Message.Header>
                             <p>Please try again later.</p>
                         </Message>
                     )}
-                    {this.state.connectionProblem && (
+                    {connectionProblem && (
                         <Message error> 
                             <Message.Header>Feedback could not be sent</Message.Header>
                             <p>Please check your internet connection.</p>
@@ -382,14 +399,14 @@ class ChatBox extends React.Component {
                         secondary
                     />
                     {/*This button is shown only if Feedback wasnt sent yet */}
-                    {!this.state.feedbackSent && (
+                    {!feedbackSent && (
                     <Button
                         content="Send"
-                        icon={this.state.modalLoading ? 'spinner' : 'checkmark'}
+                        icon={modalLoading ? 'spinner' : 'checkmark'}
                         onClick={this.handleModalSend}
                         labelPosition='right'    
                         size='small'     
-                        loading={this.state.modalLoading}         
+                        loading={modalLoading}         
                         positive                 
                     />)}                
                     </Modal.Actions>
@@ -402,7 +419,7 @@ class ChatBox extends React.Component {
                 <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
                 </Message>)}
             <Form.Field>
-                <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
+                <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} />
             </Form.Field>            
             </Form>
             {(messages.length === 0 && homePage) && (        
