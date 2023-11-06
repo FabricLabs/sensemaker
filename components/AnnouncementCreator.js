@@ -36,6 +36,7 @@ class AnnouncementCreator extends React.Component {
       errorMessage: ''
     };
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleModalSend = this.handleModalSend(this);
   }
 
   componentDidUpdate(prevProps) {

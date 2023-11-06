@@ -28,6 +28,7 @@ class Chat extends React.Component {
     };
 
     this.messagesEndRef = React.createRef();
+    this.fetchAnnouncement = this.fetchAnnouncement.bind(this);
   }
  
   componentDidMount() {
