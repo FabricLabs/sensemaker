@@ -17,7 +17,7 @@ const settings = {
 const store = require('../stores/redux');
 
 // Actions
-const { login, register } = require('../actions/authActions');
+const { login,loggedIn, register } = require('../actions/authActions');
 const { fetchAdminStats } = require('../actions/adminActions');
 
 const {
@@ -90,7 +90,7 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token
+      token: state.auth.token,      
     }
   };
 
@@ -103,6 +103,7 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchAdminStats: fetchAdminStats,
     login: login,
+    loggedIn:loggedIn,
     register: register,
     resetChat: resetChat,
     submitMessage: submitMessage,

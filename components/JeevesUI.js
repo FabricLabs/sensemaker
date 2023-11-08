@@ -8,6 +8,7 @@ const {
   useNavigate,
   Navigate
 } = require('react-router-dom');
+const {loginSuccess} = require('../actions/authActions');
 
 // Components
 const Splash = require('./Splash');
@@ -78,8 +79,20 @@ class JeevesUI extends React.Component {
       console.error(error);
     }
   }
+  componentDidMount(){
+    const session = JSON.parse(localStorage.getItem('authSession'));
+    if(session){
+
+      console.log(session);
+      this.setState({ isAuthenticated: true });
+      this.props.loggedIn(session);
+      
+    }
+
+  }
 
   render () {
+    
     return (
       <jeeves-ui id={this.id} class="fabric-site">
         <fabric-container id="react-application"></fabric-container>

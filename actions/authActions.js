@@ -38,6 +38,21 @@ const login = (username, password) => {
       }
 
       const session = await response.json();
+      localStorage.setItem('authSession', JSON.stringify(session)); // Persist the token
+
+
+      dispatch(loginSuccess(session));
+    } catch (error) {
+      dispatch(loginFailure(error.message));
+    }
+  };
+};
+
+const loggedIn = (session) => {
+  return async dispatch => {
+   // dispatch(loginRequest());
+
+    try {
       dispatch(loginSuccess(session));
     } catch (error) {
       dispatch(loginFailure(error.message));
@@ -82,6 +97,7 @@ const logout = () => {
 module.exports = {
   login,
   register,
+  loggedIn,
   LOGIN_SUCCESS,
   LOGIN_FAILURE,
   LOGIN_REQUEST,
