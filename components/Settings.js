@@ -14,9 +14,45 @@ const QueryCounter = require('./QueryCounter');
 
 class JeevesUserSettings extends React.Component {
 
+  constructor (props) {
+    super(props);
+
+    this.state = {
+      username: '',
+      email: '',
+    };
+  }
+
+  componentDidMount(){
+    const dbRequest = indexedDB.open("JeevesSession", 1);
+  
+    dbRequest.onsuccess = (event) => {
+        const db = event.target.result;      
+        const transaction = db.transaction(['session'], 'readonly');
+        const objectStore = transaction.objectStore('session');
+        const request = objectStore.get('authSession');
+    
+        request.onsuccess = (event) => {
+          if (request.result) {
+            const session = request.result.value;
+            this.setState({username: session.username, email: session.email});
+          }
+        };
+    
+        request.onerror = (event) => {
+          console.error("IndexedDB error:", event.target.errorCode);
+        };        
+    };
+  
+    dbRequest.onerror = function(event) {
+      console.error("IndexedDB error:", event.target.errorCode);
+    };
+  }
+
   render () {
-    const { username } = this.props.login;
-    const { email } = this.props.auth;
+    // const { username } = this.props.login;
+    // const { email } = this.props.auth;
+    const { username,email } = this.state;  
 
     return (
       <jeeves-user-settings class='fade-in'>

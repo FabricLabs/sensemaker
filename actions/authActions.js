@@ -19,6 +19,56 @@ const registerSuccess = token => ({ type: REGISTER_SUCCESS, payload: { token } }
 const registerFailure = error => ({ type: REGISTER_FAILURE, payload: error, error: error });
 
 // Async Action Creator (Thunk)
+// const login = (username, password) => {
+//   return async dispatch => {
+//     dispatch(loginRequest());
+
+//     try {
+//       const response = await fetch('/sessions', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({ username, password }),
+//       });
+
+//       if (!response.ok) {
+//         const error = await response.json();
+//         throw new Error(error.message);
+//       }
+
+//       const session = await response.json();
+//       //localStorage.setItem('authSession', JSON.stringify(session)); // Persist the token
+
+//       const dbRequest = indexedDB.open("jeevesDB", 10);
+
+
+//       dbRequest.onupgradeneeded = function(event) {
+//         // Create an objectStore for this database
+//         let db = event.target.result;
+//         let objectStore = db.createObjectStore("session", { keyPath: "id" });
+//         objectStore.createIndex("authSession", "authSession", { unique: false });
+//       };
+
+//       dbRequest.onsuccess = function(event) {
+//         let db = event.target.result;
+//         let transaction = db.transaction(["session"], "readwrite");
+//         let objectStore = transaction.objectStore("session");
+//         objectStore.add({ id: "authSession", value: session });
+//       };
+
+//       dbRequest.onerror = function(event) {
+//         // Handle errors when opening the database
+//         console.error("IndexedDB error:", event.target.errorCode);
+//       };
+      
+//       dispatch(loginSuccess(session));
+//     } catch (error) {
+//       dispatch(loginFailure(error.message));
+//     }
+//   };
+// };
+
 const login = (username, password) => {
   return async dispatch => {
     dispatch(loginRequest());
@@ -38,8 +88,20 @@ const login = (username, password) => {
       }
 
       const session = await response.json();
-      localStorage.setItem('authSession', JSON.stringify(session)); // Persist the token
+      
+      // Here we create the database and store the session
+      const dbRequest = indexedDB.open("JeevesSession", 1); 
+  
+      dbRequest.onerror = function (event) {
+        console.error('Error opening IndexedDB:', event.target.error);
+      };
 
+      dbRequest.onsuccess = function (event) {
+        const db = event.target.result;
+        const transaction = db.transaction(['session'], 'readwrite');
+        const store = transaction.objectStore('session');
+        store.add({ id: 'authSession', value: session });
+      };
 
       dispatch(loginSuccess(session));
     } catch (error) {
@@ -48,11 +110,12 @@ const login = (username, password) => {
   };
 };
 
+
 const loggedIn = (session) => {
   return async dispatch => {
    // dispatch(loginRequest());
 
-    try {
+    try {      
       dispatch(loginSuccess(session));
     } catch (error) {
       dispatch(loginFailure(error.message));
