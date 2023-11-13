@@ -17,7 +17,7 @@ const settings = {
 const store = require('../stores/redux');
 
 // Actions
-const { login,loggedIn, register } = require('../actions/authActions');
+const { login, reLogin, register, logout } = require('../actions/authActions');
 const { fetchAdminStats } = require('../actions/adminActions');
 
 const {
@@ -48,28 +48,28 @@ async function main (input = {}) {
   window.addEventListener('load', async () => {
     console.debug('[JEEVES]', 'Window loaded!');
 
-    let db;
+    //let db;
 
     // TODO: consider localforage
     // TODO: consider schema from Knex / MySQL
     // TODO: consider GraphQL to pass schema
-    const request = indexedDB.open('JeevesDB', 1);
+    // const request = indexedDB.open('JeevesDB', 1);
 
-    request.onerror = function (event) {
-      console.error('Error opening IndexedDB:', event.target.errorCode);
-    };
+    // request.onerror = function (event) {
+    //   console.error('Error opening IndexedDB:', event.target.errorCode);
+    // };
 
-    request.onupgradeneeded = function (event) {
-      db = event.target.result;
+    // request.onupgradeneeded = function (event) {
+    //   db = event.target.result;
 
-      if (!db.objectStoreNames.contains('tokens')) {
-        db.createObjectStore('tokens');
-      }
-    };
+    //   if (!db.objectStoreNames.contains('tokens')) {
+    //     db.createObjectStore('tokens');
+    //   }
+    // };
 
-    request.onsuccess = function (event) {
-      db = event.target.result;
-    };
+    // request.onsuccess = function (event) {
+    //   db = event.target.result;
+    // };
 
     // const chatbar = document.createElement('fabric-chat-bar');
     // chatbar.style = 'position: absolute; bottom: 1em;';
@@ -90,7 +90,9 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token,      
+      token: state.auth.token,  
+      username: state.auth.username,
+      email: state.auth.email    
     }
   };
 
@@ -103,7 +105,8 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchAdminStats: fetchAdminStats,
     login: login,
-    loggedIn:loggedIn,
+    logout: logout,
+    reLogin: reLogin,
     register: register,
     resetChat: resetChat,
     submitMessage: submitMessage,
