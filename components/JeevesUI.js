@@ -55,29 +55,6 @@
       });
       this.props.logout();
 
-      // const request = indexedDB.open('JeevesSession', 1);
-
-      // request.onerror = function(event) {
-      //   // Handle errors when opening the database
-      //   console.error("IndexedDB error:", event.target.errorCode);
-      // };
-    
-      // request.onsuccess = function(event) {
-      //   const db = event.target.result;        
-      //   const transaction = db.transaction(['session'], 'readwrite');      
-      //   const objectStore = transaction.objectStore('session');    
-       
-      //   const deleteRequest = objectStore.delete('authSession');
-    
-      //   deleteRequest.onsuccess = function(event) {        
-      //     console.log('The authSession has been removed from IndexedDB');
-      //   };
-    
-      //   deleteRequest.onerror = function(event) {         
-      //     console.error("IndexedDB delete error:", event.target.errorCode);
-      //   };
-      // };
-
       window.location.reload();
     }
 
@@ -103,56 +80,9 @@
         console.error(error);
       }
     }
-    // componentDidMount(){
-    //   const session = JSON.parse(localStorage.getItem('authSession'));
-    //   if(session){
-
-    //     console.log(session);
-    //     this.setState({ isAuthenticated: true });
-    //     this.props.loggedIn(session);
-        
-    //   }
-
-    // }
-
-    // componentDidMount(){
-    //   const dbRequest = indexedDB.open("JeevesSession", 1);
-
-    //   dbRequest.onupgradeneeded = function (event) {
-    //     const db = event.target.result;
-  
-    //     if (!db.objectStoreNames.contains('session')) {
-    //       const objectStore = db.createObjectStore('session',{ keyPath: 'id' });
-    //       objectStore.createIndex("authSession", "authSession", { unique: false });
-    //     }
-    //   };
     
-    //   dbRequest.onsuccess = (event) => {
-    //       const db = event.target.result;      
-    //       const transaction = db.transaction(['session'], 'readonly');
-    //       const objectStore = transaction.objectStore('session');
-    //       const request = objectStore.get('authSession');
-      
-    //       request.onsuccess = (event) => {
-    //         if (request.result) {
-    //          // console.log("Session found in SessionsDB", request.result);
-    //           this.setState({ isAuthenticated: true });
-    //           this.props.loggedIn(request.result.value);
-    //         }
-    //       };
-      
-    //       request.onerror = (event) => {
-    //         console.error("IndexedDB error:", event.target.errorCode);
-    //       };        
-    //   };
-    
-    //   dbRequest.onerror = function(event) {
-    //     console.error("IndexedDB error:", event.target.errorCode);
-    //   };
-    // }
-
     componentDidMount(){
-      const dbRequest = indexedDB.open("JeevesSessions", 1);
+      const dbRequest = indexedDB.open("JeevesDB", 1);
 
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
@@ -171,7 +101,6 @@
       
           request.onsuccess = (event) => {
             if (request.result) {
-             // console.log("Session found in SessionsDB", request.result);
               this.setState({ isAuthenticated: true });
               this.props.reLogin(request.result.value);
             }

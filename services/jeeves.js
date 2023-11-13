@@ -513,15 +513,13 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/sessionsRestore', async (req, res, next) => {
-     // const { username, password } = req.body;
+    this.http._addRoute('POST', '/sessionRestore', async (req, res, next) => {
 
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
           return res.status(401).json({ message: 'Invalid session.' });
         }  
-
         return res.json({
           username: user.username,
           email: user.email,
