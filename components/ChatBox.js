@@ -56,7 +56,7 @@ class ChatBox extends React.Component {
   componentDidUpdate (prevProps) {
     const { messages } = this.props.chat;
     if (prevProps.chat.messages.length !== this.props.chat.messages.length) {
-      this.scrollToBottom();
+      
       // Set hasSubmittedMessage to true if a message has been submitted
       if (!this.props.hasSubmittedMessage) {
         this.props.updateHasSubmittedMessage(true);
@@ -72,6 +72,7 @@ class ChatBox extends React.Component {
           }
         }
       }
+      this.scrollToBottom();
     }
   }
 
@@ -316,38 +317,43 @@ class ChatBox extends React.Component {
             <Feed style={messageContainerStyle} className='chat-feed'>
                 {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
                     <Feed.Event key={message.id}>
-                    <Feed.Content>
-                        {message.role === 'assistant' && (
-                        <div className='controls thumbs-group'>
-                            <Button.Group size='mini'>
-                            <Popup trigger={
-                                <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
-                            }>
-                                <Popup.Content>
-                                <p>Report something wrong with this statement.</p>
-                                </Popup.Content>
-                            </Popup>
-                            <Popup trigger={
-                                <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
-                            }>
-                                <Popup.Header>Tell Us What You Liked!</Popup.Header>
-                                <Popup.Content>
-                                <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-                                </Popup.Content>
-                            </Popup>
-                            </Button.Group>
-                        </div>
-                        )}
-                        <Feed.Summary>
-                        <Feed.User>{message.author || message.user_id}</Feed.User>
-                        <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
-                        </Feed.Summary>
-                        <Feed.Extra text>
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+                      <Feed.Content>
+                          {message.role === 'assistant' && (
+                          <div className='controls thumbs-group'>
+                              <Button.Group size='mini'>
+                              <Popup trigger={
+                                  <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
+                              }>
+                                  <Popup.Content>
+                                  <p>Report something wrong with this statement.</p>
+                                  </Popup.Content>
+                              </Popup>
+                              <Popup trigger={
+                                  <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
+                              }>
+                                  <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                                  <Popup.Content>
+                                  <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                                  </Popup.Content>
+                              </Popup>
+                              </Button.Group>
+                          </div>
+                          )}
+                          <Feed.Summary>
+                            <Feed.User>{message.author || message.user_id}</Feed.User>
+                            <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
+                          </Feed.Summary>
+                          <Feed.Extra text>
+                            <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+                          </Feed.Extra>
+                          <Feed.Extra text>
+                          {(generatingReponse && message.id === messages[messages.length - 1].id ) && (
+                            <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em'}}><Icon name='spinner' loading /> Jeeves is generating a response</Header>                
+                          )}
                         </Feed.Extra>
-                    </Feed.Content>
+                      </Feed.Content>
                     </Feed.Event>
-                    ))}
+                 ))}
                 <Modal
                     onClose={this.handleModalClose}
                     onOpen={() => this.setState({ modalOpen: true })}
@@ -414,10 +420,6 @@ class ChatBox extends React.Component {
             </Feed>
             {/* <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
             <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
-            {generatingReponse && (
-                <Message size='tiny' style={{ float: 'right'}}>
-                <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
-                </Message>)}
             <Form.Field>
                 <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} />
             </Form.Field>            
@@ -458,16 +460,18 @@ class ChatBox extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.props.messagesEndRef.current) {
-      const feedElement = this.props.messagesEndRef.current.querySelector('.chat-feed');
-      const lastMessage = feedElement.lastElementChild;
-  
-      if (lastMessage) {
-        lastMessage.scrollIntoView({ behavior: 'smooth' });
+    //this timeout is used to make sure the scroll is done AFTER the component its updated and rendered, this fixes problems with generating reponse message
+    setTimeout(() => {
+      if (this.props.messagesEndRef.current) {
+        const feedElement = this.props.messagesEndRef.current.querySelector('.chat-feed');
+        const lastMessage = feedElement.lastElementChild;
+
+        if (lastMessage) {
+          lastMessage.scrollIntoView({ behavior: 'smooth' });
+        }
       }
-    }
+    }, 0);
   };
-  
 }
 
 module.exports = ChatBox;

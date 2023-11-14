@@ -117,19 +117,7 @@ class CaseChat extends React.Component {
             />        
       </fabric-component>
     );
-  }
-
-  scrollToBottom = () => {
-    if (this.messagesEndRef.current) {
-      const feedElement = this.messagesEndRef.current.querySelector('.chat-feed');
-      const lastMessage = feedElement.lastElementChild;
-  
-      if (lastMessage) {
-        lastMessage.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  };
-  
+  }  
 }
 
 module.exports = CaseChat;
