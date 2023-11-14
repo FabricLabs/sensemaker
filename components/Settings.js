@@ -25,7 +25,7 @@ class JeevesUserSettings extends React.Component {
 
   render () {
 
-    const { username,email } = this.props;  
+    const { username,email } = this.props.auth;  
     
     return (
       <jeeves-user-settings class='fade-in'>

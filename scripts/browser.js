@@ -90,9 +90,7 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token,  
-      username: state.auth.username,
-      email: state.auth.email    
+      token: state.auth.token,   
     }
   };
 
