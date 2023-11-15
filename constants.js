@@ -1,5 +1,6 @@
 'use strict';
 
+const RELEASE_NAME = 'alpha';
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 const ENABLE_CASE_SEARCH = false;

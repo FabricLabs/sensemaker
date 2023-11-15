@@ -552,16 +552,18 @@ class Jeeves extends Service {
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
-        console.debug('summarized to:', summary);
+
         if (summary) {
           await this.db('cases').update({
             summary: summary
           }).where('id', instance.id);
+
+          instance.summary = summary;
         }
       }
 
       fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-
+        // TODO: additional params (auth?)
       }).catch((exception) => {
         console.error('FETCH FULL CASE ERROR:', exception);
       }).then(async (output) => {
@@ -741,7 +743,11 @@ class Jeeves extends Service {
       }
 
       if (case_id) {
-        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        try {
+          subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        } catch (exception) {
+          this.emit('warning', `Could not find case ID: ${case_id}`);
+        }
       }
 
       try {
@@ -775,16 +781,14 @@ class Jeeves extends Service {
           this.db('messages').insert({
             content: output.object.content,
             conversation_id: conversation_id,
-            user_id: 1 // TODO: real user ID
+            user_id: 1
           }).then(async (response) => {
-            console.log('response created:', response);
-
             if (isNew) {
               const messages = await this._getConversationMessages(conversation_id);
               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
               }));
-    
+
               await this.db('conversations').update({ title }).where({ id: conversation_id });
             }
           });
