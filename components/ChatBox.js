@@ -39,6 +39,7 @@ class ChatBox extends React.Component {
       feedbackSent : false,
       feedbackFail : false,
       generatingReponse: false,
+      reGeneratingReponse: false,
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,  
       connectionProblem: false,
@@ -65,6 +66,7 @@ class ChatBox extends React.Component {
         const lastMessage = messages[messages.length - 1];      
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant') {
           this.setState({ generatingReponse: false });
+          this.setState({ reGeneratingReponse: false });
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           if(!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)){
@@ -287,12 +289,86 @@ class ChatBox extends React.Component {
     }
   };
 
+  regenerateAnswer = ( event) =>{
+    const {messages} =this.props.chat;
+
+    event.preventDefault();
+    const { query } = this.state;
+    const { message } = this.props.chat;  
+    const {caseTitle , caseID} = this.props;
+    let dataToSubmit;
+    this.setState({ reGeneratingReponse: true });
+    this.setState({ loading: true, previousFlag: true, });   
+    const messageRegen  = messages[this.props.chat.messages.length - 2];
+
+    if(caseID){
+      dataToSubmit = {
+        conversation_id: message?.conversation,
+        content: messageRegen.content,
+        case: caseTitle+'_'+caseID,
+        messageID: messageRegen.id
+      }
+    }else{
+      if(!this.props.previousChat){
+        dataToSubmit = {
+          conversation_id: message?.conversation,
+          content: messageRegen.content,
+          messageID: messageRegen.id
+        }        
+      }else{
+        dataToSubmit = {
+          conversation_id: this.props.conversationID,
+          content: messageRegen.content,
+          messageID: messageRegen.id
+        }        
+      }
+    }   
+    // dispatch submitMessage
+    this.props.regenAnswer(
+      dataToSubmit
+    ).then((output) => {
+
+      // dispatch getMessages
+      this.props.getMessages({ conversation_id: message?.conversation });
+
+      if (!this.watcher) {
+        this.watcher = setInterval(() => {
+          this.props.getMessages({ conversation_id: message?.conversation });
+        }, 15000);
+      }
+      this.setState({ loading: false });
+    });
+
+    // Clear the input after sending the message
+    this.setState({ query: '' });
+  }
+
+  groupMessages = (messages) => {
+    let groupedMessages = [];
+    let currentGroup = [];
+  
+    messages.forEach((message, index) => {
+      if (message.role === 'assistant') {
+        currentGroup.push(message);
+        // If next message is not from assistant, push current group to groupedMessages
+        if (!messages[index + 1] || messages[index + 1].role !== 'assistant') {
+          groupedMessages.push(currentGroup);
+          currentGroup = [];
+        }
+      } else {
+        groupedMessages.push([message]);
+      }
+    });
+  
+    return groupedMessages;
+  };
 
   render () {
     
     const { 
       loading, 
       generatingReponse, 
+      reGeneratingReponse,
       modalOpen, 
       rating, 
       feedbackSent, 
@@ -310,8 +386,10 @@ class ChatBox extends React.Component {
       homePage
     } = this.props;
 
-    const { message, messages } = this.props.chat;   
+    const { message, messages } = this.props.chat;  
     
+    const mensajes = this.groupMessages(messages);
+
     return (
         <div>
             <Feed style={messageContainerStyle} className='chat-feed'>
@@ -347,8 +425,14 @@ class ChatBox extends React.Component {
                             <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
                           </Feed.Extra>
                           <Feed.Extra text>
+                          {(message.id === messages[messages.length - 1].id && message.role === 'assistant' && !reGeneratingReponse) && (
+                            <Button onClick={this.regenerateAnswer}>Regenerate Answer</Button>
+                          )}
                           {(generatingReponse && message.id === messages[messages.length - 1].id ) && (
                             <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em'}}><Icon name='spinner' loading /> Jeeves is generating a response</Header>                
+                          )}
+                          {(reGeneratingReponse && message.id === messages[messages.length - 1].id ) && (
+                            <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em'}}><Icon name='spinner' loading /> Jeeves is regenerating the response</Header>                
                           )}
                         </Feed.Extra>
                       </Feed.Content>
