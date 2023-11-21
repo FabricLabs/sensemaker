@@ -336,6 +336,11 @@ fabric-motd {
   font-family: 'Roboto Mono', sans-serif !important;
   min-width: 20em !important;
 }
+.answer-controls{
+  display: flex;
+  align-items: center;
+  align-content: center;
+}
 
 @media (max-width: 768px) {
   .home-dropdowns {
