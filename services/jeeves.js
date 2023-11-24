@@ -532,6 +532,23 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/passwordCheck', async (req, res, next) => {
+
+      const {password} = req.body;
+      try {
+        const user = await this.db('users').where('id', req.user.id).first();
+        if (!user || !compareSync(password, user.password)) {
+          return res.status(401).json({ message: 'Invalid password.' });
+        }  
+        return res.json({
+          message: 'Valid password.',
+        });
+      } catch (error) {
+        console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
