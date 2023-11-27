@@ -12,6 +12,7 @@ const {
 } = require('semantic-ui-react');
 
 const AccountCreator = require('./AccountCreator');
+const AnnouncementCreator = require('./AnnouncementCreator');
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -49,13 +50,18 @@ class AdminSettings extends React.Component {
           <Header as='h3'>Settings</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Header as='h3'>Collections</Header>
+          
           <Header as='h4'>Conversations</Header>
-          {conversations && conversations.length > 0 && conversations.map(conversation => (
-            <div key={conversation.id}>
-              <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
-              <p>{conversation.content}</p>
-            </div>
-          ))}
+          <Segment  style={{maxHeight: '40vh',}}>
+            <container>
+            {conversations && conversations.length > 0 && conversations.map(conversation => (
+              <div key={conversation.id}>
+                <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
+                <p>{conversation.content}</p>
+              </div>
+            ))}
+            </container>
+          </Segment>
           <Header as='h4'>Invitations</Header>
           <Table celled striped>
             <Table.Header>
@@ -79,7 +85,9 @@ class AdminSettings extends React.Component {
               </Table.Row>
             </Table.Body>
           </Table>
+          <AnnouncementCreator></AnnouncementCreator>
           <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
+          
         </Segment>
       </jeeves-admin-settings>
     );
