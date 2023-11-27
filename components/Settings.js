@@ -10,7 +10,8 @@ const {
   Segment,
   Table,
   Form,
-  Modal
+  Modal,
+  Message
 } = require('semantic-ui-react');
 
 const QueryCounter = require('./QueryCounter');
@@ -29,6 +30,9 @@ class JeevesUserSettings extends React.Component {
       confirmNewPassword: '',
       isNewPasswordValid: true,
       passwordMatch: true,
+      allValid: true,
+      invalidOldPassword: false,
+      passwordUpdated: false,
     };
   }
 
@@ -53,67 +57,70 @@ class JeevesUserSettings extends React.Component {
   };
 
   validatePasswordsMatch = () =>{
-    return (this.state.newPassword === this.state.confirmNewPassword);
+    return (this.state.newPassword && this.state.confirmNewPassword && this.state.newPassword === this.state.confirmNewPassword);
   }
 
   handleInputChange = (e, { name, value }) => {
     this.setState({ [name]: value }, () => {
-      if (name === 'newPassword') {
-        const isValid = this.validateNewPassword(this.state.newPassword);
-        this.setState({ isNewPasswordValid: isValid });
-      }
-      if (name === 'confirmNewPassword') {
+        const isValidPassword = this.validateNewPassword(this.state.newPassword);
         const isMatched = this.validatePasswordsMatch();
-        this.setState({ passwordMatch: isMatched })
-      }
-
-      console.log('pass1: ', this.state.newPassword, 'pass2: ', this.state.confirmNewPassword);
+        const isAllValid = (isValidPassword && isMatched && this.state.newPassword !== this.state.oldPassword);
+        this.setState({ isNewPasswordValid: isValidPassword, passwordMatch: isMatched, allValid: isAllValid });   
     });
   };
 
   // Handle form submission
   handlePasswordSubmit = async () => {
-    const { oldPassword, newPassword, confirmNewPassword } = this.state; 
-    
-    try {
-      const password = oldPassword
-      const response = await fetch('/passwordCheck', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.props.auth.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
-      });
+    const { oldPassword, newPassword, confirmNewPassword, allValid } = this.state;
+    if (allValid) {
+      try {
+        const response = await fetch('/passwordChange', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.props.auth.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ oldPassword, newPassword }),
+        });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message);
+        }
+        this.setState({ passwordUpdated: true });
+        //falta comparar que la password nueva sea distinta a la vieja, probablemente deba arreglar en el endpoint para que ya compare la pass nueva todo en
+        //el mismo endpoing, tener en cuenta esto
+      } catch (error) {
+        if (error.message == 'Invalid password.') {
+          this.setState({ invalidOldPassword: true });
+        }
+        console.log(error.message);
       }
- 
-      const respuesta = await response.json();    
-      console.log(respuesta);     
-
-      //falta comparar que la password nueva sea distinta a la vieja, probablemente deba arreglar en el endpoint para que ya compare la pass nueva todo en
-      //el mismo endpoing, tener en cuenta esto
-    } catch (error) {
-     console.log(error.message);
     }
-    
-   // this.togglePasswordModal();
+
+    // this.togglePasswordModal();
   };
 
   renderPasswordChangeModal = () => {
-    const { isPasswordModalOpen, oldPassword, newPassword, confirmNewPassword,isNewPasswordValid,passwordMatch } = this.state;
+    const { 
+      isPasswordModalOpen, 
+      oldPassword, 
+      newPassword, 
+      confirmNewPassword,
+      isNewPasswordValid,
+      passwordMatch, 
+      allValid,
+      invalidOldPassword,
+      passwordUpdated } = this.state;
 
-    const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
 
-    const passwordError = isNewPasswordValid ? null : {
+   // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
+    const passwordError = (isNewPasswordValid || !newPassword) ? null : {
       content: 'The password must be at least 8 characters, include a capital letter and a number.',
       pointing: 'above',
     };
 
-    const passwordNotMatchError = passwordMatch ? null : {
+    const passwordNotMatchError = (passwordMatch || !confirmNewPassword) ? null : {
       content: 'Both passwords must match.',
       pointing: 'above',
     };
@@ -140,7 +147,7 @@ class JeevesUserSettings extends React.Component {
               type='password'
               name='newPassword'
               value={newPassword}
-              style={passwordInputStyle}
+              //  style={passwordInputStyle}
               error={passwordError}
               onChange={this.handleInputChange}
               required
@@ -155,12 +162,32 @@ class JeevesUserSettings extends React.Component {
               required
             />
 
-          {(isNewPasswordValid && passwordMatch && newPassword && confirmNewPassword) && (
-            <p style={{ color: 'green' }}>Both passwords are correct</p>
-          )}
+            {(allValid && newPassword && !invalidOldPassword) && (
+              <p style={{ color: 'green' }}>Both passwords are correct</p>
+            )}
+            {(oldPassword === newPassword) && (
+              <p style={{ color: 'red' }}>Old password and new password must be different</p>
+            )}
+{/* 
+              {invalidOldPassword && (
+                <p style={{ color: 'red' }}>Old password is invalid</p>
+            )} */}
             <Modal.Actions>
-              <Button content="Close" icon='close' size='small' secondary onClick={this.togglePasswordModal}/> 
-              <Button content="Submit" type='submit' size='small' primary/>
+              {invalidOldPassword && (
+                <Message negative> 
+                  <Message.Header>Password error</Message.Header>
+                  <p>Your old password is not correct, please try again.</p>           
+                </Message>
+              )}
+              {passwordUpdated && (
+                <Message positive> 
+                  <Message.Header>Password updated</Message.Header>
+                  <p>Your new password has been changed successfully. Use your new password to log in.</p>           
+                </Message>
+              )}
+              
+              <Button content="Close" icon='close' size='small' secondary onClick={this.togglePasswordModal} />
+              <Button content="Submit" type='submit' size='small' primary disabled={!allValid} />
             </Modal.Actions>
           </Form>
         </Modal.Content>
@@ -206,7 +233,7 @@ class JeevesUserSettings extends React.Component {
                 <Table.Row>
                   <Table.Cell><Header as='h4'>Email:</Header></Table.Cell>
                   <Table.Cell><p>{email}</p></Table.Cell>
-                  <Table.Cell textAlign='center'><Button primary>Change</Button></Table.Cell>
+                  <Table.Cell textAlign='center'><Button primary disabled={true}>Change</Button></Table.Cell>
                   
                 </Table.Row>
                 <Table.Row>
