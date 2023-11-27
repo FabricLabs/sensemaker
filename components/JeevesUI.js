@@ -16,6 +16,13 @@
   const TermsOfUseModal = require('./TermsOfUseModal');
   const Waitlist = require('./Waitlist');
 
+  // Semantic UI
+  const { 
+    Modal,   
+    Button,
+    Header
+   } = require('semantic-ui-react');
+
   /**
    * The Jeeves UI.
    */
@@ -26,7 +33,8 @@
       this.state = {
         isAuthenticated: false,
         isLoading: true,
-        isLoggingOut: false
+        modalLogOut: false,
+        loggedOut: false,
       }
     }
 
@@ -45,17 +53,34 @@
       this.setState({ registered: true });
     }
 
+    handleLogout = () => {
+      this.setState({
+        modalLogOut: true
+      });
+    }
+
     handleLogoutSuccess = () => {
       console.log('setting isAuthenticated = false ...');
+      this.setState({ loggedOut: true });
+      setTimeout(() => {
+        this.setState({
+          isAuthenticated: false,
+          isLoading: false,
+          modalLogOut: false,
+          loggedOut: false
+        });
+        this.props.logout();
 
+        window.location.reload();
+      }, 2000)
+    }
+
+    handleModalClose = () =>{
       this.setState({
         isAuthenticated: false,
         isLoading: false,
-        isLoggingOut: false
+        modalLogOut: false
       });
-      this.props.logout();
-
-      window.location.reload();
     }
 
     handleConversationSubmit = async (message) => {
@@ -118,7 +143,7 @@
     
 
     render () {
-      
+      const { modalLogOut, loggedOut } = this.state;
       return (
         <jeeves-ui id={this.id} class="fabric-site">
           <fabric-container id="react-application"></fabric-container>
@@ -143,7 +168,7 @@
               ) : (
                 <Dashboard
                   auth={this.props.auth}
-                  onLogoutSuccess={this.handleLogoutSuccess}
+                  onLogoutSuccess={this.handleLogout}
                   onMessageSuccess={this.handleMessageSuccess}
                   fetchContract={this.props.fetchContract}
                   fetchConversation={this.props.fetchConversation}
@@ -162,7 +187,51 @@
                   {...this.props}
                 />
               )}
-            </BrowserRouter>
+              <Modal
+                onClose={this.handleModalClose}              
+                open={modalLogOut}
+                size='mini'>
+                <Modal.Header centered>
+                  Logging out
+                </Modal.Header>
+                <Modal.Content>
+                  <Modal.Description>
+                    {!loggedOut ? (
+                      <Header as='h4'>
+                        Are you sure you want to log out?
+                      </Header>
+                    ) : (
+                      <Header as='h5'className='center aligned'>
+                        You have successfully logged out. You will be redirected to the Homepage.
+                      </Header>
+                    )
+                    }
+                  </Modal.Description>
+                </Modal.Content>
+                <Modal.Actions>
+                  {!loggedOut && (
+                    <div>
+                      <Button
+                        content='Close'
+                        icon='close'
+                        onClick={this.handleModalClose}
+                        labelPosition='right'
+                        size='small'                        
+                        secondary
+                      />                  
+                      <Button
+                        content='Log out'
+                        icon='log out'
+                        onClick={this.handleLogoutSuccess}
+                        labelPosition='right'
+                        size='small'                        
+                        primary
+                      />
+                    </div>
+                  )}
+                </Modal.Actions>
+              </Modal>
+            </BrowserRouter>            
           </fabric-react-component>
         </jeeves-ui>
       )
