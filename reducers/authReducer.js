@@ -14,7 +14,7 @@ function authReducer (state = initialState, action) {
     case LOGIN_REQUEST:
       return { ...state, isAuthenticated: false, token: null, error: null }; // reset state
     case LOGIN_SUCCESS:
-      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isCompliant: action.payload.isCompliant || false, token: action.payload.token };
+      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token };    
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
       return { ...state, isAuthenticated: false, token: null, error: action.payload };

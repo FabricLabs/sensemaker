@@ -428,9 +428,9 @@ class ChatBox extends React.Component {
                 <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
                  <Dropdown
                   size='small'
-                  placeholder='Find all case that...'  
+                  placeholder='Find a case that...'  
                   selection       
-                  text='Find all case that...'                                    
+                  text='Find a case that...'                                    
                   options={caseDropOptions}
                   onChange={this.handleChangeDropdown}                         
                  />              
