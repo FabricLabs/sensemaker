@@ -369,25 +369,42 @@ fabric-motd {
 .settings-container .ui.table {
   width: 40%;
 }
-.billing-container{
+.subscription-container{
   margin-top: 1em;
   display: flex;
   flex-wrap: wrap;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 2em;
 }
 
-.billing-container div{
+.subscription-container div{
   padding-right: 2em;
   padding-left: 2em;
+
 }
+
+@media (max-width: 1280px) {
+
+  .settings-container .ui.table {
+    width: 70%;
+  }
+}
+
 @media (max-width: 768px) {
   .home-dropdowns {
     flex-direction: column;
     gap: 1em !important;
   }
   .settings-container .ui.table {
-    width: 70%;
+    width: 50%;
+  }
+
+  .settings-container .ui.table  .settings-row{      
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
   }
 }

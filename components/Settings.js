@@ -87,7 +87,14 @@ class JeevesUserSettings extends React.Component {
           const error = await response.json();
           throw new Error(error.message);
         }
-        this.setState({ passwordUpdated: true });
+        //this.setState({ passwordUpdated: true });
+        this.setState({passwordUpdated: true});
+
+        setTimeout(() => {
+          this.props.logout();  
+          //window.location.reload();
+          window.location.href = '/'; 
+        }, 2000)
         //falta comparar que la password nueva sea distinta a la vieja, probablemente deba arreglar en el endpoint para que ya compare la pass nueva todo en
         //el mismo endpoing, tener en cuenta esto
       } catch (error) {
@@ -198,6 +205,7 @@ class JeevesUserSettings extends React.Component {
   render () {
 
     const { username,email } = this.state;  
+    console.log("las props",this.props);
     
     return (
       <jeeves-user-settings class='fade-in'>
@@ -214,9 +222,9 @@ class JeevesUserSettings extends React.Component {
           </Card> */}
           <container className='settings-container' >            
             <Header as='h2'>Account</Header>
-            <Table size='small'>
+            <Table>
               <Table.Header>
-                <Table.Row>
+                <Table.Row className='settings-row'>
                 <Table.HeaderCell>
                   <Header as='h3'>Profile</Header>
                 </Table.HeaderCell>
@@ -225,18 +233,18 @@ class JeevesUserSettings extends React.Component {
                 </Table.Row>               
               </Table.Header>
               <Table.Body>
-                <Table.Row>
+                <Table.Row className='settings-row'>
                   <Table.Cell><Header as='h4'>Username:</Header></Table.Cell>
                   <Table.Cell><p>{username}</p></Table.Cell>
                   <Table.Cell/>
                 </Table.Row>
-                <Table.Row>
+                <Table.Row className='settings-row'>
                   <Table.Cell><Header as='h4'>Email:</Header></Table.Cell>
                   <Table.Cell><p>{email}</p></Table.Cell>
                   <Table.Cell textAlign='center'><Button primary disabled={true}>Change</Button></Table.Cell>
                   
                 </Table.Row>
-                <Table.Row>
+                <Table.Row className='settings-row'>
                   <Table.Cell><Header as='h4'>Password:</Header></Table.Cell>
                   <Table.Cell><code>*******</code> </Table.Cell>
                   <Table.Cell textAlign='center' onClick={this.togglePasswordModal}><Button primary>Change</Button></Table.Cell>
@@ -244,8 +252,8 @@ class JeevesUserSettings extends React.Component {
               </Table.Body>
             </Table>
           </container>
-          <container className='billing-container'>
-            <div>
+          <container className='subscription-container'>
+            <div className='subscription-billing'>
             <Header as='h2'>Billing</Header>
             <Card>
               <Card.Content>
@@ -254,7 +262,7 @@ class JeevesUserSettings extends React.Component {
               </Card.Content>
             </Card>
           </div>
-          <div>
+          <div className='subscription-plan'>
           <Header as='h2'>Current Plan</Header>
           <Card>
             <Card.Content>
