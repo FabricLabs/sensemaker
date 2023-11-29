@@ -8,7 +8,8 @@ const {
   Header,
   Segment,
   Statistic,
-  Table
+  Table,
+  Pagination
 } = require('semantic-ui-react');
 
 const AccountCreator = require('./AccountCreator');
@@ -21,7 +22,10 @@ class AdminSettings extends React.Component {
 
     this.settings = Object.assign({
       state: {
-        waitlistSignupCount: 0
+        waitlistSignupCount: 0,
+        currentPage: 1,
+        itemsPerPage: 20,
+        windowWidth: window.innerWidth
       }
     }, props);
 
@@ -30,11 +34,26 @@ class AdminSettings extends React.Component {
 
   componentDidMount () {
     this.props.fetchAdminStats();
+    window.addEventListener('resize', this.handleResize);
+
   }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  }
+  handlePaginationChange = (e, { activePage }) => {
+    this.setState({ currentPage: activePage });
+  };
+  handleResize = () => {
+    this.setState({ windowWidth: window.innerWidth });
+  };
 
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
-    const { waitlistSignupCount } = this.state;
+    const { waitlistSignupCount, currentPage, itemsPerPage, windowWidth } = this.state;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
 
     return (
       <jeeves-admin-settings class='fade-in'>
@@ -52,7 +71,7 @@ class AdminSettings extends React.Component {
           <Header as='h3'>Collections</Header>
           
           <Header as='h4'>Conversations</Header>
-          <Segment  style={{maxHeight: '40vh',}}>
+          {/* <Segment  style={{maxHeight: '40vh',}}>
             <container>
             {conversations && conversations.length > 0 && conversations.map(conversation => (
               <div key={conversation.id}>
@@ -61,6 +80,24 @@ class AdminSettings extends React.Component {
               </div>
             ))}
             </container>
+          </Segment> */}
+          <Segment >
+            <container>
+              {currentConversations.map(conversation => (
+                <div key={conversation.id}>
+                  <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
+                  <p>{conversation.content}</p>
+                </div>
+              ))}
+            </container>
+            <Pagination
+              size='tiny'  
+              activePage={currentPage}
+              totalPages={Math.ceil(conversations.length / itemsPerPage)}
+              onPageChange={this.handlePaginationChange}
+              ellipsisItem={(windowWidth>480)? undefined : null}
+              boundaryRange={(windowWidth>480) ? 1 : 0}
+            />
           </Segment>
           <Header as='h4'>Invitations</Header>
           <Table celled striped>
