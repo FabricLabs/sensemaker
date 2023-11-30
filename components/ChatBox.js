@@ -295,6 +295,83 @@ class ChatBox extends React.Component {
       } 
     }
   };
+  renderFeedbakcModal = () =>{
+
+    const { 
+      modalOpen, 
+      rating, 
+      feedbackSent, 
+      feedbackFail, 
+      connectionProblem, 
+      modalLoading,
+    } = this.state;
+
+    return (
+      <Modal
+      onClose={this.handleModalClose}
+      onOpen={() => this.setState({ modalOpen: true })}
+      open={modalOpen}
+      size='tiny'>
+      <Modal.Header>Feedback</Modal.Header>
+      <Modal.Content>
+        <Modal.Description>
+          <p>Let us know your opinion!</p>
+        </Modal.Description>
+        <Form>
+          <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} />
+          <Form.Field>
+            <Header style={{ marginTop: '0.5em' }}>Comment</Header>
+            <TextArea
+              placeholder='Enter your comment...'
+              onChange={this.handleCommentChange}
+            />
+          </Form.Field>
+        </Form>
+      </Modal.Content>
+      <Modal.Actions>
+        {/*When the feedback is sent it shows this message  */}
+        {feedbackSent && (
+          <Message positive>
+            <Message.Header>Feedback Sent!</Message.Header>
+            <p>Your comment has been successfully sent.</p>
+          </Message>
+        )}
+        {/*When the feedback could not be sent it shows this message  */}
+        {feedbackFail && (
+          <Message error>
+            <Message.Header>Feedback could not be sent</Message.Header>
+            <p>Please try again later.</p>
+          </Message>
+        )}
+        {connectionProblem && (
+          <Message error>
+            <Message.Header>Feedback could not be sent</Message.Header>
+            <p>Please check your internet connection.</p>
+          </Message>
+        )}
+        <Button
+          content="Close"
+          icon='close'
+          onClick={this.handleModalClose}
+          labelPosition='right'
+          size='small'
+          secondary
+        />
+        {/*This button is shown only if Feedback wasnt sent yet */}
+        {!feedbackSent && (
+          <Button
+            content="Send"
+            icon={modalLoading ? 'spinner' : 'checkmark'}
+            onClick={this.handleModalSend}
+            labelPosition='right'
+            size='small'
+            loading={modalLoading}
+            positive
+          />)}
+      </Modal.Actions>
+    </Modal>
+    )
+  }
 
   regenerateAnswer = (event) => {
     const { messages } = this.props.chat;
@@ -424,84 +501,6 @@ class ChatBox extends React.Component {
     }).catch(err => {
       console.error('Failed to copy text: ', err);
     });
-  }
-
-  renderFeedbakcModal = () =>{
-
-    const { 
-      modalOpen, 
-      rating, 
-      feedbackSent, 
-      feedbackFail, 
-      connectionProblem, 
-      modalLoading,
-    } = this.state;
-
-    return (
-      <Modal
-      onClose={this.handleModalClose}
-      onOpen={() => this.setState({ modalOpen: true })}
-      open={modalOpen}
-      size='tiny'>
-      <Modal.Header>Feedback</Modal.Header>
-      <Modal.Content>
-        <Modal.Description>
-          <p>Let us know your opinion!</p>
-        </Modal.Description>
-        <Form>
-          <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} />
-          <Form.Field>
-            <Header style={{ marginTop: '0.5em' }}>Comment</Header>
-            <TextArea
-              placeholder='Enter your comment...'
-              onChange={this.handleCommentChange}
-            />
-          </Form.Field>
-        </Form>
-      </Modal.Content>
-      <Modal.Actions>
-        {/*When the feedback is sent it shows this message  */}
-        {feedbackSent && (
-          <Message positive>
-            <Message.Header>Feedback Sent!</Message.Header>
-            <p>Your comment has been successfully sent.</p>
-          </Message>
-        )}
-        {/*When the feedback could not be sent it shows this message  */}
-        {feedbackFail && (
-          <Message error>
-            <Message.Header>Feedback could not be sent</Message.Header>
-            <p>Please try again later.</p>
-          </Message>
-        )}
-        {connectionProblem && (
-          <Message error>
-            <Message.Header>Feedback could not be sent</Message.Header>
-            <p>Please check your internet connection.</p>
-          </Message>
-        )}
-        <Button
-          content="Close"
-          icon='close'
-          onClick={this.handleModalClose}
-          labelPosition='right'
-          size='small'
-          secondary
-        />
-        {/*This button is shown only if Feedback wasnt sent yet */}
-        {!feedbackSent && (
-          <Button
-            content="Send"
-            icon={modalLoading ? 'spinner' : 'checkmark'}
-            onClick={this.handleModalSend}
-            labelPosition='right'
-            size='small'
-            loading={modalLoading}
-            positive
-          />)}
-      </Modal.Actions>
-    </Modal>
-    )
   }
 
   render () {
