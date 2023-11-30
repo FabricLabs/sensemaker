@@ -9,7 +9,8 @@ const {
   Segment,
   Statistic,
   Table,
-  Pagination
+  Pagination,
+  Divider
 } = require('semantic-ui-react');
 
 const AccountCreator = require('./AccountCreator');
@@ -24,7 +25,6 @@ class AdminSettings extends React.Component {
       state: {
         waitlistSignupCount: 0,
         currentPage: 1,
-        itemsPerPage: 20,
         windowWidth: window.innerWidth
       }
     }, props);
@@ -49,11 +49,14 @@ class AdminSettings extends React.Component {
 
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
-    const { waitlistSignupCount, currentPage, itemsPerPage, windowWidth } = this.state;
+    const { waitlistSignupCount, currentPage, windowWidth } = this.state;
 
+    // Math for pagination of conversation list
+    const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
+    //
 
     return (
       <jeeves-admin-settings class='fade-in'>
@@ -71,22 +74,15 @@ class AdminSettings extends React.Component {
           <Header as='h3'>Collections</Header>
           
           <Header as='h4'>Conversations</Header>
-          {/* <Segment  style={{maxHeight: '40vh',}}>
-            <container>
-            {conversations && conversations.length > 0 && conversations.map(conversation => (
-              <div key={conversation.id}>
-                <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
-                <p>{conversation.content}</p>
-              </div>
-            ))}
-            </container>
-          </Segment> */}
           <Segment >
             <container>
               {currentConversations.map(conversation => (
                 <div key={conversation.id}>
-                  <Link to={'/conversations/' + conversation.id}>{conversation.title}</Link>
-                  <p>{conversation.content}</p>
+                  <Link to={'/conversations/' + conversation.id}>
+                    {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                    {conversation.title}
+                  </Link>                 
+                  <Divider style={{marginTop: '0.3em',marginBottom:'0.3em'}}/>
                 </div>
               ))}
             </container>
@@ -96,7 +92,10 @@ class AdminSettings extends React.Component {
               totalPages={Math.ceil(conversations.length / itemsPerPage)}
               onPageChange={this.handlePaginationChange}
               ellipsisItem={(windowWidth>480)? undefined : null}
+              firstItem={(windowWidth>480)? undefined : null}
+              lastItem={(windowWidth>480)? undefined : null}
               boundaryRange={(windowWidth>480) ? 1 : 0}
+              style={{marginTop: '1em'}}
             />
           </Segment>
           <Header as='h4'>Invitations</Header>

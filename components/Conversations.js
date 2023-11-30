@@ -10,7 +10,6 @@ class Conversations extends React.Component {
     super(props);
     this.state = {
       currentPage: 1,
-      itemsPerPage: 15,
       windowWidth: window.innerWidth
     };
   }
@@ -32,7 +31,7 @@ class Conversations extends React.Component {
 
   render() {
     const { loading, error, conversations } = this.props;
-    const { currentPage, itemsPerPage, windowWidth } = this.state;
+    const { currentPage,  windowWidth } = this.state;
 
 
     if (loading) {
@@ -42,25 +41,27 @@ class Conversations extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
-
     // Calculate conversations for current page
+    
+    const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
+
+
 
     return (
       <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h2>Conversations</h2>
         {currentConversations.map(conversation => (
           <div key={conversation.id}>
-            <h4>
+            <h4 style={{marginBottom:'0.5em'}}>
               <Link to={'/conversations/' + conversation.id}>
                 {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                 {conversation.title}
               </Link>
-            </h4>
-            {/* <p>{conversation.content}</p> */}
-           <Divider />
+            </h4> 
+           <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
         ))}
         <Pagination
