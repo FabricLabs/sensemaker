@@ -33,6 +33,8 @@ class JeevesUserSettings extends React.Component {
       allValid: true,
       invalidOldPassword: false,
       passwordUpdated: false,
+      passwordUpdateError: false,
+      modalLoading: false
     };
   }
 
@@ -41,6 +43,18 @@ class JeevesUserSettings extends React.Component {
     this.setState(prevState => ({
       isPasswordModalOpen: !prevState.isPasswordModalOpen
     }));
+    this.setState({
+      oldPassword: '',
+      newPassword: '',
+      confirmNewPassword: '',
+      isNewPasswordValid: true,
+      passwordMatch: true,
+      allValid: true,
+      invalidOldPassword: false,
+      passwordUpdated: false,
+      passwordUpdateError: false,
+      modalLoading: false
+    });
   };
 
 
@@ -72,56 +86,84 @@ class JeevesUserSettings extends React.Component {
   // Handle form submission
   handlePasswordSubmit = async () => {
     const { oldPassword, newPassword, confirmNewPassword, allValid } = this.state;
+
+    const fetchPromise = fetch('/passwordChange', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ oldPassword, newPassword }),
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Fetch timed out"));
+      }, 15000);
+    });
+
     if (allValid) {
       try {
-        const response = await fetch('/passwordChange', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.props.auth.token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ oldPassword, newPassword }),
-        });
+        this.setState({modalLoading: true});
 
+        const response = await Promise.race([timeoutPromise, fetchPromise]);
         if (!response.ok) {
           const error = await response.json();
           throw new Error(error.message);
         }
-        //this.setState({ passwordUpdated: true });
-        this.setState({passwordUpdated: true});
+
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        
+        this.setState({
+          passwordUpdated: true,
+          passwordUpdateError: false,
+          invalidOldPassword: false,
+          modalLoading: false
+        });
 
         setTimeout(() => {
           this.props.logout();  
-          //window.location.reload();
           window.location.href = '/'; 
-        }, 2000)
-        //falta comparar que la password nueva sea distinta a la vieja, probablemente deba arreglar en el endpoint para que ya compare la pass nueva todo en
-        //el mismo endpoing, tener en cuenta esto
+        }, 2500)
+
       } catch (error) {
         if (error.message == 'Invalid password.') {
-          this.setState({ invalidOldPassword: true });
+          this.setState({
+            passwordUpdated: false,
+            passwordUpdateError: false,
+            invalidOldPassword: true,
+          });
+        } else {          
+          this.setState({
+            passwordUpdated: false,
+            passwordUpdateError: true,
+            invalidOldPassword: false,
+          });
         }
+        this.setState({modalLoading: false});
         console.log(error.message);
       }
     }
-
-    // this.togglePasswordModal();
+    
   };
 
   renderPasswordChangeModal = () => {
-    const { 
-      isPasswordModalOpen, 
-      oldPassword, 
-      newPassword, 
+    const {
+      isPasswordModalOpen,
+      oldPassword,
+      newPassword,
       confirmNewPassword,
       isNewPasswordValid,
-      passwordMatch, 
+      passwordMatch,
       allValid,
       invalidOldPassword,
-      passwordUpdated } = this.state;
+      passwordUpdated,
+      passwordUpdateError,
+      modalLoading } = this.state;
 
 
-   // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
+    // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
     const passwordError = (isNewPasswordValid || !newPassword) ? null : {
       content: 'The password must be at least 8 characters, include a capital letter and a number.',
       pointing: 'above',
@@ -153,8 +195,7 @@ class JeevesUserSettings extends React.Component {
               label='New Password'
               type='password'
               name='newPassword'
-              value={newPassword}
-              //  style={passwordInputStyle}
+              value={newPassword}              
               error={passwordError}
               onChange={this.handleInputChange}
               required
@@ -175,26 +216,39 @@ class JeevesUserSettings extends React.Component {
             {(oldPassword === newPassword) && (
               <p style={{ color: 'red' }}>Old password and new password must be different</p>
             )}
-{/* 
-              {invalidOldPassword && (
-                <p style={{ color: 'red' }}>Old password is invalid</p>
-            )} */}
             <Modal.Actions>
               {invalidOldPassword && (
-                <Message negative> 
+                <Message negative>
                   <Message.Header>Password error</Message.Header>
-                  <p>Your old password is not correct, please try again.</p>           
+                  <p>Your old password is not correct, please try again.</p>
                 </Message>
               )}
               {passwordUpdated && (
-                <Message positive> 
+                <Message positive>
                   <Message.Header>Password updated</Message.Header>
-                  <p>Your new password has been changed successfully. Use your new password to log in.</p>           
+                  <p>Your new password has been changed successfully. Use your new password to log in.</p>
                 </Message>
               )}
-              
-              <Button content="Close" icon='close' size='small' secondary onClick={this.togglePasswordModal} />
-              <Button content="Submit" type='submit' size='small' primary disabled={!allValid} />
+              {passwordUpdateError && (
+                <Message negative>
+                  <Message.Header>Internal server error</Message.Header>
+                  <p>Please try again later.</p>
+                </Message>
+              )}
+
+              <Button 
+                content='Close' 
+                icon='close' 
+                size='small' 
+                secondary 
+                onClick={this.togglePasswordModal}/>
+              <Button 
+                content='Submit'  
+                icon='checkmark' 
+                loading={modalLoading}
+                type='submit' size='small' 
+                primary 
+                disabled={!allValid} />
             </Modal.Actions>
           </Form>
         </Modal.Content>
@@ -211,15 +265,6 @@ class JeevesUserSettings extends React.Component {
       <jeeves-user-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }} textAlign='center'>
           <Header as='h1' textAlign='center'>Settings</Header>
-          {/* <Header as='h2'>Account</Header>
-          <Card>
-            <Card.Content>
-              <Header as='h3'>Profile</Header>
-              <p>Email: {email}</p>
-              <p>Username: {username}</p>
-              <p>Password: <code>****</code> <Button size='tiny'>change</Button></p>
-            </Card.Content>
-          </Card> */}
           <container className='settings-container' >            
             <Header as='h2'>Account</Header>
             <Table>
