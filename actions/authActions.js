@@ -40,7 +40,7 @@ const login = (username, password) => {
       const session = await response.json();
       
       // Here we create the database and store the session
-      const dbRequest = indexedDB.open("JeevesDB", 1); 
+      const dbRequest = indexedDB.open("Jeeves_DB", 1); 
       
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
@@ -133,7 +133,7 @@ const register = (username, password) => {
 const logout = () => {
   return async dispatch => {
 
-    const request = indexedDB.open('JeevesDB', 1);
+    const request = indexedDB.open('Jeeves_DB', 1);
 
     request.onerror = function(event) {
       console.error("IndexedDB error:", event.target.errorCode);
