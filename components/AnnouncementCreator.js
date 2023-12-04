@@ -15,7 +15,8 @@ const {
   Message,
   Segment,
   Container,
-  Modal
+  Modal,
+  Grid
 } = require('semantic-ui-react');
 
 class AnnouncementCreator extends React.Component {
@@ -33,17 +34,27 @@ class AnnouncementCreator extends React.Component {
       connectionProblem: false,
       announFail: false,
       announSent: false,
-      errorMessage: ''
+      errorMessage: '',
+      expirationDate: '' ,
+      windowWidth: window.innerWidth
     };
 
   }
-
+  componentDidMount () {    
+    window.addEventListener('resize', this.handleResize);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  }
   componentDidUpdate(prevProps) {
     // If a new login request has been initiated or an error has occurred, stop loading
     if ((this.props.error === null && prevProps.error !== null) || (this.props.error && prevProps.error !== this.props.error)) {
       this.setState({ loading: false });
     }
   }
+  handleResize = () => {
+    this.setState({ windowWidth: window.innerWidth });
+  };
   handleTitleChange = (event) => {
     this.setState({ title: event.target.value });
   };
@@ -63,8 +74,11 @@ class AnnouncementCreator extends React.Component {
 
   handleClear = (event) => {
     event.preventDefault();
-    this.setState({ title: '', body: '' });
+    this.setState({ title: '', body: '', expirationDate: '' });
   }
+  handleExpirationDateChange = (event) => {
+    this.setState({ expirationDate: event.target.value });
+  };
   handleModalClose = () => {
     this.setState({
       modalOpen: false,
@@ -147,9 +161,12 @@ class AnnouncementCreator extends React.Component {
       announSent,
       announFail,
       connectionProblem,
-      errorMessage
+      errorMessage,
+      expirationDate,
+      windowWidth
     } = this.state;
 
+    const dateColumns = windowWidth < 480 ? 16 : windowWidth < 1024 ? 8 : 4;
 
     return (
       <Container fluid style={{ paddingTop: '2em', }}>
@@ -160,7 +177,18 @@ class AnnouncementCreator extends React.Component {
               <label>Title (optional)</label>
               <input placeholder='Title' name='title' autoComplete='title' value={title} onChange={this.handleTitleChange} />
             </Form.Field>
-            <Form.Field>
+            <Grid>
+              <Grid.Row>
+                <Grid.Column width={dateColumns}>
+                  <Form.Field>
+                    <label>Expiration Date</label>
+                    <input type='date' name='expirationDate' value={expirationDate} onChange={this.handleExpirationDateChange} />
+                  </Form.Field>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+
+            <Form.Field style={{ marginTop: '1em' }}>
               <label><p>Body</p></label>
               <Form.TextArea placeholder='Write your announcement here' style={{ minHeight: '8em' }} value={body} onChange={this.handleBodyChange} required={true} />
             </Form.Field>
