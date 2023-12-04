@@ -76,8 +76,20 @@ class AnnouncementCreator extends React.Component {
     event.preventDefault();
     this.setState({ title: '', body: '', expirationDate: '' });
   }
+  // handleExpirationDateChange = (event) => {
+  //   this.setState({ expirationDate: event.target.value });    
+  // };
   handleExpirationDateChange = (event) => {
-    this.setState({ expirationDate: event.target.value });
+    const selectedDate = new Date(event.target.value);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+  
+    if (selectedDate < tomorrow) {
+      alert('Expiration date must be at least one day in the future.');
+      this.setState({ expirationDate: '' }); // Clear the invalid date
+    } else {
+      this.setState({ expirationDate: event.target.value });
+    }
   };
   handleModalClose = () => {
     this.setState({
@@ -91,18 +103,28 @@ class AnnouncementCreator extends React.Component {
   }
   handleModalSend = async () => {
 
-    const { title, body, } = this.state;
+    const { title, body, expirationDate} = this.state;
     const state = store.getState();
     const token = state.auth.token;
+    
+    let dataToSend;
 
-    const dataToSend = {
-      title,
-      body
-    };
+    if(expirationDate){
+      dataToSend = {
+        title,
+        body,
+        expirationDate
+      };
+    }else{
+       dataToSend = {
+        title,
+        body
+      };
+    }
 
     this.setState({ modalLoading: true });
 
-    const fetchPromise = fetch('/announcements', {
+    const fetchPromise = fetch('/announcementCreate', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -166,7 +188,8 @@ class AnnouncementCreator extends React.Component {
       windowWidth
     } = this.state;
 
-    const dateColumns = windowWidth < 480 ? 16 : windowWidth < 1024 ? 8 : 4;
+    const dateColumns = windowWidth < 480 ? 16 : windowWidth < 1024 ? 8 : windowWidth < 1441 ? 6 : 3;
+
 
     return (
       <Container fluid style={{ paddingTop: '2em', }}>
@@ -181,7 +204,7 @@ class AnnouncementCreator extends React.Component {
               <Grid.Row>
                 <Grid.Column width={dateColumns}>
                   <Form.Field>
-                    <label>Expiration Date</label>
+                    <label>Expiration Date (optional)</label>
                     <input type='date' name='expirationDate' value={expirationDate} onChange={this.handleExpirationDateChange} />
                   </Form.Field>
                 </Grid.Column>

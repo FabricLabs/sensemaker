@@ -878,24 +878,6 @@ class Jeeves extends Service {
         messageID
       } = req.body;
 
-      // if (!conversation_id) {
-      //   isNew = true;
-
-      //   const now = new Date();
-      //   const name = `Conversation Started ${now.toISOString()}`;
-      //   /* const room = await this.matrix.client.createRoom({ name: name }); */
-      //   const created = await this.db('conversations').insert({
-      //     creator_id: req.user.id,
-      //     log: JSON.stringify([]),
-      //     title: name,
-      //     // matrix_room_id: room.room_id
-      //   });
-
-      //   // TODO: document why array only for Postgres
-      //   // all others return the numeric id (Postgres returns an array with a numeric element)
-      //   conversation_id = created[0];
-      // }
-
       if (case_id) {
         subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
       }
@@ -903,12 +885,6 @@ class Jeeves extends Service {
       try {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
-
-        // const newMessage = await this.db('messages').insert({
-        //   content: content,
-        //   conversation_id: conversation_id,
-        //   user_id: req.user.id
-        // });
         
         const newRequest = await this.db('requests').insert({
           message_id: messageID
@@ -919,8 +895,6 @@ class Jeeves extends Service {
           conversation_id: conversation_id,
           subject: (subject) ? `${subject.title}, ${subject.court_name}, ${subject.decision_date}` : null,
           input: content,
-          // room: roomID // TODO: replace with a generic property (not specific to Matrix)
-          // target: activity.target // candidate 1
         }).then((output) => {
           console.log('got request output:', output);
 
@@ -973,6 +947,80 @@ class Jeeves extends Service {
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
+
+    this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
+      // TODO: check token
+      const request = req.body;
+
+      try {
+        await this.db('announcements').insert({
+          creator_id: req.user.id,          
+          title: (request.title) ? request.title : null, 
+          body: request.body,
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+        });
+
+        return res.send({
+          type: 'announcementCreated',
+          content: {
+            message: 'Success!',
+            status: 'success'
+          }
+        });
+      } catch (exception) {
+        return res.send({
+          type: 'announcementError',
+          content: exception
+        });
+      }
+    });
+        this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
+      // TODO: check token
+      const request = req.body;
+
+      try {
+        await this.db('announcements').insert({
+          creator_id: req.user.id,          
+          title: (request.title) ? request.title : null, 
+          body: request.body,
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+        });
+
+        return res.send({
+          type: 'announcementCreated',
+          content: {
+            message: 'Success!',
+            status: 'success'
+          }
+        });
+      } catch (exception) {
+        return res.send({
+          type: 'announcementError',
+          content: exception
+        });
+      }
+    });
+
+    this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
+      try {
+
+        const latestAnnouncement = await this.db('announcements')
+          .select('*') 
+          .orderBy('created_at', 'desc')
+          .first();
+    
+        if (!latestAnnouncement) {
+          return res.status(404).json({ message: 'No announcements found.' });
+        }
+    
+        res.json(latestAnnouncement);
+        
+      } catch (error) {
+        console.error('Error fetching announcement:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+    
 
     // await this._startAllServices();
 
