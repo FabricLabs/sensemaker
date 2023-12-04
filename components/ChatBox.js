@@ -509,12 +509,6 @@ class ChatBox extends React.Component {
       loading, 
       generatingReponse, 
       reGeneratingReponse,
-      modalOpen, 
-      rating, 
-      feedbackSent, 
-      feedbackFail, 
-      connectionProblem, 
-      modalLoading,
       query 
     } = this.state;
 

@@ -76,21 +76,26 @@ class AnnouncementCreator extends React.Component {
     event.preventDefault();
     this.setState({ title: '', body: '', expirationDate: '' });
   }
-  // handleExpirationDateChange = (event) => {
-  //   this.setState({ expirationDate: event.target.value });    
-  // };
+
+  
   handleExpirationDateChange = (event) => {
-    const selectedDate = new Date(event.target.value);
+    const dateString = event.target.value; // 'YYYY-MM-DD'
+
+    //this is made to compare only the dates, and not the hours, fixes problems setting expiration to tomorrow
+    const selectedDate = new Date(dateString).toISOString().split('T')[0]; // 'YYYY-MM-DD'    
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowString = tomorrow.toISOString().split('T')[0]; // 'YYYY-MM-DD'
   
-    if (selectedDate < tomorrow) {
-      alert('Expiration date must be at least one day in the future.');
+    if (selectedDate < tomorrowString) {
+      alert('If you choose to set an Expiration Date, it must be at least 1 day after the current date.');
       this.setState({ expirationDate: '' }); // Clear the invalid date
     } else {
-      this.setState({ expirationDate: event.target.value });
+      this.setState({ expirationDate: dateString });
     }
   };
+  
+  
   handleModalClose = () => {
     this.setState({
       modalOpen: false,
@@ -171,6 +176,76 @@ class AnnouncementCreator extends React.Component {
       }
     }
   }
+  renderModalAnnouncement = () => {
+
+    const {
+      modalLoading,
+      modalOpen,
+      announSent,
+      announFail,
+      connectionProblem,
+      errorMessage,
+    } = this.state;
+
+    return (
+      <Modal
+        onClose={this.handleModalClose}
+        onOpen={() => this.setState({ modalOpen: true })}
+        open={modalOpen}
+        size='tiny'>
+        <Modal.Header>
+          Publishing&nbsp;
+          <Icon name='announcement' />
+        </Modal.Header>
+        <Modal.Content>
+          <Modal.Description>
+            <p>Do you want to publish this announcement?</p>
+          </Modal.Description>
+        </Modal.Content>
+        <Modal.Actions>
+          {/*When the feedback is sent it shows this message  */}
+          {announSent && (
+            <Message positive>
+              <Message.Header>Announcement published!</Message.Header>
+              <p>Your announcement has been successfully published.</p>
+            </Message>
+          )}
+          {/*When the feedback could not be sent it shows this message  */}
+          {announFail && (
+            <Message error>
+              <Message.Header>Announcement could not be published</Message.Header>
+              <p>{errorMessage}</p>
+            </Message>
+          )}
+          {connectionProblem && (
+            <Message error>
+              <Message.Header>Announcement could not be published</Message.Header>
+              <p>Please check your internet connection.</p>
+            </Message>
+          )}
+          <Button
+            content='Close'
+            icon='close'
+            onClick={this.handleModalClose}
+            labelPosition='right'
+            size='small'
+            secondary
+          />
+          {/*This button is shown only if Feedback wasnt sent yet */}
+          {!announSent && (
+            <Button
+              content='Publish'
+              icon={modalLoading ? 'spinner' : 'checkmark'}
+              onClick={this.handleModalSend}
+              labelPosition='right'
+              size='small'
+              loading={modalLoading}
+              positive
+            />)}
+        </Modal.Actions>
+      </Modal>
+    )
+  }
 
   render() {
 
@@ -178,12 +253,6 @@ class AnnouncementCreator extends React.Component {
       title,
       body,
       loading,
-      modalLoading,
-      modalOpen,
-      announSent,
-      announFail,
-      connectionProblem,
-      errorMessage,
       expirationDate,
       windowWidth
     } = this.state;
@@ -233,62 +302,8 @@ class AnnouncementCreator extends React.Component {
           )
           }
         </Segment>
-        <Modal
-          onClose={this.handleModalClose}
-          onOpen={() => this.setState({ modalOpen: true })}
-          open={modalOpen}
-          size='mini'>
-          <Modal.Header>
-            Publishing&nbsp;
-            <Icon name='announcement' />
-          </Modal.Header>
-          <Modal.Content>
-            <Modal.Description>
-              <p>Do you want to publish this announcement?</p>
-            </Modal.Description>
-          </Modal.Content>
-          <Modal.Actions>
-            {/*When the feedback is sent it shows this message  */}
-            {announSent && (
-              <Message positive>
-                <Message.Header>Announcement published!</Message.Header>
-                <p>Your announcement has been successfully published.</p>
-              </Message>
-            )}
-            {/*When the feedback could not be sent it shows this message  */}
-            {announFail && (
-              <Message error>
-                <Message.Header>Announcement could not be published</Message.Header>
-                <p>{errorMessage}</p>
-              </Message>
-            )}
-            {connectionProblem && (
-              <Message error>
-                <Message.Header>Announcement could not be published</Message.Header>
-                <p>Please check your internet connection.</p>
-              </Message>
-            )}
-            <Button
-              content='Close'
-              icon='close'
-              onClick={this.handleModalClose}
-              labelPosition='right'
-              size='small'
-              secondary
-            />
-            {/*This button is shown only if Feedback wasnt sent yet */}
-            {!announSent && (
-              <Button
-                content='Publish'
-                icon={modalLoading ? 'spinner' : 'checkmark'}
-                onClick={this.handleModalSend}
-                labelPosition='right'
-                size='small'
-                loading={modalLoading}
-                positive
-              />)}
-          </Modal.Actions>
-        </Modal>
+        {this.renderModalAnnouncement()}
+
       </Container>
     );
   }
