@@ -72,6 +72,10 @@ class Conversation extends React.Component {
       </fabric-container>
     );
   }
+
+  toHTML () {
+    return ReactDOMServer.renderToString(this.render());
+  }
 }
 
 function Chat (props) {

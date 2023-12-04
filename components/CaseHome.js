@@ -130,6 +130,10 @@ class CaseHome extends React.Component {
   _toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
+
+  toHTML () {
+    return this._toHTML();
+  }
 }
 
 module.exports = CaseHome;

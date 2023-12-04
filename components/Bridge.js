@@ -64,11 +64,19 @@ class Bridge extends React.Component {
       ws.send(message.asRaw());
     };
 
-    ws.onmessage = (message) => {
-      if (this.settings.debug) console.debug('received ws message:', message);
+    ws.onmessage = async (msg) => {
+      // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
+      const buffer = Buffer.from(await msg.data.arrayBuffer());
+      const message = Message.fromBuffer(buffer);
+
+      switch (message.type) {
+        default:
+          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+          break;
+      }
 
       try {
-        const data = JSON.parse(message);
+        const data = JSON.parse(msg.body);
         this.setState({ data });
       } catch (e) {
         this.setState({ error: e });
