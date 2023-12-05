@@ -288,6 +288,11 @@ class Jeeves extends Service {
 
     await this.tick();
 
+    this.worker.addJob({
+      type: 'ScanCourtListener',
+      params: []
+    });
+
     let data = beat.data;
 
     try {
@@ -366,6 +371,12 @@ class Jeeves extends Service {
       }
 
       console.debug('Ingest complete:', params[1]);
+    });
+
+    this.worker.register('ScanCourtListener', async (...params) => {
+      console.debug('SCANNING COURT LISTENER...');
+      const cases = this.courtlistener('search_docket').select('*').limit(100);
+      console.debug('POSTGRES CASES:', cases);
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
