@@ -2,7 +2,7 @@
 
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
-const ENABLE_CASE_SEARCH = false;
+const ENABLE_CASE_SEARCH = true;
 const ENABLE_LIBRARY = false;
 
 const PER_PAGE_LIMIT = 100;
