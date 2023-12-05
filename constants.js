@@ -1,5 +1,6 @@
 'use strict';
 
+const RELEASE_NAME = 'alpha';
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 const ENABLE_CASE_SEARCH = true;
@@ -8,11 +9,15 @@ const ENABLE_LIBRARY = false;
 const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
 
+// ChatGPT
+const CHATGPT_MAX_TOKENS = 4096;
+
 module.exports = {
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
   ENABLE_CASE_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
-  PER_PAGE_DEFAULT
+  PER_PAGE_DEFAULT,
+  CHATGPT_MAX_TOKENS
 };

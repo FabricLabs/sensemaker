@@ -41,6 +41,7 @@ class ChatBox extends React.Component {
       generatingReponse: false,
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,  
+      connectionProblem: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -55,7 +56,7 @@ class ChatBox extends React.Component {
   componentDidUpdate (prevProps) {
     const { messages } = this.props.chat;
     if (prevProps.chat.messages.length !== this.props.chat.messages.length) {
-      this.scrollToBottom();
+      
       // Set hasSubmittedMessage to true if a message has been submitted
       if (!this.props.hasSubmittedMessage) {
         this.props.updateHasSubmittedMessage(true);
@@ -71,6 +72,7 @@ class ChatBox extends React.Component {
           }
         }
       }
+      this.scrollToBottom();
     }
   }
 
@@ -175,7 +177,6 @@ class ChatBox extends React.Component {
           this.props.getMessages({ conversation_id: message?.conversation });
         }, 15000);
       }
-
       this.setState({ loading: false });
     });
 
@@ -192,7 +193,8 @@ class ChatBox extends React.Component {
       comment : '',
       modalLoading: false,
       feedbackSent: false,
-      feedbackFail: false
+      feedbackFail: false,
+      connectionProblem: false
          
     });
   };
@@ -220,61 +222,94 @@ class ChatBox extends React.Component {
   handleCommentChange = (e, { value }) => {
     this.setState({ comment: value });
   }
-
-  handleModalSend = () => {
+  
+  handleModalSend = async () => {
     const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
     const { message } = this.props.chat;
-    const mssageId = message.id; 
+    const messageId = message.id;
     const state = store.getState();
     const token = state.auth.token;
-
-    //data to send to the API
+  
     const dataToSend = {
       rating,
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: mssageId      
+      message: messageId,
     };
-    
   
-    //shows loading button
-    this.setState({ modalLoading: true });    
-
-    //artificial delay
-    const delayPromise = new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 1500);
-    });
-
-    Promise.all([delayPromise, fetch('/reviews', {
-      method: 'POST',
+    this.setState({ modalLoading: true });
+  
+    const fetchPromise = fetch("/reviews", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(dataToSend),
-    })])
-      .then(([delayResult, fetchResponse]) => {        
-        if (delayResult === true) {
-          if (fetchResponse.ok) {
-            this.setState({feedbackSent : true, modalLoading: false });
-          } else {
-            this.setState({feedbackFail : true, modalLoading: false });
-            console.error('API request failed');
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error while sending data to the API:', error);
-      })
+    });
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Fetch timed out"));
+      }, 15000);
+    });
+    try {
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (response.ok) {
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        this.setState({
+          feedbackSent: true,
+          feedbackFail: false,
+          modalLoading: false,
+          connectionProblem: false,
+        });
+      } else {
+        this.setState({
+          feedbackSent: false,
+          feedbackFail: true,
+          modalLoading: false,
+          connectionProblem: false,
+        });        
+        console.error("API request failed with status:", response.status);
+      }    
+
+    } catch (error) {
+      if (error.message === "Fetch timed out") {
+        this.setState({
+          feedbackSent: false,
+          feedbackFail: false,
+          modalLoading: false,
+          connectionProblem: true,
+        });
+      } 
+    }
   };
 
 
   render () {
-    const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder,messageContainerStyle,inputStyle, caseID , homePage} = this.props;
+    
+    const { 
+      loading, 
+      generatingReponse, 
+      modalOpen, 
+      rating, 
+      feedbackSent, 
+      feedbackFail, 
+      connectionProblem, 
+      modalLoading,
+      query 
+    } = this.state;
+
+    const { 
+      isSending, 
+      placeholder,
+      messageContainerStyle,
+      inputStyle, 
+      homePage
+    } = this.props;
+
     const { message, messages } = this.props.chat;   
     
     return (
@@ -282,42 +317,47 @@ class ChatBox extends React.Component {
             <Feed style={messageContainerStyle} className='chat-feed'>
                 {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
                     <Feed.Event key={message.id}>
-                    <Feed.Content>
-                        {message.role === 'assistant' && (
-                        <div className='controls thumbs-group'>
-                            <Button.Group size='mini'>
-                            <Popup trigger={
-                                <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
-                            }>
-                                <Popup.Content>
-                                <p>Report something wrong with this statement.</p>
-                                </Popup.Content>
-                            </Popup>
-                            <Popup trigger={
-                                <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
-                            }>
-                                <Popup.Header>Tell Us What You Liked!</Popup.Header>
-                                <Popup.Content>
-                                <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-                                </Popup.Content>
-                            </Popup>
-                            </Button.Group>
-                        </div>
-                        )}
-                        <Feed.Summary>
-                        <Feed.User>{message.author || message.user_id}</Feed.User>
-                        <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
-                        </Feed.Summary>
-                        <Feed.Extra text>
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+                      <Feed.Content>
+                          {message.role === 'assistant' && (
+                          <div className='controls thumbs-group'>
+                              <Button.Group size='mini'>
+                              <Popup trigger={
+                                  <Button icon='thumbs down' color='black' size='tiny' onClick={this.handleModalDown} />
+                              }>
+                                  <Popup.Content>
+                                  <p>Report something wrong with this statement.</p>
+                                  </Popup.Content>
+                              </Popup>
+                              <Popup trigger={
+                                  <Button icon='thumbs up' color='green' onClick={this.handleModalUp} />
+                              }>
+                                  <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                                  <Popup.Content>
+                                  <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                                  </Popup.Content>
+                              </Popup>
+                              </Button.Group>
+                          </div>
+                          )}
+                          <Feed.Summary>
+                            <Feed.User>{message.author || message.user_id}</Feed.User>
+                            <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
+                          </Feed.Summary>
+                          <Feed.Extra text>
+                            <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
+                          </Feed.Extra>
+                          <Feed.Extra text>
+                          {(generatingReponse && message.id === messages[messages.length - 1].id ) && (
+                            <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em'}}><Icon name='spinner' loading /> Jeeves is generating a response</Header>                
+                          )}
                         </Feed.Extra>
-                    </Feed.Content>
+                      </Feed.Content>
                     </Feed.Event>
-                    ))}
+                 ))}
                 <Modal
                     onClose={this.handleModalClose}
                     onOpen={() => this.setState({ modalOpen: true })}
-                    open={this.state.modalOpen}            
+                    open={modalOpen}            
                     size='tiny'>
                     <Modal.Header>Feedback</Modal.Header>
                     <Modal.Content>              
@@ -325,7 +365,7 @@ class ChatBox extends React.Component {
                         <p>Let us know your opinion!</p>         
                     </Modal.Description>            
                     <Form>
-                        <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={this.state.rating}/>
+                        <Rating size={25} transition={true} onClick={this.handleRatingChange} initialValue={rating}/>
                         <Form.Field>
                             <Header style={{ marginTop: '0.5em'}}>Comment</Header>
                             <TextArea
@@ -337,19 +377,25 @@ class ChatBox extends React.Component {
                     </Modal.Content>
                     <Modal.Actions> 
                     {/*When the feedback is sent it shows this message  */}
-                    {this.state.feedbackSent && (
+                    {feedbackSent && (
                         <Message positive>
                             <Message.Header>Feedback Sent!</Message.Header>
                             <p>Your comment has been successfully sent.</p>
                         </Message>
                     )}
                     {/*When the feedback could not be sent it shows this message  */}
-                    {this.state.feedbackFail && (
+                    {feedbackFail && (
                         <Message error> 
                             <Message.Header>Feedback could not be sent</Message.Header>
                             <p>Please try again later.</p>
                         </Message>
-                    )}               
+                    )}
+                    {connectionProblem && (
+                        <Message error> 
+                            <Message.Header>Feedback could not be sent</Message.Header>
+                            <p>Please check your internet connection.</p>
+                        </Message>
+                    )}                  
                     <Button
                         content="Close"                  
                         icon='close'
@@ -359,14 +405,14 @@ class ChatBox extends React.Component {
                         secondary
                     />
                     {/*This button is shown only if Feedback wasnt sent yet */}
-                    {!this.state.feedbackSent && (
+                    {!feedbackSent && (
                     <Button
                         content="Send"
-                        icon={this.state.modalLoading ? 'spinner' : 'checkmark'}
+                        icon={modalLoading ? 'spinner' : 'checkmark'}
                         onClick={this.handleModalSend}
                         labelPosition='right'    
                         size='small'     
-                        loading={this.state.modalLoading}         
+                        loading={modalLoading}         
                         positive                 
                     />)}                
                     </Modal.Actions>
@@ -374,12 +420,8 @@ class ChatBox extends React.Component {
             </Feed>
             {/* <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
             <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
-            {generatingReponse && (
-                <Message size='tiny' style={{ float: 'right'}}>
-                <Message.Header style={{ fontSize: '0.8em' }}><Icon name='spinner' loading /> Jeeves is generating a response...</Message.Header>                
-                </Message>)}
             <Form.Field>
-                <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={this.state.query} />
+                <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} />
             </Form.Field>            
             </Form>
             {(messages.length === 0 && homePage) && (        
@@ -388,9 +430,9 @@ class ChatBox extends React.Component {
                 <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
                  <Dropdown
                   size='small'
-                  placeholder='Find all case that...'  
+                  placeholder='Find a case that...'  
                   selection       
-                  text='Find all case that...'                                    
+                  text='Find a case that...'                                    
                   options={caseDropOptions}
                   onChange={this.handleChangeDropdown}                         
                  />              
@@ -418,16 +460,18 @@ class ChatBox extends React.Component {
   }
 
   scrollToBottom = () => {
-    if (this.props.messagesEndRef.current) {
-      const feedElement = this.props.messagesEndRef.current.querySelector('.chat-feed');
-      const lastMessage = feedElement.lastElementChild;
-  
-      if (lastMessage) {
-        lastMessage.scrollIntoView({ behavior: 'smooth' });
+    //this timeout is used to make sure the scroll is done AFTER the component its updated and rendered, this fixes problems with generating reponse message
+    setTimeout(() => {
+      if (this.props.messagesEndRef.current) {
+        const feedElement = this.props.messagesEndRef.current.querySelector('.chat-feed');
+        const lastMessage = feedElement.lastElementChild;
+
+        if (lastMessage) {
+          lastMessage.scrollIntoView({ behavior: 'smooth' });
+        }
       }
-    }
+    }, 0);
   };
-  
 }
 
 module.exports = ChatBox;

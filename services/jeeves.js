@@ -65,6 +65,7 @@ const Worker = require('../types/worker');
 
 // Components
 const CaseHome = require('../components/CaseHome');
+const CaseView = require('../components/CaseView');
 const Conversations = require('../components/Conversations');
 
 /**
@@ -156,6 +157,17 @@ class Jeeves extends Service {
       }
     });
 
+    this.courtlistener = knex({
+      client: 'postgresql',
+      connection: {
+        host: this.settings.courtlistener.host,
+        port: this.settings.courtlistener.port,
+        username: this.settings.courtlistener.username,
+        password: this.settings.courtlistener.password,
+        database: this.settings.courtlistener.database
+      }
+    });
+
     attachPaginate();
 
     // Fabric Setup
@@ -223,6 +235,9 @@ class Jeeves extends Service {
       path: './stores'
     });
 
+    // Streaming
+    this.completions = {};
+
     this._state = {
       clock: this.clock,
       status: 'STOPPED',
@@ -272,6 +287,11 @@ class Jeeves extends Service {
     }]);
 
     await this.tick();
+
+    this.worker.addJob({
+      type: 'ScanCourtListener',
+      params: []
+    });
 
     let data = beat.data;
 
@@ -335,10 +355,6 @@ class Jeeves extends Service {
       const buffer = await blob.arrayBuffer();
       const body = Buffer.from(buffer);
 
-      console.debug('blob:', blob);
-      console.debug('buffer:', buffer);
-      console.debug('body:', body);
-
       try {
         fs.writeFileSync(params[1], body);
       } catch (exception) {
@@ -357,6 +373,12 @@ class Jeeves extends Service {
       console.debug('Ingest complete:', params[1]);
     });
 
+    this.worker.register('ScanCourtListener', async (...params) => {
+      console.debug('SCANNING COURT LISTENER...');
+      const cases = this.courtlistener('search_docket').select('*').limit(100);
+      console.debug('POSTGRES CASES:', cases);
+    });
+
     this.worker.on('debug', (...debug) => console.debug(...debug));
     this.worker.on('log', (...log) => console.log(...log));
     this.worker.on('warning', (...warning) => console.warn(...warning));
@@ -366,6 +388,9 @@ class Jeeves extends Service {
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
     this.openai.on('error', this._handleOpenAIError.bind(this));
+    this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
+    this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
+    this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // Start the logging service
     await this.audits.start();
@@ -513,6 +538,25 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/sessionRestore', async (req, res, next) => {
+
+      try {
+        const user = await this.db('users').where('id', req.user.id).first();
+        if (!user) {
+          return res.status(401).json({ message: 'Invalid session.' });
+        }  
+        return res.json({
+          username: user.username,
+          email: user.email,
+          isAdmin: user.is_admin,
+          isCompliant: user.is_compliant
+        });
+      } catch (error) {
+        console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
@@ -552,23 +596,39 @@ class Jeeves extends Service {
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
-        console.debug('summarized to:', summary);
+
         if (summary) {
           await this.db('cases').update({
             summary: summary
           }).where('id', instance.id);
+
+          instance.summary = summary;
         }
       }
 
       fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-
+        // TODO: additional params (auth?)
       }).catch((exception) => {
         console.error('FETCH FULL CASE ERROR:', exception);
       }).then(async (output) => {
-        console.debug('FETCH FULL CASE OUTPUT:', await output.json());
+        const target = await output.json();
+        const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
+        this.http.broadcast(message);
       });
 
-      res.send(instance);
+      res.format({
+        json: async () => {
+          res.send(instance);
+        },
+        html: () => {
+          // TODO: provide state
+          // const page = new CaseView({});
+          // TODO: fix this hack
+          const page = new CaseHome({}); // TODO: use CaseView
+          const html = page.toHTML();
+          return res.send(this.http.app._renderWith(html));
+        }
+      });
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
@@ -690,7 +750,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
-
       try {
         const request = req.body;
         const cases = await this._searchCases(request);
@@ -741,7 +800,11 @@ class Jeeves extends Service {
       }
 
       if (case_id) {
-        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        try {
+          subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        } catch (exception) {
+          this.emit('warning', `Could not find case ID: ${case_id}`);
+        }
       }
 
       try {
@@ -754,7 +817,7 @@ class Jeeves extends Service {
           user_id: req.user.id
         });
 
-        const newRequest = await this.db('requests').insert({
+        const inserted = await this.db('requests').insert({
           message_id: newMessage[0]
         });
 
@@ -766,28 +829,28 @@ class Jeeves extends Service {
           // room: roomID // TODO: replace with a generic property (not specific to Matrix)
           // target: activity.target // candidate 1
         }).then((output) => {
-          console.log('got request output:', output);
-
-          this.db('responses').insert({
+          // TODO: restore response tracking
+          /* this.db('responses').insert({
+            // TODO: store request ID
             content: output.object.content
-          });
+          }); */
 
-          this.db('messages').insert({
-            content: output.object.content,
-            conversation_id: conversation_id,
-            user_id: 1 // TODO: real user ID
-          }).then(async (response) => {
-            console.log('response created:', response);
+          // TODO: restore titling
+          /* if (isNew) {
+            const messages = await this._getConversationMessages(conversation_id);
+            const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+              return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+            }));
 
-            if (isNew) {
-              const messages = await this._getConversationMessages(conversation_id);
-              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
-                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-              }));
-    
-              await this.db('conversations').update({ title }).where({ id: conversation_id });
-            }
-          });
+            await this.db('conversations').update({ title }).where({ id: conversation_id });
+
+            const conversation = { id: conversation_id, messages: messages, title: title };
+            const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
+
+            this.http.broadcast(message);
+
+            console.debug('message broadcast:', message);
+          } */
         });
 
         if (!conversation.log) conversation.log = [];
@@ -822,10 +885,14 @@ class Jeeves extends Service {
 
     // Listen for HTTP events, if enabled
     if (this.settings.http.listen) this.trust(this.http);
+
+    // Always trust the local agent
     this.trust(this.agent);
 
     // Queue up a verification job
     this.queue._addJob({ method: 'verify', params: [] });
+
+    // Create a heartbeat
     this._heart = setInterval(this.tick.bind(this), this.settings.interval);
 
     // Start HTTP, if enabled
@@ -947,6 +1014,7 @@ class Jeeves extends Service {
 
     // Set reactions to reflect completed status
     const latestReactions = await this.matrix._getReactions(activity.object.id);
+
     if (!latestReactions.filter((x) => (x.key === completedIcon)).length) {
       try {
         completedReaction = await this.matrix._react(activity.object.id, completedIcon);
@@ -960,6 +1028,24 @@ class Jeeves extends Service {
 
   async _handleOpenAIError (error) {
     this.emit('error', `[SERVICES:OPENAI] ${error}`);
+  }
+
+  async _handleOpenAIMessageChunk (chunk) {
+    const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
+    this.http.broadcast(message);
+    // if (!this.completions[chunk.message_id]) this.completions[chunk.message_id] = {};
+    // this.completions[chunk.message_id].content += chunk.content;
+  }
+
+  async _handleOpenAIMessageEnd (end) {
+    await this.db('messages').where({ 'id': end.id }).update({
+      content: end.content,
+      status: 'ready'
+    });
+  }
+
+  async _handleOpenAIMessageWarning (warning) {
+    console.warn('OPENAI WARNING:', warning);
   }
 
   /**
@@ -988,7 +1074,7 @@ class Jeeves extends Service {
   }
 
   async _getConversationMessages (conversationID) {
-    const messages = await this.db('messages').where({ conversation_id: conversationID });
+    const messages = await this.db('messages').where({ conversation_id: conversationID, status: 'ready' });
     return messages;
   }
 
@@ -1018,29 +1104,38 @@ class Jeeves extends Service {
    */
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
+
     let messages = [];
 
     if (request.room) {
+      // Matrix request
       console.debug('request has room:', request.room);
       const matrixMessages = await this._getRoomMessages(request.room);
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
+      // Resume conversation
       const prev = await this._getConversationMessages(request.conversation_id);
       messages = prev.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
     } else {
-      console.debug('request without room, input:', request.input);
+      // New conversation
       messages = messages.concat([{ role: 'user', content: request.input }]);
     }
 
     if (request.subject) {
+      // Subject material provided
       messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
     }
 
     // Prompt
-    messages.unshift({ role: 'system', content: this.settings.prompt });
+    messages.unshift({
+      role: 'system',
+      content: this.settings.prompt
+    });
 
+    // Moderator
+    // Fact-checks and summarizes outputs into a single coherent result.
     const moderator = new Actor({ name: '@jeeves/moderator' });
     const agents = {};
 
@@ -1051,62 +1146,42 @@ class Jeeves extends Service {
       agents[agent.id] = agent;
     }
 
-    const openai = await this.openai._handleConversationRequest({
+    // moderator.summarize();
+    console.debug('full conversation:', messages);
+
+    /* const openai = await this.openai._handleConversationRequest({
+      messages: messages
+      // prompt: request.input
+    }); */
+
+    const inserted = await this.db('messages').insert({
+      conversation_id: request.conversation_id,
+      user_id: 1,
+      status: 'computing'
+    });
+
+    const response = null;
+
+    const openai = await this.openai._streamConversationRequest({
+      conversation_id: request.conversation_id,
+      message_id: inserted[0],
       messages: messages
       // prompt: request.input
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
-    const text = (typeof openai !== 'undefined' && openai)
-      ? openai.completion.choices[0].message.content.trim()
+    /* const text = (typeof openai !== 'undefined' && openai)
+      ? openai.completion?.choices[0].message.content.trim()
       : "I'm sorry, but something went wrong.  Try again later."
-      ;
+      ; */
 
-    this.emit('response', {
+    /* this.emit('response', {
       prompt: request.input,
       response: text
-    });
+    }); */
 
     return {
-      openai: openai,
-      object: {
-        content: text
-      }
-    };
-  }
-
-  async _generateResponse (request) {
-    let messages = [];
-
-    if (request.messages) messages = request.messages.concat(messages);
-    messages.push({ role: 'user', content: request.input });
-
-    // Prompt
-    messages.unshift({ role: 'system', content: this.settings.prompt });
-
-    console.debug('conversation to respond to:', messages);
-
-    const openai = await this.openai._handleConversationRequest({
-      messages: messages
-      // prompt: request.input
-    });
-
-    // If we get a preferred response, use it.  Otherwise fall back to a generic response.
-    const text = (typeof openai !== 'undefined' && openai)
-      ? openai.completion.choices[0].message.content.trim()
-      : 'Generic response.'
-      ;
-
-    this.emit('response', {
-      prompt: request.input,
-      response: text
-    });
-
-    return {
-      openai: openai,
-      object: {
-        content: text
-      }
+      id: inserted[0]
     };
   }
 
@@ -1123,7 +1198,7 @@ class Jeeves extends Service {
       messages: messages
     };
 
-    const response = await this._generateResponse(request);
+    const response = await this._handleRequest(request);
 
     console.debug('title debug:', response.object.content);
 
@@ -1135,7 +1210,7 @@ class Jeeves extends Service {
     console.debug('Case to summarize:', instance);
 
     const request = { input: query };
-    const response = await this._generateResponse(request);
+    const response = await this._handleRequest(request);
 
     return response.object.content;
   }

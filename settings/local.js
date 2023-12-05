@@ -83,6 +83,12 @@ module.exports = {
     ],
     token: null
   },
+  courtlistener: {
+    type: 'postgresql',
+    host: 'HOSTNAME',
+    username: 'USERNAME',
+    password: 'PASSWORD'
+  },
   harvard: {
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },

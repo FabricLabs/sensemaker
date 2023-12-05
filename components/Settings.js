@@ -14,10 +14,19 @@ const QueryCounter = require('./QueryCounter');
 
 class JeevesUserSettings extends React.Component {
 
-  render () {
-    const { username } = this.props.login;
-    const { email } = this.props.auth;
+  constructor (props) {
+    super(props);
 
+    this.state = {
+      username: '',
+      email: '',
+    };
+  }
+
+  render () {
+
+    const { username,email } = this.props.auth;  
+    
     return (
       <jeeves-user-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }}>
