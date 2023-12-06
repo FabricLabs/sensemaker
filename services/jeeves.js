@@ -248,11 +248,22 @@ class Jeeves extends Service {
       objects: {}
     };
 
+    // Stop case
+    process.on('exit', async () => {
+      console.warn('Jeeves is shutting down...');
+      await this.stop();
+    });
+
     return this;
   }
 
   get version () {
     return definition.version;
+  }
+
+  commit () {
+    console.warn('Jeeves is attempting a safe shutdown...');
+    // TODO: safe shutdown
   }
 
   async tick () {
@@ -941,13 +952,13 @@ class Jeeves extends Service {
     this.status = 'STOPPING';
 
     // Stop HTTP Listener
-    if (this.settings.http.listen) await this.http.stop();
+    if (this.settings?.http?.listen) await this.http.stop();
 
     // Stop Fabric Listener
-    if (this.settings.listen && this.agent) await this.agent.stop();
+    if (this.settings?.listen && this.agent) await this.agent.stop();
 
     // Stop the Worker
-    await this.worker.stop();
+    if (this.worker) await this.worker.stop();
 
     // Stop Heartbeat, Crawler
     clearInterval(this._heart);
@@ -1162,7 +1173,8 @@ class Jeeves extends Service {
     const inserted = await this.db('messages').insert({
       conversation_id: request.conversation_id,
       user_id: 1,
-      status: 'computing'
+      status: 'computing',
+      content: 'Jeeves is researching your question...'
     });
 
     const response = null;
