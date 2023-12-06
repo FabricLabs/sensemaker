@@ -374,9 +374,9 @@ class Jeeves extends Service {
     });
 
     this.worker.register('ScanCourtListener', async (...params) => {
-      console.debug('SCANNING COURT LISTENER...');
-      const cases = this.courtlistener('search_docket').select('*').limit(100);
-      console.debug('POSTGRES CASES:', cases);
+      console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
+      const dockets = this.courtlistener('search_docket').select('*').limit(1000);
+      console.debug('POSTGRES DOCKETS:', dockets);
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -433,6 +433,11 @@ class Jeeves extends Service {
             `stores/harvard/${unknown.harvard_case_law_id}.pdf`,
             { id: unknown.id }
           ]
+        });
+
+        this.worker.addJob({
+          type: 'ScanCourtListener',
+          params: []
         });
       }, 60000);
     }
