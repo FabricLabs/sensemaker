@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:semantic && npm run build:browser",
     "build:browser": "node scripts/build.js",
-    "build:semantic": "# cd libraries/fomantic && npx gulp build && cp -r dist/themes ../../assets && cd ../..",
+    "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
@@ -67,6 +67,7 @@
     "browserify-fs": "1.0.0",
     "crypto-browserify": "3.12.0",
     "fast-json-patch": "3.1.0",
+    "fomantic-ui": "^2.9.3",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
     "knex-paginate": "3.1.1",
