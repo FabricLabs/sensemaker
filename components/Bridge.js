@@ -50,6 +50,7 @@ class Bridge extends React.Component {
   }
 
   connect (path) {
+    console.debug('[BRIDGE]', 'Opening connection...');
     const ws = new WebSocket(`${this.authority}${path}`);
 
     this.connections.push(ws);
@@ -66,6 +67,10 @@ class Bridge extends React.Component {
 
     ws.onmessage = async (msg) => {
       // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
+      console.debug('Message inbound from WebSocket:', msg);
+      console.debug('Data from inbound from WebSocket:', msg.data);
+      console.debug('Data prototype:', msg.data.prototype);
+
       const buffer = Buffer.from(await msg.data.arrayBuffer());
       const message = Message.fromBuffer(buffer);
 
@@ -84,10 +89,12 @@ class Bridge extends React.Component {
     };
 
     ws.onerror = (error) => {
+      console.error('[BRIDGE]', 'Error:', error);
       this.setState({ error });
     };
 
     ws.onclose = () => {
+      console.debug('[BRIDGE]', 'Connection closed.');
       const time = this.generateInterval(this.attempts);
 
       setTimeout(() => {

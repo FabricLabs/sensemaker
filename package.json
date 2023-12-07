@@ -110,6 +110,7 @@
     "rollup-plugin-polyfill-node": "0.9.0",
     "rollup-plugin-serve": "1.1.0",
     "semantic-ui-css": "2.5.0",
-    "semantic-ui-react": "2.1.4"
+    "semantic-ui-react": "2.1.4",
+    "why-is-node-running": "^2.2.2"
   }
 }

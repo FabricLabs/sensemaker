@@ -3,6 +3,8 @@
 // Prepare transpilation
 require('@babel/register');
 
+const why = require('why-is-node-running');
+
 // Package
 const definition = require('../package');
 const {
@@ -146,29 +148,6 @@ class Jeeves extends Service {
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/jeeves' });
-    this.db = knex({
-      client: 'mysql2',
-      connection: {
-        host: this.settings.db.host,
-        port: this.settings.db.port,
-        user: this.settings.db.user,
-        password: this.settings.db.password,
-        database: this.settings.db.database
-      }
-    });
-
-    this.courtlistener = knex({
-      client: 'postgresql',
-      connection: {
-        host: this.settings.courtlistener.host,
-        port: this.settings.courtlistener.port,
-        username: this.settings.courtlistener.username,
-        password: this.settings.courtlistener.password,
-        database: this.settings.courtlistener.database
-      }
-    });
-
-    attachPaginate();
 
     // Fabric Setup
     this._rootKey = new Key({ xprv: this.settings.xprv });
@@ -248,11 +227,39 @@ class Jeeves extends Service {
       objects: {}
     };
 
+
+    // Database connections
+    this.db = knex({
+      client: 'mysql2',
+      connection: {
+        host: this.settings.db.host,
+        port: this.settings.db.port,
+        user: this.settings.db.user,
+        password: this.settings.db.password,
+        database: this.settings.db.database,
+        connectionTimeoutMillis: 5000
+      }
+    });
+
+    this.courtlistener = knex({
+      client: 'postgresql',
+      connection: {
+        host: this.settings.courtlistener.host,
+        port: this.settings.courtlistener.port,
+        username: this.settings.courtlistener.username,
+        password: this.settings.courtlistener.password,
+        database: this.settings.courtlistener.database,
+        connectionTimeoutMillis: 5000
+      }
+    });
+
+    attachPaginate();
+
     // Stop case
-    process.on('exit', async () => {
+    /* process.on('exit', async () => {
       console.warn('Jeeves is shutting down...');
       await this.stop();
-    });
+    }); */
 
     return this;
   }
@@ -261,10 +268,10 @@ class Jeeves extends Service {
     return definition.version;
   }
 
-  commit () {
-    console.warn('Jeeves is attempting a safe shutdown...');
+  /* commit () {
+    // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
-  }
+  } */
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -952,17 +959,25 @@ class Jeeves extends Service {
     this.status = 'STOPPING';
 
     // Stop HTTP Listener
-    if (this.settings?.http?.listen) await this.http.stop();
+    if (this.settings?.http) await this.http.destroy();
+    if (this.settings?.http?.wss) await this.http.wss.destroy();
+    // if (this.settings?.http) await this.http.stop();
 
     // Stop Fabric Listener
-    if (this.settings?.listen && this.agent) await this.agent.stop();
+    if (this.agent) await this.agent.stop();
 
     // Stop the Worker
     if (this.worker) await this.worker.stop();
 
+    /* console.debug('workers:', this.workers);
+
+    for (let i = 0; i < this.workers.length; i++) {
+      await this.workers[i].stop();
+    } */
+
     // Stop Heartbeat, Crawler
-    clearInterval(this._heart);
-    clearInterval(this._crawler);
+    if (this._heart) clearInterval(this._heart);
+    if (this._crawler) clearInterval(this._crawler);
 
     // Stop Services
     for (const [name, service] of Object.entries(this.services || {})) {
@@ -972,13 +987,20 @@ class Jeeves extends Service {
     }
 
     // Write
-    await this.commit();
+    // await this.commit();
+
+    if (this.courtlistener) await this.courtlistener.stop();
 
     // Notify
     this.status = 'STOPPED';
     this.emit('stopped', {
       id: this.id
     });
+
+    // why();
+
+    // TODO: troubleshoot why this is necessary (use `why()` above)
+    process.exit();
 
     return this;
   }
