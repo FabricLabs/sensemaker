@@ -316,7 +316,7 @@ class ChatBox extends React.Component {
         <div>
             <Feed style={messageContainerStyle} className='chat-feed'>
                 {this.props.includeFeed && messages && messages.length > 0 && messages.map(message => (
-                    <Feed.Event key={message.id}>
+                    <Feed.Event key={message.id} data-message-id={message.id}>
                       <Feed.Content>
                           {message.role === 'assistant' && (
                           <div className='controls thumbs-group'>

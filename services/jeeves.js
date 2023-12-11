@@ -406,6 +406,7 @@ class Jeeves extends Service {
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
     this.openai.on('error', this._handleOpenAIError.bind(this));
+    this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
     this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
     this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
@@ -1068,11 +1069,18 @@ class Jeeves extends Service {
     this.emit('error', `[SERVICES:OPENAI] ${error}`);
   }
 
+  async _handleOpenAIMessageStart (start) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    start.type = 'MessageStart';
+    const message = Message.fromVector(['MessageStart', JSON.stringify(start)]);
+    this.http.broadcast(message);
+  }
+
   async _handleOpenAIMessageChunk (chunk) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    chunk.type = 'MessageChunk';
     const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
     this.http.broadcast(message);
-    // if (!this.completions[chunk.message_id]) this.completions[chunk.message_id] = {};
-    // this.completions[chunk.message_id].content += chunk.content;
   }
 
   async _handleOpenAIMessageEnd (end) {
