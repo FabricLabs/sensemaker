@@ -33,6 +33,7 @@ class Home extends React.Component {
           getMessages={this.props.getMessages}
           submitMessage={this.props.submitMessage}
           onMessageSuccess={this.props.onMessageSuccess}
+          regenAnswer={this.props.regenAnswer}
           resetChat={this.props.resetChat}
           chat={this.props.chat}
           placeholder="Ask me anything..."

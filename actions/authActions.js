@@ -74,7 +74,7 @@ const reLogin = (token) => {
   return async dispatch => {
     try {
       const response = await fetch('/sessionRestore', {
-        method: "POST",
+        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

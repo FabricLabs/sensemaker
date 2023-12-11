@@ -60,6 +60,7 @@ class Conversation extends React.Component {
             fetchConversations={this.props.fetchConversations}
             getMessages={this.props.getMessages}
             submitMessage={this.props.submitMessage}
+            regenAnswer={this.props.regenAnswer}
             onMessageSuccess={this.props.onMessageSuccess}
             resetChat={this.props.resetChat}
             chat={this.props.chat}
