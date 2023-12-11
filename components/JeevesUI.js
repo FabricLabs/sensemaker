@@ -108,7 +108,7 @@
     }
     
     componentDidMount(){
-      const dbRequest = indexedDB.open("JeevesDB", 1);
+      const dbRequest = indexedDB.open("Jeeves_DB", 1);
 
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
