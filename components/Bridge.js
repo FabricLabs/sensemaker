@@ -18,7 +18,7 @@ class Bridge extends React.Component {
 
     this.settings = Object.assign({
       host: window.location.hostname,
-      port: window.location.port || 3045,
+      port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
       secure: window.location.protocol === 'https:',
       debug: false,
       tickrate: 1
