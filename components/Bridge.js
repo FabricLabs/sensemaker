@@ -20,7 +20,8 @@ class Bridge extends React.Component {
       host: 'localhost',
       port: 3045,
       secure: false,
-      debug: false
+      debug: false,
+      tickrate: 1
     });
 
     this.state = {
@@ -30,6 +31,10 @@ class Bridge extends React.Component {
 
     this.attempts = 1;
     this.connections = [];
+    this.queue = [];
+    this.ws = null;
+
+    return this;
   }
 
   get authority () {
@@ -37,8 +42,7 @@ class Bridge extends React.Component {
   }
 
   componentDidMount () {
-    this.connect('/');
-    // this.connect('/conversations');
+    this.start();
   }
 
   componentWillUnmount () {
@@ -51,32 +55,55 @@ class Bridge extends React.Component {
 
   connect (path) {
     console.debug('[BRIDGE]', 'Opening connection...');
-    const ws = new WebSocket(`${this.authority}${path}`);
+    this.ws = new WebSocket(`${this.authority}${path}`);
 
-    this.connections.push(ws);
+    // TODO: re-evaluate multiple connections
+    this.connections.push(this.ws);
 
-    ws.onopen = () => {
+    this.ws.onopen = () => {
       this.attempts = 1;
 
       const now = Date.now();
       const message = Message.fromVector(['Ping', now.toString()]);
       const ping = JSON.stringify(message.toObject());
       if (this.settings.debug) console.debug('ping:', typeof ping, ping);
-      ws.send(message.asRaw());
+      this.ws.send(message.asRaw());
     };
 
-    ws.onmessage = async (msg) => {
+    this.ws.onmessage = async (msg) => {
       // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
-      console.debug('Message inbound from WebSocket:', msg);
-      console.debug('Data from inbound from WebSocket:', msg.data);
-      console.debug('Data prototype:', msg.data.prototype);
-
-      const buffer = Buffer.from(await msg.data.arrayBuffer());
+      const array = await msg.data.arrayBuffer();
+      const buffer = Buffer.from(array);
       const message = Message.fromBuffer(buffer);
 
+      // TODO: refactor @fabric/core/types/message to support arbitrary message types
+      // This will remove the need to parse before evaluating this switch
       switch (message.type) {
         default:
           console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+          break;
+        case 'GenericMessage':
+          try {
+            const chunk = JSON.parse(message.body);
+
+            switch (chunk.type) {
+              case 'MessageStart':
+                const selector = `[data-message-id="` + chunk.message_id + `"]`;
+
+                setTimeout(() => {
+                  const target = document.querySelector(selector);
+                }, 250);
+
+                this.addJob('MessageStart', chunk);
+                break;
+              case 'MessageChunk':
+                this.addJob('MessageChunk', chunk);
+                break;
+            }
+          } catch (exception) {
+            console.error('Could not process message:', exception);
+          }
+
           break;
       }
 
@@ -88,12 +115,12 @@ class Bridge extends React.Component {
       }
     };
 
-    ws.onerror = (error) => {
+    this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'Error:', error);
       this.setState({ error });
     };
 
-    ws.onclose = () => {
+    this.ws.onclose = () => {
       console.debug('[BRIDGE]', 'Connection closed.');
       const time = this.generateInterval(this.attempts);
 
@@ -106,6 +133,23 @@ class Bridge extends React.Component {
 
   generateInterval (attempts) {
     return Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
+  }
+
+  addJob (type, data) {
+    this.queue.push({ type, data });
+  }
+
+  takeJob () {
+    if (!this.queue.length) return;
+    const job = this.queue.shift();
+
+    switch (job.type) {
+      default:
+        console.warn('[BRIDGE]', 'Unhandled Bridge job type:', job.type);
+        break;
+      case 'MessageStart':
+        break;
+    }
   }
 
   render () {
@@ -129,6 +173,30 @@ class Bridge extends React.Component {
         ) : null}
       </fabric-bridge>
     );
+  }
+
+  start () {
+    this.connect('/');
+    // this.connect('/conversations');
+    this._heartbeat = setInterval(this.tick.bind(this), this.settings.tickrate);
+  }
+
+  stop () {
+    if (this._heartbeat) clearInterval(this._heartbeat);
+  }
+
+  tick () {
+    this.takeJob();
+  }
+
+  subscribe (channel) {
+    const message = Message.fromVector(['Subscribe', channel]);
+    this.ws.send(message.toBuffer());
+  }
+
+  unsubscribe (channel) {
+    const message = Message.fromVector(['Unsubscribe', channel]);
+    this.ws.send(message.toBuffer());
   }
 }
 
