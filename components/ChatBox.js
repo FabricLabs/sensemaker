@@ -563,7 +563,7 @@ class ChatBox extends React.Component {
                     <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
                   </Feed.Summary>
                   <Feed.Extra text>
-                    <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+                    <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
                   </Feed.Extra>
                   <Feed.Extra text>
                     <div className='answer-controls' text>
