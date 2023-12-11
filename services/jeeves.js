@@ -562,7 +562,7 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/sessionRestore', async (req, res, next) => {
+    this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
 
       try {
         const user = await this.db('users').where('id', req.user.id).first();
@@ -574,6 +574,35 @@ class Jeeves extends Service {
           email: user.email,
           isAdmin: user.is_admin,
           isCompliant: user.is_compliant
+        });
+      } catch (error) {
+        console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
+
+      const { oldPassword, newPassword } = req.body;
+      try {
+        const user = await this.db('users').where('id', req.user.id).first();
+        if (!user || !compareSync(oldPassword, user.password)) {
+          return res.status(401).json({ message: 'Invalid password.' });
+        }
+
+        // Generate a salt and hash the new password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(newPassword, salt);
+
+        // Update the user's password in the database
+        await this.db('users').where('id', user.id).update({
+          password: hashedPassword,
+          salt: salt
+        });
+
+        return res.json({
+          message: 'Password updated successfully.',
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);
@@ -904,6 +933,162 @@ class Jeeves extends Service {
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
+
+    this.http._addRoute('POST', '/messagesRegen', async (req, res, next) => {
+      console.debug('Handling inbound message:', req.body);
+
+      let isNew = false;
+      let subject = null;
+      let {
+        case_id,
+        conversation_id,
+        content,
+        messageID
+      } = req.body;
+
+      if (case_id) {
+        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+      }
+
+      try {
+        const conversation = await this.db('conversations').where({ id: conversation_id }).first();
+        if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
+        
+        const newRequest = await this.db('requests').insert({
+          message_id: messageID
+        });
+
+        this._handleRequest({
+          // actor: activity.actor,
+          conversation_id: conversation_id,
+          subject: (subject) ? `${subject.title}, ${subject.court_name}, ${subject.decision_date}` : null,
+          input: content,
+        }).then((output) => {
+          console.log('got request output:', output);
+
+          this.db('responses').insert({
+            content: output.object.content
+          });
+
+          this.db('messages').insert({
+            content: output.object.content,
+            conversation_id: conversation_id,
+            user_id: 1 // TODO: real user ID
+          }).then(async (response) => {
+            console.log('response created:', response);
+
+            if (isNew) {
+              const messages = await this._getConversationMessages(conversation_id);
+              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+              }));
+    
+              await this.db('conversations').update({ title }).where({ id: conversation_id });
+            }
+          });
+        });
+
+        if (!conversation.log) conversation.log = [];
+        if (typeof conversation.log == 'string') {
+          conversation.log = JSON.parse(conversation.log);
+        }
+
+        // Attach new message to the conversation
+       // conversation.log.push(newMessage[0]);
+
+        await this.db('conversations').update({
+          log: JSON.stringify(conversation.log)
+        }).where({
+          id: conversation_id
+        });
+
+        return res.json({
+          message: 'Message sent.',
+          object: {
+            id: messageID,
+            conversation: conversation_id
+          }
+        });
+      } catch (error) {
+        console.error('ERROR:', error);
+        this.emit('error', `Failed to create message: ${error}`);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
+      // TODO: check token
+      const request = req.body;
+
+      try {
+        await this.db('announcements').insert({
+          creator_id: req.user.id,          
+          title: (request.title) ? request.title : null, 
+          body: request.body,
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+        });
+
+        return res.send({
+          type: 'announcementCreated',
+          content: {
+            message: 'Success!',
+            status: 'success'
+          }
+        });
+      } catch (exception) {
+        return res.send({
+          type: 'announcementError',
+          content: exception
+        });
+      }
+    });
+        this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
+      // TODO: check token
+      const request = req.body;
+
+      try {
+        await this.db('announcements').insert({
+          creator_id: req.user.id,          
+          title: (request.title) ? request.title : null, 
+          body: request.body,
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+        });
+
+        return res.send({
+          type: 'announcementCreated',
+          content: {
+            message: 'Success!',
+            status: 'success'
+          }
+        });
+      } catch (exception) {
+        return res.send({
+          type: 'announcementError',
+          content: exception
+        });
+      }
+    });
+
+    this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
+      try {
+
+        const latestAnnouncement = await this.db('announcements')
+          .select('*') 
+          .orderBy('created_at', 'desc')
+          .first();
+    
+        if (!latestAnnouncement) {
+          return res.status(404).json({ message: 'No announcements found.' });
+        }
+    
+        res.json(latestAnnouncement);
+        
+      } catch (error) {
+        console.error('Error fetching announcement:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+    
 
     // await this._startAllServices();
 

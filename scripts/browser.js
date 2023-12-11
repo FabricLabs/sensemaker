@@ -28,6 +28,7 @@ const {
 const {
   resetChat,
   submitMessage,
+  regenAnswer,
   getMessages
 } = require('../actions/chatActions');
 
@@ -108,6 +109,7 @@ async function main (input = {}) {
     register: register,
     resetChat: resetChat,
     submitMessage: submitMessage,
+    regenAnswer: regenAnswer,
     getMessages: getMessages
   };
 
