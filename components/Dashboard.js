@@ -215,7 +215,8 @@ class Dashboard extends React.Component {
             {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
               <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
             </Menu.Item>) : null}
-            <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}>
+            {/* <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}> */}
+            <Menu.Item  onClick={this.handleLogout} loading={this.state.isLoggingOut}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
             </Menu.Item>
             <Menu.Item style={{ borderBottom: 0 }}>

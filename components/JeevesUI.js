@@ -70,8 +70,9 @@
           loggedOut: false
         });
         this.props.logout();
+        window.location.href = '/'; 
 
-        window.location.reload();
+        //window.location.reload();
       }, 2000)
     }
 
