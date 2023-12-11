@@ -3,6 +3,8 @@
 // Prepare transpilation
 require('@babel/register');
 
+const why = require('why-is-node-running');
+
 // Package
 const definition = require('../package');
 const {
@@ -146,29 +148,6 @@ class Jeeves extends Service {
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/jeeves' });
-    this.db = knex({
-      client: 'mysql2',
-      connection: {
-        host: this.settings.db.host,
-        port: this.settings.db.port,
-        user: this.settings.db.user,
-        password: this.settings.db.password,
-        database: this.settings.db.database
-      }
-    });
-
-    this.courtlistener = knex({
-      client: 'postgresql',
-      connection: {
-        host: this.settings.courtlistener.host,
-        port: this.settings.courtlistener.port,
-        username: this.settings.courtlistener.username,
-        password: this.settings.courtlistener.password,
-        database: this.settings.courtlistener.database
-      }
-    });
-
-    attachPaginate();
 
     // Fabric Setup
     this._rootKey = new Key({ xprv: this.settings.xprv });
@@ -248,12 +227,51 @@ class Jeeves extends Service {
       objects: {}
     };
 
+
+    // Database connections
+    this.db = knex({
+      client: 'mysql2',
+      connection: {
+        host: this.settings.db.host,
+        port: this.settings.db.port,
+        user: this.settings.db.user,
+        password: this.settings.db.password,
+        database: this.settings.db.database,
+        connectionTimeoutMillis: 5000
+      }
+    });
+
+    this.courtlistener = knex({
+      client: 'postgresql',
+      connection: {
+        host: this.settings.courtlistener.host,
+        port: this.settings.courtlistener.port,
+        username: this.settings.courtlistener.username,
+        password: this.settings.courtlistener.password,
+        database: this.settings.courtlistener.database,
+        connectionTimeoutMillis: 5000
+      }
+    });
+
+    attachPaginate();
+
+    // Stop case
+    /* process.on('exit', async () => {
+      console.warn('Jeeves is shutting down...');
+      await this.stop();
+    }); */
+
     return this;
   }
 
   get version () {
     return definition.version;
   }
+
+  /* commit () {
+    // console.warn('Jeeves is attempting a safe shutdown...');
+    // TODO: safe shutdown
+  } */
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -374,9 +392,9 @@ class Jeeves extends Service {
     });
 
     this.worker.register('ScanCourtListener', async (...params) => {
-      console.debug('SCANNING COURT LISTENER...');
-      const cases = this.courtlistener('search_docket').select('*').limit(100);
-      console.debug('POSTGRES CASES:', cases);
+      console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
+      const dockets = this.courtlistener('search_docket').select('*').limit(1000);
+      console.debug('POSTGRES DOCKETS:', dockets);
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -388,6 +406,7 @@ class Jeeves extends Service {
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
     this.openai.on('error', this._handleOpenAIError.bind(this));
+    this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
     this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
     this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
@@ -433,6 +452,11 @@ class Jeeves extends Service {
             `stores/harvard/${unknown.harvard_case_law_id}.pdf`,
             { id: unknown.id }
           ]
+        });
+
+        this.worker.addJob({
+          type: 'ScanCourtListener',
+          params: []
         });
       }, 60000);
     }
@@ -1121,17 +1145,25 @@ class Jeeves extends Service {
     this.status = 'STOPPING';
 
     // Stop HTTP Listener
-    if (this.settings.http.listen) await this.http.stop();
+    if (this.settings?.http) await this.http.destroy();
+    if (this.settings?.http?.wss) await this.http.wss.destroy();
+    // if (this.settings?.http) await this.http.stop();
 
     // Stop Fabric Listener
-    if (this.settings.listen && this.agent) await this.agent.stop();
+    if (this.agent) await this.agent.stop();
 
     // Stop the Worker
-    await this.worker.stop();
+    if (this.worker) await this.worker.stop();
+
+    /* console.debug('workers:', this.workers);
+
+    for (let i = 0; i < this.workers.length; i++) {
+      await this.workers[i].stop();
+    } */
 
     // Stop Heartbeat, Crawler
-    clearInterval(this._heart);
-    clearInterval(this._crawler);
+    if (this._heart) clearInterval(this._heart);
+    if (this._crawler) clearInterval(this._crawler);
 
     // Stop Services
     for (const [name, service] of Object.entries(this.services || {})) {
@@ -1141,13 +1173,20 @@ class Jeeves extends Service {
     }
 
     // Write
-    await this.commit();
+    // await this.commit();
+
+    if (this.courtlistener) await this.courtlistener.stop();
 
     // Notify
     this.status = 'STOPPED';
     this.emit('stopped', {
       id: this.id
     });
+
+    // why();
+
+    // TODO: troubleshoot why this is necessary (use `why()` above)
+    process.exit();
 
     return this;
   }
@@ -1215,11 +1254,18 @@ class Jeeves extends Service {
     this.emit('error', `[SERVICES:OPENAI] ${error}`);
   }
 
+  async _handleOpenAIMessageStart (start) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    start.type = 'MessageStart';
+    const message = Message.fromVector(['MessageStart', JSON.stringify(start)]);
+    this.http.broadcast(message);
+  }
+
   async _handleOpenAIMessageChunk (chunk) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    chunk.type = 'MessageChunk';
     const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
     this.http.broadcast(message);
-    // if (!this.completions[chunk.message_id]) this.completions[chunk.message_id] = {};
-    // this.completions[chunk.message_id].content += chunk.content;
   }
 
   async _handleOpenAIMessageEnd (end) {
@@ -1342,7 +1388,8 @@ class Jeeves extends Service {
     const inserted = await this.db('messages').insert({
       conversation_id: request.conversation_id,
       user_id: 1,
-      status: 'computing'
+      status: 'computing',
+      content: 'Jeeves is researching your question...'
     });
 
     const response = null;

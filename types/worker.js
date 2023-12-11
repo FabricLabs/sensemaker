@@ -80,6 +80,14 @@ class Worker extends Service {
 
     return this;
   }
+
+  async stop () {
+    // clearInterval(this._heart);
+    // clearInterval(this._timer);
+    // clearInterval(this._ticker);
+    this.process.exit();
+    return true;
+  }
 }
 
 module.exports = Worker;

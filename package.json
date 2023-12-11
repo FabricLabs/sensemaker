@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:semantic && npm run build:browser",
     "build:browser": "node scripts/build.js",
-    "build:semantic": "# cd libraries/fomantic && npx gulp build && cp -r dist/themes ../../assets && cd ../..",
+    "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
@@ -17,7 +17,7 @@
     "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "report:coverage": "npm run make:coverage && c8 report --reporter=text-lcov > reports/coverage.lcov",
     "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
-    "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
+    "report:todo": "grep --exclude package.json --exclude-dir=.git --exclude-dir=_book --exclude-dir=stores --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . | sed 's/\\([^:]*:\\)[ ]*/\\1 /' > reports/TODO.txt",
     "serve:docs": "fabric-http docs",
     "setup": "knex migrate:latest",
     "start": "npm run build && node scripts/node.js",
@@ -67,6 +67,7 @@
     "browserify-fs": "1.0.0",
     "crypto-browserify": "3.12.0",
     "fast-json-patch": "3.1.0",
+    "fomantic-ui": "^2.9.3",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
     "knex-paginate": "3.1.1",
@@ -110,6 +111,7 @@
     "rollup-plugin-polyfill-node": "0.9.0",
     "rollup-plugin-serve": "1.1.0",
     "semantic-ui-css": "2.5.0",
-    "semantic-ui-react": "2.1.4"
+    "semantic-ui-react": "2.1.4",
+    "why-is-node-running": "^2.2.2"
   }
 }

@@ -86,6 +86,11 @@ class OpenAIService extends Service {
         stream: true
       });
 
+      this.emit('MessageStart', {
+        message_id: request.message_id,
+        conversation_id: request.conversation_id
+      });
+
       stream.on('content', (delta, snapshot) => {
         this.emit('MessageChunk', {
           message_id: request.message_id,

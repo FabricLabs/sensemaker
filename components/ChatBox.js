@@ -504,24 +504,23 @@ class ChatBox extends React.Component {
   }
 
   render () {
-    
-    const { 
-      loading, 
-      generatingReponse, 
+    const {
+      loading,
+      generatingReponse,
       reGeneratingReponse,
-      query 
+      query
     } = this.state;
 
-    const { 
-      isSending, 
+    const {
+      isSending,
       placeholder,
       messageContainerStyle,
-      inputStyle, 
+      inputStyle,
       homePage
     } = this.props;
 
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
-    const { messages } = this.props.chat;    
+    const { messages } = this.props.chat;
 
     return (
       <div>
@@ -536,7 +535,7 @@ class ChatBox extends React.Component {
               message = group.messages[0];
             }
             return (
-              <Feed.Event key={message.id}>
+              <Feed.Event key={message.id} data-message-id={message.id}>
                 <Feed.Content>
                   {message.role === 'assistant' && (
                     <div className='controls thumbs-group'>
@@ -564,7 +563,7 @@ class ChatBox extends React.Component {
                     <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
                   </Feed.Summary>
                   <Feed.Extra text>
-                    <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} />
+                    <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
                   </Feed.Extra>
                   <Feed.Extra text>
                     <div className='answer-controls' text>
@@ -631,7 +630,7 @@ class ChatBox extends React.Component {
           </Form.Field>
         </Form>
         {(messages.length === 0 && homePage) && (
-          <container >
+          <container>
             <Header as='h3' style={{ textAlign: 'center', marginTop: '2em' }}>Chat suggestions you can try:</Header>
             <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
               <Dropdown
@@ -661,7 +660,7 @@ class ChatBox extends React.Component {
             </div>
           </container>
         )}
-        
+
         {this.renderFeedbakcModal()}
       </div>
     );
