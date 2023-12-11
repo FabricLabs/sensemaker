@@ -24,7 +24,8 @@ class Chat extends React.Component {
     this.state = {
       hasSubmittedMessage: false,
       announTitle:'',
-      announBody:''
+      announBody:'',
+      windowWidth: window.innerWidth
     };
 
     this.messagesEndRef = React.createRef();
@@ -53,7 +54,7 @@ class Chat extends React.Component {
     const token = state.auth.token;
 
     try {
-      const fetchPromise = fetch('/announcementsHome', {
+      const fetchPromise = fetch('/announcementFetch', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -74,12 +75,24 @@ class Chat extends React.Component {
         throw new Error(error.message);
       }
 
-      const result = await response.json();
-      if (result.title) {
-        this.setState({ announTitle: result.title })
-      }
-      if (result.body) {
-        this.setState({ announBody: result.body })
+      const announcement = await response.json();
+   
+      const today = new Date();
+      const expirationDate = announcement.expiration_date ? new Date(announcement.expiration_date) : null;
+      const createdAt = new Date(announcement.created_at);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const isValidExpiration = expirationDate && expirationDate > today;
+      const isValidCreation = !expirationDate && createdAt > thirtyDaysAgo;
+
+      if (isValidExpiration || (!expirationDate && isValidCreation)) {
+        if (announcement.title) {
+          this.setState({ announTitle: announcement.title })
+        }
+        if (announcement.body) {
+          this.setState({ announBody: announcement.body })
+        }
       }
     } catch (error) {
       console.log('Error fetching announcements from API:', error);
@@ -88,10 +101,11 @@ class Chat extends React.Component {
 
   handleResize = () => {
     // Force a re-render when the window resizes
+    this.setState({ windowWidth: window.innerWidth });
     this.forceUpdate();
   };
   render () {
-    const {announTitle, announBody} = this.state;
+    const {announTitle, announBody,windowWidth} = this.state;
     const { messages } = this.props.chat;
 
     const messageContainerStyle = messages.length>0 ? {
@@ -131,22 +145,23 @@ class Chat extends React.Component {
       maxWidth: '80vw !important',
       position: 'relative',
     };
-
-    const announcementStyle =  {  
-      maxHeight: '14em',
-      overflow: 'auto',    
-    };
-       
+        
     if(inputStyle.position === 'fixed'){
-      if (window.matchMedia('(max-width: 820px)').matches){
+      if (windowWidth < 820){
         inputStyle.left = '1.25em';
       }else{
         inputStyle.left = 'calc(350px + 1.25em)';      
       }
     } 
-    
-    // const textToTry = '**this is the body**  # this is another pharagraph lorem asdsadas **this is the body**  ';
 
+    const minAnnounHeight = windowWidth < 1440 ? '5.5em' : '3em';
+    
+    const announcementStyle =  {
+      minHeight: minAnnounHeight,
+      maxHeight: '14em',
+      overflow: 'auto',    
+    };
+    
     return (  
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
          {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}

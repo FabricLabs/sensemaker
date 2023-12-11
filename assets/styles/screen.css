@@ -336,10 +336,75 @@ fabric-motd {
   font-family: 'Roboto Mono', sans-serif !important;
   min-width: 20em !important;
 }
+.answer-controls{
+  display: flex;
+  align-items: center;
+  align-content: center;
+}
+.settings-user{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+}
+/* .settings-user .settings-user .header{
+  width: 30%;
+}
+.settings-container .settings-user p {
+  width: 30%;
+}
+.settings-container .settings-user .button {
+  width: 30%;
+} */
+.settings-container{
+  margin-top: 2em;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+} 
+
+.settings-container .ui.table {
+  width: 40%;
+}
+.subscription-container{
+  margin-top: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2em;
+}
+
+.subscription-container div{
+  padding-right: 2em;
+  padding-left: 2em;
+
+}
+
+@media (max-width: 1280px) {
+
+  .settings-container .ui.table {
+    width: 70%;
+  }
+}
 
 @media (max-width: 768px) {
   .home-dropdowns {
     flex-direction: column;
     gap: 1em !important;
+  }
+  .settings-container .ui.table {
+    width: 50%;
+  }
+
+  .settings-container .ui.table  .settings-row{      
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-between !important;
+      align-items: center !important;
   }
 }

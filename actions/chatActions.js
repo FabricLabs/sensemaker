@@ -57,6 +57,35 @@ const submitMessage = (message) => {
   };
 };
 
+const regenAnswer = (message) => {
+  return async (dispatch, getState) => {
+    dispatch(messageRequest());
+
+    const token = getState().auth.token;
+
+    try {
+      const response = await fetch('/messagesRegen', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(message)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      dispatch(messageSuccess(result));
+    } catch (error) {
+      dispatch(messageFailure(error.message));
+    }
+  };
+};
+
 const getMessages = (params = {}) => {
   return async (dispatch, getState) => {
     dispatch(getMessagesRequest());
@@ -93,6 +122,7 @@ module.exports = {
   resetChat,
   submitMessage,
   getMessages,
+  regenAnswer,
   CHAT_SUCCESS,
   CHAT_FAILURE,
   CHAT_REQUEST,

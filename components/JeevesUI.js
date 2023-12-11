@@ -70,8 +70,9 @@
           loggedOut: false
         });
         this.props.logout();
+        window.location.href = '/'; 
 
-        window.location.reload();
+        //window.location.reload();
       }, 2000)
     }
 
@@ -107,7 +108,7 @@
     }
     
     componentDidMount(){
-      const dbRequest = indexedDB.open("JeevesDB", 1);
+      const dbRequest = indexedDB.open("Jeeves_DB", 1);
 
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
