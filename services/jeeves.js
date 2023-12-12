@@ -242,6 +242,8 @@ class Jeeves extends Service {
       }
     });
 
+    console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
+
     this.courtlistener = knex({
       client: 'postgresql',
       connection: {
@@ -614,7 +616,14 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
+      const uningested = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').count();
+      const ingestions = fs.readdirSync('../stores/harvard');
+
       const stats = {
+        ingestions: {
+          remaining: uningested,
+          complete: ingestions.length
+        },
         inquiries: {
           total: inquiries.length
         },
