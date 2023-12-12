@@ -461,7 +461,8 @@ class Jeeves extends Service {
         const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
           this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
         }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
-        console.debug('[INGEST] Found uningested case:', unknown);
+
+        console.debug('[INGEST] Found uningested case:', unknown.title);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         this.worker.addJob({
