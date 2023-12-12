@@ -444,7 +444,7 @@ class Jeeves extends Service {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').first();
+        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
         console.debug('[INGEST] Found uningested case:', unknown);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
