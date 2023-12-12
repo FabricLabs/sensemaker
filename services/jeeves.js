@@ -566,7 +566,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
-
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
@@ -585,8 +584,8 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
-
       const { oldPassword, newPassword } = req.body;
+
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user || !compareSync(oldPassword, user.password)) {
@@ -616,12 +615,12 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
-      const uningested = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').count();
+      const uningested = await this.db('cases').select('id').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc');
       const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
 
       const stats = {
         ingestions: {
-          remaining: uningested,
+          remaining: uningested.length,
           complete: ingestions.length
         },
         inquiries: {
