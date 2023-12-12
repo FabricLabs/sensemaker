@@ -442,8 +442,8 @@ class Jeeves extends Service {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'asc').first();
-        console.debug('got unknown case:', unknown);
+        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').first();
+        console.debug('[INGEST] Found uningested case:', unknown);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         this.worker.addJob({
@@ -609,6 +609,21 @@ class Jeeves extends Service {
         console.error('Error authenticating user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
+    });
+
+    this.http._addRoute('GET', '/statistics', async (req, res, next) => {
+      const inquiries = await this.db('inquiries').select('id');
+      const invitations = await this.db('invitations').select('id').from('invitations');
+      const stats = {
+        inquiries: {
+          total: inquiries.length
+        },
+        invitations: {
+          total: invitations.length
+        }
+      };
+
+      res.send(stats);
     });
 
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
