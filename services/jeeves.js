@@ -116,6 +116,7 @@ class Jeeves extends Service {
       services: [
         'bitcoin'
       ],
+      crawlDelay: 250,
       interval: 86400 * 1000,
       verbosity: 2,
       workers: 1
@@ -465,7 +466,7 @@ class Jeeves extends Service {
           type: 'ScanCourtListener',
           params: []
         });
-      }, 60000);
+      }, this.settings.crawlDelay);
     }
 
     // Internal APIs
