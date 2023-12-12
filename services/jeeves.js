@@ -1501,8 +1501,8 @@ class Jeeves extends Service {
 
     const inserted = await this.db('embeddings').insert({
       text: text,
-      model: embedding.model,
-      content: JSON.stringify(embedding.embedding)
+      model: embedding[0].model,
+      content: JSON.stringify(embedding[0].embedding)
     });
 
     console.debug('inserted:', inserted);
