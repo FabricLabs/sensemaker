@@ -655,6 +655,7 @@ class Jeeves extends Service {
         json: async () => {
           const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
             // TODO: filter by public/private value
+            'pdf_acquired': true
           }).orderBy('decision_date', 'desc').paginate({
             perPage: PER_PAGE_LIMIT,
             currentPage: 1
@@ -722,6 +723,14 @@ class Jeeves extends Service {
           return res.send(this.http.app._renderWith(html));
         }
       });
+    });
+
+    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
+      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
+      if (!instance) res.end(404);
+      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
+      res.send(pdf); */
+      res.redirect(instance.harvard_case_law_pdf);
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
