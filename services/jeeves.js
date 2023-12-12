@@ -217,6 +217,7 @@ class Jeeves extends Service {
     // Streaming
     this.completions = {};
 
+    // State
     this._state = {
       clock: this.clock,
       status: 'STOPPED',
@@ -393,8 +394,8 @@ class Jeeves extends Service {
 
     this.worker.register('ScanCourtListener', async (...params) => {
       console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
-      const dockets = this.courtlistener('search_docket').select('*').limit(1000);
-      console.debug('POSTGRES DOCKETS:', dockets);
+      const dockets = this.courtlistener('search_docket').select('*').limit(5);
+      console.debug('POSTGRES DOCKETS:', dockets.data);
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -616,7 +617,7 @@ class Jeeves extends Service {
           const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
             // TODO: filter by public/private value
           }).orderBy('decision_date', 'desc').paginate({
-            perPage: 30,
+            perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
 
@@ -871,7 +872,8 @@ class Jeeves extends Service {
         });
 
         const inserted = await this.db('requests').insert({
-          message_id: newMessage[0]
+          message_id: newMessage[0],
+          content: 'Jeeves is thinking...'
         });
 
         this._handleRequest({
@@ -1071,24 +1073,21 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
       try {
-
         const latestAnnouncement = await this.db('announcements')
           .select('*') 
           .orderBy('created_at', 'desc')
           .first();
-    
+
         if (!latestAnnouncement) {
           return res.status(404).json({ message: 'No announcements found.' });
         }
-    
+
         res.json(latestAnnouncement);
-        
       } catch (error) {
         console.error('Error fetching announcement:', error);
         res.status(500).json({ message: 'Internal server error.' });
       }
     });
-    
 
     // await this._startAllServices();
 
