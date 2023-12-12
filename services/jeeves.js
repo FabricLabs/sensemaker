@@ -617,7 +617,7 @@ class Jeeves extends Service {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
       const uningested = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').count();
-      const ingestions = fs.readdirSync('../stores/harvard');
+      const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
 
       const stats = {
         ingestions: {
