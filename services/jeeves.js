@@ -728,7 +728,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
       const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
-      if (!instance) res.end(404);
+      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
       /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
       res.send(pdf); */
       res.redirect(instance.harvard_case_law_pdf);
@@ -1502,7 +1502,7 @@ class Jeeves extends Service {
     const inserted = await this.db('embeddings').insert({
       text: text,
       model: embedding.model,
-      content: JSON.stringify(embedding.data)
+      content: JSON.stringify(embedding.embedding)
     });
 
     console.debug('inserted:', inserted);
