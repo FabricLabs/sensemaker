@@ -36,7 +36,7 @@ class OpenAIService extends Service {
   }
 
   async generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const result = await this.openai.createEmbedding({
+    const result = await this.openai.embeddings.create({
       input: text,
       model: model
     });
