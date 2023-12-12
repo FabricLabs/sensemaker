@@ -396,8 +396,12 @@ class Jeeves extends Service {
 
     this.worker.register('ScanCourtListener', async (...params) => {
       console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
-      const dockets = this.courtlistener('search_docket').select('*').limit(5);
-      console.debug('POSTGRES DOCKETS:', dockets.data);
+      try {
+        const dockets = this.courtlistener('search_docket').select('*').limit(5);
+        console.debug('POSTGRES DOCKETS:', dockets.data);
+      } catch (exception) {
+        console.error('COURTLISTENER ERROR:', exception);
+      }
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
