@@ -116,7 +116,7 @@ class Jeeves extends Service {
       services: [
         'bitcoin'
       ],
-      crawlDelay: 250,
+      crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
       workers: 1
@@ -238,8 +238,7 @@ class Jeeves extends Service {
         port: this.settings.db.port,
         user: this.settings.db.user,
         password: this.settings.db.password,
-        database: this.settings.db.database,
-        connectionTimeoutMillis: 5000
+        database: this.settings.db.database
       }
     });
 
@@ -367,6 +366,15 @@ class Jeeves extends Service {
 
     this.worker.register('Ingest', async (...params) => {
       console.debug('Handling Ingest job:', params);
+
+      try {
+        await this.db('cases').update({
+          last_harvard_crawl: this.db.raw('now()')
+        }).where('id', params[2].id);
+      } catch (exception) {
+        this.emit('error', `Worker could not update database: ${params} ${exception}`);
+      }
+
       const doc = await fetch(params[0], {
         headers: {
           'Authorization': `Token ${this.settings.harvard.token}`
@@ -449,7 +457,10 @@ class Jeeves extends Service {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
+        const db = this.db;
+        const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
+          this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
+        }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
         console.debug('[INGEST] Found uningested case:', unknown);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
