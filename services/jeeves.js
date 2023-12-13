@@ -116,6 +116,7 @@ class Jeeves extends Service {
       services: [
         'bitcoin'
       ],
+      crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
       workers: 1
@@ -217,6 +218,7 @@ class Jeeves extends Service {
     // Streaming
     this.completions = {};
 
+    // State
     this._state = {
       clock: this.clock,
       status: 'STOPPED',
@@ -236,10 +238,11 @@ class Jeeves extends Service {
         port: this.settings.db.port,
         user: this.settings.db.user,
         password: this.settings.db.password,
-        database: this.settings.db.database,
-        connectionTimeoutMillis: 5000
+        database: this.settings.db.database
       }
     });
+
+    console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
 
     this.courtlistener = knex({
       client: 'postgresql',
@@ -363,6 +366,15 @@ class Jeeves extends Service {
 
     this.worker.register('Ingest', async (...params) => {
       console.debug('Handling Ingest job:', params);
+
+      try {
+        await this.db('cases').update({
+          last_harvard_crawl: this.db.raw('now()')
+        }).where('id', params[2].id);
+      } catch (exception) {
+        this.emit('error', `Worker could not update database: ${params} ${exception}`);
+      }
+
       const doc = await fetch(params[0], {
         headers: {
           'Authorization': `Token ${this.settings.harvard.token}`
@@ -393,8 +405,12 @@ class Jeeves extends Service {
 
     this.worker.register('ScanCourtListener', async (...params) => {
       console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
-      const dockets = this.courtlistener('search_docket').select('*').limit(1000);
-      console.debug('POSTGRES DOCKETS:', dockets);
+      try {
+        const dockets = this.courtlistener('search_docket').select('*').limit(5);
+        console.debug('POSTGRES DOCKETS:', dockets.data);
+      } catch (exception) {
+        console.error('COURTLISTENER ERROR:', exception);
+      }
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -441,8 +457,12 @@ class Jeeves extends Service {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'asc').first();
-        console.debug('got unknown case:', unknown);
+        const db = this.db;
+        const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
+          this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
+        }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
+
+        console.debug('[INGEST] Found uningested case:', unknown.title);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         this.worker.addJob({
@@ -458,7 +478,7 @@ class Jeeves extends Service {
           type: 'ScanCourtListener',
           params: []
         });
-      }, 60000);
+      }, this.settings.crawlDelay);
     }
 
     // Internal APIs
@@ -563,7 +583,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
-
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
@@ -582,8 +601,8 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
-
       const { oldPassword, newPassword } = req.body;
+
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user || !compareSync(oldPassword, user.password)) {
@@ -610,13 +629,36 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/statistics', async (req, res, next) => {
+      const inquiries = await this.db('inquiries').select('id');
+      const invitations = await this.db('invitations').select('id').from('invitations');
+      const uningested = await this.db('cases').select('id').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc');
+      const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
+
+      const stats = {
+        ingestions: {
+          remaining: uningested.length,
+          complete: ingestions.length
+        },
+        inquiries: {
+          total: inquiries.length
+        },
+        invitations: {
+          total: invitations.length
+        }
+      };
+
+      res.send(stats);
+    });
+
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
           const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
             // TODO: filter by public/private value
+            'pdf_acquired': true
           }).orderBy('decision_date', 'desc').paginate({
-            perPage: 30,
+            perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
 
@@ -682,6 +724,14 @@ class Jeeves extends Service {
           return res.send(this.http.app._renderWith(html));
         }
       });
+    });
+
+    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
+      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
+      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
+      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
+      res.send(pdf); */
+      res.redirect(instance.harvard_case_law_pdf);
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
@@ -871,7 +921,8 @@ class Jeeves extends Service {
         });
 
         const inserted = await this.db('requests').insert({
-          message_id: newMessage[0]
+          message_id: newMessage[0],
+          content: 'Jeeves is thinking...'
         });
 
         this._handleRequest({
@@ -1070,24 +1121,21 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
       try {
-
         const latestAnnouncement = await this.db('announcements')
           .select('*') 
           .orderBy('created_at', 'desc')
           .first();
-    
+
         if (!latestAnnouncement) {
           return res.status(404).json({ message: 'No announcements found.' });
         }
-    
+
         res.json(latestAnnouncement);
-        
       } catch (error) {
         console.error('Error fetching announcement:', error);
         res.status(500).json({ message: 'Internal server error.' });
       }
     });
-    
 
     // await this._startAllServices();
 
@@ -1452,8 +1500,8 @@ class Jeeves extends Service {
 
     const inserted = await this.db('embeddings').insert({
       text: text,
-      model: embedding.model,
-      content: JSON.stringify(embedding.data)
+      model: embedding[0].model,
+      content: JSON.stringify(embedding[0].embedding)
     });
 
     console.debug('inserted:', inserted);
