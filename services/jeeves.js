@@ -431,7 +431,7 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // Retrieval Augmentation Generator (RAG)
-    this.rag = new Agent();
+    // this.rag = new Agent();
     
     // Start the logging service
     await this.audits.start();
@@ -762,7 +762,7 @@ class Jeeves extends Service {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -1021,28 +1021,27 @@ class Jeeves extends Service {
           subject: (subject) ? `${subject.title}, ${subject.court_name}, ${subject.decision_date}` : null,
           input: content,
         }).then((output) => {
-          console.log('got request output:', output);
+//           console.log('got request output:', output);
+//           this.db('responses').insert({
+//             content: output.object.content
+//           });
 
-          this.db('responses').insert({
-            content: output.object.content
-          });
+//           this.db('messages').insert({
+//             content: output.object.content,
+//             conversation_id: conversation_id,
+//             user_id: 1 // TODO: real user ID
+//           }).then(async (response) => {
+//             console.log('response created:', response);
 
-          this.db('messages').insert({
-            content: output.object.content,
-            conversation_id: conversation_id,
-            user_id: 1 // TODO: real user ID
-          }).then(async (response) => {
-            console.log('response created:', response);
-
-            if (isNew) {
-              const messages = await this._getConversationMessages(conversation_id);
-              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
-                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-              }));
+//             if (isNew) {
+//               const messages = await this._getConversationMessages(conversation_id);
+//               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+//                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+//               }));
     
-              await this.db('conversations').update({ title }).where({ id: conversation_id });
-            }
-          });
+//               await this.db('conversations').update({ title }).where({ id: conversation_id });
+//             }
+//           });
         });
 
         if (!conversation.log) conversation.log = [];
