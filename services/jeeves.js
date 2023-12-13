@@ -431,7 +431,7 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // Retrieval Augmentation Generator (RAG)
-    this.rag = new Agent();
+    // this.rag = new Agent();
     
     // Start the logging service
     await this.audits.start();
