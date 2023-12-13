@@ -61,6 +61,7 @@ const Matrix = require('@fabric/matrix');
 const OpenAI = require('./openai');
 
 // Internal Types
+const Agent = require('../types/agent');
 // const Brain = require('../types/brain');
 const Learner = require('../types/learner');
 const Worker = require('../types/worker');
@@ -311,7 +312,9 @@ class Jeeves extends Service {
 
     this.worker.addJob({
       type: 'ScanCourtListener',
-      params: []
+      params: [
+        { query: 'Cases not yet synchronized with Jeeves.' }
+      ]
     });
 
     let data = beat.data;
@@ -427,6 +430,9 @@ class Jeeves extends Service {
     this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
+    // Retrieval Augmentation Generator (RAG)
+    this.rag = new Agent();
+    
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
@@ -932,7 +938,7 @@ class Jeeves extends Service {
           input: content,
           // room: roomID // TODO: replace with a generic property (not specific to Matrix)
           // target: activity.target // candidate 1
-        }).then((output) => {
+        }).then(async (output) => {
           // TODO: restore response tracking
           /* this.db('responses').insert({
             // TODO: store request ID
