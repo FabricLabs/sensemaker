@@ -1,11 +1,19 @@
 'use strict';
 
-const RELEASE_NAME = 'alpha';
+const RELEASE_NAME = 'beta';
+
+// OpenAI
+const AGENT_TEMPERATURE = 0.5;
+
+// Sensemaker
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_LIBRARY = false;
+const ENABLE_CHAT = true;
+const INTEGRITY_CHECK = true;
 
+// Records
 const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
 
@@ -13,11 +21,15 @@ const PER_PAGE_DEFAULT = 30;
 const CHATGPT_MAX_TOKENS = 4096;
 
 module.exports = {
+  RELEASE_NAME,
+  INTEGRITY_CHECK,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
+  ENABLE_CHAT,
   ENABLE_CASE_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
-  CHATGPT_MAX_TOKENS
+  CHATGPT_MAX_TOKENS,
+  AGENT_TEMPERATURE,
 };
