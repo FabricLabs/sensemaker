@@ -73,8 +73,9 @@ class ChatBox extends React.Component {
         this.props.updateHasSubmittedMessage(true);
       }
       if (messages && messages.length > 0){
-        const lastMessage = messages[messages.length - 1];      
-        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant') {
+        const lastMessage = messages[messages.length - 1];   
+
+        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
         } else {
@@ -568,9 +569,17 @@ class ChatBox extends React.Component {
                     <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
                   </Feed.Summary>
                   <Feed.Extra text>
-                    <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
+                    {(message.status !== 'computing') &&
+                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
+                    }
                   </Feed.Extra>
                   <Feed.Extra text>
+                    {(generatingReponse && message.id === messages[messages.length - 1].id && !reGeneratingReponse) && (
+                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is generating a response</Header>
+                    )}
+                    {(reGeneratingReponse && group === this.state.groupedMessages[this.state.groupedMessages.length - 1]) && (
+                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is regenerating the response</Header>
+                    )}
                     <div className='answer-controls' text>
                       {/* Navigation Controls */}
                       {group.messages.length > 1 && (
@@ -593,7 +602,7 @@ class ChatBox extends React.Component {
                         </div>
                       )}
                       {/* the regenerate answer button only shows in the last answer */}
-                      {(group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && message.role === 'assistant' && !reGeneratingReponse) && (
+                      {(group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && message.role === 'assistant' && !reGeneratingReponse && !generatingReponse) && (
                         <Popup content='Regenerate this answer' trigger={
                           <Button
                             icon='redo'
@@ -616,12 +625,6 @@ class ChatBox extends React.Component {
                             </Button>}/>
                       )}
                     </div>
-                    {(generatingReponse && message.id === messages[messages.length - 1].id) && (
-                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is generating a response</Header>
-                    )}
-                    {(reGeneratingReponse && group === this.state.groupedMessages[this.state.groupedMessages.length - 1]) && (
-                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is regenerating the response</Header>
-                    )}
                   </Feed.Extra>
                 </Feed.Content>
               </Feed.Event>
