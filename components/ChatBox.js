@@ -23,6 +23,8 @@ const {
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
+const TextareaAutosize = require('react-textarea-autosize').default;
+
 
 class ChatBox extends React.Component {
   constructor (props) {
@@ -632,9 +634,26 @@ class ChatBox extends React.Component {
           })}
         </Feed>
         {/* <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
-        <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+        <Form id="input-controls" fluid onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
-            <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} />
+            <TextareaAutosize 
+              id='primary-query'                
+              name='query' 
+              required 
+              placeholder={placeholder} 
+              onChange={e => this.setState({query: e.target.value})}             
+              disabled={isSending} 
+              loading={isSending} 
+              value={query}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  this.handleSubmit(e);                  
+                }
+              }}
+              style={{resize: 'none',minHeight: 0, maxHeight: '8em'}}
+            />
+            {/* <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} /> */}
           </Form.Field>
         </Form>
         {(messages.length === 0 && homePage) && (
