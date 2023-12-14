@@ -119,20 +119,38 @@ class Chat extends React.Component {
       transition: 'height 1s',      
     };
 
+    // const componentStyle = messages.length>0 ? {
+    //   display: 'absolute',
+    //   top: '1em',
+    //   left: 'calc(350px + 1em)',
+    //   maxHeight: 'calc(100vh - 3rem)', // Set a maximum height
+    //   bottom: '1em',
+    //   paddingRight: '0em',
+    //   inset: 0,
+    //   display: 'flex',
+    //   flexDirection: 'column', 
+    // } : {
+    //   height: 'calc(100vh - 3rem)',
+    //   display: 'flex',
+    //   flexDirection: 'column',  
+    // };
+
     const componentStyle = messages.length>0 ? {
       display: 'absolute',
-      top: '1em',
+     // top: '1em',
       left: 'calc(350px + 1em)',
-      maxHeight: 'calc(100vh - 3rem)', // Set a maximum height
-      bottom: '1em',
+      height: 'calc(100vh - 2.5rem)', // Set a maximum height
+   //   bottom: '1em',
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column', 
+      paddingBottom: '0'
     } : {
-      height: 'calc(100vh - 3rem)',
+      height: 'calc(100vh - 2.5rem)',
       display: 'flex',
       flexDirection: 'column',  
+      paddingBottom: '0'
     };
 
     const inputStyle = messages.length>0 ? {
@@ -154,7 +172,7 @@ class Chat extends React.Component {
       }
     } 
 
-    const minAnnounHeight = windowWidth < 1440 ? '5.5em' : '3em';
+    const minAnnounHeight = windowWidth < 1440 ? '5.5em' : '4em';
     
     const announcementStyle =  {
       minHeight: minAnnounHeight,
@@ -165,7 +183,7 @@ class Chat extends React.Component {
     return (  
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
          {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
-         {((announTitle || announBody) && (messages.length == 0) ) && (             
+         {/* {((announTitle || announBody) && (messages.length == 0) ) && (             
                 <Message info style={announcementStyle}>
                   <Message.Header >
                     <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle) }} />
@@ -183,10 +201,12 @@ class Chat extends React.Component {
             </div>
 
           </Feed.Extra>
-          <Header style={{ marginTop: '0em'}}>How can I help you today?</Header> 
+          <Header style={{ marginTop: '0em'}}>How can I help you today?</Header>  */}
 
           <ChatBox 
              {...this.props}   
+             announTitle = {announTitle}
+             announBody ={announBody}
              messageContainerStyle={messageContainerStyle}
              inputStyle={inputStyle} 
              hasSubmittedMessage={this.state.hasSubmittedMessage}

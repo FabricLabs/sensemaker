@@ -228,7 +228,7 @@ class Dashboard extends React.Component {
           </Sidebar>
         </div>
         <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}>
-            <Container fluid style={{ margin: '1em' }}>
+            <Container fluid style={{ margin: '1em 1em 0 1em' }}>
               {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
               {this.state.debug ? (
                 <div>
