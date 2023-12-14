@@ -529,7 +529,7 @@ class ChatBox extends React.Component {
 
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
     const { messages } = this.props.chat;
-    console.log("mensajes", messages);
+
     return (
       <div>
         <Feed style={messageContainerStyle} className='chat-feed'>
