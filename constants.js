@@ -1,11 +1,19 @@
 'use strict';
 
+// Constants
 const RELEASE_NAME = 'beta';
 
-// OpenAI
-const AGENT_TEMPERATURE = 0.5;
+// Fabric
+const GENESIS_HASH = '';
+const MAX_MEMORY_SIZE = 32 * 1024 * 1024; // 32 MB
+const {
+  BITCOIN_NETWORK,
+  FIXTURE_SEED
+} = require('@fabric/core/constants');
 
 // Sensemaker
+const AGENT_MAX_TOKENS = 4096;
+const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 const ENABLE_CASE_SEARCH = true;
@@ -20,8 +28,14 @@ const PER_PAGE_DEFAULT = 30;
 // ChatGPT
 const CHATGPT_MAX_TOKENS = 4096;
 
+// Exports
 module.exports = {
+  GENESIS_HASH,
   RELEASE_NAME,
+  BITCOIN_NETWORK,
+  FIXTURE_SEED,
+  AGENT_MAX_TOKENS,
+  MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,

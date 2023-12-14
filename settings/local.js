@@ -11,8 +11,8 @@ environment.start();
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
-const NAME = 'ALPHA';
-const VERSION = '0.2.2'; // TODO: 0.2.1-pre
+const NAME = 'BETA';
+const VERSION = '0.3.0';
 const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
