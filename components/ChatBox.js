@@ -633,7 +633,6 @@ class ChatBox extends React.Component {
             )
           })}
         </Feed>
-        {/* <Form id="input-controls" size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
         <Form id="input-controls" fluid onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
           <Form.Field>
             <TextareaAutosize 
@@ -653,7 +652,6 @@ class ChatBox extends React.Component {
               }}
               style={{resize: 'none',minHeight: 0, maxHeight: '8em'}}
             />
-            {/* <Form.Input id='primary-query' fluid name='query' required placeholder={placeholder} onChange={this.handleChange} disabled={isSending} loading={isSending} value={query} /> */}
           </Form.Field>
         </Form>
         {(messages.length === 0 && homePage) && (
