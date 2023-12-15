@@ -946,21 +946,21 @@ class Jeeves extends Service {
           }); */
 
           // TODO: restore titling
-          /* if (isNew) {
+          if (isNew) {
             const messages = await this._getConversationMessages(conversation_id);
-            const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+
+            await this._summarizeMessagesToTitle(messages.map((x) => {
               return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-            }));
+            })).then(async (output) => {
+              const title = output?.content;
+              if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
 
-            await this.db('conversations').update({ title }).where({ id: conversation_id });
+              const conversation = { id: conversation_id, messages: messages, title: title };
+              const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
 
-            const conversation = { id: conversation_id, messages: messages, title: title };
-            const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
-
-            this.http.broadcast(message);
-
-            console.debug('message broadcast:', message);
-          } */
+              this.http.broadcast(message);
+            });
+          }
         });
 
         if (!conversation.log) conversation.log = [];
@@ -1427,16 +1427,15 @@ class Jeeves extends Service {
 
     for (let i = 0; i < agentCount; i++) {
       const agent = new Actor({ name: `agent/${i}` });
+
+      agent._handleConversationRequest = (request) => {
+
+      };
+
       agents[agent.id] = agent;
     }
 
     // moderator.summarize();
-    console.debug('full conversation:', messages);
-
-    /* const openai = await this.openai._handleConversationRequest({
-      messages: messages
-      // prompt: request.input
-    }); */
 
     const inserted = await this.db('messages').insert({
       conversation_id: request.conversation_id,
@@ -1445,13 +1444,16 @@ class Jeeves extends Service {
       content: 'Jeeves is researching your question...'
     });
 
-    const response = null;
-
-    const openai = await this.openai._streamConversationRequest({
+    const response = await this.openai._streamConversationRequest({
       conversation_id: request.conversation_id,
       message_id: inserted[0],
       messages: messages
       // prompt: request.input
+    });
+
+    const updated = await this.db('messages').where({ id: inserted[0] }).update({
+      status: 'ready',
+      content: response.content.trim()
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
@@ -1466,7 +1468,8 @@ class Jeeves extends Service {
     }); */
 
     return {
-      id: inserted[0]
+      id: inserted[0],
+      content: response.content.trim()
     };
   }
 
@@ -1477,17 +1480,18 @@ class Jeeves extends Service {
   }
 
   async _summarizeMessagesToTitle (messages, max = 100) {
-    const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
-    const request = {
-      input: query,
-      messages: messages
-    };
-
-    const response = await this._handleRequest(request);
-
-    console.debug('title debug:', response.object.content);
-
-    return response.object.content;
+    return new Promise((resolve, reject) => {
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title.`;
+      const request = {
+        input: query,
+        messages: messages
+      };
+ 
+      this._handleRequest(request).then((output) => {
+        console.debug('got summarized title:', output);
+        resolve(output);
+      });
+    });
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
@@ -1495,9 +1499,10 @@ class Jeeves extends Service {
     console.debug('Case to summarize:', instance);
 
     const request = { input: query };
-    const response = await this._handleRequest(request);
 
-    return response.object.content;
+    this._handleRequest(request).then((output) => {
+      console.debug('got summarized case:', output);
+    });
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {

@@ -76,38 +76,46 @@ class OpenAIService extends Service {
   }
 
   async _streamConversationRequest (request) {
-    const message = { id: request.message_id };
+    return new Promise(async (resolve, reject) => {
+      const message = { id: request.message_id };
 
-    try {
-      const stream = await this.openai.beta.chat.completions.stream({
-        max_tokens: CHATGPT_MAX_TOKENS,
-        messages: request.messages,
-        model: this.settings.model,
-        stream: true
-      });
-
-      this.emit('MessageStart', {
-        message_id: request.message_id,
-        conversation_id: request.conversation_id
-      });
-
-      stream.on('content', (delta, snapshot) => {
-        this.emit('MessageChunk', {
-          message_id: request.message_id,
-          conversation_id: request.conversation_id,
-          content: delta
+      try {
+        const stream = this.openai.beta.chat.completions.stream({
+          max_tokens: CHATGPT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model,
+          stream: true
         });
-      });
 
-      stream.on('finalChatCompletion', (completion) => {
-        console.debug('FINAL CHAT COMPLETION:', completion);
-        message.content = completion.choices[0].message.content;
-        this.emit('MessageEnd', message);
-      });
-    } catch (exception) {
-      this.emit('error', `Could not create Conversation: ${exception}`);
-      return null;
-    }
+        this.emit('MessageStart', {
+          message_id: request.message_id,
+          conversation_id: request.conversation_id
+        });
+
+        stream.on('content', (delta, snapshot) => {
+          this.emit('MessageChunk', {
+            message_id: request.message_id,
+            conversation_id: request.conversation_id,
+            content: delta
+          });
+        });
+
+        stream.on('finalChatCompletion', (completion) => {
+          console.debug('FINAL CHAT COMPLETION:', completion);
+
+          // Attach message content
+          message.content = completion.choices[0].message.content;
+
+          // Notify the message is complete
+          this.emit('MessageEnd', message);
+
+          resolve(message);
+        });
+      } catch (exception) {
+        this.emit('error', `Could not create Conversation: ${exception}`);
+        reject(exception);
+      }
+    });
   }
 
   async _handleRequest (request) {
