@@ -43,7 +43,7 @@ class CaseChat extends React.Component {
     const componentStyle = messages.length>0 ? {
       top: '1em',
       left: 'calc(350px + 1em)',
-      maxHeight: 'calc(60vh - 4rem)', // Set a maximum height
+      height: 'calc(60vh - 3rem)', // Set a maximum height
       bottom: '1em',
       paddingRight: '0em',
       inset: 0,

@@ -106,6 +106,7 @@ class ChatBox extends React.Component {
   handleChange = (e, { name, value }) => {
     this.setState({ [name]: value });
   }
+
   handleChangeDropdown = (e, { name, value }) => {
     if(value!=''){
       this.setState({ query: value });     
@@ -299,6 +300,7 @@ class ChatBox extends React.Component {
       } 
     }
   };
+
   renderFeedbakcModal = () =>{
 
     const { 
@@ -433,7 +435,7 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-
+  //function to group answers to the same question
   groupMessages = (messages) => {
     let groupedMessages = [];
     let currentGroup = [];
@@ -541,10 +543,6 @@ class ChatBox extends React.Component {
       chatContainerStyle = {...chatContainerStyle, height: '98%', justifyContent: 'space-between'}
     }
 
-    if(caseID){
-      chatContainerStyle = {...chatContainerStyle,maxHeight: 'calc(60vh - 6rem)',}
-    }
-
     const messagesContainerStyle ={
       overflowY: 'auto',
       transition: 'height 1s',  
@@ -556,15 +554,12 @@ class ChatBox extends React.Component {
       overflow: 'auto',    
     };
 
-
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
 
     return (
-
-      <div style={chatContainerStyle} >
-        {/* <Feed style={messageContainerStyle} className='chat-feed'> */}
-
+      <section style={chatContainerStyle} >
         <Feed style={messagesContainerStyle} className='chat-feed'>
+          {/*Announcements from homepage */}
           {homePage && (
             ((announTitle || announBody) && (messages.length == 0)) && (
               <Message info style={announcementStyle}>
@@ -597,9 +592,8 @@ class ChatBox extends React.Component {
           )}
           {conversationID && (
             <Header as='h2'>Conversation #{conversationID}</Header>
-
           )}
-
+          {/* The chat messages start rendering here */}
           {(this.props.includeFeed && messages && messages.length > 0) && this.state.groupedMessages.map((group, groupIndex) => {
             let message;
             //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
@@ -633,6 +627,7 @@ class ChatBox extends React.Component {
                       </Button.Group>
                     </div>
                   )}
+                  {/* Actual content of message */}
                   <Feed.Summary>
                     <Feed.User>{message.author || message.user_id}</Feed.User>
                     <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
@@ -650,7 +645,7 @@ class ChatBox extends React.Component {
                       <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is regenerating the response</Header>
                     )}
                     <div className='answer-controls' text>
-                      {/* Navigation Controls */}
+                      {/* Answers Navigation Controls */}
                       {group.messages.length > 1 && (
                         <div className="answers-navigation">
                           <Button
@@ -700,7 +695,6 @@ class ChatBox extends React.Component {
             )
           })}
         </Feed>
-        {/* <Form id="input-controls" fluid onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
         <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '98%' }}>
           <Form.Field>
             <TextareaAutosize
@@ -755,7 +749,7 @@ class ChatBox extends React.Component {
         )}
 
         {this.renderFeedbakcModal()}
-      </div>
+      </section>
     );
   }
 

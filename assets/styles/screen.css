@@ -354,6 +354,10 @@ fabric-motd {
   align-content: center;
 }
 
+.answers-navigation{
+  margin-top: 3px;  
+}
+
 /* Settings CSS */
 .settings-user{
   display: flex;
