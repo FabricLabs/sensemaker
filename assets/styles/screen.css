@@ -306,6 +306,14 @@ fabric-motd {
   color: #ccc;
 }
 
+.case-info {
+  margin-right: 1em !important; 
+  max-height: 40vh;
+  min-height: 40vh;
+}
+
+/* ChatBox CSS */
+
 .thumbs-group{
   float: right;
   display: none;
@@ -313,14 +321,10 @@ fabric-motd {
   padding-top: 1em; 
 }
 
- .chat-feed .event:hover .controls {
+.chat-feed .event:hover .controls {
   display: block !important;
 }
-.case-info {
-  margin-right: 1em !important; 
-  max-height: 40vh;
-  min-height: 40vh;
-}
+
 .home-dropdowns{
   
   text-align: center;
@@ -336,11 +340,21 @@ fabric-motd {
   font-family: 'Roboto Mono', sans-serif !important;
   min-width: 20em !important;
 }
+
+@media (max-width: 768px) {
+  .home-dropdowns {
+    flex-direction: column;
+    gap: 1em !important;
+  }
+}
+
 .answer-controls{
   display: flex;
   align-items: center;
   align-content: center;
 }
+
+/* Settings CSS */
 .settings-user{
   display: flex;
   flex-direction: row;
@@ -348,15 +362,6 @@ fabric-motd {
   align-items: center;
   align-content: center;
 }
-/* .settings-user .settings-user .header{
-  width: 30%;
-}
-.settings-container .settings-user p {
-  width: 30%;
-}
-.settings-container .settings-user .button {
-  width: 30%;
-} */
 .settings-container{
   margin-top: 2em;
   display: flex;
@@ -393,10 +398,6 @@ fabric-motd {
 }
 
 @media (max-width: 768px) {
-  .home-dropdowns {
-    flex-direction: column;
-    gap: 1em !important;
-  }
   .settings-container .ui.table {
     width: 50%;
   }

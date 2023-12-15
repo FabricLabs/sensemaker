@@ -22,10 +22,8 @@ class Chat extends React.Component {
     super(props);
 
     this.state = {
-      hasSubmittedMessage: false,
       announTitle:'',
-      announBody:'',
-      windowWidth: window.innerWidth
+      announBody:'',      
     };
 
     this.messagesEndRef = React.createRef();
@@ -35,18 +33,10 @@ class Chat extends React.Component {
   componentDidMount() {
     $('#primary-query').focus();
     this.props.resetChat();
-    window.addEventListener('resize', this.handleResize);
 
     this.fetchAnnouncement();
   }  
 
-  componentWillUnmount () {
-    this.setState({
-      hasSubmittedMessage: false,
-    });
-    window.removeEventListener('resize', this.handleResize);
-
-  }
 
   fetchAnnouncement = async () => {
 
@@ -99,48 +89,14 @@ class Chat extends React.Component {
     }
   };
 
-  handleResize = () => {
-    // Force a re-render when the window resizes
-    this.setState({ windowWidth: window.innerWidth });
-    this.forceUpdate();
-  };
   render () {
-    const {announTitle, announBody,windowWidth} = this.state;
+    const {announTitle, announBody} = this.state;
     const { messages } = this.props.chat;
-
-    const messageContainerStyle = messages.length>0 ? {
-      flexGrow: 1,
-      paddingBottom: '3rem',
-      transition: 'height 1s',
-      overflowY: 'auto',
-      transition: 'max-height 1s',
-      maxWidth: '98%', 
-    } : {
-      transition: 'height 1s',      
-    };
-
-    // const componentStyle = messages.length>0 ? {
-    //   display: 'absolute',
-    //   top: '1em',
-    //   left: 'calc(350px + 1em)',
-    //   maxHeight: 'calc(100vh - 3rem)', // Set a maximum height
-    //   bottom: '1em',
-    //   paddingRight: '0em',
-    //   inset: 0,
-    //   display: 'flex',
-    //   flexDirection: 'column', 
-    // } : {
-    //   height: 'calc(100vh - 3rem)',
-    //   display: 'flex',
-    //   flexDirection: 'column',  
-    // };
 
     const componentStyle = messages.length>0 ? {
       display: 'absolute',
-     // top: '1em',
       left: 'calc(350px + 1em)',
       height: 'calc(100vh - 2.5rem)', // Set a maximum height
-   //   bottom: '1em',
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
@@ -152,65 +108,13 @@ class Chat extends React.Component {
       flexDirection: 'column',  
       paddingBottom: '0'
     };
-
-    const inputStyle = messages.length>0 ? {
-      position: 'fixed',
-      bottom: '1.25em',
-      right: '1.25em',
-      paddingRight: '0.2em'      
-    } : {
-      left: '0',
-      maxWidth: '80vw !important',
-      position: 'relative',
-    };
-        
-    if(inputStyle.position === 'fixed'){
-      if (windowWidth < 820){
-        inputStyle.left = '1.25em';
-      }else{
-        inputStyle.left = 'calc(350px + 1.25em)';      
-      }
-    } 
-
-    const minAnnounHeight = windowWidth < 1440 ? '5.5em' : '4em';
-    
-    const announcementStyle =  {
-      minHeight: minAnnounHeight,
-      maxHeight: '14em',
-      overflow: 'auto',    
-    };
-    
+   
     return (  
        <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-         {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
-         {/* {((announTitle || announBody) && (messages.length == 0) ) && (             
-                <Message info style={announcementStyle}>
-                  <Message.Header >
-                    <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle) }} />
-                  </Message.Header>
-                  <Message.Content >
-                    <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
-                  </Message.Content>
-                </Message>              
-            )
-            }
-          <Feed.Extra text style={{ display: 'flex' }}>
-            <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-            <div style={{ paddingTop: '2em', maxWidth: '10em' }}>
-              <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
-            </div>
-
-          </Feed.Extra>
-          <Header style={{ marginTop: '0em'}}>How can I help you today?</Header>  */}
-
           <ChatBox 
              {...this.props}   
              announTitle = {announTitle}
              announBody ={announBody}
-             messageContainerStyle={messageContainerStyle}
-             inputStyle={inputStyle} 
-             hasSubmittedMessage={this.state.hasSubmittedMessage}
-             updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
              placeholder={this.props.placeholder}
              messagesEndRef={this.messagesEndRef}
              homePage={true}

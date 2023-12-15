@@ -19,7 +19,8 @@ const {
   Message,
   TextArea,
   Popup,
-  Dropdown  
+  Dropdown,
+  Image  
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -57,7 +58,6 @@ class ChatBox extends React.Component {
   componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
-    this.props.updateHasSubmittedMessage(false);
   }
 
   componentDidUpdate (prevProps) {
@@ -70,10 +70,7 @@ class ChatBox extends React.Component {
         (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)  ) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
-      // Set hasSubmittedMessage to true if a message has been submitted
-      if (!this.props.hasSubmittedMessage) {
-        this.props.updateHasSubmittedMessage(true);
-      }
+
       if (messages && messages.length > 0){
         const lastMessage = messages[messages.length - 1];   
 
@@ -104,7 +101,6 @@ class ChatBox extends React.Component {
       message: null,
       messages: [],
     });
-    this.props.updateHasSubmittedMessage(false);
   }
 
   handleChange = (e, { name, value }) => {
@@ -512,9 +508,12 @@ class ChatBox extends React.Component {
   }
 
   render () {
-    const {
-      loading,
-      generatingReponse,
+
+    const { messages } = this.props.chat;    
+    
+    const { 
+      loading, 
+      generatingReponse, 
       reGeneratingReponse,
       query
     } = this.state;
@@ -522,17 +521,85 @@ class ChatBox extends React.Component {
     const {
       isSending,
       placeholder,
-      messageContainerStyle,
-      inputStyle,
-      homePage
+      homePage,
+      announTitle,
+      announBody,
+      caseID,
+      conversationID
     } = this.props;
 
+    let chatContainerStyle = {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'left',
+      transition: 'height 1s',
+      width: '100%',
+      height: '100%'
+    }
+
+    if (messages.length > 0){
+      chatContainerStyle = {...chatContainerStyle, height: '98%', justifyContent: 'space-between'}
+    }
+
+    if(caseID){
+      chatContainerStyle = {...chatContainerStyle,maxHeight: 'calc(60vh - 6rem)',}
+    }
+
+    const messagesContainerStyle ={
+      overflowY: 'auto',
+      transition: 'height 1s',  
+      marginBottom: '0'    
+    }
+    const announcementStyle =  {
+      minHeight: '5.5em',
+      maxHeight: '14em',
+      overflow: 'auto',    
+    };
+
+
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
-    const { messages } = this.props.chat;
 
     return (
-      <div>
-        <Feed style={messageContainerStyle} className='chat-feed'>
+
+      <div style={chatContainerStyle} >
+        {/* <Feed style={messageContainerStyle} className='chat-feed'> */}
+
+        <Feed style={messagesContainerStyle} className='chat-feed'>
+          {homePage && (
+            ((announTitle || announBody) && (messages.length == 0)) && (
+              <Message info style={announcementStyle}>
+                <Message.Header >
+                  <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle) }} />
+                </Message.Header>
+                <Message.Content >
+                  <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
+                </Message.Content>
+              </Message>
+            )
+          )}
+          {homePage && (
+            <div>
+              <Feed.Extra text style={{ display: 'flex' }}>
+                <Image src='/images/jeeves-brand.png' size='small' floated='left' />
+                <div style={{ paddingTop: '2em', maxWidth: '10em' }}>
+                  <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
+                </div>
+
+              </Feed.Extra>
+              <Header style={{ marginTop: '0em', paddingBottom: '2em' }}>How can I help you today?</Header>
+            </div>
+
+          )}
+          {caseID && (
+            <Feed.Extra text style={{ paddingBottom: '2em' }}>
+              <Header>Can I help you with this case?</Header>
+            </Feed.Extra>
+          )}
+          {conversationID && (
+            <Header as='h2'>Conversation #{conversationID}</Header>
+
+          )}
+
           {(this.props.includeFeed && messages && messages.length > 0) && this.state.groupedMessages.map((group, groupIndex) => {
             let message;
             //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
@@ -586,7 +653,7 @@ class ChatBox extends React.Component {
                       {/* Navigation Controls */}
                       {group.messages.length > 1 && (
                         <div className="answers-navigation">
-                          <Button 
+                          <Button
                             icon='angle left'
                             size='tiny'
                             style={controlsStyle}
@@ -594,7 +661,7 @@ class ChatBox extends React.Component {
                             onClick={() => this.navigateMessage(groupIndex, -1)}
                             disabled={group.activeMessageIndex === 0} />
                           <span style={{ fontWeight: 'bold', color: 'grey' }}>{`${group.activeMessageIndex + 1} / ${group.messages.length}`}</span>
-                          <Button 
+                          <Button
                             icon='angle right'
                             size='tiny'
                             style={controlsStyle}
@@ -611,7 +678,7 @@ class ChatBox extends React.Component {
                             onClick={this.regenerateAnswer}
                             style={controlsStyle}
                             size='tiny'
-                          />}/>
+                          />} />
                       )}
                       {message.role === 'assistant' && (
                         <Popup
@@ -624,7 +691,7 @@ class ChatBox extends React.Component {
                               style={controlsStyle}
                               size='tiny'>
                               <Icon name='clipboard outline' />
-                            </Button>}/>
+                            </Button>} />
                       )}
                     </div>
                   </Feed.Extra>
@@ -633,24 +700,25 @@ class ChatBox extends React.Component {
             )
           })}
         </Feed>
-        <Form id="input-controls" fluid onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}>
+        {/* <Form id="input-controls" fluid onSubmit={this.handleSubmit.bind(this)} loading={loading} style={inputStyle}> */}
+        <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '98%' }}>
           <Form.Field>
-            <TextareaAutosize 
-              id='primary-query'                
-              name='query' 
-              required 
-              placeholder={placeholder} 
-              onChange={e => this.setState({query: e.target.value})}             
-              disabled={isSending} 
-              loading={isSending} 
+            <TextareaAutosize
+              id='primary-query'
+              name='query'
+              required
+              placeholder={placeholder}
+              onChange={e => this.setState({ query: e.target.value })}
+              disabled={isSending}
+              loading={isSending}
               value={query}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  this.handleSubmit(e);                  
+                  this.handleSubmit(e);
                 }
               }}
-              style={{resize: 'none',minHeight: 0, maxHeight: '8em'}}
+              style={{ resize: 'none', minHeight: 0, maxHeight: '8em' }}
             />
           </Form.Field>
         </Form>
