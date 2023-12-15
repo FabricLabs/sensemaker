@@ -536,7 +536,7 @@ class ChatBox extends React.Component {
       alignItems: 'left',
       transition: 'height 1s',
       width: '100%',
-      height: '100%'
+      
     }
 
     if (messages.length > 0){
@@ -551,7 +551,8 @@ class ChatBox extends React.Component {
     const announcementStyle =  {
       minHeight: '5.5em',
       maxHeight: '14em',
-      overflow: 'auto',    
+      overflow: 'auto',
+      marginBottom: 0   
     };
 
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
@@ -581,7 +582,7 @@ class ChatBox extends React.Component {
                 </div>
 
               </Feed.Extra>
-              <Header style={{ marginTop: '0em', paddingBottom: '2em' }}>How can I help you today?</Header>
+              <Header style={{ marginTop: '0em', paddingBottom: '1em' }}>How can I help you today?</Header>
             </div>
 
           )}
@@ -718,10 +719,10 @@ class ChatBox extends React.Component {
         </Form>
         {(messages.length === 0 && homePage) && (
           <container>
-            <Header as='h3' style={{ textAlign: 'center', marginTop: '2em' }}>Chat suggestions you can try:</Header>
+            <Header as='h4' style={{ textAlign: 'center', marginTop: '1em' }}>Chat suggestions you can try:</Header>
             <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
               <Dropdown
-                size='small'
+                size='tiny'
                 placeholder='Find a case that...'
                 selection
                 text='Find a case that...'
@@ -729,7 +730,7 @@ class ChatBox extends React.Component {
                 onChange={this.handleChangeDropdown}
               />
               <Dropdown
-                size='small'
+                size='tiny'
                 placeholder='Draft a brief...'
                 selection
                 text='Draft a brief...'
@@ -737,7 +738,7 @@ class ChatBox extends React.Component {
                 onChange={this.handleChangeDropdown}
               />
               <Dropdown
-                size='small'
+                size='tiny'
                 placeholder='Outline a motion...'
                 selection
                 text='Outline a motion...'

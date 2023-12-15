@@ -334,7 +334,7 @@ fabric-motd {
   align-items: center;
   flex-wrap: wrap;
   gap: 2em;
-  margin-top: 2em;
+  margin-top: 1em;
 }
 .home-dropdowns .ui.dropdown{
   font-family: 'Roboto Mono', sans-serif !important;
