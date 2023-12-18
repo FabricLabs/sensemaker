@@ -24,6 +24,7 @@ const {
 const {
   RELEASE_NAME,
   ENABLE_CASE_SEARCH,
+  ENABLE_COURT_SEARCH,
   ENABLE_LIBRARY
 } = require('../constants');
 
@@ -31,6 +32,7 @@ const {
 const Home = require('./Home');
 const CaseHome = require('./CaseHome');
 const CaseView = require('./CaseView');
+const CourtHome = require('./CourtHome');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const Room = require('./Room');
@@ -191,6 +193,11 @@ class Dashboard extends React.Component {
                 <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
+            {ENABLE_COURT_SEARCH && (
+              <Menu.Item as={Link} to='/courts'>
+                <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             {ENABLE_LIBRARY && (
               <Menu.Item disabled>
                 <div>
@@ -257,6 +264,7 @@ class Dashboard extends React.Component {
                   <Route path="/workspaces" element={<Workspaces />} />
                   <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer}/>}/>
                   <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat}/>} />
+                  <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} chat={this.props.chat}/>} />
                   <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
