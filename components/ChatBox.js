@@ -50,6 +50,8 @@ class ChatBox extends React.Component {
       previousFlag: false,  
       connectionProblem: false,
       copiedStatus: {},
+      windowWidth: window.innerWidth, 
+      windowHeight: window.innerHeight
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -58,6 +60,8 @@ class ChatBox extends React.Component {
   componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
+    window.addEventListener('resize', this.handleResize);
+
   }
 
   componentDidUpdate (prevProps) {
@@ -101,7 +105,12 @@ class ChatBox extends React.Component {
       message: null,
       messages: [],
     });
+    window.removeEventListener('resize', this.handleResize);
   }
+
+  handleResize = () => {
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight,});
+  };
 
   handleChange = (e, { name, value }) => {
     this.setState({ [name]: value });
@@ -517,7 +526,9 @@ class ChatBox extends React.Component {
       loading, 
       generatingReponse, 
       reGeneratingReponse,
-      query
+      query,
+      windowWidth,
+      windowHeight,
     } = this.state;
 
     const {
@@ -539,8 +550,12 @@ class ChatBox extends React.Component {
       
     }
 
-    if (messages.length > 0){
-      chatContainerStyle = {...chatContainerStyle, height: '98%', justifyContent: 'space-between'}
+    if (messages.length > 0) {
+      chatContainerStyle = {
+        ...chatContainerStyle, 
+        height: '98%', 
+        justifyContent: (windowHeight < 1200 || windowHeight < windowWidth) ? 'space-between' : ''
+      };
     }
 
     const messagesContainerStyle ={
@@ -713,7 +728,7 @@ class ChatBox extends React.Component {
                   this.handleSubmit(e);
                 }
               }}
-              style={{ resize: 'none', minHeight: 0, maxHeight: '8em' }}
+              style={{ resize: 'none', minHeight: '0', maxHeight: '8em', fontSize:'1rem'}}
             />
           </Form.Field>
         </Form>

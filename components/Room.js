@@ -53,8 +53,8 @@ class Conversation extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column', 
-      height: 'calc(100vh - 3rem)',
+      flexDirection: 'column',  
+      paddingBottom: '0'     
     };
 
     return (       

@@ -18,6 +18,9 @@ const {
 class CaseChat extends React.Component {
   constructor (props) {
     super(props);
+    this.state = {
+      windowHeight: window.innerHeight
+    };
 
     this.messagesEndRef = React.createRef();
   }
@@ -29,31 +32,38 @@ class CaseChat extends React.Component {
   } 
 
   componentWillUnmount () {
-
     window.removeEventListener('resize', this.handleResize);
   }
   handleResize = () => {
     // Force a re-render when the window resizes
+    this.setState({ windowHeight: window.innerHeight,});
     this.forceUpdate();
   };
 
   render () {
     
+    const {windowHeight} = this.state;
     const { messages } = this.props.chat;
+
     const componentStyle = messages.length>0 ? {
       top: '1em',
       left: 'calc(350px + 1em)',
-      height: 'calc(60vh - 3rem)', // Set a maximum height
+      // height: 'calc(60vh - 3rem)', // Set a maximum height
+      height: windowHeight < 1200? 'calc(60vh - 2.5rem)' : 'calc(80vh - 2.5rem)',
       bottom: '1em',
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',      
+      flexDirection: 'column', 
+      paddingBottom: '0'     
     } : {
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',  
+      
     };
+
+
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>

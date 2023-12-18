@@ -309,7 +309,13 @@ fabric-motd {
 .case-info {
   margin-right: 1em !important; 
   max-height: 40vh;
-  min-height: 40vh;
+  min-height: 40vh; 
+}
+@media (min-height: 1200px) {
+  .case-info {
+    max-height: 20vh;
+    min-height: 0; 
+  }
 }
 
 /* ChatBox CSS */
@@ -334,7 +340,7 @@ fabric-motd {
   align-items: center;
   flex-wrap: wrap;
   gap: 2em;
-  margin-top: 1em;
+  margin-top: 2em;
 }
 .home-dropdowns .ui.dropdown{
   font-family: 'Roboto Mono', sans-serif !important;
@@ -352,10 +358,6 @@ fabric-motd {
   display: flex;
   align-items: center;
   align-content: center;
-}
-
-.answers-navigation{
-  margin-top: 3px;  
 }
 
 /* Settings CSS */
