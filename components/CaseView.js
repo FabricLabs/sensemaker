@@ -31,8 +31,7 @@ class Conversation extends React.Component {
   }
 
   render () {
-    const { id, loading, error, cases, messages } = this.props;
-
+    const { id, loading, error, cases } = this.props;
     if (error) {
       return <div>Error: {error}</div>;
     }
@@ -65,8 +64,7 @@ class Conversation extends React.Component {
             resetChat={this.props.resetChat}
             chat={this.props.chat}
             includeFeed={true}
-            isSending={loading}
-            placeholder='Ask me anything about this case...'
+            isSending={loading}            
             caseTitle={cases.current.title}
             caseID={id}
           />

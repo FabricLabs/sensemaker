@@ -67,7 +67,7 @@
     "browserify-fs": "1.0.0",
     "crypto-browserify": "3.12.0",
     "fast-json-patch": "3.1.0",
-    "fomantic-ui": "^2.9.3",
+    "fomantic-ui": "2.9.3",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
     "knex-paginate": "3.1.1",
@@ -85,7 +85,7 @@
     "react-redux": "8.1.0",
     "react-router-dom": "6.13.0",
     "react-simple-star-rating": "5.1.7",
-    "react-textarea-autosize": "^8.5.3",
+    "react-textarea-autosize": "8.5.3",
     "react-top-loading-bar": "2.3.1",
     "redux": "4.2.1",
     "redux-thunk": "2.4.2",
@@ -113,6 +113,6 @@
     "rollup-plugin-serve": "1.1.0",
     "semantic-ui-css": "2.5.0",
     "semantic-ui-react": "2.1.4",
-    "why-is-node-running": "^2.2.2"
+    "why-is-node-running": "2.2.2"
   }
 }

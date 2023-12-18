@@ -18,9 +18,8 @@ const {
 class CaseChat extends React.Component {
   constructor (props) {
     super(props);
-
     this.state = {
-      hasSubmittedMessage: false,
+      windowHeight: window.innerHeight
     };
 
     this.messagesEndRef = React.createRef();
@@ -33,86 +32,44 @@ class CaseChat extends React.Component {
   } 
 
   componentWillUnmount () {
-    this.setState({
-      hasSubmittedMessage: false,
-    });
     window.removeEventListener('resize', this.handleResize);
   }
   handleResize = () => {
     // Force a re-render when the window resizes
+    this.setState({ windowHeight: window.innerHeight,});
     this.forceUpdate();
   };
 
   render () {
-    const { loading, generatingReponse } = this.state;
-    const { isSending, placeholder } = this.props;
-    const { message, messages } = this.props.chat;    
-
-    const messageContainerStyle = messages.length>0 ? {
-      flexGrow: 1,
-      paddingBottom: '3rem',
-      transition: 'height 1s',
-      height: 'auto',
-      overflowY: 'auto',
-      transition: 'max-height 1s',
-      maxWidth: '98%', 
-
-    } : {
-      transition: 'height 1s',
-      paddingBottom: '5em',
-      height: '100%',
-      
-    };
+    
+    const {windowHeight} = this.state;
+    const { messages } = this.props.chat;
 
     const componentStyle = messages.length>0 ? {
       top: '1em',
       left: 'calc(350px + 1em)',
-      maxHeight: 'calc(60vh - 4rem)', // Set a maximum height
+      // height: 'calc(60vh - 3rem)', // Set a maximum height
+      height: windowHeight < 1200? 'calc(60vh - 2.5rem)' : 'calc(80vh - 2.5rem)',
       bottom: '1em',
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',      
+      flexDirection: 'column', 
+      paddingBottom: '0'     
     } : {
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',  
+      
     };
 
-    const inputStyle = messages.length>0 ? {
-      position: 'fixed',
-      bottom: '1.25em',
-      right: '1.25em',         
-      paddingRight: '0.2em' 
-    } : {
-      bottom: '1em',
-      right: '1em',
-      left: '1em',
-      height: 'auto',
-      position:'absolute'
-    };
 
-    if(inputStyle.position === 'fixed'){
-      if (window.matchMedia('(max-width: 820px)').matches){
-        inputStyle.left = '1.25em';
-      }else{
-        inputStyle.left = 'calc(350px + 1.25em)';      
-      }
-    } 
+
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-        {/* <Button floated='right' onClick={this.handleClick.bind(this)}><Icon name='sync' /></Button> */}
-          <Feed.Extra text style={{ paddingBottom: '2em'}}>
-            <Header>Can I help you with this case?</Header>
-          </Feed.Extra>
-
           <ChatBox 
-            {...this.props}   
-            messageContainerStyle={messageContainerStyle}
-            inputStyle={inputStyle} 
-            hasSubmittedMessage={this.state.hasSubmittedMessage}
-            updateHasSubmittedMessage={(value) => this.setState({ hasSubmittedMessage: value })}
-            placeholder={this.props.placeholder}
+            {...this.props}  
+            placeholder={'Ask me anything about this case...'}
             messagesEndRef={this.messagesEndRef}
             />        
       </fabric-component>

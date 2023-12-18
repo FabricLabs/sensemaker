@@ -63,12 +63,15 @@ const regenAnswer = (message) => {
 
     const token = getState().auth.token;
 
+    message.temperature = 'extreme';
+
     try {
-      const response = await fetch('/messagesRegen', {
-        method: 'POST',
+      const response = await fetch('/messages/:id', {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          'X-Temperature': message.temperature
         },
         body: JSON.stringify(message)
       });
