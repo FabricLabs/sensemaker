@@ -758,6 +758,11 @@ class Jeeves extends Service {
       });
     });
 
+    this.http._addRoute('GET', '/courts', async (req, res, next) => {
+      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
+      res.send(courts);
+    });
+
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
       let messages = [];
 

@@ -16,7 +16,10 @@ const AGENT_MAX_TOKENS = 4096;
 const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
+
+// Jeeves
 const ENABLE_CASE_SEARCH = true;
+const ENABLE_COURT_SEARCH = true;
 const ENABLE_LIBRARY = false;
 const ENABLE_CHAT = true;
 const INTEGRITY_CHECK = true;
@@ -41,6 +44,7 @@ module.exports = {
   ENABLE_REGISTRATION,
   ENABLE_CHAT,
   ENABLE_CASE_SEARCH,
+  ENABLE_COURT_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
