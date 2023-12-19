@@ -1,5 +1,7 @@
 'use strict';
 
+const Service = require('@fabric/core/types/service');
+
 class CourtListener extends Service {
   constructor (settings = {}) {
     super(settings);
