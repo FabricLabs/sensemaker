@@ -58,6 +58,10 @@ class AdminSettings extends React.Component {
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
     //
 
+    // TODO: collect waitlist data to table
+    /* const inquiries = await this.db('inquries').select('*').where({ status: 'WAITING' });
+    const waitlistSignupCount = inquiries.length; */
+
     return (
       <jeeves-admin-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }}>

@@ -24,7 +24,7 @@ async function main (input = {}) {
   const compiler = new Compiler({
     document: site,
     webpack: {
-      mode: 'production',
+      mode: settings.mode || 'development',
       module: {
         rules: [
           {
