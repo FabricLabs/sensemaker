@@ -2,7 +2,7 @@
 
 const {
   fetchFromAPI
-} = require('./apiActions');
+} = require('../actions/apiActions');
 
 const input = require('../settings/local');
 
