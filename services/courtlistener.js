@@ -31,6 +31,10 @@ class CourtListener extends Service {
     return dockets;
   }
 
+  async query (table) {
+    return this.db(table);
+  }
+
   async getCounts () {
     const docketCount = await this.db('search_docket').count();
     const courtCount = await this.db('search_court').count();
