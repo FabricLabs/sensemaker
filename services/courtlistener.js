@@ -1,6 +1,8 @@
 'use strict';
 
 const knex = require('knex');
+
+const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
 class CourtListener extends Service {
@@ -24,6 +26,11 @@ class CourtListener extends Service {
     });
   }
 
+  async enumerateDockets () {
+    const dockets = await this.db('search_docket').select();
+    return dockets;
+  }
+
   async getCounts () {
     const docketCount = await this.db('search_docket').count();
     const courtCount = await this.db('search_court').count();
@@ -40,10 +47,19 @@ class CourtListener extends Service {
     };
   }
 
+  async sync () {
+    console.log('[COURTLISTENER]', 'Syncing...');
+    const courts = await this.db('search_court').select();
+    console.debug('courts:', courts.slice(0, 10));
+  }
+
   async start () {
+    console.log('[COURTLISTENER]', 'Starting...');
     this.getCounts().then((counts) => {
       this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
     });
+
+    await this.sync();
 
     return this;
   }
