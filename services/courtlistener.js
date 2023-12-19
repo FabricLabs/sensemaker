@@ -8,7 +8,7 @@ class CourtListener extends Service {
       name: 'CourtListener'
     }, settings);
 
-    this.courtlistener = knex({
+    this.db = knex({
       client: 'postgresql',
       connection: {
         host: this.settings.host,
@@ -19,6 +19,17 @@ class CourtListener extends Service {
         connectionTimeoutMillis: 5000
       }
     });
+  }
+
+  async start () {
+    const docketCount = await this.db('dockets').count();
+
+    this.emit('debug', {
+      type: 'CourtListenerDocketCount',
+      content: docketCount
+    });
+
+    return this;
   }
 }
 
