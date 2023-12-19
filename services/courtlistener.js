@@ -1,5 +1,6 @@
 'use strict';
 
+const knex = require('knex');
 const Service = require('@fabric/core/types/service');
 
 class CourtListener extends Service {
