@@ -506,6 +506,28 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/invitations', async (req, res) => {
+      // TODO: check for admin token
+      const { inquiry_id } = req.body;
+
+      const inserted = await this.db('invitations').insert({
+        inquiry_id: inquiry_id
+      });
+
+      console.debug('inserted:', inserted);
+
+      res.send({
+        message: 'Invitation sent successfully!'
+      });
+    });
+
+    this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
+      // TODO: render page for accepting invitation
+      // - create user account
+      // - set user password
+      // - create help conversation
+    });
+
     this.http._addRoute('POST', '/users', async (req, res) => {
       const { username, password } = req.body;
 
@@ -548,8 +570,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
-
-      console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
+      // console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
 
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
@@ -581,6 +602,7 @@ class Jeeves extends Service {
       }
     });
 
+    // TODO: change this route from `/sessionRestore` to use authMiddleware?
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
       try {
         const user = await this.db('users').where('id', req.user.id).first();
@@ -795,12 +817,29 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
+
+      // User Analytics
+      const users = await this.db('users').select('id', 'username');
+
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
+        const messages = await this.db('messages').select('id').where({ user_id: user.id });
+
+        user.conversations = conversations.length;
+        user.messages = messages.length;
+      }
+
       const stats = {
         inquiries: {
           total: inquiries.length
         },
         invitations: {
           total: invitations.length
+        },
+        users: {
+          total: users.length,
+          content: users
         }
       };
 
@@ -898,6 +937,7 @@ class Jeeves extends Service {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
+
           // matrix_room_id: room.room_id
         });
 
@@ -1645,6 +1685,7 @@ class Jeeves extends Service {
           try {
             const obj = JSON.parse(inner);
             req.user.id = obj.sub;
+            req.user.role = obj.role || 'asserted';
           } catch (exception) {
             console.error('Invalid Bearer Token:', inner)
           }
