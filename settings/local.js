@@ -24,7 +24,7 @@ module.exports = {
   alias: 'JeevesAI',
   moniker: NAME,
   name: 'jeeves',
-  mode: 'production',
+  mode: 'development',
   crawl: true,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
