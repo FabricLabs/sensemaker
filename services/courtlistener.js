@@ -16,7 +16,7 @@ class CourtListener extends Service {
       connection: {
         host: this.settings.host,
         port: this.settings.port,
-        username: this.settings.username,
+        user: this.settings.username,
         password: this.settings.password,
         database: this.settings.database,
         connectionTimeoutMillis: 5000
@@ -25,7 +25,7 @@ class CourtListener extends Service {
   }
 
   async start () {
-    const docketCount = await this.db('dockets').count();
+    const docketCount = await this.db('search_dockets').count();
 
     this.emit('debug', {
       type: 'CourtListenerDocketCount',
