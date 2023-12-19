@@ -59,6 +59,10 @@ const Matrix = require('@fabric/matrix');
 
 // Services
 const OpenAI = require('./openai');
+// TODO: Mistral
+// TODO: HarvardCaseLaw
+const CourtListener = require('./courtlistener');
+// TODO: WestLaw
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -244,18 +248,7 @@ class Jeeves extends Service {
     });
 
     console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
-
-    this.courtlistener = knex({
-      client: 'postgresql',
-      connection: {
-        host: this.settings.courtlistener.host,
-        port: this.settings.courtlistener.port,
-        username: this.settings.courtlistener.username,
-        password: this.settings.courtlistener.password,
-        database: this.settings.courtlistener.database,
-        connectionTimeoutMillis: 5000
-      }
-    });
+    this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     attachPaginate();
 
@@ -431,8 +424,8 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // Retrieval Augmentation Generator (RAG)
-    // this.rag = new Agent();
-    
+    this.rag = new Agent(this.settings);
+
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
