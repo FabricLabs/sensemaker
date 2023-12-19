@@ -11,8 +11,8 @@ environment.start();
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
-const NAME = 'ALPHA';
-const VERSION = '0.2.2'; // TODO: 0.2.1-pre
+const NAME = 'BETA';
+const VERSION = '0.3.0';
 const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
@@ -24,7 +24,7 @@ module.exports = {
   alias: 'JeevesAI',
   moniker: NAME,
   name: 'jeeves',
-  crawl: false,
+  crawl: true,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
@@ -83,6 +83,12 @@ module.exports = {
     ],
     token: null
   },
+  courtlistener: {
+    type: 'postgresql',
+    host: 'HOSTNAME',
+    username: 'USERNAME',
+    password: 'PASSWORD'
+  },
   harvard: {
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },
@@ -127,7 +133,7 @@ module.exports = {
   },
   openai: {
     key: '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',
-    model: 'gpt-4'
+    model: 'gpt-4-1106-preview'
   },
   twilio: {
     sid: 'add your twilio sid here',

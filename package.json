@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:semantic && npm run build:browser",
     "build:browser": "node scripts/build.js",
-    "build:semantic": "# cd libraries/fomantic && npx gulp build && cp -r dist/themes ../../assets && cd ../..",
+    "build:semantic": "# cd libraries/semantic && npx gulp build && cd ../..",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
@@ -17,7 +17,7 @@
     "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "report:coverage": "npm run make:coverage && c8 report --reporter=text-lcov > reports/coverage.lcov",
     "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
-    "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
+    "report:todo": "grep --exclude package.json --exclude-dir=.git --exclude-dir=_book --exclude-dir=stores --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . | sed 's/\\([^:]*:\\)[ ]*/\\1 /' > reports/TODO.txt",
     "serve:docs": "fabric-http docs",
     "setup": "knex migrate:latest",
     "start": "npm run build && node scripts/node.js",
@@ -60,10 +60,14 @@
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
     "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
     "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",
+    "assert-browserify": "2.0.0",
     "babel-loader": "8.2.5",
     "bcrypt": "5.1.0",
     "bitcoinjs-lib": "5.2.0",
-    "fast-json-patch": "3.1.0",
+    "browserify-fs": "1.0.0",
+    "crypto-browserify": "3.12.0",
+    "fast-json-patch": "3.1.1",
+    "fomantic-ui": "^2.9.3",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
     "knex-paginate": "3.1.1",
@@ -71,16 +75,22 @@
     "lodash.debounce": "4.0.8",
     "lodash.merge": "4.6.2",
     "mysql2": "3.4.0",
-    "openai": "3.2.1",
+    "node-util": "0.0.1",
+    "openai": "4.20.1",
+    "path-browserify": "1.0.1",
+    "pg": "8.11.3",
+    "querystring-es3": "0.2.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-redux": "8.1.0",
     "react-router-dom": "6.13.0",
     "react-simple-star-rating": "5.1.7",
+    "react-textarea-autosize": "^8.5.3",
     "react-top-loading-bar": "2.3.1",
     "redux": "4.2.1",
     "redux-thunk": "2.4.2",
-    "sqlite3": "5.1.6"
+    "sqlite3": "5.1.6",
+    "stream-browserify": "3.0.0"
   },
   "devDependencies": {
     "@babel/preset-env": "7.22.5",
@@ -102,6 +112,7 @@
     "rollup-plugin-polyfill-node": "0.9.0",
     "rollup-plugin-serve": "1.1.0",
     "semantic-ui-css": "2.5.0",
-    "semantic-ui-react": "2.1.4"
+    "semantic-ui-react": "2.1.4",
+    "why-is-node-running": "^2.2.2"
   }
 }

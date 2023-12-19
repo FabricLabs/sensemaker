@@ -1,18 +1,53 @@
 'use strict';
 
+// Constants
+const RELEASE_NAME = 'beta';
+
+// Fabric
+const GENESIS_HASH = '';
+const MAX_MEMORY_SIZE = 32 * 1024 * 1024; // 32 MB
+const {
+  BITCOIN_NETWORK,
+  FIXTURE_SEED
+} = require('@fabric/core/constants');
+
+// Sensemaker
+const AGENT_MAX_TOKENS = 4096;
+const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
-const ENABLE_CASE_SEARCH = false;
-const ENABLE_LIBRARY = false;
 
+// Jeeves
+const ENABLE_CASE_SEARCH = true;
+const ENABLE_COURT_SEARCH = true;
+const ENABLE_LIBRARY = false;
+const ENABLE_CHAT = true;
+const INTEGRITY_CHECK = true;
+
+// Records
 const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
 
+// ChatGPT
+const CHATGPT_MAX_TOKENS = 4096;
+
+// Exports
 module.exports = {
+  GENESIS_HASH,
+  RELEASE_NAME,
+  BITCOIN_NETWORK,
+  FIXTURE_SEED,
+  AGENT_MAX_TOKENS,
+  MAX_MEMORY_SIZE,
+  INTEGRITY_CHECK,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
+  ENABLE_CHAT,
   ENABLE_CASE_SEARCH,
+  ENABLE_COURT_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
-  PER_PAGE_DEFAULT
+  PER_PAGE_DEFAULT,
+  CHATGPT_MAX_TOKENS,
+  AGENT_TEMPERATURE,
 };

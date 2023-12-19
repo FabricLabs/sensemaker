@@ -26,6 +26,11 @@ const {
 } = require('../actions/caseActions');
 
 const {
+  fetchCourts,
+  fetchCourt
+} = require('../actions/courtActions');
+
+const {
   resetChat,
   submitMessage,
   regenAnswer,
@@ -86,6 +91,7 @@ async function main (input = {}) {
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
+      courts: state.courts,
       error: state.auth.error,
       isAuthenticated: state.auth.isAuthenticated,
       isAdmin: state.auth.isAdmin,
@@ -102,6 +108,8 @@ async function main (input = {}) {
     signContract: signContract,
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
+    fetchCourts: fetchCourts,
+    fetchCourt: fetchCourt,
     fetchAdminStats: fetchAdminStats,
     login: login,
     logout: logout,

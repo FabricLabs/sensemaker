@@ -1,9 +1,13 @@
 'use strict';
 
-const { Configuration, OpenAIApi } = require('openai');
+const {
+  CHATGPT_MAX_TOKENS
+} = require('../constants');
+
+const { Configuration, OpenAIApi, OpenAI } = require('openai');
 const Service = require('@fabric/core/types/service');
 
-class OpenAI extends Service {
+class OpenAIService extends Service {
   constructor (settings = {}) {
     super(settings);
 
@@ -14,11 +18,15 @@ class OpenAI extends Service {
       state: {}
     }, settings);
 
-    const configuration = new Configuration({
+    /* const configuration = new Configuration({
       apiKey: settings.key
     });
 
-    this.openai = new OpenAIApi(configuration);
+    this.openai = new OpenAIApi(configuration); */
+
+    this.openai = new OpenAI({
+      apiKey: settings.key
+    });
 
     this._state = {
       content: this.settings.state
@@ -28,7 +36,7 @@ class OpenAI extends Service {
   }
 
   async generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const result = await this.openai.createEmbedding({
+    const result = await this.openai.embeddings.create({
       input: text,
       model: model
     });
@@ -52,8 +60,8 @@ class OpenAI extends Service {
 
   async _handleConversationRequest (request) {
     try {
-      const completion = await this.openai.createChatCompletion({
-        max_tokens: 1000,
+      const completion = await this.openai.chat.completions.create({
+        max_tokens: CHATGPT_MAX_TOKENS,
         messages: request.messages,
         model: this.settings.model
       });
@@ -67,9 +75,52 @@ class OpenAI extends Service {
     }
   }
 
+  async _streamConversationRequest (request) {
+    return new Promise(async (resolve, reject) => {
+      const message = { id: request.message_id };
+
+      try {
+        const stream = this.openai.beta.chat.completions.stream({
+          max_tokens: CHATGPT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model,
+          stream: true
+        });
+
+        this.emit('MessageStart', {
+          message_id: request.message_id,
+          conversation_id: request.conversation_id
+        });
+
+        stream.on('content', (delta, snapshot) => {
+          this.emit('MessageChunk', {
+            message_id: request.message_id,
+            conversation_id: request.conversation_id,
+            content: delta
+          });
+        });
+
+        stream.on('finalChatCompletion', (completion) => {
+          console.debug('FINAL CHAT COMPLETION:', completion);
+
+          // Attach message content
+          message.content = completion.choices[0].message.content;
+
+          // Notify the message is complete
+          this.emit('MessageEnd', message);
+
+          resolve(message);
+        });
+      } catch (exception) {
+        this.emit('error', `Could not create Conversation: ${exception}`);
+        reject(exception);
+      }
+    });
+  }
+
   async _handleRequest (request) {
     const completion = await this.openai.createCompletion({
-      max_tokens: 1000,
+      max_tokens: CHATGPT_MAX_TOKENS,
       model: this.settings.model,
       prompt: request.prompt
     });
@@ -80,4 +131,4 @@ class OpenAI extends Service {
   }
 }
 
-module.exports = OpenAI;
+module.exports = OpenAIService;

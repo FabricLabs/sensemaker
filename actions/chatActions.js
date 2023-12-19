@@ -110,7 +110,7 @@ const getMessages = (params = {}) => {
       }
 
       const result = await response.json();
-      console.log('messages result:', result);
+
       dispatch(getMessagesSuccess(result));
     } catch (error) {
       dispatch(getMessagesFailure(error.message));

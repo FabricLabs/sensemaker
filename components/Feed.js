@@ -32,7 +32,7 @@ class ActivityFeed extends React.Component {
     return (
       <Feed>
         {chat && chat.messages && chat.messages.length > 0 && chat.messages.map(message => (
-          <Feed.Event key={message.id}>
+          <Feed.Event key={message.id} data-message-id={message.id}>
             <Feed.Content>
               <Feed.Summary>
                 <Feed.User>{message.author}</Feed.User>

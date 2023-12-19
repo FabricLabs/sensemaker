@@ -3,6 +3,8 @@
 // Prepare transpilation
 require('@babel/register');
 
+const why = require('why-is-node-running');
+
 // Package
 const definition = require('../package');
 const {
@@ -59,12 +61,14 @@ const Matrix = require('@fabric/matrix');
 const OpenAI = require('./openai');
 
 // Internal Types
+const Agent = require('../types/agent');
 // const Brain = require('../types/brain');
 const Learner = require('../types/learner');
 const Worker = require('../types/worker');
 
 // Components
 const CaseHome = require('../components/CaseHome');
+const CaseView = require('../components/CaseView');
 const Conversations = require('../components/Conversations');
 
 /**
@@ -113,6 +117,7 @@ class Jeeves extends Service {
       services: [
         'bitcoin'
       ],
+      crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
       workers: 1
@@ -145,18 +150,6 @@ class Jeeves extends Service {
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
     this.fs = new Filesystem({ path: './stores/jeeves' });
-    this.db = knex({
-      client: 'mysql2',
-      connection: {
-        host: this.settings.db.host,
-        port: this.settings.db.port,
-        user: this.settings.db.user,
-        password: this.settings.db.password,
-        database: this.settings.db.database
-      }
-    });
-
-    attachPaginate();
 
     // Fabric Setup
     this._rootKey = new Key({ xprv: this.settings.xprv });
@@ -223,6 +216,10 @@ class Jeeves extends Service {
       path: './stores'
     });
 
+    // Streaming
+    this.completions = {};
+
+    // State
     this._state = {
       clock: this.clock,
       status: 'STOPPED',
@@ -233,12 +230,52 @@ class Jeeves extends Service {
       objects: {}
     };
 
+
+    // Database connections
+    this.db = knex({
+      client: 'mysql2',
+      connection: {
+        host: this.settings.db.host,
+        port: this.settings.db.port,
+        user: this.settings.db.user,
+        password: this.settings.db.password,
+        database: this.settings.db.database
+      }
+    });
+
+    console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
+
+    this.courtlistener = knex({
+      client: 'postgresql',
+      connection: {
+        host: this.settings.courtlistener.host,
+        port: this.settings.courtlistener.port,
+        username: this.settings.courtlistener.username,
+        password: this.settings.courtlistener.password,
+        database: this.settings.courtlistener.database,
+        connectionTimeoutMillis: 5000
+      }
+    });
+
+    attachPaginate();
+
+    // Stop case
+    /* process.on('exit', async () => {
+      console.warn('Jeeves is shutting down...');
+      await this.stop();
+    }); */
+
     return this;
   }
 
   get version () {
     return definition.version;
   }
+
+  /* commit () {
+    // console.warn('Jeeves is attempting a safe shutdown...');
+    // TODO: safe shutdown
+  } */
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -272,6 +309,13 @@ class Jeeves extends Service {
     }]);
 
     await this.tick();
+
+    this.worker.addJob({
+      type: 'ScanCourtListener',
+      params: [
+        { query: 'Cases not yet synchronized with Jeeves.' }
+      ]
+    });
 
     let data = beat.data;
 
@@ -325,6 +369,15 @@ class Jeeves extends Service {
 
     this.worker.register('Ingest', async (...params) => {
       console.debug('Handling Ingest job:', params);
+
+      try {
+        await this.db('cases').update({
+          last_harvard_crawl: this.db.raw('now()')
+        }).where('id', params[2].id);
+      } catch (exception) {
+        this.emit('error', `Worker could not update database: ${params} ${exception}`);
+      }
+
       const doc = await fetch(params[0], {
         headers: {
           'Authorization': `Token ${this.settings.harvard.token}`
@@ -334,10 +387,6 @@ class Jeeves extends Service {
       const blob = await doc.blob();
       const buffer = await blob.arrayBuffer();
       const body = Buffer.from(buffer);
-
-      console.debug('blob:', blob);
-      console.debug('buffer:', buffer);
-      console.debug('body:', body);
 
       try {
         fs.writeFileSync(params[1], body);
@@ -357,6 +406,16 @@ class Jeeves extends Service {
       console.debug('Ingest complete:', params[1]);
     });
 
+    this.worker.register('ScanCourtListener', async (...params) => {
+      console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
+      try {
+        const dockets = this.courtlistener('search_docket').select('*').limit(5);
+        console.debug('POSTGRES DOCKETS:', dockets.data);
+      } catch (exception) {
+        console.error('COURTLISTENER ERROR:', exception);
+      }
+    });
+
     this.worker.on('debug', (...debug) => console.debug(...debug));
     this.worker.on('log', (...log) => console.log(...log));
     this.worker.on('warning', (...warning) => console.warn(...warning));
@@ -366,7 +425,14 @@ class Jeeves extends Service {
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
     this.openai.on('error', this._handleOpenAIError.bind(this));
+    this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
+    this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
+    this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
+    this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
+    // Retrieval Augmentation Generator (RAG)
+    // this.rag = new Agent();
+    
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
@@ -397,8 +463,12 @@ class Jeeves extends Service {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const unknown = await this.db('cases').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'asc').first();
-        console.debug('got unknown case:', unknown);
+        const db = this.db;
+        const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
+          this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
+        }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
+
+        console.debug('[INGEST] Found uningested case:', unknown.title);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         this.worker.addJob({
@@ -409,7 +479,12 @@ class Jeeves extends Service {
             { id: unknown.id }
           ]
         });
-      }, 60000);
+
+        this.worker.addJob({
+          type: 'ScanCourtListener',
+          params: []
+        });
+      }, this.settings.crawlDelay);
     }
 
     // Internal APIs
@@ -514,7 +589,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
-
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
@@ -533,8 +607,8 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
-
       const { oldPassword, newPassword } = req.body;
+
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user || !compareSync(oldPassword, user.password)) {
@@ -561,13 +635,36 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/statistics', async (req, res, next) => {
+      const inquiries = await this.db('inquiries').select('id');
+      const invitations = await this.db('invitations').select('id').from('invitations');
+      const uningested = await this.db('cases').select('id').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc');
+      const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
+
+      const stats = {
+        ingestions: {
+          remaining: uningested.length,
+          complete: ingestions.length
+        },
+        inquiries: {
+          total: inquiries.length
+        },
+        invitations: {
+          total: invitations.length
+        }
+      };
+
+      res.send(stats);
+    });
+
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
           const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
             // TODO: filter by public/private value
+            'pdf_acquired': true
           }).orderBy('decision_date', 'desc').paginate({
-            perPage: 30,
+            perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
 
@@ -600,23 +697,47 @@ class Jeeves extends Service {
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
-        console.debug('summarized to:', summary);
+
         if (summary) {
           await this.db('cases').update({
             summary: summary
           }).where('id', instance.id);
+
+          instance.summary = summary;
         }
       }
 
       fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-
+        // TODO: additional params (auth?)
       }).catch((exception) => {
         console.error('FETCH FULL CASE ERROR:', exception);
       }).then(async (output) => {
-        console.debug('FETCH FULL CASE OUTPUT:', await output.json());
+        const target = await output.json();
+        const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
+        this.http.broadcast(message);
       });
 
-      res.send(instance);
+      res.format({
+        json: async () => {
+          res.send(instance);
+        },
+        html: () => {
+          // TODO: provide state
+          // const page = new CaseView({});
+          // TODO: fix this hack
+          const page = new CaseHome({}); // TODO: use CaseView
+          const html = page.toHTML();
+          return res.send(this.http.app._renderWith(html));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
+      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
+      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
+      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
+      res.send(pdf); */
+      res.redirect(instance.harvard_case_law_pdf);
     });
 
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
@@ -637,11 +758,16 @@ class Jeeves extends Service {
       });
     });
 
+    this.http._addRoute('GET', '/courts', async (req, res, next) => {
+      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
+      res.send(courts);
+    });
+
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -738,7 +864,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
-
       try {
         const request = req.body;
         const cases = await this._searchCases(request);
@@ -789,7 +914,11 @@ class Jeeves extends Service {
       }
 
       if (case_id) {
-        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        try {
+          subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
+        } catch (exception) {
+          this.emit('warning', `Could not find case ID: ${case_id}`);
+        }
       }
 
       try {
@@ -802,8 +931,9 @@ class Jeeves extends Service {
           user_id: req.user.id
         });
 
-        const newRequest = await this.db('requests').insert({
-          message_id: newMessage[0]
+        const inserted = await this.db('requests').insert({
+          message_id: newMessage[0],
+          content: 'Jeeves is thinking...'
         });
 
         this._handleRequest({
@@ -813,29 +943,29 @@ class Jeeves extends Service {
           input: content,
           // room: roomID // TODO: replace with a generic property (not specific to Matrix)
           // target: activity.target // candidate 1
-        }).then((output) => {
-          console.log('got request output:', output);
-
-          this.db('responses').insert({
+        }).then(async (output) => {
+          // TODO: restore response tracking
+          /* this.db('responses').insert({
+            // TODO: store request ID
             content: output.object.content
-          });
+          }); */
 
-          this.db('messages').insert({
-            content: output.object.content,
-            conversation_id: conversation_id,
-            user_id: 1 // TODO: real user ID
-          }).then(async (response) => {
-            console.log('response created:', response);
+          // TODO: restore titling
+          if (isNew) {
+            const messages = await this._getConversationMessages(conversation_id);
 
-            if (isNew) {
-              const messages = await this._getConversationMessages(conversation_id);
-              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
-                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-              }));
-    
-              await this.db('conversations').update({ title }).where({ id: conversation_id });
-            }
-          });
+            await this._summarizeMessagesToTitle(messages.map((x) => {
+              return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+            })).then(async (output) => {
+              const title = output?.content;
+              if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
+
+              const conversation = { id: conversation_id, messages: messages, title: title };
+              const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
+
+              this.http.broadcast(message);
+            });
+          }
         });
 
         if (!conversation.log) conversation.log = [];
@@ -896,28 +1026,27 @@ class Jeeves extends Service {
           subject: (subject) ? `${subject.title}, ${subject.court_name}, ${subject.decision_date}` : null,
           input: content,
         }).then((output) => {
-          console.log('got request output:', output);
+//           console.log('got request output:', output);
+//           this.db('responses').insert({
+//             content: output.object.content
+//           });
 
-          this.db('responses').insert({
-            content: output.object.content
-          });
+//           this.db('messages').insert({
+//             content: output.object.content,
+//             conversation_id: conversation_id,
+//             user_id: 1 // TODO: real user ID
+//           }).then(async (response) => {
+//             console.log('response created:', response);
 
-          this.db('messages').insert({
-            content: output.object.content,
-            conversation_id: conversation_id,
-            user_id: 1 // TODO: real user ID
-          }).then(async (response) => {
-            console.log('response created:', response);
-
-            if (isNew) {
-              const messages = await this._getConversationMessages(conversation_id);
-              const title = await this._summarizeMessagesToTitle(messages.map((x) => {
-                return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-              }));
+//             if (isNew) {
+//               const messages = await this._getConversationMessages(conversation_id);
+//               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
+//                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+//               }));
     
-              await this.db('conversations').update({ title }).where({ id: conversation_id });
-            }
-          });
+//               await this.db('conversations').update({ title }).where({ id: conversation_id });
+//             }
+//           });
         });
 
         if (!conversation.log) conversation.log = [];
@@ -1003,33 +1132,34 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
       try {
-
         const latestAnnouncement = await this.db('announcements')
           .select('*') 
           .orderBy('created_at', 'desc')
           .first();
-    
+
         if (!latestAnnouncement) {
           return res.status(404).json({ message: 'No announcements found.' });
         }
-    
+
         res.json(latestAnnouncement);
-        
       } catch (error) {
         console.error('Error fetching announcement:', error);
         res.status(500).json({ message: 'Internal server error.' });
       }
     });
-    
 
     // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
     if (this.settings.http.listen) this.trust(this.http);
+
+    // Always trust the local agent
     this.trust(this.agent);
 
     // Queue up a verification job
     this.queue._addJob({ method: 'verify', params: [] });
+
+    // Create a heartbeat
     this._heart = setInterval(this.tick.bind(this), this.settings.interval);
 
     // Start HTTP, if enabled
@@ -1073,17 +1203,25 @@ class Jeeves extends Service {
     this.status = 'STOPPING';
 
     // Stop HTTP Listener
-    if (this.settings.http.listen) await this.http.stop();
+    if (this.settings?.http) await this.http.destroy();
+    if (this.settings?.http?.wss) await this.http.wss.destroy();
+    // if (this.settings?.http) await this.http.stop();
 
     // Stop Fabric Listener
-    if (this.settings.listen && this.agent) await this.agent.stop();
+    if (this.agent) await this.agent.stop();
 
     // Stop the Worker
-    await this.worker.stop();
+    if (this.worker) await this.worker.stop();
+
+    /* console.debug('workers:', this.workers);
+
+    for (let i = 0; i < this.workers.length; i++) {
+      await this.workers[i].stop();
+    } */
 
     // Stop Heartbeat, Crawler
-    clearInterval(this._heart);
-    clearInterval(this._crawler);
+    if (this._heart) clearInterval(this._heart);
+    if (this._crawler) clearInterval(this._crawler);
 
     // Stop Services
     for (const [name, service] of Object.entries(this.services || {})) {
@@ -1093,13 +1231,20 @@ class Jeeves extends Service {
     }
 
     // Write
-    await this.commit();
+    // await this.commit();
+
+    if (this.courtlistener) await this.courtlistener.stop();
 
     // Notify
     this.status = 'STOPPED';
     this.emit('stopped', {
       id: this.id
     });
+
+    // why();
+
+    // TODO: troubleshoot why this is necessary (use `why()` above)
+    process.exit();
 
     return this;
   }
@@ -1151,6 +1296,7 @@ class Jeeves extends Service {
 
     // Set reactions to reflect completed status
     const latestReactions = await this.matrix._getReactions(activity.object.id);
+
     if (!latestReactions.filter((x) => (x.key === completedIcon)).length) {
       try {
         completedReaction = await this.matrix._react(activity.object.id, completedIcon);
@@ -1164,6 +1310,31 @@ class Jeeves extends Service {
 
   async _handleOpenAIError (error) {
     this.emit('error', `[SERVICES:OPENAI] ${error}`);
+  }
+
+  async _handleOpenAIMessageStart (start) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    start.type = 'MessageStart';
+    const message = Message.fromVector(['MessageStart', JSON.stringify(start)]);
+    this.http.broadcast(message);
+  }
+
+  async _handleOpenAIMessageChunk (chunk) {
+    // TODO: fix @fabric/core/types/message to allow custom message types
+    chunk.type = 'MessageChunk';
+    const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
+    this.http.broadcast(message);
+  }
+
+  async _handleOpenAIMessageEnd (end) {
+    await this.db('messages').where({ 'id': end.id }).update({
+      content: end.content,
+      status: 'ready'
+    });
+  }
+
+  async _handleOpenAIMessageWarning (warning) {
+    console.warn('OPENAI WARNING:', warning);
   }
 
   /**
@@ -1192,7 +1363,7 @@ class Jeeves extends Service {
   }
 
   async _getConversationMessages (conversationID) {
-    const messages = await this.db('messages').where({ conversation_id: conversationID });
+    const messages = await this.db('messages').where({ conversation_id: conversationID, status: 'ready' });
     return messages;
   }
 
@@ -1222,29 +1393,38 @@ class Jeeves extends Service {
    */
   async _handleRequest (request) {
     this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
+
     let messages = [];
 
     if (request.room) {
+      // Matrix request
       console.debug('request has room:', request.room);
       const matrixMessages = await this._getRoomMessages(request.room);
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
+      // Resume conversation
       const prev = await this._getConversationMessages(request.conversation_id);
       messages = prev.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
     } else {
-      console.debug('request without room, input:', request.input);
+      // New conversation
       messages = messages.concat([{ role: 'user', content: request.input }]);
     }
 
     if (request.subject) {
+      // Subject material provided
       messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
     }
 
     // Prompt
-    messages.unshift({ role: 'system', content: this.settings.prompt });
+    messages.unshift({
+      role: 'system',
+      content: this.settings.prompt
+    });
 
+    // Moderator
+    // Fact-checks and summarizes outputs into a single coherent result.
     const moderator = new Actor({ name: '@jeeves/moderator' });
     const agents = {};
 
@@ -1252,65 +1432,49 @@ class Jeeves extends Service {
 
     for (let i = 0; i < agentCount; i++) {
       const agent = new Actor({ name: `agent/${i}` });
+
+      agent._handleConversationRequest = (request) => {
+
+      };
+
       agents[agent.id] = agent;
     }
 
-    const openai = await this.openai._handleConversationRequest({
+    // moderator.summarize();
+
+    const inserted = await this.db('messages').insert({
+      conversation_id: request.conversation_id,
+      user_id: 1,
+      status: 'computing',
+      content: 'Jeeves is researching your question...'
+    });
+
+    const response = await this.openai._streamConversationRequest({
+      conversation_id: request.conversation_id,
+      message_id: inserted[0],
       messages: messages
       // prompt: request.input
     });
 
+    const updated = await this.db('messages').where({ id: inserted[0] }).update({
+      status: 'ready',
+      content: response.content.trim()
+    });
+
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
-    const text = (typeof openai !== 'undefined' && openai)
-      ? openai.completion.choices[0].message.content.trim()
+    /* const text = (typeof openai !== 'undefined' && openai)
+      ? openai.completion?.choices[0].message.content.trim()
       : "I'm sorry, but something went wrong.  Try again later."
-      ;
+      ; */
 
-    this.emit('response', {
+    /* this.emit('response', {
       prompt: request.input,
       response: text
-    });
+    }); */
 
     return {
-      openai: openai,
-      object: {
-        content: text
-      }
-    };
-  }
-
-  async _generateResponse (request) {
-    let messages = [];
-
-    if (request.messages) messages = request.messages.concat(messages);
-    messages.push({ role: 'user', content: request.input });
-
-    // Prompt
-    messages.unshift({ role: 'system', content: this.settings.prompt });
-
-    console.debug('conversation to respond to:', messages);
-
-    const openai = await this.openai._handleConversationRequest({
-      messages: messages
-      // prompt: request.input
-    });
-
-    // If we get a preferred response, use it.  Otherwise fall back to a generic response.
-    const text = (typeof openai !== 'undefined' && openai)
-      ? openai.completion.choices[0].message.content.trim()
-      : 'Generic response.'
-      ;
-
-    this.emit('response', {
-      prompt: request.input,
-      response: text
-    });
-
-    return {
-      openai: openai,
-      object: {
-        content: text
-      }
+      id: inserted[0],
+      content: response.content.trim()
     };
   }
 
@@ -1321,17 +1485,18 @@ class Jeeves extends Service {
   }
 
   async _summarizeMessagesToTitle (messages, max = 100) {
-    const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
-    const request = {
-      input: query,
-      messages: messages
-    };
-
-    const response = await this._generateResponse(request);
-
-    console.debug('title debug:', response.object.content);
-
-    return response.object.content;
+    return new Promise((resolve, reject) => {
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title.`;
+      const request = {
+        input: query,
+        messages: messages
+      };
+ 
+      this._handleRequest(request).then((output) => {
+        console.debug('got summarized title:', output);
+        resolve(output);
+      });
+    });
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
@@ -1339,9 +1504,10 @@ class Jeeves extends Service {
     console.debug('Case to summarize:', instance);
 
     const request = { input: query };
-    const response = await this._generateResponse(request);
 
-    return response.object.content;
+    this._handleRequest(request).then((output) => {
+      console.debug('got summarized case:', output);
+    });
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
@@ -1350,8 +1516,8 @@ class Jeeves extends Service {
 
     const inserted = await this.db('embeddings').insert({
       text: text,
-      model: embedding.model,
-      content: JSON.stringify(embedding.data)
+      model: embedding[0].model,
+      content: JSON.stringify(embedding[0].embedding)
     });
 
     console.debug('inserted:', inserted);
