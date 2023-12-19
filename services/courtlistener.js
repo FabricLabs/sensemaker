@@ -24,12 +24,25 @@ class CourtListener extends Service {
     });
   }
 
-  async start () {
+  async getCounts () {
     const docketCount = await this.db('search_docket').count();
+    const courtCount = await this.db('search_court').count();
+    const citationCount = await this.db('search_citation').count();
+    const attorneyCount = await this.db('people_db_attorney').count();
+    const partyCount = await this.db('people_db_party').count();
 
-    this.emit('debug', {
-      type: 'CourtListenerDocketCount',
-      content: docketCount
+    return {
+      dockets: docketCount,
+      courts: courtCount,
+      citations: citationCount,
+      attorneys: attorneyCount,
+      parties: partyCount
+    };
+  }
+
+  async start () {
+    this.getCounts().then((counts) => {
+      this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
     });
 
     return this;
