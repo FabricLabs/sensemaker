@@ -402,7 +402,7 @@ class Jeeves extends Service {
     this.worker.register('ScanCourtListener', async (...params) => {
       console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
       try {
-        const dockets = this.courtlistener('search_docket').select('*').limit(5);
+        const dockets = this.courtlistener.query('search_docket').select('*').limit(5);
         console.debug('POSTGRES DOCKETS:', dockets.data);
       } catch (exception) {
         console.error('COURTLISTENER ERROR:', exception);
@@ -832,10 +832,12 @@ class Jeeves extends Service {
 
       const stats = {
         inquiries: {
-          total: inquiries.length
+          total: inquiries.length,
+          content: inquiries
         },
         invitations: {
-          total: invitations.length
+          total: invitations.length,
+          content: invitations
         },
         users: {
           total: users.length,
@@ -1029,9 +1031,8 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/messagesRegen', async (req, res, next) => {
-      console.debug('Handling inbound message:', req.body);
-
+    // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
+    this.http._addRoute('PATCH', '/messages/:id', async (req, res, next) => {
       let isNew = false;
       let subject = null;
       let {
@@ -1486,7 +1487,6 @@ class Jeeves extends Service {
       conversation_id: request.conversation_id,
       message_id: inserted[0],
       messages: messages
-      // prompt: request.input
     });
 
     const updated = await this.db('messages').where({ id: inserted[0] }).update({
@@ -1524,7 +1524,7 @@ class Jeeves extends Service {
         input: query,
         messages: messages
       };
- 
+
       this._handleRequest(request).then((output) => {
         console.debug('got summarized title:', output);
         resolve(output);
