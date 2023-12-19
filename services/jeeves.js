@@ -59,6 +59,10 @@ const Matrix = require('@fabric/matrix');
 
 // Services
 const OpenAI = require('./openai');
+// TODO: Mistral
+// TODO: HarvardCaseLaw
+const CourtListener = require('./courtlistener');
+// TODO: WestLaw
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -244,18 +248,7 @@ class Jeeves extends Service {
     });
 
     console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
-
-    this.courtlistener = knex({
-      client: 'postgresql',
-      connection: {
-        host: this.settings.courtlistener.host,
-        port: this.settings.courtlistener.port,
-        username: this.settings.courtlistener.username,
-        password: this.settings.courtlistener.password,
-        database: this.settings.courtlistener.database,
-        connectionTimeoutMillis: 5000
-      }
-    });
+    this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     attachPaginate();
 
@@ -408,12 +401,12 @@ class Jeeves extends Service {
 
     this.worker.register('ScanCourtListener', async (...params) => {
       console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
-      try {
-        const dockets = this.courtlistener('search_docket').select('*').limit(5);
+      /* try {
+        const dockets = await this.courtlistener.query('search_docket').select('*').limit(5);
         console.debug('POSTGRES DOCKETS:', dockets.data);
       } catch (exception) {
         console.error('COURTLISTENER ERROR:', exception);
-      }
+      } */
     });
 
     this.worker.on('debug', (...debug) => console.debug(...debug));
@@ -431,8 +424,8 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // Retrieval Augmentation Generator (RAG)
-    // this.rag = new Agent();
-    
+    this.rag = new Agent(this.settings);
+
     // Start the logging service
     await this.audits.start();
     await this.changes.start();
@@ -513,6 +506,28 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/invitations', async (req, res) => {
+      // TODO: check for admin token
+      const { inquiry_id } = req.body;
+
+      const inserted = await this.db('invitations').insert({
+        inquiry_id: inquiry_id
+      });
+
+      console.debug('inserted:', inserted);
+
+      res.send({
+        message: 'Invitation sent successfully!'
+      });
+    });
+
+    this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
+      // TODO: render page for accepting invitation
+      // - create user account
+      // - set user password
+      // - create help conversation
+    });
+
     this.http._addRoute('POST', '/users', async (req, res) => {
       const { username, password } = req.body;
 
@@ -555,8 +570,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
-
-      console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
+      // console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
 
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
@@ -588,6 +602,7 @@ class Jeeves extends Service {
       }
     });
 
+    // TODO: change this route from `/sessionRestore` to use authMiddleware?
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
       try {
         const user = await this.db('users').where('id', req.user.id).first();
@@ -802,12 +817,31 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
+
+      // User Analytics
+      const users = await this.db('users').select('id', 'username');
+
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
+        const messages = await this.db('messages').select('id').where({ user_id: user.id });
+
+        user.conversations = conversations.length;
+        user.messages = messages.length;
+      }
+
       const stats = {
         inquiries: {
-          total: inquiries.length
+          total: inquiries.length,
+          content: inquiries
         },
         invitations: {
-          total: invitations.length
+          total: invitations.length,
+          content: invitations
+        },
+        users: {
+          total: users.length,
+          content: users
         }
       };
 
@@ -905,6 +939,7 @@ class Jeeves extends Service {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
+
           // matrix_room_id: room.room_id
         });
 
@@ -996,9 +1031,8 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/messagesRegen', async (req, res, next) => {
-      console.debug('Handling inbound message:', req.body);
-
+    // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
+    this.http._addRoute('PATCH', '/messages/:id', async (req, res, next) => {
       let isNew = false;
       let subject = null;
       let {
@@ -1453,7 +1487,6 @@ class Jeeves extends Service {
       conversation_id: request.conversation_id,
       message_id: inserted[0],
       messages: messages
-      // prompt: request.input
     });
 
     const updated = await this.db('messages').where({ id: inserted[0] }).update({
@@ -1491,7 +1524,7 @@ class Jeeves extends Service {
         input: query,
         messages: messages
       };
- 
+
       this._handleRequest(request).then((output) => {
         console.debug('got summarized title:', output);
         resolve(output);
@@ -1652,6 +1685,7 @@ class Jeeves extends Service {
           try {
             const obj = JSON.parse(inner);
             req.user.id = obj.sub;
+            req.user.role = obj.role || 'asserted';
           } catch (exception) {
             console.error('Invalid Bearer Token:', inner)
           }
