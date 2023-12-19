@@ -6,6 +6,8 @@ const {
 
 const input = require('../settings/local');
 
+const CourtListener = require('../services/courtlistener'); 
+
 async function main (settings = {}) {
   const courtlistener = new CourtListener(settings);
 
