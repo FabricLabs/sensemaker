@@ -90,6 +90,7 @@ class CourtListener extends Service {
     const citationCount = await this.db('search_citation').count();
     const personCount = await this.db('people_db_person').count();
     const attorneyCount = await this.db('people_db_attorney').count();
+    const opinionCount = await this.db('search_opinioncluster').count();
     const partyCount = await this.db('people_db_party').count();
 
     return {
@@ -98,6 +99,7 @@ class CourtListener extends Service {
       citations: citationCount,
       persons: personCount,
       attorneys: attorneyCount,
+      opinions: opinionCount,
       parties: partyCount
     };
   }

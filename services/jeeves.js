@@ -468,7 +468,7 @@ class Jeeves extends Service {
       if (!target) {
         await this.db('opinions').insert({
           courtlistener_id: opinion.id,
-          scdb_id: opinion.scdb_id,
+          scdb_id: (opinion.scdb_id) ? opinion.scdb_id : null,
           date_created: opinion.date_created,
           date_modified: opinion.date_modified,
           date_filed: opinion.date_filed,
