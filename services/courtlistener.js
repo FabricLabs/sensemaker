@@ -52,7 +52,7 @@ class CourtListener extends Service {
 
   async sampleOpinions () {
     this.emit('debug', 'Enumerating opinions...');
-    const opinions = await this.db('search_opinioncluster').select().orderByRaw('RAND()').limit(256);
+    const opinions = await this.db('search_opinioncluster').select().orderByRaw('RANDOM()').limit(256);
     return opinions;
   }
 
@@ -81,7 +81,7 @@ class CourtListener extends Service {
   }
 
   async sampleRecapDocuments (limit = 256) {
-    const documents = await this.db('search_recapdocument').select().orderByRaw('RAND()').limit(limit);
+    const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
     return documents
   }
 
