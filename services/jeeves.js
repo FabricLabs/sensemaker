@@ -368,6 +368,7 @@ class Jeeves extends Service {
           this.where('last_recap_crawl', '<', self.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_recap_crawl');
         })
         .whereNotNull('pacer_doc_id')
+        .whereNotNull('courtlistener_filepath_local')
         .first();
 
       console.debug('Found uningested document:', target);
