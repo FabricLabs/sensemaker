@@ -9,7 +9,7 @@ exports.up = function (knex) {
     table.integer('citation_count');
     table.text('judges');
     table.date('date_filed');
-    table.integer('scdb_id');
+    table.string('scdb_id', 10);
     table.integer('scdb_decision_direction');
     table.integer('scdb_votes_majority');
     table.integer('scdb_votes_minority');
