@@ -52,7 +52,7 @@ class CourtListener extends Service {
 
   async enumerateOpinions () {
     this.emit('debug', 'Enumerating opinions...');
-    const opinions = await this.db('search_opinioncluster').select();
+    const opinions = await this.db('search_opinioncluster').select().limit(1000);
     return opinions;
   }
 
