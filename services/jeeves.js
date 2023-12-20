@@ -437,13 +437,24 @@ class Jeeves extends Service {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
     });
 
+    this.courtlistener.on('error', (...error) => {
+      console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
+    });
+
+    this.courtlistener.on('warning', (...warning) => {
+      console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
+    });
+
     this.courtlistener.on('message', (message) => {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
     });
 
     this.courtlistener.on('document', async (actor) => {
+      console.debug('[DOCUMENT]', 'Received document:', actor);
+
       const document = actor.content;
       const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
+
       if (!target) {
         console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
         await this.db('documents').insert({
