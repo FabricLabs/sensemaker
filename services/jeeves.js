@@ -618,7 +618,7 @@ class Jeeves extends Service {
           this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
         }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
 
-        console.debug('[INGEST] Found uningested case:', unknown.title);
+        // console.debug('[INGEST] Found uningested case:', unknown.title);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
         /* this.worker.addJob({
@@ -632,7 +632,9 @@ class Jeeves extends Service {
 
         this.worker.addJob({
           type: 'ScanCourtListener',
-          params: []
+          params: [
+            { query: unknown.title }
+          ]
         });
       }, this.settings.crawlDelay);
     }
