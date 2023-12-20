@@ -363,8 +363,6 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('Ingest', async (...params) => {
-      console.debug('Handling Ingest job:', params);
-
       try {
         await this.db('cases').update({
           last_harvard_crawl: this.db.raw('now()')
@@ -402,7 +400,7 @@ class Jeeves extends Service {
     });
 
     this.worker.register('ScanCourtListener', async (...params) => {
-      console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
+      // console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
       /* try {
         const dockets = await this.courtlistener.query('search_docket').select('*').limit(5);
         console.debug('POSTGRES DOCKETS:', dockets.data);
@@ -623,14 +621,14 @@ class Jeeves extends Service {
         console.debug('[INGEST] Found uningested case:', unknown.title);
         if (!unknown || !unknown.harvard_case_law_pdf) return;
 
-        this.worker.addJob({
+        /* this.worker.addJob({
           type: 'Ingest',
           params: [
             unknown.harvard_case_law_pdf,
             `stores/harvard/${unknown.harvard_case_law_id}.pdf`,
             { id: unknown.id }
           ]
-        });
+        }); */
 
         this.worker.addJob({
           type: 'ScanCourtListener',
