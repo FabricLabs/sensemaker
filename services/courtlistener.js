@@ -92,6 +92,10 @@ class CourtListener extends Service {
     return documents;
   }
 
+  async streamRecapDocuments (handler) {
+    return this.db('search_recapdocument').stream(handler);
+  }
+
   async query (table) {
     return this.db(table);
   }
@@ -166,6 +170,17 @@ class CourtListener extends Service {
     return clusters;
   }
 
+  async syncRecapDocuments () {
+    this.streamRecapDocuments((document) => {
+      this.emit('document', {
+        type: 'RECAP_DOCUMENT',
+        content: document
+      });
+    });
+
+    return documents;
+  }
+
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
 
@@ -182,23 +197,14 @@ class CourtListener extends Service {
     // await this.syncOpinionClusters();
 
     // PACER / RECAP Documents
-    // TODO: this should be a stream
-    const documents = await this.sampleRecapDocuments();
-
-    for (let i = 0; i < documents.length; i++) {
-      const document = documents[i];
-      this.emit('document', {
-        type: 'RECAP_DOCUMENT',
-        content: document
-      });
-    }
+    await this.syncRecapDocuments();
 
     // EMIT SYNC EVENT
     this.emit('sync', {
       type: 'Sync',
       state: {
         content: {
-          courts: courts,
+          // courts: courts,
           // people: people,
           // opinions: opinions,
           // documents: documents

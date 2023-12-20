@@ -437,6 +437,14 @@ class Jeeves extends Service {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
     });
 
+    this.courtlistener.on('error', (...error) => {
+      console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
+    });
+
+    this.courtlistener.on('warning', (...warning) => {
+      console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
+    });
+
     this.courtlistener.on('message', (message) => {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
     });
