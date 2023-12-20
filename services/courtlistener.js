@@ -36,6 +36,11 @@ class CourtListener extends Service {
     return dockets;
   }
 
+  async enumeratePeople () {
+    const people = await this.db('people_db_person').select();
+    return people;
+  }
+
   async query (table) {
     return this.db(table);
   }
@@ -64,8 +69,14 @@ class CourtListener extends Service {
 
     for (let i = 0; i < courts.length; i++) {
       const court = courts[i];
-      console.debug('emitting court:', court);
       this.emit('court', court);
+    }
+
+    const people = await this.enumeratePeople();
+
+    for (let i = 0; i < people.length; i++) {
+      const person = people[i];
+      this.emit('person', person);
     }
   }
 

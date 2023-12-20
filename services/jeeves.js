@@ -438,7 +438,6 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('court', async (court) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', 'Court:', court);
       const actor = new Actor({ name: court.full_name });
       const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
 
@@ -451,6 +450,26 @@ class Jeeves extends Service {
           name: court.full_name,
           short_name: court.short_name,
           citation_string: court.citation_string
+        });
+      }
+    });
+
+    this.courtlistener.on('person', async (person) => {
+      const target = await this.db('people').where({ courtlistener_id: person.id }).first();
+
+      if (!target) {
+        await this.db('people').insert({
+          courtlistener_id: person.id,
+          name_first: person.name_first,
+          name_middle: person.name_middle,
+          name_last: person.name_last,
+          name_suffix: person.name_suffix,
+          date_of_birth: person.date_dob,
+          date_of_death: person.date_dod,
+          birth_city: person.dob_city,
+          birth_state: person.dob_state,
+          death_city: person.dod_city,
+          death_state: person.dod_state
         });
       }
     });
