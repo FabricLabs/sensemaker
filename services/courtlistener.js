@@ -40,8 +40,8 @@ class CourtListener extends Service {
 
   async enumerateRecapDocuments () {
     this.emit('debug', 'Enumerating RECAP documents...');
-    const documents = await this.paginateRecapDocuments();
-    return documents.documents;
+    const documents = await this.db('search_recapdocument').select();
+    return documents;
   }
 
   async enumeratePeople () {
@@ -50,9 +50,9 @@ class CourtListener extends Service {
     return people;
   }
 
-  async enumerateOpinions () {
+  async sampleOpinions () {
     this.emit('debug', 'Enumerating opinions...');
-    const opinions = await this.db('search_opinioncluster').select().limit(1000);
+    const opinions = await this.db('search_opinioncluster').select().orderBy('RAND()').limit(256);
     return opinions;
   }
 
@@ -78,6 +78,11 @@ class CourtListener extends Service {
       total: count[0].count,
       documents: documents
     };
+  }
+
+  async sampleRecapDocuments (limit = 256) {
+    const documents = await this.db('search_recapdocument').select().orderBy('RAND()').limit(limit);
+    return documents
   }
 
   async query (table) {
@@ -127,7 +132,7 @@ class CourtListener extends Service {
 
     // Opinions
     // TODO: this should be a stream
-    const opinions = await this.enumerateOpinions();
+    const opinions = await this.sampleOpinions();
 
     for (let i = 0; i < opinions.length; i++) {
       const opinion = opinions[i];
@@ -136,7 +141,7 @@ class CourtListener extends Service {
 
     // PACER / RECAP Documents
     // TODO: this should be a stream
-    const documents = await this.enumerateRecapDocuments();
+    const documents = await this.sampleRecapDocuments();
 
     for (let i = 0; i < documents.length; i++) {
       const document = documents[i];
