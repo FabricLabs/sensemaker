@@ -483,11 +483,11 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('opinioncluster', async (cluster) => {
-      const target = await this.db('opinions').where({ courtlistener_id: cluster.id }).first();
+      const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
 
       if (!target) {
         await this.db('opinions').insert({
-          courtlistener_id: cluster.id,
+          courtlistener_cluster_id: cluster.id,
           scdb_id: (cluster.scdb_id) ? cluster.scdb_id : null,
           date_created: cluster.date_created,
           date_modified: cluster.date_modified,
@@ -524,6 +524,30 @@ class Jeeves extends Service {
 
     this.courtlistener.on('opinion', async (opinion) => {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[OPINION]', opinion);
+      const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
+
+      if (!target) {
+        await this.db('opinions').insert({
+          sha1: opinion.sha1,
+          date_created: opinion.date_created,
+          date_modified: opinion.date_modified,
+          courtlistener_id: opinion.id,
+          courtlistener_cluster_id: opinion.cluster_id,
+          courtlistener_download_url: opinion.download_url,
+          courtlistener_local_path: opinion.local_path,
+          plain_text: opinion.plain_text,
+          html: opinion.html,
+          html_lawbox: opinion.html_lawbox,
+          html_with_citations: opinion.html_with_citations,
+          extracted_by_ocr: opinion.extracted_by_ocr,
+          per_curiam: opinion.per_curiam,
+          page_count: opinion.page_count,
+          author_str: opinion.author_str,
+          joined_by_str: opinion.joined_by_str,
+          xml_harvard: opinion.xml_harvard,
+          html_anon_2020: opinion.html_anon_2020
+        });
+      }
     });
 
     this.courtlistener.on('person', async (person) => {
