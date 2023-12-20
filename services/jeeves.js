@@ -437,6 +437,10 @@ class Jeeves extends Service {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', debug);
     });
 
+    this.courtlistener.on('document', (document) => {
+      console.debug('GOT COURTLISTENER DOCUMENT:', document);
+    });
+
     this.courtlistener.on('court', async (court) => {
       const actor = new Actor({ name: court.full_name });
       const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
@@ -450,6 +454,46 @@ class Jeeves extends Service {
           name: court.full_name,
           short_name: court.short_name,
           citation_string: court.citation_string
+        });
+      }
+    });
+
+    this.courtlistener.on('opinion', async (opinion) => {
+      const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
+
+      if (!target) {
+        await this.db('opinions').insert({
+          courtlistener_id: opinion.id,
+          scdb_id: opinion.scdb_id,
+          date_created: opinion.date_created,
+          date_modified: opinion.date_modified,
+          date_filed: opinion.date_filed,
+          judges: opinion.judges,
+          case_name: opinion.case_name,
+          case_name_short: opinion.case_short,
+          case_name_full: opinion.case_name_full,
+          scdb_decision_direction: opinion.scdb_decision_direction,
+          scdb_votes_majority: opinion.scdb_votes_majority,
+          scdb_votes_minority: opinion.scdb_votes_minority,
+          source: opinion.source,
+          procedural_history: opinion.procedural_history,
+          attorneys: opinion.attorneys,
+          nature_of_suit: opinion.nature_of_suit,
+          posture: opinion.posture,
+          syllabus: opinion.syllabus,
+          precedential_status: opinion.precedential_status,
+          date_blocked: opinion.date_blocked,
+          blocked: opinion.blocked,
+          courtlistener_docket_id: opinion.docket_id,
+          date_filed_is_approximate: opinion.date_filed_is_approximate,
+          correction: opinion.correction,
+          cross_reference: opinion.cross_reference,
+          disposition: opinion.disposition,
+          filepath_json_harvard: opinion.filepath_json_harvard,
+          headnotes: opinion.headnotes,
+          history: opinion.history,
+          other_dates: opinion.other_dates,
+          summary: opinion.summary
         });
       }
     });

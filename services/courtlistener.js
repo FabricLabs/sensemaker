@@ -36,9 +36,19 @@ class CourtListener extends Service {
     return dockets;
   }
 
+  async enumerateRecapDocuments () {
+    const documents = await this.paginateRecapDocuments();
+    return documents;
+  }
+
   async enumeratePeople () {
     const people = await this.db('people_db_person').select();
     return people;
+  }
+
+  async enumerateOpinions () {
+    const opinions = await this.db('search_opinioncluster').select();
+    return opinions;
   }
 
   async paginateDockets (page = 0, limit = 100) {
@@ -101,6 +111,23 @@ class CourtListener extends Service {
     for (let i = 0; i < people.length; i++) {
       const person = people[i];
       this.emit('person', person);
+    }
+
+    const opinions = await this.enumerateOpinions();
+
+    for (let i = 0; i < opinions.length; i++) {
+      const opinion = opinions[i];
+      this.emit('opinion', opinion);
+    }
+
+    const documents = await this.enumerateRecapDocuments();
+
+    for (let i = 0; i < documents.length; i++) {
+      const document = documents[i];
+      this.emit('document', {
+        type: 'RECAP_DOCUMENT',
+        content: document
+      });
     }
   }
 
