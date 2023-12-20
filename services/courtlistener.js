@@ -27,26 +27,31 @@ class CourtListener extends Service {
   }
 
   async enumerateCourts () {
+    this.emit('debug', 'Enumerating courts...');
     const courts = await this.db('search_court').select();
     return courts;
   }
 
   async enumerateDockets () {
+    this.emit('debug', 'Enumerating dockets...');
     const dockets = await this.db('search_docket').select();
     return dockets;
   }
 
   async enumerateRecapDocuments () {
+    this.emit('debug', 'Enumerating RECAP documents...');
     const documents = await this.paginateRecapDocuments();
-    return documents;
+    return documents.documents;
   }
 
   async enumeratePeople () {
+    this.emit('debug', 'Enumerating people...');
     const people = await this.db('people_db_person').select();
     return people;
   }
 
   async enumerateOpinions () {
+    this.emit('debug', 'Enumerating opinions...');
     const opinions = await this.db('search_opinioncluster').select();
     return opinions;
   }
