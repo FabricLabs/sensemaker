@@ -50,9 +50,15 @@ class CourtListener extends Service {
     return people;
   }
 
-  async sampleOpinions () {
-    this.emit('debug', 'Enumerating opinions...');
+  async sampleOpinionClusters () {
+    this.emit('debug', 'Sampling opinion clusters...');
     const opinions = await this.db('search_opinioncluster').select().orderByRaw('RANDOM()').limit(256);
+    return opinions;
+  }
+
+  async sampleOpinions () {
+    this.emit('debug', 'Sampling opinions...');
+    const opinions = await this.db('search_opinion').select().orderByRaw('RANDOM()').limit(256);
     return opinions;
   }
 
@@ -81,8 +87,9 @@ class CourtListener extends Service {
   }
 
   async sampleRecapDocuments (limit = 256) {
+    this.emit('debug', 'Sampling RECAP documents...');
     const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
-    return documents
+    return documents;
   }
 
   async query (table) {
@@ -95,7 +102,8 @@ class CourtListener extends Service {
     const citationCount = await this.db('search_citation').count();
     const personCount = await this.db('people_db_person').count();
     const attorneyCount = await this.db('people_db_attorney').count();
-    const opinionCount = await this.db('search_opinioncluster').count();
+    const opinionClusterCount = await this.db('search_opinioncluster').count();
+    const opinionCount = await this.db('search_opinion').count();
     const partyCount = await this.db('people_db_party').count();
 
     return {
@@ -104,6 +112,7 @@ class CourtListener extends Service {
       citations: citationCount,
       persons: personCount,
       attorneys: attorneyCount,
+      opinionClusters: opinionClusterCount,
       opinions: opinionCount,
       parties: partyCount
     };
@@ -137,6 +146,15 @@ class CourtListener extends Service {
     for (let i = 0; i < opinions.length; i++) {
       const opinion = opinions[i];
       this.emit('opinion', opinion);
+    }
+
+    // Opinion Clusters
+    // TODO: this should be a stream
+    const clusters = await this.sampleOpinionClusters();
+
+    for (let i = 0; i < clusters.length; i++) {
+      const cluster = clusters[i];
+      this.emit('opinioncluster', cluster);
     }
 
     // PACER / RECAP Documents
