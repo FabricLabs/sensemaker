@@ -442,8 +442,11 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('document', async (actor) => {
+      console.debug('[DOCUMENT]', 'Received document:', actor);
+
       const document = actor.content;
       const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
+
       if (!target) {
         console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
         await this.db('documents').insert({
