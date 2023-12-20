@@ -28,6 +28,19 @@ class CourtListener extends Service {
         connectionTimeoutMillis: 5000
       }
     });
+
+    this._state = {
+      content: {
+        status: 'INITIALIZED',
+        counts: {
+          cases: 0,
+          citations: 0,
+          opinions: 0
+        }
+      }
+    };
+
+    return this;
   }
 
   async enumerateCourts () {
@@ -112,6 +125,10 @@ class CourtListener extends Service {
   }
 
   async getCounts () {
+    // Tracking
+    const now = Date.now();
+
+    // TODO: these should be async streams
     const docketCount = await this.db('search_docket').count();
     const courtCount = await this.db('search_court').count();
     const citationCount = await this.db('search_citation').count();
@@ -121,6 +138,11 @@ class CourtListener extends Service {
     const opinionCount = await this.db('search_opinion').count();
     const partyCount = await this.db('people_db_party').count();
 
+    // Tracking
+    const end = Date.now();
+    this.emit('debug', 'Counted in', end - now, 'ms.');
+
+    // Return counts
     return {
       dockets: docketCount[0].count,
       courts: courtCount[0].count,
@@ -233,9 +255,14 @@ class CourtListener extends Service {
 
     this.getCounts().then((counts) => {
       this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+      this._state.content.counts = Object.assign(this._state.content.counts, counts);
     });
 
-    await this.sync();
+    // Begin syncing
+    this.sync().then(() => {
+      this._state.content.status = 'SYNCED';
+      this.emit('ready');
+    });
 
     return this;
   }
