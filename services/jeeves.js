@@ -439,7 +439,7 @@ class Jeeves extends Service {
 
     this.courtlistener.on('court', async (court) => {
       console.debug('[JEEVES]', '[COURTLISTENER]', 'Court:', court);
-      const target = await this.db('courts').find({ courtlistener_id: court.id }).first();
+      const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
       console.debug('got target:', target);
       if (!target) {
         await this.db('courts').insert({
