@@ -118,10 +118,7 @@ class CourtListener extends Service {
     };
   }
 
-  async sync () {
-    console.log('[COURTLISTENER]', 'Syncing...');
-
-    // Courts
+  async syncCourts () {
     // TODO: this should be a stream
     const courts = await this.enumerateCourts();
 
@@ -130,7 +127,10 @@ class CourtListener extends Service {
       this.emit('court', court);
     }
 
-    // People
+    return courts;
+  }
+
+  async syncPeople () {
     // TODO: this should be a stream
     const people = await this.enumeratePeople();
 
@@ -139,7 +139,10 @@ class CourtListener extends Service {
       this.emit('person', person);
     }
 
-    // Opinions
+    return people;
+  }
+
+  async syncOpinions () {
     // TODO: this should be a stream
     const opinions = await this.sampleOpinions();
 
@@ -148,7 +151,10 @@ class CourtListener extends Service {
       this.emit('opinion', opinion);
     }
 
-    // Opinion Clusters
+    return opinions;
+  }
+
+  async syncOpinionClusters () {
     // TODO: this should be a stream
     const clusters = await this.sampleOpinionClusters();
 
@@ -156,6 +162,24 @@ class CourtListener extends Service {
       const cluster = clusters[i];
       this.emit('opinioncluster', cluster);
     }
+
+    return clusters;
+  }
+
+  async sync () {
+    console.log('[COURTLISTENER]', 'Syncing...');
+
+    // Courts
+    // await this.syncCourts();
+
+    // People
+    // await this.syncPeople();
+
+    // Opinions
+    // await this.syncOpinions();
+
+    // Opinion Clusters
+    // await this.syncOpinionClusters();
 
     // PACER / RECAP Documents
     // TODO: this should be a stream
