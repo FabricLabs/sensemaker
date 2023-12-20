@@ -177,8 +177,6 @@ class CourtListener extends Service {
         content: document
       });
     });
-
-    return documents;
   }
 
   async sync () {
