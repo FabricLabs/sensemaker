@@ -93,7 +93,14 @@ class CourtListener extends Service {
   }
 
   async streamRecapDocuments (handler) {
-    return this.db('search_recapdocument').stream(handler);
+    const stream = this.db('search_recapdocument').stream((stream) => {
+      stream.on('data', handler);
+      stream.on('end', () => {
+        this.emit('debug', 'Stream ended.');
+      });
+    });
+
+    return stream;
   }
 
   async query (table) {
