@@ -360,6 +360,8 @@ class Jeeves extends Service {
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
+    // Primary Worker
+    // Job Types
     this.worker.register('Ingest', async (...params) => {
       console.debug('Handling Ingest job:', params);
 
@@ -409,19 +411,45 @@ class Jeeves extends Service {
       } */
     });
 
+    // Worker Events
     this.worker.on('debug', (...debug) => console.debug(...debug));
     this.worker.on('log', (...log) => console.log(...log));
     this.worker.on('warning', (...warning) => console.warn(...warning));
     this.worker.on('error', (...error) => console.error(...error));
 
+    // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
 
+    // OpenAI Events
     this.openai.on('error', this._handleOpenAIError.bind(this));
     this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
     this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
     this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
+
+    // CourtListener Events
+    this.courtlistener.on('debug', (...debug) => {
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
+    });
+
+    this.courtlistener.on('message', (message) => {
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', debug);
+    });
+
+    this.courtlistener.on('court', async (court) => {
+      console.debug('[JEEVES]', '[COURTLISTENER]', 'Court:', court);
+      const target = await this.db('courts').find({ courtlistener_id: court.id }).first();
+      console.debug('got target:', target);
+      if (!target) {
+        await this.db('courts').insert({
+          courtlistener_id: court.id,
+          founded_date: court.start_date,
+          name: court.full_name,
+          short_name: court.short_name
+        });
+      }
+    });
 
     // Retrieval Augmentation Generator (RAG)
     this.rag = new Agent(this.settings);
@@ -436,6 +464,7 @@ class Jeeves extends Service {
     // Internal Services
     await this.openai.start();
     // await this.matrix.start();
+    await this.courtlistener.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {

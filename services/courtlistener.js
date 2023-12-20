@@ -28,7 +28,6 @@ class CourtListener extends Service {
 
   async enumerateCourts () {
     const courts = await this.db('search_court').select();
-    console.debug('courts:', Object.keys(courts));
     return courts;
   }
 
@@ -62,7 +61,12 @@ class CourtListener extends Service {
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
     const courts = await this.enumerateCourts();
-    console.debug('courts:', courts.slice(0, 10));
+
+    for (let i = 0; i < courts.length; i++) {
+      const court = courts[i];
+      console.debug('emitting court:', court);
+      this.emit('court', court);
+    }
   }
 
   async start () {
