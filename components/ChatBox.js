@@ -20,7 +20,7 @@ const {
   TextArea,
   Popup,
   Dropdown,
-  Image  
+  Image
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -47,10 +47,10 @@ class ChatBox extends React.Component {
       groupedMessages: this.groupMessages(props.chat.messages),
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
-      previousFlag: false,  
+      previousFlag: false,
       connectionProblem: false,
       copiedStatus: {},
-      windowWidth: window.innerWidth, 
+      windowWidth: window.innerWidth,
       windowHeight: window.innerHeight
     };
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -70,13 +70,13 @@ class ChatBox extends React.Component {
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
 
-    if ((prevProps.chat.messages.length !== messages.length) || 
+    if ((prevProps.chat.messages.length !== messages.length) ||
         (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)  ) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
 
       if (messages && messages.length > 0){
-        const lastMessage = messages[messages.length - 1];   
+        const lastMessage = messages[messages.length - 1];
 
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
@@ -118,16 +118,16 @@ class ChatBox extends React.Component {
 
   handleChangeDropdown = (e, { name, value }) => {
     if(value!=''){
-      this.setState({ query: value });     
-      const { message } = this.props.chat;  
+      this.setState({ query: value });
+      const { message } = this.props.chat;
       let dataToSubmit;
-      
+
       this.setState({ loading: true });
 
         dataToSubmit = {
           conversation_id: message?.conversation,
-          content: value,        
-        }  
+          content: value,
+        }
 
       // dispatch submitMessage
       this.props.submitMessage(
@@ -148,7 +148,7 @@ class ChatBox extends React.Component {
 
       // Clear the input after sending the message
       this.setState({ query: '' });
-   }         
+   }
   }
 
   handleClick = (e) => {
@@ -160,11 +160,11 @@ class ChatBox extends React.Component {
   handleSubmit = (event) => {
     event.preventDefault();
     const { query } = this.state;
-    const { message } = this.props.chat;  
+    const { message } = this.props.chat;
     const {caseTitle , caseID} = this.props;
     let dataToSubmit;
-    
-    this.setState({ loading: true, previousFlag: true });    
+
+    this.setState({ loading: true, previousFlag: true });
 
     if(caseID){
       dataToSubmit = {
@@ -177,14 +177,14 @@ class ChatBox extends React.Component {
         dataToSubmit = {
           conversation_id: message?.conversation,
           content: query,
-        }        
+        }
       }else{
         dataToSubmit = {
           conversation_id: this.props.conversationID,
           content: query,
-        }        
+        }
       }
-    }   
+    }
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit
@@ -206,7 +206,7 @@ class ChatBox extends React.Component {
   }
 
   handleModalClose = () => {
-    this.setState({ 
+    this.setState({
       modalOpen: false,
       thumbsDownClicked : false,
       thumbsUpClicked : false,
@@ -216,43 +216,43 @@ class ChatBox extends React.Component {
       feedbackSent: false,
       feedbackFail: false,
       connectionProblem: false
-         
+
     });
   };
 
   handleModalUp = (messageID) => {
-    
-    this.setState({ 
-      modalOpen: true, 
-      thumbsDownClicked : false, 
+
+    this.setState({
+      modalOpen: true,
+      thumbsDownClicked : false,
       thumbsUpClicked : true,
       ratingMessageID: messageID,
     });
   };
 
   handleModalDown = (messageID) => {
-    this.setState({ 
-      modalOpen: true, 
-      thumbsDownClicked : true, 
+    this.setState({
+      modalOpen: true,
+      thumbsDownClicked : true,
       thumbsUpClicked : false,
       ratingMessageID: messageID,
     });
   };
 
   handleRatingChange = (rate) => {
-    this.setState({ rating: rate });    
+    this.setState({ rating: rate });
   };
 
   handleCommentChange = (e, { value }) => {
     this.setState({ comment: value });
   }
-  
+
   handleModalSend = async () => {
     const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
     const messageId = this.state.ratingMessageID;
     const state = store.getState();
     const token = state.auth.token;
-  
+
     const dataToSend = {
       rating,
       comment,
@@ -260,9 +260,9 @@ class ChatBox extends React.Component {
       thumbsDownClicked,
       message: messageId,
     };
-  
+
     this.setState({ modalLoading: true });
-  
+
     const fetchPromise = fetch("/reviews", {
       method: "POST",
       headers: {
@@ -294,9 +294,9 @@ class ChatBox extends React.Component {
           feedbackFail: true,
           modalLoading: false,
           connectionProblem: false,
-        });        
+        });
         console.error("API request failed with status:", response.status);
-      }    
+      }
 
     } catch (error) {
       if (error.message === "Fetch timed out") {
@@ -306,18 +306,18 @@ class ChatBox extends React.Component {
           modalLoading: false,
           connectionProblem: true,
         });
-      } 
+      }
     }
   };
 
   renderFeedbakcModal = () =>{
 
-    const { 
-      modalOpen, 
-      rating, 
-      feedbackSent, 
-      feedbackFail, 
-      connectionProblem, 
+    const {
+      modalOpen,
+      rating,
+      feedbackSent,
+      feedbackFail,
+      connectionProblem,
       modalLoading,
     } = this.state;
 
@@ -520,11 +520,11 @@ class ChatBox extends React.Component {
 
   render () {
 
-    const { messages } = this.props.chat;    
-    
-    const { 
-      loading, 
-      generatingReponse, 
+    const { messages } = this.props.chat;
+
+    const {
+      loading,
+      generatingReponse,
       reGeneratingReponse,
       query,
       windowWidth,
@@ -547,30 +547,30 @@ class ChatBox extends React.Component {
       alignItems: 'left',
       transition: 'height 1s',
       width: '100%',
-      
+
     }
 
     if (messages.length > 0) {
       chatContainerStyle = {
-        ...chatContainerStyle, 
-        height: '98%', 
+        ...chatContainerStyle,
+        height: '98%',
         justifyContent: (windowHeight < 1200 || windowHeight < windowWidth) ? 'space-between' : ''
       };
     }
 
     const messagesContainerStyle ={
       overflowY: 'auto',
-      transition: 'height 1s',  
-      marginBottom: '0'    
+      transition: 'height 1s',
+      marginBottom: '0'
     }
     const announcementStyle =  {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      marginBottom: 0   
+      marginBottom: 0
     };
 
-    const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
+    const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'}
 
     return (
       <section style={chatContainerStyle} >
@@ -663,7 +663,7 @@ class ChatBox extends React.Component {
                     <div className='answer-controls' text>
                       {/* Answers Navigation Controls */}
                       {group.messages.length > 1 && (
-                        <div className="answers-navigation">
+                        <div className="answer-navigation">
                           <Button
                             icon='angle left'
                             size='tiny'
