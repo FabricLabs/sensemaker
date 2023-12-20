@@ -41,6 +41,18 @@ class CourtListener extends Service {
     return people;
   }
 
+  async paginateDockets (page = 0, limit = 100) {
+    const dockets = await this.db('search_docket').select().limit(limit).offset(page * limit);
+    const count = await this.db('search_docket').count();
+
+    return {
+      page: page,
+      limit: limit,
+      total: count,
+      dockets: dockets
+    };
+  }
+
   async query (table) {
     return this.db(table);
   }

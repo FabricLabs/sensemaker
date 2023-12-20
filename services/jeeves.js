@@ -580,6 +580,11 @@ class Jeeves extends Service {
       // - create help conversation
     });
 
+    this.http._addRoute('GET', '/dockets', async (req, res) => {
+      const dockets = await this.courtlistener.paginateDockets();
+      res.send(dockets);
+    });
+
     this.http._addRoute('POST', '/users', async (req, res) => {
       const { username, password } = req.body;
 
