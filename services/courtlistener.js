@@ -112,6 +112,10 @@ class CourtListener extends Service {
   }
 
   async getCounts () {
+    // Tracking
+    const now = Date.now();
+
+    // TODO: these should be async streams
     const docketCount = await this.db('search_docket').count();
     const courtCount = await this.db('search_court').count();
     const citationCount = await this.db('search_citation').count();
@@ -121,6 +125,11 @@ class CourtListener extends Service {
     const opinionCount = await this.db('search_opinion').count();
     const partyCount = await this.db('people_db_party').count();
 
+    // Tracking
+    const end = Date.now();
+    this.emit('debug', 'Counted in', end - now, 'ms.');
+
+    // Return counts
     return {
       dockets: docketCount[0].count,
       courts: courtCount[0].count,
