@@ -482,44 +482,48 @@ class Jeeves extends Service {
       }
     });
 
-    this.courtlistener.on('opinion', async (opinion) => {
-      const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
+    this.courtlistener.on('opinioncluster', async (cluster) => {
+      const target = await this.db('opinions').where({ courtlistener_id: cluster.id }).first();
 
       if (!target) {
         await this.db('opinions').insert({
-          courtlistener_id: opinion.id,
-          scdb_id: (opinion.scdb_id) ? opinion.scdb_id : null,
-          date_created: opinion.date_created,
-          date_modified: opinion.date_modified,
-          date_filed: opinion.date_filed,
-          judges: opinion.judges,
-          case_name: opinion.case_name,
-          case_name_short: opinion.case_short,
-          case_name_full: opinion.case_name_full,
-          scdb_decision_direction: opinion.scdb_decision_direction,
-          scdb_votes_majority: opinion.scdb_votes_majority,
-          scdb_votes_minority: opinion.scdb_votes_minority,
-          source: opinion.source,
-          procedural_history: opinion.procedural_history,
-          attorneys: opinion.attorneys,
-          nature_of_suit: opinion.nature_of_suit,
-          posture: opinion.posture,
-          syllabus: opinion.syllabus,
-          precedential_status: opinion.precedential_status,
-          date_blocked: opinion.date_blocked,
-          blocked: opinion.blocked,
-          courtlistener_docket_id: opinion.docket_id,
-          date_filed_is_approximate: opinion.date_filed_is_approximate,
-          correction: opinion.correction,
-          cross_reference: opinion.cross_reference,
-          disposition: opinion.disposition,
-          filepath_json_harvard: opinion.filepath_json_harvard,
-          headnotes: opinion.headnotes,
-          history: opinion.history,
-          other_dates: opinion.other_dates,
-          summary: opinion.summary
+          courtlistener_id: cluster.id,
+          scdb_id: (cluster.scdb_id) ? cluster.scdb_id : null,
+          date_created: cluster.date_created,
+          date_modified: cluster.date_modified,
+          date_filed: cluster.date_filed,
+          judges: cluster.judges,
+          case_name: cluster.case_name,
+          case_name_short: cluster.case_short,
+          case_name_full: cluster.case_name_full,
+          scdb_decision_direction: cluster.scdb_decision_direction,
+          scdb_votes_majority: cluster.scdb_votes_majority,
+          scdb_votes_minority: cluster.scdb_votes_minority,
+          source: cluster.source,
+          procedural_history: cluster.procedural_history,
+          attorneys: cluster.attorneys,
+          nature_of_suit: cluster.nature_of_suit,
+          posture: cluster.posture,
+          syllabus: cluster.syllabus,
+          precedential_status: cluster.precedential_status,
+          date_blocked: cluster.date_blocked,
+          blocked: cluster.blocked,
+          courtlistener_docket_id: cluster.docket_id,
+          date_filed_is_approximate: cluster.date_filed_is_approximate,
+          correction: cluster.correction,
+          cross_reference: cluster.cross_reference,
+          disposition: cluster.disposition,
+          filepath_json_harvard: cluster.filepath_json_harvard,
+          headnotes: cluster.headnotes,
+          history: cluster.history,
+          other_dates: cluster.other_dates,
+          summary: cluster.summary
         });
       }
+    });
+
+    this.courtlistener.on('opinion', async (opinion) => {
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[OPINION]', opinion);
     });
 
     this.courtlistener.on('person', async (person) => {
