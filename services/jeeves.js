@@ -441,7 +441,8 @@ class Jeeves extends Service {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
     });
 
-    this.courtlistener.on('document', async (document) => {
+    this.courtlistener.on('document', async (actor) => {
+      const document = actor.content;
       const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
       if (!target) {
         console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
