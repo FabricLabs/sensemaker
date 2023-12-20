@@ -455,11 +455,11 @@ class Jeeves extends Service {
           pacer_doc_id: document.pacer_doc_id,
           is_available: document.is_available,
           is_sealed: document.is_sealed,
-          courtcourtlistener_id: document.id,
-          courtcourtlistener_thumbnail: document.thumbnail,
-          courtcourtlistener_filepath_local: document.filepath_local,
-          courtcourtlistener_filepath_ia: document.filepath_ia,
-          courtcourtlistener_ocr_status: document.ocr_status,
+          courtlistener_id: document.id,
+          courtlistener_thumbnail: document.thumbnail,
+          courtlistener_filepath_local: document.filepath_local,
+          courtlistener_filepath_ia: document.filepath_ia,
+          courtlistener_ocr_status: document.ocr_status,
           plain_text: document.plain_text
         });
       }
@@ -523,7 +523,6 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('opinion', async (opinion) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[OPINION]', opinion);
       const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
 
       if (!target) {
