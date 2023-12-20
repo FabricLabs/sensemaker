@@ -1,18 +1,25 @@
 'use strict';
 
-const {
-  fetchFromAPI
-} = require('../actions/apiActions');
-
 const input = require('../settings/local');
-
 const CourtListener = require('../services/courtlistener'); 
 
 async function main (settings = {}) {
   const courtlistener = new CourtListener(settings);
 
-  courtlistener.on('debug', (message) => {
-    console.debug('[JEEVES:COURTLISTENER]', message);
+  courtlistener.on('debug', (...debug) => {
+    console.debug('[JEEVES:COURTLISTENER]', '[DEBUG]', ...debug);
+  });
+
+  courtlistener.on('error', (...message) => {
+    console.error('[JEEVES:COURTLISTENER]', '[ERROR]', ...message);
+  });
+
+  courtlistener.on('warning', (...warning) => {
+    console.warn('[JEEVES:COURTLISTENER]', '[WARNING]', ...warning);
+  });
+
+  courtlistener.on('message', (message) => {
+    console.log('[JEEVES:COURTLISTENER]', '[MESSAGE]', message);
   });
 
   await courtlistener.start();

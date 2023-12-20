@@ -26,8 +26,14 @@ class CourtListener extends Service {
     });
   }
 
+  async enumerateCourts () {
+    const courts = await this.query('search_court').select();
+    console.debug('courts:', Object.keys(courts));
+    return courts;
+  }
+
   async enumerateDockets () {
-    const dockets = await this.db('search_docket').select();
+    const dockets = await this.query('search_docket').select();
     return dockets;
   }
 
@@ -39,6 +45,7 @@ class CourtListener extends Service {
     const docketCount = await this.db('search_docket').count();
     const courtCount = await this.db('search_court').count();
     const citationCount = await this.db('search_citation').count();
+    const personCount = await this.db('people_db_person').count();
     const attorneyCount = await this.db('people_db_attorney').count();
     const partyCount = await this.db('people_db_party').count();
 
@@ -46,6 +53,7 @@ class CourtListener extends Service {
       dockets: docketCount,
       courts: courtCount,
       citations: citationCount,
+      persons: personCount,
       attorneys: attorneyCount,
       parties: partyCount
     };
@@ -53,7 +61,7 @@ class CourtListener extends Service {
 
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
-    const courts = await this.db('search_court').select();
+    const courts = await this.enumerateCourts();
     console.debug('courts:', courts.slice(0, 10));
   }
 
