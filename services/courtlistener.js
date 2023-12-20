@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  PER_PAGE_LIMIT
+} = require('../constants');
+
 const knex = require('knex');
 
 const Actor = require('@fabric/core/types/actor');
@@ -52,17 +56,23 @@ class CourtListener extends Service {
 
   async sampleOpinionClusters () {
     this.emit('debug', 'Sampling opinion clusters...');
-    const opinions = await this.db('search_opinioncluster').select().orderByRaw('RANDOM()').limit(256);
+    const opinions = await this.db('search_opinioncluster').select().orderByRaw('RANDOM()').limit(PER_PAGE_LIMIT);
     return opinions;
   }
 
   async sampleOpinions () {
     this.emit('debug', 'Sampling opinions...');
-    const opinions = await this.db('search_opinion').select().orderByRaw('RANDOM()').limit(256);
+    const opinions = await this.db('search_opinion').select().orderByRaw('RANDOM()').limit(PER_PAGE_LIMIT);
     return opinions;
   }
 
-  async paginateDockets (page = 0, limit = 100) {
+  async sampleRecapDocuments (limit = PER_PAGE_LIMIT) {
+    this.emit('debug', 'Sampling RECAP documents...');
+    const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
+    return documents;
+  }
+
+  async paginateDockets (page = 0, limit = PER_PAGE_LIMIT) {
     const dockets = await this.db('search_docket').select().limit(limit).offset(page * limit);
     const count = await this.db('search_docket').count();
 
@@ -74,7 +84,7 @@ class CourtListener extends Service {
     };
   }
 
-  async paginateRecapDocuments (page = 0, limit = 100) {
+  async paginateRecapDocuments (page = 0, limit = PER_PAGE_LIMIT) {
     const documents = await this.db('search_recapdocument').select().limit(limit).offset(page * limit);
     const count = await this.db('search_recapdocument').count();
 
@@ -84,12 +94,6 @@ class CourtListener extends Service {
       total: count[0].count,
       documents: documents
     };
-  }
-
-  async sampleRecapDocuments (limit = 256) {
-    this.emit('debug', 'Sampling RECAP documents...');
-    const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
-    return documents;
   }
 
   async streamRecapDocuments (handler) {
@@ -178,12 +182,18 @@ class CourtListener extends Service {
   }
 
   async syncRecapDocuments () {
-    this.streamRecapDocuments((document) => {
+    // TODO: this should be a stream
+    const documents = await this.sampleRecapDocuments();
+
+    for (let i = 0; i < documents.length; i++) {
+      const document = documents[i];
       this.emit('document', {
-        type: 'RECAP_DOCUMENT',
+        type: 'Document',
         content: document
       });
-    });
+    }
+
+    return documents;
   }
 
   async sync () {
