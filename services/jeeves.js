@@ -362,6 +362,15 @@ class Jeeves extends Service {
 
     // Primary Worker
     // Job Types
+    this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
+      const target = await this.db('documents')
+        .where('last_recap_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)'))
+        .whereNotNull('pacer_doc_id')
+        .first();
+
+      console.debug('Found uningested document:', target);
+    });
+
     this.worker.register('Ingest', async (...params) => {
       try {
         await this.db('cases').update({
@@ -636,6 +645,11 @@ class Jeeves extends Service {
             { query: unknown.title }
           ]
         });
+
+        this.worker.addJob({
+          type: 'DownloadMissingRECAPDocument',
+          params: []
+        });
       }, this.settings.crawlDelay);
     }
 
@@ -735,7 +749,6 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
-
 
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
