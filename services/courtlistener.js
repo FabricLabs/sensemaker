@@ -28,6 +28,19 @@ class CourtListener extends Service {
         connectionTimeoutMillis: 5000
       }
     });
+
+    this._state = {
+      content: {
+        status: 'INITIALIZED',
+        counts: {
+          cases: 0,
+          citations: 0,
+          opinions: 0
+        }
+      }
+    };
+
+    return this;
   }
 
   async enumerateCourts () {
@@ -242,9 +255,14 @@ class CourtListener extends Service {
 
     this.getCounts().then((counts) => {
       this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+      this._state.content.counts = Object.assign(this._state.content.counts, counts);
     });
 
-    await this.sync();
+    // Begin syncing
+    this.sync().then(() => {
+      this._state.content.status = 'SYNCED';
+      this.emit('ready');
+    });
 
     return this;
   }
