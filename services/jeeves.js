@@ -441,8 +441,28 @@ class Jeeves extends Service {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
     });
 
-    this.courtlistener.on('document', (document) => {
-      console.debug('GOT COURTLISTENER DOCUMENT:', document);
+    this.courtlistener.on('document', async (document) => {
+      const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
+      if (!target) {
+        console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
+        await this.db('documents').insert({
+          sha1: document.sha1,
+          file_size: document.file_size,
+          page_count: document.page_count,
+          date_created: document.date_created,
+          date_modified: document.date_modified,
+          date_uploaded: document.date_upload,
+          pacer_doc_id: document.pacer_doc_id,
+          is_available: document.is_available,
+          is_sealed: document.is_sealed,
+          courtcourtlistener_id: document.id,
+          courtcourtlistener_thumbnail: document.thumbnail,
+          courtcourtlistener_filepath_local: document.filepath_local,
+          courtcourtlistener_filepath_ia: document.filepath_ia,
+          courtcourtlistener_ocr_status: document.ocr_status,
+          plain_text: document.plain_text
+        });
+      }
     });
 
     this.courtlistener.on('court', async (court) => {
