@@ -364,7 +364,7 @@ class Jeeves extends Service {
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
       const target = await this.db('documents')
-        .where('last_recap_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)'))
+        .where('last_recap_crawl', '<', this.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)'))
         .whereNotNull('pacer_doc_id')
         .first();
 
