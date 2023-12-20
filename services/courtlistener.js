@@ -107,14 +107,14 @@ class CourtListener extends Service {
     const partyCount = await this.db('people_db_party').count();
 
     return {
-      dockets: docketCount,
-      courts: courtCount,
-      citations: citationCount,
-      persons: personCount,
-      attorneys: attorneyCount,
-      opinionClusters: opinionClusterCount,
-      opinions: opinionCount,
-      parties: partyCount
+      dockets: docketCount[0].count,
+      courts: courtCount[0].count,
+      citations: citationCount[0].count,
+      persons: personCount[0].count,
+      attorneys: attorneyCount[0].count,
+      opinionClusters: opinionClusterCount[0].count,
+      opinions: opinionCount[0].count,
+      parties: partyCount[0].count
     };
   }
 
