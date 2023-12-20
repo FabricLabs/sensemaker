@@ -64,6 +64,7 @@ const regenAnswer = (message) => {
     const token = getState().auth.token;
 
     message.temperature = 'extreme';
+    message.regenerate = true;
 
     try {
       const response = await fetch('/messages/:id', {

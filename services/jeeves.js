@@ -1143,18 +1143,29 @@ class Jeeves extends Service {
 
     // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
     this.http._addRoute('PATCH', '/messages/:id', async (req, res, next) => {
-      let isNew = false;
       let subject = null;
       let {
         case_id,
         conversation_id,
         content,
-        messageID
+        messageID,
+        regenerate
       } = req.body;
+
+      if (!regenerate) console.warn('[JEEVES]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');
 
       if (case_id) {
         subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
       }
+
+      const old_message = await this.db('messages').where({ id: req.params.id }).first();
+      console.debug('old message:', old_message);
+
+      if (!old_message) return res.error('No such message.');
+      // TODO: update message graph; consider requests, responses
+      // flag message as regenerated
+      // point to new answer
+      // confirm acceptance of new answer
 
       try {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
