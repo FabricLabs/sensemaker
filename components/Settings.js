@@ -43,7 +43,6 @@ class JeevesUserSettings extends React.Component {
   render() {
 
     const { username, email } = this.state;
-    console.log("las props", this.props);
 
     return (
       <jeeves-user-settings class='fade-in'>
@@ -65,7 +64,7 @@ class JeevesUserSettings extends React.Component {
                 <Table.Row className='settings-row'>
                   <Table.Cell><Header as='h4'>Username:</Header></Table.Cell>
                   <Table.Cell><p>{username}</p></Table.Cell>
-                  <Table.Cell textAlign='center'><Button primary >Change</Button></Table.Cell>
+                  <Table.Cell textAlign='center' onClick={this.toggleUserModal}><Button primary >Change</Button></Table.Cell>
                 </Table.Row>
                 <Table.Row className='settings-row'>
                   <Table.Cell><Header as='h4'>Email:</Header></Table.Cell>
@@ -111,9 +110,10 @@ class JeevesUserSettings extends React.Component {
           logout={this.props.logout}
         />
         <UserChangeModal
+          oldUsername={username}
           token={this.props.auth.token}
           open={this.state.isUserModalOpen}
-          togglePasswordModal={this.toggleUserModal}
+          toggleUserModal={this.toggleUserModal}
           logout={this.props.logout}
         />
 

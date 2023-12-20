@@ -108,7 +108,12 @@ const {
 
     if (allValid) {
       try {
-        this.setState({passwordModalLoading:true});
+        this.setState({
+          passwordModalLoading:true,
+          passwordUpdated: false,
+          passwordUpdateError: false,
+          invalidOldPassword: false,
+          passwordModalLoading: false});
 
         const response = await Promise.race([timeoutPromise, fetchPromise]);
         if (!response.ok) {
@@ -119,12 +124,7 @@ const {
         //forced delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        this.setState({
-          passwordUpdated: true,
-          passwordUpdateError: false,
-          invalidOldPassword: false,
-          passwordModalLoading: false
-        });
+        this.setState({passwordUpdated: true});
 
         setTimeout(() => {
           this.props.logout();
@@ -132,18 +132,14 @@ const {
         }, 2500)
 
       } catch (error) {
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        //handling the errors to show the different messages
         if (error.message == 'Invalid password.') {
-          this.setState({
-            passwordUpdated: false,
-            passwordUpdateError: false,
-            invalidOldPassword: true,
-          });
+          this.setState({invalidOldPassword: true});
         } else {
-          this.setState({
-            passwordUpdated: false,
-            passwordUpdateError: true,
-            invalidOldPassword: false,
-          });
+          this.setState({passwordUpdateError: true});
         }
         this.setState({passwordModalLoading:false});
         console.log(error.message);
@@ -194,6 +190,7 @@ const {
               type='password'
               name='oldPassword'
               onChange={this.handleInputChange}
+              autoComplete="new-password"
               required
             />
             <Form.Input
@@ -203,6 +200,7 @@ const {
               value={newPassword}
               error={passwordError}
               onChange={this.handleInputChange}
+              autoComplete="new-password"
               required
             />
             <Form.Input
@@ -212,6 +210,7 @@ const {
               value={confirmNewPassword}
               error={passwordNotMatchError}
               onChange={this.handleInputChange}
+              autoComplete="new-password"
               required
             />
 

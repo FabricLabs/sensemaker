@@ -3,101 +3,108 @@
 const React = require('react');
 
 const {
-    Button,
-    Header,
-    Segment,
-    Table,
-    Form,
-    Modal,
-    Message
-  } = require('semantic-ui-react');
+  Button,
+  Header,
+  Segment,
+  Table,
+  Form,
+  Modal,
+  Message,
+  Label
+} = require('semantic-ui-react');
 
-  class UserChangeModal extends React.Component {
+class UserChangeModal extends React.Component {
 
-    constructor(props) {
-      super(props);
+  constructor(props) {
+    super(props);
 
-      this.state = {
-        token: this.props.token,
-        open: this.props.open,
-        newUsername: '',
-        isNewUserValid: true,
-        allValid: true,
-        usernameExists: false, //state to check if the new username already exists
-        userUpdated: false,
-        userUpdateError: false,
-        userModalLoading: false,
-        password: '',
-        invalidPassword: false
-      };
-    }
-
-  userModalOpen = () =>{
-    this.setState({
-        newUser: '',
-        isNewUserValid: true,
-        allValid: true,
-        usernameExists: false,
-        userUpdated: false,
-        userUpdateError: false,
-        userModalLoading: false,
-        password: '',
-        invalidPassword: false
-      });
+    this.state = {
+      newUsername: '',
+      isNewUserValid: false,
+      allValid: true,
+      usernameExists: false, //state to check if the new username already exists
+      userUpdated: false,
+      userUpdateError: false,
+      userModalLoading: false,
+      password: '',
+      invalidPassword: false,
+      usernameError: ''
+    };
   }
-  userModalClose = () =>{
+
+  userModalOpen = () => {
+    this.setState({
+      newUsername: '',
+      isNewUserValid: false,
+      allValid: true,
+      usernameExists: false,
+      userUpdated: false,
+      userUpdateError: false,
+      userModalLoading: false,
+      password: '',
+      invalidPassword: false,
+      usernameError: ''
+    });
+  }
+  userModalClose = () => {
     this.props.toggleUserModal();
     this.setState({
-        newUser: '',
-        isNewUserValid: true,
-        allValid: true,
-        usernameExists: false,
-        userUpdated: false,
-        userUpdateError: false,
-        userModalLoading: false,
-        password: '',
-        invalidPassword: false
-      });
+      newUsername: '',
+      isNewUserValid: false,
+      allValid: true,
+      usernameExists: false,
+      userUpdated: false,
+      userUpdateError: false,
+      userModalLoading: false,
+      password: '',
+      invalidPassword: false,
+      usernameError: ''
+    });
   }
 
 
   // Handle input change
   handleInputChange = (e, { name, value }) => {
     this.setState({ [name]: value });
-  };
-
-  validateNewPassword = (newPassword) => {
-    const hasEightCharacters = newPassword.length >= 8;
-    const hasCapitalLetter = /[A-Z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
-
-    return hasEightCharacters && hasCapitalLetter && hasNumber;
-  };
-
-  validatePasswordsMatch = () =>{
-    return (this.state.newPassword && this.state.confirmNewPassword && this.state.newPassword === this.state.confirmNewPassword);
-  }
-
-  handleInputChange = (e, { name, value }) => {
-    this.setState({ [name]: value }, () => {
-        const isValidPassword = this.validateNewPassword(this.state.newPassword);
-        const isMatched = this.validatePasswordsMatch();
-        const isAllValid = (isValidPassword && isMatched && this.state.newPassword !== this.state.oldPassword);
-        this.setState({ isNewPasswordValid: isValidPassword, passwordMatch: isMatched, allValid: isAllValid });
-    });
+    if (name === 'newUsername') {
+      // Check for special characters and whitespace
+      if ((/[^a-zA-Z0-9]/.test(value))) {
+        this.setState({
+          isNewUserValid: false,
+          usernameError: 'Username must not contain special characters or spaces.',
+        });
+      } else {
+        if (value.length < 3) {
+          this.setState({
+            isNewUserValid: false,
+            usernameError: 'Username must have at least 3 characters.',
+          });
+        } else {
+          if (value === this.props.oldUsername) {
+            this.setState({
+              isNewUserValid: false,
+              usernameError: 'The new username must be different to the actual one',
+            });
+          } else {
+            this.setState({ isNewUserValid: true });
+          }
+        }
+      }
+    }
   };
 
   // Handle form submission
-  handlePasswordSubmit = async () => {
-    const { oldPassword, newPassword, allValid } = this.state;
+  handleUserSubmit = async () => {
+    const { newUsername, isNewUserValid, password } = this.state;
+    const { token } = this.props;
 
-    const fetchPromise = fetch('/passwordChange', {
+    const fetchPromise = fetch('/usernameChange', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.state.token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ oldPassword, newPassword }),
+      body: JSON.stringify({ newUsername, password }),
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -106,9 +113,15 @@ const {
       }, 15000);
     });
 
-    if (allValid) {
+    if (isNewUserValid) {
       try {
-        this.setState({passwordModalLoading:true});
+        this.setState({
+          userModalLoading: true,
+          userUpdated: false,
+          userUpdateError: false,
+          invalidPassword: false,
+          usernameExists: false
+        });
 
         const response = await Promise.race([timeoutPromise, fetchPromise]);
         if (!response.ok) {
@@ -120,10 +133,7 @@ const {
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         this.setState({
-          passwordUpdated: true,
-          passwordUpdateError: false,
-          invalidOldPassword: false,
-          passwordModalLoading: false
+          userUpdated: true,
         });
 
         setTimeout(() => {
@@ -132,20 +142,19 @@ const {
         }, 2500)
 
       } catch (error) {
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        //handling the errors state to show the different messages
         if (error.message == 'Invalid password.') {
-          this.setState({
-            passwordUpdated: false,
-            passwordUpdateError: false,
-            invalidOldPassword: true,
-          });
+          this.setState({ invalidPassword: true });
         } else {
-          this.setState({
-            passwordUpdated: false,
-            passwordUpdateError: true,
-            invalidOldPassword: false,
-          });
+          if (error.message == 'Username already exists.') {
+            this.setState({ usernameExists: true });
+          } else {
+            this.setState({ userUpdateError: true, });
+          }
         }
-        this.setState({passwordModalLoading:false});
+        this.setState({ userModalLoading: false });
         console.log(error.message);
       }
     }
@@ -154,108 +163,94 @@ const {
 
   render() {
 
-      const {
-          newUsername,
-          isNewUserValid,
-          allValid,
-          usernameExists,
-          userUpdated,
-          userUpdateError,
-          userModalLoading,
-          password,
-          validPassword,
-      } = this.state;
+    const {
+      newUsername,
+      isNewUserValid,
+      usernameExists,
+      userUpdated,
+      userUpdateError,
+      userModalLoading,
+      password,
+      invalidPassword,
+      usernameError,
+    } = this.state;
 
-      const { open } = this.props;
+    const { open, oldUsername } = this.props;
 
 
     // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
-    const usernameError = (isNewUserValid || !newUsername) ? null : {
-      content: 'The username must be at least 6 characters',
+    const userError = (isNewUserValid || !newUsername) ? null : {
+      content: usernameError,
       pointing: 'above',
     };
-
-    const usernameExistsError = (!usernameExists) ? null : {
-      content: 'Username already Exists, please select another one.',
-      pointing: 'above',
-    };
-
-    //shows the errors related to the username
-    const popUpError = usernameError ? usernameError : usernameExistsError;
-
-    const invalidPassowrdError = (!usernameExists) ? null : {
-      content: 'Username already Exists, please select another one.',
-      pointing: 'above',
-    };
-
 
     return (
       <Modal
         open={open}
         onOpen={this.userModalOpen}
         onClose={this.userModalClose}
-        size='medium'
+        size='tiny'
       >
         <Modal.Header>Change Your Username</Modal.Header>
         <Modal.Content>
-          <Form onSubmit={this.handlePasswordSubmit}>
+          <Header as='h4'> Actual Username: <Label>{oldUsername}</Label></Header>
+          <Form onSubmit={this.handleUserSubmit}>
             <Form.Input
               label='New Username'
               name='newUsername'
               value={newUsername}
-              error={popUpError}
+              error={userError}
               onChange={this.handleInputChange}
               required
+              autocomplete="off"
             />
             <Form.Input
               label='Introduce your Password'
               type='password'
               name='password'
               value={password}
-              error={invalidPassowrdError}
               onChange={this.handleInputChange}
               required
+              autoComplete="new-password"
             />
-{/*
-            {(allValid && newPassword && !invalidOldPassword) && (
-              <p style={{ color: 'green' }}>Both passwords are correct</p>
-            )}
-            {(oldPassword && newPassword && oldPassword === newPassword) && (
-              <p style={{ color: 'red' }}>Old password and new password must be different</p>
-            )} */}
             <Modal.Actions>
-              {/* {invalidOldPassword && (
+              {invalidPassword && (
                 <Message negative>
                   <Message.Header>Password error</Message.Header>
-                  <p>Your old password is not correct, please try again.</p>
+                  <p>Your password is not correct, please try again.</p>
                 </Message>
               )}
-              {passwordUpdated && (
+              {usernameExists && (
+                <Message negative>
+                  <Message.Header>Username already Exists</Message.Header>
+                  <p>this username is already in use, please try another one.</p>
+                </Message>
+              )}
+              {userUpdated && (
                 <Message positive>
-                  <Message.Header>Password updated</Message.Header>
-                  <p>Your new password has been changed successfully. Use your new password to log in.</p>
+                  <Message.Header>Username updated</Message.Header>
+                  <p>Your new username has been changed successfully. Use your new password to log in.</p>
                 </Message>
               )}
-              {passwordUpdateError && (
+              {userUpdateError && (
                 <Message negative>
                   <Message.Header>Internal server error</Message.Header>
                   <p>Please try again later.</p>
                 </Message>
-              )} */}
-
+              )}
               <Button
                 content='Close'
                 icon='close'
                 size='small'
                 secondary
-                onClick={this.userModalClose}/>
+                onClick={this.userModalClose} />
               <Button
                 content='Submit'
                 icon='checkmark'
                 loading={userModalLoading}
                 type='submit' size='small'
                 primary
-                disabled={!allValid} />
+                disabled={!isNewUserValid} />
             </Modal.Actions>
           </Form>
         </Modal.Content>
