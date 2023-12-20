@@ -429,12 +429,16 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // CourtListener Events
+    this.courtlistener.on('sync', (sync) => {
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
+    });
+
     this.courtlistener.on('debug', (...debug) => {
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
     });
 
     this.courtlistener.on('message', (message) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', debug);
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
     });
 
     this.courtlistener.on('document', (document) => {

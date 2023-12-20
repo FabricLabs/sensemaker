@@ -99,6 +99,9 @@ class CourtListener extends Service {
 
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
+
+    // Courts
+    // TODO: this should be a stream
     const courts = await this.enumerateCourts();
 
     for (let i = 0; i < courts.length; i++) {
@@ -106,6 +109,8 @@ class CourtListener extends Service {
       this.emit('court', court);
     }
 
+    // People
+    // TODO: this should be a stream
     const people = await this.enumeratePeople();
 
     for (let i = 0; i < people.length; i++) {
@@ -113,6 +118,8 @@ class CourtListener extends Service {
       this.emit('person', person);
     }
 
+    // Opinions
+    // TODO: this should be a stream
     const opinions = await this.enumerateOpinions();
 
     for (let i = 0; i < opinions.length; i++) {
@@ -120,6 +127,8 @@ class CourtListener extends Service {
       this.emit('opinion', opinion);
     }
 
+    // PACER / RECAP Documents
+    // TODO: this should be a stream
     const documents = await this.enumerateRecapDocuments();
 
     for (let i = 0; i < documents.length; i++) {
@@ -129,6 +138,19 @@ class CourtListener extends Service {
         content: document
       });
     }
+
+    // EMIT SYNC EVENT
+    this.emit('sync', {
+      type: 'Sync',
+      state: {
+        content: {
+          courts: courts,
+          // people: people,
+          // opinions: opinions,
+          // documents: documents
+        }
+      }
+    });
   }
 
   async start () {
