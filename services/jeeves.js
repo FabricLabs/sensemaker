@@ -367,6 +367,7 @@ class Jeeves extends Service {
         .where(function () {
           this.where('last_recap_crawl', '<', self.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_recap_crawl');
         })
+        .where('pdf_acquired', false)
         .whereNotNull('pacer_doc_id')
         .whereNotNull('courtlistener_filepath_local')
         .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
@@ -673,6 +674,8 @@ class Jeeves extends Service {
           type: 'DownloadMissingRECAPDocument',
           params: []
         });
+
+        this.courtlistener.syncSamples();
       }, this.settings.crawlDelay);
     }
 

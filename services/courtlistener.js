@@ -218,6 +218,12 @@ class CourtListener extends Service {
     return documents;
   }
 
+  async syncSamples () {
+    return Promise.all([
+      this.syncRecapDocuments()
+    ]);
+  }
+
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
 
