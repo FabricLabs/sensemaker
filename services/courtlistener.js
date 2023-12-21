@@ -128,34 +128,39 @@ class CourtListener extends Service {
   }
 
   async getCounts () {
-    // Tracking
-    const now = Date.now();
+    try {
+      // Tracking
+      const now = Date.now();
 
-    // TODO: these should be async streams
-    const docketCount = await this.db('search_docket').count();
-    const courtCount = await this.db('search_court').count();
-    const citationCount = await this.db('search_citation').count();
-    const personCount = await this.db('people_db_person').count();
-    const attorneyCount = await this.db('people_db_attorney').count();
-    const opinionClusterCount = await this.db('search_opinioncluster').count();
-    const opinionCount = await this.db('search_opinion').count();
-    const partyCount = await this.db('people_db_party').count();
+      // TODO: these should be async streams
+      const docketCount = await this.db('search_docket').count();
+      const courtCount = await this.db('search_court').count();
+      const citationCount = await this.db('search_citation').count();
+      const personCount = await this.db('people_db_person').count();
+      const attorneyCount = await this.db('people_db_attorney').count();
+      const opinionClusterCount = await this.db('search_opinioncluster').count();
+      const opinionCount = await this.db('search_opinion').count();
+      const partyCount = await this.db('people_db_party').count();
 
-    // Tracking
-    const end = Date.now();
-    this.emit('debug', 'Counted in', end - now, 'ms.');
+      // Tracking
+      const end = Date.now();
+      this.emit('debug', 'Counted in', end - now, 'ms.');
 
-    // Return counts
-    return {
-      dockets: docketCount[0].count,
-      courts: courtCount[0].count,
-      citations: citationCount[0].count,
-      persons: personCount[0].count,
-      attorneys: attorneyCount[0].count,
-      opinionClusters: opinionClusterCount[0].count,
-      opinions: opinionCount[0].count,
-      parties: partyCount[0].count
-    };
+      // Return counts
+      return {
+        dockets: docketCount[0].count,
+        courts: courtCount[0].count,
+        citations: citationCount[0].count,
+        persons: personCount[0].count,
+        attorneys: attorneyCount[0].count,
+        opinionClusters: opinionClusterCount[0].count,
+        opinions: opinionCount[0].count,
+        parties: partyCount[0].count
+      };
+    } catch (exception) {
+      this.emit('error', exception);
+      return null;
+    }
   }
 
   async syncCourts () {
@@ -243,7 +248,7 @@ class CourtListener extends Service {
     // await this.syncOpinionClusters();
 
     // PACER / RECAP Documents
-    await this.syncRecapDocuments();
+    // await this.syncRecapDocuments();
 
     // EMIT SYNC EVENT
     this.emit('sync', {
