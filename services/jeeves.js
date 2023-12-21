@@ -378,7 +378,7 @@ class Jeeves extends Service {
       const sql = query.toString();
       console.debug('SQL:', sql);
 
-      target = await query();
+      target = await query;
 
       if (!target) {
         console.debug('No target found!');
