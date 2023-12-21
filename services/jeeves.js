@@ -365,7 +365,7 @@ class Jeeves extends Service {
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
       const query = this.db('documents')
         .where(function () {
-          this.where('pdf_acquired', false).orWhereNull('pdf_acquired');
+          this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
         })
         .whereNotNull('courtlistener_filepath_ia')
         .where(self.db.raw('LENGTH(courtlistener_filepath_ia)'), '>', 0)
