@@ -81,7 +81,10 @@ class CourtListener extends Service {
 
   async sampleRecapDocuments (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling RECAP documents...');
+    const now = Date.now();
     const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
+    const end = Date.now();
+    this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
     return documents;
   }
 
