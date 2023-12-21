@@ -712,7 +712,7 @@ class ChatBox extends React.Component {
           })}
         </Feed>
         <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '98%' }}>
-          <Form.Field>
+          <div>
             <TextareaAutosize
               id='primary-query'
               name='query'
@@ -728,9 +728,9 @@ class ChatBox extends React.Component {
                   this.handleSubmit(e);
                 }
               }}
-              style={{ resize: 'none', minHeight: '0', maxHeight: '8em', fontSize:'1rem'}}
+              /* style={{ resize: 'none', minHeight: '0', maxHeight: '8em', fontSize:'1rem'}} */
             />
-          </Form.Field>
+          </div>
         </Form>
         {(messages.length === 0 && homePage) && (
           <container>

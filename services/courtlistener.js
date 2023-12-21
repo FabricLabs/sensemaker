@@ -241,6 +241,7 @@ class CourtListener extends Service {
 
   async sync () {
     console.log('[COURTLISTENER]', 'Syncing...');
+    this._state.content.status = 'SYNCING';
 
     // Courts
     // await this.syncCourts();
@@ -270,6 +271,7 @@ class CourtListener extends Service {
     this.getCounts().then((counts) => {
       this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
       this._state.content.counts = Object.assign(this._state.content.counts, counts);
+      this.commit();
     });
 
     // Begin syncing
