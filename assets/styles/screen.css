@@ -320,14 +320,10 @@ fabric-motd {
 
 /* ChatBox CSS */
 
-.prompt-bar{
-  resize: none;
-  width: 100%;
-  border-radius: 4px;
-
-}
-.prompt-bar:focus{
-  /* border: 2px red !important; */
+/* this is to change the TextAreaAutosize style*/
+.ui.form textarea:not([rows]).prompt-bar{
+  font-size: 1rem;
+  min-height: 0;
 }
 .thumbs-group{
   float: right;

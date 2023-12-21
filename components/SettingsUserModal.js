@@ -20,10 +20,9 @@ class UserChangeModal extends React.Component {
 
     this.state = {
       newUsername: '',
-      isNewUserValid: false,
-      allValid: true,
+      isNewUserValid: false,     
       usernameExists: false, //state to check if the new username already exists
-      userUpdated: false,
+      userUpdated: false, 
       userUpdateError: false,
       userModalLoading: false,
       password: '',
@@ -35,8 +34,7 @@ class UserChangeModal extends React.Component {
   userModalOpen = () => {
     this.setState({
       newUsername: '',
-      isNewUserValid: false,
-      allValid: true,
+      isNewUserValid: false,      
       usernameExists: false,
       userUpdated: false,
       userUpdateError: false,
@@ -50,8 +48,7 @@ class UserChangeModal extends React.Component {
     this.props.toggleUserModal();
     this.setState({
       newUsername: '',
-      isNewUserValid: false,
-      allValid: true,
+      isNewUserValid: false,    
       usernameExists: false,
       userUpdated: false,
       userUpdateError: false,
@@ -115,6 +112,7 @@ class UserChangeModal extends React.Component {
 
     if (isNewUserValid) {
       try {
+        //these are the different states to show different messages according to the update username api answers
         this.setState({
           userModalLoading: true,
           userUpdated: false,
