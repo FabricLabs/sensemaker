@@ -677,14 +677,16 @@ class Jeeves extends Service {
             { query: unknown.title }
           ]
         });
+      }, this.settings.crawlDelay);
 
+      this._slowcrawler = setInterval(async () => {
         this.worker.addJob({
           type: 'DownloadMissingRECAPDocument',
           params: []
         });
 
         this.courtlistener.syncSamples();
-      }, this.settings.crawlDelay);
+      }, 60000);
     }
 
     // Internal APIs
