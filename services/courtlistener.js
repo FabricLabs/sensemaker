@@ -36,6 +36,9 @@ class CourtListener extends Service {
     this._state = {
       content: {
         status: 'INITIALIZED',
+        collections: {
+          documents: {}
+        },
         counts: {
           cases: 0,
           citations: 0,
@@ -257,14 +260,7 @@ class CourtListener extends Service {
     // EMIT SYNC EVENT
     this.emit('sync', {
       type: 'Sync',
-      state: {
-        content: {
-          // courts: courts,
-          // people: people,
-          // opinions: opinions,
-          // documents: documents
-        }
-      }
+      state: this.state
     });
   }
 
