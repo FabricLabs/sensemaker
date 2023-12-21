@@ -369,7 +369,7 @@ class Jeeves extends Service {
         })
         .whereNotNull('pacer_doc_id')
         .whereNotNull('courtlistener_filepath_local')
-        .where('LENGTH(courtlistener_filepath_local)', '>', 0)
+        .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
         .first();
 
       console.debug('Found uningested document:', target);
