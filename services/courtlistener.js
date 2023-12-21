@@ -26,6 +26,10 @@ class CourtListener extends Service {
         password: this.settings.password,
         database: this.settings.database,
         connectionTimeoutMillis: 5000
+      },
+      pool: {
+        min: 0,
+        max: 32
       }
     });
 
