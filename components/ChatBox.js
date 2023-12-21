@@ -20,7 +20,7 @@ const {
   TextArea,
   Popup,
   Dropdown,
-  Image  
+  Image
 } = require('semantic-ui-react');
 
 const {Rating} = require('react-simple-star-rating');
@@ -44,13 +44,13 @@ class ChatBox extends React.Component {
       feedbackFail : false,
       generatingReponse: false,
       reGeneratingReponse: false,
-      groupedMessages: this.groupMessages(props.chat.messages),
+      groupedMessages: (props.chat.messages.length > 0)? this.groupMessages(props.chat.messages):[], 
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
-      previousFlag: false,  
+      previousFlag: false,
       connectionProblem: false,
       copiedStatus: {},
-      windowWidth: window.innerWidth, 
+      windowWidth: window.innerWidth,
       windowHeight: window.innerHeight
     };
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -70,13 +70,15 @@ class ChatBox extends React.Component {
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
 
-    if ((prevProps.chat.messages.length !== messages.length) || 
+    // we go this way if we have more messages than before or if the content of the last message
+    // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer    
+    if ((prevProps.chat.messages.length !== messages.length) ||
         (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)  ) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
 
       if (messages && messages.length > 0){
-        const lastMessage = messages[messages.length - 1];   
+        const lastMessage = messages[messages.length - 1];
 
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
@@ -118,16 +120,16 @@ class ChatBox extends React.Component {
 
   handleChangeDropdown = (e, { name, value }) => {
     if(value!=''){
-      this.setState({ query: value });     
-      const { message } = this.props.chat;  
+      this.setState({ query: value });
+      const { message } = this.props.chat;
       let dataToSubmit;
-      
+
       this.setState({ loading: true });
 
         dataToSubmit = {
           conversation_id: message?.conversation,
-          content: value,        
-        }  
+          content: value,
+        }
 
       // dispatch submitMessage
       this.props.submitMessage(
@@ -148,7 +150,7 @@ class ChatBox extends React.Component {
 
       // Clear the input after sending the message
       this.setState({ query: '' });
-   }         
+   }
   }
 
   handleClick = (e) => {
@@ -160,12 +162,13 @@ class ChatBox extends React.Component {
   handleSubmit = (event) => {
     event.preventDefault();
     const { query } = this.state;
-    const { message } = this.props.chat;  
+    const { message } = this.props.chat;
     const {caseTitle , caseID} = this.props;
     let dataToSubmit;
-    
-    this.setState({ loading: true, previousFlag: true });    
 
+    this.setState({ loading: true, previousFlag: true });
+
+    //if we have caseID its beacause we are on a specific case chat
     if(caseID){
       dataToSubmit = {
         conversation_id: message?.conversation,
@@ -173,18 +176,20 @@ class ChatBox extends React.Component {
         case: caseTitle+'_'+caseID,
       }
     }else{
+      //if we don't have previous chat it means this is a new conversation
       if(!this.props.previousChat){
         dataToSubmit = {
           conversation_id: message?.conversation,
           content: query,
-        }        
+        }
       }else{
+        //else, we are in a previous one and we already have a conversationID for this
         dataToSubmit = {
           conversation_id: this.props.conversationID,
           content: query,
-        }        
+        }
       }
-    }   
+    }
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit
@@ -206,7 +211,7 @@ class ChatBox extends React.Component {
   }
 
   handleModalClose = () => {
-    this.setState({ 
+    this.setState({
       modalOpen: false,
       thumbsDownClicked : false,
       thumbsUpClicked : false,
@@ -216,43 +221,44 @@ class ChatBox extends React.Component {
       feedbackSent: false,
       feedbackFail: false,
       connectionProblem: false
-         
+
     });
   };
 
   handleModalUp = (messageID) => {
-    
-    this.setState({ 
-      modalOpen: true, 
-      thumbsDownClicked : false, 
+
+    this.setState({
+      modalOpen: true,
+      thumbsDownClicked : false,
       thumbsUpClicked : true,
       ratingMessageID: messageID,
     });
   };
 
   handleModalDown = (messageID) => {
-    this.setState({ 
-      modalOpen: true, 
-      thumbsDownClicked : true, 
+    this.setState({
+      modalOpen: true,
+      thumbsDownClicked : true,
       thumbsUpClicked : false,
       ratingMessageID: messageID,
     });
   };
 
   handleRatingChange = (rate) => {
-    this.setState({ rating: rate });    
+    this.setState({ rating: rate });
   };
 
   handleCommentChange = (e, { value }) => {
     this.setState({ comment: value });
   }
-  
+
+  //this is the feedback modal send function
   handleModalSend = async () => {
     const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
     const messageId = this.state.ratingMessageID;
     const state = store.getState();
     const token = state.auth.token;
-  
+
     const dataToSend = {
       rating,
       comment,
@@ -260,9 +266,9 @@ class ChatBox extends React.Component {
       thumbsDownClicked,
       message: messageId,
     };
-  
+
     this.setState({ modalLoading: true });
-  
+
     const fetchPromise = fetch("/reviews", {
       method: "POST",
       headers: {
@@ -276,28 +282,25 @@ class ChatBox extends React.Component {
         reject(new Error("Fetch timed out"));
       }, 15000);
     });
+    
     try {
+      this.setState({
+        feedbackSent: false,
+        feedbackFail: false,
+        connectionProblem: false,
+      });
+      //the promise race runs the fetch against a 15 seconds timeout, to handle possible connection problems
+      //if we dont have an answer from fetch after 15 seconds it cuts off
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (response.ok) {
         //forced delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        this.setState({
-          feedbackSent: true,
-          feedbackFail: false,
-          modalLoading: false,
-          connectionProblem: false,
-        });
+        this.setState({ feedbackSent: true, modalLoading: false, });
       } else {
-        this.setState({
-          feedbackSent: false,
-          feedbackFail: true,
-          modalLoading: false,
-          connectionProblem: false,
-        });        
+        this.setState({ feedbackFail: true, modalLoading: false, });
         console.error("API request failed with status:", response.status);
-      }    
-
+      }
     } catch (error) {
       if (error.message === "Fetch timed out") {
         this.setState({
@@ -306,18 +309,18 @@ class ChatBox extends React.Component {
           modalLoading: false,
           connectionProblem: true,
         });
-      } 
+      }
     }
   };
 
   renderFeedbakcModal = () =>{
-
-    const { 
-      modalOpen, 
-      rating, 
-      feedbackSent, 
-      feedbackFail, 
-      connectionProblem, 
+    //TODO: take this modal into a separate component with all its related functions and logic
+    const {
+      modalOpen,
+      rating,
+      feedbackSent,
+      feedbackFail,
+      connectionProblem,
       modalLoading,
     } = this.state;
 
@@ -389,19 +392,20 @@ class ChatBox extends React.Component {
   }
 
   regenerateAnswer = (event) => {
-    const { messages } = this.props.chat;
 
     event.preventDefault();
-    const { query } = this.state;
+    const { groupedMessages } = this.state;
     const { message } = this.props.chat;
     const { caseTitle, caseID } = this.props;
     let dataToSubmit;
-    this.setState({ reGeneratingReponse: true });
-    this.setState({ loading: true, previousFlag: true, });
-    const messageRegen = messages[this.props.chat.messages.length - 2];
+    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
+    
+    const messageRegen = groupedMessages[groupedMessages.length-2].messages[0];
+
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
 
+    //if we have caseID its beacause we are on a specific case chat
     if (caseID) {
       dataToSubmit = {
         conversation_id: message?.conversation,
@@ -410,12 +414,14 @@ class ChatBox extends React.Component {
         messageID: messageRegen.id
       }
     } else {
+      //if we don't have previous chat it means this is a new conversation
       if (!this.props.previousChat) {
         dataToSubmit = {
           conversation_id: message?.conversation,
           content: messageRegen.content,
           messageID: messageRegen.id
         }
+      //else, we are in a previous one and we already have a conversationID for this
       } else {
         dataToSubmit = {
           conversation_id: this.props.conversationID,
@@ -444,7 +450,7 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  //function to group answers to the same question
+  // Function to group answers to the same question
   groupMessages = (messages) => {
     let groupedMessages = [];
     let currentGroup = [];
@@ -452,11 +458,20 @@ class ChatBox extends React.Component {
     messages.forEach((message, index) => {
       if (message.role === 'assistant') {
         currentGroup.push(message);
-        // If next message is not from assistant, push current group to groupedMessages
+        // If the next message is not from an assistant, push the current group to groupedMessages
         if (!messages[index + 1] || messages[index + 1].role !== 'assistant') {
+          // Find the corresponding group in the previous state
+          const prevGroup = this.state.groupedMessages.find(g => g.messages[0].id === currentGroup[0].id);
+          let activeMessageIndex = currentGroup.length - 1; // last message is active by default
+
+          // If a corresponding group is found and it has the same number of messages, retain the activeMessageIndex
+          if (prevGroup && prevGroup.messages.length === currentGroup.length) {
+            activeMessageIndex = prevGroup.activeMessageIndex;
+          }
+
           groupedMessages.push({
             messages: currentGroup,
-            activeMessageIndex: currentGroup.length - 1 // last message is active by default
+            activeMessageIndex: activeMessageIndex
           });
           currentGroup = [];
         }
@@ -467,9 +482,10 @@ class ChatBox extends React.Component {
         });
       }
     });
-    this.setState({ groupedMessages: groupedMessages })
+
     return groupedMessages;
   };
+
 
   //function to navigate through responses from same question
   navigateMessage = (groupIndex, direction) => {
@@ -520,11 +536,10 @@ class ChatBox extends React.Component {
 
   render () {
 
-    const { messages } = this.props.chat;    
-    
-    const { 
-      loading, 
-      generatingReponse, 
+    const { messages } = this.props.chat;
+    const {
+      loading,
+      generatingReponse,
       reGeneratingReponse,
       query,
       windowWidth,
@@ -541,36 +556,41 @@ class ChatBox extends React.Component {
       conversationID
     } = this.props;
 
+    //this is the style of the chat container with no messages on the chat
+    //the elements are on a flex-column but all together
     let chatContainerStyle = {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'left',
       transition: 'height 1s',
       width: '100%',
-      
     }
 
+    //when there are messages on the chat, it fits 98% of the parent height
+    //and we put normally justify-content space-between, wich pushes the prompt bar to bottom
+    //in cases where the screen is really tall (height > 1200px) and the screen is taller than wider
+    //then we dont use space-between, this makes the prompt bar sticks to the last message of the chat
     if (messages.length > 0) {
       chatContainerStyle = {
-        ...chatContainerStyle, 
-        height: '98%', 
+        ...chatContainerStyle,
+        height: '98%',
         justifyContent: (windowHeight < 1200 || windowHeight < windowWidth) ? 'space-between' : ''
       };
     }
 
     const messagesContainerStyle ={
       overflowY: 'auto',
-      transition: 'height 1s',  
-      marginBottom: '0'    
+      transition: 'height 1s',
+      marginBottom: '0'
     }
     const announcementStyle =  {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      marginBottom: 0   
+      marginBottom: 0
     };
 
-    const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'} 
+    const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'}
 
     return (
       <section style={chatContainerStyle} >
@@ -663,7 +683,7 @@ class ChatBox extends React.Component {
                     <div className='answer-controls' text>
                       {/* Answers Navigation Controls */}
                       {group.messages.length > 1 && (
-                        <div className="answers-navigation">
+                        <div className="answer-navigation">
                           <Button
                             icon='angle left'
                             size='tiny'
@@ -711,10 +731,11 @@ class ChatBox extends React.Component {
             )
           })}
         </Feed>
-        <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '98%' }}>
-          <div>
+        <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '99%' }}>
+          <Form.Input>
             <TextareaAutosize
               id='primary-query'
+              className='prompt-bar'
               name='query'
               required
               placeholder={placeholder}
@@ -722,18 +743,19 @@ class ChatBox extends React.Component {
               disabled={isSending}
               loading={isSending}
               value={query}
+              maxRows={5}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   this.handleSubmit(e);
                 }
               }}
-              /* style={{ resize: 'none', minHeight: '0', maxHeight: '8em', fontSize:'1rem'}} */
+              style={{ resize: 'none'}}
             />
-          </div>
+          </Form.Input>
         </Form>
         {(messages.length === 0 && homePage) && (
-          <container>
+          <section>
             <Header as='h4' style={{ textAlign: 'center', marginTop: '1em' }}>Chat suggestions you can try:</Header>
             <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
               <Dropdown
@@ -761,7 +783,7 @@ class ChatBox extends React.Component {
                 onChange={this.handleChangeDropdown}
               />
             </div>
-          </container>
+          </section>
         )}
 
         {this.renderFeedbakcModal()}

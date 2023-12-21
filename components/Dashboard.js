@@ -168,7 +168,7 @@ class Dashboard extends React.Component {
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-                <img src="/images/jeeves-tux.png" class="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
+                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
                 <Popup trigger={<Label color='black'>alpha</Label>}>
                   <Popup.Content>Exclusive access!</Popup.Content>
                 </Popup>
@@ -229,7 +229,7 @@ class Dashboard extends React.Component {
             <Menu.Item style={{ borderBottom: 0 }}>
               <Bridge />
               {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
-              <p style={{ marginTop: '2em' }}><small class="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
+              <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
               {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
             </Menu.Item>
           </Sidebar>
