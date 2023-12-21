@@ -372,7 +372,26 @@ class Jeeves extends Service {
         .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
         .first();
 
-      console.debug('Found uningested document:', target);
+      const url = `https://courtlistener.com/${target.courtlistener_filepath_local}`;
+      const doc = await fetch(url);
+      const blob = await doc.blob();
+      const buffer = await blob.arrayBuffer();
+      const body = Buffer.from(buffer);
+
+      try {
+        fs.writeFileSync(`stores/recap/${unknown.courtlistener_id}.pdf`, body);
+      } catch (exception) {
+        this.emit('error', `Worker could not write RECAP file: ${exception}`);
+        return;
+      }
+
+      try {
+        await this.db('documents').update({
+          pdf_acquired: true
+        }).where('courtlistener_id', unknown.courtlistener_id);
+      } catch (exception) {
+        this.emit('error', `Worker could not update database: ${params} ${exception}`);
+      }
     });
 
     this.worker.register('Ingest', async (...params) => {
