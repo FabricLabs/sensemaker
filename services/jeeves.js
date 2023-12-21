@@ -363,7 +363,7 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      const target = await this.db('documents')
+      const query = this.db('documents')
         .where(function () {
           this.where('last_recap_crawl', '<', self.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_recap_crawl');
         })
@@ -374,6 +374,11 @@ class Jeeves extends Service {
         .whereNotNull('courtlistener_filepath_local')
         .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
         .first();
+
+      const sql = query.toString();
+      console.debug('SQL:', sql);
+
+      target = await query();
 
       if (!target) {
         console.debug('No target found!');
