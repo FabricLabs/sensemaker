@@ -365,14 +365,10 @@ class Jeeves extends Service {
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
       const query = this.db('documents')
         .where(function () {
-          this.where('last_recap_crawl', '<', self.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_recap_crawl');
-        })
-        .where(function () {
           this.where('pdf_acquired', false).orWhereNull('pdf_acquired');
         })
-        .whereNotNull('pacer_doc_id')
-        .whereNotNull('courtlistener_filepath_local')
-        .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
+        .whereNotNull('courtlistener_filepath_ia')
+        .where(self.db.raw('LENGTH(courtlistener_filepath_ia)'), '>', 0)
         .first();
 
       const sql = query.toString();
@@ -385,7 +381,7 @@ class Jeeves extends Service {
         return;
       };
 
-      const url = `https://courtlistener.com/${target.courtlistener_filepath_local}`;
+      const url = `https://courtlistener.com/${target.courtlistener_filepath_ia}`;
       const doc = await fetch(url);
       const blob = await doc.blob();
       const buffer = await blob.arrayBuffer();
