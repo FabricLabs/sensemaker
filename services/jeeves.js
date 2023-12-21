@@ -379,7 +379,7 @@ class Jeeves extends Service {
       const body = Buffer.from(buffer);
 
       try {
-        fs.writeFileSync(`stores/recap/${unknown.courtlistener_id}.pdf`, body);
+        fs.writeFileSync(`stores/recap/${target.courtlistener_id}.pdf`, body);
       } catch (exception) {
         this.emit('error', `Worker could not write RECAP file: ${exception}`);
         return;
@@ -388,7 +388,7 @@ class Jeeves extends Service {
       try {
         await this.db('documents').update({
           pdf_acquired: true
-        }).where('courtlistener_id', unknown.courtlistener_id);
+        }).where('courtlistener_id', target.courtlistener_id);
       } catch (exception) {
         this.emit('error', `Worker could not update database: ${params} ${exception}`);
       }
