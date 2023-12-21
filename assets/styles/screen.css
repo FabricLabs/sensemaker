@@ -307,24 +307,29 @@ fabric-motd {
 }
 
 .case-info {
-  margin-right: 1em !important; 
+  margin-right: 1em !important;
   max-height: 40vh;
-  min-height: 40vh; 
+  min-height: 40vh;
 }
 @media (min-height: 1200px) {
   .case-info {
     max-height: 20vh;
-    min-height: 0; 
+    min-height: 0;
   }
 }
 
 /* ChatBox CSS */
 
+/* this is to change the TextAreaAutosize style*/
+.ui.form textarea:not([rows]).prompt-bar{
+  font-size: 1rem;
+  min-height: 0;
+}
 .thumbs-group{
   float: right;
   display: none;
   margin-right: 1em;
-  padding-top: 1em; 
+  padding-top: 1em;
 }
 
 .chat-feed .event:hover .controls {
@@ -332,7 +337,7 @@ fabric-motd {
 }
 
 .home-dropdowns{
-  
+
   text-align: center;
   display: flex;
   flex-direction: row;
@@ -359,6 +364,9 @@ fabric-motd {
   align-items: center;
   align-content: center;
 }
+.answer-navigation{
+  margin-top: 2px;
+}
 
 /* Settings CSS */
 .settings-user{
@@ -375,7 +383,7 @@ fabric-motd {
   justify-content: center;
   align-items: center;
   align-content: center;
-} 
+}
 
 .settings-container .ui.table {
   width: 40%;
@@ -408,7 +416,7 @@ fabric-motd {
     width: 50%;
   }
 
-  .settings-container .ui.table  .settings-row{      
+  .settings-container .ui.table  .settings-row{
       display: flex !important;
       flex-direction: row !important;
       justify-content: space-between !important;

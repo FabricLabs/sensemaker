@@ -868,6 +868,35 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/usernameChange', async (req, res, next) => {
+      const { newUsername, password } = req.body;
+
+      try {
+        const user = await this.db('users').where('id', req.user.id).first();
+        //check for the password
+        if (!user || !compareSync(password, user.password)) {
+          return res.status(401).json({ message: 'Invalid password.' });
+        }
+
+        // Check if the username already exists
+        const existingUser = await this.db('users').where('username', newUsername).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Username already exists.' });
+        }
+
+        // Update the user's username in the database
+        await this.db('users').where('id', user.id).update({
+          username: newUsername,
+        });
+
+        return res.json({
+          message: 'Username updated successfully.',
+        });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
@@ -1341,32 +1370,6 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
-      // TODO: check token
-      const request = req.body;
-
-      try {
-        await this.db('announcements').insert({
-          creator_id: req.user.id,          
-          title: (request.title) ? request.title : null, 
-          body: request.body,
-          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
-        });
-
-        return res.send({
-          type: 'announcementCreated',
-          content: {
-            message: 'Success!',
-            status: 'success'
-          }
-        });
-      } catch (exception) {
-        return res.send({
-          type: 'announcementError',
-          content: exception
-        });
-      }
-    });
-        this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
       // TODO: check token
       const request = req.body;
 
