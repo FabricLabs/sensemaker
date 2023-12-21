@@ -381,7 +381,7 @@ class Jeeves extends Service {
         return;
       };
 
-      const url = `https://courtlistener.com/${target.courtlistener_filepath_ia}`;
+      const url = target.courtlistener_filepath_ia;
       const doc = await fetch(url);
       const blob = await doc.blob();
       const buffer = await blob.arrayBuffer();
