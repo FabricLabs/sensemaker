@@ -367,11 +367,18 @@ class Jeeves extends Service {
         .where(function () {
           this.where('last_recap_crawl', '<', self.db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_recap_crawl');
         })
-        .where('pdf_acquired', false)
+        .where(function () {
+          this.where('pdf_acquired', false).orWhereNull('pdf_acquired');
+        })
         .whereNotNull('pacer_doc_id')
         .whereNotNull('courtlistener_filepath_local')
         .where(self.db.raw('LENGTH(courtlistener_filepath_local)'), '>', 0)
         .first();
+
+      if (!target) {
+        console.debug('No target found!');
+        return;
+      };
 
       const url = `https://courtlistener.com/${target.courtlistener_filepath_local}`;
       const doc = await fetch(url);
