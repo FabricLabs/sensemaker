@@ -287,7 +287,6 @@ class ChatBox extends React.Component {
       this.setState({
         feedbackSent: false,
         feedbackFail: false,
-        modalLoading: false,
         connectionProblem: false,
       });
       //the promise race runs the fetch against a 15 seconds timeout, to handle possible connection problems
@@ -297,9 +296,9 @@ class ChatBox extends React.Component {
         //forced delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        this.setState({ feedbackSent: true });
+        this.setState({ feedbackSent: true, modalLoading: false, });
       } else {
-        this.setState({ feedbackFail: true });
+        this.setState({ feedbackFail: true, modalLoading: false, });
         console.error("API request failed with status:", response.status);
       }
     } catch (error) {
@@ -393,18 +392,15 @@ class ChatBox extends React.Component {
   }
 
   regenerateAnswer = (event) => {
-    const { messages } = this.props.chat;
 
     event.preventDefault();
-    const { query, groupedMessages } = this.state;
+    const { groupedMessages } = this.state;
     const { message } = this.props.chat;
     const { caseTitle, caseID } = this.props;
     let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
     
     const messageRegen = groupedMessages[groupedMessages.length-2].messages[0];
-    console.log("mensaje a regenerar",messageRegen);
-    // const messageRegen = messages[this.props.chat.messages.length - 2];
 
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
@@ -454,7 +450,7 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  //function to group answers to the same question
+  // Function to group answers to the same question
   groupMessages = (messages) => {
     let groupedMessages = [];
     let currentGroup = [];
@@ -462,11 +458,20 @@ class ChatBox extends React.Component {
     messages.forEach((message, index) => {
       if (message.role === 'assistant') {
         currentGroup.push(message);
-        // If next message is not from assistant, push current group to groupedMessages
+        // If the next message is not from an assistant, push the current group to groupedMessages
         if (!messages[index + 1] || messages[index + 1].role !== 'assistant') {
+          // Find the corresponding group in the previous state
+          const prevGroup = this.state.groupedMessages.find(g => g.messages[0].id === currentGroup[0].id);
+          let activeMessageIndex = currentGroup.length - 1; // last message is active by default
+
+          // If a corresponding group is found and it has the same number of messages, retain the activeMessageIndex
+          if (prevGroup && prevGroup.messages.length === currentGroup.length) {
+            activeMessageIndex = prevGroup.activeMessageIndex;
+          }
+
           groupedMessages.push({
             messages: currentGroup,
-            activeMessageIndex: currentGroup.length - 1 // last message is active by default
+            activeMessageIndex: activeMessageIndex
           });
           currentGroup = [];
         }
@@ -477,10 +482,10 @@ class ChatBox extends React.Component {
         });
       }
     });
-    this.setState({ groupedMessages: groupedMessages });
-    console.log("mensajes agrupados", groupedMessages);
+
     return groupedMessages;
   };
+
 
   //function to navigate through responses from same question
   navigateMessage = (groupIndex, direction) => {
