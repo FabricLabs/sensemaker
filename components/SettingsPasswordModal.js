@@ -113,7 +113,7 @@ const {
           passwordUpdated: false,
           passwordUpdateError: false,
           invalidOldPassword: false,
-          passwordModalLoading: false});
+        });
 
         const response = await Promise.race([timeoutPromise, fetchPromise]);
         if (!response.ok) {
@@ -124,7 +124,7 @@ const {
         //forced delay
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
-        this.setState({passwordUpdated: true});
+        this.setState({passwordUpdated: true, passwordModalLoading:false});
 
         setTimeout(() => {
           this.props.logout();

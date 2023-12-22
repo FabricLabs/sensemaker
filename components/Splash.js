@@ -22,6 +22,7 @@ const AccountCreator = require('./AccountCreator');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
+const ResetPasswordForm = require('./ResetPasswordForm');
 
 class Splash extends React.Component {
   render () {
@@ -40,6 +41,7 @@ class Splash extends React.Component {
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+            <Route path="/passwordreset/:token" element={<ResetPasswordForm/>} />
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>

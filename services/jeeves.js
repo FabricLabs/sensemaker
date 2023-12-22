@@ -785,6 +785,9 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+    this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
@@ -891,6 +894,29 @@ class Jeeves extends Service {
 
         return res.json({
           message: 'Username updated successfully.',
+        });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+    this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
+      const { email} = req.body;
+
+      try {
+        // Check if the email exists
+        const existingUser = await this.db('users').where('email', email).first();
+        if (!existingUser) {
+          return res.status(409).json({ 
+            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com ' 
+          });
+        }
+        // // Update the user's username in the database
+        // await this.db('users').where('id', user.id).update({
+        //   username: newUsername,
+        // });
+
+        return res.json({
+          message: 'Token sent successfully.',
         });
       } catch (error) {
         return res.status(500).json({ message: 'Internal server error.' });

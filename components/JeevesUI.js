@@ -15,6 +15,7 @@
   const Dashboard = require('./Dashboard');
   const TermsOfUseModal = require('./TermsOfUseModal');
   const Waitlist = require('./Waitlist');
+  const ResetPasswordForm = require('./ResetPasswordForm');
 
   // Semantic UI
   const { 
@@ -150,6 +151,9 @@
           <fabric-container id="react-application"></fabric-container>
           <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
             <BrowserRouter>
+              <Routes>
+                <Route path="/passwordreset/:token" element={<ResetPasswordForm/>} />
+               </Routes>
               {!this.props.isAuthenticated ? (
                 <Splash
                   onLoginSuccess={this.handleLoginSuccess}
