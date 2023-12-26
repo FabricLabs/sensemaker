@@ -116,7 +116,7 @@ class PasswordResetModal extends React.Component {
                                 name='email'
                                 onChange={this.handleInputChange}
                                 autoComplete="off"
-                                vale={email}
+                                value={email}
                                 required
                             />
                         )}

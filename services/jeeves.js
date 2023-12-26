@@ -23,6 +23,7 @@ const merge = require('lodash.merge');
 const levelgraph = require('levelgraph');
 const knex = require('knex');
 const { attachPaginate } = require('knex-paginate');
+const crypto = require('crypto');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -899,8 +900,10 @@ class Jeeves extends Service {
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
+
+
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
-      const { email} = req.body;
+      const { email } = req.body;
 
       try {
         // Check if the email exists
@@ -910,14 +913,50 @@ class Jeeves extends Service {
             message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com ' 
           });
         }
-        // // Update the user's username in the database
-        // await this.db('users').where('id', user.id).update({
-        //   username: newUsername,
-        // });
+
+        const resetToken = crypto.randomBytes(20).toString('hex'); 
+
+        const newReset = await this.db('password_resets').insert({
+          user_id: existingUser.id,
+          token: resetToken,
+        });
+        //TODO: Send the email
 
         return res.json({
           message: 'Token sent successfully.',
         });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //function to check if the reset token for password is valid
+    this.http._addRoute('POST', '/resettokencheck', async (req, res, next) => {
+      const { resetToken } = req.body;
+
+      try {
+        // Check if the email exists
+        const existingToken = await this.db('password_resets').where('token', resetToken).last();
+
+        if (!existingToken) {
+          return res.status(409).json({ 
+            message: 'Your reset link is not valid, please try reseting your password again' 
+          });
+        }else{
+          console.log("token bien");
+        }
+
+        // const resetToken = crypto.randomBytes(20).toString('hex'); 
+
+        // const newReset = await this.db('password_resets').insert({
+        //   user_id: existingUser.id,
+        //   token: resetToken,
+        // });
+        //TODO: Send the email
+
+        // return res.json({
+        //   message: 'Token sent successfully.',
+        // });
       } catch (error) {
         return res.status(500).json({ message: 'Internal server error.' });
       }
