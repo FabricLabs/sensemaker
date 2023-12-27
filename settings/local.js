@@ -30,6 +30,11 @@ module.exports = {
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
+  fabric: {
+    remotes: [
+      { host: 'hub.fabric.pub', port: 443, secure: true }
+    ]
+  },
   db: {
     type: 'mysql',
     host: 'localhost',
