@@ -901,7 +901,7 @@ class Jeeves extends Service {
       }
     });
 
-
+    //this is the function that generates a password reset token
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
       const { email } = req.body;
 
@@ -935,29 +935,59 @@ class Jeeves extends Service {
       const { resetToken } = req.body;
 
       try {
-        // Check if the email exists
-        const existingToken = await this.db('password_resets').where('token', resetToken).last();
+        // Check if the token exists
 
-        if (!existingToken) {
-          return res.status(409).json({ 
-            message: 'Your reset link is not valid, please try reseting your password again' 
+        const existingToken = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
+
+        if (!existingToken) {          
+          return res.status(409).json({
+            message: 'Your reset link is not valid, please try reseting your password again'
           });
-        }else{
-          console.log("token bien");
+        }
+        // Check if the token is older than 1 hour
+        const tokenAge = new Date() - new Date(existingToken.created_at);
+        const oneHour = 1000 * 60 * 60; // milliseconds in one hour
+
+        if (tokenAge > oneHour) {          
+          return res.status(410).json({ // 410 Gone is often used for expired resources
+            message: 'Your reset token has expired, please request a new one.'
+          });
+        }      
+
+        return res.json({
+          message: 'Token correct.',
+        });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //this is the function that updates the password of the user that came with a reset token
+    this.http._addRoute('POST', '/passwordRestore', async (req, res, next) => {
+      const { newPassword, resetToken } = req.body;
+
+      try {
+        const userReseting = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
+        if (!userReseting) {
+          return res.status(401).json({ message: 'Invalid reset token.' });
         }
 
-        // const resetToken = crypto.randomBytes(20).toString('hex'); 
+        // Generate a salt and hash the new password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(newPassword, salt);
 
-        // const newReset = await this.db('password_resets').insert({
-        //   user_id: existingUser.id,
-        //   token: resetToken,
-        // });
-        //TODO: Send the email
+        // Update the user's password in the database
+        await this.db('users').where('id', userReseting.user_id).update({
+          password: hashedPassword,
+          salt: salt
+        });
 
-        // return res.json({
-        //   message: 'Token sent successfully.',
-        // });
+        return res.json({
+          message: 'Password updated successfully.',
+        });
       } catch (error) {
+        console.error('Error authenticating user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });

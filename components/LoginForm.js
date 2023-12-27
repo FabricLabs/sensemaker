@@ -3,7 +3,7 @@
 // Dependencies
 const React = require('react');
 const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
-const PasswordResetModal = require('./LoginFormResetModal');
+const AskPasswordResetModal = require('./LoginFormAskResetModal');
 
 
 // Semantic UI
@@ -85,7 +85,7 @@ class LoginForm extends React.Component {
           <p style={{ marginTop: '2em' }}>Did you forget your password? Restore it <a onClick={this.togglePasswordModal}>Here</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
         </Form>        
-        <PasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal}/>
+        <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal}/>
       </fabric-react-component>
     );
   }

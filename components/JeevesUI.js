@@ -17,8 +17,8 @@
   const Waitlist = require('./Waitlist');
 
   // Semantic UI
-  const { 
-    Modal,   
+  const {
+    Modal,
     Button,
     Header
    } = require('semantic-ui-react');
@@ -70,7 +70,7 @@
           loggedOut: false
         });
         this.props.logout();
-        window.location.href = '/'; 
+        window.location.href = '/';
 
         //window.location.reload();
       }, 2000)
@@ -106,42 +106,42 @@
         console.error(error);
       }
     }
-    
+
     componentDidMount(){
       const dbRequest = indexedDB.open("Jeeves_DB", 1);
 
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
-  
+
         if (!db.objectStoreNames.contains('token')) {
           const objectStore = db.createObjectStore('token',{ keyPath: 'id' });
           objectStore.createIndex("authToken", "authToken", { unique: false });
         }
       };
-    
+
       dbRequest.onsuccess = (event) => {
-          const db = event.target.result;      
+          const db = event.target.result;
           const transaction = db.transaction(['token'], 'readonly');
           const objectStore = transaction.objectStore('token');
           const request = objectStore.get('authToken');
-      
+
           request.onsuccess = (event) => {
             if (request.result) {
               this.setState({ isAuthenticated: true });
               this.props.reLogin(request.result.value);
             }
           };
-      
+
           request.onerror = (event) => {
             console.error("IndexedDB error:", event.target.errorCode);
-          };        
+          };
       };
-    
+
       dbRequest.onerror = function(event) {
         console.error("IndexedDB error:", event.target.errorCode);
       };
     }
-    
+
 
     render () {
       const { modalLogOut, loggedOut } = this.state;
@@ -189,7 +189,7 @@
                 />
               )}
               <Modal
-                onClose={this.handleModalClose}              
+                onClose={this.handleModalClose}
                 open={modalLogOut}
                 size='mini'>
                 <Modal.Header centered>
@@ -217,22 +217,22 @@
                         icon='close'
                         onClick={this.handleModalClose}
                         labelPosition='right'
-                        size='small'                        
+                        size='small'
                         secondary
-                      />                  
+                      />
                       <Button
                         content='Log out'
                         icon='log out'
                         onClick={this.handleLogoutSuccess}
                         labelPosition='right'
-                        size='small'                        
+                        size='small'
                         primary
                       />
                     </div>
                   )}
                 </Modal.Actions>
               </Modal>
-            </BrowserRouter>            
+            </BrowserRouter>
           </fabric-react-component>
         </jeeves-ui>
       )

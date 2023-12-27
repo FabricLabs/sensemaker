@@ -12,7 +12,11 @@ const {
     Header
 } = require('semantic-ui-react');
 
-class PasswordResetModal extends React.Component {
+
+//This is a Modal where the user writes his registered Email and ask for a password reset
+//this will send an email to the user with a link to reset the password
+
+class AskPasswordResetModal extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -28,6 +32,7 @@ class PasswordResetModal extends React.Component {
         const { email } = this.state;
         event.preventDefault();
 
+        // call for the fetch that generates the token for password reset
         const fetchPromise = fetch('/passwordReset', {
             method: 'POST',
             headers: {
@@ -57,7 +62,7 @@ class PasswordResetModal extends React.Component {
 
             //forced delay
             await new Promise((resolve) => setTimeout(resolve, 1500));
-
+            //email with reset token sent
             this.setState({ tokenSent: true, modalLoading: false });
 
         } catch (error) {
@@ -107,7 +112,7 @@ class PasswordResetModal extends React.Component {
                         </Modal.Description>
                     )
                     }
-                    <Form onSubmit={this.handleSubmit} style={{ marginTop: '1em' }}>
+                    <Form style={{ marginTop: '1em' }}>
                         {!tokenSent && (
                             <Form.Input
                                 size='mini'
@@ -142,8 +147,8 @@ class PasswordResetModal extends React.Component {
                                 content='Submit'
                                 icon='checkmark'
                                 loading={modalLoading}
-                                type='submit'
                                 size='small'
+                                onClick={this.handleSubmit}
                                 primary
                                 disabled={tokenSent}
                             />
@@ -156,4 +161,4 @@ class PasswordResetModal extends React.Component {
     }
 }
 
-module.exports = PasswordResetModal;
+module.exports = AskPasswordResetModal;
