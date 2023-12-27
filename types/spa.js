@@ -40,7 +40,7 @@ class SPA extends FabricSPA {
   </head>
   <body>
     <div data-hash="${hash}" id="application-target">${html}</div>
-    <script src="/bundles/browser.js"></script>
+    <script src="/bundles/browser.min.js"></script>
   </body>
 </html>`;
   }

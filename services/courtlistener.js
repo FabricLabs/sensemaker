@@ -240,11 +240,11 @@ class CourtListener extends Service {
   }
 
   async sync () {
-    console.log('[COURTLISTENER]', 'Syncing...');
+    console.debug('[COURTLISTENER]', 'Syncing...');
     this._state.content.status = 'SYNCING';
 
     // Courts
-    // await this.syncCourts();
+    await this.syncCourts();
 
     // People
     // await this.syncPeople();
@@ -258,15 +258,24 @@ class CourtListener extends Service {
     // PACER / RECAP Documents
     // await this.syncRecapDocuments();
 
+    this._state.content.status = 'SYNCED';
+    this.commit();
+
     // EMIT SYNC EVENT
     this.emit('sync', {
       type: 'Sync',
       state: this.state
     });
+
+    console.debug('[COURTLISTENER]', 'Sync complete!');
   }
 
   async start () {
     console.log('[COURTLISTENER]', 'Starting...');
+
+    this.db.on('error', (error) => {
+      this.emit('debug', '[COURTLISTENER]', 'Error:', error);
+    });
 
     this.getCounts().then((counts) => {
       this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);

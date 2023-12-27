@@ -85,6 +85,7 @@ module.exports = {
     token: null
   },
   courtlistener: {
+    enable: false,
     type: 'postgresql',
     host: 'HOSTNAME',
     username: 'USERNAME',
