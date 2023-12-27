@@ -1,35 +1,49 @@
 'use strict';
 
+// React
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
-const { Segment, Pagination, Divider } = require('semantic-ui-react');
 
+// Semantic UI
+const { Link } = require('react-router-dom');
+const { Label, Segment, Pagination, Divider, Button } = require('semantic-ui-react');
+
+// Components
+const ChatBox = require('./ChatBox');
+
+/**
+ * The Jeeves UI.
+ * @param {Object} props Properties for the component.
+ **/
 class Conversations extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
+
+    this.messagesEndRef = React.createRef();
+
     this.state = {
       currentPage: 1,
       windowWidth: window.innerWidth
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
 
   handlePaginationChange = (e, { activePage }) => {
     this.setState({ currentPage: activePage });
-  };
+  }
+
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth });
-  };
+  }
 
-  render() {
+  render () {
     const { loading, error, conversations } = this.props;
     const { currentPage,  windowWidth } = this.state;
 
@@ -41,19 +55,17 @@ class Conversations extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
+
     // Calculate conversations for current page
-    
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
 
-
-
     return (
       <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h2>Conversations</h2>
-        {currentConversations.map(conversation => (
+        {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div key={conversation.id}>
             <h4 style={{marginBottom:'0.5em'}}>
               <Link to={'/conversations/' + conversation.id}>
@@ -63,15 +75,18 @@ class Conversations extends React.Component {
             </h4> 
            <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
-        ))}
-        <Pagination
-          size='tiny'          
+        )) : <div>
+          <div>We haven't had any conversations yet.</div>
+          <Button as={Link} to='/conversations/new' primary>Ask a Question</Button>
+        </div>}
+        {(currentConversations.length > itemsPerPage) ? <Pagination
+          size='tiny'
           activePage={currentPage}
           totalPages={Math.ceil(conversations.length / itemsPerPage)}
           onPageChange={this.handlePaginationChange}
           ellipsisItem={(windowWidth>480)? undefined : null}
           boundaryRange={(windowWidth>480) ? 1 : 0}
-        />
+        /> : null}
       </Segment>
     );
   }

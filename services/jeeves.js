@@ -59,11 +59,12 @@ const Matrix = require('@fabric/matrix');
 // const Prices = require('@portal/feed');
 
 // Services
+const EmailService = require('./email');
 const OpenAI = require('./openai');
 // TODO: Mistral
 // TODO: HarvardCaseLaw
 const CourtListener = require('./courtlistener');
-// TODO: WestLaw
+// const WestLaw = require('./westlaw');
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -142,6 +143,7 @@ class Jeeves extends Service {
     this.worker = new Worker(this.settings);
 
     // Services
+    this.email = new EmailService;
     this.matrix = new Matrix(this.settings.matrix);
     this.openai = new OpenAI(this.settings.openai);
 
@@ -364,18 +366,13 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      const query = this.db('documents')
+      const target = await this.db('documents')
         .where(function () {
           this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
         })
         .whereNotNull('courtlistener_filepath_ia')
         .where(self.db.raw('LENGTH(courtlistener_filepath_ia)'), '>', 0)
         .first();
-
-      const sql = query.toString();
-      console.debug('SQL:', sql);
-
-      const target = await query;
 
       if (!target) {
         console.debug('No target found!');
@@ -632,9 +629,10 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
+    await this.email.start();
     await this.openai.start();
     // await this.matrix.start();
-    await this.courtlistener.start();
+    if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
@@ -724,10 +722,21 @@ class Jeeves extends Service {
         inquiry_id: inquiry_id
       });
 
-      console.debug('inserted:', inserted);
+      res.send({
+        message: 'Invitation created successfully!'
+      });
+    });
+
+    this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
+      // TODO: check for admin token
+      const { status } = req.body;
+
+      const inserted = await this.db('invitations').insert({
+        status: status
+      });
 
       res.send({
-        message: 'Invitation sent successfully!'
+        message: 'Invitation re-sent successfully!'
       });
     });
 
@@ -800,14 +809,20 @@ class Jeeves extends Service {
 
       try {
         const user = await this.db('users').where('username', username).first();
-        if (!user || !compareSync(password, user.password)) {
-          return res.status(401).json({ message: 'Invalid username or password.' });
-        }
+        if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
 
+        // Set Roles
+        const roles = ['user'];
+        if (user.is_admin) roles.unshift('admin');
+
+        // Create Token
         const token = new Token({
           capability: 'OP_IDENTITY',
           issuer: null,
-          subject: user.id
+          subject: user.id + '', // String value of integer ID
+          state: {
+            roles: roles
+          }
         });
 
         return res.json({
@@ -1100,24 +1115,41 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
       res.format({
         json: async () => {
-          const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
-          // TODO: update the conversation upon change (new user message, new agent message)
-          // TODO: sort conversations by updated_at (below line)
-          // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
-          res.send(conversations);
+          let results = [];
+
+          // TODO: re-evaluate security of `is_admin` check
+          if (req.user?.state?.roles?.includes('admin')) {
+            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
+          } else {
+            results = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
+            // TODO: update the conversation upon change (new user message, new agent message)
+            // TODO: sort conversations by updated_at (below line)
+            // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
+          }
+
+          res.send(results);
         },
         html: () => {
           // TODO: provide state
-          const page = new Conversations({});
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          // const page = new Conversations({});
+          // const html = page.toHTML();
+          // return res.send(this.http.app._renderWith(html));
+          return res.send(this.http.app._renderWith(''));
         }
       });
     });
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
-      res.send(courts);
+      res.format({
+        json: () => {
+          res.send(courts);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
     });
 
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
@@ -1157,8 +1189,13 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
-      const inquiries = await this.db('inquiries').select('id');
-      const invitations = await this.db('invitations').select('id').from('invitations');
+      const cases = await this.db('cases').select('id').from('cases');
+      const courts = await this.db('courts').select('id').from('courts');
+      const conversations = await this.db('conversations').select('id').from('conversations');
+      const documents = await this.db('documents').select('id').from('documents');
+      const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
+      const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
+      const messages = await this.db('messages').select('id').from('messages');
 
       // User Analytics
       const users = await this.db('users').select('id', 'username');
@@ -1172,7 +1209,23 @@ class Jeeves extends Service {
         user.messages = messages.length;
       }
 
-      const stats = {
+      const state = {
+        cases: {
+          total: cases.length,
+          // content: cases.map(x => x.id)
+        },
+        conversations: {
+          total: conversations.length,
+          // content: conversations.map(x => x.id)
+        },
+        courts: {
+          total: courts.length,
+          // content: courts.map(x => x.id)
+        },
+        documents: {
+          total: documents.length,
+          // content: documents.map(x => x.id)
+        },
         inquiries: {
           total: inquiries.length,
           content: inquiries
@@ -1181,13 +1234,45 @@ class Jeeves extends Service {
           total: invitations.length,
           content: invitations
         },
+        messages: {
+          total: messages.length
+          // content: messages.map(x => x.id)
+        },
         users: {
           total: users.length,
           content: users
-        }
+        },
       };
 
-      res.send(stats);
+      res.send(state);
+    });
+
+    this.http._addRoute('GET', '/settings', async (req, res, next) => {
+      res.format({
+        json: () => {
+          return res.send({
+            name: this.name,
+            version: this.version
+          });
+        },
+        html: () => {
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
+    });
+
+    this.http._addRoute('GET', '/settings/admin', async (req, res, next) => {
+      res.format({
+        json: () => {
+          return res.send({
+            name: this.name,
+            version: this.version
+          });
+        },
+        html: () => {
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
     });
 
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
@@ -1464,16 +1549,19 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
-      // TODO: check token
+    this.http._addRoute('POST', '/announcements', async (req, res, next) => {
+      if (!req.user || !req.user.state?.roles?.includes('admin')) {
+        return res.status(401).json({ message: 'Unauthorized.' });
+      }
+
       const request = req.body;
 
       try {
         await this.db('announcements').insert({
-          creator_id: req.user.id,          
+          creator_id: req.user.id,
           title: (request.title) ? request.title : null, 
           body: request.body,
-          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,
         });
 
         return res.send({
@@ -1491,7 +1579,20 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
+    this.http._addRoute('GET', '/announcements', async (req, res, next) => {
+      try {
+        const announcements = await this.db('announcements')
+          .select('*') 
+          .orderBy('created_at', 'desc');
+
+        res.json(announcements);
+      } catch (error) {
+        console.error('Error fetching announcement:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('GET', '/announcements/latest', async (req, res, next) => {
       try {
         const latestAnnouncement = await this.db('announcements')
           .select('*') 
@@ -1499,7 +1600,7 @@ class Jeeves extends Service {
           .first();
 
         if (!latestAnnouncement) {
-          return res.status(404).json({ message: 'No announcements found.' });
+          return res.status(404).json({ message: 'No announcement found.' });
         }
 
         res.json(latestAnnouncement);
@@ -2013,6 +2114,7 @@ class Jeeves extends Service {
             const obj = JSON.parse(inner);
             req.user.id = obj.sub;
             req.user.role = obj.role || 'asserted';
+            req.user.state = obj.state || {};
           } catch (exception) {
             console.error('Invalid Bearer Token:', inner)
           }

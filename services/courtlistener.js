@@ -240,11 +240,18 @@ class CourtListener extends Service {
   }
 
   async sync () {
-    console.log('[COURTLISTENER]', 'Syncing...');
+    console.debug('[COURTLISTENER]', 'Syncing...');
     this._state.content.status = 'SYNCING';
 
+    // Estimate Work
+    const counts = await this.getCounts();
+    this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+    this._state.content.counts = Object.assign(this._state.content.counts, counts);
+
+    // Sync Data Sources
+    // TODO: Dockets
     // Courts
-    // await this.syncCourts();
+    await this.syncCourts();
 
     // People
     // await this.syncPeople();
@@ -258,26 +265,31 @@ class CourtListener extends Service {
     // PACER / RECAP Documents
     // await this.syncRecapDocuments();
 
+    this._state.content.status = 'SYNCED';
+    this.commit();
+
     // EMIT SYNC EVENT
     this.emit('sync', {
       type: 'Sync',
       state: this.state
     });
+
+    console.debug('[COURTLISTENER]', 'Sync complete!');
   }
 
   async start () {
     console.log('[COURTLISTENER]', 'Starting...');
 
-    this.getCounts().then((counts) => {
-      this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
-      this._state.content.counts = Object.assign(this._state.content.counts, counts);
-      this.commit();
+    this.db.on('error', (error) => {
+      this.emit('debug', '[COURTLISTENER]', 'Error:', error);
     });
 
     // Begin syncing
     this.sync().then(() => {
       this._state.content.status = 'SYNCED';
       this.emit('ready');
+    }).catch((exception) => {
+      this.emit('debug', '[COURTLISTENER]', 'Exception:', exception);
     });
 
     return this;

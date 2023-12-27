@@ -2,8 +2,8 @@
 
 const { fetchFromAPI } = require('./apiActions');
 
-async function fetchConversationsFromAPI (token) {
-  return fetchFromAPI('/conversations', token);
+async function fetchConversationsFromAPI (token, params = {}) {
+  return fetchFromAPI('/conversations', params, token);
 }
 
 // Action types
