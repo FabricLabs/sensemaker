@@ -363,18 +363,13 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      const query = this.db('documents')
+      const target = await this.db('documents')
         .where(function () {
           this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
         })
         .whereNotNull('courtlistener_filepath_ia')
         .where(self.db.raw('LENGTH(courtlistener_filepath_ia)'), '>', 0)
         .first();
-
-      const sql = query.toString();
-      console.debug('SQL:', sql);
-
-      const target = await query;
 
       if (!target) {
         console.debug('No target found!');
@@ -633,7 +628,7 @@ class Jeeves extends Service {
     // Internal Services
     await this.openai.start();
     // await this.matrix.start();
-    await this.courtlistener.start();
+    if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
