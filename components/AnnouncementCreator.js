@@ -129,7 +129,7 @@ class AnnouncementCreator extends React.Component {
 
     this.setState({ modalLoading: true });
 
-    const fetchPromise = fetch('/announcementCreate', {
+    const fetchPromise = fetch('/announcements', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

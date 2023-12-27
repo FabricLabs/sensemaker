@@ -1,5 +1,12 @@
 'use strict';
 
+// Constants
+const {
+  BROWSER_DATABASE_NAME,
+  BROWSER_DATABASE_TOKEN_TABLE
+} = require('../constants');
+
+// Dependencies
 const fetch = require('cross-fetch');
 
 // Action Types
@@ -36,29 +43,28 @@ const login = (username, password) => {
         throw new Error(error.message);
       }
 
- 
       const session = await response.json();
-      
+
       // Here we create the database and store the session
-      const dbRequest = indexedDB.open("Jeeves_DB", 1); 
-      
+      const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
+
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
-  
-        if (!db.objectStoreNames.contains('token')) {
-          const objectStore = db.createObjectStore('token',{ keyPath: 'id' });
+
+        if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+          const objectStore = db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE,{ keyPath: 'id' });
           objectStore.createIndex("authToken", "authToken", { unique: false });
         }
       };
-  
+
       dbRequest.onerror = function (event) {
         console.error('Error opening IndexedDB:', event.target.error);
       };
 
       dbRequest.onsuccess = function (event) {
         const db = event.target.result;
-        const transaction = db.transaction(['token'], 'readwrite');
-        const store = transaction.objectStore('token');
+        const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readwrite');
+        const store = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
         store.put({ id: 'authToken', value: session.token });
       };
 
@@ -78,11 +84,10 @@ const reLogin = (token) => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-        },      
+        },
       });
 
       const user = await response.json();
-
       const session = {
         token: token,
         username: user.username,
@@ -91,13 +96,13 @@ const reLogin = (token) => {
         isCompliant: user.isCompliant
       }
 
-      if (!response.ok) {       
+      if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message);
       }
-      //dispatch(reLoginSuccess(respuesta,token));
-        dispatch(loginSuccess(session));
-    } catch (error) {   
+
+      dispatch(loginSuccess(session));
+    } catch (error) {
       dispatch(loginFailure(error.message));
     }
   };
@@ -138,23 +143,22 @@ const logout = () => {
     request.onerror = function(event) {
       console.error("IndexedDB error:", event.target.errorCode);
     };
-  
+
     request.onsuccess = function(event) {
-      const db = event.target.result;        
-      const transaction = db.transaction(['token'], 'readwrite');      
-      const objectStore = transaction.objectStore('token');    
+      const db = event.target.result;
+      const transaction = db.transaction(['token'], 'readwrite');
+      const objectStore = transaction.objectStore('token');
      
       const deleteRequest = objectStore.delete('authToken');
   
-      deleteRequest.onsuccess = function(event) {        
+      deleteRequest.onsuccess = function(event) {
         console.log('The token has been removed from IndexedDB');
       };
   
-      deleteRequest.onerror = function(event) {         
+      deleteRequest.onerror = function(event) {
         console.error("IndexedDB delete error:", event.target.errorCode);
       };
     };
-
   }
 };
 

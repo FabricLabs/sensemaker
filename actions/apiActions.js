@@ -1,4 +1,4 @@
-async function fetchFromAPI (path, token = null) {
+async function fetchFromAPI (path, params = {},token = null) {
   const response = await fetch(path, {
     method: 'GET',
     headers: {

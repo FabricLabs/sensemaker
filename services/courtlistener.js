@@ -243,6 +243,13 @@ class CourtListener extends Service {
     console.debug('[COURTLISTENER]', 'Syncing...');
     this._state.content.status = 'SYNCING';
 
+    // Estimate Work
+    const counts = await this.getCounts();
+    this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+    this._state.content.counts = Object.assign(this._state.content.counts, counts);
+
+    // Sync Data Sources
+    // TODO: Dockets
     // Courts
     await this.syncCourts();
 
@@ -277,16 +284,12 @@ class CourtListener extends Service {
       this.emit('debug', '[COURTLISTENER]', 'Error:', error);
     });
 
-    this.getCounts().then((counts) => {
-      this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
-      this._state.content.counts = Object.assign(this._state.content.counts, counts);
-      this.commit();
-    });
-
     // Begin syncing
     this.sync().then(() => {
       this._state.content.status = 'SYNCED';
       this.emit('ready');
+    }).catch((exception) => {
+      this.emit('debug', '[COURTLISTENER]', 'Exception:', exception);
     });
 
     return this;

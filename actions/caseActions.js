@@ -3,7 +3,7 @@
 const { fetchFromAPI } = require('./apiActions');
 
 async function fetchCasesFromAPI (token) {
-  return fetchFromAPI('/cases', token);
+  return fetchFromAPI('/cases', null, token);
 }
 
 // Action types
@@ -41,7 +41,7 @@ const fetchCase = (id) => {
     dispatch(fetchCaseRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/cases/${id}`, token);
+      const instance = await fetchFromAPI(`/cases/${id}`, null, token);
       dispatch(fetchCaseSuccess(instance));
     } catch (error) {
       dispatch(fetchCaseFailure(error));

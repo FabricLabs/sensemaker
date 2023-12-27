@@ -1000,7 +1000,9 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
       res.format({
         json: async () => {
-          const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('updated_at', 'desc');
+          // TODO: re-evaluate security of `is_admin` check
+          const selector = (req.user.is_admin && req.params.query) ? { id: this.db.raw('IS NOT NULL') } : { creator_id: req.user.id };
+          const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where(selector).orderBy('updated_at', 'desc');
           // TODO: update the conversation upon change (new user message, new agent message)
           // TODO: sort conversations by updated_at (below line)
           // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
@@ -1008,16 +1010,25 @@ class Jeeves extends Service {
         },
         html: () => {
           // TODO: provide state
-          const page = new Conversations({});
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          // const page = new Conversations({});
+          // const html = page.toHTML();
+          // return res.send(this.http.app._renderWith(html));
+          return res.send(this.http.app._renderWith(''));
         }
       });
     });
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
-      res.send(courts);
+      res.format({
+        json: () => {
+          res.send(courts);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
     });
 
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
@@ -1088,6 +1099,34 @@ class Jeeves extends Service {
       };
 
       res.send(stats);
+    });
+
+    this.http._addRoute('GET', '/settings', async (req, res, next) => {
+      res.format({
+        json: () => {
+          return res.send({
+            name: this.name,
+            version: this.version
+          });
+        },
+        html: () => {
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
+    });
+
+    this.http._addRoute('GET', '/settings/admin', async (req, res, next) => {
+      res.format({
+        json: () => {
+          return res.send({
+            name: this.name,
+            version: this.version
+          });
+        },
+        html: () => {
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
     });
 
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
@@ -1364,16 +1403,19 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/announcementCreate', async (req, res, next) => {
-      // TODO: check token
+    this.http._addRoute('POST', '/announcements', async (req, res, next) => {
+      if (!req.user || !req.user.is_admin) {
+        return res.status(401).json({ message: 'Unauthorized.' });
+      }
+
       const request = req.body;
 
       try {
         await this.db('announcements').insert({
-          creator_id: req.user.id,          
+          creator_id: req.user.id,
           title: (request.title) ? request.title : null, 
           body: request.body,
-          expiration_date: (request.expirationDate) ? request.expirationDate : null,          
+          expiration_date: (request.expirationDate) ? request.expirationDate : null,
         });
 
         return res.send({
@@ -1391,7 +1433,20 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('GET', '/announcementFetch', async (req, res, next) => {
+    this.http._addRoute('GET', '/announcements', async (req, res, next) => {
+      try {
+        const announcements = await this.db('announcements')
+          .select('*') 
+          .orderBy('created_at', 'desc');
+
+        res.json(announcements);
+      } catch (error) {
+        console.error('Error fetching announcement:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('GET', '/announcements/latest', async (req, res, next) => {
       try {
         const latestAnnouncement = await this.db('announcements')
           .select('*') 
@@ -1399,7 +1454,7 @@ class Jeeves extends Service {
           .first();
 
         if (!latestAnnouncement) {
-          return res.status(404).json({ message: 'No announcements found.' });
+          return res.status(404).json({ message: 'No announcement found.' });
         }
 
         res.json(latestAnnouncement);

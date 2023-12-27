@@ -24,6 +24,10 @@ const ENABLE_LIBRARY = false;
 const ENABLE_CHAT = true;
 const INTEGRITY_CHECK = true;
 
+// Browser
+const BROWSER_DATABASE_NAME = 'jeeves';
+const BROWSER_DATABASE_TOKEN_TABLE = 'tokens';
+
 // Records
 const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
@@ -48,6 +52,8 @@ module.exports = {
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
+  BROWSER_DATABASE_NAME,
+  BROWSER_DATABASE_TOKEN_TABLE,
   CHATGPT_MAX_TOKENS,
   AGENT_TEMPERATURE,
 };

@@ -23,6 +23,18 @@ class AdminSettings extends React.Component {
 
     this.settings = Object.assign({
       state: {
+        statistics: {
+          counts: {
+            waitlist: 0,
+            pending: 0, // pending invitations
+            users: 0,
+            conversations: 0,
+            messages: 0,
+            courts: 0,
+            cases: 0,
+            documents: 0
+          }
+        },
         waitlistSignupCount: 0,
         currentPage: 1,
         windowWidth: window.innerWidth
@@ -34,15 +46,18 @@ class AdminSettings extends React.Component {
 
   componentDidMount () {
     this.props.fetchAdminStats();
+    this.props.fetchAllConversationsFromAPI();
     window.addEventListener('resize', this.handleResize);
-
   }
-  componentWillUnmount() {
+
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
+
   handlePaginationChange = (e, { activePage }) => {
     this.setState({ currentPage: activePage });
   };
+
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth });
   };
@@ -56,11 +71,6 @@ class AdminSettings extends React.Component {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
-    //
-
-    // TODO: collect waitlist data to table
-    /* const inquiries = await this.db('inquries').select('*').where({ status: 'WAITING' });
-    const waitlistSignupCount = inquiries.length; */
 
     return (
       <jeeves-admin-settings class='fade-in'>
@@ -72,26 +82,35 @@ class AdminSettings extends React.Component {
               <Statistic.Value>{waitlistSignupCount}</Statistic.Value>
               <Statistic.Label>Waiting</Statistic.Label>
             </Statistic>
+            <Statistic>
+              <Statistic.Value>{this.state.statistics.counts.waitlist}</Statistic.Value>
+              <Statistic.Label>Sent</Statistic.Label>
+            </Statistic>
+            <Statistic>
+              <Statistic.Value>{this.state.statistics.counts.users}</Statistic.Value>
+              <Statistic.Label>Users</Statistic.Label>
+            </Statistic>
           </Segment>
+
           <Header as='h3'>Settings</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Header as='h3'>Collections</Header>
-          
+
           <Header as='h4'>Conversations</Header>
-          <Segment >
+          <Segment>
             <container>
               {currentConversations.map(conversation => (
                 <div key={conversation.id}>
                   <Link to={'/conversations/' + conversation.id}>
                     {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                     {conversation.title}
-                  </Link>                 
+                  </Link>
                   <Divider style={{marginTop: '0.3em',marginBottom:'0.3em'}}/>
                 </div>
               ))}
             </container>
             <Pagination
-              size='tiny'  
+              size='tiny'
               activePage={currentPage}
               totalPages={Math.ceil(conversations.length / itemsPerPage)}
               onPageChange={this.handlePaginationChange}
@@ -127,7 +146,6 @@ class AdminSettings extends React.Component {
           </Table>
           <AnnouncementCreator></AnnouncementCreator>
           <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
-          
         </Segment>
       </jeeves-admin-settings>
     );

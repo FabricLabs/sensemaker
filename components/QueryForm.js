@@ -35,16 +35,15 @@ class Chat extends React.Component {
     this.props.resetChat();
 
     this.fetchAnnouncement();
-  }  
+  }
 
 
   fetchAnnouncement = async () => {
-
     const state = store.getState();
     const token = state.auth.token;
 
     try {
-      const fetchPromise = fetch('/announcementFetch', {
+      const fetchPromise = fetch('/announcements/latest', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -85,7 +84,7 @@ class Chat extends React.Component {
         }
       }
     } catch (error) {
-      console.log('Error fetching announcements from API:', error);
+      // console.log('Error fetching announcements from API:', error);
     }
   };
 
