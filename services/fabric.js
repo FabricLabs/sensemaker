@@ -11,8 +11,8 @@ class FabricService extends Service {
     this.settings = Object.assign({
       name: 'Fabric',
       remotes: [
-        // { hostname: 'hub.fabric.pub', port: 443, secure: true },
-        { hostname: 'beta.jeeves.dev', port: 443, secure: true }
+        { host: 'hub.fabric.pub', port: 443, secure: true },
+        { host: 'beta.jeeves.dev', port: 443, secure: true }
       ],
       state: {
         content: {
@@ -47,10 +47,10 @@ class FabricService extends Service {
     this.emit('debug', 'Syncing...');
 
     for (let i = 0; i < this.remotes.length; i++) {
-      console.debug('syncing:', this.remotes[i].settings);
+      // console.debug('[FABRIC] Remote Settings:', this.remotes[i].settings);
       const remote = this.remotes[i];
       const documents = await remote._GET('/documents');
-      console.debug('documents retrieved:', documents);
+      // console.debug('[FABRIC] Documents found:', documents);
     }
 
     return this;
