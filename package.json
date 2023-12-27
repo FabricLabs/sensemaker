@@ -4,9 +4,9 @@
   "description": "crawl and aggregate data.",
   "main": "services/jeeves.js",
   "scripts": {
-    "build": "npm run build:semantic && npm run build:browser",
+    "build": "npm run build:browser",
     "build:browser": "node scripts/build.js",
-    "build:semantic": "# cd libraries/semantic && npx gulp build && cd ../..",
+    "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",

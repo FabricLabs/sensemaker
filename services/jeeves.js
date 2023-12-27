@@ -1094,8 +1094,13 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
-      const inquiries = await this.db('inquiries').select('id');
-      const invitations = await this.db('invitations').select('id').from('invitations');
+      const cases = await this.db('cases').select('id').from('cases');
+      const courts = await this.db('courts').select('id').from('courts');
+      const conversations = await this.db('conversations').select('id').from('conversations');
+      const documents = await this.db('documents').select('id').from('documents');
+      const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
+      const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
+      const messages = await this.db('messages').select('id').from('messages');
 
       // User Analytics
       const users = await this.db('users').select('id', 'username');
@@ -1109,7 +1114,23 @@ class Jeeves extends Service {
         user.messages = messages.length;
       }
 
-      const stats = {
+      const state = {
+        cases: {
+          total: cases.length,
+          // content: cases.map(x => x.id)
+        },
+        conversations: {
+          total: conversations.length,
+          // content: conversations.map(x => x.id)
+        },
+        courts: {
+          total: courts.length,
+          // content: courts.map(x => x.id)
+        },
+        documents: {
+          total: documents.length,
+          // content: documents.map(x => x.id)
+        },
         inquiries: {
           total: inquiries.length,
           content: inquiries
@@ -1118,13 +1139,17 @@ class Jeeves extends Service {
           total: invitations.length,
           content: invitations
         },
+        messages: {
+          total: messages.length
+          // content: messages.map(x => x.id)
+        },
         users: {
           total: users.length,
           content: users
-        }
+        },
       };
 
-      res.send(stats);
+      res.send(state);
     });
 
     this.http._addRoute('GET', '/settings', async (req, res, next) => {
