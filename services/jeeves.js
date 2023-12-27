@@ -58,6 +58,7 @@ const Matrix = require('@fabric/matrix');
 // const Prices = require('@portal/feed');
 
 // Services
+const Fabric = require('./fabric');
 const EmailService = require('./email');
 const OpenAI = require('./openai');
 // TODO: Mistral
@@ -163,6 +164,9 @@ class Jeeves extends Service {
       ephemera: this._rootKey,
       token: new Token({ issuer: this._rootKey })
     };
+
+    // Fabric
+    this.fabric = new Fabric(this.settings.fabric);
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -628,6 +632,7 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
+    await this.fabric.start();
     await this.email.start();
     await this.openai.start();
     // await this.matrix.start();
@@ -1055,6 +1060,73 @@ class Jeeves extends Service {
           return res.send(this.http.app._renderWith(''));
         }
       })
+    });
+
+    this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
+      const court = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc').where({ slug: req.params.slug }).first();
+      res.format({
+        json: () => {
+          if (!court) return res.status(404).json({ message: 'Court not found.' });
+          res.send(court);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/people', async (req, res, next) => {
+      const people = await this.db.select('id', 'full_name', 'created_at').from('people').orderBy('full_name', 'asc');
+      res.format({
+        json: () => {
+          res.send(people);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
+    });
+
+    this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
+      const person = await this.db.select('id', 'name', 'created_at').from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
+      res.format({
+        json: () => {
+          if (!person) return res.status(404).json({ message: 'Person not found.' });
+          res.send(person);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/documents', async (req, res, next) => {
+      const documents = await this.db.select('id', 'description', 'created_at').from('documents').orderBy('created_at', 'desc');
+      res.format({
+        json: () => {
+          res.send(documents);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/judges', async (req, res, next) => {
+      const judges = await this.db.select('id', 'name', 'created_at').from('judges').orderBy('name', 'asc');
+      res.format({
+        json: () => {
+          res.send(judges);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
     });
 
     this.http._addRoute('GET', '/messages', async (req, res, next) => {

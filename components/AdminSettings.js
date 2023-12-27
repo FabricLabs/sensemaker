@@ -171,6 +171,26 @@ class AdminSettings extends React.Component {
               <Table.Cell>gpt-4</Table.Cell>
               <Table.Cell><Label>ready</Label></Table.Cell>
             </Table.Row>
+            <Table.Row>
+              <Table.Cell>GPT 4 32k</Table.Cell>
+              <Table.Cell>gpt-4-32k</Table.Cell>
+              <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>GPT 4 Turbo</Table.Cell>
+              <Table.Cell>gpt-4-turbo</Table.Cell>
+              <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Falcon 40B</Table.Cell>
+              <Table.Cell>falcon-40b</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Mistral 7B</Table.Cell>
+              <Table.Cell>mistral-7b</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
           </Table.Body>
         </Table>
       </Tab.Pane> },

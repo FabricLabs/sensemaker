@@ -21,11 +21,11 @@ const {
 const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');
 
-class Conversation extends React.Component {
+class CaseView extends React.Component {
   componentDidMount () {
     const { id } = this.props;
     const { message } = this.props.cases;
-    
+
     this.props.fetchCase(id);
     console.log(this.props);
   }
@@ -79,7 +79,7 @@ class Conversation extends React.Component {
 
 function Chat (props) {
   const { id } = useParams();
-  return <Conversation id={id} {...props} />;
+  return <CaseView id={id} {...props} />;
 }
 
 module.exports = Chat;
