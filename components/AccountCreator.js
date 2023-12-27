@@ -58,7 +58,7 @@ class AccountCreator extends React.Component {
 
   render () {
     const { username, password, loading } = this.state;
-    const { error } = this.props;  // Get the error from the props
+    const { error } = this.props; // Get the error from the props
 
     console.log('Rendering AccountCreator with error:', this.props.error);
 
@@ -74,7 +74,7 @@ class AccountCreator extends React.Component {
             <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={password} onChange={this.handlePasswordChange} />
           </Form.Field>
           <div>
-            <Button floated='right' fluid primary loading={loading} type="submit" size={this.props.size}>Register</Button>
+            <Button floated='right' fluid primary loading={loading} type="submit" size={this.props.size}>Create Login &raquo;</Button>
             {error && <Message error visible content={error} style={{clear: 'both'}} />} {/* Display error message if error state is not null */}
           </div>
         </Form>

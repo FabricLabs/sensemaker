@@ -22,8 +22,8 @@ class Chat extends React.Component {
     super(props);
 
     this.state = {
-      announTitle:'',
-      announBody:'',      
+      announTitle: '',
+      announBody: '',
     };
 
     this.messagesEndRef = React.createRef();
@@ -99,27 +99,27 @@ class Chat extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column', 
+      flexDirection: 'column',
       paddingBottom: '0'
     } : {
       height: 'calc(100vh - 2.5rem)',
       display: 'flex',
-      flexDirection: 'column',  
+      flexDirection: 'column',
       paddingBottom: '0'
     };
    
-    return (  
-       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-          <ChatBox 
-             {...this.props}   
-             announTitle = {announTitle}
-             announBody ={announBody}
-             placeholder={this.props.placeholder}
-             messagesEndRef={this.messagesEndRef}
-             homePage={true}
-           />        
-
-       </fabric-component>
+    return ( 
+      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
+        <ChatBox
+            {...this.props}
+            announTitle={announTitle}
+            announBody={announBody}
+            placeholder={this.props.placeholder}
+            messagesEndRef={this.messagesEndRef}
+            homePage={true}
+            size='large'
+          />
+      </fabric-component>
     );
   }
 }

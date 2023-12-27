@@ -137,8 +137,7 @@ const register = (username, password) => {
 
 const logout = () => {
   return async dispatch => {
-
-    const request = indexedDB.open('Jeeves_DB', 1);
+    const request = indexedDB.open(BROWSER_DATABASE_NAME, 1);
 
     request.onerror = function(event) {
       console.error("IndexedDB error:", event.target.errorCode);
@@ -146,15 +145,14 @@ const logout = () => {
 
     request.onsuccess = function(event) {
       const db = event.target.result;
-      const transaction = db.transaction(['token'], 'readwrite');
-      const objectStore = transaction.objectStore('token');
-     
+      const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readwrite');
+      const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
       const deleteRequest = objectStore.delete('authToken');
-  
+
       deleteRequest.onsuccess = function(event) {
         console.log('The token has been removed from IndexedDB');
       };
-  
+
       deleteRequest.onerror = function(event) {
         console.error("IndexedDB delete error:", event.target.errorCode);
       };

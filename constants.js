@@ -1,7 +1,8 @@
 'use strict';
 
 // Constants
-const RELEASE_NAME = 'beta';
+const RELEASE_NAME = 'beta-1.0.0-pre';
+const RELEASE_DESCRIPTION = 'Exclusive access!';
 
 // Fabric
 const GENESIS_HASH = '';
@@ -18,6 +19,7 @@ const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 
 // Jeeves
+const BRAND_NAME = 'Novo';
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
 const ENABLE_LIBRARY = false;
@@ -39,6 +41,7 @@ const CHATGPT_MAX_TOKENS = 4096;
 module.exports = {
   GENESIS_HASH,
   RELEASE_NAME,
+  RELEASE_DESCRIPTION,
   BITCOIN_NETWORK,
   FIXTURE_SEED,
   AGENT_MAX_TOKENS,
@@ -54,6 +57,7 @@ module.exports = {
   PER_PAGE_DEFAULT,
   BROWSER_DATABASE_NAME,
   BROWSER_DATABASE_TOKEN_TABLE,
+  BRAND_NAME,
   CHATGPT_MAX_TOKENS,
   AGENT_TEMPERATURE,
 };
