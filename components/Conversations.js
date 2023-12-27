@@ -6,7 +6,7 @@ const ReactDOMServer = require('react-dom/server');
 
 // Semantic UI
 const { Link } = require('react-router-dom');
-const { Label, Segment, Pagination, Divider } = require('semantic-ui-react');
+const { Label, Segment, Pagination, Divider, Button } = require('semantic-ui-react');
 
 /**
  * The Jeeves UI.
@@ -60,18 +60,20 @@ class Conversations extends React.Component {
     return (
       <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h2>Conversations</h2>
-        {currentConversations.map(conversation => (
+        {currentConversations ? currentConversations.map(conversation => (
           <div key={conversation.id}>
             <h4 style={{marginBottom:'0.5em'}}>
               <Link to={'/conversations/' + conversation.id}>
                 {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
-                <span>Started by <Label>{conversation.creator_name || 'you'}</Label>:</span>
                 {conversation.title}
               </Link>
             </h4> 
            <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
-        ))}
+        )) : <div>
+            <div>We haven't had any conversations yet.</div>
+            <Button as={Link} to='/conversations/new' primary>Ask a Question</Button>
+          </div>}
         <Pagination
           size='tiny'
           activePage={currentPage}

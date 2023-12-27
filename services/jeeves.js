@@ -725,6 +725,19 @@ class Jeeves extends Service {
       });
     });
 
+    this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
+      // TODO: check for admin token
+      const { status } = req.body;
+
+      const inserted = await this.db('invitations').insert({
+        status: status
+      });
+
+      res.send({
+        message: 'Invitation sent successfully!'
+      });
+    });
+
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
       // - create user account
@@ -801,7 +814,7 @@ class Jeeves extends Service {
         const token = new Token({
           capability: 'OP_IDENTITY',
           issuer: null,
-          subject: user.id,
+          subject: user.id + '', // String value of integer ID
           state: {
             roles: roles
           }
@@ -1006,13 +1019,19 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/conversations', async (req, res, next) => {
       res.format({
         json: async () => {
+          let results = [];
+
           // TODO: re-evaluate security of `is_admin` check
-          const selector = (req.user.is_admin && req.params.query) ? { id: this.db.raw('IS NOT NULL') } : { creator_id: req.user.id };
-          const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').where(selector).orderBy('updated_at', 'desc');
-          // TODO: update the conversation upon change (new user message, new agent message)
-          // TODO: sort conversations by updated_at (below line)
-          // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
-          res.send(conversations);
+          if (req.user?.state?.roles?.includes('admin')) {
+            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
+          } else {
+            results = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
+            // TODO: update the conversation upon change (new user message, new agent message)
+            // TODO: sort conversations by updated_at (below line)
+            // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
+          }
+
+          res.send(results);
         },
         html: () => {
           // TODO: provide state

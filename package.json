@@ -1,6 +1,6 @@
 {
   "name": "@jeeves/core",
-  "version": "0.1.0-dev",
+  "version": "0.2.0-dev",
   "description": "crawl and aggregate data.",
   "main": "services/jeeves.js",
   "scripts": {
