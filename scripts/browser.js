@@ -64,6 +64,30 @@ const {
   fetchConversation
 } = require('../actions/conversationActions');
 
+// ## Person Actions
+const {
+  fetchPeople,
+  fetchPerson
+} = require('../actions/personActions');
+
+// ## Judge Actions
+const {
+  fetchJudges,
+  fetchJudge
+} = require('../actions/judgeActions');
+
+// ## Opinion Actions
+const {
+  fetchOpinions,
+  fetchOpinion
+} = require('../actions/opinionActions');
+
+// ## Document Actions
+const {
+  fetchDocuments,
+  fetchDocument
+} = require('../actions/documentActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -108,12 +132,16 @@ async function main (input = {}) {
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
       courts: state.courts,
+      documents: state.documents,
+      judges: state.judges,
+      people: state.people,
+      opinions: state.opinions,
       error: state.auth.error,
       isAuthenticated: state.auth.isAuthenticated,
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token,   
+      token: state.auth.token
     }
   };
 
@@ -126,6 +154,14 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    fetchDocuments: fetchDocuments,
+    fetchDocument: fetchDocument,
+    fetchJudges: fetchJudges,
+    fetchJudge: fetchJudge,
+    fetchPeople: fetchPeople,
+    fetchPerson: fetchPerson,
+    fetchOpinions: fetchOpinions,
+    fetchOpinion: fetchOpinion,
     fetchAdminStats: fetchAdminStats,
     fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
     login: login,
