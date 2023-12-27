@@ -8,7 +8,7 @@
        Fonts
 --------------------*/
 
-@fontName          : 'Noto Sans Mono';
+@fontName          : 'Martian Mono';
 
 @headerFont        : @fontName, 'Helvetica Neue', Arial, Helvetica, sans-serif;
 @pageFont          : @fontName, 'Helvetica Neue', Arial, Helvetica, sans-serif;
