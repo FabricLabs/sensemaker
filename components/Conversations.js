@@ -8,6 +8,9 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 const { Label, Segment, Pagination, Divider, Button } = require('semantic-ui-react');
 
+// Components
+const ChatBox = require('./ChatBox');
+
 /**
  * The Jeeves UI.
  * @param {Object} props Properties for the component.
@@ -15,6 +18,8 @@ const { Label, Segment, Pagination, Divider, Button } = require('semantic-ui-rea
 class Conversations extends React.Component {
   constructor (props) {
     super(props);
+
+    this.messagesEndRef = React.createRef();
 
     this.state = {
       currentPage: 1,
@@ -60,7 +65,7 @@ class Conversations extends React.Component {
     return (
       <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
         <h2>Conversations</h2>
-        {currentConversations ? currentConversations.map(conversation => (
+        {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div key={conversation.id}>
             <h4 style={{marginBottom:'0.5em'}}>
               <Link to={'/conversations/' + conversation.id}>
@@ -71,17 +76,17 @@ class Conversations extends React.Component {
            <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
         )) : <div>
-            <div>We haven't had any conversations yet.</div>
-            <Button as={Link} to='/conversations/new' primary>Ask a Question</Button>
-          </div>}
-        <Pagination
+          <div>We haven't had any conversations yet.</div>
+          <Button as={Link} to='/conversations/new' primary>Ask a Question</Button>
+        </div>}
+        {(currentConversations.length > itemsPerPage) ? <Pagination
           size='tiny'
           activePage={currentPage}
           totalPages={Math.ceil(conversations.length / itemsPerPage)}
           onPageChange={this.handlePaginationChange}
           ellipsisItem={(windowWidth>480)? undefined : null}
           boundaryRange={(windowWidth>480) ? 1 : 0}
-        />
+        /> : null}
       </Segment>
     );
   }

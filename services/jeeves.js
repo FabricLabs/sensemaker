@@ -58,11 +58,12 @@ const Matrix = require('@fabric/matrix');
 // const Prices = require('@portal/feed');
 
 // Services
+const EmailService = require('./email');
 const OpenAI = require('./openai');
 // TODO: Mistral
 // TODO: HarvardCaseLaw
 const CourtListener = require('./courtlistener');
-// TODO: WestLaw
+// const WestLaw = require('./westlaw');
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -141,6 +142,7 @@ class Jeeves extends Service {
     this.worker = new Worker(this.settings);
 
     // Services
+    this.email = new EmailService;
     this.matrix = new Matrix(this.settings.matrix);
     this.openai = new OpenAI(this.settings.openai);
 
@@ -626,6 +628,7 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
+    await this.email.start();
     await this.openai.start();
     // await this.matrix.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
@@ -718,10 +721,8 @@ class Jeeves extends Service {
         inquiry_id: inquiry_id
       });
 
-      console.debug('inserted:', inserted);
-
       res.send({
-        message: 'Invitation sent successfully!'
+        message: 'Invitation created successfully!'
       });
     });
 
@@ -734,7 +735,7 @@ class Jeeves extends Service {
       });
 
       res.send({
-        message: 'Invitation sent successfully!'
+        message: 'Invitation re-sent successfully!'
       });
     });
 

@@ -85,8 +85,8 @@ class AdminSettings extends React.Component {
             {currentConversations.map(conversation => (
               <div key={conversation.id}>
                 <Link to={'/conversations/' + conversation.id}>
-                  <span><Label>{conversation.creator_name || 'you'}</Label></span>
-                  {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                  <span><Label>{conversation.creator_name || 'you'}</Label></span>&nbsp;
+                  <abbr title={conversation.created_at}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>{": "}
                   <span>{conversation.title}</span>
                 </Link>
                 <Divider style={{marginTop: '0.3em',marginBottom:'0.3em'}}/>
@@ -109,6 +109,12 @@ class AdminSettings extends React.Component {
       { menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Users</Header>
       </Tab.Pane> },
+      { menuItem: 'Services', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Services</Header>
+      </Tab.Pane> },
+      { menuItem: 'Settings', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Settings</Header>
+      </Tab.Pane> }
     ];
 
     return (
