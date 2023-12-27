@@ -791,14 +791,20 @@ class Jeeves extends Service {
 
       try {
         const user = await this.db('users').where('username', username).first();
-        if (!user || !compareSync(password, user.password)) {
-          return res.status(401).json({ message: 'Invalid username or password.' });
-        }
+        if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
 
+        // Set Roles
+        const roles = ['user'];
+        if (user.is_admin) roles.unshift('admin');
+
+        // Create Token
         const token = new Token({
           capability: 'OP_IDENTITY',
           issuer: null,
-          subject: user.id
+          subject: user.id,
+          state: {
+            roles: roles
+          }
         });
 
         return res.json({
@@ -1404,7 +1410,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/announcements', async (req, res, next) => {
-      if (!req.user || !req.user.is_admin) {
+      if (!req.user || !req.user.state?.roles?.includes('admin')) {
         return res.status(401).json({ message: 'Unauthorized.' });
       }
 
@@ -1968,6 +1974,7 @@ class Jeeves extends Service {
             const obj = JSON.parse(inner);
             req.user.id = obj.sub;
             req.user.role = obj.role || 'asserted';
+            req.user.state = obj.state || {};
           } catch (exception) {
             console.error('Invalid Bearer Token:', inner)
           }

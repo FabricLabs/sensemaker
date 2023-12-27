@@ -52,16 +52,19 @@ class AnnouncementCreator extends React.Component {
       this.setState({ loading: false });
     }
   }
+
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth });
-  };
+  }
+
+
   handleTitleChange = (event) => {
     this.setState({ title: event.target.value });
-  };
+  }
 
   handleBodyChange = (event) => {
     this.setState({ body: event.target.value });   
-  };
+  }
 
   handleSubmit = async (event) => {
     event.preventDefault();
@@ -70,14 +73,13 @@ class AnnouncementCreator extends React.Component {
     if (title || body) {
       this.setState({ modalOpen: true });
     }
-  };
+  }
 
   handleClear = (event) => {
     event.preventDefault();
     this.setState({ title: '', body: '', expirationDate: '' });
   }
 
-  
   handleExpirationDateChange = (event) => {
     const dateString = event.target.value; // 'YYYY-MM-DD'
 
@@ -93,7 +95,7 @@ class AnnouncementCreator extends React.Component {
     } else {
       this.setState({ expirationDate: dateString });
     }
-  };
+  }
   
   
   handleModalClose = () => {
@@ -106,21 +108,22 @@ class AnnouncementCreator extends React.Component {
       errorMessage: ''
     });
   }
+
   handleModalSend = async () => {
 
     const { title, body, expirationDate} = this.state;
     const state = store.getState();
     const token = state.auth.token;
-    
+
     let dataToSend;
 
-    if(expirationDate){
+    if (expirationDate) {
       dataToSend = {
         title,
         body,
         expirationDate
       };
-    }else{
+    } else {
        dataToSend = {
         title,
         body
@@ -142,6 +145,7 @@ class AnnouncementCreator extends React.Component {
         reject(new Error('Fetch timed out'));
       }, 15000);
     });
+
     try {
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (response.ok) {
@@ -176,8 +180,8 @@ class AnnouncementCreator extends React.Component {
       }
     }
   }
-  renderModalAnnouncement = () => {
 
+  renderModalAnnouncement = () => {
     const {
       modalLoading,
       modalOpen,
@@ -248,7 +252,6 @@ class AnnouncementCreator extends React.Component {
   }
 
   render() {
-
     const {
       title,
       body,
@@ -258,7 +261,6 @@ class AnnouncementCreator extends React.Component {
     } = this.state;
 
     const dateColumns = windowWidth < 480 ? 16 : windowWidth < 1024 ? 8 : windowWidth < 1441 ? 6 : 3;
-
 
     return (
       <Container fluid style={{ paddingTop: '2em', }}>
