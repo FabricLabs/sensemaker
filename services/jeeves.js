@@ -1104,16 +1104,39 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
-      const documents = await this.db.select('id', 'description', 'created_at').from('documents').orderBy('created_at', 'desc');
+      const documents = await this.db.select('id', 'description', 'created_at', 'fabric_id').from('documents').whereNotNull('fabric_id').orderBy('created_at', 'desc');
+
       res.format({
         json: () => {
-          res.send(documents);
+          const response = documents.map((doc) => {
+            return {
+              id: doc.fabric_id,
+              description: doc.description,
+              created: doc.created_at
+            };
+          });
+
+          res.send(response);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
           return res.send(this.http.app._renderWith(''));
         }
       });
+    });
+
+    this.http._addRoute('GET', '/opinions', async (req, res, next) => {
+      const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
+
+      res.format({
+        json: () => {
+          res.send(opinions);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
     });
 
     this.http._addRoute('GET', '/judges', async (req, res, next) => {
