@@ -1,6 +1,6 @@
 {
   "name": "@jeeves/core",
-  "version": "0.1.0-dev",
+  "version": "0.2.0-dev",
   "description": "crawl and aggregate data.",
   "main": "services/jeeves.js",
   "scripts": {
@@ -57,8 +57,8 @@
   "homepage": "https://jeeves.dev",
   "dependencies": {
     "@babel/register": "7.22.5",
-    "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
-    "@fabric/http": "FabricLabs/fabric-http#feature/graphql",
+    "@fabric/core": "FabricLabs/fabric#feature/node-18",
+    "@fabric/http": "FabricLabs/fabric-http#feature/release-update",
     "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",
     "assert-browserify": "2.0.0",
     "babel-loader": "8.2.5",
@@ -76,6 +76,7 @@
     "lodash.merge": "4.6.2",
     "mysql2": "3.4.0",
     "node-util": "0.0.1",
+    "nodemailer": "6.9.7",
     "openai": "4.20.1",
     "path-browserify": "1.0.1",
     "pg": "8.11.3",
@@ -89,6 +90,7 @@
     "react-top-loading-bar": "2.3.1",
     "redux": "4.2.1",
     "redux-thunk": "2.4.2",
+    "smtp-client": "0.4.0",
     "sqlite3": "5.1.6",
     "stream-browserify": "3.0.0"
   },

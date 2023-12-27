@@ -22,7 +22,9 @@ const {
 } = require('semantic-ui-react');
 
 const {
+  BRAND_NAME,
   RELEASE_NAME,
+  RELEASE_DESCRIPTION,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
   ENABLE_LIBRARY
@@ -168,9 +170,9 @@ class Dashboard extends React.Component {
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
-                <Popup trigger={<Label color='black'>alpha</Label>}>
-                  <Popup.Content>Exclusive access!</Popup.Content>
+                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> {BRAND_NAME}
+                <Popup trigger={<Label color='black'>{RELEASE_NAME}</Label>}>
+                  <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
                 </Popup>
               </Header>
             </Menu.Item>

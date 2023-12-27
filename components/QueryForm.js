@@ -22,8 +22,8 @@ class Chat extends React.Component {
     super(props);
 
     this.state = {
-      announTitle:'',
-      announBody:'',      
+      announTitle: '',
+      announBody: '',
     };
 
     this.messagesEndRef = React.createRef();
@@ -35,16 +35,15 @@ class Chat extends React.Component {
     this.props.resetChat();
 
     this.fetchAnnouncement();
-  }  
+  }
 
 
   fetchAnnouncement = async () => {
-
     const state = store.getState();
     const token = state.auth.token;
 
     try {
-      const fetchPromise = fetch('/announcementFetch', {
+      const fetchPromise = fetch('/announcements/latest', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -85,7 +84,7 @@ class Chat extends React.Component {
         }
       }
     } catch (error) {
-      console.log('Error fetching announcements from API:', error);
+      // console.log('Error fetching announcements from API:', error);
     }
   };
 
@@ -100,27 +99,27 @@ class Chat extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column', 
+      flexDirection: 'column',
       paddingBottom: '0'
     } : {
       height: 'calc(100vh - 2.5rem)',
       display: 'flex',
-      flexDirection: 'column',  
+      flexDirection: 'column',
       paddingBottom: '0'
     };
    
-    return (  
-       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-          <ChatBox 
-             {...this.props}   
-             announTitle = {announTitle}
-             announBody ={announBody}
-             placeholder={this.props.placeholder}
-             messagesEndRef={this.messagesEndRef}
-             homePage={true}
-           />        
-
-       </fabric-component>
+    return ( 
+      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
+        <ChatBox
+            {...this.props}
+            announTitle={announTitle}
+            announBody={announBody}
+            placeholder={this.props.placeholder}
+            messagesEndRef={this.messagesEndRef}
+            homePage={true}
+            size='large'
+          />
+      </fabric-component>
     );
   }
 }
