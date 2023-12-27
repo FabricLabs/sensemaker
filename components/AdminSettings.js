@@ -94,6 +94,29 @@ class AdminSettings extends React.Component {
         </Statistic>
       </Tab.Pane> },
       { menuItem: 'Growth', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Waitlist</Header>
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>ID</Table.HeaderCell>
+              <Table.HeaderCell>Date</Table.HeaderCell>
+              <Table.HeaderCell>Email</Table.HeaderCell>
+              <Table.HeaderCell>Status</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>
+                <Button>Send Invitation</Button>
+              </Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
         <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>
