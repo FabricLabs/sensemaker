@@ -1112,13 +1112,13 @@ class Jeeves extends Service {
 
       res.format({
         json: () => {
-          const response = documents.map((doc) => {
+          const response = (documents && documents.length) ? documents.map((doc) => {
             return {
               id: doc.fabric_id,
               description: doc.description,
               created: doc.created_at
             };
-          });
+          }) : [];
 
           res.send(response);
         },
