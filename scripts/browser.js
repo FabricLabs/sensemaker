@@ -27,7 +27,7 @@ const store = require('../stores/redux');
 const { login, reLogin, register, logout } = require('../actions/authActions');
 
 // ## Admin Actions
-const { 
+const {
   fetchAdminStats,
   fetchAllConversationsFromAPI
 } = require('../actions/adminActions');
@@ -141,7 +141,8 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token
+      token: state.auth.token,
+      stats: state.stats
     }
   };
 

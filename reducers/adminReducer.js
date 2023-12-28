@@ -9,8 +9,8 @@ function adminReducer (state = initialState, action) {
   switch (action.type) {
     case FETCH_ADMIN_STATS_REQUEST:
       return { ...state }; // reset state
-    case FETCH_ADMIN_STATS_SUCCESS:        
-      return { ...state, stats: action.payload};    
+    case FETCH_ADMIN_STATS_SUCCESS:
+      return { ...state, stats: action.payload};
     case FETCH_ADMIN_STATS_FAILURE:
       console.debug('fetch admin stats failure:', state, action);
       return { ...state, error: action.payload };

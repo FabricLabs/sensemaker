@@ -69,6 +69,7 @@ class AdminSettings extends React.Component {
     const { waitlistSignupCount, currentPage, windowWidth } = this.state;
     const { stats } = this.props.stats;
 
+
     // Math for pagination of conversation list
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
