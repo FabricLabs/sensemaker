@@ -55,6 +55,19 @@ class CaseView extends React.Component {
             </code>
           </div>
         </Segment>
+        <Grid columns='equal'>
+          <Grid.Row stretched>
+            <Grid.Column>
+              <Segment>
+                <Header as='h4'>People</Header>
+              </Segment>
+            </Grid.Column>
+            <Grid.Column>
+                <Header as='h4'>Cites</Header>
+                <Header as='h4'>Cited By</Header>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
         <CaseChat
             fetchConversations={this.props.fetchConversations}
             getMessages={this.props.getMessages}

@@ -1,7 +1,10 @@
 'use strict';
 
+// Fabric Core
 const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
+
+// Fabric HTTP
 const Remote = require('@fabric/http/types/remote');
 
 class FabricService extends Service {
@@ -37,6 +40,14 @@ class FabricService extends Service {
     };
 
     return this;
+  }
+
+  get documents () {
+    return Object.values(this.state.collections.documents);
+  }
+
+  get courts () {
+    return Object.values(this.state.collections.courts);
   }
 
   async enumerateDocuments () {
@@ -81,6 +92,23 @@ class FabricService extends Service {
     await this.sync();
 
     return this;
+  }
+
+  commit () {
+    super.commit();
+
+    for (let i = 0; i < this.courts.length; i++) {
+      const court = this.courts[i];
+      const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+
+      // Fabric
+      court.id = actor.id;
+      court.ids = {};
+
+      if (court.courtlistener_id) court.ids.courtlistener_id = court.courtlistener_id;
+
+      this.emit('court', court);
+    }
   }
 }
 

@@ -146,6 +146,7 @@ class Jeeves extends Service {
     this.email = new EmailService;
     this.matrix = new Matrix(this.settings.matrix);
     this.openai = new OpenAI(this.settings.openai);
+    this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -240,7 +241,6 @@ class Jeeves extends Service {
       objects: {}
     };
 
-
     // Database connections
     this.db = knex({
       client: 'mysql2',
@@ -252,9 +252,6 @@ class Jeeves extends Service {
         database: this.settings.db.database
       }
     });
-
-    console.debug('COURTLISTENER SETTINGS:', this.settings.courtlistener);
-    this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     attachPaginate();
 
@@ -457,6 +454,31 @@ class Jeeves extends Service {
     this.worker.on('warning', (...warning) => console.warn(...warning));
     this.worker.on('error', (...error) => console.error(...error));
 
+    // Fabric Events
+    this.fabric.on('error', (...error) => console.error(...error));
+    this.fabric.on('warning', (...warning) => console.warn(...warning));
+    this.fabric.on('debug', (...debug) => console.debug(...debug));
+    this.fabric.on('log', (...log) => console.log(...log));
+
+    this.fabric.on('court', async (court) => {
+      console.debug('[FABRIC]', '[COURT]', court);
+      const target = await this.db('courts').where({ fabric_id: court.id }).first();
+      console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
+      if (!target) {
+        const inserted = await this.db('courts').insert({
+          fabric_id: court.id,
+          slug: court.slug,
+          courtlistener_id: court.ids?.courtlistener,
+          founded_date: court.founded_date,
+          name: court.name,
+          short_name: court.short_name,
+          citation_string: court.citation_string
+        });
+
+        this.emit('debug', '[FABRIC]', '[COURT]', '[INSERTED]', inserted);
+      }
+    });
+
     // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
@@ -535,28 +557,35 @@ class Jeeves extends Service {
 
     this.courtlistener.on('docket', async (docket) => {
       const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
-      this.db('cases').where({ courtlistener_id: docket.id }).first().then(async (target) => {
-        if (target) return;
-        const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
-        const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
-        await this.db('cases').insert({
-          fabric_id: actor.id,
-          court_id: court.id,
-          pacer_case_id: docket.pacer_case_id,
-          courtlistener_id: docket.id,
-          title: bestname,
-          short_name: docket.case_name_short,
-          date_filed: docket.date_filed,
-          date_argued: docket.date_argued,
-          date_reargued: docket.date_reargued,
-          date_reargument_denied: docket.date_reargument_denied,
-          date_blocked: docket.date_blocked,
-          date_last_filing: docket.date_last_filing,
-          date_terminated: docket.date_terminated
-        });
-      }).catch((exception) => {
-        console.error('COULD NOT FIND CASE:', exception);
-      });
+      const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
+      const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
+      const instance = {
+        fabric_id: actor.id,
+        court_id: court.id,
+        pacer_case_id: docket.pacer_case_id,
+        courtlistener_id: docket.id,
+        title: bestname,
+        short_name: docket.case_name_short,
+        date_filed: docket.date_filed,
+        date_argued: docket.date_argued,
+        date_reargued: docket.date_reargued,
+        date_reargument_denied: docket.date_reargument_denied,
+        date_blocked: docket.date_blocked,
+        date_last_filing: docket.date_last_filing,
+        date_terminated: docket.date_terminated
+      };
+
+      const target = this.db('cases').where({ courtlistener_id: docket.id }).first();
+
+      if (!target) {
+        // await this.db('cases').insert(instance);
+      }
+
+      if (docket.pacer_case_id) {
+        console.debug('[JEEVES]', 'We have a PACER Case ID:', docket.pacer_case_id);
+        const pacer = this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
+        if (!pacer) await this.db('cases').insert(instance);
+      }
     });
 
     this.courtlistener.on('opinioncluster', async (cluster) => {
@@ -659,7 +688,7 @@ class Jeeves extends Service {
     await this.fabric.start();
     await this.email.start();
     await this.openai.start();
-    // await this.matrix.start();
+    if (this.settings.matrix.enable) await this.matrix.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
     // Record all future activity
@@ -946,7 +975,6 @@ class Jeeves extends Service {
       const invitations = await this.db('invitations').select('id').from('invitations');
       const uningested = await this.db('cases').select('id').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc');
       const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
-
       const stats = {
         ingestions: {
           remaining: uningested.length,
@@ -1093,7 +1121,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const courts = await this.db.select('slug', 'name', 'founded_date').from('courts').orderBy('founded_date', 'desc').paginate({
+      const courts = await this.db.select('slug', 'name', 'founded_date', 'courtlistener_id').from('courts').orderBy('founded_date', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });

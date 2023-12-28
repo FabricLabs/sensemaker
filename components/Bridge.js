@@ -65,9 +65,8 @@ class Bridge extends React.Component {
 
       const now = Date.now();
       const message = Message.fromVector(['Ping', now.toString()]);
-      const ping = JSON.stringify(message.toObject());
-      if (this.settings.debug) console.debug('ping:', typeof ping, ping);
-      this.ws.send(message.asRaw());
+
+      this.ws.send(message.toBuffer());
     };
 
     this.ws.onmessage = async (msg) => {
