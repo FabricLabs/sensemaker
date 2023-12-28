@@ -59,6 +59,7 @@ const Matrix = require('@fabric/matrix');
 // const Prices = require('@portal/feed');
 
 // Services
+const Fabric = require('./fabric');
 const EmailService = require('./email');
 const OpenAI = require('./openai');
 // TODO: Mistral
@@ -164,6 +165,9 @@ class Jeeves extends Service {
       ephemera: this._rootKey,
       token: new Token({ issuer: this._rootKey })
     };
+
+    // Fabric
+    this.fabric = new Fabric(this.settings.fabric);
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -366,7 +370,7 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      const target = await this.db('documents')
+      const target = await self.db('documents')
         .where(function () {
           this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
         })
@@ -393,7 +397,7 @@ class Jeeves extends Service {
       }
 
       try {
-        await this.db('documents').update({
+        await self.db('documents').update({
           pdf_acquired: true
         }).where('courtlistener_id', target.courtlistener_id);
       } catch (exception) {
@@ -403,7 +407,7 @@ class Jeeves extends Service {
 
     this.worker.register('Ingest', async (...params) => {
       try {
-        await this.db('cases').update({
+        await self.db('cases').update({
           last_harvard_crawl: this.db.raw('now()')
         }).where('id', params[2].id);
       } catch (exception) {
@@ -428,7 +432,7 @@ class Jeeves extends Service {
       }
 
       try {
-        await this.db('cases').update({
+        await self.db('cases').update({
           pdf_acquired: true
         }).where('id', params[2].id);
       } catch (exception) {
@@ -515,9 +519,8 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('court', async (court) => {
-      const actor = new Actor({ name: court.full_name });
+      const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
       const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
-
       if (!target) {
         await this.db('courts').insert({
           fabric_id: actor.id,
@@ -529,6 +532,32 @@ class Jeeves extends Service {
           citation_string: court.citation_string
         });
       }
+    });
+
+    this.courtlistener.on('docket', async (docket) => {
+      const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
+      this.db('cases').where({ courtlistener_id: docket.id }).first().then(async (target) => {
+        if (target) return;
+        const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
+        const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
+        await this.db('cases').insert({
+          fabric_id: actor.id,
+          court_id: court.id,
+          pacer_case_id: docket.pacer_case_id,
+          courtlistener_id: docket.id,
+          title: bestname,
+          short_name: docket.case_name_short,
+          date_filed: docket.date_filed,
+          date_argued: docket.date_argued,
+          date_reargued: docket.date_reargued,
+          date_reargument_denied: docket.date_reargument_denied,
+          date_blocked: docket.date_blocked,
+          date_last_filing: docket.date_last_filing,
+          date_terminated: docket.date_terminated
+        });
+      }).catch((exception) => {
+        console.error('COULD NOT FIND CASE:', exception);
+      });
     });
 
     this.courtlistener.on('opinioncluster', async (cluster) => {
@@ -600,7 +629,6 @@ class Jeeves extends Service {
 
     this.courtlistener.on('person', async (person) => {
       const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-
       if (!target) {
         await this.db('people').insert({
           courtlistener_id: person.id,
@@ -629,6 +657,7 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
+    await this.fabric.start();
     await this.email.start();
     await this.openai.start();
     // await this.matrix.start();
@@ -670,19 +699,19 @@ class Jeeves extends Service {
           ]
         }); */
 
-        this.worker.addJob({
+        /* this.worker.addJob({
           type: 'ScanCourtListener',
           params: [
             { query: unknown.title }
           ]
-        });
+        }); */
       }, this.settings.crawlDelay);
 
       this._slowcrawler = setInterval(async () => {
-        this.worker.addJob({
+        /* this.worker.addJob({
           type: 'DownloadMissingRECAPDocument',
           params: []
-        });
+        }); */
 
         this.courtlistener.syncSamples();
       }, 60000);
@@ -1032,10 +1061,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
-            // TODO: filter by public/private value
-            'pdf_acquired': true
-          }).orderBy('decision_date', 'desc').paginate({
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').whereNotNull('courtlistener_id').orderBy('decision_date', 'desc').paginate({
             perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
@@ -1057,9 +1083,14 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name').from('cases').where({
+      const origin = {};
+      const updates = {};
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
+
+      if (!instance) return res.status(404).json({ message: 'Case not found.' });
+      // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
@@ -1067,27 +1098,43 @@ class Jeeves extends Service {
       /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
-      if (!instance.summary) {
-        const summary = await this._summarizeCaseToLength(instance);
-
-        if (summary) {
-          await this.db('cases').update({
-            summary: summary
-          }).where('id', instance.id);
-
-          instance.summary = summary;
-        }
+      if (instance.courtlistener_id) {
+        const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
+        console.debug('docket record:', record);
+        const title = record.case_name_full || record.case_name || instance.title;
+        if (title !== instance.title) updates.title = title;
       }
 
-      fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-        // TODO: additional params (auth?)
-      }).catch((exception) => {
-        console.error('FETCH FULL CASE ERROR:', exception);
-      }).then(async (output) => {
-        const target = await output.json();
-        const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
-        this.http.broadcast(message);
-      });
+      if (instance.pacer_case_id) {
+        const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
+        console.debug('PACER record:', record);
+        const title = record.case_name_full || record.case_name || instance.title;
+        if (title !== instance.title) updates.title = title;
+      }
+
+      if (instance.harvard_case_law_id) {
+        console.debug('Harvard record:', instance.harvard_case_law_id);
+        fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
+          // TODO: additional params (auth?)
+        }).catch((exception) => {
+          console.error('FETCH FULL CASE ERROR:', exception);
+        }).then(async (output) => {
+          const target = await output.json();
+          const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
+          this.http.broadcast(message);
+        });
+      }
+
+      if (!instance.summary) {
+        const merged = Object.assign({}, instance, updates);
+        const summary = await this._summarizeCaseToLength(merged);
+        if (summary) updates.summary = summary;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        console.debug('UPDATING CASE:', updates, instance);
+        await this.db('cases').update(updates).where('id', instance.id);
+      }
 
       res.format({
         json: async () => {
@@ -1140,16 +1187,122 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
-      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
+      const currentPage = req.query.page || 1;
+      const courts = await this.db.select('slug', 'name', 'founded_date').from('courts').orderBy('founded_date', 'desc').paginate({
+        perPage: PER_PAGE_LIMIT,
+        currentPage: currentPage
+      });
+
       res.format({
         json: () => {
-          res.send(courts);
+          res.send(courts.data);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
           return res.send(this.http.app._renderWith(''));
         }
       })
+    });
+
+    this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
+      const court = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc').where({ slug: req.params.slug }).first();
+      res.format({
+        json: () => {
+          if (!court) return res.status(404).json({ message: 'Court not found.' });
+          res.send(court);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/people', async (req, res, next) => {
+      const people = await this.db.select('id', 'full_name', 'created_at').from('people').orderBy('full_name', 'asc');
+      res.format({
+        json: () => {
+          res.send(people);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
+    });
+
+    this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
+      const person = await this.db.select('id', 'name', 'created_at').from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
+      res.format({
+        json: () => {
+          if (!person) return res.status(404).json({ message: 'Person not found.' });
+          res.send(person);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/documents', async (req, res, next) => {
+      const currentPage = req.query.page || 1;
+      const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+        perPage: PER_PAGE_LIMIT,
+        currentPage: currentPage
+      });
+
+      res.format({
+        json: () => {
+          // Create response
+          const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
+            return {
+              id: doc.fabric_id,
+              description: doc.description,
+              created: doc.created_at
+            };
+          }) : [];
+
+          // Set Pagination Headers
+          res.setHeader('X-Pagination', true);
+          res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
+          res.setHeader('X-Pagination-Per', documents.pagination.perPage);
+          res.setHeader('X-Pagination-Total', documents.pagination.total);
+
+          return res.send(response);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/opinions', async (req, res, next) => {
+      const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
+
+      res.format({
+        json: () => {
+          res.send(opinions);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      })
+    });
+
+    this.http._addRoute('GET', '/judges', async (req, res, next) => {
+      const judges = await this.db.select('id', 'name', 'created_at').from('judges').orderBy('name', 'asc');
+      res.format({
+        json: () => {
+          res.send(judges);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
     });
 
     this.http._addRoute('GET', '/messages', async (req, res, next) => {
@@ -1478,7 +1631,7 @@ class Jeeves extends Service {
       const old_message = await this.db('messages').where({ id: req.params.id }).first();
       console.debug('old message:', old_message);
 
-      if (!old_message) return res.error('No such message.');
+      if (!old_message) return res.status(404).json({ message: 'Message not found.' });
       // TODO: update message graph; consider requests, responses
       // flag message as regenerated
       // point to new answer
@@ -1961,7 +2114,12 @@ class Jeeves extends Service {
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
-    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum: ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
+    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
+      + `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
+      + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
+      + `Additional information:\n`
+      + `  PACER Case ID: ${instance.pacer_case_id}`;
+
     console.debug('Case to summarize:', instance);
 
     const request = { input: query };

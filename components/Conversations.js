@@ -62,8 +62,21 @@ class Conversations extends React.Component {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
 
+    const componentStyle = {
+      display: 'absolute',
+      top: '1em',
+      left: 'calc(350px + 1em)',
+      height: 'calc(100vh - 5rem)', // Set a maximum height
+      bottom: '1em',
+      paddingRight: '0em',
+      inset: 0,
+      display: 'flex',
+      flexDirection: 'column',  
+      paddingBottom: '0'     
+    };
+
     return (
-      <Segment className='fade-in' fluid style={{ marginRight: '1em' }}>
+      <Segment className='fade-in' fluid>
         <h2>Conversations</h2>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div key={conversation.id}>
@@ -75,9 +88,16 @@ class Conversations extends React.Component {
             </h4> 
            <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
-        )) : <div>
-          <div>We haven't had any conversations yet.</div>
-          <Button as={Link} to='/conversations/new' primary>Ask a Question</Button>
+        )) : <div  ref={this.messagesEndRef} style={componentStyle}>
+          {/* <div style={{marginBottom: '2em'}}>We haven't had any conversations yet.</div> */}
+          {/* <Button as={Link} to='/conversations/new' primary>Ask a Question</Button> */}
+          <ChatBox 
+            {...this.props}
+            messagesEndRef={this.messagesEndRef}
+            includeFeed={true}
+            placeholder={'Ask me anything...'}
+          />
+
         </div>}
         {(currentConversations.length > itemsPerPage) ? <Pagination
           size='tiny'

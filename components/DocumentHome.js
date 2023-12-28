@@ -12,30 +12,31 @@ const {
   Segment,
   Label,
   List,
-  Loader,
-  Dimmer,  
+  Loader
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
 
-class CaseHome extends React.Component {
+class DocumentHome extends React.Component {
   constructor (settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
-      filteredCases: [], // Initialize filtered cases state
+      filteredDocuments: [], // Initialize filtered documents state
       searching: false // Boolean to show a spinner icon while fetching
     };
   }
 
   componentDidMount () {
-    this.props.fetchCases();
+    this.props.fetchDocuments();
   }
 
   handleSearchChange = debounce((query) => {
+    //console.debug('search change:', query);
+
     this.setState({ searching: true });
 
-    fetch('/cases', {
+    fetch('/documents', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -44,28 +45,26 @@ class CaseHome extends React.Component {
       body: JSON.stringify({ query })
     }).then(async (result) => {
       const obj = await result.json();
-      console.debug('fetch result: ', obj);
+      console.log('fetch result: ', obj);
 
       this.setState({
-        filteredCases: obj.content,
+        filteredDocuments: obj.content,
         searchQuery: query,
       });
-    })
-    .catch((error) => {
+    }).catch((error) => {
       console.error('Error fetching data:', error);
-    })
-    .finally(() => {
+    }).finally(() => {
       this.setState({ searching: false }); // Set searching to false after fetch is complete
     });
   }, 1000);
 
   render () {
     const { loading, error } = this.props;
-    const { filteredCases, searchQuery, searching } = this.state;
+    const { filteredDocuments, searchQuery, searching } = this.state;
 
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
-        <h1>Cases</h1>
+        <h1>Documents</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input
@@ -82,53 +81,52 @@ class CaseHome extends React.Component {
                 this.handleSearchChange(query); // Call the debounce function with the query
               }}
             />
+
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
-        <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
-          {searching ? (
+        <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
+        {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
-          ) : searchQuery ? (filteredCases && filteredCases.cases && filteredCases.cases.length > 0 ? (
-              filteredCases.cases.map((instance) => (
-                <List.Item as={Card} key={instance.id} loading={loading}>
-                  <Card.Content>
-                    <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
-                    <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
-                    </Label.Group>
-                    <p>{instance.content}</p>
-                  </Card.Content>
-                </List.Item>
-              )
-            )
-          ) : (<p>No results found</p>)) : this.props.cases && this.props.cases.cases && this.props.cases.cases.length > 0 ? (
-              this.props.cases.cases.map((instance) => (
+          ) :
+          searchQuery ? // if searching, goes this way
+            (filteredDocuments && filteredDocuments.documents && filteredDocuments.documents.length > 0 ? (
+              filteredDocuments.documents.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/cases/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <h3><Link to={"/documents/" + instance.id}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
                       <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label icon="law">{instance.document_name}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
                   </Card.Content>
                 </List.Item>
               ))
-            ) : (<Loader active inline="centered" />)
+              ) : (<p>No results found</p>)
+            ) : this.props.documents && this.props.documents.documents && this.props.documents.documents.length > 0 ? (
+              this.props.documents.documents.map((instance) => (
+                <List.Item as={Card} key={instance.id}>
+                  <Card.Content>
+                    <h3><Link to={"/documents/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <Label.Group basic>
+                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
+                      <Label icon="law">{instance.document_name}</Label>
+                    </Label.Group>
+                    <p>{instance.content}</p>
+                  </Card.Content>
+                </List.Item>
+              ))
+            ) : (<p>No documents available</p>)
           }
         </List>
       </Segment>
     );
   }
 
-  _toHTML () {
-    return ReactDOMServer.renderToString(this.render());
-  }
-
   toHTML () {
-    return this._toHTML();
+    return ReactDOMServer.renderToString(this.render());
   }
 }
 
-module.exports = CaseHome;
+module.exports = DocumentHome;

@@ -67,12 +67,17 @@ class AdminSettings extends React.Component {
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
     const { waitlistSignupCount, currentPage, windowWidth } = this.state;
+    const { stats } = this.props.stats;
 
     // Math for pagination of conversation list
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
+
+    const inquiriesTotal = stats?.inquiries?.total ?? 0;
+    const invitationsTotal = stats?.invitations?.total ?? 0;
+    const usersTotal = stats?.users?.total ?? 0;
 
     // Admin Tabs
     // TODO: add users to admin settings
@@ -81,15 +86,15 @@ class AdminSettings extends React.Component {
       { menuItem: 'Overview', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
-          <Statistic.Value>{waitlistSignupCount}</Statistic.Value>
+          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
           <Statistic.Label>Waiting</Statistic.Label>
         </Statistic>
         <Statistic>
-          <Statistic.Value>{this.state.statistics.counts.waitlist}</Statistic.Value>
+          <Statistic.Value>{invitationsTotal}</Statistic.Value>
           <Statistic.Label>Sent</Statistic.Label>
         </Statistic>
         <Statistic>
-          <Statistic.Value>{this.state.statistics.counts.users}</Statistic.Value>
+          <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>
       </Tab.Pane> },
@@ -170,6 +175,26 @@ class AdminSettings extends React.Component {
               <Table.Cell>GPT 4</Table.Cell>
               <Table.Cell>gpt-4</Table.Cell>
               <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>GPT 4 32k</Table.Cell>
+              <Table.Cell>gpt-4-32k</Table.Cell>
+              <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>GPT 4 Turbo</Table.Cell>
+              <Table.Cell>gpt-4-turbo</Table.Cell>
+              <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Falcon 40B</Table.Cell>
+              <Table.Cell>falcon-40b</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Mistral 7B</Table.Cell>
+              <Table.Cell>mistral-7b</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>

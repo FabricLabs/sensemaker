@@ -70,8 +70,7 @@ class CourtListener extends Service {
 
   async enumeratePeople () {
     this.emit('debug', 'Enumerating people...');
-    const people = await this.db('people_db_person').select();
-    return people;
+    return this.db('people_db_person').select('id');
   }
 
   async sampleOpinionClusters () {
@@ -90,6 +89,15 @@ class CourtListener extends Service {
     this.emit('debug', 'Sampling RECAP documents...');
     const now = Date.now();
     const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
+    const end = Date.now();
+    this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
+    return documents;
+  }
+
+  async sampleDockets (limit = PER_PAGE_LIMIT) {
+    this.emit('debug', 'Sampling dockets...');
+    const now = Date.now();
+    const documents = await this.db('search_docket').select().orderByRaw('RANDOM()').limit(limit);
     const end = Date.now();
     this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
     return documents;
@@ -182,12 +190,26 @@ class CourtListener extends Service {
     return courts;
   }
 
+  async syncDockets () {
+    // TODO: this should be a stream
+    const dockets = await this.sampleDockets();
+
+    for (let i = 0; i < dockets.length; i++) {
+      const docket = dockets[i];
+      this.emit('docket', docket);
+    }
+
+    return dockets;
+  }
+
   async syncPeople () {
     // TODO: this should be a stream
     const people = await this.enumeratePeople();
 
     for (let i = 0; i < people.length; i++) {
       const person = people[i];
+      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
+      person.fabric_id = actor.id;
       this.emit('person', person);
     }
 
@@ -234,8 +256,13 @@ class CourtListener extends Service {
   }
 
   async syncSamples () {
+    // Sync courts first
+    await this.syncCourts();
+
+    // Then for all parallel jobs...
     return Promise.all([
-      this.syncRecapDocuments()
+      this.syncDockets(),
+      // this.syncRecapDocuments()
     ]);
   }
 
@@ -244,14 +271,17 @@ class CourtListener extends Service {
     this._state.content.status = 'SYNCING';
 
     // Estimate Work
-    const counts = await this.getCounts();
-    this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
-    this._state.content.counts = Object.assign(this._state.content.counts, counts);
+    // const counts = await this.getCounts();
+    // this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+    // this._state.content.counts = Object.assign(this._state.content.counts, counts);
 
     // Sync Data Sources
     // TODO: Dockets
     // Courts
     await this.syncCourts();
+
+    // Dockets
+    await this.syncDockets();
 
     // People
     // await this.syncPeople();
