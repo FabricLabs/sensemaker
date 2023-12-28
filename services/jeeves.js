@@ -1104,7 +1104,11 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
-      const documents = await this.db.select('id', 'description', 'created_at', 'fabric_id').from('documents').whereNotNull('fabric_id').orderBy('created_at', 'desc');
+      const currentPage = req.query.page || 1;
+      const documents = await this.db.select('id', 'description', 'created_at', 'fabric_id').from('documents').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+        perPage: PER_PAGE_LIMIT,
+        currentPage: currentPage
+      });
 
       res.format({
         json: () => {
