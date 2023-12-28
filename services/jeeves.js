@@ -1058,7 +1058,7 @@ class Jeeves extends Service {
 
       res.format({
         json: () => {
-          res.send(courts);
+          res.send(courts.data);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
@@ -1113,13 +1113,11 @@ class Jeeves extends Service {
       const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
-      }).catch((exception) => {
-        console.debug('DOCUMENTS ERROR:', exception);
       });
 
       res.format({
         json: () => {
-          const response = (documents && documents.length) ? documents.map((doc) => {
+          const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
               id: doc.fabric_id,
               description: doc.description,
@@ -1127,6 +1125,10 @@ class Jeeves extends Service {
             };
           }) : [];
 
+          res.setHeader('X-Pagination', true);
+          res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
+          res.setHeader('X-Pagination-Per', documents.pagination.perPage);
+          res.setHeader('X-Pagination-Total', documents.pagination.total);
           res.send(response);
         },
         html: () => {
