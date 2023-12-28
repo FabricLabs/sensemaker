@@ -256,9 +256,13 @@ class CourtListener extends Service {
   }
 
   async syncSamples () {
+    // Sync courts first
+    await this.syncCourts();
+
+    // Then for all parallel jobs...
     return Promise.all([
+      this.syncDockets(),
       // this.syncRecapDocuments()
-      this.syncDockets()
     ]);
   }
 

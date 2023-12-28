@@ -706,10 +706,10 @@ class Jeeves extends Service {
       }, this.settings.crawlDelay);
 
       this._slowcrawler = setInterval(async () => {
-        this.worker.addJob({
+        /* this.worker.addJob({
           type: 'DownloadMissingRECAPDocument',
           params: []
-        });
+        }); */
 
         this.courtlistener.syncSamples();
       }, 60000);
