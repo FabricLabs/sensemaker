@@ -1491,7 +1491,7 @@ class Jeeves extends Service {
       const old_message = await this.db('messages').where({ id: req.params.id }).first();
       console.debug('old message:', old_message);
 
-      if (!old_message) return res.error('No such message.');
+      if (!old_message) return res.status(404).json({ message: 'Message not found.' });
       // TODO: update message graph; consider requests, responses
       // flag message as regenerated
       // point to new answer
