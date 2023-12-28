@@ -534,6 +534,21 @@ class Jeeves extends Service {
       }
     });
 
+    this.courtlistener.on('docket', async (docket) => {
+      const actor = new Actor({ name: docket.case_name_full });
+      const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
+
+      if (!target) {
+        await this.db('cases').insert({
+          fabric_id: actor.id,
+          slug: docket.slug,
+          courtlistener_id: docket.id,
+          title: docket.case_name_full,
+          short_name: docket.case_name_short
+        });
+      }
+    });
+
     this.courtlistener.on('opinioncluster', async (cluster) => {
       const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
 

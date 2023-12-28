@@ -70,8 +70,7 @@ class CourtListener extends Service {
 
   async enumeratePeople () {
     this.emit('debug', 'Enumerating people...');
-    const people = await this.db('people_db_person').select();
-    return people;
+    return this.db('people_db_person').select('id');
   }
 
   async sampleOpinionClusters () {
@@ -90,6 +89,15 @@ class CourtListener extends Service {
     this.emit('debug', 'Sampling RECAP documents...');
     const now = Date.now();
     const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
+    const end = Date.now();
+    this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
+    return documents;
+  }
+
+  async sampleDockets (limit = PER_PAGE_LIMIT) {
+    this.emit('debug', 'Sampling dockets...');
+    const now = Date.now();
+    const documents = await this.db('search_docket').select().orderByRaw('RANDOM()').limit(limit);
     const end = Date.now();
     this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
     return documents;
@@ -182,6 +190,18 @@ class CourtListener extends Service {
     return courts;
   }
 
+  async syncDockets () {
+    // TODO: this should be a stream
+    const dockets = await this.sampleDockets();
+
+    for (let i = 0; i < dockets.length; i++) {
+      const docket = dockets[i];
+      this.emit('docket', docket);
+    }
+
+    return dockets;
+  }
+
   async syncPeople () {
     // TODO: this should be a stream
     const people = await this.enumeratePeople();
@@ -253,6 +273,9 @@ class CourtListener extends Service {
     // TODO: Dockets
     // Courts
     await this.syncCourts();
+
+    // Dockets
+    await this.syncDockets();
 
     // People
     // await this.syncPeople();
