@@ -280,7 +280,7 @@ class CourtListener extends Service {
     await this.syncDockets();
 
     // People
-    await this.syncPeople();
+    // await this.syncPeople();
 
     // Opinions
     // await this.syncOpinions();

@@ -518,7 +518,7 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('court', async (court) => {
-      const actor = new Actor({ name: court.full_name });
+      const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
       const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
       if (!target) {
         await this.db('courts').insert({
@@ -536,12 +536,24 @@ class Jeeves extends Service {
     this.courtlistener.on('docket', async (docket) => {
       const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
       const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
+
       if (!target) {
+        const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
+        const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
         await this.db('cases').insert({
           fabric_id: actor.id,
+          court_id: court.id,
+          pacer_case_id: docket.pacer_case_id,
           courtlistener_id: docket.id,
-          title: docket.case_name_full,
-          short_name: docket.case_name_short
+          title: bestname,
+          short_name: docket.case_name_short,
+          date_filed: docket.date_filed,
+          date_argued: docket.date_argued,
+          date_reargued: docket.date_reargued,
+          date_reargument_denied: docket.date_reargument_denied,
+          date_blocked: docket.date_blocked,
+          date_last_filing: docket.date_last_filing,
+          date_terminated: docket.date_terminated
         });
       }
     });
