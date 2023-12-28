@@ -152,8 +152,7 @@ class UserChangeModal extends React.Component {
             this.setState({ userUpdateError: true, });
           }
         }
-        this.setState({ userModalLoading: false });
-        console.log(error.message);
+        this.setState({ userModalLoading: false });        
       }
     }
 

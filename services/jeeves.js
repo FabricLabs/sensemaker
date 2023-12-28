@@ -23,6 +23,7 @@ const merge = require('lodash.merge');
 const levelgraph = require('levelgraph');
 const knex = require('knex');
 const { attachPaginate } = require('knex-paginate');
+const crypto = require('crypto');
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -457,9 +458,11 @@ class Jeeves extends Service {
     // Fabric Events
     this.fabric.on('error', (...error) => console.error(...error));
     this.fabric.on('warning', (...warning) => console.warn(...warning));
-    this.fabric.on('debug', (...debug) => console.debug(...debug));
+    // this.fabric.on('debug', (...debug) => console.debug(...debug));
     this.fabric.on('log', (...log) => console.log(...log));
 
+    // Collect Jeeves-specific
+    // Courts
     this.fabric.on('court', async (court) => {
       console.debug('[FABRIC]', '[COURT]', court);
       const target = await this.db('courts').where({ fabric_id: court.id }).first();
@@ -852,6 +855,9 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+    this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
     this.http._addRoute('POST', '/sessions', async (req, res, next) => {
       const { username, password } = req.body;
@@ -966,6 +972,97 @@ class Jeeves extends Service {
           message: 'Username updated successfully.',
         });
       } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //this is the function that generates a password reset token
+    this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
+      const { email } = req.body;
+
+      try {
+        // Check if the email exists
+        const existingUser = await this.db('users').where('email', email).first();
+        if (!existingUser) {
+          return res.status(409).json({ 
+            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com ' 
+          });
+        }
+
+        const resetToken = crypto.randomBytes(20).toString('hex'); 
+
+        const newReset = await this.db('password_resets').insert({
+          user_id: existingUser.id,
+          token: resetToken,
+        });
+        //TODO: Send the email
+
+        return res.json({
+          message: 'Token sent successfully.',
+        });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //function to check if the reset token for password is valid
+    this.http._addRoute('POST', '/resettokencheck', async (req, res, next) => {
+      const { resetToken } = req.body;
+
+      try {
+        // Check if the token exists
+
+        const existingToken = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
+
+        if (!existingToken) {          
+          return res.status(409).json({
+            message: 'Your reset link is not valid, please try reseting your password again'
+          });
+        }
+        // Check if the token is older than 1 hour
+        const tokenAge = new Date() - new Date(existingToken.created_at);
+        const oneHour = 1000 * 60 * 60; // milliseconds in one hour
+
+        if (tokenAge > oneHour) {          
+          return res.status(410).json({ // 410 Gone is often used for expired resources
+            message: 'Your reset token has expired, please request a new one.'
+          });
+        }      
+
+        return res.json({
+          message: 'Token correct.',
+        });
+      } catch (error) {
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //this is the function that updates the password of the user that came with a reset token
+    this.http._addRoute('POST', '/passwordRestore', async (req, res, next) => {
+      const { newPassword, resetToken } = req.body;
+
+      try {
+        const userReseting = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
+        if (!userReseting) {
+          return res.status(401).json({ message: 'Invalid reset token.' });
+        }
+
+        // Generate a salt and hash the new password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(newPassword, salt);
+
+        // Update the user's password in the database
+        await this.db('users').where('id', userReseting.user_id).update({
+          password: hashedPassword,
+          salt: salt
+        });
+
+        return res.json({
+          message: 'Password updated successfully.',
+        });
+      } catch (error) {
+        console.error('Error authenticating user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
