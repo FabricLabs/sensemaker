@@ -67,12 +67,18 @@ class AdminSettings extends React.Component {
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
     const { waitlistSignupCount, currentPage, windowWidth } = this.state;
+    const { stats } = this.props.stats;
+
 
     // Math for pagination of conversation list
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
+
+    const inquiriesTotal = stats?.inquiries?.total ?? 0;
+    const invitationsTotal = stats?.invitations?.total ?? 0;
+    const usersTotal = stats?.users?.total ?? 0;
 
     // Admin Tabs
     // TODO: add users to admin settings
@@ -81,15 +87,15 @@ class AdminSettings extends React.Component {
       { menuItem: 'Overview', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
-          <Statistic.Value>{waitlistSignupCount}</Statistic.Value>
+          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
           <Statistic.Label>Waiting</Statistic.Label>
         </Statistic>
         <Statistic>
-          <Statistic.Value>{this.state.statistics.counts.waitlist}</Statistic.Value>
+          <Statistic.Value>{invitationsTotal}</Statistic.Value>
           <Statistic.Label>Sent</Statistic.Label>
         </Statistic>
         <Statistic>
-          <Statistic.Value>{this.state.statistics.counts.users}</Statistic.Value>
+          <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>
       </Tab.Pane> },

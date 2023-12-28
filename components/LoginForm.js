@@ -3,12 +3,14 @@
 // Dependencies
 const React = require('react');
 const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
+const AskPasswordResetModal = require('./LoginFormAskResetModal');
+
 
 // Semantic UI
 const {
   Button,
   Form,
-  Message
+  Message,
 } = require('semantic-ui-react');
 
 class LoginForm extends React.Component {
@@ -19,6 +21,7 @@ class LoginForm extends React.Component {
       loading: false,
       username: '',
       password: '',
+      pwdModalOpen: false,
     };
   }
 
@@ -53,8 +56,15 @@ class LoginForm extends React.Component {
     });
   };
 
+  // Toggle the modal
+  togglePasswordModal = () => {    
+    this.setState(prevState => ({
+      pwdModalOpen: !prevState.pwdModalOpen
+    }));    
+  };
+
   render () {
-    const { username, password, loading } = this.state;
+    const { username, password, loading, pwdModalOpen } = this.state;
     const { error } = this.props;
 
     return (
@@ -72,8 +82,10 @@ class LoginForm extends React.Component {
             <Button fluid primary loading={loading} type="submit" size={this.props.size}>Login</Button>
             <Button as={Link} to='/' fluid size='small'>Back to the Waitlist</Button>
           </Button.Group>
+          <p style={{ marginTop: '2em' }}>Did you forget your password? Restore it <a onClick={this.togglePasswordModal}>Here</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
-        </Form>
+        </Form>        
+        <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal}/>
       </fabric-react-component>
     );
   }

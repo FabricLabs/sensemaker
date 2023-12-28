@@ -76,7 +76,7 @@
           loggedOut: false
         });
         this.props.logout();
-        window.location.href = '/'; 
+        window.location.href = '/';
 
         //window.location.reload();
       }, 2000)
@@ -137,7 +137,7 @@
               this.props.reLogin(request.result.value);
             }
           };
-      
+
           request.onerror = (event) => {
             console.error("IndexedDB error:", event.target.errorCode);
           };
@@ -147,6 +147,7 @@
         console.error("IndexedDB error:", event.target.errorCode);
       };
     }
+
 
     render () {
       const { modalLogOut, loggedOut } = this.state;
