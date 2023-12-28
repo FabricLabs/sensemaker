@@ -1218,7 +1218,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const courts = await this.db.select('slug', 'name', 'founded_date', 'courtlistener_id', 'short_name').from('courts').orderBy('founded_date', 'desc').paginate({
+      const courts = await this.db.select('slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date', 'url').from('courts').orderBy('founded_date', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
