@@ -458,9 +458,11 @@ class Jeeves extends Service {
     // Fabric Events
     this.fabric.on('error', (...error) => console.error(...error));
     this.fabric.on('warning', (...warning) => console.warn(...warning));
-    this.fabric.on('debug', (...debug) => console.debug(...debug));
+    // this.fabric.on('debug', (...debug) => console.debug(...debug));
     this.fabric.on('log', (...log) => console.log(...log));
 
+    // Collect Jeeves-specific
+    // Courts
     this.fabric.on('court', async (court) => {
       console.debug('[FABRIC]', '[COURT]', court);
       const target = await this.db('courts').where({ fabric_id: court.id }).first();
