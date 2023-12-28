@@ -535,7 +535,9 @@ class Jeeves extends Service {
 
     this.courtlistener.on('docket', async (docket) => {
       const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
-      const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
+      const target = await this.db('cases').where({ courtlistener_id: docket.id }).first().catch((exception) => {
+        console.error('COULD NOT FIND CASE:', exception);
+      });
 
       if (!target) {
         const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
@@ -697,12 +699,12 @@ class Jeeves extends Service {
           ]
         }); */
 
-        this.worker.addJob({
+        /* this.worker.addJob({
           type: 'ScanCourtListener',
           params: [
             { query: unknown.title }
           ]
-        });
+        }); */
       }, this.settings.crawlDelay);
 
       this._slowcrawler = setInterval(async () => {
@@ -987,7 +989,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
 
@@ -998,10 +1000,17 @@ class Jeeves extends Service {
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       if (!instance) return res.status(404).json({ message: 'Case not found.' });
-      if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
+      // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
 
-      const record = await this.courtlistener.db('dockets').where({ id: instance.courtlistener_id }).first();
-      console.debug('record:', record);
+      if (instance.courtlistener_id) {
+        const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
+        console.debug('docket record:', record);
+      }
+
+      if (instance.pacer_case_id) {
+        const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
+        console.debug('PACER record:', record);
+      }
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
