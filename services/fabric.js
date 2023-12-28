@@ -64,7 +64,7 @@ class FabricService extends Service {
       // console.debug('[FABRIC] Courts found:', courts);
       for (let j = 0; j < courts.length; j++) {
         const court = courts[j];
-        const actor = new Actor({ name: `courtlistener/${court.slug}` });
+        const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
         this._state.content.collections.courts[actor.id] = court;
       }
     }
