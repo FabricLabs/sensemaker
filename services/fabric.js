@@ -49,8 +49,14 @@ class FabricService extends Service {
     for (let i = 0; i < this.remotes.length; i++) {
       // console.debug('[FABRIC] Remote Settings:', this.remotes[i].settings);
       const remote = this.remotes[i];
+
+      // Documents
       const documents = await remote._GET('/documents');
-      // console.debug('[FABRIC] Documents found:', documents);
+      console.debug('[FABRIC] Documents found:', documents);
+
+      // Courts
+      const courts = await remote._GET('/courts');
+      console.debug('[FABRIC] Courts found:', courts);
     }
 
     return this;
