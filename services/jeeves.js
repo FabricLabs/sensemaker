@@ -469,9 +469,9 @@ class Jeeves extends Service {
           fabric_id: court.id,
           slug: court.slug,
           courtlistener_id: court.ids?.courtlistener,
-          founded_date: court.founded_date,
+          founded_date: new Date(court.founded_date),
           name: court.name,
-          short_name: court.short_name,
+          short_name: court.short_name || court.name,
           citation_string: court.citation_string
         });
 
@@ -1121,7 +1121,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const courts = await this.db.select('slug', 'name', 'founded_date', 'courtlistener_id').from('courts').orderBy('founded_date', 'desc').paginate({
+      const courts = await this.db.select('slug', 'name', 'founded_date', 'courtlistener_id', 'short_name').from('courts').orderBy('founded_date', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
