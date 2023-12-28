@@ -90,7 +90,7 @@ class CaseHome extends React.Component {
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) : searchQuery ? (filteredCases && filteredCases.cases && filteredCases.cases.length > 0 ? (
               filteredCases.cases.map((instance) => (
-                <List.Item as={Card} key={instance.id}>
+                <List.Item as={Card} key={instance.id} loading={loading}>
                   <Card.Content>
                     <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
