@@ -535,11 +535,8 @@ class Jeeves extends Service {
 
     this.courtlistener.on('docket', async (docket) => {
       const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
-      const target = await this.db('cases').where({ courtlistener_id: docket.id }).first().catch((exception) => {
-        console.error('COULD NOT FIND CASE:', exception);
-      });
-
-      if (!target) {
+      this.db('cases').where({ courtlistener_id: docket.id }).first().then(async (target) => {
+        if (target) return;
         const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
         const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
         await this.db('cases').insert({
@@ -557,7 +554,9 @@ class Jeeves extends Service {
           date_last_filing: docket.date_last_filing,
           date_terminated: docket.date_terminated
         });
-      }
+      }).catch((exception) => {
+        console.error('COULD NOT FIND CASE:', exception);
+      });
     });
 
     this.courtlistener.on('opinioncluster', async (cluster) => {
