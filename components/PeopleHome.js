@@ -22,7 +22,7 @@ class PeopleHome extends React.Component {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
-      filteredPeople: [], // Initialize filtered courts state
+      filteredPeople: [], // Initialize filtered people state
       searching: false // Boolean to show a spinner icon while fetching
     };
   }
@@ -34,7 +34,7 @@ class PeopleHome extends React.Component {
   handleSearchChange = debounce((query) => {
     this.setState({ searching: true });
 
-    fetch('/courts', {
+    fetch('/people', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -43,9 +43,8 @@ class PeopleHome extends React.Component {
       body: JSON.stringify({ query })
     }).then(async (result) => {
       const obj = await result.json();
-        
       console.log('fetch result: ', obj);
-      
+
       this.setState({
         filteredPeople: obj.content,
         searchQuery: query,
@@ -80,7 +79,6 @@ class PeopleHome extends React.Component {
                 this.handleSearchChange(query); // Call the debounce function with the query
               }}
             />
-
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
@@ -89,11 +87,11 @@ class PeopleHome extends React.Component {
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
           searchQuery ? // if searching, goes this way
-            (filteredPeople && filteredPeople.courts && filteredPeople.courts.length > 0 ? (
-              filteredPeople.courts.map((instance) => (
+            (filteredPeople && filteredPeople.people && filteredPeople.people.length > 0 ? (
+              filteredPeople.people.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/courts/" + instance.id}>{instance.short_name}</Link></h3>
+                    <h3><Link to={"/people/" + instance.id}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
                       <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
                       <Label icon="law">{instance.court_name}</Label>
@@ -103,20 +101,19 @@ class PeopleHome extends React.Component {
                 </List.Item>
               ))
               ) : (<p>No results found</p>)
-            ) : this.props.courts && this.props.courts.courts && this.props.courts.courts.length > 0 ? (
-              this.props.courts.courts.map((instance) => (
+            ) : this.props.people && this.props.people.people && this.props.people.people.length > 0 ? (
+              this.props.people.people.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/courts/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <h3><Link to={"/people/" + instance.id}> {instance.short_name} </Link> </h3>
                     <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label icon="law">{instance.legal_name}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
                   </Card.Content>
                 </List.Item>
               ))
-            ) : (<p>No courts available</p>)
+            ) : (<p>No people available</p>)
           }
         </List>
       </Segment>
