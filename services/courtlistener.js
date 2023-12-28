@@ -255,7 +255,8 @@ class CourtListener extends Service {
 
   async syncSamples () {
     return Promise.all([
-      this.syncRecapDocuments()
+      // this.syncRecapDocuments()
+      this.syncDockets()
     ]);
   }
 

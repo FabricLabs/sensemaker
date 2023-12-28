@@ -541,7 +541,6 @@ class Jeeves extends Service {
       if (!target) {
         await this.db('cases').insert({
           fabric_id: actor.id,
-          slug: docket.slug,
           courtlistener_id: docket.id,
           title: docket.case_name_full,
           short_name: docket.case_name_short
