@@ -989,18 +989,20 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
+      const origin = {};
+      const updates = {};
       const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
+
+      if (!instance) return res.status(404).json({ message: 'Case not found.' });
+      // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
       // Embeddings
       /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
-
-      if (!instance) return res.status(404).json({ message: 'Case not found.' });
-      // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
 
       if (instance.courtlistener_id) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
@@ -1010,29 +1012,33 @@ class Jeeves extends Service {
       if (instance.pacer_case_id) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('PACER record:', record);
+        const title = record.case_name_full || record.case_name || instance.title;
+        if (title !== instance.title) updates.title = title;
+      }
+
+      if (instance.harvard_case_law_id) {
+        console.debug('Harvard record:', instance.harvard_case_law_id);
+        fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
+          // TODO: additional params (auth?)
+        }).catch((exception) => {
+          console.error('FETCH FULL CASE ERROR:', exception);
+        }).then(async (output) => {
+          const target = await output.json();
+          const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
+          this.http.broadcast(message);
+        });
       }
 
       if (!instance.summary) {
-        const summary = await this._summarizeCaseToLength(instance);
-
-        if (summary) {
-          await this.db('cases').update({
-            summary: summary
-          }).where('id', instance.id);
-
-          instance.summary = summary;
-        }
+        const merged = Object.assign({}, instance, updates);
+        const summary = await this._summarizeCaseToLength(merged);
+        if (summary) updates.summary = summary;
       }
 
-      fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-        // TODO: additional params (auth?)
-      }).catch((exception) => {
-        console.error('FETCH FULL CASE ERROR:', exception);
-      }).then(async (output) => {
-        const target = await output.json();
-        const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
-        this.http.broadcast(message);
-      });
+      if (Object.keys(updates).length > 0) {
+        console.debug('UPDATING CASE:', updates, instance);
+        await this.db('cases').update(updates).where('id', instance.id);
+      }
 
       res.format({
         json: async () => {
