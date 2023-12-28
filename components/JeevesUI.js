@@ -1,5 +1,11 @@
   'use strict';
 
+  // Constants
+  const {
+    BROWSER_DATABASE_NAME,
+    BROWSER_DATABASE_TOKEN_TABLE
+  } = require('../constants');
+
   // Dependencies
   const React = require('react');
   const { renderToString } = require('react-dom/server');
@@ -107,22 +113,22 @@
       }
     }
 
-    componentDidMount(){
-      const dbRequest = indexedDB.open("Jeeves_DB", 1);
+    componentDidMount () {
+      const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
 
       dbRequest.onupgradeneeded = function (event) {
         const db = event.target.result;
 
-        if (!db.objectStoreNames.contains('token')) {
-          const objectStore = db.createObjectStore('token',{ keyPath: 'id' });
+        if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+          const objectStore = db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE, { keyPath: 'id' });
           objectStore.createIndex("authToken", "authToken", { unique: false });
         }
       };
 
       dbRequest.onsuccess = (event) => {
           const db = event.target.result;
-          const transaction = db.transaction(['token'], 'readonly');
-          const objectStore = transaction.objectStore('token');
+          const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
+          const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
           const request = objectStore.get('authToken');
 
           request.onsuccess = (event) => {
@@ -141,7 +147,6 @@
         console.error("IndexedDB error:", event.target.errorCode);
       };
     }
-
 
     render () {
       const { modalLogOut, loggedOut } = this.state;
@@ -213,7 +218,7 @@
                   {!loggedOut && (
                     <div>
                       <Button
-                        content='Close'
+                        content='Cancel'
                         icon='close'
                         onClick={this.handleModalClose}
                         labelPosition='right'

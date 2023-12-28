@@ -11,7 +11,7 @@ environment.start();
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
-const NAME = 'BETA';
+const NAME = 'NOVO';
 const VERSION = '0.3.0';
 const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
@@ -21,21 +21,27 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  * Provides the user's local settings.
  */
 module.exports = {
-  alias: 'JeevesAI',
+  alias: 'NOVO',
   moniker: NAME,
+  release: 'beta',
   name: 'jeeves',
-  mode: 'development',
-  crawl: true,
+  mode: 'production',
+  crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
+  fabric: {
+    remotes: [
+      { host: 'hub.fabric.pub', port: 443, secure: true }
+    ]
+  },
   db: {
     type: 'mysql',
     host: 'localhost',
     port: 3306,
-    user: 'db_user',
-    password: 'password',
-    database: 'db_name'
+    user: 'db_user_jeeves',
+    password: 'chahcieYishi1wuu',
+    database: 'db_jeeves'
   },
   http: {
     listen: true,
@@ -85,10 +91,12 @@ module.exports = {
     token: null
   },
   courtlistener: {
+    enable: false,
     type: 'postgresql',
-    host: 'HOSTNAME',
-    username: 'USERNAME',
-    password: 'PASSWORD'
+    host: 'lavendar.courtlistener.com',
+    database: 'courtlistener',
+    username: 'django',
+    password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
   },
   harvard: {
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'

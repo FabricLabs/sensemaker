@@ -67,7 +67,7 @@ const regenAnswer = (message) => {
     message.regenerate = true;
 
     try {
-      const response = await fetch('/messages/:id', {
+      const response = await fetch(`/messages/${message.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

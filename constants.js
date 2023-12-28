@@ -1,7 +1,8 @@
 'use strict';
 
 // Constants
-const RELEASE_NAME = 'beta';
+const RELEASE_NAME = 'beta-1.0.0-pre';
+const RELEASE_DESCRIPTION = 'Exclusive access!';
 
 // Fabric
 const GENESIS_HASH = '';
@@ -18,11 +19,21 @@ const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
 
 // Jeeves
+const BRAND_NAME = 'Novo';
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
+const ENABLE_JUDGE_SEARCH = false;
+const ENABLE_OPINION_SEARCH = true;
+const ENABLE_DOCUMENT_SEARCH = true;
+const ENABLE_PERSON_SEARCH = true;
+
 const ENABLE_LIBRARY = false;
 const ENABLE_CHAT = true;
 const INTEGRITY_CHECK = true;
+
+// Browser
+const BROWSER_DATABASE_NAME = 'jeeves';
+const BROWSER_DATABASE_TOKEN_TABLE = 'tokens';
 
 // Records
 const PER_PAGE_LIMIT = 100;
@@ -35,6 +46,7 @@ const CHATGPT_MAX_TOKENS = 4096;
 module.exports = {
   GENESIS_HASH,
   RELEASE_NAME,
+  RELEASE_DESCRIPTION,
   BITCOIN_NETWORK,
   FIXTURE_SEED,
   AGENT_MAX_TOKENS,
@@ -45,9 +57,16 @@ module.exports = {
   ENABLE_CHAT,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
+  ENABLE_JUDGE_SEARCH,
+  ENABLE_OPINION_SEARCH,
+  ENABLE_DOCUMENT_SEARCH,
+  ENABLE_PERSON_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
+  BROWSER_DATABASE_NAME,
+  BROWSER_DATABASE_TOKEN_TABLE,
+  BRAND_NAME,
   CHATGPT_MAX_TOKENS,
   AGENT_TEMPERATURE,
 };

@@ -3,7 +3,7 @@
 const { fetchFromAPI } = require('./apiActions');
 
 async function fetchCourtsFromAPI (token) {
-  return fetchFromAPI('/courts', token);
+  return fetchFromAPI('/courts', null, token);
 }
 
 // Action types
@@ -41,7 +41,7 @@ const fetchCourt = (id) => {
     dispatch(fetchCourtRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/courts/${id}`, token);
+      const instance = await fetchFromAPI(`/courts/${id}`, null, token);
       dispatch(fetchCourtSuccess(instance));
     } catch (error) {
       dispatch(fetchCourtFailure(error));

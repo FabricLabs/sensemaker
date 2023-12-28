@@ -64,7 +64,7 @@ class Compiler extends HTTPCompiler {
         target: 'node',
         output: {
           path: path.resolve('./assets/bundles'),
-          filename: 'browser.js',
+          filename: 'browser.min.js',
           clean: {
             dry: true
           }

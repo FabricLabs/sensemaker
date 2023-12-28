@@ -33,8 +33,6 @@ class CaseHome extends React.Component {
   }
 
   handleSearchChange = debounce((query) => {
-    //console.debug('search change:', query);
-
     this.setState({ searching: true });
 
     fetch('/cases', {
@@ -46,9 +44,8 @@ class CaseHome extends React.Component {
       body: JSON.stringify({ query })
     }).then(async (result) => {
       const obj = await result.json();
-        
-      console.log('fetch result: ', obj);
-      
+      console.debug('fetch result: ', obj);
+
       this.setState({
         filteredCases: obj.content,
         searchQuery: query,
@@ -85,43 +82,40 @@ class CaseHome extends React.Component {
                 this.handleSearchChange(query); // Call the debounce function with the query
               }}
             />
-
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
           {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
-          ) :
-            searchQuery ? // if searching, goes this way
-              (filteredCases && filteredCases.cases && filteredCases.cases.length > 0 ? (
-                filteredCases.cases.map((instance) => (
-                  <List.Item as={Card} key={instance.id}>
-                    <Card.Content>
-                      <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
-                      <Label.Group basic>
-                        <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                        <Label icon="law">{instance.court_name}</Label>
-                      </Label.Group>
-                      <p>{instance.content}</p>
-                    </Card.Content>
-                  </List.Item>
-                ))
-              ) : (<p>No results found</p>)
-              ) : this.props.cases && this.props.cases.cases && this.props.cases.cases.length > 0 ? (
-                this.props.cases.cases.map((instance) => (
-                  <List.Item as={Card} key={instance.id}>
-                    <Card.Content>
-                      <h3><Link to={"/cases/" + instance.id}> {instance.short_name} </Link> </h3>
-                      <Label.Group basic>
-                        <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                        <Label icon="law">{instance.court_name}</Label>
-                      </Label.Group>
-                      <p>{instance.content}</p>
-                    </Card.Content>
-                  </List.Item>
-                ))
-              ) : (<Loader active inline="centered" />)               
+          ) : searchQuery ? (filteredCases && filteredCases.cases && filteredCases.cases.length > 0 ? (
+              filteredCases.cases.map((instance) => (
+                <List.Item as={Card} key={instance.id} loading={loading}>
+                  <Card.Content>
+                    <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
+                    <Label.Group basic>
+                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
+                      <Label icon="law">{instance.court_name}</Label>
+                    </Label.Group>
+                    <p>{instance.content}</p>
+                  </Card.Content>
+                </List.Item>
+              )
+            )
+          ) : (<p>No results found</p>)) : this.props.cases && this.props.cases.cases && this.props.cases.cases.length > 0 ? (
+              this.props.cases.cases.map((instance) => (
+                <List.Item as={Card} key={instance.id}>
+                  <Card.Content>
+                    <h3><Link to={"/cases/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <Label.Group basic>
+                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
+                      <Label icon="law">{instance.court_name}</Label>
+                    </Label.Group>
+                    <p>{instance.content}</p>
+                  </Card.Content>
+                </List.Item>
+              ))
+            ) : (<Loader active inline="centered" />)
           }
         </List>
       </Segment>

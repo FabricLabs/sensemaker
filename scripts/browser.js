@@ -1,3 +1,7 @@
+// # The Jeeves Browser Script
+// This file runs in the browser, and is responsible for rendering the UI.
+
+// ## Overview
 'use strict';
 
 // Dependencies
@@ -16,20 +20,31 @@ const settings = {
 // Redux
 const store = require('../stores/redux');
 
-// Actions
-const { login, reLogin, register, logout } = require('../actions/authActions');
-const { fetchAdminStats } = require('../actions/adminActions');
+// ## Actions
+// Actions drive the application.  They are the only way to change the state.
 
+// ## Authentication (and Authorization) Actions
+const { login, reLogin, register, logout } = require('../actions/authActions');
+
+// ## Admin Actions
+const { 
+  fetchAdminStats,
+  fetchAllConversationsFromAPI
+} = require('../actions/adminActions');
+
+// ## Case Actions
 const {
   fetchCases,
   fetchCase
 } = require('../actions/caseActions');
 
+// ## Chat Actions
 const {
   fetchCourts,
   fetchCourt
 } = require('../actions/courtActions');
 
+// ## Contract Actions
 const {
   resetChat,
   submitMessage,
@@ -37,24 +52,48 @@ const {
   getMessages
 } = require('../actions/chatActions');
 
+// ## Conversation Actions
 const {
   fetchContract,
   signContract
 } = require('../actions/contractActions');
 
+// ## Court Actions
 const {
   fetchConversations,
   fetchConversation
 } = require('../actions/conversationActions');
 
-// Main Process Definition
+// ## Person Actions
+const {
+  fetchPeople,
+  fetchPerson
+} = require('../actions/personActions');
+
+// ## Judge Actions
+const {
+  fetchJudges,
+  fetchJudge
+} = require('../actions/judgeActions');
+
+// ## Opinion Actions
+const {
+  fetchOpinions,
+  fetchOpinion
+} = require('../actions/opinionActions');
+
+// ## Document Actions
+const {
+  fetchDocuments,
+  fetchDocument
+} = require('../actions/documentActions');
+
+// ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
 
   window.addEventListener('load', async () => {
     console.debug('[JEEVES]', 'Window loaded!');
-
-    //let db;
 
     // TODO: consider localforage
     // TODO: consider schema from Knex / MySQL
@@ -82,7 +121,8 @@ async function main (input = {}) {
     // document.body.append(chatbar);
   });
 
-  // React
+  // ## React Application
+  // ### Connect Actions (Redux)
   const mapStateToProps = (state) => {
     return {
       auth: state.auth,
@@ -92,12 +132,16 @@ async function main (input = {}) {
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
       courts: state.courts,
+      documents: state.documents,
+      judges: state.judges,
+      people: state.people,
+      opinions: state.opinions,
       error: state.auth.error,
       isAuthenticated: state.auth.isAuthenticated,
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
-      token: state.auth.token,   
+      token: state.auth.token
     }
   };
 
@@ -110,7 +154,16 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    fetchDocuments: fetchDocuments,
+    fetchDocument: fetchDocument,
+    fetchJudges: fetchJudges,
+    fetchJudge: fetchJudge,
+    fetchPeople: fetchPeople,
+    fetchPerson: fetchPerson,
+    fetchOpinions: fetchOpinions,
+    fetchOpinion: fetchOpinion,
     fetchAdminStats: fetchAdminStats,
+    fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
     login: login,
     logout: logout,
     reLogin: reLogin,
@@ -124,6 +177,7 @@ async function main (input = {}) {
   console.debug('[JEEVES]', 'Connecting UI...');
   const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);
 
+  // ## DOM Attachment
   // Render
   const container = document.getElementById('application-target');
   const root = ReactDOM.createRoot(container);

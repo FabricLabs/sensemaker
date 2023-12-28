@@ -22,9 +22,15 @@ const {
 } = require('semantic-ui-react');
 
 const {
+  BRAND_NAME,
   RELEASE_NAME,
+  RELEASE_DESCRIPTION,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
+  ENABLE_JUDGE_SEARCH,
+  ENABLE_OPINION_SEARCH,
+  ENABLE_DOCUMENT_SEARCH,
+  ENABLE_PERSON_SEARCH,
   ENABLE_LIBRARY
 } = require('../constants');
 
@@ -33,6 +39,11 @@ const Home = require('./Home');
 const CaseHome = require('./CaseHome');
 const CaseView = require('./CaseView');
 const CourtHome = require('./CourtHome');
+const CourtView = require('./CourtView');
+const JudgeHome = require('./JudgeHome');
+const OpinionHome = require('./OpinionHome');
+const DocumentHome = require('./DocumentHome');
+const PeopleHome = require('./PeopleHome');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const Room = require('./Room');
@@ -168,9 +179,9 @@ class Dashboard extends React.Component {
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> J{this.state.sidebarCollapsed ? '' : 'EEVES'}
-                <Popup trigger={<Label color='black'>alpha</Label>}>
-                  <Popup.Content>Exclusive access!</Popup.Content>
+                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> {BRAND_NAME}
+                <Popup trigger={<Label color='black'>{RELEASE_NAME}</Label>}>
+                  <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
                 </Popup>
               </Header>
             </Menu.Item>
@@ -198,6 +209,21 @@ class Dashboard extends React.Component {
                 <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
+            {ENABLE_JUDGE_SEARCH && (
+              <Menu.Item as={Link} to='/judges'>
+                <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
+            {ENABLE_OPINION_SEARCH && (
+              <Menu.Item as={Link} to='/opinions'>
+                <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
+            {ENABLE_DOCUMENT_SEARCH && (
+              <Menu.Item as={Link} to='/documents'>
+                <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             {ENABLE_LIBRARY && (
               <Menu.Item disabled>
                 <div>
@@ -205,6 +231,11 @@ class Dashboard extends React.Component {
                   {!this.state.sidebarCollapsed && 'Library'}
                   &nbsp;<Label size='mini' color='orange'>disabled</Label>
                 </div>
+              </Menu.Item>
+            )}
+            {ENABLE_PERSON_SEARCH && (
+              <Menu.Item as={Link} to='/people'>
+                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
             {/* <Menu.Item disabled>
@@ -265,6 +296,11 @@ class Dashboard extends React.Component {
                   <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer}/>}/>
                   <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat}/>} />
                   <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                  <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                  <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat}/>} />
+                  <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
+                  <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
+                  <Route path="/people" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} chat={this.props.chat}/>} />
                   <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />

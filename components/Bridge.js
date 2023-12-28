@@ -72,6 +72,13 @@ class Bridge extends React.Component {
 
     this.ws.onmessage = async (msg) => {
       // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
+      if (!msg.data || !msg.data.arrayBuffer) {
+        const warning = `Message does not provide an ArrayBuffer:`;
+        console.debug('[BRIDGE]', 'No arraybuffer:', warning, msg);
+        // this.emit('warning', `${warning} ${msg}`);
+        return;
+      }
+
       const array = await msg.data.arrayBuffer();
       const buffer = Buffer.from(array);
       const message = Message.fromBuffer(buffer);
