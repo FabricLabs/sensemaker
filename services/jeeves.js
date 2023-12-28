@@ -1007,13 +1007,13 @@ class Jeeves extends Service {
       if (instance.courtlistener_id) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('docket record:', record);
+        const title = record.case_name_full || record.case_name || instance.title;
+        if (title !== instance.title) updates.title = title;
       }
 
       if (instance.pacer_case_id) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('PACER record:', record);
-        const title = record.case_name_full || record.case_name || instance.title;
-        if (title !== instance.title) updates.title = title;
       }
 
       if (instance.harvard_case_law_id) {
