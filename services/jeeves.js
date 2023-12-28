@@ -1050,7 +1050,12 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
-      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc');
+      const currentPage = req.query.page || 1;
+      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('founded_date', 'desc').paginate({
+        perPage: PER_PAGE_LIMIT,
+        currentPage: currentPage
+      });
+
       res.format({
         json: () => {
           res.send(courts);
@@ -1105,9 +1110,11 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db.select('id', 'description', 'created_at', 'fabric_id').from('documents').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
+      }).catch((exception) => {
+        console.debug('DOCUMENTS ERROR:', exception);
       });
 
       res.format({
