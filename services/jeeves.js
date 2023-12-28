@@ -406,7 +406,7 @@ class Jeeves extends Service {
 
     this.worker.register('Ingest', async (...params) => {
       try {
-        await this.db('cases').update({
+        await self.db('cases').update({
           last_harvard_crawl: this.db.raw('now()')
         }).where('id', params[2].id);
       } catch (exception) {
@@ -431,7 +431,7 @@ class Jeeves extends Service {
       }
 
       try {
-        await this.db('cases').update({
+        await self.db('cases').update({
           pdf_acquired: true
         }).where('id', params[2].id);
       } catch (exception) {
