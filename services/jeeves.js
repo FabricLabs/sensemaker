@@ -617,7 +617,6 @@ class Jeeves extends Service {
 
     this.courtlistener.on('person', async (person) => {
       const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-
       if (!target) {
         await this.db('people').insert({
           courtlistener_id: person.id,
@@ -956,10 +955,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').where({
-            // TODO: filter by public/private value
-            'pdf_acquired': true
-          }).orderBy('decision_date', 'desc').paginate({
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').whereNotNull('courtlistener_id').orderBy('decision_date', 'desc').paginate({
             perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
@@ -990,6 +986,12 @@ class Jeeves extends Service {
       // Embeddings
       /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
+
+      if (!instance) return res.status(404).json({ message: 'Case not found.' });
+      if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
+
+      const record = await this.courtlistener.db('dockets').where({ id: instance.courtlistener_id }).first();
+      console.debug('record:', record);
 
       if (!instance.summary) {
         const summary = await this._summarizeCaseToLength(instance);
