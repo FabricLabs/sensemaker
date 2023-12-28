@@ -216,7 +216,7 @@ class Dashboard extends React.Component {
             )}
             {ENABLE_OPINION_SEARCH && (
               <Menu.Item as={Link} to='/opinions'>
-                <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
+                <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
             {ENABLE_DOCUMENT_SEARCH && (
