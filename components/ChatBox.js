@@ -392,11 +392,12 @@ class ChatBox extends React.Component {
   }
 
   regenerateAnswer = (event) => {
-
     event.preventDefault();
+
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
     const { caseTitle, caseID } = this.props;
+
     let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
     
@@ -411,7 +412,7 @@ class ChatBox extends React.Component {
         conversation_id: message?.conversation,
         content: messageRegen.content,
         case: caseTitle + '_' + caseID,
-        messageID: messageRegen.id
+        id: messageRegen.id
       }
     } else {
       //if we don't have previous chat it means this is a new conversation
@@ -419,22 +420,19 @@ class ChatBox extends React.Component {
         dataToSubmit = {
           conversation_id: message?.conversation,
           content: messageRegen.content,
-          messageID: messageRegen.id
+          id: messageRegen.id
         }
       //else, we are in a previous one and we already have a conversationID for this
       } else {
         dataToSubmit = {
           conversation_id: this.props.conversationID,
           content: messageRegen.content,
-          messageID: messageRegen.id
+          id: messageRegen.id
         }
       }
     }
     // dispatch submitMessage
-    this.props.regenAnswer(
-      dataToSubmit
-    ).then((output) => {
-
+    this.props.regenAnswer(dataToSubmit).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -443,6 +441,7 @@ class ChatBox extends React.Component {
           this.props.getMessages({ conversation_id: message?.conversation });
         }, 15000);
       }
+
       this.setState({ loading: false });
     });
 

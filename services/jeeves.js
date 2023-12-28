@@ -1051,7 +1051,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const courts = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('founded_date', 'desc').paginate({
+      const courts = await this.db.select('slug', 'name', 'founded_date').from('courts').orderBy('founded_date', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -1117,6 +1117,7 @@ class Jeeves extends Service {
 
       res.format({
         json: () => {
+          // Create response
           const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
               id: doc.fabric_id,
@@ -1125,11 +1126,13 @@ class Jeeves extends Service {
             };
           }) : [];
 
+          // Set Pagination Headers
           res.setHeader('X-Pagination', true);
           res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
           res.setHeader('X-Pagination-Per', documents.pagination.perPage);
           res.setHeader('X-Pagination-Total', documents.pagination.total);
-          res.send(response);
+
+          return res.send(response);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
