@@ -208,6 +208,8 @@ class CourtListener extends Service {
 
     for (let i = 0; i < people.length; i++) {
       const person = people[i];
+      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
+      person.fabric_id = actor.id;
       this.emit('person', person);
     }
 
@@ -265,10 +267,9 @@ class CourtListener extends Service {
     this._state.content.status = 'SYNCING';
 
     // Estimate Work
-    const counts = await this.getCounts();
-
-    this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
-    this._state.content.counts = Object.assign(this._state.content.counts, counts);
+    // const counts = await this.getCounts();
+    // this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
+    // this._state.content.counts = Object.assign(this._state.content.counts, counts);
 
     // Sync Data Sources
     // TODO: Dockets
@@ -279,7 +280,7 @@ class CourtListener extends Service {
     await this.syncDockets();
 
     // People
-    // await this.syncPeople();
+    await this.syncPeople();
 
     // Opinions
     // await this.syncOpinions();
