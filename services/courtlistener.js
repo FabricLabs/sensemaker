@@ -245,6 +245,7 @@ class CourtListener extends Service {
 
     // Estimate Work
     const counts = await this.getCounts();
+
     this.emit('debug', '[COURTLISTENER]', 'Counts:', counts);
     this._state.content.counts = Object.assign(this._state.content.counts, counts);
 

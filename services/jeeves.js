@@ -369,7 +369,7 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      const target = await this.db('documents')
+      const target = await self.db('documents')
         .where(function () {
           this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
         })
@@ -396,7 +396,7 @@ class Jeeves extends Service {
       }
 
       try {
-        await this.db('documents').update({
+        await self.db('documents').update({
           pdf_acquired: true
         }).where('courtlistener_id', target.courtlistener_id);
       } catch (exception) {
