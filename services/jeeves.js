@@ -1014,6 +1014,8 @@ class Jeeves extends Service {
       if (instance.pacer_case_id) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('PACER record:', record);
+        const title = record.case_name_full || record.case_name || instance.title;
+        if (title !== instance.title) updates.title = title;
       }
 
       if (instance.harvard_case_law_id) {
@@ -2018,7 +2020,12 @@ class Jeeves extends Service {
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
-    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum: ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks, and if you are unable to generate an accurate summary, return only "false".`;
+    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
+      + `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
+      + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
+      + `Additional information:\n`
+      + `  PACER Case ID: ${instance.pacer_case_id}`;
+
     console.debug('Case to summarize:', instance);
 
     const request = { input: query };
