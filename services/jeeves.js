@@ -520,7 +520,6 @@ class Jeeves extends Service {
     this.courtlistener.on('court', async (court) => {
       const actor = new Actor({ name: court.full_name });
       const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
-
       if (!target) {
         await this.db('courts').insert({
           fabric_id: actor.id,
@@ -535,9 +534,8 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('docket', async (docket) => {
-      const actor = new Actor({ name: docket.case_name_full });
+      const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
       const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
-
       if (!target) {
         await this.db('cases').insert({
           fabric_id: actor.id,
