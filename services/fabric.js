@@ -1,5 +1,6 @@
 'use strict';
 
+const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 const Remote = require('@fabric/http/types/remote');
 
@@ -15,14 +16,14 @@ class FabricService extends Service {
         { host: 'beta.jeeves.dev', port: 443, secure: true }
       ],
       state: {
-        content: {
-          status: 'INITIALIZED',
-          collections: {
-            documents: {}
-          },
-          counts: {
-            documents: 0
-          }
+        status: 'INITIALIZED',
+        collections: {
+          courts: {},
+          documents: {}
+        },
+        counts: {
+          courts: 0,
+          documents: 0
         }
       }
     }, settings);
@@ -52,19 +53,33 @@ class FabricService extends Service {
 
       // Documents
       const documents = await remote._GET('/documents');
-      console.debug('[FABRIC] Documents found:', documents);
+      // console.debug('[FABRIC] Documents found:', documents);
+      for (let j = 0; j < documents.length; j++) {
+        const document = documents[j];
+        this._state.content.collections.documents[document.id] = document;
+      }
 
       // Courts
       const courts = await remote._GET('/courts');
-      console.debug('[FABRIC] Courts found:', courts);
+      // console.debug('[FABRIC] Courts found:', courts);
+      for (let j = 0; j < courts.length; j++) {
+        const court = courts[j];
+        const actor = new Actor({ name: `courtlistener/${court.slug}` });
+        this._state.content.collections.courts[actor.id] = court;
+      }
     }
+
+    this.commit();
 
     return this;
   }
 
   async start () {
     this.emit('debug', '[FABRIC] Starting service...');
+
+    // Sync
     await this.sync();
+
     return this;
   }
 }
