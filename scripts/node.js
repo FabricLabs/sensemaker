@@ -20,8 +20,8 @@ async function main (input = {}) {
   jeeves.on('error', handleJeevesError);
   jeeves.on('log', handleJeevesLog);
   jeeves.on('warning', handleJeevesWarning);
-  jeeves.on('debug', (debug) => {
-    console.debug('[JEEVES]', '[DEBUG]', debug);
+  jeeves.on('debug', (...debug) => {
+    console.debug('[JEEVES]', '[DEBUG]', ...debug);
   });
 
   // Start Node

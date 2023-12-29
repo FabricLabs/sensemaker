@@ -92,8 +92,7 @@ class Scraper extends Service {
 
       for (let i = 0; i < obj.results.length; i++) {
         const candidate = obj.results[i];
-        const object = new Actor(candidate);
-        const actor = new Actor({ harvard_case_law_id: candidate.id });
+        const actor = new Actor({ name: `harvard/cases/${candidate.id }` });
         const mine = new Actor({
           fabric_id: actor.id,
           content: candidate
@@ -101,8 +100,6 @@ class Scraper extends Service {
 
         // this._state.content.objects[object.id] = object;
         // this._state.content.cases[actor.id] = candidate;
-
-        console.log('found case:', mine.toJSON());
 
         this.emit('case', mine.toJSON());
       }

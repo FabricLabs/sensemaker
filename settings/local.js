@@ -31,6 +31,7 @@ module.exports = {
   seed:  environment.readVariable('FABRIC_SEED'),
   workers: 8,
   fabric: {
+    peers: ['hub.fabric.pub:7777'],
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true }
     ]
@@ -99,6 +100,7 @@ module.exports = {
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
   },
   harvard: {
+    enable: true,
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },
   discord: {
@@ -122,6 +124,7 @@ module.exports = {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
   matrix: {
+    enable: false,
     name: '@jeeves/core',
     handle: '@jeeves:fabric.pub',
     connect: true,
