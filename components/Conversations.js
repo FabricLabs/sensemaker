@@ -71,8 +71,8 @@ class Conversations extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',  
-      paddingBottom: '0'     
+      flexDirection: 'column',
+      paddingBottom: '0'
     };
 
     return (
@@ -85,13 +85,13 @@ class Conversations extends React.Component {
                 {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                 {conversation.title}
               </Link>
-            </h4> 
+            </h4>
            <Divider style={{marginTop: '0.3em',marginBottom:'0.5em'}}/>
           </div>
         )) : <div  ref={this.messagesEndRef} style={componentStyle}>
           {/* <div style={{marginBottom: '2em'}}>We haven't had any conversations yet.</div> */}
           {/* <Button as={Link} to='/conversations/new' primary>Ask a Question</Button> */}
-          <ChatBox 
+          <ChatBox
             {...this.props}
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}
@@ -99,7 +99,7 @@ class Conversations extends React.Component {
           />
 
         </div>}
-        {(currentConversations.length > itemsPerPage) ? <Pagination
+        {(conversations.length > itemsPerPage) ? <Pagination
           size='tiny'
           activePage={currentPage}
           totalPages={Math.ceil(conversations.length / itemsPerPage)}
