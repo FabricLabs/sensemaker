@@ -600,8 +600,11 @@ class Jeeves extends Service {
 
       if (docket.pacer_case_id) {
         console.debug('[JEEVES]', 'We have a PACER Case ID:', docket.pacer_case_id);
-        const pacer = await this.db('cases').where({ pacer_id: docket.pacer_case_id }).first();
-        if (!pacer) await this.db('cases').insert(instance);
+        const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
+        if (!pacer) {
+          console.debug('[JEEVES]', 'No PACER case found, inserting:', instance);
+          await this.db('cases').insert(instance);
+        }
       }
     });
 
