@@ -105,7 +105,7 @@ class FabricService extends Service {
       court.id = actor.id;
       court.ids = {};
 
-      if (court.courtlistener_id) court.ids.courtlistener_id = court.courtlistener_id;
+      if (court.courtlistener_id) court.ids.courtlistener = court.courtlistener_id;
 
       this.emit('court', court);
     }

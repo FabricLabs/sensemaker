@@ -31,7 +31,7 @@ async function main (settings = {}) {
 
   scraper.on('case', function (item) {
     const tableName = 'cases';
-    const actor = new Actor({ harvard_case_law_id: item.content.id });
+    const actor = new Actor({ name: `harvard/cases/${item.content.id}` });
     const data = {
       fabric_id: actor.id,
       harvard_case_law_id: item.content.id,
@@ -49,7 +49,7 @@ async function main (settings = {}) {
     const updateStatements = columns.map(column => `${column} = VALUES(${column})`).join(', ');
     const query = `INSERT INTO ?? (${columnPlaceholders}) VALUES (${valuePlaceholders}) ON DUPLICATE KEY UPDATE ${updateStatements}`;
 
-    db.raw(query, [tableName, ...columns, ...values]).then(result => {
+    db.raw(query, [tableName, ...columns, ...values]).then((result) => {
       console.debug('Created local case:', result);
     }).catch(error => {
       console.error('Could not create local case:', error);

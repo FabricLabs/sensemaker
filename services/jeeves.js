@@ -61,6 +61,7 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const Harvard = require('./harvard');
 const OpenAI = require('./openai');
 // TODO: Mistral
 // TODO: HarvardCaseLaw
@@ -147,6 +148,7 @@ class Jeeves extends Service {
     this.email = new EmailService;
     this.matrix = new Matrix(this.settings.matrix);
     this.openai = new OpenAI(this.settings.openai);
+    this.harvard = new Harvard(this.settings.harvard);
     this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     // Collections
@@ -456,17 +458,17 @@ class Jeeves extends Service {
     this.worker.on('error', (...error) => console.error(...error));
 
     // Fabric Events
-    this.fabric.on('error', (...error) => console.error(...error));
-    this.fabric.on('warning', (...warning) => console.warn(...warning));
+    // this.fabric.on('error', (...error) => console.error(...error));
+    // this.fabric.on('warning', (...warning) => console.warn(...warning));
     // this.fabric.on('debug', (...debug) => console.debug(...debug));
-    this.fabric.on('log', (...log) => console.log(...log));
+    // this.fabric.on('log', (...log) => console.log(...log));
 
     // Collect Jeeves-specific
     // Courts
     this.fabric.on('court', async (court) => {
-      console.debug('[FABRIC]', '[COURT]', court);
+      // console.debug('[FABRIC]', '[COURT]', court);
       const target = await this.db('courts').where({ fabric_id: court.id }).first();
-      console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
+      // console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
       if (!target) {
         const inserted = await this.db('courts').insert({
           fabric_id: court.id,
@@ -485,6 +487,14 @@ class Jeeves extends Service {
     // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
+
+    // Harvard Events
+    this.harvard.on('error', this._handleHarvardError.bind(this));
+    this.harvard.on('debug', this._handleHarvardDebug.bind(this));
+    this.harvard.on('warning', this._handleHarvardWarning.bind(this));
+    this.harvard.on('sync', this._handleHarvardSync.bind(this));
+    this.harvard.on('document', this._handleHarvardDocument.bind(this));
+    this.harvard.on('court', this._handleHarvardCourt.bind(this));
 
     // OpenAI Events
     this.openai.on('error', this._handleOpenAIError.bind(this));
@@ -549,11 +559,15 @@ class Jeeves extends Service {
         await this.db('courts').insert({
           fabric_id: actor.id,
           slug: court.id,
+          start_date: court.start_date,
+          end_date: court.end_date,
           courtlistener_id: court.id,
           founded_date: court.start_date,
           name: court.full_name,
           short_name: court.short_name,
-          citation_string: court.citation_string
+          citation_string: court.citation_string,
+          jurisdiction: court.jurisdiction,
+          url: court.url
         });
       }
     });
@@ -691,6 +705,7 @@ class Jeeves extends Service {
     await this.fabric.start();
     await this.email.start();
     await this.openai.start();
+    if (this.settings.harvard.enable) await this.harvard.start();
     if (this.settings.matrix.enable) await this.matrix.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
@@ -1951,6 +1966,42 @@ class Jeeves extends Service {
     }
 
     return true;
+  }
+
+  async _handleHarvardError (error) {
+    console.error('[JEEVES]', '[HARVARD]', '[ERROR]', error);
+  }
+
+  async _handleHarvardDebug (message) {
+    console.debug('[JEEVES]', '[HARVARD]', '[DEBUG]', message);
+  }
+
+  async _handleHarvardWarning (warning) {
+    console.warn('[JEEVES]', '[HARVARD]', '[WARNING]', warning);
+  }
+
+  async _handleHarvardSync (sync) {
+    console.debug('[JEEVES]', '[HARVARD]', 'sync:', sync);
+  }
+
+  async _handleHarvardDocument (document) {
+    console.debug('[JEEVES]', '[HARVARD]', 'document:', document);
+  }
+
+  async _handleHarvardCourt (court) {
+    // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
+    const actor = new Actor({ name: `harvard/courts/${court.id}` });
+    const target = await this.db('courts').where({ harvard_id: court.id }).first();
+    if (!target) {
+      await this.db('courts').insert({
+        fabric_id: actor.id,
+        harvard_id: court.id,
+        name: court.name || court.name_abbreviation,
+        short_name: court.name_abbreviation,
+        jurisdiction: court.jurisdiction,
+        slug: court.slug
+      });
+    }
   }
 
   async _handleOpenAIError (error) {
