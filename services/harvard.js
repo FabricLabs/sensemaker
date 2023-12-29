@@ -34,12 +34,49 @@ class Harvard extends Service {
     return this;
   }
 
+  async allCourts (url = 'https://api.case.law/v1/courts/?page_size=1000') {
+    this.emit('debug', 'Enumerating courts...');
+    const courts = await fetch(url);
+    const object = await courts.json();
+
+    let results = object.results;
+
+    if (object.next) {
+      results = results.concat(await this.deepFetch(object.next));
+    }
+
+    return results;
+  }
+
+  async deepFetch (url) {
+    const response = await fetch(url);
+    const object = await response.json();
+
+    let results = object.results;
+
+    if (object.next) {
+      results = results.concat(await this.deepFetch(object.next));
+    }
+
+    return results;
+  }
+
+  async enumerateCases () {
+    return this.allCases();
+  }
+
   async enumerateCourts () {
     this.emit('debug', 'Enumerating courts...');
-    const courts = await fetch('https://api.case.law/v1/courts');
-    const object = await courts.json();
-    // console.debug('[HARVARD]', 'ENUMERATED COURTS:', object.results);
-    return object.results;
+    const courts = await this.allCourts();
+    console.debug('[HARVARD]', 'ENUMERATED COURTS:', courts);
+    return courts;
+  }
+
+  async sampleCases () {
+    this.emit('debug', 'Sampling courts...');
+    const courts = await fetch('https://api.case.law/v1/cases?full_case=true&ordering=random');
+    console.debug('[HARVARD]', 'SAMPLED COURTS:', courts);
+    return courts;
   }
 
   async sampleCourts () {
@@ -81,6 +118,18 @@ class Harvard extends Service {
     }
   }
 
+  async syncCases () {
+    // TODO: this should be a stream
+    const cases = await this.enumerateCases();
+
+    for (let i = 0; i < cases.length; i++) {
+      const court = cases[i];
+      this.emit('court', court);
+    }
+
+    return cases;
+  }
+
   async syncCourts () {
     // TODO: this should be a stream
     const courts = await this.enumerateCourts();
@@ -99,35 +148,39 @@ class Harvard extends Service {
 
     // Then for all parallel jobs...
     return Promise.all([
+      this.syncCases()
       // this.syncDockets(),
       // this.syncRecapDocuments()
     ]);
   }
 
   async sync () {
-    console.debug('[HARVARD]', 'Syncing...');
-    this._state.content.status = 'SYNCING';
+    return new Promise((resolve, reject) => {
+      console.debug('[HARVARD]', 'Syncing...');
+      this._state.content.status = 'SYNCING';
 
-    // Estimate Work
-    // const counts = await this.getCounts();
-    // this.emit('debug', '[HARVARD]', 'Counts:', counts);
-    // this._state.content.counts = Object.assign(this._state.content.counts, counts);
-
-    // Sync Data Sources
-    // TODO: Dockets
-    // Courts
-    await this.syncCourts();
-
-    this._state.content.status = 'SYNCED';
-    this.commit();
-
-    // EMIT SYNC EVENT
-    this.emit('sync', {
-      type: 'Sync',
-      state: this.state
+      // Estimate Work
+      // const counts = await this.getCounts();
+      // this.emit('debug', '[HARVARD]', 'Counts:', counts);
+      // this._state.content.counts = Object.assign(this._state.content.counts, counts);
+  
+      // Sync Data Sources
+      // TODO: Dockets
+      // Courts
+      this.syncCourts().then(() => {
+        this._state.content.status = 'SYNCED';
+        this.commit();
+    
+        // EMIT SYNC EVENT
+        this.emit('sync', {
+          type: 'Sync',
+          state: this.state
+        });
+    
+        console.debug('[HARVARD]', 'Sync complete!');
+        resolve();
+      }).catch(reject);
     });
-
-    console.debug('[HARVARD]', 'Sync complete!');
   }
 
   async start () {

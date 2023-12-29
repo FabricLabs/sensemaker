@@ -460,29 +460,12 @@ class Jeeves extends Service {
     // Fabric Events
     // this.fabric.on('error', (...error) => console.error(...error));
     // this.fabric.on('warning', (...warning) => console.warn(...warning));
-    // this.fabric.on('debug', (...debug) => console.debug(...debug));
-    // this.fabric.on('log', (...log) => console.log(...log));
+    this.fabric.on('debug', (...debug) => console.debug(...debug));
+    this.fabric.on('log', (...log) => console.log(...log));
 
     // Collect Jeeves-specific
     // Courts
-    this.fabric.on('court', async (court) => {
-      // console.debug('[FABRIC]', '[COURT]', court);
-      const target = await this.db('courts').where({ fabric_id: court.id }).first();
-      // console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
-      if (!target) {
-        const inserted = await this.db('courts').insert({
-          fabric_id: court.id,
-          slug: court.slug,
-          courtlistener_id: court.ids?.courtlistener,
-          founded_date: new Date(court.founded_date),
-          name: court.name,
-          short_name: court.short_name || court.name,
-          citation_string: court.citation_string
-        });
-
-        this.emit('debug', '[FABRIC]', '[COURT]', '[INSERTED]', inserted);
-      }
-    });
+    this.fabric.on('court', this._handleFabricCourt.bind(this));
 
     // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
@@ -572,42 +555,7 @@ class Jeeves extends Service {
       }
     });
 
-    this.courtlistener.on('docket', async (docket) => {
-      const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
-      const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
-      const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
-      const instance = {
-        fabric_id: actor.id,
-        court_id: court.id,
-        pacer_case_id: docket.pacer_case_id,
-        courtlistener_id: docket.id,
-        title: bestname,
-        short_name: docket.case_name_short,
-        date_filed: docket.date_filed,
-        date_argued: docket.date_argued,
-        date_reargued: docket.date_reargued,
-        date_reargument_denied: docket.date_reargument_denied,
-        date_blocked: docket.date_blocked,
-        date_last_filing: docket.date_last_filing,
-        date_terminated: docket.date_terminated
-      };
-
-      const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
-
-      if (!target) {
-        // await this.db('cases').insert(instance);
-      }
-
-      if (docket.pacer_case_id) {
-        console.debug('[JEEVES]', 'We have a PACER Case ID:', docket.pacer_case_id);
-        const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
-        if (!pacer) {
-          console.debug('[JEEVES]', 'No PACER case found, inserting:', instance);
-          await this.db('cases').insert(instance);
-        }
-      }
-    });
-
+    this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
     this.courtlistener.on('opinioncluster', async (cluster) => {
       const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
 
@@ -1925,7 +1873,7 @@ class Jeeves extends Service {
   }
 
   async _handleMatrixActivity (activity) {
-    console.log('matrix activity:', activity);
+    console.debug('matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
 
     const roomID = activity.target.split('/')[2];
@@ -1969,6 +1917,61 @@ class Jeeves extends Service {
     }
 
     return true;
+  }
+
+  async _handleFabricCourt (court) {
+    // console.debug('[FABRIC]', '[COURT]', court);
+    const target = await this.db('courts').where({ fabric_id: court.id }).first();
+    // console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
+    if (!target) {
+      const inserted = await this.db('courts').insert({
+        fabric_id: court.id,
+        slug: court.slug,
+        courtlistener_id: court.ids?.courtlistener,
+        founded_date: new Date(court.founded_date),
+        name: court.name,
+        short_name: court.short_name || court.name,
+        citation_string: court.citation_string
+      });
+
+      // console.debug('[FABRIC]', '[COURT]', '[INSERTED]', inserted);
+    }
+  }
+
+  async _handleCourtListenerDocket (docket) {
+    const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
+    const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
+    const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
+    const instance = {
+      fabric_id: actor.id,
+      court_id: court.id,
+      pacer_case_id: docket.pacer_case_id,
+      courtlistener_id: docket.id,
+      title: bestname,
+      short_name: docket.case_name_short,
+      date_filed: docket.date_filed,
+      date_argued: docket.date_argued,
+      date_reargued: docket.date_reargued,
+      date_reargument_denied: docket.date_reargument_denied,
+      date_blocked: docket.date_blocked,
+      date_last_filing: docket.date_last_filing,
+      date_terminated: docket.date_terminated
+    };
+
+    const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
+
+    if (!target) {
+      // await this.db('cases').insert(instance);
+    }
+
+    if (docket.pacer_case_id) {
+      console.debug('[JEEVES]', 'We have a PACER Case ID:', docket.pacer_case_id);
+      const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
+      if (!pacer) {
+        console.debug('[JEEVES]', 'No PACER case found, inserting:', instance);
+        await this.db('cases').insert(instance);
+      }
+    }
   }
 
   async _handleHarvardError (error) {
@@ -2248,6 +2251,54 @@ class Jeeves extends Service {
     const cases = [].concat(harvardCases);
 
     return cases;
+  }
+
+  async _searchCourts (request) {
+    const query = request.query;
+    const tokens = this._tokenizeTerm(query);
+    const candidates = await Promise.allSettled([
+      (new Promise((resolve, reject) => {
+        setTimeout(reject, 15000, 'foo')
+      })),
+      this._searchHarvardCourts(request)
+      // TODO: Harvard search
+      // TODO: CourtListener search
+    ]);
+
+    console.debug('candidates:', candidates);
+    const results = candidates.filter((x) => (x.status === 'fulfilled'));
+
+    return results;
+  }
+
+  async _searchCourtsByTerm (term) {
+    return this._searchCourts({ query: term });
+  }
+
+  async _searchHarvardCourts (request) {
+    return new Promise((resolve, reject) => {
+      fetch(`https://api.case.law/v1/courts/?search=${request.query}`).then((response) => {
+        const object = response.json();
+        resolve(object.results);
+      }).catch(reject);
+    });
+  }
+
+  async _tokenizeTerm (term) {
+    return term.split(/\s/g);
+  }
+
+  async _produceAnswer (request) {
+    const query = request.query;
+    const tokens = this._tokenizeTerm(query);
+    const embeddings = await Promise.all(tokens.map((token) => {
+      return this._generateEmbedding(token);
+    }));
+
+    const result = await this.openai.generateAnswer(query, embeddings);
+    console.debug('got answer:', result);
+
+    return result;
   }
 
   async _requestWork (name, method) {
