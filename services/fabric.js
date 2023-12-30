@@ -72,7 +72,7 @@ class FabricService extends Service {
 
       // Courts
       const courts = await remote._GET('/courts');
-      // console.debug('[FABRIC] Courts found:', courts);
+      console.debug('[FABRIC] Courts found:', courts.length);
       for (let j = 0; j < courts.length; j++) {
         const court = courts[j];
         const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
