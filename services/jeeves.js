@@ -368,6 +368,10 @@ class Jeeves extends Service {
 
     // Primary Worker
     // Job Types
+    this.worker.register('SearchCourts', async (...params) => {
+      return this._searchCourts(...params);
+    });
+
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
       const target = await self.db('documents')
         .where(function () {
@@ -1057,7 +1061,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').whereNotNull('courtlistener_id').orderBy('decision_date', 'desc').paginate({
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
             perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
@@ -1978,8 +1982,8 @@ class Jeeves extends Service {
     console.error('[JEEVES]', '[HARVARD]', '[ERROR]', error);
   }
 
-  async _handleHarvardDebug (message) {
-    console.debug('[JEEVES]', '[HARVARD]', '[DEBUG]', message);
+  async _handleHarvardDebug (...params) {
+    console.debug('[JEEVES]', '[HARVARD]', '[DEBUG]', ...params);
   }
 
   async _handleHarvardWarning (warning) {
@@ -1998,6 +2002,7 @@ class Jeeves extends Service {
     // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
     const actor = new Actor({ name: `harvard/courts/${court.id}` });
     const target = await this.db('courts').where({ harvard_id: court.id }).first();
+
     if (!target) {
       await this.db('courts').insert({
         fabric_id: actor.id,
@@ -2008,6 +2013,11 @@ class Jeeves extends Service {
         slug: court.slug
       });
     }
+
+    /* if (court.name) {
+      const search = await this._searchCourtsByTerm(court.name);
+      console.debug('[JEEVES]', '[HARVARD]', 'Search Results:', search);
+    } */
   }
 
   async _handleOpenAIError (error) {
@@ -2254,13 +2264,22 @@ class Jeeves extends Service {
   }
 
   async _searchCourts (request) {
-    const query = request.query;
-    const tokens = this._tokenizeTerm(query);
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching courts:', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    const tokens = this._tokenizeTerm(request.query);
+    const promises = tokens.map((token) => {
+      return new Promise((resolve, reject) => {
+        this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
+      });
+    });
+
     const candidates = await Promise.allSettled([
       (new Promise((resolve, reject) => {
-        setTimeout(reject, 15000, 'foo')
+        setTimeout(reject, 15000, new Error('Timeout!'));
       })),
-      this._searchHarvardCourts(request)
+      promises[0] // first token only
       // TODO: Harvard search
       // TODO: CourtListener search
     ]);
@@ -2272,6 +2291,7 @@ class Jeeves extends Service {
   }
 
   async _searchCourtsByTerm (term) {
+    if (!term) throw new Error('No term provided.');
     return this._searchCourts({ query: term });
   }
 
@@ -2284,7 +2304,7 @@ class Jeeves extends Service {
     });
   }
 
-  async _tokenizeTerm (term) {
+  _tokenizeTerm (term) {
     return term.split(/\s/g);
   }
 

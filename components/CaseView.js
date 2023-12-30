@@ -10,6 +10,7 @@ const {
 
 const {
   Card,
+  Grid,
   Header,
   Label,
   Segment

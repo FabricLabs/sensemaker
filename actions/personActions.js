@@ -41,7 +41,7 @@ const fetchPerson = (id) => {
     dispatch(fetchPersonRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/judges/${id}`, null, token);
+      const instance = await fetchFromAPI(`/people/${id}`, null, token);
       dispatch(fetchPersonSuccess(instance));
     } catch (error) {
       dispatch(fetchPersonFailure(error));
