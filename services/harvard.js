@@ -1,12 +1,14 @@
 'use strict';
 
+// Constants
 const {
   PER_PAGE_LIMIT
 } = require('../constants');
 
-const knex = require('knex');
+// Dependencies
 const fetch = require('cross-fetch');
 
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
@@ -18,16 +20,21 @@ class Harvard extends Service {
       name: 'Harvard'
     }, settings);
 
+    this.actor = new Actor({ name: 'Harvard' });
+
     this._state = {
       content: {
+        actor: this.actor.id,
         status: 'INITIALIZED',
         collections: {
+          cases: {},
+          courts: {},
           documents: {}
         },
         counts: {
           cases: 0,
-          citations: 0,
-          courts: 0
+          courts: 0,
+          documents: {}
         }
       }
     };
@@ -103,15 +110,6 @@ class Harvard extends Service {
     return courts;
   }
 
-  async streamCourts (handler) {
-    const stream = null;
-    return stream;
-  }
-
-  async query (table) {
-    return this.db(table);
-  }
-
   async getCounts () {
     try {
       // Tracking
@@ -165,8 +163,6 @@ class Harvard extends Service {
     // Then for all parallel jobs...
     return Promise.all([
       this.syncCases()
-      // this.syncDockets(),
-      // this.syncRecapDocuments()
     ]);
   }
 

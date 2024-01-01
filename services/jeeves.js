@@ -373,10 +373,12 @@ class Jeeves extends Service {
     // Primary Worker
     // Job Types
     this.worker.register('SearchCourts', async (...params) => {
+      console.debug('[WORKER]', 'Searching courts:', params);
       return this._searchCourts(...params);
     });
 
     this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
+      console.debug('[WORKER]', 'Downloading missing RECAP document:', params);
       const target = await self.db('documents')
         .where(function () {
           this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
@@ -413,6 +415,7 @@ class Jeeves extends Service {
     });
 
     this.worker.register('Ingest', async (...params) => {
+      console.debug('[WORKER]', 'Ingesting:', params);
       try {
         await self.db('cases').update({
           last_harvard_crawl: this.db.raw('now()')
@@ -450,6 +453,7 @@ class Jeeves extends Service {
     });
 
     this.worker.register('ScanCourtListener', async (...params) => {
+      console.debug('[WORKER]', 'Scanning CourtListener:', params);
       // console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
       /* try {
         const dockets = await this.courtlistener.query('search_docket').select('*').limit(5);
@@ -466,7 +470,7 @@ class Jeeves extends Service {
     this.worker.on('error', (...error) => console.error(...error));
 
     // Fabric Events
-    this.fabric.on('error', (...error) => console.error(...error));
+    this.fabric.on('error', this._handleFabricError.bind(this));
     // this.fabric.on('warning', (...warning) => console.warn(...warning));
     this.fabric.on('debug', this._handleFabricDebug.bind(this));
     this.fabric.on('log', (...log) => console.log(...log));
@@ -661,7 +665,7 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
-    await this.fabric.start();
+    // await this.fabric.start();
     await this.email.start();
     await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
@@ -684,6 +688,13 @@ class Jeeves extends Service {
 
     // Worker
     await this.worker.start();
+
+    try {
+      const stats = await this.db('cases').count('id as count').first();
+      console.debug('[JEEVES]', 'Loaded', stats.count, 'cases.');
+    } catch (exception) {
+      console.error('[JEEVES]', 'Could not load cases:', exception);
+    }
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
@@ -1929,6 +1940,10 @@ class Jeeves extends Service {
 
   async _handleFabricDebug (...props) {
     console.debug('[FABRIC]', '[DEBUG]', ...props);
+  }
+
+  async _handleFabricError (...props) {
+    console.error('[FABRIC]', '[ERROR]', ...props);
   }
 
   async _handleFabricCourt (court) {

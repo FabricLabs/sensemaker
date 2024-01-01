@@ -58,54 +58,70 @@ class FabricService extends Service {
   async sync () {
     this.emit('debug', 'Syncing...');
 
+    // For each Remote, synchronize documents
     for (let i = 0; i < this.remotes.length; i++) {
-      // console.debug('[FABRIC] Remote Settings:', this.remotes[i].settings);
       const remote = this.remotes[i];
 
       // Documents
-      try {
-        const documents = await remote._GET('/documents');
-        // console.debug('[FABRIC] Documents found:', documents);
-        for (let j = 0; j < documents.length; j++) {
-          const document = documents[j];
-          this._state.content.collections.documents[document.id] = document;
-        }
-      } catch (exception) {
-        console.error('[FABRIC] Could not fetch documents:', exception);
-      }
-
-      // Courts
-      try {
-        const courts = await remote._GET('/courts');
-        console.debug('[FABRIC] Courts found:', courts.length);
-        for (let j = 0; j < courts.length; j++) {
-          const court = courts[j];
-          const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
-          this._state.content.collections.courts[actor.id] = court;
-        }
-      } catch (exception) {
-        console.error('[FABRIC] Could not fetch courts:', exception);
-      }
-
-      // Cases
-      try {
-        const cases = await remote._GET('/cases');
-        console.debug('[FABRIC] Cases found:', cases.length);
-        for (let j = 0; j < cases.length; j++) {
-          const court = cases[j];
-          if (court.harvard_case_law_id) {
-            const actor = new Actor({ name: `harvard/cases/${court.harvard_case_law_id}` });
-            this._state.content.collections.cases[actor.id] = court;
-          }
-        }
-      } catch (exception) {
-        console.error('[FABRIC] Could not fetch courts:', exception);
-      }
+      await Promise.allSettled([
+        this.syncRemoteDocuments(remote),
+        // this.syncRemoteCases(remote),
+        this.syncRemoteCourts(remote)
+      ]);
     }
 
     this.commit();
 
     return this;
+  }
+
+  async syncRemoteDocuments (remote) {
+    try {
+      const documents = await remote._GET('/documents');
+      console.debug('[FABRIC] Remote Documents found:', documents);
+      for (let j = 0; j < documents.length; j++) {
+        const document = documents[j];
+        this._state.content.collections.documents[document.id] = document;
+      }
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch documents:', exception);
+    }
+
+    this.commit();
+  }
+
+  async syncRemoteCases (remote) {
+    try {
+      const cases = await remote._GET('/cases');
+      console.debug('[FABRIC] Remote Cases found:', cases.length);
+      for (let j = 0; j < cases.length; j++) {
+        const court = cases[j];
+        if (court.harvard_case_law_id) {
+          const actor = new Actor({ name: `harvard/cases/${court.harvard_case_law_id}` });
+          this._state.content.collections.cases[actor.id] = court;
+        }
+      }
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch courts:', exception);
+    }
+
+    this.commit();
+  }
+
+  async syncRemoteCourts (remote) {
+    try {
+      const courts = await remote._GET('/courts');
+      console.debug('[FABRIC] Remote Courts found:', courts.length);
+      for (let j = 0; j < courts.length; j++) {
+        const court = courts[j];
+        const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+        this._state.content.collections.courts[actor.id] = court;
+      }
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch courts:', exception);
+    }
+
+    this.commit();
   }
 
   async start () {
