@@ -30,7 +30,7 @@ function courtReducer (state = initialState, action) {
     case FETCH_COURTS_FAILURE:
       return { ...state, loading: false, error: action.payload };
     default:
-      // console.warn('Unhandled action in case reducer:', action);
+      // console.warn('Unhandled action in court reducer:', action);
       return state;
   }
 }

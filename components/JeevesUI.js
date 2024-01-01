@@ -188,6 +188,7 @@
                   contracts={this.props.contracts}
                   conversations={this.props.conversations}
                   conversation={this.props.conversation}
+                  courts={this.props.courts}
                   chat={this.props.chat}
                   isAdmin={this.props.auth.isAdmin}
                   isCompliant={this.props.auth.isCompliant}
