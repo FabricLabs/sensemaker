@@ -63,20 +63,43 @@ class FabricService extends Service {
       const remote = this.remotes[i];
 
       // Documents
-      const documents = await remote._GET('/documents');
-      // console.debug('[FABRIC] Documents found:', documents);
-      for (let j = 0; j < documents.length; j++) {
-        const document = documents[j];
-        this._state.content.collections.documents[document.id] = document;
+      try {
+        const documents = await remote._GET('/documents');
+        // console.debug('[FABRIC] Documents found:', documents);
+        for (let j = 0; j < documents.length; j++) {
+          const document = documents[j];
+          this._state.content.collections.documents[document.id] = document;
+        }
+      } catch (exception) {
+        console.error('[FABRIC] Could not fetch documents:', exception);
       }
 
       // Courts
-      const courts = await remote._GET('/courts');
-      console.debug('[FABRIC] Courts found:', courts.length);
-      for (let j = 0; j < courts.length; j++) {
-        const court = courts[j];
-        const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
-        this._state.content.collections.courts[actor.id] = court;
+      try {
+        const courts = await remote._GET('/courts');
+        console.debug('[FABRIC] Courts found:', courts.length);
+        for (let j = 0; j < courts.length; j++) {
+          const court = courts[j];
+          const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+          this._state.content.collections.courts[actor.id] = court;
+        }
+      } catch (exception) {
+        console.error('[FABRIC] Could not fetch courts:', exception);
+      }
+
+      // Cases
+      try {
+        const cases = await remote._GET('/cases');
+        console.debug('[FABRIC] Cases found:', cases.length);
+        for (let j = 0; j < cases.length; j++) {
+          const court = cases[j];
+          if (court.harvard_case_law_id) {
+            const actor = new Actor({ name: `harvard/cases/${court.harvard_case_law_id}` });
+            this._state.content.collections.cases[actor.id] = court;
+          }
+        }
+      } catch (exception) {
+        console.error('[FABRIC] Could not fetch courts:', exception);
       }
     }
 

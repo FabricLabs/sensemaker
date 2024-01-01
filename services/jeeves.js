@@ -353,6 +353,10 @@ class Jeeves extends Service {
   async start () {
     const self = this;
 
+    this.db.on('error', (...error) => {
+      console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
+    });
+
     // Register Services
     // await this._registerService('webhooks', WebHooks);
     // await this._registerService('bitcoin', Bitcoin);
@@ -462,9 +466,9 @@ class Jeeves extends Service {
     this.worker.on('error', (...error) => console.error(...error));
 
     // Fabric Events
-    // this.fabric.on('error', (...error) => console.error(...error));
+    this.fabric.on('error', (...error) => console.error(...error));
     // this.fabric.on('warning', (...warning) => console.warn(...warning));
-    this.fabric.on('debug', (...debug) => console.debug(...debug));
+    this.fabric.on('debug', this._handleFabricDebug.bind(this));
     this.fabric.on('log', (...log) => console.log(...log));
 
     // Collect Jeeves-specific
@@ -1061,7 +1065,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/cases', async (req, res, next) => {
       res.format({
         json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
+          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name', 'harvard_case_law_id').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
             perPage: PER_PAGE_LIMIT,
             currentPage: 1
           });
@@ -1923,6 +1927,10 @@ class Jeeves extends Service {
     return true;
   }
 
+  async _handleFabricDebug (...props) {
+    console.debug('[FABRIC]', '[DEBUG]', ...props);
+  }
+
   async _handleFabricCourt (court) {
     // console.debug('[FABRIC]', '[COURT]', court);
     const target = await this.db('courts').where({ fabric_id: court.id }).first();
@@ -2034,8 +2042,11 @@ class Jeeves extends Service {
   async _handleOpenAIMessageChunk (chunk) {
     // TODO: fix @fabric/core/types/message to allow custom message types
     chunk.type = 'MessageChunk';
+    const broadcast = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
+    this.http.broadcast(broadcast);
+
     const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
-    this.http.broadcast(message);
+    // this.http.deliver('', message);
   }
 
   async _handleOpenAIMessageEnd (end) {

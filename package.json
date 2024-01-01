@@ -57,8 +57,8 @@
   "homepage": "https://jeeves.dev",
   "dependencies": {
     "@babel/register": "7.22.5",
-    "@fabric/core": "FabricLabs/fabric#feature/node-18",
-    "@fabric/http": "FabricLabs/fabric-http#feature/release-update",
+    "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
+    "@fabric/http": "FabricLabs/fabric-http#feature/v0.1.0-RC1",
     "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",
     "assert-browserify": "2.0.0",
     "babel-loader": "8.2.5",
