@@ -253,6 +253,14 @@ class Jeeves extends Service {
         user: this.settings.db.user,
         password: this.settings.db.password,
         database: this.settings.db.database
+      },
+      pool: {
+        min: 0,
+        max: 8,
+        afterCreate: (conn, done) => {
+          console.debug('[JEEVES]', '[DB]', 'Connection created.');
+          done(null, conn);
+        }
       }
     });
 
@@ -353,9 +361,9 @@ class Jeeves extends Service {
   async start () {
     const self = this;
 
-    this.db.on('error', (...error) => {
+    /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
-    });
+    }); */
 
     // Register Services
     // await this._registerService('webhooks', WebHooks);
@@ -665,7 +673,7 @@ class Jeeves extends Service {
     await this.restore();
 
     // Internal Services
-    // await this.fabric.start();
+    await this.fabric.start();
     await this.email.start();
     await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
