@@ -490,6 +490,7 @@ class Jeeves extends Service {
     // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
+    this.matrix.on('error', this._handleMatrixError.bind(this));
 
     // Harvard Events
     this.harvard.on('error', this._handleHarvardError.bind(this));
@@ -675,9 +676,10 @@ class Jeeves extends Service {
     // Internal Services
     await this.fabric.start();
     await this.email.start();
+    if (this.settings.matrix.enable) await this.matrix.start();
+
     await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
-    if (this.settings.matrix.enable) await this.matrix.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
     // Record all future activity
@@ -2124,11 +2126,19 @@ class Jeeves extends Service {
       const members = await this.matrix.client.getJoinedRoomMembers(room);
       console.log(`room ${room} has ${Object.keys(members.joined).length}`);
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
-        await this.matrix.client.invite(room, '@eric:fabric.pub');
+        try {
+          await this.matrix.client.invite(room, '@eric:fabric.pub');
+        } catch (exception) {
+          console.warn('[JEEVES]', '[MATRIX]', 'Failed to invite admin to room:', room);
+        }
       }
     }
 
     this.emit('debug', '[JEEVES:CORE] Matrix connected and ready!');
+  }
+
+  async _handleMatrixError (error) {
+    console.error('[JEEVES:CORE]', 'Matrix error:', error);
   }
 
   /**
