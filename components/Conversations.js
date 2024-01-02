@@ -57,13 +57,13 @@ class Conversations extends React.Component {
 
     this.setState({ editLoading: true });
 
-    const fetchPromise = fetch('/conversationEdit', {
-      method: 'POST',
+    const fetchPromise = fetch(`/conversations/${conversationID}`, {
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${this.props.auth.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ editedTitle, conversationID }),
+      body: JSON.stringify({ title: editedTitle }),
     });
 
     const timeoutPromise = new Promise((_, reject) => {

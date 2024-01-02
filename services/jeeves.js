@@ -1066,12 +1066,13 @@ class Jeeves extends Service {
     });
 
     //route to edit a conversation title
-    this.http._addRoute('POST', '/conversationEdit', async (req, res, next) => {
-      const { editedTitle, conversationID } = req.body;
+    this.http._addRoute('PATCH', '/conversations/:id', async (req, res, next) => {
+      const { title } = req.body;
+
       try {
         const conversationEditing = await this.db('conversations')
         .where({
-          id: conversationID,
+          id: req.params.id,
           creator_id: req.user.id  // validates if the user editing is the creator of the conversation
         }).first();
 
@@ -1080,8 +1081,8 @@ class Jeeves extends Service {
         }
 
         // Update the conversation's title in the database
-        await this.db('conversations').where('id', conversationID).update({
-          title: editedTitle
+        await this.db('conversations').where('id', req.params.id).update({
+          title: title
         });
 
         return res.json({
