@@ -24,8 +24,9 @@ class Conversations extends React.Component {
     this.state = {
       currentPage: 1,
       windowWidth: window.innerWidth,
-      editingId: null, // ID of the conversation being edited
-      editValue: '', // Temporary state for the input value
+      editingID: null, // ID of the conversation being edited
+      editedTitle: '', // Temporary state for the input value
+      editLoading: false,
     };
   }
 
@@ -46,27 +47,60 @@ class Conversations extends React.Component {
   }
 
   //handle when you click edit on a conversation title
-  handleEditClick = (conversationId, currentTitle) => {
-    this.setState({ editingId: conversationId, editValue: currentTitle });
+  handleEditClick = (conversationID, currentTitle) => {
+    this.setState({ editingID: conversationID, editedTitle: currentTitle });
   };
 
-  handleSaveEditing = (conversationId) => {
-    console.log("Saving new title:", this.state.editValue, "for conversation ID:", conversationId);
+  handleSaveEditing = async (conversationID) => {
 
-    // Reset editing state
-    this.setState({ editingId: null, editValue: '' });
+    const { editedTitle } = this.state;
 
-    // TODO: Update the conversation title in your state or backend
+    this.setState({ editLoading: true });
+
+    const fetchPromise = fetch('/conversationEdit', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.props.auth.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ editedTitle, conversationID }),
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Fetch timed out'));
+      }, 15000);
+    });
+
+    try {
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (response.ok) {
+        //forced delay
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        this.setState({ editingID: null, editedTitle: '', editLoading: false });
+        this.props.fetchConversations();
+
+      } else {
+        error('API request failed with status:', response.status);
+      }
+    } catch (error) {
+      if (error.message === 'Fetch timed out') {
+        console.log("check your internet connection");
+      } else {
+        console.error('Title update Error:', error.message);
+      }
+      this.setState({ editingID: null, editedTitle: '', editLoading: false});
+    }
   };
 
   handleCancelEditing = () => {
     // Reset editing state without saving
-    this.setState({ editingId: null, editValue: '' });
+    this.setState({ editingID: null, editedTitle: '' });
   };
 
   render() {
     const { loading, error, conversations } = this.props;
-    const { currentPage, windowWidth } = this.state;
+    const { currentPage, windowWidth, editLoading } = this.state;
 
 
     if (loading) {
@@ -105,23 +139,24 @@ class Conversations extends React.Component {
             className="conversationItem"
           >
             <h4 style={{ marginBottom: '0.5em' }}>
-              {this.state.editingId === conversation.id ? (
+              {this.state.editingID === conversation.id ? (
                 <Form>
                   <div className='conversation-line'>
                     <div className='conversation-line-input'>
                       <Form.Input
                         type="text"
                         maxLength={255}
-                        value={this.state.editValue}
-                        onChange={(e) => this.setState({ editValue: e.target.value })}
+                        value={this.state.editedTitle}
+                        onChange={(e) => this.setState({ editedTitle: e.target.value })}
                         autoFocus
                         fluid
+                        loading={editLoading}
                       />
                     </div>
                     <Icon
                       name='check'
                       className='saveIcon'
-                      style={{ cursor: 'pointer', color: 'green' }}
+                      style={{ cursor: 'pointer', color: 'grey' }}
                       onClick={() => this.handleSaveEditing(conversation.id)}
                       size='big'
                       title='Save'
@@ -129,7 +164,7 @@ class Conversations extends React.Component {
                     <Icon
                       name='cancel'
                       className='cancelIcon'
-                      style={{ cursor: 'pointer', color: 'red' }}
+                      style={{ cursor: 'pointer', color: 'grey' }}
                       onClick={this.handleCancelEditing}
                       size='big'
                       title='Cancel'
