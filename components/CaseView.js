@@ -64,8 +64,10 @@ class CaseView extends React.Component {
               </Segment>
             </Grid.Column>
             <Grid.Column>
+              <Segment>
                 <Header as='h4'>Cites</Header>
                 <Header as='h4'>Cited By</Header>
+              </Segment>
             </Grid.Column>
           </Grid.Row>
         </Grid>
