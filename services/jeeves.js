@@ -2392,7 +2392,7 @@ class Jeeves extends Service {
 
     const harvard = await result.json();
     const ids = harvard.results.map(x => x.id);
-    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids);
+    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
