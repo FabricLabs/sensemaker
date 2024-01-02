@@ -903,7 +903,7 @@ class Jeeves extends Service {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
           return res.status(401).json({ message: 'Invalid session.' });
-        }  
+        }
         return res.json({
           username: user.username,
           email: user.email,
@@ -982,12 +982,12 @@ class Jeeves extends Service {
         // Check if the email exists
         const existingUser = await this.db('users').where('email', email).first();
         if (!existingUser) {
-          return res.status(409).json({ 
-            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com ' 
+          return res.status(409).json({
+            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com '
           });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex'); 
+        const resetToken = crypto.randomBytes(20).toString('hex');
 
         const newReset = await this.db('password_resets').insert({
           user_id: existingUser.id,
@@ -1012,7 +1012,7 @@ class Jeeves extends Service {
 
         const existingToken = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
 
-        if (!existingToken) {          
+        if (!existingToken) {
           return res.status(409).json({
             message: 'Your reset link is not valid, please try reseting your password again'
           });
@@ -1021,11 +1021,11 @@ class Jeeves extends Service {
         const tokenAge = new Date() - new Date(existingToken.created_at);
         const oneHour = 1000 * 60 * 60; // milliseconds in one hour
 
-        if (tokenAge > oneHour) {          
+        if (tokenAge > oneHour) {
           return res.status(410).json({ // 410 Gone is often used for expired resources
             message: 'Your reset token has expired, please request a new one.'
           });
-        }      
+        }
 
         return res.json({
           message: 'Token correct.',
@@ -1061,6 +1061,34 @@ class Jeeves extends Service {
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //route to edit a conversation title
+    this.http._addRoute('POST', '/conversationEdit', async (req, res, next) => {
+      const { editedTitle, conversationID } = req.body;
+      try {
+        const conversationEditing = await this.db('conversations')
+        .where({
+          id: conversationID,
+          creator_id: req.user.id  // validates if the user editing is the creator of the conversation
+        }).first();
+
+        if (!conversationEditing) {
+          return res.status(401).json({ message: 'Invalid conversation.' });
+        }
+
+        // Update the conversation's title in the database
+        await this.db('conversations').where('id', conversationID).update({
+          title: editedTitle
+        });
+
+        return res.json({
+          message: 'Title edited successfully.',
+        });
+      } catch (error) {
+        console.error('Error editing title: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
@@ -1668,7 +1696,7 @@ class Jeeves extends Service {
       try {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
-        
+
         const newRequest = await this.db('requests').insert({
           message_id: messageID
         });
@@ -1696,7 +1724,7 @@ class Jeeves extends Service {
 //               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
 //                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
 //               }));
-    
+
 //               await this.db('conversations').update({ title }).where({ id: conversation_id });
 //             }
 //           });
@@ -1740,7 +1768,7 @@ class Jeeves extends Service {
       try {
         await this.db('announcements').insert({
           creator_id: req.user.id,
-          title: (request.title) ? request.title : null, 
+          title: (request.title) ? request.title : null,
           body: request.body,
           expiration_date: (request.expirationDate) ? request.expirationDate : null,
         });
@@ -1763,7 +1791,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/announcements', async (req, res, next) => {
       try {
         const announcements = await this.db('announcements')
-          .select('*') 
+          .select('*')
           .orderBy('created_at', 'desc');
 
         res.json(announcements);
@@ -1776,7 +1804,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/announcements/latest', async (req, res, next) => {
       try {
         const latestAnnouncement = await this.db('announcements')
-          .select('*') 
+          .select('*')
           .orderBy('created_at', 'desc')
           .first();
 
