@@ -2,7 +2,6 @@
 
 exports.up = function (knex) {
   return knex.schema.alterTable('courts', function (table) {
-    table.integer('pacer_id');
     table.date('start_date');
     table.date('end_date');
     table.text('url', 500);
@@ -12,7 +11,6 @@ exports.up = function (knex) {
 
 exports.down = function (knex) {
   return knex.schema.alterTable('courts', function (table) {
-    table.dropColumn('pacer_id');
     table.dropColumn('start_date');
     table.dropColumn('end_date');
     table.dropColumn('url');

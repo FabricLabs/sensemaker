@@ -16,7 +16,7 @@ const ChatBox = require('./ChatBox');
  * @param {Object} props Properties for the component.
  **/
 class Conversations extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.messagesEndRef = React.createRef();
@@ -30,11 +30,11 @@ class Conversations extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -98,7 +98,7 @@ class Conversations extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
-  render() {
+  render () {
     const { loading, error, conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
 
