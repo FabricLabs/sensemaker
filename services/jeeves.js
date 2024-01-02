@@ -255,8 +255,8 @@ class Jeeves extends Service {
         database: this.settings.db.database
       },
       pool: {
-        min: 0,
-        max: 8,
+        min: 8,
+        max: 128,
         afterCreate: (conn, done) => {
           console.debug('[JEEVES]', '[DB]', 'Connection created.');
           done(null, conn);
@@ -499,6 +499,9 @@ class Jeeves extends Service {
     this.harvard.on('sync', this._handleHarvardSync.bind(this));
     this.harvard.on('document', this._handleHarvardDocument.bind(this));
     this.harvard.on('court', this._handleHarvardCourt.bind(this));
+    this.harvard.on('jurisdiction', this._handleHarvardJurisdiction.bind(this));
+    this.harvard.on('reporter', this._handleHarvardReporter.bind(this));
+    this.harvard.on('volume', this._handleHarvardVolume.bind(this));
 
     // OpenAI Events
     this.openai.on('error', this._handleOpenAIError.bind(this));
@@ -2051,6 +2054,67 @@ class Jeeves extends Service {
       const search = await this._searchCourtsByTerm(court.name);
       console.debug('[JEEVES]', '[HARVARD]', 'Search Results:', search);
     } */
+  }
+
+  async _handleHarvardJurisdiction (jurisdiction) {
+    // console.debug('[JEEVES]', '[HARVARD]', 'jurisdiction:', jurisdiction);
+    const actor = new Actor({ name: `harvard/jurisdictions/${jurisdiction.id}` });
+    const target = await this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
+
+    if (!target) {
+      await this.db('jurisdictions').insert({
+        fabric_id: actor.id,
+        harvard_id: jurisdiction.id,
+        name: jurisdiction.name_long,
+        name_short: jurisdiction.name
+      });
+    }
+  }
+
+  async _handleHarvardReporter (reporter) {
+    // console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
+    const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
+    const target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
+
+    if (!target) {
+      await this.db('reporters').insert({
+        fabric_id: actor.id,
+        harvard_id: reporter.id,
+        name: reporter.full_name,
+        name_short: reporter.short_name,
+        start_year: reporter.start_year,
+        end_year: reporter.end_year,
+        // jurisdiction: reporter.jurisdiction,
+        // slug: reporter.slug
+      });
+    }
+
+    /* const jurisdictions = await Promise.all(reporter.jurisdictions.map((jurisdiction) => {
+      return this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
+    })); */
+
+    // console.debug('[JEEVES]', '[HARVARD]', 'Reporter jurisdictions:', jurisdictions);
+  }
+
+  async _handleHarvardVolume (volume) {
+    console.debug('[JEEVES]', '[HARVARD]', 'volume:', volume);
+    const actor = new Actor({ name: `harvard/volumes/${volume.id}` });
+    this.db('volumes').where({ harvard_id: volume.id }).first().then(async (target) => {
+      console.debug('[JEEVES]', '[HARVARD]', 'Found volume:', target);
+
+      if (!target) {
+        await this.db('volumes').insert({
+          fabric_id: actor.id,
+          harvard_id: volume.id,
+          title: volume.title,
+          start_year: volume.start_year,
+          end_year: volume.end_year,
+          harvard_pdf_url: volume.pdf_url
+        });
+      }
+    }).catch((exception) => {
+      console.error('[JEEVES]', '[HARVARD]', 'Failed to find volume:', exception);
+    });
   }
 
   async _handleOpenAIError (error) {

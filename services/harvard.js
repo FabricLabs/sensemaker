@@ -5,6 +5,9 @@ const {
   PER_PAGE_LIMIT
 } = require('../constants');
 
+// Local Constants
+const API_PAGE_LIMIT = 1000;
+
 // Dependencies
 const fetch = require('cross-fetch');
 
@@ -17,7 +20,8 @@ class Harvard extends Service {
     super(settings);
 
     this.settings = Object.assign({
-      name: 'Harvard'
+      name: 'Harvard',
+      collections: ['cases', 'courts', 'documents', 'jurisdictions', 'reporters', 'volumes']
     }, settings);
 
     this.actor = new Actor({ name: 'Harvard' });
@@ -29,12 +33,18 @@ class Harvard extends Service {
         collections: {
           cases: {},
           courts: {},
-          documents: {}
+          documents: {},
+          jurisdictions: {},
+          reporters: {},
+          volumes: {}
         },
         counts: {
           cases: 0,
           courts: 0,
-          documents: {}
+          documents: 0,
+          jurisdictions: 0,
+          reporters: 0,
+          volumes: 0
         }
       }
     };
@@ -42,8 +52,8 @@ class Harvard extends Service {
     return this;
   }
 
-  async allCases (url = 'https://api.case.law/v1/cases/?page_size=1000') {
-    this.emit('debug', 'Enumerating cases...');
+  async allCases (url = `https://api.case.law/v1/cases/?page_size=${API_PAGE_LIMIT}`) {
+    this.emit('debug', 'Fetching all cases...');
     const cases = await fetch(url);
     const object = await cases.json();
 
@@ -56,8 +66,8 @@ class Harvard extends Service {
     return results;
   }
 
-  async allCourts (url = 'https://api.case.law/v1/courts/?page_size=1000') {
-    this.emit('debug', 'Enumerating courts...');
+  async allCourts (url = `https://api.case.law/v1/courts/?page_size=${API_PAGE_LIMIT}`) {
+    this.emit('debug', 'Fetching all courts...');
     const courts = await fetch(url);
     const object = await courts.json();
 
@@ -67,11 +77,63 @@ class Harvard extends Service {
       results = results.concat(await this.deepFetch(object.next));
     }
 
+    this.emit('debug', 'Fetched all courts!');
+
+    return results;
+  }
+
+  async allJurisdictions (url = `https://api.case.law/v1/jurisdictions/?page_size=${API_PAGE_LIMIT}`) {
+    this.emit('debug', 'Fetching all jurisdictions...');
+    const jurisdictions = await fetch(url);
+    const object = await jurisdictions.json();
+
+    let results = object.results;
+
+    if (object.next) {
+      results = results.concat(await this.deepFetch(object.next));
+    }
+
+    this.emit('debug', 'Fetched all jurisdictions!');
+
+    return results;
+  }
+
+  async allReporters (url = `https://api.case.law/v1/reporters/?page_size=${API_PAGE_LIMIT}`) {
+    this.emit('debug', 'Fetching all reporters...');
+    const reporters = await fetch(url);
+    const object = await reporters.json();
+
+    let results = object.results;
+
+    if (object.next) {
+      results = results.concat(await this.deepFetch(object.next));
+    }
+
+    this.emit('debug', 'Fetched all reporters!');
+
+    return results;
+  }
+
+  async allVolumes (url = `https://api.case.law/v1/volumes/?page_size=${API_PAGE_LIMIT}`) {
+    this.emit('debug', 'Fetching all volumes...');
+    const volumes = await fetch(url);
+    const object = await volumes.json();
+
+    let results = object.results;
+
+    if (object.next) {
+      results = results.concat(await this.deepFetch(object.next));
+    }
+
+    this.emit('debug', 'Fetched all volumes!');
+
     return results;
   }
 
   async deepFetch (url) {
     if (!url) return [];
+
+    // console.debug('[HARVARD]', 'Deep fetching:', url);
 
     const response = await fetch(url);
     const object = await response.json();
@@ -92,8 +154,25 @@ class Harvard extends Service {
   async enumerateCourts () {
     this.emit('debug', 'Enumerating courts...');
     const courts = await this.allCourts();
-    // console.debug('[HARVARD]', 'ENUMERATED COURTS:', courts);
     return courts;
+  }
+
+  async enumerateJurisdictions () {
+    this.emit('debug', 'Enumerating jurisdictions...');
+    const jurisdictions = await this.allJurisdictions();
+    return jurisdictions;
+  }
+
+  async enumerateReporters () {
+    this.emit('debug', 'Enumerating reporters...');
+    const reporters = await this.allReporters();
+    return reporters;
+  }
+
+  async enumerateVolumes () {
+    this.emit('debug', 'Enumerating volumes...');
+    const volumes = await this.allVolumes();
+    return volumes;
   }
 
   async sampleCases () {
@@ -110,13 +189,29 @@ class Harvard extends Service {
     return courts;
   }
 
+  async getJurisdictionByID (id) {
+    return this.state.collections.jurisdictions[id];
+  }
+
+  async getJurisdictionBySlug (slug) {
+    const result = await fetch(`https://api.case.law/v1/jurisdictions/${slug}/`);
+    const object = await result.json();
+    return object;
+  }
+
   async getCounts () {
     try {
       // Tracking
       const now = Date.now();
 
       // TODO: these should be async streams
-      const courts = await this.enumerateCourts();
+      // const cases = await this.enumerateCases();
+      const cases = [];
+      const jurisdictions = await this.syncJurisdictions();
+      // const volumes = await this.syncVolumes();
+      const volumes = [];
+      const courts = await this.syncCourts();
+      const reporters = await this.syncReporters();
 
       // Tracking
       const end = Date.now();
@@ -124,11 +219,25 @@ class Harvard extends Service {
 
       // Return counts
       return {
-        courts: courts?.length || 0
+        cases: cases?.length || 0,
+        courts: courts?.length || 0,
+        jurisdictions: jurisdictions?.length || 0,
+        reporters: reporters?.length || 0,
+        volumes: volumes?.length || 0
       };
     } catch (exception) {
       this.emit('error', exception);
       return null;
+    }
+  }
+
+  async getStats () {
+    const json = JSON.stringify(this.state);
+
+    return {
+      fabric: {
+        serialization: json.length
+      }
     }
   }
 
@@ -137,8 +246,9 @@ class Harvard extends Service {
     const cases = await this.enumerateCases();
 
     for (let i = 0; i < cases.length; i++) {
-      const court = cases[i];
-      this.emit('court', court);
+      const instance = cases[i];
+      this._state.content.cases[instance.id] = instance;
+      this.emit('case', instance);
     }
 
     return cases;
@@ -150,20 +260,72 @@ class Harvard extends Service {
 
     for (let i = 0; i < courts.length; i++) {
       const court = courts[i];
+      this._state.content.collections.courts[court.id] = court;
       this.emit('court', court);
     }
 
     return courts;
   }
 
-  async syncSamples () {
-    // Sync courts first
-    await this.syncCourts();
+  async syncJurisdictions () {
+    // TODO: this should be a stream
+    const jurisdictions = await this.enumerateJurisdictions();
 
-    // Then for all parallel jobs...
-    return Promise.all([
-      this.syncCases()
-    ]);
+    for (let i = 0; i < jurisdictions.length; i++) {
+      const jurisdiction = jurisdictions[i];
+      this._state.content.collections.jurisdictions[jurisdiction.id] = jurisdiction;
+      this.emit('jurisdiction', jurisdiction);
+    }
+
+    return jurisdictions;
+  }
+
+  async syncJurisdictionBySlug (slug) {
+    const jurisdiction = await this.getJurisdictionBySlug(slug);
+
+    if (!jurisdiction) {
+      const response = await fetch(`https://api.case.law/v1/jurisdictions/${slug}/`);
+      const object = await response.json();
+      this._state.content.collections.jurisdictions[object.id] = object;
+      this.emit('jurisdiction', object);
+    }
+
+    return jurisdiction;
+  }
+
+  async syncReporters () {
+    // TODO: this should be a stream
+    const reporters = await this.enumerateReporters();
+
+    for (let i = 0; i < reporters.length; i++) {
+      const reporter = reporters[i];
+      this._state.content.collections.reporters[reporter.id] = reporter;
+
+      /* const jurisdictions = await Promise.all(reporter.jurisdictions.map(async (jurisdiction) => {
+        console.debug('getting jurisdiction:', jurisdiction.id);
+        return this.getJurisdictionByID(jurisdiction.id);
+      })); */
+
+      // console.debug('mapped jurisdictions:', jurisdictions);
+
+      this.emit('reporter', reporter);
+    }
+
+    return reporters;
+  }
+
+  async syncVolumes () {
+    // TODO: this should be a stream
+    const volumes = await this.enumerateVolumes();
+
+    for (let i = 0; i < volumes.length; i++) {
+      const volume = volumes[i];
+      volume.id = volume.barcode;
+      this._state.content.collections.volumes[volume.id] = volume;
+      this.emit('volume', volume);
+    }
+
+    return volumes;
   }
 
   async sync () {
@@ -173,27 +335,24 @@ class Harvard extends Service {
 
       // Estimate Work
       const counts = await this.getCounts();
-      this.emit('debug', '[HARVARD]', 'Counts:', counts);
-      this._state.content.counts = Object.assign(this._state.content.counts, counts);
-  
-      // Sync Data Sources
-      // TODO: Dockets
-      // Courts
-      this.syncCourts().then((results) => {
-        console.debug('[HARVARD] Courts found:', results);
+      const stats = await this.getStats();
 
-        this._state.content.status = 'SYNCED';
-        this.commit();
-    
-        // EMIT SYNC EVENT
-        this.emit('sync', {
-          type: 'Sync',
-          state: this.state
-        });
-    
-        console.debug('[HARVARD]', 'Sync complete!');
-        resolve();
-      }).catch(reject);
+      this.emit('debug', '[HARVARD]', 'Counts:', counts);
+      this.emit('debug', '[HARVARD]', 'Stats:', stats);
+
+      this._state.content.counts = Object.assign(this._state.content.counts, counts);
+
+      this._state.content.status = 'SYNCED';
+      this.commit();
+  
+      // EMIT SYNC EVENT
+      this.emit('sync', {
+        type: 'Sync',
+        state: this.state
+      });
+  
+      console.debug('[HARVARD]', 'Sync complete!');
+      resolve();
     });
   }
 

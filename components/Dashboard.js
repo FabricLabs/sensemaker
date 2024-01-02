@@ -31,6 +31,9 @@ const {
   ENABLE_OPINION_SEARCH,
   ENABLE_DOCUMENT_SEARCH,
   ENABLE_PERSON_SEARCH,
+  ENABLE_JURISDICTION_SEARCH,
+  ENABLE_REPORTER_SEARCH,
+  ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY
 } = require('../constants');
 
@@ -238,6 +241,21 @@ class Dashboard extends React.Component {
                 <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
+            {ENABLE_REPORTER_SEARCH && (
+              <Menu.Item as={Link} to='/reporters'>
+                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
+            {ENABLE_JURISDICTION_SEARCH && (
+              <Menu.Item as={Link} to='/jurisdictions'>
+                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
+            {ENABLE_VOLUME_SEARCH && (
+              <Menu.Item as={Link} to='/volumes'>
+                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             {/* <Menu.Item disabled>
               <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
             </Menu.Item> */}
@@ -301,6 +319,9 @@ class Dashboard extends React.Component {
                   <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
                   <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
                   <Route path="/people" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                  <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                  <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                  <Route path="/volumes" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
                   <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
                   <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
                   <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
