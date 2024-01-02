@@ -1,8 +1,8 @@
 const { FETCH_ADMIN_STATS_REQUEST, FETCH_ADMIN_STATS_SUCCESS, FETCH_ADMIN_STATS_FAILURE } = require('../actions/adminActions');
 
-const initialState = {
-  stats: null,
-  error: null
+const initialState = {  
+  error: null,
+  loading: true
 };
 
 function adminReducer (state = initialState, action) {
@@ -10,10 +10,10 @@ function adminReducer (state = initialState, action) {
     case FETCH_ADMIN_STATS_REQUEST:
       return { ...state }; // reset state
     case FETCH_ADMIN_STATS_SUCCESS:
-      return { ...state, stats: action.payload};
+      return { ...state, ...action.payload, loading: false};
     case FETCH_ADMIN_STATS_FAILURE:
       console.debug('fetch admin stats failure:', state, action);
-      return { ...state, error: action.payload };
+      return { ...state, error: action.payload, loading: false };
     default:
       return state;
   }

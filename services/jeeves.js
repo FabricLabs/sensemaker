@@ -255,8 +255,8 @@ class Jeeves extends Service {
         database: this.settings.db.database
       },
       pool: {
-        min: 0,
-        max: 8,
+        min: 8,
+        max: 128,
         afterCreate: (conn, done) => {
           console.debug('[JEEVES]', '[DB]', 'Connection created.');
           done(null, conn);
@@ -499,6 +499,9 @@ class Jeeves extends Service {
     this.harvard.on('sync', this._handleHarvardSync.bind(this));
     this.harvard.on('document', this._handleHarvardDocument.bind(this));
     this.harvard.on('court', this._handleHarvardCourt.bind(this));
+    this.harvard.on('jurisdiction', this._handleHarvardJurisdiction.bind(this));
+    this.harvard.on('reporter', this._handleHarvardReporter.bind(this));
+    this.harvard.on('volume', this._handleHarvardVolume.bind(this));
 
     // OpenAI Events
     this.openai.on('error', this._handleOpenAIError.bind(this));
@@ -900,7 +903,7 @@ class Jeeves extends Service {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
           return res.status(401).json({ message: 'Invalid session.' });
-        }  
+        }
         return res.json({
           username: user.username,
           email: user.email,
@@ -979,12 +982,12 @@ class Jeeves extends Service {
         // Check if the email exists
         const existingUser = await this.db('users').where('email', email).first();
         if (!existingUser) {
-          return res.status(409).json({ 
-            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com ' 
+          return res.status(409).json({
+            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com '
           });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex'); 
+        const resetToken = crypto.randomBytes(20).toString('hex');
 
         const newReset = await this.db('password_resets').insert({
           user_id: existingUser.id,
@@ -1009,7 +1012,7 @@ class Jeeves extends Service {
 
         const existingToken = await this.db('password_resets').where('token', resetToken).orderBy('id', 'desc').first();
 
-        if (!existingToken) {          
+        if (!existingToken) {
           return res.status(409).json({
             message: 'Your reset link is not valid, please try reseting your password again'
           });
@@ -1018,11 +1021,11 @@ class Jeeves extends Service {
         const tokenAge = new Date() - new Date(existingToken.created_at);
         const oneHour = 1000 * 60 * 60; // milliseconds in one hour
 
-        if (tokenAge > oneHour) {          
+        if (tokenAge > oneHour) {
           return res.status(410).json({ // 410 Gone is often used for expired resources
             message: 'Your reset token has expired, please request a new one.'
           });
-        }      
+        }
 
         return res.json({
           message: 'Token correct.',
@@ -1058,6 +1061,35 @@ class Jeeves extends Service {
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //route to edit a conversation title
+    this.http._addRoute('PATCH', '/conversations/:id', async (req, res, next) => {
+      const { title } = req.body;
+
+      try {
+        const conversationEditing = await this.db('conversations')
+        .where({
+          id: req.params.id,
+          creator_id: req.user.id  // validates if the user editing is the creator of the conversation
+        }).first();
+
+        if (!conversationEditing) {
+          return res.status(401).json({ message: 'Invalid conversation.' });
+        }
+
+        // Update the conversation's title in the database
+        await this.db('conversations').where('id', req.params.id).update({
+          title: title
+        });
+
+        return res.json({
+          message: 'Title edited successfully.',
+        });
+      } catch (error) {
+        console.error('Error editing title: ', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
@@ -1665,7 +1697,7 @@ class Jeeves extends Service {
       try {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
-        
+
         const newRequest = await this.db('requests').insert({
           message_id: messageID
         });
@@ -1693,7 +1725,7 @@ class Jeeves extends Service {
 //               const title = await this._summarizeMessagesToTitle(messages.map((x) => {
 //                 return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
 //               }));
-    
+
 //               await this.db('conversations').update({ title }).where({ id: conversation_id });
 //             }
 //           });
@@ -1737,7 +1769,7 @@ class Jeeves extends Service {
       try {
         await this.db('announcements').insert({
           creator_id: req.user.id,
-          title: (request.title) ? request.title : null, 
+          title: (request.title) ? request.title : null,
           body: request.body,
           expiration_date: (request.expirationDate) ? request.expirationDate : null,
         });
@@ -1760,7 +1792,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/announcements', async (req, res, next) => {
       try {
         const announcements = await this.db('announcements')
-          .select('*') 
+          .select('*')
           .orderBy('created_at', 'desc');
 
         res.json(announcements);
@@ -1773,7 +1805,7 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/announcements/latest', async (req, res, next) => {
       try {
         const latestAnnouncement = await this.db('announcements')
-          .select('*') 
+          .select('*')
           .orderBy('created_at', 'desc')
           .first();
 
@@ -2051,6 +2083,67 @@ class Jeeves extends Service {
       const search = await this._searchCourtsByTerm(court.name);
       console.debug('[JEEVES]', '[HARVARD]', 'Search Results:', search);
     } */
+  }
+
+  async _handleHarvardJurisdiction (jurisdiction) {
+    // console.debug('[JEEVES]', '[HARVARD]', 'jurisdiction:', jurisdiction);
+    const actor = new Actor({ name: `harvard/jurisdictions/${jurisdiction.id}` });
+    const target = await this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
+
+    if (!target) {
+      await this.db('jurisdictions').insert({
+        fabric_id: actor.id,
+        harvard_id: jurisdiction.id,
+        name: jurisdiction.name_long,
+        name_short: jurisdiction.name
+      });
+    }
+  }
+
+  async _handleHarvardReporter (reporter) {
+    // console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
+    const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
+    const target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
+
+    if (!target) {
+      await this.db('reporters').insert({
+        fabric_id: actor.id,
+        harvard_id: reporter.id,
+        name: reporter.full_name,
+        name_short: reporter.short_name,
+        start_year: reporter.start_year,
+        end_year: reporter.end_year,
+        // jurisdiction: reporter.jurisdiction,
+        // slug: reporter.slug
+      });
+    }
+
+    /* const jurisdictions = await Promise.all(reporter.jurisdictions.map((jurisdiction) => {
+      return this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
+    })); */
+
+    // console.debug('[JEEVES]', '[HARVARD]', 'Reporter jurisdictions:', jurisdictions);
+  }
+
+  async _handleHarvardVolume (volume) {
+    console.debug('[JEEVES]', '[HARVARD]', 'volume:', volume);
+    const actor = new Actor({ name: `harvard/volumes/${volume.id}` });
+    this.db('volumes').where({ harvard_id: volume.id }).first().then(async (target) => {
+      console.debug('[JEEVES]', '[HARVARD]', 'Found volume:', target);
+
+      if (!target) {
+        await this.db('volumes').insert({
+          fabric_id: actor.id,
+          harvard_id: volume.id,
+          title: volume.title,
+          start_year: volume.start_year,
+          end_year: volume.end_year,
+          harvard_pdf_url: volume.pdf_url
+        });
+      }
+    }).catch((exception) => {
+      console.error('[JEEVES]', '[HARVARD]', 'Failed to find volume:', exception);
+    });
   }
 
   async _handleOpenAIError (error) {

@@ -12,7 +12,8 @@ const {
   Tab,
   Table,
   Pagination,
-  Divider
+  Divider,
+  Loader
 } = require('semantic-ui-react');
 
 const AccountCreator = require('./AccountCreator');
@@ -65,10 +66,8 @@ class AdminSettings extends React.Component {
   };
 
   render () {
-    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations } = this.props;
-    const { waitlistSignupCount, currentPage, windowWidth } = this.state;
-    const { stats } = this.props.stats;
-
+    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats  } = this.props;
+    const { currentPage, windowWidth } = this.state;
 
     // Math for pagination of conversation list
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
@@ -84,7 +83,7 @@ class AdminSettings extends React.Component {
     // TODO: add users to admin settings
     // TODO: add pagination to users
     const panes = [
-      { menuItem: 'Overview', render: () => <Tab.Pane loading={this.state.loading}>
+      { menuItem: 'Overview', render: () => <Tab.Pane loading={stats.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
           <Statistic.Value>{inquiriesTotal}</Statistic.Value>
