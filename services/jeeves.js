@@ -2126,7 +2126,11 @@ class Jeeves extends Service {
       const members = await this.matrix.client.getJoinedRoomMembers(room);
       console.log(`room ${room} has ${Object.keys(members.joined).length}`);
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
-        await this.matrix.client.invite(room, '@eric:fabric.pub');
+        try {
+          await this.matrix.client.invite(room, '@eric:fabric.pub');
+        } catch (exception) {
+          console.warn('[JEEVES]', '[MATRIX]', 'Failed to invite admin to room:', room);
+        }
       }
     }
 
