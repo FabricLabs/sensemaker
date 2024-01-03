@@ -1186,6 +1186,8 @@ class Jeeves extends Service {
         console.debug('docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
+      } else {
+        console.debug('NO COURT LISTENER ID FOR CASE:', req.params.id);
       }
 
       if (instance.pacer_case_id) {
@@ -1785,6 +1787,22 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('POST', '/services/courtlistener/requests', async (req, res, next) => {
+      const { query } = req.body;
+
+      try {
+        const results = await this.courtlistener.search({
+          query: query,
+          model: 'jeeves-0.2.0-RC1'
+        });
+
+        res.json(results);
+      } catch (error) {
+        console.error('Error searching CourtListener:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('POST', '/announcements', async (req, res, next) => {
       if (!req.user || !req.user.state?.roles?.includes('admin')) {
         return res.status(401).json({ message: 'Unauthorized.' });
@@ -1862,6 +1880,14 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    // Test the CourtListener database
+    const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
+      query: 'North\nCarolina',
+      model: 'jeeves-0.2.0-RC1'
+    });
+
+    console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
 
     // GraphQL
     /* this.apollo.applyMiddleware({

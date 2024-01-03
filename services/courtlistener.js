@@ -4,11 +4,19 @@ const {
   PER_PAGE_LIMIT
 } = require('../constants');
 
+const SEARCH_FANOUT_LIMIT = 3;
+const SEARCH_RESULT_LIMIT = 10;
+
 const knex = require('knex');
 
 const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
+/**
+ * CourtListener is a service for interacting with the CourtListener database.
+ * @extends Service
+ * @property {Object} [settings] Configuration for the service.
+ */
 class CourtListener extends Service {
   constructor (settings = {}) {
     super(settings);
@@ -28,8 +36,8 @@ class CourtListener extends Service {
         connectionTimeoutMillis: 5000
       },
       pool: {
-        min: 0,
-        max: 32
+        min: 8,
+        max: 64
       }
     });
 
@@ -176,6 +184,34 @@ class CourtListener extends Service {
       this.emit('error', exception);
       return null;
     }
+  }
+
+  async search (request) {
+    console.debug('[COURTLISTENER]', 'Searching...', request);
+    const tokens = request.query.split(/\s/g);
+    console.debug('[COURTLISTENER]', 'Tokens:', tokens);
+
+    let dockets = [];
+
+    for (let i = 0; i < tokens.length && i < SEARCH_FANOUT_LIMIT; i++) {
+      const token = tokens[i];
+      console.debug('[COURTLISTENER]', 'Searching for token:', token);
+
+      try {
+        const results = await this.db('search_docket').where('case_name', 'like', `%${token}%`).limit(SEARCH_RESULT_LIMIT);
+        dockets = dockets.concat(results);
+      } catch (exception) {
+        this.emit('error', exception);
+      }
+    }
+
+    const results = {
+      dockets: dockets
+    };
+
+    console.debug('[COURTLISTENER]', 'Search results:', results);
+
+    return results;
   }
 
   async syncCourts () {
