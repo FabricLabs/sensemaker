@@ -570,6 +570,8 @@ class Jeeves extends Service {
       console.debug('[DOCUMENT]', 'Received document:', actor);
 
       const document = actor.content;
+      // TODO: store sample.id as fabric_id
+      const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
       const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
 
       if (!target) {
@@ -656,6 +658,7 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('opinion', async (opinion) => {
+      const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
       const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
 
       if (!target) {
@@ -683,9 +686,11 @@ class Jeeves extends Service {
     });
 
     this.courtlistener.on('person', async (person) => {
+      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
       const target = await this.db('people').where({ courtlistener_id: person.id }).first();
       if (!target) {
         await this.db('people').insert({
+          fabric_id: actor.id,
           courtlistener_id: person.id,
           name_first: person.name_first,
           name_middle: person.name_middle,
@@ -783,6 +788,8 @@ class Jeeves extends Service {
     }
 
     // Internal APIs
+    this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
+    // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', async (req, res) => {
       const { email } = req.body;
 
@@ -1831,7 +1838,8 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
-      const { query } = req.body;
+      const request = req.body;
+      const { query } = request;
 
       try {
         const results = await this.courtlistener.search({
@@ -2032,6 +2040,17 @@ class Jeeves extends Service {
       const worker = new Worker();
       this.workers.push(worker);
     }
+  }
+
+  _handleGenericSearchRequest (req, res, next) {
+    const request = req.body;
+    const { query } = request;
+
+    this.search({
+      query: query
+    }).then((results) => {
+      res.json(results);
+    });
   }
 
   async _handleMatrixActivity (activity) {
