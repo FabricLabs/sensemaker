@@ -375,6 +375,15 @@ class Jeeves extends Service {
     await this.queue._addJob('ingest', [data]);
   }
 
+  async search (request) {
+    const cases = await this._searchCases(request);
+    const results = {
+      cases: cases
+    };
+
+    return results;
+  }
+
   /**
    * Start the process.
    * @return {Promise} Resolves once the process has been started.
@@ -1210,6 +1219,15 @@ class Jeeves extends Service {
         });
       }
 
+      this.search({
+        query: instance.title
+      }).then((results) => {
+        const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
+        this.http.broadcast(message);
+
+        console.debug('[JEEVES]', 'Jeeves search results:', results);
+      });
+
       if (!instance.summary) {
         const merged = Object.assign({}, instance, updates);
         const summary = await this._summarizeCaseToLength(merged);
@@ -1787,7 +1805,7 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('POST', '/services/courtlistener/requests', async (req, res, next) => {
+    this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
       const { query } = req.body;
 
       try {
@@ -1881,12 +1899,18 @@ class Jeeves extends Service {
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
 
+    const FABRIC_FIXTURE = await this.fabric.search({
+      query: 'North\nCarolina',
+      model: 'jeeves-0.2.0-RC1'
+    });
+
     // Test the CourtListener database
     const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
       query: 'North\nCarolina',
       model: 'jeeves-0.2.0-RC1'
     });
 
+    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
     console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
 
     // GraphQL
@@ -2466,6 +2490,13 @@ class Jeeves extends Service {
     const harvard = await result.json();
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
+
+    const courtListenerResults = await this.courtlistener.search({
+      query: request.query,
+      model: 'jeeves-0.2.0-RC1'
+    });
+
+    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);

@@ -55,6 +55,24 @@ class FabricService extends Service {
     return [];
   }
 
+  async search (request) {
+    this.emit('debug', 'Searching...');
+    let results = [];
+
+    for (let i = 0; i < this.remotes.length; i++) {
+      const remote = this.remotes[i];
+      const index = await remote._SEARCH('/', request);
+      console.debug('[FABRIC] Search results (index):', index.results);
+
+      const response = await remote._SEARCH('/services/courtlistener/cases', request);
+      console.debug('[FABRIC] Search results (CourtListener cases):', response.results);
+
+      results = results.concat(response.results);
+    }
+
+    return results;
+  }
+
   async sync () {
     this.emit('debug', 'Syncing...');
 
