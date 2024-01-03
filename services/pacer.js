@@ -29,9 +29,13 @@ class PACER extends Service {
   }
 
   async allCourts () {
-    const results = await fetch('https://pacer.uscourts.gov/file-case/court-cmecf-lookup/data.json');
-    const object = await results.json();
-    return object.data;
+    return new Promise((resolve, reject) => {
+      fetch('https://pacer.uscourts.gov/file-case/court-cmecf-lookup/data.json').then(async (results) => {
+        const object = await results.json();
+        if (!object || !object.data) return reject(new Error('No data found in response.'));
+        resolve(object.data);
+      }).catch(reject);
+    });
   }
 
   async getCounts () {
