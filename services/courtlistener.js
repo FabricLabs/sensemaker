@@ -1,16 +1,23 @@
 'use strict';
 
+// Constants
 const {
   PER_PAGE_LIMIT
 } = require('../constants');
 
-const SEARCH_FANOUT_LIMIT = 3;
-const SEARCH_RESULT_LIMIT = 10;
+// Local Constants
+const SEARCH_FANOUT_LIMIT = 3; // Sets the maximum number of tokens to search for (first, second, third, etc.)
+const SEARCH_RESULT_LIMIT = 10; // Sets the maximum number of results to return per token
 
+// Dependencies
 const knex = require('knex');
 
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
+
+// Functions
+const tokenize = require('../functions/tokenize');
 
 /**
  * CourtListener is a service for interacting with the CourtListener database.
@@ -21,10 +28,12 @@ class CourtListener extends Service {
   constructor (settings = {}) {
     super(settings);
 
+    // Settings
     this.settings = Object.assign({
       name: 'CourtListener'
     }, settings);
 
+    // Database
     this.db = knex({
       client: 'postgresql',
       connection: {
@@ -41,6 +50,7 @@ class CourtListener extends Service {
       }
     });
 
+    // State
     this._state = {
       content: {
         status: 'INITIALIZED',
@@ -203,6 +213,10 @@ class CourtListener extends Service {
       } catch (exception) {
         this.emit('error', exception);
       }
+    }
+
+    for (let i = 0; i < dockets.length; i++) {
+      this.emit('docket', dockets[i]);
     }
 
     const results = {
