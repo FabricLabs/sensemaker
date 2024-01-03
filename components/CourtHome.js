@@ -45,9 +45,9 @@ class CourtHome extends React.Component {
       body: JSON.stringify({ query })
     }).then(async (result) => {
       const obj = await result.json();
-        
+
       console.log('fetch result: ', obj);
-      
+
       this.setState({
         filteredCourts: obj.content,
         searchQuery: query,
