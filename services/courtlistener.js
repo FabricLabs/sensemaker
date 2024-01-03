@@ -103,6 +103,15 @@ class CourtListener extends Service {
     return opinions;
   }
 
+  async samplePeople (limit = PER_PAGE_LIMIT) {
+    this.emit('debug', 'Sampling people...');
+    const now = Date.now();
+    const people = await this.db('people_db_person').select().orderByRaw('RANDOM()').limit(limit);
+    const end = Date.now();
+    this.emit('debug', 'Sampled', people.length, 'people in', end - now, 'ms.');
+    return people;
+  }
+
   async sampleRecapDocuments (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling RECAP documents...');
     const now = Date.now();
@@ -255,6 +264,18 @@ class CourtListener extends Service {
     return dockets;
   }
 
+  async syncDocketSamples () {
+    // TODO: this should be a stream
+    const dockets = await this.sampleDockets();
+
+    for (let i = 0; i < dockets.length; i++) {
+      const docket = dockets[i];
+      this.emit('docket', docket);
+    }
+
+    return dockets;
+  }
+
   async syncPeople () {
     // TODO: this should be a stream
     const people = await this.enumeratePeople();
@@ -263,6 +284,18 @@ class CourtListener extends Service {
       const person = people[i];
       const actor = new Actor({ name: `courtlistener/people/${person.id}` });
       person.fabric_id = actor.id;
+      this.emit('person', person);
+    }
+
+    return people;
+  }
+
+  async syncPeopleSamples () {
+    // TODO: this should be a stream
+    const people = await this.samplePeople();
+
+    for (let i = 0; i < people.length; i++) {
+      const person = people[i];
       this.emit('person', person);
     }
 
@@ -314,7 +347,8 @@ class CourtListener extends Service {
 
     // Then for all parallel jobs...
     return Promise.all([
-      this.syncDockets(),
+      this.syncDocketSamples(),
+      this.syncPeopleSamples()
       // this.syncRecapDocuments()
     ]);
   }
@@ -337,7 +371,7 @@ class CourtListener extends Service {
     await this.syncDockets();
 
     // People
-    await this.syncPeople();
+    await this.syncPeopleSamples();
 
     // Opinions
     // await this.syncOpinions();
