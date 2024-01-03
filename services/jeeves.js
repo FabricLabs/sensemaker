@@ -2034,10 +2034,10 @@ class Jeeves extends Service {
     }
 
     if (docket.pacer_case_id) {
-      console.debug('[JEEVES]', 'We have a PACER Case ID:', docket.pacer_case_id);
+      console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
       const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
       if (!pacer) {
-        console.debug('[JEEVES]', 'No PACER case found, inserting:', instance);
+        console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
         await this.db('cases').insert(instance);
       }
     }
@@ -2392,7 +2392,7 @@ class Jeeves extends Service {
 
     const harvard = await result.json();
     const ids = harvard.results.map(x => x.id);
-    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids);
+    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
