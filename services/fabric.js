@@ -22,11 +22,13 @@ class FabricService extends Service {
         status: 'INITIALIZED',
         collections: {
           courts: {},
-          documents: {}
+          documents: {},
+          people: {}
         },
         counts: {
           courts: 0,
-          documents: 0
+          documents: 0,
+          people: 0
         }
       }
     }, settings);
@@ -56,7 +58,7 @@ class FabricService extends Service {
   }
 
   async search (request) {
-    this.emit('debug', 'Searching...');
+    this.emit('debug', 'Searching...', request);
     let results = [];
 
     for (let i = 0; i < this.remotes.length; i++) {
@@ -84,7 +86,8 @@ class FabricService extends Service {
       await Promise.allSettled([
         this.syncRemoteDocuments(remote),
         // this.syncRemoteCases(remote),
-        this.syncRemoteCourts(remote)
+        this.syncRemoteCourts(remote),
+        this.syncRemotePeople(remote)
       ]);
     }
 
@@ -130,13 +133,35 @@ class FabricService extends Service {
     try {
       const courts = await remote._GET('/courts');
       console.debug('[FABRIC] Remote Courts found:', courts.length);
+      console.debug('[FABRIC] Remote Court sample:', courts[0]);
       for (let j = 0; j < courts.length; j++) {
         const court = courts[j];
-        const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
-        this._state.content.collections.courts[actor.id] = court;
+
+        // Capture CourtListener courts
+        if (court.courtlistener_id) {
+          const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+          this._state.content.collections.courts[actor.id] = court;
+        }
       }
     } catch (exception) {
       console.error('[FABRIC] Could not fetch courts:', exception);
+    }
+
+    this.commit();
+  }
+
+  async syncRemotePeople (remote) {
+    try {
+      const people = await remote._GET('/people');
+      console.debug('[FABRIC] Remote People found:', people.length);
+      console.debug('[FABRIC] Remote Person sample:', people[0]);
+      for (let j = 0; j < people.length; j++) {
+        const court = people[j];
+        const actor = new Actor({ name: `courtlistener/people/${court.slug}` });
+        this._state.content.collections.people[actor.id] = court;
+      }
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch people:', exception);
     }
 
     this.commit();

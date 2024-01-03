@@ -198,6 +198,7 @@ class CourtListener extends Service {
 
   async search (request) {
     console.debug('[COURTLISTENER]', 'Searching...', request);
+    if (!request.query) throw new Error('No query provided.');
     const tokens = request.query.split(/\s/g);
     console.debug('[COURTLISTENER]', 'Tokens:', tokens);
 

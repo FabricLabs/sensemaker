@@ -1322,7 +1322,17 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/people', async (req, res, next) => {
-      const people = await this.db.select('id', 'full_name', 'created_at').from('people').orderBy('full_name', 'asc');
+      const people = await this.db.select(
+        'id',
+        'full_name',
+        'name_first',
+        'name_middle',
+        'name_last',
+        'name_suffix',
+        'date_of_birth',
+        'date_of_death',
+        'fabric_id'
+      ).from('people').orderBy('full_name', 'asc');
       res.format({
         json: () => {
           res.send(people);
@@ -1335,7 +1345,17 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
-      const person = await this.db.select('id', 'name', 'created_at').from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
+      const person = await this.db.select(
+        'id',
+        'full_name',
+        'name_first',
+        'name_middle',
+        'name_last',
+        'name_suffix',
+        'date_of_birth',
+        'date_of_death',
+        'fabric_id'
+      ).from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
       res.format({
         json: () => {
           if (!person) return res.status(404).json({ message: 'Person not found.' });
