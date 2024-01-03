@@ -516,6 +516,7 @@ class Jeeves extends Service {
     // Collect Jeeves-specific
     // Courts
     this.fabric.on('court', this._handleFabricCourt.bind(this));
+    this.fabric.on('person', this._handleFabricPerson.bind(this));
 
     // Matrix Events
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
@@ -1333,6 +1334,7 @@ class Jeeves extends Service {
         'date_of_death',
         'fabric_id'
       ).from('people').orderBy('full_name', 'asc');
+
       res.format({
         json: () => {
           res.send(people);
@@ -1356,6 +1358,7 @@ class Jeeves extends Service {
         'date_of_death',
         'fabric_id'
       ).from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
+
       res.format({
         json: () => {
           if (!person) return res.status(404).json({ message: 'Person not found.' });
@@ -2100,6 +2103,19 @@ class Jeeves extends Service {
       });
 
       // console.debug('[FABRIC]', '[COURT]', '[INSERTED]', inserted);
+    }
+  }
+
+  async _handleFabricPerson (person) {
+    console.debug('[FABRIC]', '[PERSON]', person);
+    const target = await this.db('people').where({ fabric_id: person.id }).first();
+    // console.debug('[FABRIC]', '[PERSON]', '[TARGET]', target);
+    if (!target) {
+      const inserted = await this.db('people').insert({
+        fabric_id: person.id
+      });
+
+      console.debug('[FABRIC]', '[PERSON]', '[INSERTED]', inserted);
     }
   }
 
