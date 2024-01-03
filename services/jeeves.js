@@ -1334,7 +1334,7 @@ class Jeeves extends Service {
         'date_of_birth',
         'date_of_death',
         'courtlistener_id'
-      ).from('people').orderBy('full_name', 'asc');
+      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc');
 
       res.format({
         json: () => {
@@ -2111,10 +2111,18 @@ class Jeeves extends Service {
   async _handleFabricPerson (person) {
     console.debug('[FABRIC]', '[PERSON]', person);
     const target = await this.db('people').where({ fabric_id: person.id }).first();
-    // console.debug('[FABRIC]', '[PERSON]', '[TARGET]', target);
+    console.debug('[FABRIC]', '[PERSON]', '[TARGET]', target);
     if (!target) {
       const inserted = await this.db('people').insert({
-        fabric_id: person.id
+        fabric_id: person.id,
+        full_name: person.full_name,
+        name_first: person.name_first,
+        name_middle: person.name_middle,
+        name_last: person.name_last,
+        name_suffix: person.name_suffix,
+        date_of_birth: person.date_of_birth,
+        date_of_death: person.date_of_death,
+        courtlistener_id: person.ids?.courtlistener
       });
 
       console.debug('[FABRIC]', '[PERSON]', '[INSERTED]', inserted);
