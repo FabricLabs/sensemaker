@@ -22,11 +22,13 @@ class FabricService extends Service {
         status: 'INITIALIZED',
         collections: {
           courts: {},
-          documents: {}
+          documents: {},
+          people: {}
         },
         counts: {
           courts: 0,
-          documents: 0
+          documents: 0,
+          people: 0
         }
       }
     }, settings);
@@ -50,13 +52,17 @@ class FabricService extends Service {
     return Object.values(this.state.collections.courts);
   }
 
+  get people () {
+    return Object.values(this.state.collections.people);
+  }
+
   async enumerateDocuments () {
     this.emit('debug', 'Enumerating documents...');
     return [];
   }
 
   async search (request) {
-    this.emit('debug', 'Searching...');
+    this.emit('debug', 'Searching...', request);
     let results = [];
 
     for (let i = 0; i < this.remotes.length; i++) {
@@ -84,7 +90,8 @@ class FabricService extends Service {
       await Promise.allSettled([
         this.syncRemoteDocuments(remote),
         // this.syncRemoteCases(remote),
-        this.syncRemoteCourts(remote)
+        this.syncRemoteCourts(remote),
+        this.syncRemotePeople(remote)
       ]);
     }
 
@@ -99,7 +106,10 @@ class FabricService extends Service {
       console.debug('[FABRIC] Remote Documents found:', documents);
       for (let j = 0; j < documents.length; j++) {
         const document = documents[j];
+        // TODO: validate documents
+        // TODO: decide inner Fabric state vs. standard document content
         this._state.content.collections.documents[document.id] = document;
+        this.emit('document', document);
       }
     } catch (exception) {
       console.error('[FABRIC] Could not fetch documents:', exception);
@@ -113,10 +123,12 @@ class FabricService extends Service {
       const cases = await remote._GET('/cases');
       console.debug('[FABRIC] Remote Cases found:', cases.length);
       for (let j = 0; j < cases.length; j++) {
-        const court = cases[j];
-        if (court.harvard_case_law_id) {
-          const actor = new Actor({ name: `harvard/cases/${court.harvard_case_law_id}` });
-          this._state.content.collections.cases[actor.id] = court;
+        const instance = cases[j];
+        if (instance.harvard_case_law_id) {
+          const actor = new Actor({ name: `harvard/cases/${instance.harvard_case_law_id}` });
+          instance.id = actor.id;
+          this._state.content.collections.cases[actor.id] = instance;
+          this.emit('case', instance);
         }
       }
     } catch (exception) {
@@ -130,13 +142,38 @@ class FabricService extends Service {
     try {
       const courts = await remote._GET('/courts');
       console.debug('[FABRIC] Remote Courts found:', courts.length);
+      console.debug('[FABRIC] Remote Court sample:', courts[0]);
       for (let j = 0; j < courts.length; j++) {
         const court = courts[j];
-        const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
-        this._state.content.collections.courts[actor.id] = court;
+
+        // Capture CourtListener courts
+        if (court.courtlistener_id) {
+          const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+          court.id = actor.id;
+          this._state.content.collections.courts[actor.id] = court;
+          this.emit('court', court);
+        }
       }
     } catch (exception) {
       console.error('[FABRIC] Could not fetch courts:', exception);
+    }
+
+    this.commit();
+  }
+
+  async syncRemotePeople (remote) {
+    try {
+      const people = await remote._GET('/people');
+      console.debug('[FABRIC] Remote People found:', people.length);
+      console.debug('[FABRIC] Remote Person sample:', people[0]);
+      for (let j = 0; j < people.length; j++) {
+        const person = people[j];
+        const actor = new Actor({ name: `courtlistener/people/${person.slug}` });
+        this._state.content.collections.people[actor.id] = person;
+        this.emit('person', person);
+      }
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch people:', exception);
     }
 
     this.commit();
@@ -154,18 +191,20 @@ class FabricService extends Service {
   commit () {
     super.commit();
 
-    for (let i = 0; i < this.courts.length; i++) {
-      const court = this.courts[i];
-      const actor = new Actor({ name: `courtlistener/courts/${court.slug}` });
+    // Commit to state
+    const commit = new Actor({
+      content: {
+        state: this.state
+      }
+    });
 
-      // Fabric
-      court.id = actor.id;
-      court.ids = {};
-
-      if (court.courtlistener_id) court.ids.courtlistener = court.courtlistener_id;
-
-      this.emit('court', court);
-    }
+    this.emit('commit', {
+      id: commit.id,
+      type: 'Commit',
+      content: {
+        state: this.state
+      }
+    })
   }
 }
 
