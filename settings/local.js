@@ -143,6 +143,9 @@ module.exports = {
     username: 'dbuser_jeeves_dev',
     password: ''
   },
+  pacer: {
+    enable: true
+  },
   openai: {
     key: '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',
     model: 'gpt-4-1106-preview'

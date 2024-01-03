@@ -715,7 +715,7 @@ class Jeeves extends Service {
     await this.email.start();
     if (this.settings.matrix.enable) await this.matrix.start();
 
-    await this.pacer.start();
+    if (this.settings.pacer.enable) await this.pacer.start();
     await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();

@@ -7,20 +7,20 @@ async function fetchCourtsFromAPI (token) {
 }
 
 // Action types
-const FETCH_CASES_REQUEST = 'FETCH_CASES_REQUEST';
-const FETCH_CASES_SUCCESS = 'FETCH_CASES_SUCCESS';
-const FETCH_CASES_FAILURE = 'FETCH_CASES_FAILURE';
-const FETCH_CASE_REQUEST = 'FETCH_CASE_REQUEST';
-const FETCH_CASE_SUCCESS = 'FETCH_CASE_SUCCESS';
-const FETCH_CASE_FAILURE = 'FETCH_CASE_FAILURE';
+const FETCH_COURTS_REQUEST = 'FETCH_COURTS_REQUEST';
+const FETCH_COURTS_SUCCESS = 'FETCH_COURTS_SUCCESS';
+const FETCH_COURTS_FAILURE = 'FETCH_COURTS_FAILURE';
+const FETCH_COURT_REQUEST = 'FETCH_COURT_REQUEST';
+const FETCH_COURT_SUCCESS = 'FETCH_COURT_SUCCESS';
+const FETCH_COURT_FAILURE = 'FETCH_COURT_FAILURE';
 
 // Action creators
-const fetchCourtsRequest = () => ({ type: FETCH_CASES_REQUEST, loading: true });
-const fetchCourtsSuccess = (courts) => ({ type: FETCH_CASES_SUCCESS, payload: courts, loading: false });
-const fetchCourtsFailure = (error) => ({ type: FETCH_CASES_FAILURE, payload: error, loading: false  });
-const fetchCourtRequest = () => ({ type: FETCH_CASE_REQUEST, loading: true });
-const fetchCourtSuccess = (instance) => ({ type: FETCH_CASE_SUCCESS, payload: instance, loading: false });
-const fetchCourtFailure = (error) => ({ type: FETCH_CASE_FAILURE, payload: error, loading: false });
+const fetchCourtsRequest = () => ({ type: FETCH_COURTS_REQUEST, loading: true });
+const fetchCourtsSuccess = (courts) => ({ type: FETCH_COURTS_SUCCESS, payload: courts, loading: false });
+const fetchCourtsFailure = (error) => ({ type: FETCH_COURTS_FAILURE, payload: error, loading: false  });
+const fetchCourtRequest = () => ({ type: FETCH_COURT_REQUEST, loading: true });
+const fetchCourtSuccess = (instance) => ({ type: FETCH_COURT_SUCCESS, payload: instance, loading: false });
+const fetchCourtFailure = (error) => ({ type: FETCH_COURT_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchCourts = () => {
@@ -52,10 +52,10 @@ const fetchCourt = (id) => {
 module.exports = {
   fetchCourt,
   fetchCourts,
-  FETCH_CASE_REQUEST,
-  FETCH_CASE_SUCCESS,
-  FETCH_CASE_FAILURE,
-  FETCH_CASES_REQUEST,
-  FETCH_CASES_SUCCESS,
-  FETCH_CASES_FAILURE
+  FETCH_COURT_REQUEST,
+  FETCH_COURT_SUCCESS,
+  FETCH_COURT_FAILURE,
+  FETCH_COURTS_REQUEST,
+  FETCH_COURTS_SUCCESS,
+  FETCH_COURTS_FAILURE
 };
