@@ -1324,7 +1324,8 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/people', async (req, res, next) => {
       const people = await this.db.select(
-        'id',
+        'id as dbid',
+        'fabric_id as id',
         'full_name',
         'name_first',
         'name_middle',
@@ -1332,7 +1333,7 @@ class Jeeves extends Service {
         'name_suffix',
         'date_of_birth',
         'date_of_death',
-        'fabric_id'
+        'courtlistener_id'
       ).from('people').orderBy('full_name', 'asc');
 
       res.format({
@@ -1348,7 +1349,8 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
       const person = await this.db.select(
-        'id',
+        'id as dbid',
+        'fabric_id as id',
         'full_name',
         'name_first',
         'name_middle',
@@ -1356,7 +1358,7 @@ class Jeeves extends Service {
         'name_suffix',
         'date_of_birth',
         'date_of_death',
-        'fabric_id'
+        'courtlistener_id'
       ).from('people').orderBy('name', 'asc').where({ fabric_id: req.params.fabricID }).first();
 
       res.format({

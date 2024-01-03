@@ -162,14 +162,23 @@ class FabricService extends Service {
   }
 
   async syncRemotePeople (remote) {
+    // Stores people by remote ID, not Fabric ID (should be Fabric ID already)
     try {
       const people = await remote._GET('/people');
       console.debug('[FABRIC] Remote People found:', people.length);
       console.debug('[FABRIC] Remote Person sample:', people[0]);
+
       for (let j = 0; j < people.length; j++) {
         const person = people[j];
-        const actor = new Actor({ name: `courtlistener/people/${person.slug}` });
-        this._state.content.collections.people[actor.id] = person;
+
+        // Store external IDs
+        people.ids = {};
+        if (person.courtlistener_id) people.ids.courtlistener = person.courtlistener_id;
+
+        // Store in state
+        this._state.content.collections.people[person.id] = person;
+
+        // Emit event
         this.emit('person', person);
       }
     } catch (exception) {
