@@ -180,6 +180,7 @@ class CourtListener extends Service {
 
   async syncCourts () {
     // TODO: this should be a stream
+    this.emit('debug', 'Syncing courts...');
     const courts = await this.enumerateCourts();
 
     for (let i = 0; i < courts.length; i++) {
@@ -187,6 +188,7 @@ class CourtListener extends Service {
       this.emit('court', court);
     }
 
+    this.emit('debug', 'Synced', courts.length, 'courts!');
     return courts;
   }
 

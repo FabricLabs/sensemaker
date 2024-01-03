@@ -9,7 +9,8 @@ const why = require('why-is-node-running');
 const definition = require('../package');
 const {
   PER_PAGE_LIMIT,
-  PER_PAGE_DEFAULT
+  PER_PAGE_DEFAULT,
+  USER_QUERY_TIMEOUT_MS
 } = require('../constants');
 
 // Dependencies
@@ -61,6 +62,7 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const PACER = require('./pacer');
 const Harvard = require('./harvard');
 const OpenAI = require('./openai');
 // TODO: Mistral
@@ -147,6 +149,7 @@ class Jeeves extends Service {
     // Services
     this.email = new EmailService;
     this.matrix = new Matrix(this.settings.matrix);
+    this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
     this.harvard = new Harvard(this.settings.harvard);
     this.courtlistener = new CourtListener(this.settings.courtlistener);
@@ -258,7 +261,7 @@ class Jeeves extends Service {
         min: 8,
         max: 128,
         afterCreate: (conn, done) => {
-          console.debug('[JEEVES]', '[DB]', 'Connection created.');
+          // console.debug('[JEEVES]', '[DB]', 'Connection created.');
           done(null, conn);
         }
       }
@@ -342,6 +345,24 @@ class Jeeves extends Service {
     });
 
     return beat;
+  }
+
+  async query (query) {
+    console.debug('[JEEVES]', '[QUERY]', 'Received query:', query);
+    const collections = {
+      courts: {}
+    };
+
+    const candidates = await Promise.allSettled([
+      (new Promise((resolve, reject) => {
+        setTimeout(reject, USER_QUERY_TIMEOUT_MS, new Error('Timeout!'));
+      })),
+      this._searchCourts(query)
+    ]);
+
+    console.debug('[JEEVES]', '[QUERY]', 'Candidates:', candidates);
+
+    return candidates;
   }
 
   async restore () {
@@ -491,6 +512,10 @@ class Jeeves extends Service {
     this.matrix.on('activity', this._handleMatrixActivity.bind(this));
     this.matrix.on('ready', this._handleMatrixReady.bind(this));
     this.matrix.on('error', this._handleMatrixError.bind(this));
+
+    // PACER Events
+    this.pacer.on('debug', this._handlePACERDebug.bind(this));
+    this.pacer.on('court', this._handlePACERCourt.bind(this));
 
     // Harvard Events
     this.harvard.on('error', this._handleHarvardError.bind(this));
@@ -681,6 +706,7 @@ class Jeeves extends Service {
     await this.email.start();
     if (this.settings.matrix.enable) await this.matrix.start();
 
+    await this.pacer.start();
     await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
@@ -2324,6 +2350,27 @@ class Jeeves extends Service {
       id: inserted[0],
       content: response.content.trim()
     };
+  }
+
+  async _handlePACERDebug (...params) {
+    console.debug('[JEEVES]', '[PACER]', '[DEBUG]', ...params);
+  }
+
+  async _handlePACERCourt (court) {
+    // console.debug('[JEEVES]', '[PACER]', 'court:', court);
+    const actor = new Actor({ name: `pacer/courts/${court.id}` });
+    const target = await this.db('courts').where({ pacer_id: court.id }).first();
+
+    if (!target) {
+      await this.db('courts').insert({
+        fabric_id: actor.id,
+        pacer_id: court.id,
+        name: court.title,
+        short_name: court.title,
+        jurisdiction: court.court_name,
+        slug: `pacer-${court.id}`
+      });
+    }
   }
 
   async _startWorkers () {
