@@ -15,7 +15,9 @@ const {
   Label,
   List,
   Loader,
-  Icon
+  Icon,
+  Form,
+  TextArea
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -123,11 +125,15 @@ class DocumentHome extends React.Component {
             }
           </List>
         </Segment>
-        <Segment fluid>
-          <Header as='h3'>Draft Documents</Header>
-          <p>Start drafting a new document by telling me the details of your case.</p>
-          <textarea></textarea>
-          <Button icon='file'>Draft</Button>
+        <Segment>
+          <Form>
+            <Form.Field>
+              <Header as='h3'>Draft Documents</Header>
+              <p>Start drafting a new document by telling me the details of your case.</p>
+              <Form.TextArea />
+              <Button icon='file'>Draft</Button>
+            </Form.Field>
+          </Form>
         </Segment>
       </fabric-document-home>
     );
