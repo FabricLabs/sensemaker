@@ -10,7 +10,6 @@ const {
   const initialState = {
     person: {},
     people: [],
-    current: {},
     loading: false,
     error: null
   };

@@ -14,13 +14,14 @@ const {
   Segment,
   Label,
   List,
-  Loader
+  Loader,
+  Icon
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
 
 class DocumentHome extends React.Component {
-  constructor (settings = {}) {
+  constructor(settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
@@ -29,7 +30,7 @@ class DocumentHome extends React.Component {
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchDocuments();
   }
 
@@ -60,7 +61,7 @@ class DocumentHome extends React.Component {
     });
   }, 1000);
 
-  render () {
+  render() {
     const { loading, error } = this.props;
     const { filteredDocuments, searchQuery, searching } = this.state;
 
@@ -89,37 +90,36 @@ class DocumentHome extends React.Component {
             </div>
           </jeeves-search>
           <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
-          {searching ? (
+            {searching ? (
               <Loader active inline="centered" /> // Display loading icon if searching is true
             ) :
-            searchQuery ? // if searching, goes this way
-              (filteredDocuments && filteredDocuments.documents && filteredDocuments.documents.length > 0 ? (
-                filteredDocuments.documents.map((instance) => (
-                  <List.Item as={Card} key={instance.id}>
-                    <Card.Content>
-                      <h3><Link to={"/documents/" + instance.id}>{instance.short_name}</Link></h3>
-                      <Label.Group basic>
-                        <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                        <Label icon="law">{instance.document_name}</Label>
-                      </Label.Group>
-                      <p>{instance.content}</p>
-                    </Card.Content>
-                  </List.Item>
-                ))
+              searchQuery ? // if searching, goes this way
+                (filteredDocuments && filteredDocuments.documents && filteredDocuments.documents.length > 0 ? (
+                  filteredDocuments.documents.map((instance) => (
+                    <List.Item as={Card} key={instance.id}>
+                      <Card.Content>
+                        <h3><Link to={"/documents/" + instance.id}>{instance.short_name} (doc #{instance.id}) </Link></h3>
+                        <Label.Group basic>
+                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
+                          <p>{instance.description}</p>
+                        </Label.Group>
+                      </Card.Content>
+                    </List.Item>
+                  ))
                 ) : (<p>No results found</p>)
-              ) : this.props.documents && this.props.documents.documents && this.props.documents.documents.length > 0 ? (
-                this.props.documents.documents.map((instance) => (
-                  <List.Item as={Card} key={instance.id}>
-                    <Card.Content>
-                      <h3><Link to={"/documents/" + instance.id}> {instance.short_name} (doc #{instance.id})</Link> </h3>
-                      <Label.Group basic>
-                        <Label icon="law">{instance.document_name}</Label>
-                      </Label.Group>
-                      <p>{instance.summary}</p>
-                    </Card.Content>
-                  </List.Item>
-                ))
-              ) : (<p>No documents available</p>)
+                ) : this.props.documents && this.props.documents.documents && this.props.documents.documents.length > 0 ? (
+                  this.props.documents.documents.map((instance) => (
+                    <List.Item as={Card} key={instance.id}>
+                      <Card.Content>
+                        <h3><Link to={"/documents/" + instance.id}> (doc #{instance.id})</Link> </h3>
+                        <Label.Group basic>
+                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created}</Label>
+                          <p>{instance.description}</p>
+                        </Label.Group>
+                      </Card.Content>
+                    </List.Item>
+                  ))
+                ) : (<p>No documents available</p>)
             }
           </List>
         </Segment>
@@ -133,7 +133,7 @@ class DocumentHome extends React.Component {
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }

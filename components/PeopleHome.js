@@ -61,9 +61,6 @@ class PeopleHome extends React.Component {
     const { loading, error, } = this.props;
     const { filteredPeople, searchQuery, searching } = this.state;
 
-    console.log("people en el home",this.props.people);
-
-
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
         <h1>People</h1>

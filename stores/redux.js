@@ -12,7 +12,8 @@ const chatReducer = require('../reducers/chatReducer');
 const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
 const courtReducer = require('../reducers/courtReducer');
-const personReducer = require('../reducers/personReducer')
+const documentReducer = require('../reducers/documentReducer');
+const personReducer = require('../reducers/personReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -22,8 +23,9 @@ const rootReducer = combineReducers({
   contracts: contractReducer,
   conversations: conversationReducer,
   courts: courtReducer,
+  documents: documentReducer,
   stats: adminReducer,
-  people: personReducer
+  people: personReducer,
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));
