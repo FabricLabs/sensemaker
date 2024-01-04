@@ -12,7 +12,8 @@ const {
   Segment,
   Label,
   List,
-  Loader
+  Loader,
+  Icon
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -57,7 +58,7 @@ class PeopleHome extends React.Component {
   }, 1000);
 
   render () {
-    const { loading, error } = this.props;
+    const { loading, error, } = this.props;
     const { filteredPeople, searchQuery, searching } = this.state;
 
     return (
@@ -91,12 +92,11 @@ class PeopleHome extends React.Component {
               filteredPeople.people.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/people/" + instance.id}>{instance.short_name}</Link></h3>
+                    <h3><Link to={"/people/" + instance.id}> {instance.full_name} </Link> </h3>
                     <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
+                      <Label title='City/State of birth '><Icon name='building'/> {instance.birth_city}, {instance.birth_state}</Label>
                     </Label.Group>
-                    <p>{instance.content}</p>
                   </Card.Content>
                 </List.Item>
               ))
@@ -105,11 +105,11 @@ class PeopleHome extends React.Component {
               this.props.people.people.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/people/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <h3><Link to={"/people/" + instance.id}> {instance.full_name} </Link> </h3>
                     <Label.Group basic>
-                      <Label icon="law">{instance.legal_name}</Label>
+                      <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
+                      <Label title='City/State of birth '><Icon name='building'/> {instance.birth_city}, {instance.birth_state}</Label>
                     </Label.Group>
-                    <p>{instance.content}</p>
                   </Card.Content>
                 </List.Item>
               ))

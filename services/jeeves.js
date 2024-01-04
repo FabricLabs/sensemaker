@@ -1388,6 +1388,8 @@ class Jeeves extends Service {
         'name_suffix',
         'date_of_birth',
         'date_of_death',
+        'birth_city',
+        'birth_state',
         'courtlistener_id'
       ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc');
 
