@@ -6,7 +6,9 @@ const { Link } = require('react-router-dom');
 const {
   Button,
   Header,
+  Icon,
   Label,
+  List,
   Segment,
   Statistic,
   Tab,
@@ -99,8 +101,82 @@ class AdminSettings extends React.Component {
           <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>
+        <Header as='h4'>Resources</Header>
+        <List>
+          <List.Item>
+            <Icon name='file alternate outline' />
+            <a href="/courts.sql">Courts (SQL)</a>
+          </List.Item>
+        </List>
+      </Tab.Pane> },
+      { menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Datasets</Header>
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell>Name</Table.HeaderCell>
+              <Table.HeaderCell>Status</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>CaselawAccessProject (Harvard)</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='check' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>CourtListener</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='remove' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>PACER</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='remove' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
       </Tab.Pane> },
       { menuItem: 'Growth', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Metrics</Header>
+        <Statistic>
+          <Statistic.Value>???</Statistic.Value>
+          <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+          <Statistic.Label>Users</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>0</Statistic.Value>
+          <Statistic.Label>Conversations</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>0</Statistic.Value>
+          <Statistic.Label>Messages</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>0</Statistic.Value>
+          <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
+        </Statistic>
         <Header as='h4'>Waitlist</Header>
         <Table celled striped>
           <Table.Header>
@@ -232,6 +308,32 @@ class AdminSettings extends React.Component {
       { menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h3'>Create User</Header>
         <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>ID</Table.HeaderCell>
+              <Table.HeaderCell>Username</Table.HeaderCell>
+              <Table.HeaderCell>Created</Table.HeaderCell>
+              <Table.HeaderCell>Modified</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {this.props.users && this.props.users.users && this.props.users.users.length > 0 ? (
+              this.props.users.users.map((instance) => (
+                <Table.Row key={instance.id}>
+                  <Table.Cell>{instance.id}</Table.Cell>
+                  <Table.Cell>{instance.username}</Table.Cell>
+                  <Table.Cell>{instance.created_at}</Table.Cell>
+                  <Table.Cell>{instance.modified_at}</Table.Cell>
+                  <Table.Cell>
+                    <Button>Reactivate</Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))
+            ) : (<Loader active inline="centered" />)}
+          </Table.Body>
+        </Table>
       </Tab.Pane> },
       { menuItem: 'Services', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Services</Header>
@@ -239,35 +341,64 @@ class AdminSettings extends React.Component {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Status</Table.HeaderCell>
+              <Table.HeaderCell>Last Update</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             <Table.Row>
-              <Table.Cell>@jeeves/core</Table.Cell>
-              <Table.Cell>Last Update</Table.Cell>
+              <Table.Cell>@fabric/core</Table.Cell>
               <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>@fabric/core</Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>@jeeves/core</Table.Cell>
               <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>JeevesAI</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>JeevesAI JSON Case Names</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>JeevesAI JSON Case Validator</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>PACER</Table.Cell>
-              <Table.Cell></Table.Cell>
               <Table.Cell><Label>stopped</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>CaselawAccessProject</Table.Cell>
-              <Table.Cell></Table.Cell>
               <Table.Cell><Label>stopped</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>CourtListener</Table.Cell>
-              <Table.Cell></Table.Cell>
               <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>
+                <Button.Group>
+                  <Button>restart</Button>
+                  <Button>stop</Button>
+                </Button.Group>
+              </Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>
