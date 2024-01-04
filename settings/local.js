@@ -103,22 +103,8 @@ module.exports = {
     enable: true,
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },
-  discord: {
-    alerts: [
-      '504047881427091472'
-    ],
-    app: {
-      id: '898417891215564851',
-      key: '27a59063c0d577e11099dd4668fca31ec25fdd57f4e158350c35d7d411be377a'
-    },
-    auth: {
-      id: 'your_discord_auth_id_here',
-      secret: 'your_discord_auth_secret_here'
-    },
-    token: 'your_discord_auth_token_here'
-  },
-  ethereum: {
-    interval: 12000
+  huggingface: {
+    token: 'add your huggingface token here'
   },
   lightning: {
     authority: 'unix:/SOME_PATH/lightning.sock'

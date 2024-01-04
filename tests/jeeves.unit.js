@@ -1,12 +1,19 @@
 'use strict';
 
+// Dependencies
 const assert = require('assert');
 const definition = require('../package');
+
+// Fabric Types
 const Jeeves = require('../services/jeeves');
 const Learner = require('../types/learner');
 
+// Settings
 const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex');
 const settings = require('../settings/local');
+
+// GPT4
+const { getEncoding, encodingForModel } = require('js-tiktoken');
 
 describe('Jeeves', function () {
   this.timeout(30000);
@@ -14,6 +21,26 @@ describe('Jeeves', function () {
   describe('@jeeves/core', function () {
     it('should be instantiable', function () {
       assert.strictEqual(typeof Jeeves, 'function');
+    });
+
+    xit('should implement the GPT4 encoder', function () {
+      const enc = getEncoding('gpt4');
+      assert.strictEqual(typeof enc, 'object');
+    });
+
+    xit('should implement the GPT3.5 encoder', function () {
+      const enc = getEncoding('gpt3.5');
+      assert.strictEqual(typeof enc, 'object');
+    });
+
+    xit('should implement the GPT3 encoder', function () {
+      const enc = getEncoding('gpt3');
+      assert.strictEqual(typeof enc, 'object');
+    });
+
+    it('should implement the GPT2 encoder', function () {
+      const enc = getEncoding('gpt2');
+      assert.strictEqual(typeof enc, 'object');
     });
 
     xit('should have a correct version attribute', function () {

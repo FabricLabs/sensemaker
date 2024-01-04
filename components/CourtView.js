@@ -26,7 +26,7 @@ class Conversation extends React.Component {
     const { id } = this.props;
     const { message } = this.props.courts;
 
-    this.props.fetchCase(id);
+    this.props.fetchCourt(id);
     console.log(this.props);
   }
 

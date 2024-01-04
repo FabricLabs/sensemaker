@@ -82,6 +82,12 @@ const {
   fetchOpinion
 } = require('../actions/opinionActions');
 
+// ## Volume Actions
+const {
+  fetchVolumes,
+  fetchVolume
+} = require('../actions/volumeActions');
+
 // ## Document Actions
 const {
   fetchDocuments,
@@ -163,6 +169,8 @@ async function main (input = {}) {
     fetchPerson: fetchPerson,
     fetchOpinions: fetchOpinions,
     fetchOpinion: fetchOpinion,
+    fetchVolumes: fetchVolumes,
+    fetchVolume: fetchVolume,
     fetchAdminStats: fetchAdminStats,
     fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
     login: login,
