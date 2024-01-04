@@ -13,7 +13,7 @@ const {
   Label,
   List,
   Loader,
-  Dimmer,  
+  Icon
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -94,8 +94,8 @@ class CaseHome extends React.Component {
                   <Card.Content>
                     <h3><Link to={"/cases/" + instance.id}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label><Icon name="calendar"/>{formatDate(instance.decision_date)}</Label>
+                      <Label><Icon name="law"/>{instance.court_name}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
                   </Card.Content>
@@ -108,8 +108,8 @@ class CaseHome extends React.Component {
                   <Card.Content>
                     <h3><Link to={"/cases/" + instance.id}> {instance.short_name} </Link> </h3>
                     <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label><Icon name="calendar"/>{formatDate(instance.decision_date)}</Label>
+                      <Label><Icon name="law"/>{instance.court_name}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
                   </Card.Content>
