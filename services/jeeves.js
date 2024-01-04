@@ -1255,6 +1255,7 @@ class Jeeves extends Service {
       if (!instance.title) {
         console.error('[JEEVES]', '[SEARCH]', 'Case has no title:', instance);
       } else {
+        console.debug('[JEEVES]', '[SEARCH]', 'Searching for case backfill:', instance.title);
         this.search({
           query: instance.title
         }).then((results) => {
@@ -2655,12 +2656,12 @@ class Jeeves extends Service {
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
-    /* const courtListenerResults = await this.courtlistener.search({
+    const courtListenerResults = await this.courtlistener.search({
       query: request.query,
       model: 'jeeves-0.2.0-RC1'
     });
 
-    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets); */
+    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
