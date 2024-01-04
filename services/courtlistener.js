@@ -71,13 +71,19 @@ class CourtListener extends Service {
   combinationsOf (tokens, prefix = '') {
     if (!tokens.length) return prefix;
     let result = [];
+
+    // Recursively combine tokens
     for (let i = 0; i < tokens.length; i++) {
       const rest = tokens.slice(0, i).concat(tokens.slice(i + 1));
       const combinations = this.combinationsOf(rest, prefix + tokens[i] + ' ');
       result = result.concat(combinations);
     }
 
-    return result;
+    // Add the original tokens
+    result = result.concat(tokens);
+
+    // Return unique results
+    return [...new Set(result.map((item) => item.trim()))];
   }
 
   async enumerateCourts () {
@@ -222,6 +228,8 @@ class CourtListener extends Service {
     if (!request.query) throw new Error('No query provided.');
     const tokens = request.query.split(/\s/g);
     console.debug('[COURTLISTENER]', 'Tokens:', tokens);
+
+    // Vector Search
     const combos = this.combinationsOf(tokens);
     console.debug('[COURTLISTENER]', 'Combos:', combos);
 

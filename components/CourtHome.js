@@ -109,7 +109,7 @@ class CourtHome extends React.Component {
               this.props.courts.courts.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/courts/" + instance.id}> {instance.short_name} </Link> </h3>
+                    <h3><Link to={"/courts/" + instance.slug}> {instance.short_name} </Link> </h3>
                     <Label.Group basic>
                       <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
                       <Label icon="calendar">{formatDate(instance.start_date)}</Label>

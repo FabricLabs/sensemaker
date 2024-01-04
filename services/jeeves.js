@@ -19,6 +19,7 @@ const fs = require('fs');
 // External Dependencies
 // const { ApolloServer, gql } = require('apollo-server-express');
 const { hashSync, compareSync, genSaltSync } = require('bcrypt');
+const { getEncoding, encodingForModel } = require('js-tiktoken');
 const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
 const levelgraph = require('levelgraph');
@@ -280,6 +281,24 @@ class Jeeves extends Service {
 
   get version () {
     return definition.version;
+  }
+
+  combinationsOf (tokens, prefix = '') {
+    if (!tokens.length) return prefix;
+    let result = [];
+
+    // Recursively combine tokens
+    for (let i = 0; i < tokens.length; i++) {
+      const rest = tokens.slice(0, i).concat(tokens.slice(i + 1));
+      const combinations = this.combinationsOf(rest, prefix + tokens[i] + ' ');
+      result = result.concat(combinations);
+    }
+
+    // Add the original tokens
+    result = result.concat(tokens);
+
+    // Return unique results
+    return [...new Set(result.map((item) => item.trim()))];
   }
 
   /* commit () {
@@ -1714,6 +1733,28 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('SEARCH', '/courts', async (req, res, next) => {
+      try {
+        const request = req.body;
+        const courts = await this._searchCourts(request);
+        const result = {
+          courts: courts || []
+        };
+
+        return res.send({
+          type: 'SearchCourtsResult',
+          content: result,
+          results: courts
+        });
+      } catch (exception) {
+        res.status(503);
+        return res.send({
+          type: 'SearchCourtsError',
+          content: exception
+        });
+      }
+    });
+
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
       console.debug('Handling inbound message:', req.body);
 
@@ -1920,7 +1961,6 @@ class Jeeves extends Service {
 
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
       const request = req.body;
-
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
 
       try {
@@ -2128,14 +2168,9 @@ class Jeeves extends Service {
 
   _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
-    const { query } = request;
-
     console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
-    console.debug('[JEEVES]', '[SEARCH]', 'Query:', query);
 
-    this.search({
-      query: query
-    }).then((results) => {
+    this.search(request).then((results) => {
       console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
       res.json({
         results: results
