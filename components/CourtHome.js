@@ -95,10 +95,10 @@ class CourtHome extends React.Component {
               filteredCourts.courts.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/courts/" + instance.id}>{instance.short_name}</Link></h3>
+                    <h3><Link to={"/courts/" + instance.slug}>{instance.short_name}</Link></h3>
                     <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
+                      <Label icon="calendar">{formatDate(instance.founded_date)}</Label>
+                      <Label icon="law">{instance.jurisdiction}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
                   </Card.Content>
@@ -112,6 +112,8 @@ class CourtHome extends React.Component {
                     <h3><Link to={"/courts/" + instance.id}> {instance.short_name} </Link> </h3>
                     <Label.Group basic>
                       <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
+                      <Label icon="calendar">{formatDate(instance.start_date)}</Label>
+                      <Label icon="calendar">{formatDate(instance.end_date)}</Label>
                       <Label icon="law">{instance.court_name}</Label>
                     </Label.Group>
                     <p>{instance.content}</p>
