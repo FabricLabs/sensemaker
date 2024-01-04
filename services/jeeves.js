@@ -618,10 +618,10 @@ class Jeeves extends Service {
 
     this.courtlistener.on('person', async (person) => {
       const actor = new Actor({ name: `courtlistener/people/${person.id}` });
-      const target = await this.db('courts').where({ courtlistener_id: person.id }).first();
+      const target = await this.db('people').where({ courtlistener_id: person.id }).first();
       if (!target) {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
-        await this.db('courts').insert({
+        await this.db('people').insert({
           fabric_id: actor.id,
           courtlistener_id: person.id,
           name_first: person.name_first,
@@ -2272,6 +2272,12 @@ class Jeeves extends Service {
       const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
       if (!pacer) {
         console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
+
+        if (instance.court_id) {
+          const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
+          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
+        }
+
         await this.db('cases').insert(instance);
       }
     }
