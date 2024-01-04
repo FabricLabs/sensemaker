@@ -29,8 +29,14 @@ const { login, reLogin, register, logout } = require('../actions/authActions');
 // ## Admin Actions
 const {
   fetchAdminStats,
-  fetchAllConversationsFromAPI
+  fetchAllConversationsFromAPI,
+  createInvitation
 } = require('../actions/adminActions');
+
+// ## Invitation Actions
+const {
+  fetchInvitations
+} = require('../actions/invitationActions');
 
 // ## Case Actions
 const {
@@ -163,6 +169,7 @@ async function main (input = {}) {
     fetchCourt: fetchCourt,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    fetchInvitations: fetchInvitations,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
     fetchPeople: fetchPeople,
@@ -177,6 +184,7 @@ async function main (input = {}) {
     logout: logout,
     reLogin: reLogin,
     register: register,
+    createInvitation: createInvitation,
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,

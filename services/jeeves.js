@@ -1756,7 +1756,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
-      console.debug('Handling inbound message:', req.body);
+      console.debug('[JEEVES]', '[HTTP]', 'Handling inbound message:', req.body);
 
       let isNew = false;
       let subject = null;
@@ -1776,7 +1776,6 @@ class Jeeves extends Service {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
-
           // matrix_room_id: room.room_id
         });
 
