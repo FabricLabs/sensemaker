@@ -1328,7 +1328,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/courts', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const courts = await this.db.select('slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date', 'url').from('courts').orderBy('founded_date', 'desc').paginate({
+      const courts = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date', 'url').from('courts').orderBy('founded_date', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -1345,7 +1345,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
-      const court = await this.db.select('id', 'name', 'created_at').from('courts').orderBy('name', 'asc').where({ slug: req.params.slug }).first();
+      const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
       res.format({
         json: () => {
           if (!court) return res.status(404).json({ message: 'Court not found.' });
