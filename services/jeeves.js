@@ -2312,6 +2312,11 @@ class Jeeves extends Service {
         if (instance.court_id) {
           const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
+          if (!court) {
+            console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
+            const sample = await this.courtlistener.db('search_courts').where({ id: instance.court_id }).first();
+            console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
+          }
         }
 
         await this.db('cases').insert(instance);
@@ -2661,16 +2666,17 @@ class Jeeves extends Service {
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
+    const actor = new Actor({ content: text });
     const embedding = await this.openai.generateEmbedding(text, model);
     console.debug('got embedding:', embedding);
+    if (embedding.length !== 1) throw new Error('Embedding length mismatch!');
 
     const inserted = await this.db('embeddings').insert({
+      fabric_id: actor.id,
       text: text,
       model: embedding[0].model,
       content: JSON.stringify(embedding[0].embedding)
     });
-
-    console.debug('inserted:', inserted);
 
     return {
       id: inserted[0]
