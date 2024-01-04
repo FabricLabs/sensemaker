@@ -616,6 +616,28 @@ class Jeeves extends Service {
       }
     });
 
+    this.courtlistener.on('person', async (person) => {
+      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
+      const target = await this.db('courts').where({ courtlistener_id: person.id }).first();
+      if (!target) {
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
+        await this.db('courts').insert({
+          fabric_id: actor.id,
+          courtlistener_id: person.id,
+          name_first: person.name_first,
+          name_middle: person.name_middle,
+          name_last: person.name_last,
+          name_suffix: person.name_suffix,
+          date_of_birth: person.date_dob,
+          date_of_death: person.date_dod,
+          birth_city: person.dob_city,
+          birth_state: person.dob_state,
+          death_city: person.dod_city,
+          death_state: person.dod_state
+        });
+      }
+    });
+
     this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
     this.courtlistener.on('opinioncluster', async (cluster) => {
       const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
@@ -1194,10 +1216,12 @@ class Jeeves extends Service {
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
+      // Async Tasks
       // Embeddings
       /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
+      // Data Updates
       if (instance.courtlistener_id) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('docket record:', record);
@@ -1227,14 +1251,18 @@ class Jeeves extends Service {
         });
       }
 
-      this.search({
-        query: instance.title
-      }).then((results) => {
-        const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
-        this.http.broadcast(message);
-
-        console.debug('[JEEVES]', 'Jeeves search results:', results);
-      });
+      // Search Test
+      if (!instance.title) {
+        console.error('[JEEVES]', '[SEARCH]', 'Case has no title:', instance);
+      } else {
+        this.search({
+          query: instance.title
+        }).then((results) => {
+          console.debug('[JEEVES]', '[SEARCH]', 'Jeeves search results:', results);
+          const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
+          this.http.broadcast(message);
+        });
+      }
 
       if (!instance.summary) {
         const merged = Object.assign({}, instance, updates);
@@ -1413,6 +1441,19 @@ class Jeeves extends Service {
       });
     });
 
+    this.http._addRoute('GET', '/documents/:fabricID', async (req, res, next) => {
+      const document = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id', ).where('fabric_id', req.params.fabricID).first();
+      res.format({
+        json: () => {
+          return res.send(document);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
     this.http._addRoute('GET', '/opinions', async (req, res, next) => {
       const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
 
@@ -1428,10 +1469,49 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/judges', async (req, res, next) => {
-      const judges = await this.db.select('id', 'name', 'created_at').from('judges').orderBy('name', 'asc');
+      const judges = await this.db.select('id').from('judges').orderBy('name', 'asc');
       res.format({
         json: () => {
           res.send(judges);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/jurisdictions', async (req, res, next) => {
+      const jurisdictions = await this.db.select('id').from('jurisdictions').orderBy('id', 'desc');
+      res.format({
+        json: () => {
+          res.send(jurisdictions);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/reporters', async (req, res, next) => {
+      const reporters = await this.db.select('id').from('reporters').orderBy('id', 'desc');
+      res.format({
+        json: () => {
+          res.send(reporters);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(this.http.app._renderWith(''));
+        }
+      });
+    });
+
+    this.http._addRoute('GET', '/volumes', async (req, res, next) => {
+      const volumes = await this.db.select('id').from('volumes').orderBy('id', 'desc');
+      res.format({
+        json: () => {
+          res.send(volumes);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
@@ -1839,13 +1919,16 @@ class Jeeves extends Service {
 
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
       const request = req.body;
-      const { query } = request;
+
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
 
       try {
         const results = await this.courtlistener.search({
-          query: query,
+          query: request.query,
           model: 'jeeves-0.2.0-RC1'
         });
+
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'search results:', results);
 
         res.json(results);
       } catch (error) {
@@ -2046,16 +2129,26 @@ class Jeeves extends Service {
     const request = req.body;
     const { query } = request;
 
+    console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
+    console.debug('[JEEVES]', '[SEARCH]', 'Query:', query);
+
     this.search({
       query: query
     }).then((results) => {
-      res.json(results);
+      console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
+      res.json({
+        results: results
+      });
     });
   }
 
   async _handleMatrixActivity (activity) {
-    console.debug('matrix activity:', activity);
+    console.debug('[JEEVES]', '[MATRIX]', 'Matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
+    if (!activity.target) {
+      console.debug('[JEEVES]', '[MATRIX]', 'No target, ignoring.');
+      return;
+    }
 
     const roomID = activity.target.split('/')[2];
     const computingIcon = '⌛';
@@ -2556,12 +2649,12 @@ class Jeeves extends Service {
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
-    const courtListenerResults = await this.courtlistener.search({
+    /* const courtListenerResults = await this.courtlistener.search({
       query: request.query,
       model: 'jeeves-0.2.0-RC1'
     });
 
-    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets); */
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
