@@ -21,7 +21,8 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  * Provides the user's local settings.
  */
 module.exports = {
-  alias: 'NOVO',
+  alias: NAME,
+  domain: 'beta.jeeves.dev',
   moniker: NAME,
   release: 'beta',
   name: 'jeeves',

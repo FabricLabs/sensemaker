@@ -162,7 +162,7 @@ class AdminSettings extends React.Component {
           <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
         </Statistic>
         <Statistic>
-          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+          <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>
         <Statistic>
