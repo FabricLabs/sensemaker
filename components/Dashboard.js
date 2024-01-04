@@ -33,6 +33,7 @@ const {
   ENABLE_PERSON_SEARCH,
   ENABLE_JURISDICTION_SEARCH,
   ENABLE_REPORTER_SEARCH,
+  ENABLE_STATUTE_SEARCH,
   ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY
 } = require('../constants');
@@ -200,6 +201,11 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/">
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
+            {ENABLE_STATUTE_SEARCH && (
+              <Menu.Item as={Link} to='/statues'>
+                <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>

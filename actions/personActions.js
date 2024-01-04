@@ -3,7 +3,7 @@
 const { fetchFromAPI } = require('./apiActions');
 
 async function fetchPeopleFromAPI (token) {
-  return fetchFromAPI('/judges', null, token);
+  return fetchFromAPI('/people', null, token);
 }
 
 // Action types
@@ -16,7 +16,7 @@ const FETCH_PERSON_FAILURE = 'FETCH_PERSON_FAILURE';
 
 // Action creators
 const fetchPeopleRequest = () => ({ type: FETCH_PEOPLE_REQUEST, loading: true });
-const fetchPeopleSuccess = (judges) => ({ type: FETCH_PEOPLE_SUCCESS, payload: judges, loading: false });
+const fetchPeopleSuccess = (people) => ({ type: FETCH_PEOPLE_SUCCESS, payload: people, loading: false });
 const fetchPeopleFailure = (error) => ({ type: FETCH_PEOPLE_FAILURE, payload: error, loading: false  });
 const fetchPersonRequest = () => ({ type: FETCH_PERSON_REQUEST, loading: true });
 const fetchPersonSuccess = (instance) => ({ type: FETCH_PERSON_SUCCESS, payload: instance, loading: false });
@@ -28,8 +28,8 @@ const fetchPeople = () => {
     dispatch(fetchPeopleRequest());
     const { token } = getState().auth;
     try {
-      const judges = await fetchPeopleFromAPI(token);
-      dispatch(fetchPeopleSuccess(judges));
+      const people = await fetchPeopleFromAPI(token);
+      dispatch(fetchPeopleSuccess(people));
     } catch (error) {
       dispatch(fetchPeopleFailure(error));
     }
