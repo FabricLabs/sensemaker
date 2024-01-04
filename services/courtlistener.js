@@ -68,6 +68,18 @@ class CourtListener extends Service {
     return this;
   }
 
+  combinationsOf (tokens, prefix = '') {
+    if (!tokens.length) return prefix;
+    let result = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const rest = tokens.slice(0, i).concat(tokens.slice(i + 1));
+      const combinations = this.combinationsOf(rest, prefix + tokens[i] + ' ');
+      result = result.concat(combinations);
+    }
+
+    return result;
+  }
+
   async enumerateCourts () {
     this.emit('debug', 'Enumerating courts...');
     const courts = await this.db('search_court').select();
@@ -210,6 +222,8 @@ class CourtListener extends Service {
     if (!request.query) throw new Error('No query provided.');
     const tokens = request.query.split(/\s/g);
     console.debug('[COURTLISTENER]', 'Tokens:', tokens);
+    const combos = this.combinationsOf(tokens);
+    console.debug('[COURTLISTENER]', 'Combos:', combos);
 
     let dockets = [];
 
