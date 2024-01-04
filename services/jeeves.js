@@ -2314,7 +2314,7 @@ class Jeeves extends Service {
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
           if (!court) {
             console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
-            const sample = await this.courtlistener.db('search_courts').where({ id: instance.court_id }).first();
+            const sample = await this.courtlistener.db('search_court').where({ id: instance.court_id }).first();
             console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
           }
         }
