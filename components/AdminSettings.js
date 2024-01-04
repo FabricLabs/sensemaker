@@ -26,6 +26,8 @@ class AdminSettings extends React.Component {
 
     this.settings = Object.assign({
       state: {
+        alias: 'JEEVES',
+        name: 'jeeves',
         statistics: {
           counts: {
             waitlist: 0,
@@ -233,9 +235,61 @@ class AdminSettings extends React.Component {
       </Tab.Pane> },
       { menuItem: 'Services', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Services</Header>
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Name</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell>Status</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell>@jeeves/core</Table.Cell>
+              <Table.Cell>Last Update</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>@fabric/core</Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>PACER</Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>CaselawAccessProject</Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>CourtListener</Table.Cell>
+              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
       </Tab.Pane> },
       { menuItem: 'Settings', render: () => <Tab.Pane loading={this.state.loading}>
         <Header as='h4'>Settings</Header>
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Name</Table.HeaderCell>
+              <Table.HeaderCell>Value</Table.HeaderCell>
+              <Table.HeaderCell>Modified</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell>alias</Table.Cell>
+              <Table.Cell>{this.state.alias}</Table.Cell>
+              <Table.Cell><abbr title=""></abbr></Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
       </Tab.Pane> }
     ];
 
