@@ -70,6 +70,18 @@ class FabricService extends Service {
         const remote = this.remotes[i];
         const index = await remote._SEARCH('/', { body: request });
         console.debug(`[FABRIC] Search results (index) [${remote.settings.host}]:`, index);
+
+        if (index) {
+          switch (index.code) {
+            default:
+              console.debug('[FABRIC] [SEARCH] Unhandled response code:', index.code);
+              break;
+            case 400:
+            case 502:
+              console.error('[FABRIC] Could not search index:', index);
+              break;
+          }
+        }
         // results = results.concat(index.results);
       } catch (exception) {
         console.error('[FABRIC] Could not search index:', exception);
