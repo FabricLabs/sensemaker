@@ -23,6 +23,16 @@ describe('Jeeves', function () {
       assert.strictEqual(typeof Jeeves, 'function');
     });
 
+    it('should implement the ada encoder', function () {
+      const enc = encodingForModel('text-embedding-ada-002');
+      assert.strictEqual(typeof enc, 'object');
+    });
+
+    it('should implement the davinci encoder', function () {
+      const enc = encodingForModel('text-davinci-003');
+      assert.strictEqual(typeof enc, 'object');
+    });
+
     xit('should implement the GPT4 encoder', function () {
       const enc = getEncoding('gpt4');
       assert.strictEqual(typeof enc, 'object');
