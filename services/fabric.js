@@ -66,14 +66,22 @@ class FabricService extends Service {
     let results = [];
 
     for (let i = 0; i < this.remotes.length; i++) {
-      const remote = this.remotes[i];
-      const index = await remote._SEARCH('/', request);
-      console.debug(`[FABRIC] Search results (index) [${remote.settings.host}]:`, index);
+      try {
+        const remote = this.remotes[i];
+        const index = await remote._SEARCH('/', { body: request });
+        console.debug(`[FABRIC] Search results (index) [${remote.settings.host}]:`, index);
+        // results = results.concat(index.results);
+      } catch (exception) {
+        console.error('[FABRIC] Could not search index:', exception);
+      }
 
-      const response = await remote._SEARCH('/services/courtlistener/dockets', request);
-      console.debug('[FABRIC] Search results (CourtListener cases):', response);
+      try {
+        const response = await remote._SEARCH('/services/courtlistener/dockets', request);
+        console.debug('[FABRIC] Search results (CourtListener cases):', response);
+        // results = results.concat(response.results);
+      } catch (exception) {
 
-      results = results.concat(response.results);
+      }
     }
 
     return results;
@@ -172,7 +180,7 @@ class FabricService extends Service {
         const person = people[j];
 
         // Store external IDs
-        people.ids = {};
+        person.ids = {};
         if (person.courtlistener_id) people.ids.courtlistener = person.courtlistener_id;
 
         // Store in state
