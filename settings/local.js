@@ -34,7 +34,8 @@ module.exports = {
   fabric: {
     peers: ['hub.fabric.pub:7777'],
     remotes: [
-      { host: 'hub.fabric.pub', port: 443, secure: true }
+      { host: 'hub.fabric.pub', port: 443, secure: true },
+      { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] }
     ]
   },
   db: {
@@ -50,6 +51,12 @@ module.exports = {
     hostname: 'localhost',
     interface: '0.0.0.0',
     port: 3045
+  },
+  email: {
+    host: 'smtp.gmail.com',
+    port: 567,
+    username: 'agent@jeeves.dev',
+    password: 'get your own'
   },
   interval: 1000, // 1 Hz
   persistent: false,
@@ -157,10 +164,6 @@ module.exports = {
       'FabricLabs',
       'martindale'
     ]
-  },
-  shyft: {
-    name: 'TYPHOON',
-    interval: 5000
   },
   verbosity: 2,
   version: VERSION

@@ -148,12 +148,20 @@ class Bridge extends React.Component {
   takeJob () {
     if (!this.queue.length) return;
     const job = this.queue.shift();
+    if (!job) return;
 
     switch (job.type) {
       default:
         console.warn('[BRIDGE]', 'Unhandled Bridge job type:', job.type);
         break;
+      case 'MessageChunk':
+        console.debug('[BRIDGE]', 'MessageChunk:', job.data);
+        break;
+      case 'MessageEnd':
+        console.debug('[BRIDGE]', 'MessageEnd:', job.data);
+        break;
       case 'MessageStart':
+        console.debug('[BRIDGE]', 'MessageStart:', job.data);
         break;
     }
   }
