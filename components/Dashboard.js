@@ -175,19 +175,22 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
-            <Menu.Item as={Link} to="/">
-              <Header inverted>
-                <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', marginTop: '1em' }} />}>
+            <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}}>
+              <Header className='dashboard-header'>
+              <div>
+                <Image src="/images/novo-logo-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
+                <Popup trigger={<Label color='black'style={{borderColor:'transparent', backgroundColor: 'transparent'}}>{RELEASE_NAME}</Label>}>
+                  <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
+                </Popup>
+                </div>
+                <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', color: 'white' }} />}>
                   <Popup.Header>Need Help?</Popup.Header>
                   <Popup.Content>
                     <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-                <img src="/images/jeeves-tux.png" className="icon" style={{ height: '1.2em', width: '1.2em', verticalAlign: 'top' }} /> {BRAND_NAME}
-                <Popup trigger={<Label color='black'>{RELEASE_NAME}</Label>}>
-                  <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
-                </Popup>
+
               </Header>
             </Menu.Item>
             {/* <Menu.Item>
