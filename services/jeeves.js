@@ -148,7 +148,7 @@ class Jeeves extends Service {
     this.worker = new Worker(this.settings);
 
     // Services
-    this.email = new EmailService;
+    this.email = new EmailService(this.settings.email);
     this.matrix = new Matrix(this.settings.matrix);
     this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
@@ -305,6 +305,17 @@ class Jeeves extends Service {
     // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
   } */
+
+  async alert (message) {
+    return new Promise((resolve, reject) => {
+      this.email.send({
+        from: 'agent@jeeves.dev',
+        to: 'tech@jeeves.dev',
+        subject: 'Jeeves Alert',
+        body: message
+      }).then(resolve).catch(reject);
+    });
+  }
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -526,6 +537,12 @@ class Jeeves extends Service {
     this.worker.on('warning', (...warning) => console.warn(...warning));
     this.worker.on('error', (...error) => console.error(...error));
 
+    // Email Events
+    this.email.on('debug', (...debug) => console.debug('[EMAIL]', ...debug));
+    this.email.on('log', (...log) => console.log('[EMAIL]', ...log));
+    this.email.on('warning', (...warning) => console.warn('[EMAIL]', ...warning));
+    this.email.on('error', (...error) => console.error('[EMAIL]', ...error));
+
     // Fabric Events
     this.fabric.on('error', this._handleFabricError.bind(this));
     // this.fabric.on('warning', (...warning) => console.warn(...warning));
@@ -534,6 +551,7 @@ class Jeeves extends Service {
 
     // Collect Jeeves-specific
     // Courts
+    this.fabric.on('document', this._handleFabricDocument.bind(this));
     this.fabric.on('court', this._handleFabricCourt.bind(this));
     this.fabric.on('person', this._handleFabricPerson.bind(this));
 
@@ -762,10 +780,14 @@ class Jeeves extends Service {
     await this.email.start();
     if (this.settings.matrix.enable) await this.matrix.start();
 
+    // Data Sources
     if (this.settings.pacer.enable) await this.pacer.start();
-    await this.openai.start();
     if (this.settings.harvard.enable) await this.harvard.start();
     if (this.settings.courtlistener.enable) await this.courtlistener.start();
+
+    // AI Services
+    // await this.rag.start();
+    await this.openai.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
@@ -1960,6 +1982,25 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('SEARCH', '/services/courtlistener/people', async (req, res, next) => {
+      const request = req.body;
+      console.debug('[JEEVES]', '[COURTLISTENER]', '[PEOPLE]', 'searching people:', request);
+
+      try {
+        const results = await this.courtlistener.search({
+          query: request.query,
+          model: 'jeeves-0.2.0-RC1'
+        });
+
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[PEOPLE]', 'search results:', results);
+
+        res.json(results);
+      } catch (error) {
+        console.error('Error searching CourtListener:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
       const request = req.body;
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
@@ -2236,6 +2277,10 @@ class Jeeves extends Service {
 
   async _handleFabricError (...props) {
     console.error('[FABRIC]', '[ERROR]', ...props);
+  }
+
+  async _handleFabricDocument (document) {
+    console.error('[FABRIC]', '[DOCUMENT]', document);
   }
 
   async _handleFabricCourt (court) {

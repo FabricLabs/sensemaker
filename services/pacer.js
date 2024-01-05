@@ -1,5 +1,6 @@
 'use strict';
 
+const fetch = require('cross-fetch');
 const Service = require('@fabric/core/types/service');
 
 class PACER extends Service {

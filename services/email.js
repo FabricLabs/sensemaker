@@ -56,8 +56,9 @@ class EmailService extends Service {
 
     try {
       const transporter = nodemailer.createTransport({
+        service: 'gmail',
         host: this.settings.host,
-        port: this.settings.port,
+        // port: this.settings.port,
         secure: true,
         auth: {
           user: this.settings.username,
