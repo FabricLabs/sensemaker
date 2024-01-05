@@ -3,6 +3,7 @@
 const { fetchFromAPI } = require('./apiActions');
 
 async function fetchCasesFromAPI (token) {
+  // TODO: pagination
   return fetchFromAPI('/cases', null, token);
 }
 
