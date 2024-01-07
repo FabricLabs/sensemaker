@@ -55,6 +55,33 @@ describe('Jeeves', function () {
 
       test();
     });
+
+    xit('serves a SEARCH request to the index', async function () {
+      const jeeves = new Jeeves({
+        connect: false,
+        openai: settings.openai
+      });
+
+      await jeeves.start();
+
+      fetch('http://localhost:3045/', {
+        method: 'SEARCH',
+        body: JSON.stringify({
+          query: 'Who are you?'
+        })
+      }).then(async (response) => {
+        const object = await response.json();
+        console.debug('Response:', object);
+        assert.ok(object);
+        await jeeves.stop();
+        // why();
+      }).catch((exception) => {
+        assert.fail(exception);
+      });
+
+      // Properties
+      assert.strictEqual(jeeves.status, 'STARTED');
+    });
   });
 
   describe('@jeeves/core/types/learner', function () {
