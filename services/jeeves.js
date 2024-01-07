@@ -125,8 +125,15 @@ class Jeeves extends Service {
           max: Math.pow(2, 26) // ~64MB RAM
         }
       },
+      matrix: {},
+      openai: {},
+      pacer: {},
+      harvard: {},
+      courtlistener: {},
       services: [
-        'bitcoin'
+        'bitcoin',
+        'harvard',
+        'matrix'
       ],
       state: {
         status: 'INITIALIZED',
@@ -2226,6 +2233,9 @@ class Jeeves extends Service {
     // await this.commit();
 
     if (this.courtlistener) await this.courtlistener.stop();
+    if (this.openai) await this.openai.stop();
+    if (this.matrix) await this.matrix.stop();
+    if (this.email) await this.email.stop();
 
     // Notify
     this.status = 'STOPPED';
