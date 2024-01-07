@@ -128,6 +128,40 @@ class Jeeves extends Service {
       services: [
         'bitcoin'
       ],
+      state: {
+        status: 'INITIALIZED',
+        collections: {
+          cases: {},
+          courts: {},
+          documents: {},
+          people: {}
+        },
+        counts: {
+          cases: 0,
+          courts: 0,
+          documents: 0,
+          people: 0
+        },
+        services: {
+          bitcoin: {
+            balance: 0
+          },
+          courtlistener: {
+            cases: 0,
+            courts: 0,
+            documents: 0,
+            people: 0
+          },
+          harvard: {
+            counts: {
+              cases: 0,
+              courts: 0,
+              documents: 0,
+              people: 0
+            }
+          }
+        }
+      },
       crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
@@ -245,7 +279,8 @@ class Jeeves extends Service {
       audits: {},
       epochs: [],
       messages: {},
-      objects: {}
+      objects: {},
+      content: this.settings.state
     };
 
     // Database connections
@@ -1400,6 +1435,7 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('GET', '/people', async (req, res, next) => {
+      const page = req.query.page || 1;
       const people = await this.db.select(
         'id as dbid',
         'fabric_id as id',
@@ -1413,11 +1449,20 @@ class Jeeves extends Service {
         'birth_city',
         'birth_state',
         'courtlistener_id'
-      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc');
+      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc').paginate({
+        perPage: PER_PAGE_LIMIT,
+        currentPage: page
+      });
+
+      res.setHeader('X-Fabric-Type', 'Collection');
+      res.setHeader('X-Pagination', true);
+      res.setHeader('X-Pagination-Current', `${people.pagination.from}-${people.pagination.to}`);
+      res.setHeader('X-Pagination-Per', people.pagination.perPage);
+      res.setHeader('X-Pagination-Total', people.pagination.total);
 
       res.format({
         json: () => {
-          res.send(people);
+          res.send(people.data);
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
