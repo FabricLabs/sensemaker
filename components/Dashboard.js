@@ -190,7 +190,6 @@ class Dashboard extends React.Component {
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-
               </Header>
             </Menu.Item>
             {/* <Menu.Item>
