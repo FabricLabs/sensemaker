@@ -179,7 +179,7 @@ class Dashboard extends React.Component {
               <Header className='dashboard-header'>
               <div>
                 <Image src="/images/novo-logo-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
-                <Popup trigger={<Label color='black'style={{borderColor:'transparent', backgroundColor: 'transparent'}}>{RELEASE_NAME}</Label>}>
+                <Popup trigger={<Label color='black'style={{borderColor:'transparent', backgroundColor: 'transparent'}}><Icon name='circle' color='red' />{RELEASE_NAME}</Label>}>
                   <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
                 </Popup>
                 </div>
@@ -190,7 +190,6 @@ class Dashboard extends React.Component {
                     {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                   </Popup.Content>
                 </Popup>
-
               </Header>
             </Menu.Item>
             {/* <Menu.Item>

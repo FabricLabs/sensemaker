@@ -52,14 +52,14 @@ class EmailService extends Service {
   }
 
   async send (message) {
-    this.emit('debug', `[${this.settings.name}] Sending message...`);
+    this.emit('debug', `[${this.settings.name}] Sending message...`, message);
 
     try {
       const transporter = nodemailer.createTransport({
-        service: 'gmail',
+        // service: 'gmail',
         host: this.settings.host,
-        // port: this.settings.port,
-        secure: true,
+        port: this.settings.port,
+        secure: this.settings.secure,
         auth: {
           user: this.settings.username,
           pass: this.settings.password
@@ -68,6 +68,7 @@ class EmailService extends Service {
 
       const result = await transporter.sendMail(message);
       this.emit('debug', `[${this.settings.name}] Message sent: ${result.messageId}`);
+      this.emit('debug', `[${this.settings.name}] Message sent: ${Object.keys(result)}`, result);
     } catch (error) {
       this.emit('error', `[${this.settings.name}] Error sending message: ${error.message}`);
     }
