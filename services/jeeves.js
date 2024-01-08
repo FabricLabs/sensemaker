@@ -449,8 +449,78 @@ class Jeeves extends Service {
 
   async search (request) {
     const cases = await this._searchCases(request);
+    // const courts = await this._searchCourts(request);
+    // const documents = await this._searchDocuments(request);
+    // const people = await this._searchPeople(request);
+
+    const elements = [];
+
+    for (let i = 0; i < cases.length; i++) {
+      const instance = cases[i];
+      const element = { type: 'Case', content: instance };
+      elements.push(element);
+    }
+
+    // Construct Results Object
     const results = {
-      cases: cases
+      request: request,
+      query: request.query,
+      cases: cases,
+      courts: [], // TODO: implement
+      documents: [], // TODO: implement
+      people: [], // TODO: implement
+      results: [],
+      pagination: {
+        total: elements.length,
+        per_page: PER_PAGE_DEFAULT,
+        current_page: 1,
+        last_page: 1
+      }
+    };
+
+    return results;
+  }
+
+  async searchConversations (request) {
+    const components = request.query.split(' ');
+    const tokens = this.combinationsOf(components);
+
+    // Search for all tokens
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const results = await this.db('messages').where('content', 'like', `%${token}%`);
+      console.debug('[JEEVES]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
+    }
+
+    const messages = await this.db('messages').select('id').where('content', 'like', `%${request.query}%`);
+    const conversations = await this.db('conversations').in('id', messages.map((message) => message.conversation_id)).paginate({
+      perPage: PER_PAGE_DEFAULT,
+      currentPage: 1
+    });
+
+    console.debug('[JEEVES]', '[SEARCH]', '[CONVERSATIONS]', 'Found conversations:', conversations);
+
+    // Result Constructor
+    const elements = [];
+
+    for (let i = 0; i < conversations.data.length; i++) {
+      const instance = conversations[i];
+      const element = { type: 'Conversation', content: instance };
+      elements.push(element);
+    }
+
+    // Construct Results Object
+    const results = {
+      request: request,
+      query: request.query,
+      conversations: conversations,
+      results: [],
+      pagination: {
+        total: elements.length,
+        per_page: PER_PAGE_DEFAULT,
+        current_page: 1,
+        last_page: 1
+      }
     };
 
     return results;
@@ -893,7 +963,13 @@ class Jeeves extends Service {
     }
 
     // Internal APIs
+    // Search
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
+
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', async (req, res) => {
       const { email } = req.body;
@@ -1788,49 +1864,6 @@ class Jeeves extends Service {
       }
     });
 
-    this.http._addRoute('SEARCH', '/cases', async (req, res, next) => {
-      try {
-        const request = req.body;
-        const cases = await this._searchCases(request);
-        const result = {
-          cases: cases || []
-        };
-
-        return res.send({
-          type: 'SearchCasesResult',
-          content: result
-        });
-      } catch (exception) {
-        res.status(503);
-        return res.send({
-          type: 'SearchCasesError',
-          content: exception
-        });
-      }
-    });
-
-    this.http._addRoute('SEARCH', '/courts', async (req, res, next) => {
-      try {
-        const request = req.body;
-        const courts = await this._searchCourts(request);
-        const result = {
-          courts: courts || []
-        };
-
-        return res.send({
-          type: 'SearchCourtsResult',
-          content: result,
-          results: courts
-        });
-      } catch (exception) {
-        res.status(503);
-        return res.send({
-          type: 'SearchCourtsError',
-          content: exception
-        });
-      }
-    });
-
     this.http._addRoute('POST', '/messages', async (req, res, next) => {
       console.debug('[JEEVES]', '[HTTP]', 'Handling inbound message:', req.body);
 
@@ -2263,16 +2296,111 @@ class Jeeves extends Service {
     }
   }
 
-  _handleGenericSearchRequest (req, res, next) {
+  async _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
     console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
 
     this.search(request).then((results) => {
       console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
+
+      res.setHeader('X-Fabric-Type', 'SearchResults');
+      res.setHeader('X-Pagination', true);
+      res.setHeader('X-Pagination-Current', `${results.pagination.from}-${results.pagination.to}`);
+      res.setHeader('X-Pagination-Per', results.pagination.perPage);
+      res.setHeader('X-Pagination-Total', results.pagination.total);
+
       res.json({
+        status: 'success',
+        message: 'Results retrieved successfully.',
         results: results
       });
     });
+  }
+  
+  async _handleCaseSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const cases = await this._searchCases(request);
+      const result = {
+        cases: cases || []
+      };
+
+      return res.send({
+        type: 'SearchCasesResult',
+        content: result
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchCasesError',
+        content: exception
+      });
+    }
+  }
+
+  async _handleConversationSearchRequest (req, res, next) {
+    const request = req.body;
+    console.debug('[JEEVES]', '[SEARCH]', 'Conversation search request:', request);
+
+    this.searchConversations(request).then((results) => {
+      console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
+
+      res.setHeader('X-Fabric-Type', 'SearchResults');
+      res.setHeader('X-Pagination', true);
+      res.setHeader('X-Pagination-Current', `${results.pagination.from}-${results.pagination.to}`);
+      res.setHeader('X-Pagination-Per', results.pagination.perPage);
+      res.setHeader('X-Pagination-Total', results.pagination.total);
+
+      res.json({
+        status: 'success',
+        message: 'Results retrieved successfully.',
+        results: results
+      });
+    });
+  }
+
+  async _handleCourtSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const courts = await this._searchCourts(request);
+      const result = {
+        courts: courts || []
+      };
+
+      return res.send({
+        type: 'SearchCourtsResult',
+        content: result,
+        results: courts
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchCourtsError',
+        content: exception
+      });
+    }
+  }
+
+  async _handlePeopleSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const people = await this._searchPeople(request);
+      const result = {
+        people: people || []
+      };
+
+      return res.send({
+        type: 'SearchCourtsResult',
+        content: result,
+        results: people
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchPeopleError',
+        content: exception
+      });
+    }
   }
 
   async _handleMatrixActivity (activity) {
@@ -2850,6 +2978,34 @@ class Jeeves extends Service {
         resolve(object.results);
       }).catch(reject);
     });
+  }
+
+  async _searchPeople (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching people:', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    const results = [];
+    const tokens = this._tokenizeTerm(request.query);
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const people = await this.db('people')
+        .select('*')
+        .where('full_name', 'like', `%${token}%`)
+        .orWhere('name_first', 'like', `%${token}%`)
+        .orWhere('name_last', 'like', `%${token}%`)
+        .orWhere('name_middle', 'like', `%${token}%`)
+        .orWhere('name_suffix', 'like', `%${token}%`);
+
+      results = results.concat(people);
+    }
+
+    return results;
+  }
+
+  async _searchPeopleByTerm (term) {
+    if (!term) throw new Error('No term provided.');
   }
 
   _tokenizeTerm (term) {
