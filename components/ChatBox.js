@@ -7,6 +7,7 @@ const marked = require('marked');
 
 const store = require('../stores/redux');
 const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./SuggestionOptions');
+const FeedbackSidebar  = require('./FeedbackSidebar');
 
 // Semantic UI
 const {
@@ -35,7 +36,6 @@ class ChatBox extends React.Component {
       query: '',
       rating: 0, //user star rating
       comment: '', //user feedback comment
-      ratingMessageID: null,//id from the message rating
       thumbsUpClicked: false,
       thumbsDownClicked: false,
       modalOpen : false,
@@ -44,14 +44,17 @@ class ChatBox extends React.Component {
       feedbackFail : false,
       generatingReponse: false,
       reGeneratingReponse: false,
-      groupedMessages: (props.chat.messages.length > 0)? this.groupMessages(props.chat.messages):[], 
+      groupedMessages: (props.chat.messages.length > 0)? this.groupMessages(props.chat.messages):[],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,
       connectionProblem: false,
       copiedStatus: {},
       windowWidth: window.innerWidth,
-      windowHeight: window.innerHeight
+      windowHeight: window.innerHeight,
+      ratingMessageID: 0,//id from the message rating
+      feedbackSidebarOpen: true,
+      resetFeedbackSidebar: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -71,7 +74,7 @@ class ChatBox extends React.Component {
     const currentLastMessage = messages[messages.length - 1];
 
     // we go this way if we have more messages than before or if the content of the last message
-    // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer    
+    // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
         (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)  ) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
@@ -221,7 +224,6 @@ class ChatBox extends React.Component {
       feedbackSent: false,
       feedbackFail: false,
       connectionProblem: false
-
     });
   };
 
@@ -250,6 +252,20 @@ class ChatBox extends React.Component {
 
   handleCommentChange = (e, { value }) => {
     this.setState({ comment: value });
+  }
+
+  toggleFeedbackSidebar = () => {
+    this.setState(prevState => ({
+      feedbackSidebarOpen: !prevState.feedbackSidebarOpen
+    }));
+  };
+
+  messageInfo = (ID) => {
+    this.setState(prevState => ({
+      ratingMessageID: ID,
+      resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
+    }));
+    this.setState({feedbackSidebarOpen: true});
   }
 
   //this is the feedback modal send function
@@ -282,7 +298,7 @@ class ChatBox extends React.Component {
         reject(new Error("Fetch timed out"));
       }, 15000);
     });
-    
+
     try {
       this.setState({
         feedbackSent: false,
@@ -400,7 +416,7 @@ class ChatBox extends React.Component {
 
     let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
-    
+
     const messageRegen = groupedMessages[groupedMessages.length-2].messages[0];
 
     //scrolls so it shows the regenerating message
@@ -525,7 +541,6 @@ class ChatBox extends React.Component {
           }
         }));
       }, 2000);
-      console.log('Text copied to clipboard');
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2000);
     }).catch(err => {
@@ -543,6 +558,8 @@ class ChatBox extends React.Component {
       query,
       windowWidth,
       windowHeight,
+      feedbackSidebarOpen,
+      ratingMessageID
     } = this.state;
 
     const {
@@ -592,58 +609,82 @@ class ChatBox extends React.Component {
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'}
 
     return (
-      <section style={chatContainerStyle} >
-        <Feed style={messagesContainerStyle} className='chat-feed'>
+      <section style={chatContainerStyle}>
+        <Feed style={messagesContainerStyle} className="chat-feed">
+          <FeedbackSidebar
+            ratingMessageID={ratingMessageID}
+            visible={feedbackSidebarOpen}
+            toggleFeedbackSidebar={this.toggleFeedbackSidebar}
+            resetFeedbackSidebar={this.state.resetFeedbackSidebar}
+            />
           {/*Announcements from homepage */}
-          {homePage && (
-            ((announTitle || announBody) && (messages.length == 0)) && (
-              <Message info style={announcementStyle}>
-                <Message.Header >
-                  <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle) }} />
-                </Message.Header>
-                <Message.Content >
-                  <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
-                </Message.Content>
-              </Message>
-            )
+          {homePage && (announTitle || announBody) && messages.length == 0 && (
+            <Message info style={announcementStyle}>
+              <Message.Header>
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: marked.parse(announTitle),
+                  }}
+                />
+              </Message.Header>
+              <Message.Content>
+                <span
+                  dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }}
+                />
+              </Message.Content>
+            </Message>
           )}
           {homePage && (
             <div>
-              <Feed.Extra text style={{ display: 'flex' }}>
-                <Image src='/images/jeeves-brand.png' size='small' floated='left' />
-                <div style={{ paddingTop: '2em', maxWidth: '10em' }}>
-                  <p><strong>Hello,</strong> I'm <abbr title="Yes, what about it?">JeevesAI</abbr>, your legal research companion.</p>
+              <Feed.Extra text style={{ display: "flex" }}>
+                <Image
+                  src="/images/jeeves-brand.png"
+                  size="small"
+                  floated="left"
+                />
+                <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
+                  <p>
+                    <strong>Hello,</strong> I'm{" "}
+                    <abbr title="Yes, what about it?">JeevesAI</abbr>, your
+                    legal research companion.
+                  </p>
                 </div>
-
               </Feed.Extra>
-              <Header style={{ marginTop: '0em', paddingBottom: '1em' }}>How can I help you today?</Header>
+              <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
+                How can I help you today?
+              </Header>
             </div>
-
           )}
           {caseID && (
-            <Feed.Extra text style={{ paddingBottom: '2em' }}>
+            <Feed.Extra text style={{ paddingBottom: "2em" }}>
               <Header>Can I help you with this case?</Header>
             </Feed.Extra>
           )}
           {conversationID && (
-            <Header as='h2'>Conversation #{conversationID}</Header>
+            <Header as="h2">Conversation #{conversationID}</Header>
           )}
           {/* The chat messages start rendering here */}
-          {(this.props.includeFeed && messages && messages.length > 0) && this.state.groupedMessages.map((group, groupIndex) => {
-            let message;
-            //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
-            if (group.messages[0].role === 'assistant' && group.messages.length > 1) {
-              //this is the active answer the user selected to read
-              message = group.messages[group.activeMessageIndex];
-            } else {
-              message = group.messages[0];
-            }
-            return (
-              <Feed.Event key={message.id} data-message-id={message.id}>
-                <Feed.Content>
-                  {message.role === 'assistant' && (
-                    <div className='controls thumbs-group'>
-                      <Button.Group size='mini'>
+          {this.props.includeFeed &&
+            messages &&
+            messages.length > 0 &&
+            this.state.groupedMessages.map((group, groupIndex) => {
+              let message;
+              //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
+              if (
+                group.messages[0].role === "assistant" &&
+                group.messages.length > 1
+              ) {
+                //this is the active answer the user selected to read
+                message = group.messages[group.activeMessageIndex];
+              } else {
+                message = group.messages[0];
+              }
+              return (
+                <Feed.Event key={message.id} data-message-id={message.id}>
+                  <Feed.Content>
+                    {message.role === "assistant" && (
+                      <div className="controls thumbs-group">
+                        {/* <Button.Group size='mini'>
                         <Popup trigger={
                           <Button icon='thumbs down' color='black' size='tiny' onClick={() => this.handleModalDown(message.id)} />
                         }>
@@ -659,125 +700,205 @@ class ChatBox extends React.Component {
                             <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
                           </Popup.Content>
                         </Popup>
-                      </Button.Group>
-                    </div>
-                  )}
-                  {/* Actual content of message */}
-                  <Feed.Summary>
-                    <Feed.User>{message.author || message.user_id}</Feed.User>
-                    <Feed.Date><abbr title={message.created_at}>{message.created_at}</abbr></Feed.Date>
-                  </Feed.Summary>
-                  <Feed.Extra text>
-                    {(message.status !== 'computing') &&
-                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || '') }} />
-                    }
-                  </Feed.Extra>
-                  <Feed.Extra text>
-                    {(generatingReponse && message.id === messages[messages.length - 1].id && !reGeneratingReponse) && (
-                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is generating a response</Header>
+                      </Button.Group> */}
+                        {/* <Icon name='info'  style={{ cursor: 'pointer', marginRight: '1rem', color: 'grey' }} onClick={()=> this.toggleFeedbackSidebar() }/> */}
+                      </div>
                     )}
-                    {(reGeneratingReponse && group === this.state.groupedMessages[this.state.groupedMessages.length - 1]) && (
-                      <Header size='small' style={{ fontSize: '1em', marginTop: '1.5em' }}><Icon name='spinner' loading /> Jeeves is regenerating the response</Header>
-                    )}
-                    <div className='answer-controls' text>
-                      {/* Answers Navigation Controls */}
-                      {group.messages.length > 1 && (
-                        <div className="answer-navigation">
-                          <Button
-                            icon='angle left'
-                            size='tiny'
-                            style={controlsStyle}
-                            basic
-                            onClick={() => this.navigateMessage(groupIndex, -1)}
-                            disabled={group.activeMessageIndex === 0} />
-                          <span style={{ fontWeight: 'bold', color: 'grey' }}>{`${group.activeMessageIndex + 1} / ${group.messages.length}`}</span>
-                          <Button
-                            icon='angle right'
-                            size='tiny'
-                            style={controlsStyle}
-                            basic
-                            onClick={() => this.navigateMessage(groupIndex, 1)}
-                            disabled={group.activeMessageIndex === group.messages.length - 1} />
+                    {/* Actual content of message */}
+                    <Feed.Summary>
+                      <Feed.User>
+                        {message.author || message.user_id}{" "}
+                      </Feed.User>
+                      <Feed.Date>
+                        <abbr title={message.created_at}>
+                          {message.created_at}
+                        </abbr>
+                      </Feed.Date>
+                      {message.role === "assistant" && (
+                        <div className="controls info-icon">
+                          <Icon
+                            name="info"
+                            color="blue"
+                            style={{ cursor: "pointer", marginLeft: "1rem" }}
+                            onClick={() => this.messageInfo(message.id)}
+                          />
                         </div>
                       )}
-                      {/* the regenerate answer button only shows in the last answer */}
-                      {(group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && message.role === 'assistant' && !reGeneratingReponse && !generatingReponse) && (
-                        <Popup content='Regenerate this answer' trigger={
-                          <Button
-                            icon='redo'
-                            onClick={this.regenerateAnswer}
-                            style={controlsStyle}
-                            size='tiny'
-                          />} />
+                    </Feed.Summary>
+                    <Feed.Extra text>
+                      {message.status !== "computing" && (
+                        <span
+                          dangerouslySetInnerHTML={{
+                            __html: marked.parse(message.content || ""),
+                          }}
+                        />
                       )}
-                      {message.role === 'assistant' && (
-                        <Popup
-                          content="Copied to clipboard"
-                          on="click"
-                          open={this.state.copiedStatus[message.id] || false}
-                          trigger={
+                    </Feed.Extra>
+                    <Feed.Extra text>
+                      {generatingReponse &&
+                        message.id === messages[messages.length - 1].id &&
+                        !reGeneratingReponse && (
+                          <Header
+                            size="small"
+                            style={{ fontSize: "1em", marginTop: "1.5em" }}
+                          >
+                            <Icon name="spinner" loading /> Jeeves is generating
+                            a response
+                          </Header>
+                        )}
+                      {reGeneratingReponse &&
+                        group ===
+                          this.state.groupedMessages[
+                            this.state.groupedMessages.length - 1
+                          ] && (
+                          <Header
+                            size="small"
+                            style={{ fontSize: "1em", marginTop: "1.5em" }}
+                          >
+                            <Icon name="spinner" loading /> Jeeves is
+                            regenerating the response
+                          </Header>
+                        )}
+                      <div className="answer-controls" text>
+                        {/* Answers Navigation Controls */}
+                        {group.messages.length > 1 && (
+                          <div className="answer-navigation">
                             <Button
-                              onClick={() => this.copyToClipboard(message.id, marked.parse(message.content))}
+                              icon="angle left"
+                              size="tiny"
                               style={controlsStyle}
-                              size='tiny'>
-                              <Icon name='clipboard outline' />
-                            </Button>} />
-                      )}
-                    </div>
-                  </Feed.Extra>
-                </Feed.Content>
-              </Feed.Event>
-            )
-          })}
+                              basic
+                              onClick={() =>
+                                this.navigateMessage(groupIndex, -1)
+                              }
+                              disabled={group.activeMessageIndex === 0}
+                            />
+                            <span
+                              style={{ fontWeight: "bold", color: "grey" }}
+                            >{`${group.activeMessageIndex + 1} / ${
+                              group.messages.length
+                            }`}</span>
+                            <Button
+                              icon="angle right"
+                              size="tiny"
+                              style={controlsStyle}
+                              basic
+                              onClick={() =>
+                                this.navigateMessage(groupIndex, 1)
+                              }
+                              disabled={
+                                group.activeMessageIndex ===
+                                group.messages.length - 1
+                              }
+                            />
+                          </div>
+                        )}
+                        {/* the regenerate answer button only shows in the last answer */}
+                        {group ===
+                          this.state.groupedMessages[
+                            this.state.groupedMessages.length - 1
+                          ] &&
+                          message.role === "assistant" &&
+                          !reGeneratingReponse &&
+                          !generatingReponse && (
+                            <Popup
+                              content="Regenerate this answer"
+                              trigger={
+                                <Button
+                                  icon="redo"
+                                  onClick={this.regenerateAnswer}
+                                  style={controlsStyle}
+                                  size="tiny"
+                                />
+                              }
+                            />
+                          )}
+                        {message.role === "assistant" && (
+                          <Popup
+                            content="Copied to clipboard"
+                            on="click"
+                            open={this.state.copiedStatus[message.id] || false}
+                            trigger={
+                              <Button
+                                onClick={() =>
+                                  this.copyToClipboard(
+                                    message.id,
+                                    marked.parse(message.content)
+                                  )
+                                }
+                                style={controlsStyle}
+                                size="tiny"
+                              >
+                                <Icon name="clipboard outline" />
+                              </Button>
+                            }
+                          />
+                        )}
+                      </div>
+                    </Feed.Extra>
+                  </Feed.Content>
+                </Feed.Event>
+              );
+            })}
         </Feed>
-        <Form size='big' onSubmit={this.handleSubmit.bind(this)} loading={loading} style={{ width: '99%' }}>
+        <Form
+          size="big"
+          onSubmit={this.handleSubmit.bind(this)}
+          loading={loading}
+          style={{ width: "99%" }}
+        >
           <Form.Input>
             <TextareaAutosize
-              id='primary-query'
-              className='prompt-bar'
-              name='query'
+              id="primary-query"
+              className="prompt-bar"
+              name="query"
               required
               placeholder={placeholder}
-              onChange={e => this.setState({ query: e.target.value })}
+              onChange={(e) => this.setState({ query: e.target.value })}
               disabled={isSending}
               loading={isSending}
               value={query}
               maxRows={5}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   this.handleSubmit(e);
                 }
               }}
-              style={{ resize: 'none'}}
+              style={{ resize: "none" }}
             />
           </Form.Input>
         </Form>
-        {(messages.length === 0 && homePage) && (
+        {messages.length === 0 && homePage && (
           <section>
-            <Header as='h4' style={{ textAlign: 'center', marginTop: '1em' }}>Chat suggestions you can try:</Header>
-            <div className='home-dropdowns' onBlur={() => this.setState({ query: '' })}>
+            <Header as="h4" style={{ textAlign: "center", marginTop: "1em" }}>
+              Chat suggestions you can try:
+            </Header>
+            <div
+              className="home-dropdowns"
+              onBlur={() => this.setState({ query: "" })}
+            >
               <Dropdown
-                size='tiny'
-                placeholder='Find a case that...'
+                size="tiny"
+                placeholder="Find a case that..."
                 selection
-                text='Find a case that...'
+                text="Find a case that..."
                 options={caseDropOptions}
                 onChange={this.handleChangeDropdown}
               />
               <Dropdown
-                size='tiny'
-                placeholder='Draft a brief...'
+                size="tiny"
+                placeholder="Draft a brief..."
                 selection
-                text='Draft a brief...'
+                text="Draft a brief..."
                 options={draftDropOptions}
                 onChange={this.handleChangeDropdown}
               />
               <Dropdown
-                size='tiny'
-                placeholder='Outline a motion...'
+                size="tiny"
+                placeholder="Outline a motion..."
                 selection
-                text='Outline a motion...'
+                text="Outline a motion..."
                 options={outlineDropOptions}
                 onChange={this.handleChangeDropdown}
               />

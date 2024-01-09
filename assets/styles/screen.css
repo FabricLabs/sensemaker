@@ -331,15 +331,12 @@ fabric-motd {
   font-size: 1rem;
   min-height: 0;
 }
-.thumbs-group{
-  float: right;
+.info-icon{
   display: none;
-  margin-right: 1em;
-  padding-top: 1em;
 }
 
 .chat-feed .event:hover .controls {
-  display: block !important;
+  display: inline !important;
 }
 
 .home-dropdowns{
@@ -374,6 +371,22 @@ fabric-motd {
   margin-top: 2px;
 }
 
+/* FeedbackSidebar CSS */
+.info-sidebar{
+  background-color: rgb(27, 28, 29);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+.feedback-close{
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  cursor: pointer;
+}
 /* Settings CSS */
 .settings-user{
   display: flex;
