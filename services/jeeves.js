@@ -419,6 +419,12 @@ class Jeeves extends Service {
     return beat;
   }
 
+  async findCaseByName (name) {
+    const instance = await this.db('cases').where('name', name).first();
+    console.debug('[JEEVES]', 'Found case by name:', instance);
+    return instance;
+  }
+
   async findCourtByName (name) {
     const court = await this.db('courts').where('name', name).first();
     const result = await Promise.race([
