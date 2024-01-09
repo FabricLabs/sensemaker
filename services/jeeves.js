@@ -419,6 +419,20 @@ class Jeeves extends Service {
     return beat;
   }
 
+  async findCourtByName (name) {
+    const court = await this.db('courts').where('name', name).first();
+    const result = await Promise.race([
+      new Promise((resolve, reject) => {
+        this.courtlistener.db('search_court').select('*').where('name', name).then(resolve).catch(reject);
+      })
+    ]);
+
+    console.debug('[JEEVES]', 'Found court by name:', court);
+    console.debug('[JEEVES]', 'Court search by name, results:', result);
+
+    return court;
+  }
+
   async query (query) {
     console.debug('[JEEVES]', '[QUERY]', 'Received query:', query);
     const collections = {
