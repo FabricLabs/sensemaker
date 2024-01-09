@@ -212,7 +212,7 @@ class ChatBox extends React.Component {
       ratingMessageID: ID,
       resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
     }));
-    this.setState({feedbackSidebarOpen: true});
+    this.toggleFeedbackSidebar();
   }
 
   regenerateAnswer = (event) => {
