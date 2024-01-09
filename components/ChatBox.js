@@ -208,11 +208,15 @@ class ChatBox extends React.Component {
   };
 
   messageInfo = (ID) => {
+    if(ID == this.state.ratingMessageID){
+      this.toggleFeedbackSidebar();
+    } else {
+      this.setState({feedbackSidebarOpen: true});
+    }
     this.setState(prevState => ({
       ratingMessageID: ID,
       resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
     }));
-    this.toggleFeedbackSidebar();
   }
 
   regenerateAnswer = (event) => {
