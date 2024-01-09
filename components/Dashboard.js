@@ -177,19 +177,26 @@ class Dashboard extends React.Component {
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
             <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}}>
               <Header className='dashboard-header'>
-              <div>
-                <Image src="/images/novo-logo-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
-                <Popup trigger={<Label color='black'style={{borderColor:'transparent', backgroundColor: 'transparent'}}><Icon name='circle' color='red' />{RELEASE_NAME}</Label>}>
-                  <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
-                </Popup>
+                <div>
+                  <div>
+                    <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', color: 'white' }} />}>
+                      <Popup.Header>Need Help?</Popup.Header>
+                      <Popup.Content>
+                        <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
+                        {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
+                      </Popup.Content>
+                    </Popup>
+                    <Image src="/images/novo-logo-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
+                  </div>
+                  <div style={{ marginTop: '0.5em' }}>
+                    <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
+                      <Popup.Content>disconnected</Popup.Content>
+                    </Popup>
+                    <Popup trigger={<Label color='black' style={{borderColor:'transparent', backgroundColor: 'transparent'}}>{RELEASE_NAME}</Label>}>
+                      <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
+                    </Popup>
+                  </div>
                 </div>
-                <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', color: 'white' }} />}>
-                  <Popup.Header>Need Help?</Popup.Header>
-                  <Popup.Content>
-                    <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
-                    {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
-                  </Popup.Content>
-                </Popup>
               </Header>
             </Menu.Item>
             {/* <Menu.Item>
