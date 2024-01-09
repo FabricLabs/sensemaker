@@ -5,9 +5,7 @@ const React = require('react');
 const {
   Button,
   Header,
-  Segment,
   Form,
-  Modal,
   Message,
   Sidebar,
   Popup,
@@ -55,11 +53,10 @@ class FeedbackSidebar extends React.Component {
     });
   }
 
-  // Handle input change
   handleInputChange = (e, { name, value }) => {
     this.setState({ [name]: value });
   };
-
+  //handles the user message rating
   handleRatingChange = (rate) => {
     this.setState({ rating: rate });
   };
@@ -140,6 +137,11 @@ class FeedbackSidebar extends React.Component {
     } = this.state;
     const { visible } = this.props;
 
+        // Style for active buttons
+        const activeButtonStyle = {
+          border: '2px solid #cfcdca',
+        };
+
     return (
       <Sidebar
         as={Form}
@@ -147,8 +149,7 @@ class FeedbackSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        className='info-sidebar'
-      >
+        className='info-sidebar'>
 
         <Header as='h3' style={{ color: '#fff' }} >Feedback</Header>
         <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
@@ -160,6 +161,7 @@ class FeedbackSidebar extends React.Component {
               size='tiny'
               onClick={() => this.setState({ thumbsDownClicked: true, thumbsUpClicked: false, })}
               active={thumbsDownClicked}
+              style={thumbsDownClicked ? activeButtonStyle : {}}
             />
           }>
             <Popup.Content>
@@ -169,9 +171,11 @@ class FeedbackSidebar extends React.Component {
           <Popup trigger={
             <Button
               icon='thumbs up'
+              size='tiny'
               color='green'
               onClick={() => this.setState({ thumbsDownClicked: false, thumbsUpClicked: true, })}
               active={thumbsUpClicked}
+              style={thumbsUpClicked ? activeButtonStyle : {}}
             />
           }>
             <Popup.Header>Tell Us What You Liked!</Popup.Header>
@@ -182,21 +186,20 @@ class FeedbackSidebar extends React.Component {
         </Button.Group>
         <p>Let us know your opinion!</p>
 
-        <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />
-        {!feedbackSent && (
+        {(!feedbackSent && !connectionProblem) && (<div>
+          <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />
           <Form.Field>
             <Header style={{ color: '#fff' }}>Comment</Header>
             <Form.TextArea
               placeholder='Enter your comment...'
-              // ...other props
               style={{ resize: 'none' }}
               rows={3}
               name='comment'
               onChange={this.handleInputChange}
             />
           </Form.Field>
+        </div>
         )}
-
         <Form.Field>
           {/*When the feedback is sent it shows this message  */}
           {feedbackSent && (
@@ -207,13 +210,13 @@ class FeedbackSidebar extends React.Component {
           )}
           {/*When the feedback could not be sent it shows this message  */}
           {feedbackFail && (
-            <Message error>
+            <Message negative>
               <Message.Header>Feedback could not be sent</Message.Header>
               <p>Please try again later.</p>
             </Message>
           )}
           {connectionProblem && (
-            <Message error>
+            <Message negative>
               <Message.Header>Feedback could not be sent</Message.Header>
               <p>Please check your internet connection.</p>
             </Message>
@@ -230,7 +233,7 @@ class FeedbackSidebar extends React.Component {
               color='grey'
             />
             {/*This button is shown only if Feedback wasnt sent yet */}
-            {!feedbackSent && (
+            {(!feedbackSent && !connectionProblem) && (
               <Button
                 content="Send"
                 icon={sending ? 'spinner' : 'checkmark'}
@@ -246,6 +249,5 @@ class FeedbackSidebar extends React.Component {
     )
   };
 }
-
 
 module.exports = FeedbackSidebar;

@@ -5,7 +5,6 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 
-const store = require('../stores/redux');
 const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./SuggestionOptions');
 const FeedbackSidebar  = require('./FeedbackSidebar');
 
@@ -16,15 +15,12 @@ const {
   Form,
   Header,
   Icon,
-  Modal,
   Message,
-  TextArea,
   Popup,
   Dropdown,
   Image
 } = require('semantic-ui-react');
 
-const {Rating} = require('react-simple-star-rating');
 const TextareaAutosize = require('react-textarea-autosize').default;
 
 
@@ -34,14 +30,6 @@ class ChatBox extends React.Component {
 
     this.state = {
       query: '',
-      rating: 0, //user star rating
-      comment: '', //user feedback comment
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      modalOpen : false,
-      modalLoading : false,
-      feedbackSent : false,
-      feedbackFail : false,
       generatingReponse: false,
       reGeneratingReponse: false,
       groupedMessages: (props.chat.messages.length > 0)? this.groupMessages(props.chat.messages):[],
@@ -53,7 +41,7 @@ class ChatBox extends React.Component {
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
       ratingMessageID: 0,//id from the message rating
-      feedbackSidebarOpen: true,
+      feedbackSidebarOpen: false,
       resetFeedbackSidebar: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -213,47 +201,6 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  handleModalClose = () => {
-    this.setState({
-      modalOpen: false,
-      thumbsDownClicked : false,
-      thumbsUpClicked : false,
-      rating : 0,
-      comment : '',
-      modalLoading: false,
-      feedbackSent: false,
-      feedbackFail: false,
-      connectionProblem: false
-    });
-  };
-
-  handleModalUp = (messageID) => {
-
-    this.setState({
-      modalOpen: true,
-      thumbsDownClicked : false,
-      thumbsUpClicked : true,
-      ratingMessageID: messageID,
-    });
-  };
-
-  handleModalDown = (messageID) => {
-    this.setState({
-      modalOpen: true,
-      thumbsDownClicked : true,
-      thumbsUpClicked : false,
-      ratingMessageID: messageID,
-    });
-  };
-
-  handleRatingChange = (rate) => {
-    this.setState({ rating: rate });
-  };
-
-  handleCommentChange = (e, { value }) => {
-    this.setState({ comment: value });
-  }
-
   toggleFeedbackSidebar = () => {
     this.setState(prevState => ({
       feedbackSidebarOpen: !prevState.feedbackSidebarOpen
@@ -266,145 +213,6 @@ class ChatBox extends React.Component {
       resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
     }));
     this.setState({feedbackSidebarOpen: true});
-  }
-
-  //this is the feedback modal send function
-  handleModalSend = async () => {
-    const { rating, comment, thumbsUpClicked, thumbsDownClicked } = this.state;
-    const messageId = this.state.ratingMessageID;
-    const state = store.getState();
-    const token = state.auth.token;
-
-    const dataToSend = {
-      rating,
-      comment,
-      thumbsUpClicked,
-      thumbsDownClicked,
-      message: messageId,
-    };
-
-    this.setState({ modalLoading: true });
-
-    const fetchPromise = fetch("/reviews", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(dataToSend),
-    });
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Fetch timed out"));
-      }, 15000);
-    });
-
-    try {
-      this.setState({
-        feedbackSent: false,
-        feedbackFail: false,
-        connectionProblem: false,
-      });
-      //the promise race runs the fetch against a 15 seconds timeout, to handle possible connection problems
-      //if we dont have an answer from fetch after 15 seconds it cuts off
-      const response = await Promise.race([timeoutPromise, fetchPromise]);
-      if (response.ok) {
-        //forced delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        this.setState({ feedbackSent: true, modalLoading: false, });
-      } else {
-        this.setState({ feedbackFail: true, modalLoading: false, });
-        console.error("API request failed with status:", response.status);
-      }
-    } catch (error) {
-      if (error.message === "Fetch timed out") {
-        this.setState({
-          feedbackSent: false,
-          feedbackFail: false,
-          modalLoading: false,
-          connectionProblem: true,
-        });
-      }
-    }
-  };
-
-  renderFeedbakcModal = () =>{
-    //TODO: take this modal into a separate component with all its related functions and logic
-    const {
-      modalOpen,
-      rating,
-      feedbackSent,
-      feedbackFail,
-      connectionProblem,
-      modalLoading,
-    } = this.state;
-
-    return (
-      <Modal
-      onClose={this.handleModalClose}
-      onOpen={() => this.setState({ modalOpen: true })}
-      open={modalOpen}
-      size='tiny'>
-      <Modal.Header>Feedback</Modal.Header>
-      <Modal.Content>
-        <Modal.Description>
-          <p>Let us know your opinion!</p>
-        </Modal.Description>
-        <Form>
-          <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} />
-          <Form.Field>
-            <Header style={{ marginTop: '0.5em' }}>Comment</Header>
-            <TextArea
-              placeholder='Enter your comment...'
-              onChange={this.handleCommentChange}
-            />
-          </Form.Field>
-        </Form>
-      </Modal.Content>
-      <Modal.Actions>
-        {/*When the feedback is sent it shows this message  */}
-        {feedbackSent && (
-          <Message positive>
-            <Message.Header>Feedback Sent!</Message.Header>
-            <p>Your comment has been successfully sent.</p>
-          </Message>
-        )}
-        {/*When the feedback could not be sent it shows this message  */}
-        {feedbackFail && (
-          <Message error>
-            <Message.Header>Feedback could not be sent</Message.Header>
-            <p>Please try again later.</p>
-          </Message>
-        )}
-        {connectionProblem && (
-          <Message error>
-            <Message.Header>Feedback could not be sent</Message.Header>
-            <p>Please check your internet connection.</p>
-          </Message>
-        )}
-        <Button
-          content="Close"
-          icon='close'
-          onClick={this.handleModalClose}
-          labelPosition='right'
-          size='small'
-          secondary
-        />
-        {/*This button is shown only if Feedback wasnt sent yet */}
-        {!feedbackSent && (
-          <Button
-            content="Send"
-            icon={modalLoading ? 'spinner' : 'checkmark'}
-            onClick={this.handleModalSend}
-            labelPosition='right'
-            size='small'
-            loading={modalLoading}
-            positive
-          />)}
-      </Modal.Actions>
-    </Modal>
-    )
   }
 
   regenerateAnswer = (event) => {
@@ -621,27 +429,17 @@ class ChatBox extends React.Component {
           {homePage && (announTitle || announBody) && messages.length == 0 && (
             <Message info style={announcementStyle}>
               <Message.Header>
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: marked.parse(announTitle),
-                  }}
-                />
+                <span dangerouslySetInnerHTML={{__html: marked.parse(announTitle), }}/>
               </Message.Header>
               <Message.Content>
-                <span
-                  dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }}
-                />
+                <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }}/>
               </Message.Content>
             </Message>
           )}
           {homePage && (
             <div>
               <Feed.Extra text style={{ display: "flex" }}>
-                <Image
-                  src="/images/jeeves-brand.png"
-                  size="small"
-                  floated="left"
-                />
+                <Image src="/images/jeeves-brand.png" size="small" floated="left" />
                 <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
                   <p>
                     <strong>Hello,</strong> I'm{" "}
@@ -670,10 +468,7 @@ class ChatBox extends React.Component {
             this.state.groupedMessages.map((group, groupIndex) => {
               let message;
               //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
-              if (
-                group.messages[0].role === "assistant" &&
-                group.messages.length > 1
-              ) {
+              if (group.messages[0].role === "assistant" && group.messages.length > 1) {
                 //this is the active answer the user selected to read
                 message = group.messages[group.activeMessageIndex];
               } else {
@@ -682,28 +477,6 @@ class ChatBox extends React.Component {
               return (
                 <Feed.Event key={message.id} data-message-id={message.id}>
                   <Feed.Content>
-                    {message.role === "assistant" && (
-                      <div className="controls thumbs-group">
-                        {/* <Button.Group size='mini'>
-                        <Popup trigger={
-                          <Button icon='thumbs down' color='black' size='tiny' onClick={() => this.handleModalDown(message.id)} />
-                        }>
-                          <Popup.Content>
-                            <p>Report something wrong with this statement.</p>
-                          </Popup.Content>
-                        </Popup>
-                        <Popup trigger={
-                          <Button icon='thumbs up' color='green' onClick={() => this.handleModalUp(message.id)} />
-                        }>
-                          <Popup.Header>Tell Us What You Liked!</Popup.Header>
-                          <Popup.Content>
-                            <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-                          </Popup.Content>
-                        </Popup>
-                      </Button.Group> */}
-                        {/* <Icon name='info'  style={{ cursor: 'pointer', marginRight: '1rem', color: 'grey' }} onClick={()=> this.toggleFeedbackSidebar() }/> */}
-                      </div>
-                    )}
                     {/* Actual content of message */}
                     <Feed.Summary>
                       <Feed.User>
@@ -727,30 +500,21 @@ class ChatBox extends React.Component {
                     </Feed.Summary>
                     <Feed.Extra text>
                       {message.status !== "computing" && (
-                        <span
-                          dangerouslySetInnerHTML={{
-                            __html: marked.parse(message.content || ""),
-                          }}
-                        />
+                        <span dangerouslySetInnerHTML={{__html: marked.parse(message.content || ""),}}/>
                       )}
                     </Feed.Extra>
                     <Feed.Extra text>
                       {generatingReponse &&
                         message.id === messages[messages.length - 1].id &&
                         !reGeneratingReponse && (
-                          <Header
-                            size="small"
-                            style={{ fontSize: "1em", marginTop: "1.5em" }}
-                          >
-                            <Icon name="spinner" loading /> Jeeves is generating
-                            a response
+                          <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                            <Icon name="spinner" loading />
+                            Jeeves is generating a response
                           </Header>
                         )}
                       {reGeneratingReponse &&
                         group ===
-                          this.state.groupedMessages[
-                            this.state.groupedMessages.length - 1
-                          ] && (
+                          this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
                           <Header
                             size="small"
                             style={{ fontSize: "1em", marginTop: "1.5em" }}
@@ -794,13 +558,8 @@ class ChatBox extends React.Component {
                           </div>
                         )}
                         {/* the regenerate answer button only shows in the last answer */}
-                        {group ===
-                          this.state.groupedMessages[
-                            this.state.groupedMessages.length - 1
-                          ] &&
-                          message.role === "assistant" &&
-                          !reGeneratingReponse &&
-                          !generatingReponse && (
+                        {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                          message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
                             <Popup
                               content="Regenerate this answer"
                               trigger={
@@ -905,8 +664,6 @@ class ChatBox extends React.Component {
             </div>
           </section>
         )}
-
-        {this.renderFeedbakcModal()}
       </section>
     );
   }
