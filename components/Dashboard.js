@@ -179,7 +179,7 @@ class Dashboard extends React.Component {
               <Header className='dashboard-header'>
                 <div>
                   <div>
-                    <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', color: 'white' }} />}>
+                    <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
                         <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
