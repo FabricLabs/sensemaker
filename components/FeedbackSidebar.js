@@ -18,7 +18,7 @@ const store = require('../stores/redux');
 
 class FeedbackSidebar extends React.Component {
 
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.state = {
@@ -33,7 +33,7 @@ class FeedbackSidebar extends React.Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     // Check if the resetFeedbackSidebar prop has changed
     if (this.props.resetFeedbackSidebar !== prevProps.resetFeedbackSidebar) {
       this.resetState();
@@ -124,7 +124,11 @@ class FeedbackSidebar extends React.Component {
     }
   }
 
-  render() {
+  /**
+   * Render to HTML DOM
+   * @returns the feedback sidebar, as a React Component
+   */
+  render () {
     const {
       // modalOpen,
       rating,
@@ -185,6 +189,17 @@ class FeedbackSidebar extends React.Component {
           </Popup>
         </Button.Group>
         <p>Let us know your opinion!</p>
+        <Header>Cases Sourced</Header>
+        {
+          // TODO: implement message->case API
+          // All cases retuned by the search against the message ID (inline = true)
+        }
+        <fabric-search-results>
+          <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
+          <fabric-state>
+            <code>{JSON.stringify(this.state, null, '  ')}</code>
+          </fabric-state>
+        </fabric-search-results>
 
         {(!feedbackSent && !connectionProblem) && (<div>
           <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />

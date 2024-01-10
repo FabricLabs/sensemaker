@@ -161,7 +161,7 @@ class CourtListener extends Service {
   }
 
   async paginateRecapDocuments (page = 0, limit = PER_PAGE_LIMIT) {
-    const documents = await this.db('search_recapdocument').select().limit(limit).offset(page * limit);
+    const documents = await this.db('search_recapdocument').select().where('is_free_on_pacer', true).limit(limit).offset(page * limit);
     const count = await this.db('search_recapdocument').count();
 
     return {
