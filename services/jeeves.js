@@ -1602,7 +1602,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id', 'html').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -2484,6 +2484,12 @@ class Jeeves extends Service {
 
   async _handleFabricDocument (document) {
     console.error('[FABRIC]', '[DOCUMENT]', document);
+    const inserted = await this.db('documents').insert({
+      fabric_id: document.id,
+      description: document.description,
+      created_at: document.created_at
+    });
+    console.debug('[FABRIC]', '[DOCUMENT]', '[INSERTED]', inserted);
   }
 
   async _handleFabricCourt (court) {

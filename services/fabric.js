@@ -135,6 +135,35 @@ class FabricService extends Service {
       console.error('[FABRIC] Could not fetch documents:', exception);
     }
 
+    console.debug('[FABRIC] Beginning experimental CourtListener sync...');
+    try {
+      const documents = await remote._GET('/services/courtlistener/recapdocuments');
+      for (let j = 0; j < documents.length; j++) {
+        const document = documents[j];
+        const actor = new Actor({ name: `courtlistener/documents/${document.id}` });
+        const instance = {
+          id: actor.id,
+          sha1: document.sha1,
+          page_count: document.page_count,
+          description: document.description,
+          created: document.date_created,
+          modified: document.date_modified,
+          title: document.title,
+          content: plain_text,
+          pacer_id: document.pacer_doc_id,
+          courtlistener_filepath: document.filepath_local,
+          internetarchive_filepath: document.filepath_ia,
+          is_free_on_pacer: document.is_free_on_pacer
+        };
+
+        this._state.content.collections.documents[instance.id] = instance;
+        this.emit('document', instance);
+      }
+      console.debug('[FABRIC] [SERVICES/CL] Remote Documents found:', documents);
+    } catch (exception) {
+      console.error('[FABRIC] Could not fetch documents:', exception);
+    }
+
     this.commit();
   }
 

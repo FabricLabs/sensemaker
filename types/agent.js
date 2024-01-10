@@ -146,6 +146,15 @@ class Agent extends Service {
     return this;
   }
 
+  query (request) {
+    return new Promise((resolve, reject) => {
+      resolve({
+        status: 'success',
+        query: request.query
+      });
+    });
+  }
+
   start () {
     return new Promise((resolve, reject) => {
       this.fabric.start().then((node) => {
