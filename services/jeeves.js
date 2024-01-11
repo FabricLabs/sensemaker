@@ -359,16 +359,19 @@ class Jeeves extends Service {
     // TODO: safe shutdown
   } */
 
-  async alert (message) {
-    return new Promise((resolve, reject) => {
-      this.email.send({
-        from: 'agent@jeeves.dev',
-        to: 'tech@jeeves.dev',
-        subject: 'Jeeves Alert',
-        body: message
-      }).then(resolve).catch(reject);
-    });
-  }
+  async alert(message) {
+    try {
+        await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: 'tech@jeeves.dev',
+            subject: 'Jeeves Alert',
+            html: message
+        });
+        console.log('Alert email sent successfully');
+    } catch (error) {
+        console.error('Error sending alert email:', error);
+    }
+}
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -1265,12 +1268,43 @@ class Jeeves extends Service {
           user_id: existingUser.id,
           token: resetToken,
         });
-        //TODO: Send the email
+        //Flag for Eric
+        //We have to change the resetLink when it goes to the server so it redirects to the right hostname
+        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        return res.json({
-          message: 'Token sent successfully.',
-        });
+        const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+        const htmlContent = `
+                                <html>
+                                  <body>
+                                    <p>Hello,</p>
+                                    <p>Please click on the link below to reset your password:</p>
+                                    <p><a href="${resetLink}">Reset Password</a></p>
+                                    <p>If you did not request a password reset, please ignore this email.</p>
+                                    <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                  </body>
+                                </html>
+                              `;
+
+        try {
+          await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: email,
+            subject: 'Password Reset',
+            html: htmlContent
+          });
+
+          return res.json({
+            message: 'Token sent successfully.',
+          });
+        } catch (error) {
+          console.error('Error sending email', error);
+          return res.status(500).json({
+            message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
+          });
+        }
       } catch (error) {
+        console.error('Error processing request', error);
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
@@ -2448,7 +2482,7 @@ class Jeeves extends Service {
 
     return result;
   }
-  
+
   async _handleCaseSearchRequest (req, res, next) {
     try {
       const request = req.body;
