@@ -951,9 +951,13 @@ class Jeeves extends Service {
 
     // Internal Services
     await this.fabric.start();
-    await this.email.start();
+    if (this.email) await this.email.start();
+    if (this.matrix) await this.matrix.start();
+    // if (this.github) await this.github.start();
+    // if (this.discord) await this.discord.start();
+
+    // Debug Services
     await this.rag.start();
-    if (this.settings.matrix.enable) await this.matrix.start();
 
     // Data Sources
     if (this.settings.pacer.enable) await this.pacer.start();
