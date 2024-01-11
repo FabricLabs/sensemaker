@@ -365,19 +365,21 @@ class Jeeves extends Service {
   } */
 
   async alert (message) {
-    try {
-      // Alert Tech
-      await this.email.send({
-          from: 'agent@jeeves.dev',
-          to: 'tech@jeeves.dev',
-          subject: `[ALERT] [JEEVES] Jeeves Alert`,
-          html: message
-      });
-      console.debug('Alert email sent successfully!');
-    } catch (error) {
-      console.error('Error sending alert email:', error);
+    if (this.email) {
+      try {
+        // Alert Tech
+        await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: 'tech@jeeves.dev',
+            subject: `[ALERT] [JEEVES] Jeeves Alert`,
+            html: message
+        });
+        console.debug('Alert email sent successfully!');
+      } catch (error) {
+        console.error('Error sending alert email:', error);
+      }
     }
-}
+  }
 
   async tick () {
     const now = (new Date()).toISOString();
