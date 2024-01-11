@@ -898,12 +898,13 @@ class Jeeves extends Service {
     });
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ listen: this.settings.listen, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ listen: this.settings.listen, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.' });
-    this.extractor = new Agent({ listen: this.settings.listen, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.' });
-    this.validator = new Agent({ listen: this.settings.listen, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.' });
+    this.augmentor = new Agent({ listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.' });
+    this.extractor = new Agent({ listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.' });
+    this.validator = new Agent({ listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.' });
     this.rag = new Agent({
-      listen: this.settings.listen
+      listen: this.settings.fabric.listen,
+      openai: this.settings.openai,
       // prompt: ''
     });
 
@@ -2228,7 +2229,7 @@ class Jeeves extends Service {
       model: 'jeeves-0.2.0-RC1'
     });
 
-    const SUMMARIZER_FIXTURE = this.summarizer.query({
+    const SUMMARIZER_FIXTURE = await this.summarizer.query({
       query: 'Agent 1: yes\nAgent 2: yes\nAgent 3: no'
     });
 
@@ -2245,11 +2246,11 @@ class Jeeves extends Service {
     console.debug('GOT RANDOM CASES:', randomCases)
 
     const EXTRACTOR_FIXTURE = await this.extractor.query({
-      query: fixture.content
+      query: randomCases.content
     });
 
     const VALIDATOR_FIXTURE = await this.validator.query({
-      query: fixture.content
+      query: randomCases.content
     });
 
     // Test RAG Query
@@ -2262,7 +2263,7 @@ class Jeeves extends Service {
     console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
     console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
     console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
-    console.debug('RAG FIXTURE:', COURT_LISTENER_FIXTURE);
+    console.debug('RAG FIXTURE:', RAG_FIXTURE);
 
     // GraphQL
     /* this.apollo.applyMiddleware({

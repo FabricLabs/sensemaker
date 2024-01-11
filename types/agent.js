@@ -45,6 +45,9 @@ class Agent extends Service {
       database: {
         type: 'memory'
       },
+      fabric: {
+        listen: false,
+      },
       parameters: {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
@@ -77,52 +80,7 @@ class Agent extends Service {
       name: 'fabric',
       description: 'The Fabric agent, which manages a Fabric node for the AI agent.  Fabric is peer-to-peer network for running applications which store and exchange information paid in Bitcoin.',
       type: 'Peer',
-      documentation: {
-        name: 'Fabric',
-        description: 'The Fabric Network agent, which manages a Fabric node for the AI agent.',
-        methods: {
-          ack: {
-            description: 'Acknowledge a message.',
-            parameters: {
-              message: {
-                // TODO: consider making this a FabricMessageID
-                type: 'FabricMessage',
-                description: 'The message to acknowledge.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the completed FabricState.'
-            }
-          },
-          send: {
-            description: 'Send a message to a connected peer.',
-            parameters: {
-              message: {
-                type: 'FabricMessage',
-                description: 'The message to send to the peer.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the agent\'s response (if any).'
-            }
-          },
-          broadcast: {
-            description: 'Broadcast a message to all connected nodes.',
-            parameters: {
-              message: {
-                type: 'FabricMessage',
-                description: 'The message to send to the node.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the agents\' responses (if any).'
-            }
-          }
-        }
-      }
+      listen: this.settings.fabric.listen
     });
 
     this.services = {
@@ -188,19 +146,34 @@ class Agent extends Service {
     }
   }
 
-  query (request) {
-    return new Promise((resolve, reject) => {
+  async query (request) {
+    return new Promise(async (resolve, reject) => {
       this.emit('debug', '[AGENT]', 'Querying:', request);
+      const responses = {
+        // TODO: Mistral 7B for local installs
+        openai: this.services.openai._streamConversationRequest({
+          messages: [
+            { role: 'user', content: request.query }
+          ]
+        })
+      };
+
+      // Wait for all responses to resolve or reject.
+      await Promise.allSettled(Object.values(responses));
+
       resolve({
+        type: 'AgentResponse',
         status: 'success',
-        query: request.query
+        query: request.query,
+        response: responses.openai.content,
+        content: responses.openai.content
       });
     });
   }
 
   loadDefaultPrompt () {
     try {
-      this.prompt = fs.readFileSync('../prompts/default.txt', 'utf8');
+      this.prompt = fs.readFileSync('./prompts/default.txt', 'utf8');
     } catch (exception) {
       console.error('[AGENT]', 'Could not load default prompt:', exception);
     }
@@ -209,7 +182,7 @@ class Agent extends Service {
   start () {
     return new Promise((resolve, reject) => {
       this.fabric.start().then((node) => {
-        this.emit('debug', '[FABRIC]', 'Node:', node);
+        this.emit('debug', '[FABRIC]', 'Node:', node.id);
 
         // Load default prompt.
         this.loadDefaultPrompt();
