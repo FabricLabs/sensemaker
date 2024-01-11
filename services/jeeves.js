@@ -348,16 +348,32 @@ class Jeeves extends Service {
     // TODO: safe shutdown
   } */
 
-  async alert (message) {
-    return new Promise((resolve, reject) => {
-      this.email.send({
-        from: 'agent@jeeves.dev',
-        to: 'tech@jeeves.dev',
-        subject: 'Jeeves Alert',
-        body: message
-      }).then(resolve).catch(reject);
-    });
-  }
+  // async alert (message) {
+  //   return new Promise((resolve, reject) => {
+  //     this.email.send({
+  //       from: 'agent@jeeves.dev',
+  //       to: 'tech@jeeves.dev',
+  //       subject: 'Jeeves Alert',
+  //       body: message
+  //     }).then(resolve).catch(reject);
+  //   });
+  // }
+
+  async alert(message) {
+    try {
+        await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: 'tech@jeeves.dev',
+            subject: 'Jeeves Alert',
+            body: message
+        });
+        console.log('Alert email sent successfully');
+    } catch (error) {
+        console.error('Error sending alert email:', error);
+        // Handle the error or throw it to be caught by a higher-level handler
+    }
+}
+
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -1256,24 +1272,47 @@ class Jeeves extends Service {
                               `;
 
         //here we have to add the real email we are using in From field, or it will usually reject the email sending
-        await this.email.send({
+    //     await this.email.send({
+    //       from: 'nahuel_vignattasdsai@hotmail.com',
+    //       to: email,
+    //       subject: 'Password Reset',
+    //       html: htmlContent
+    //     })
+        
+    //     return res.json({
+    //       message: 'Token sent successfully.',
+    //     });
+
+    //   } catch (error) {
+    //     console.error('Error sending email', error);
+    //     return res.status(500).json({
+    //       message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
+    //     });
+    //   }
+    // });
+
+    try {
+      await this.email.send({
           from: 'nahuel_vignattasdsai@hotmail.com',
           to: email,
           subject: 'Password Reset',
           html: htmlContent
-        })
+      });
 
-        return res.json({
+      return res.json({
           message: 'Token sent successfully.',
-        });
-
-      } catch (error) {
-        console.error('Error sending email', error);
-        return res.status(500).json({
+      });
+  } catch (error) {
+      console.error('Error sending email', error);
+      return res.status(500).json({
           message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
-        });
-      }
-    });
+      });
+  }
+} catch (error) {
+  console.error('Error processing request', error);
+  return res.status(500).json({ message: 'Internal server error.' });
+}
+});
 
     //function to check if the reset token for password is valid
     this.http._addRoute('POST', '/resettokencheck', async (req, res, next) => {

@@ -71,6 +71,7 @@ class EmailService extends Service {
       this.emit('debug', `[${this.settings.name}] Message sent: ${Object.keys(result)}`, result);
     } catch (error) {
       this.emit('error', `[${this.settings.name}] Error sending message: ${error.message}`);
+      throw error; // Rethrow the error
     }
 
     return this;
