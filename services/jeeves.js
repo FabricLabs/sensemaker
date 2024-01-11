@@ -1237,13 +1237,41 @@ class Jeeves extends Service {
           user_id: existingUser.id,
           token: resetToken,
         });
-        //TODO: Send the email
+        //Flag for Eric
+        //We have to change the resetLink when it goes to the server so it redirects to the right hostname
+        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
+
+        const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+        const htmlContent = `
+                                <html>
+                                  <body>
+                                    <p>Hello,</p>
+                                    <p>Please click on the link below to reset your password:</p>
+                                    <p><a href="${resetLink}">Reset Password</a></p>
+                                    <p>If you did not request a password reset, please ignore this email.</p>
+                                    <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                  </body>
+                                </html>
+                              `;
+
+        //here we have to add the real email we are using in From field, or it will usually reject the email sending
+        await this.email.send({
+          from: 'nahuel_vignattasdsai@hotmail.com',
+          to: email,
+          subject: 'Password Reset',
+          html: htmlContent
+        })
 
         return res.json({
           message: 'Token sent successfully.',
         });
+
       } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
+        console.error('Error sending email', error);
+        return res.status(500).json({
+          message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
+        });
       }
     });
 
@@ -2336,7 +2364,7 @@ class Jeeves extends Service {
       });
     });
   }
-  
+
   async _handleCaseSearchRequest (req, res, next) {
     try {
       const request = req.body;
