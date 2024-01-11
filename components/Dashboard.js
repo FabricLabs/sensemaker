@@ -175,11 +175,11 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
-            <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}}>
+            <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}} onClick={()=> this.props.resetChat()}>
               <Header className='dashboard-header'>
                 <div>
                   <div>
-                    <Popup trigger={<Icon name='help' size='tiny' style={{ float: 'right', color: 'white' }} />}>
+                    <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
                         <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
@@ -207,7 +207,7 @@ class Dashboard extends React.Component {
                 </div>
               </jeeves-search>
             </Menu.Item> */}
-            <Menu.Item as={Link} to="/">
+            <Menu.Item as={Link} to="/" onClick={()=> this.props.resetChat()}>
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
             {ENABLE_STATUTE_SEARCH && (

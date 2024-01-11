@@ -59,12 +59,9 @@ module.exports = {
     port: 3045
   },
   email: {
-    host: 'smtp.postmarkapp.com',
-    port: 587,
-    secure: false,
-    username: 'get from postmark',
-    password: 'get from postmark',
-    token: 'get from postmark'
+    service: 'gmail',
+    username: 'agent@jeeves.dev',
+    password: 'generate app-specific password'
   },
   interval: 1000, // 1 Hz
   persistent: false,

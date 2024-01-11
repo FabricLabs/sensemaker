@@ -31,6 +31,11 @@ Enjoy!
 ## Configuring
 Settings may be provided by modifying `settings/local.js`
 
+```yaml
+alias: Network alias.  Used when connecting to peers.
+seed: Seed phrase.
+```
+
 ## Training
 
 ### Tokenization
