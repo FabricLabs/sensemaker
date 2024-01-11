@@ -192,12 +192,17 @@ class Jeeves extends Service {
     this.worker = new Worker(this.settings);
 
     // Services
-    this.email = new EmailService(this.settings.email);
-    this.matrix = new Matrix(this.settings.matrix);
+    // Optional Services
+    this.email = (this.settings.email.enable) ? new EmailService(this.settings.email) : null;
+    this.matrix = (this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
+    // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
+    // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
+    this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
+
+    // Other Services
     this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
     this.harvard = new Harvard(this.settings.harvard);
-    this.courtlistener = new CourtListener(this.settings.courtlistener);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -359,17 +364,18 @@ class Jeeves extends Service {
     // TODO: safe shutdown
   } */
 
-  async alert(message) {
+  async alert (message) {
     try {
-        await this.email.send({
-            from: 'agent@jeeves.dev',
-            to: 'tech@jeeves.dev',
-            subject: 'Jeeves Alert',
-            html: message
-        });
-        console.log('Alert email sent successfully');
+      // Alert Tech
+      await this.email.send({
+          from: 'agent@jeeves.dev',
+          to: 'tech@jeeves.dev',
+          subject: `[ALERT] [JEEVES] Jeeves Alert`,
+          html: message
+      });
+      console.debug('Alert email sent successfully!');
     } catch (error) {
-        console.error('Error sending alert email:', error);
+      console.error('Error sending alert email:', error);
     }
 }
 
@@ -684,10 +690,12 @@ class Jeeves extends Service {
     this.worker.on('error', (...error) => console.error(...error));
 
     // Email Events
-    this.email.on('debug', (...debug) => console.debug('[EMAIL]', ...debug));
-    this.email.on('log', (...log) => console.log('[EMAIL]', ...log));
-    this.email.on('warning', (...warning) => console.warn('[EMAIL]', ...warning));
-    this.email.on('error', (...error) => console.error('[EMAIL]', ...error));
+    if (this.email) {
+      this.email.on('debug', (...debug) => console.debug('[EMAIL]', ...debug));
+      this.email.on('log', (...log) => console.log('[EMAIL]', ...log));
+      this.email.on('warning', (...warning) => console.warn('[EMAIL]', ...warning));
+      this.email.on('error', (...error) => console.error('[EMAIL]', ...error));
+    }
 
     // Fabric Events
     this.fabric.on('error', this._handleFabricError.bind(this));
@@ -702,9 +710,11 @@ class Jeeves extends Service {
     this.fabric.on('person', this._handleFabricPerson.bind(this));
 
     // Matrix Events
-    this.matrix.on('activity', this._handleMatrixActivity.bind(this));
-    this.matrix.on('ready', this._handleMatrixReady.bind(this));
-    this.matrix.on('error', this._handleMatrixError.bind(this));
+    if (this.matrix) {
+      this.matrix.on('activity', this._handleMatrixActivity.bind(this));
+      this.matrix.on('ready', this._handleMatrixReady.bind(this));
+      this.matrix.on('error', this._handleMatrixError.bind(this));
+    }
 
     // PACER Events
     this.pacer.on('debug', this._handlePACERDebug.bind(this));
@@ -729,188 +739,190 @@ class Jeeves extends Service {
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
     // CourtListener Events
-    this.courtlistener.on('sync', (sync) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
-    });
-
-    this.courtlistener.on('debug', (...debug) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
-    });
-
-    this.courtlistener.on('error', (...error) => {
-      console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
-    });
-
-    this.courtlistener.on('warning', (...warning) => {
-      console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
-    });
-
-    this.courtlistener.on('message', (message) => {
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
-    });
-
-    this.courtlistener.on('document', async (actor) => {
-      console.debug('[DOCUMENT]', 'Received document:', actor);
-
-      const document = actor.content;
-      // TODO: store sample.id as fabric_id
-      const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
-      const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
-
-      if (!target) {
-        console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
-        await this.db('documents').insert({
-          sha1: document.sha1,
-          description: document.description,
-          file_size: document.file_size,
-          page_count: document.page_count,
-          date_created: document.date_created,
-          date_modified: document.date_modified,
-          date_uploaded: document.date_upload,
-          pacer_doc_id: document.pacer_doc_id,
-          is_available: document.is_available,
-          is_sealed: document.is_sealed,
-          courtlistener_id: document.id,
-          courtlistener_thumbnail: document.thumbnail,
-          courtlistener_filepath_local: document.filepath_local,
-          courtlistener_filepath_ia: document.filepath_ia,
-          courtlistener_ocr_status: document.ocr_status,
-          plain_text: document.plain_text
-        });
-      }
-    });
-
-    this.courtlistener.on('court', async (court) => {
-      const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
-      const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
-      if (!target) {
-        await this.db('courts').insert({
-          fabric_id: actor.id,
-          slug: court.id,
-          start_date: court.start_date,
-          end_date: court.end_date,
-          courtlistener_id: court.id,
-          founded_date: court.start_date,
-          name: court.full_name,
-          short_name: court.short_name,
-          citation_string: court.citation_string,
-          jurisdiction: court.jurisdiction,
-          url: court.url
-        });
-      }
-    });
-
-    this.courtlistener.on('person', async (person) => {
-      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
-      const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-      if (!target) {
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
-        await this.db('people').insert({
-          fabric_id: actor.id,
-          courtlistener_id: person.id,
-          name_first: person.name_first,
-          name_middle: person.name_middle,
-          name_last: person.name_last,
-          name_suffix: person.name_suffix,
-          date_of_birth: person.date_dob,
-          date_of_death: person.date_dod,
-          birth_city: person.dob_city,
-          birth_state: person.dob_state,
-          death_city: person.dod_city,
-          death_state: person.dod_state
-        });
-      }
-    });
-
-    this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
-    this.courtlistener.on('opinioncluster', async (cluster) => {
-      const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
-
-      if (!target) {
-        await this.db('opinions').insert({
-          courtlistener_cluster_id: cluster.id,
-          scdb_id: (cluster.scdb_id) ? cluster.scdb_id : null,
-          date_created: cluster.date_created,
-          date_modified: cluster.date_modified,
-          date_filed: cluster.date_filed,
-          judges: cluster.judges,
-          case_name: cluster.case_name,
-          case_name_short: cluster.case_short,
-          case_name_full: cluster.case_name_full,
-          scdb_decision_direction: cluster.scdb_decision_direction,
-          scdb_votes_majority: cluster.scdb_votes_majority,
-          scdb_votes_minority: cluster.scdb_votes_minority,
-          source: cluster.source,
-          procedural_history: cluster.procedural_history,
-          attorneys: cluster.attorneys,
-          nature_of_suit: cluster.nature_of_suit,
-          posture: cluster.posture,
-          syllabus: cluster.syllabus,
-          precedential_status: cluster.precedential_status,
-          date_blocked: cluster.date_blocked,
-          blocked: cluster.blocked,
-          courtlistener_docket_id: cluster.docket_id,
-          date_filed_is_approximate: cluster.date_filed_is_approximate,
-          correction: cluster.correction,
-          cross_reference: cluster.cross_reference,
-          disposition: cluster.disposition,
-          filepath_json_harvard: cluster.filepath_json_harvard,
-          headnotes: cluster.headnotes,
-          history: cluster.history,
-          other_dates: cluster.other_dates,
-          summary: cluster.summary
-        });
-      }
-    });
-
-    this.courtlistener.on('opinion', async (opinion) => {
-      const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
-      const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
-
-      if (!target) {
-        await this.db('opinions').insert({
-          sha1: opinion.sha1,
-          date_created: opinion.date_created,
-          date_modified: opinion.date_modified,
-          courtlistener_id: opinion.id,
-          courtlistener_cluster_id: opinion.cluster_id,
-          courtlistener_download_url: opinion.download_url,
-          courtlistener_local_path: opinion.local_path,
-          plain_text: opinion.plain_text,
-          html: opinion.html,
-          html_lawbox: opinion.html_lawbox,
-          html_with_citations: opinion.html_with_citations,
-          extracted_by_ocr: opinion.extracted_by_ocr,
-          per_curiam: opinion.per_curiam,
-          page_count: opinion.page_count,
-          author_str: opinion.author_str,
-          joined_by_str: opinion.joined_by_str,
-          xml_harvard: opinion.xml_harvard,
-          html_anon_2020: opinion.html_anon_2020
-        });
-      }
-    });
-
-    this.courtlistener.on('person', async (person) => {
-      const actor = new Actor({ name: `courtlistener/people/${person.id}` });
-      const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-      if (!target) {
-        await this.db('people').insert({
-          fabric_id: actor.id,
-          courtlistener_id: person.id,
-          name_first: person.name_first,
-          name_middle: person.name_middle,
-          name_last: person.name_last,
-          name_suffix: person.name_suffix,
-          date_of_birth: person.date_dob,
-          date_of_death: person.date_dod,
-          birth_city: person.dob_city,
-          birth_state: person.dob_state,
-          death_city: person.dod_city,
-          death_state: person.dod_state
-        });
-      }
-    });
+    if (this.courtlistener) {
+      this.courtlistener.on('sync', (sync) => {
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
+      });
+  
+      this.courtlistener.on('debug', (...debug) => {
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
+      });
+  
+      this.courtlistener.on('error', (...error) => {
+        console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
+      });
+  
+      this.courtlistener.on('warning', (...warning) => {
+        console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
+      });
+  
+      this.courtlistener.on('message', (message) => {
+        console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
+      });
+  
+      this.courtlistener.on('document', async (actor) => {
+        console.debug('[DOCUMENT]', 'Received document:', actor);
+  
+        const document = actor.content;
+        // TODO: store sample.id as fabric_id
+        const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
+        const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
+  
+        if (!target) {
+          console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
+          await this.db('documents').insert({
+            sha1: document.sha1,
+            description: document.description,
+            file_size: document.file_size,
+            page_count: document.page_count,
+            date_created: document.date_created,
+            date_modified: document.date_modified,
+            date_uploaded: document.date_upload,
+            pacer_doc_id: document.pacer_doc_id,
+            is_available: document.is_available,
+            is_sealed: document.is_sealed,
+            courtlistener_id: document.id,
+            courtlistener_thumbnail: document.thumbnail,
+            courtlistener_filepath_local: document.filepath_local,
+            courtlistener_filepath_ia: document.filepath_ia,
+            courtlistener_ocr_status: document.ocr_status,
+            plain_text: document.plain_text
+          });
+        }
+      });
+  
+      this.courtlistener.on('court', async (court) => {
+        const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
+        const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
+        if (!target) {
+          await this.db('courts').insert({
+            fabric_id: actor.id,
+            slug: court.id,
+            start_date: court.start_date,
+            end_date: court.end_date,
+            courtlistener_id: court.id,
+            founded_date: court.start_date,
+            name: court.full_name,
+            short_name: court.short_name,
+            citation_string: court.citation_string,
+            jurisdiction: court.jurisdiction,
+            url: court.url
+          });
+        }
+      });
+  
+      this.courtlistener.on('person', async (person) => {
+        const actor = new Actor({ name: `courtlistener/people/${person.id}` });
+        const target = await this.db('people').where({ courtlistener_id: person.id }).first();
+        if (!target) {
+          console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
+          await this.db('people').insert({
+            fabric_id: actor.id,
+            courtlistener_id: person.id,
+            name_first: person.name_first,
+            name_middle: person.name_middle,
+            name_last: person.name_last,
+            name_suffix: person.name_suffix,
+            date_of_birth: person.date_dob,
+            date_of_death: person.date_dod,
+            birth_city: person.dob_city,
+            birth_state: person.dob_state,
+            death_city: person.dod_city,
+            death_state: person.dod_state
+          });
+        }
+      });
+  
+      this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
+      this.courtlistener.on('opinioncluster', async (cluster) => {
+        const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
+  
+        if (!target) {
+          await this.db('opinions').insert({
+            courtlistener_cluster_id: cluster.id,
+            scdb_id: (cluster.scdb_id) ? cluster.scdb_id : null,
+            date_created: cluster.date_created,
+            date_modified: cluster.date_modified,
+            date_filed: cluster.date_filed,
+            judges: cluster.judges,
+            case_name: cluster.case_name,
+            case_name_short: cluster.case_short,
+            case_name_full: cluster.case_name_full,
+            scdb_decision_direction: cluster.scdb_decision_direction,
+            scdb_votes_majority: cluster.scdb_votes_majority,
+            scdb_votes_minority: cluster.scdb_votes_minority,
+            source: cluster.source,
+            procedural_history: cluster.procedural_history,
+            attorneys: cluster.attorneys,
+            nature_of_suit: cluster.nature_of_suit,
+            posture: cluster.posture,
+            syllabus: cluster.syllabus,
+            precedential_status: cluster.precedential_status,
+            date_blocked: cluster.date_blocked,
+            blocked: cluster.blocked,
+            courtlistener_docket_id: cluster.docket_id,
+            date_filed_is_approximate: cluster.date_filed_is_approximate,
+            correction: cluster.correction,
+            cross_reference: cluster.cross_reference,
+            disposition: cluster.disposition,
+            filepath_json_harvard: cluster.filepath_json_harvard,
+            headnotes: cluster.headnotes,
+            history: cluster.history,
+            other_dates: cluster.other_dates,
+            summary: cluster.summary
+          });
+        }
+      });
+  
+      this.courtlistener.on('opinion', async (opinion) => {
+        const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
+        const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
+  
+        if (!target) {
+          await this.db('opinions').insert({
+            sha1: opinion.sha1,
+            date_created: opinion.date_created,
+            date_modified: opinion.date_modified,
+            courtlistener_id: opinion.id,
+            courtlistener_cluster_id: opinion.cluster_id,
+            courtlistener_download_url: opinion.download_url,
+            courtlistener_local_path: opinion.local_path,
+            plain_text: opinion.plain_text,
+            html: opinion.html,
+            html_lawbox: opinion.html_lawbox,
+            html_with_citations: opinion.html_with_citations,
+            extracted_by_ocr: opinion.extracted_by_ocr,
+            per_curiam: opinion.per_curiam,
+            page_count: opinion.page_count,
+            author_str: opinion.author_str,
+            joined_by_str: opinion.joined_by_str,
+            xml_harvard: opinion.xml_harvard,
+            html_anon_2020: opinion.html_anon_2020
+          });
+        }
+      });
+  
+      this.courtlistener.on('person', async (person) => {
+        const actor = new Actor({ name: `courtlistener/people/${person.id}` });
+        const target = await this.db('people').where({ courtlistener_id: person.id }).first();
+        if (!target) {
+          await this.db('people').insert({
+            fabric_id: actor.id,
+            courtlistener_id: person.id,
+            name_first: person.name_first,
+            name_middle: person.name_middle,
+            name_last: person.name_last,
+            name_suffix: person.name_suffix,
+            date_of_birth: person.date_dob,
+            date_of_death: person.date_dod,
+            birth_city: person.dob_city,
+            birth_state: person.dob_state,
+            death_city: person.dod_city,
+            death_state: person.dod_state
+          });
+        }
+      });
+    }
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
@@ -939,9 +951,13 @@ class Jeeves extends Service {
 
     // Internal Services
     await this.fabric.start();
-    await this.email.start();
+    if (this.email) await this.email.start();
+    if (this.matrix) await this.matrix.start();
+    // if (this.github) await this.github.start();
+    // if (this.discord) await this.discord.start();
+
+    // Debug Services
     await this.rag.start();
-    if (this.settings.matrix.enable) await this.matrix.start();
 
     // Data Sources
     if (this.settings.pacer.enable) await this.pacer.start();
