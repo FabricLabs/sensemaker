@@ -898,7 +898,20 @@ class Jeeves extends Service {
     });
 
     // Retrieval Augmentation Generator (RAG)
-    this.rag = new Agent(this.settings);
+    this.augmentor = new Agent({ listen: this.settings.listen, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ listen: this.settings.listen, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.' });
+    this.extractor = new Agent({ listen: this.settings.listen, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.' });
+    this.validator = new Agent({ listen: this.settings.listen, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.' });
+    this.rag = new Agent({
+      listen: this.settings.listen
+      // prompt: ''
+    });
+
+    this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
+    this.rag.on('log', (...log) => console.log('[RAG]', ...log));
+    this.rag.on('warning', (...warning) => console.warn('[RAG]', ...warning));
+    this.rag.on('error', (...error) => console.error('[RAG]', ...error));
+    this.rag.on('query', this._handleRAGQuery.bind(this));
 
     // Start the logging service
     await this.audits.start();
@@ -910,6 +923,7 @@ class Jeeves extends Service {
     // Internal Services
     await this.fabric.start();
     await this.email.start();
+    await this.rag.start();
     if (this.settings.matrix.enable) await this.matrix.start();
 
     // Data Sources
@@ -2214,8 +2228,41 @@ class Jeeves extends Service {
       model: 'jeeves-0.2.0-RC1'
     });
 
+    const SUMMARIZER_FIXTURE = this.summarizer.query({
+      query: 'Agent 1: yes\nAgent 2: yes\nAgent 3: no'
+    });
+
+    // Test Extractor
+    const randomCases = await this.openai._streamConversationRequest({
+      messages: [
+        {
+          role: 'user',
+          content: 'Provide a list of 10 random cases from North Carolina.'
+        }
+      ]
+    });
+
+    console.debug('GOT RANDOM CASES:', randomCases)
+
+    const EXTRACTOR_FIXTURE = await this.extractor.query({
+      query: fixture.content
+    });
+
+    const VALIDATOR_FIXTURE = await this.validator.query({
+      query: fixture.content
+    });
+
+    // Test RAG Query
+    const RAG_FIXTURE = await this.rag.query({
+      query: ''
+    });
+
     console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
     console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
+    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
+    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
+    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
+    console.debug('RAG FIXTURE:', COURT_LISTENER_FIXTURE);
 
     // GraphQL
     /* this.apollo.applyMiddleware({
@@ -2335,6 +2382,16 @@ class Jeeves extends Service {
         results: results
       });
     });
+  }
+
+  async _handleRAGQuery (query) {
+    console.debug('[JEEVES]', '[RAG]', 'Query:', query);
+    const result = await this.fabric.search({
+      query: query,
+      model: 'jeeves-0.2.0-RC1'
+    });
+
+    return result;
   }
   
   async _handleCaseSearchRequest (req, res, next) {

@@ -33,6 +33,7 @@ module.exports = {
   workers: 8,
   fabric: {
     peers: ['hub.fabric.pub:7777'],
+    listen: false,
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] }
