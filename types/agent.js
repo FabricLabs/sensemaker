@@ -230,7 +230,7 @@ class Agent extends Service {
         });
 
         // Start Mistral.
-        this.services.mistral.start();
+        // this.services.mistral.start();
 
         // Start OpenAI.
         this.services.openai.start();
