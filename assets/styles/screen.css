@@ -84,6 +84,13 @@
   align-items: center;
 }
 
+.dashboard-header .dashboard-help{
+  color: white;
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
 body {
   background: #fff;
 }
