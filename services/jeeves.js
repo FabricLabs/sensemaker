@@ -912,7 +912,7 @@ class Jeeves extends Service {
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
     this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer.' });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
     this.rag = new Agent({
       name: 'AugmentorRAG',
@@ -2294,6 +2294,12 @@ class Jeeves extends Service {
 
     console.debug('GOT RANDOM CASES:', randomCases);
 
+    const AUGMENTOR_FIXTURE = await this.augmentor.query({
+      query: `Name an individual in an interesting case in North Carolina`
+    });
+
+    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
+
     // Test Extractor
     const EXTRACTOR_FIXTURE = await this.extractor.query({
       query: randomCases.content
@@ -2337,7 +2343,7 @@ class Jeeves extends Service {
     this.emit('ready');
 
     // DEBUG
-    // this.alert(`Jeeves started.  Agent ID: ${this.id}`);
+    this.alert(`Jeeves started.  Agent ID: ${this.id}`);
 
     // return the instance!
     return this;
@@ -3023,7 +3029,7 @@ class Jeeves extends Service {
 
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
-      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title.`;
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.`;
       const request = {
         input: query,
         messages: messages

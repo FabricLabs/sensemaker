@@ -37,6 +37,8 @@ seed: Seed phrase.
 ```
 
 ## Training
+### Data Ingestion
+Run `scripts/scraper.js` to ingest initial data.  Sensemaker will regularly crawl for additional data from remote data sources, which can be disabled by providing a false `crawl` setting.
 
 ### Tokenization
 See the `./stores` directory.
