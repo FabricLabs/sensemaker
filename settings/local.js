@@ -59,6 +59,7 @@ module.exports = {
     port: 3045
   },
   email: {
+    enable: false,
     service: 'gmail',
     username: 'agent@jeeves.dev',
     password: 'generate app-specific password'
