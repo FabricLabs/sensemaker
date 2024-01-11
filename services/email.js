@@ -13,7 +13,11 @@ class EmailService extends Service {
     super(settings);
 
     this.settings = Object.assign({
-      name: 'EmailService'
+      name: 'EmailService',
+      service: 'gmail',
+      state: {
+        status: 'INITIALIZED'
+      }
     }, settings);
 
     this.smtp = new SMTPClient({
@@ -56,7 +60,7 @@ class EmailService extends Service {
 
     try {
       const transporter = nodemailer.createTransport({
-        // service: 'gmail',
+        service: this.settings.service,
         host: this.settings.host,
         port: this.settings.port,
         secure: this.settings.secure,

@@ -161,7 +161,7 @@ class CourtListener extends Service {
   }
 
   async paginateRecapDocuments (page = 0, limit = PER_PAGE_LIMIT) {
-    const documents = await this.db('search_recapdocument').select().limit(limit).offset(page * limit);
+    const documents = await this.db('search_recapdocument').select().where('is_free_on_pacer', true).limit(limit).offset(page * limit);
     const count = await this.db('search_recapdocument').count();
 
     return {
@@ -370,8 +370,8 @@ class CourtListener extends Service {
     // Then for all parallel jobs...
     return Promise.all([
       this.syncDocketSamples(),
-      this.syncPeopleSamples()
-      // this.syncRecapDocuments()
+      this.syncPeopleSamples(),
+      this.syncRecapDocuments()
     ]);
   }
 
@@ -385,15 +385,10 @@ class CourtListener extends Service {
     // this._state.content.counts = Object.assign(this._state.content.counts, counts);
 
     // Sync Data Sources
-    // TODO: Dockets
-    // Courts
+    await this.syncSamples();
     await this.syncCourts();
-
-    // Dockets
-    await this.syncDockets();
-
-    // People
-    await this.syncPeopleSamples();
+    // await this.syncDockets();
+    // await this.syncPeople();
 
     // Opinions
     // await this.syncOpinions();

@@ -13,6 +13,10 @@ environment.start();
 
 const NAME = 'NOVO';
 const VERSION = '0.3.0';
+const {
+  FIXTURE_SEED
+} = require('@fabric/core/constants');
+
 const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
@@ -29,13 +33,15 @@ module.exports = {
   mode: 'production',
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
-  seed:  environment.readVariable('FABRIC_SEED'),
+  seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   workers: 8,
   fabric: {
-    peers: ['hub.fabric.pub:7777'],
+    peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
+    listen: false,
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true },
-      { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] }
+      { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
+      { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ]
   },
   db: {
@@ -53,12 +59,9 @@ module.exports = {
     port: 3045
   },
   email: {
-    host: 'smtp.postmarkapp.com',
-    port: 587,
-    secure: false,
-    username: 'get from postmark',
-    password: 'get from postmark',
-    token: 'get from postmark'
+    service: 'gmail',
+    username: 'agent@jeeves.dev',
+    password: 'generate app-specific password'
   },
   interval: 1000, // 1 Hz
   persistent: false,

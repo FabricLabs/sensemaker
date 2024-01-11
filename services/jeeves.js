@@ -104,9 +104,12 @@ class Jeeves extends Service {
       debug: false,
       seed: null,
       port: 7777,
+      precision: 8, // precision in bits for floating point compression
       persistent: true,
       path: './logs/jeeves',
       coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
+      frequency: 0.01, // Hz (once every ~100 seconds)
+      temperature: 0,
       db: {
         host: 'localhost',
         user: 'db_user_jeeves',
@@ -227,6 +230,13 @@ class Jeeves extends Service {
         userIdentifier: this._userMiddleware.bind(this)
       },
       resources: {
+        Document: {
+          route: '/documents',
+          components: {
+            list: 'DocumentHome',
+            view: 'DocumentView'
+          }
+        },
         Index: {
           route: '/',
           components: {
@@ -257,6 +267,7 @@ class Jeeves extends Service {
       }
     `; */
 
+    this.openai.settings.temperature = this.settings.temperature;
     this.apollo = null; /* new ApolloServer({
       typeDefs,
       resolvers,
@@ -411,7 +422,7 @@ class Jeeves extends Service {
       this.emit('error', `Exception parsing beat: ${exception}`);
     }
 
-    this.alert('Heartbeat: ```\n' + data + '\n```');
+    // this.alert('Heartbeat: ```\n' + data + '\n```');
 
     this.emit('beat', beat);
     this.emit('block', {
@@ -750,6 +761,7 @@ class Jeeves extends Service {
         console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
         await this.db('documents').insert({
           sha1: document.sha1,
+          description: document.description,
           file_size: document.file_size,
           page_count: document.page_count,
           date_created: document.date_created,
@@ -901,7 +913,22 @@ class Jeeves extends Service {
     });
 
     // Retrieval Augmentation Generator (RAG)
-    this.rag = new Agent(this.settings);
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+    this.rag = new Agent({
+      name: 'AugmentorRAG',
+      listen: this.settings.fabric.listen,
+      openai: this.settings.openai,
+      // prompt: this.settings.prompt
+    });
+
+    this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
+    this.rag.on('log', (...log) => console.log('[RAG]', ...log));
+    this.rag.on('warning', (...warning) => console.warn('[RAG]', ...warning));
+    this.rag.on('error', (...error) => console.error('[RAG]', ...error));
+    this.rag.on('query', this._handleRAGQuery.bind(this));
 
     // Start the logging service
     await this.audits.start();
@@ -913,6 +940,7 @@ class Jeeves extends Service {
     // Internal Services
     await this.fabric.start();
     await this.email.start();
+    await this.rag.start();
     if (this.settings.matrix.enable) await this.matrix.start();
 
     // Data Sources
@@ -1636,7 +1664,7 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -1647,8 +1675,11 @@ class Jeeves extends Service {
           const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
               id: doc.fabric_id,
+              created: doc.created_at,
               description: doc.description,
-              created: doc.created_at
+              sha1: doc.sha1,
+              sha256: doc.sha256,
+              size: doc.file_size
             };
           }) : [];
 
@@ -1978,6 +2009,30 @@ class Jeeves extends Service {
           // room: roomID // TODO: replace with a generic property (not specific to Matrix)
           // target: activity.target // candidate 1
         }).then(async (output) => {
+          console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
+          const extracted = await this.extractor.query({
+            query: `$CONTENT\n\`\`\`${output.content}\n\`\`\``
+          });
+          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+          if (extracted && extracted.content) {
+            try {
+              const caseCards = JSON.parse(extracted.content).map((x) => {
+                const actor = new Actor({ name: x });
+                return {
+                  type: 'CaseCard',
+                  content: { id: actor.id }
+                };
+              });
+
+              const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                cards: JSON.stringify(caseCards.map((x) => x.content.id))
+              });
+            } catch (exception) {
+              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+            }
+          }
+
           // TODO: restore response tracking
           /* this.db('responses').insert({
             // TODO: store request ID
@@ -2248,8 +2303,55 @@ class Jeeves extends Service {
       model: 'jeeves-0.2.0-RC1'
     });
 
+    const SUMMARIZER_FIXTURE = await this.summarizer.query({
+      query: 'Summarize:\n```\nagents:\n- [1]: yes\n[2]: yes\n[3]: no\n```'
+    });
+
     console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
     console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
+    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
+
+    // Test Extractor
+    let randomCases = await this.openai._streamConversationRequest({
+      messages: [
+        {
+          role: 'user',
+          content: 'Provide a list of 10 random cases from North Carolina.'
+        }
+      ]
+    });
+
+    if (!randomCases) {
+      const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
+      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
+    }
+
+    console.debug('GOT RANDOM CASES:', randomCases);
+
+    const AUGMENTOR_FIXTURE = await this.augmentor.query({
+      query: `Name an individual in an interesting case in North Carolina`
+    });
+
+    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
+
+    // Test Extractor
+    const EXTRACTOR_FIXTURE = await this.extractor.query({
+      query: randomCases.content
+    });
+
+    // Test Validator
+    const VALIDATOR_FIXTURE = await this.validator.query({
+      query: EXTRACTOR_FIXTURE.response
+    });
+
+    // Test RAG Query
+    const RAG_FIXTURE = await this.rag.query({
+      query: `Find a case that is similar to ${randomCases.content.split(' ').slice(2).join(' ')}.`
+    });
+
+    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
+    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
+    console.debug('RAG FIXTURE:', RAG_FIXTURE);
 
     // GraphQL
     /* this.apollo.applyMiddleware({
@@ -2268,8 +2370,8 @@ class Jeeves extends Service {
 
     // Emit log events
     this.emit('log', '[JEEVES] Started!');
-    this.emit('log', `[JEEVES] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
-    this.emit('log', `[JEEVES] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
+    this.emit('debug', `[JEEVES] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
+    this.emit('debug', `[JEEVES] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
 
     // Emit ready event
     this.emit('ready');
@@ -2369,6 +2471,16 @@ class Jeeves extends Service {
         results: results
       });
     });
+  }
+
+  async _handleRAGQuery (query) {
+    console.debug('[JEEVES]', '[RAG]', 'Query:', query);
+    const result = await this.fabric.search({
+      query: query,
+      model: 'jeeves-0.2.0-RC1'
+    });
+
+    return result;
   }
 
   async _handleCaseSearchRequest (req, res, next) {
@@ -2517,7 +2629,13 @@ class Jeeves extends Service {
   }
 
   async _handleFabricDocument (document) {
-    console.error('[FABRIC]', '[DOCUMENT]', document);
+    console.error('[FABRIC]', '[DOCUMENT]', '[INSERT]', document);
+    const inserted = await this.db('documents').insert({
+      fabric_id: document.id,
+      description: document.description,
+      created_at: document.created_at
+    });
+    console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', `${inserted.length} documents inserted:`, inserted);
   }
 
   async _handleFabricCourt (court) {
@@ -2732,7 +2850,16 @@ class Jeeves extends Service {
   }
 
   async _handleOpenAIMessageEnd (end) {
-    await this.db('messages').where({ 'id': end.id }).update({
+    if (!end || !end.id) return console.trace('[DEBUG]', 'No end message ID provided!  END:', end);
+    const where = {};
+
+    if (end.id.length >= 32) {
+      where.fabric_id = end.id;
+    } else {
+      where.id = end.id;
+    }
+
+    await this.db('messages').where(where).update({
       content: end.content,
       status: 'ready'
     });
@@ -2855,22 +2982,39 @@ class Jeeves extends Service {
 
     // moderator.summarize();
 
+    // Generate unique ID from state
+    const actor = new Actor({
+      name: this.settings.name,
+      prompt: this.settings.prompt,
+      seed: this.settings.seed,
+      state: {
+        created: (new Date()).toISOString(),
+        query: request.input,
+        status: 'COMPUTING'
+      }
+    });
+
+    // Store in database
     const inserted = await this.db('messages').insert({
+      fabric_id: actor.id,
       conversation_id: request.conversation_id,
       user_id: 1,
       status: 'computing',
       content: 'Jeeves is researching your question...'
     });
 
+    // Generate Response
     const response = await this.openai._streamConversationRequest({
       conversation_id: request.conversation_id,
       message_id: inserted[0],
       messages: messages
     });
 
+    // Update database with completed response
+    const content = response.content.trim();
     const updated = await this.db('messages').where({ id: inserted[0] }).update({
       status: 'ready',
-      content: response.content.trim()
+      content: content
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
@@ -2886,7 +3030,7 @@ class Jeeves extends Service {
 
     return {
       id: inserted[0],
-      content: response.content.trim()
+      content: content
     };
   }
 
@@ -2919,7 +3063,7 @@ class Jeeves extends Service {
 
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
-      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title.`;
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.`;
       const request = {
         input: query,
         messages: messages
@@ -2934,7 +3078,7 @@ class Jeeves extends Service {
 
   async _summarizeCaseToLength (instance, max = 2048) {
     const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
-      + `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
+      + ` ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
       + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
       + `Additional information:\n`
       + `  PACER Case ID: ${instance.pacer_case_id}`;

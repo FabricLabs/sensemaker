@@ -1,11 +1,15 @@
 'use strict';
 
+// Constants
 const {
   AGENT_MAX_TOKENS,
   AGENT_TEMPERATURE,
   CHATGPT_MAX_TOKENS,
   MAX_MEMORY_SIZE
 } = require('../constants');
+
+// Local Constants
+const FAILURE_PROBABILTY = 0;
 
 // Dependencies
 const fs = require('fs');
@@ -32,7 +36,8 @@ class Agent extends Service {
       status: 'initialized',
       memory: Buffer.alloc(MAX_MEMORY_SIZE),
       messages: [],
-      hash: null
+      hash: null,
+      version: 0
     };
 
     // Settings
@@ -40,8 +45,12 @@ class Agent extends Service {
       name: 'agent',
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
+      frequency: 1, // 1 Hz
       database: {
         type: 'memory'
+      },
+      fabric: {
+        listen: false,
       },
       parameters: {
         temperature: AGENT_TEMPERATURE,
@@ -75,58 +84,26 @@ class Agent extends Service {
       name: 'fabric',
       description: 'The Fabric agent, which manages a Fabric node for the AI agent.  Fabric is peer-to-peer network for running applications which store and exchange information paid in Bitcoin.',
       type: 'Peer',
-      documentation: {
-        name: 'Fabric',
-        description: 'The Fabric Network agent, which manages a Fabric node for the AI agent.',
-        methods: {
-          ack: {
-            description: 'Acknowledge a message.',
-            parameters: {
-              message: {
-                // TODO: consider making this a FabricMessageID
-                type: 'FabricMessage',
-                description: 'The message to acknowledge.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the completed FabricState.'
-            }
-          },
-          send: {
-            description: 'Send a message to a connected peer.',
-            parameters: {
-              message: {
-                type: 'FabricMessage',
-                description: 'The message to send to the peer.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the agent\'s response (if any).'
-            }
-          },
-          broadcast: {
-            description: 'Broadcast a message to all connected nodes.',
-            parameters: {
-              message: {
-                type: 'FabricMessage',
-                description: 'The message to send to the node.'
-              }
-            },
-            returns: {
-              type: 'Promise',
-              description: 'A Promise which resolves to the agents\' responses (if any).'
-            }
-          }
-        }
-      }
+      listen: this.settings.fabric.listen
     });
 
+    // Assign prompts
+    this.settings.openai.model = this.settings.model;
+    // TODO: add configurable rules
+    this.settings.openai.prompt = `RULES:\n- do not provide hypotheticals\n\n` + this.settings.prompt;
+
+    // Services
     this.services = {
       mistral: new Mistral(this.settings.mistral),
       openai: new OpenAIService(this.settings.openai)
     };
+
+    // Memory
+    Object.defineProperty(this, 'memory', {
+      get: function () {
+        return Buffer.from(state.memory);
+      }
+    });
 
     // State
     Object.defineProperty(this, 'state', {
@@ -135,24 +112,117 @@ class Agent extends Service {
       }
     });
 
-    // Memory
-    Object.defineProperty(this, 'memory', {
-      get: function () {
-        return state.memory;
-      }
-    });
+    this._state = {
+      model: this.settings.model,
+      content: this.settings.state,
+      prompt: this.settings.prompt
+    };
 
     // Ensure chainability
     return this;
   }
 
+  get interval () {
+    return 1000 / this.settings.frequency;
+  }
+
+  get prompt () {
+    return this._state.prompt;
+  }
+
+  set prompt (value) {
+    this._state.prompt = value;
+  }
+
+  get model () {
+    return this._state.model;
+  }
+
+  async _handleRequest (request) {
+    switch (request.type) {
+      case 'Query':
+        return this.query(request.content);
+      case 'Message':
+        return this.message(request);
+      case 'MessageChunk':
+        return this.messageChunk(request);
+      case 'MessageStart':
+        return this.messageStart(request);
+      case 'MessageEnd':
+        return this.messageEnd(request);
+      case 'MessageAck':
+        return this.messageAck(request);
+      default:
+        throw new Error(`Unhandled Agent request type: ${request.type}`);
+    }
+  }
+
+  async query (request) {
+    return new Promise(async (resolve, reject) => {
+      this.emit('debug', '[AGENT]', 'Querying:', request);
+      const responses = {
+        // TODO: Mistral 7B for local installs
+        openai: await this.services.openai._streamConversationRequest({
+          messages: [
+            { role: 'system', content: this.prompt },
+            { role: 'user', content: request.query }
+          ]
+        })
+      };
+
+      // Wait for all responses to resolve or reject.
+      await Promise.allSettled(Object.values(responses));
+      console.debug('[AGENT]', 'Query:', request.query);
+      console.debug('[AGENT]', 'Prompt:', this.prompt);
+      console.debug('[AGENT]', 'Responses:', responses);
+
+      let response = '';
+
+      if (FAILURE_PROBABILTY > Math.random()) {
+        response = 'I am sorry, I do not understand.';
+      } else if (responses.openai && responses.openai.content) {
+        response = responses.openai.content;
+      } else {
+        response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
+      }
+
+      resolve({
+        type: 'AgentResponse',
+        status: 'success',
+        query: request.query,
+        response: response,
+        content: response
+      });
+    });
+  }
+
+  loadDefaultPrompt () {
+    try {
+      this.prompt = fs.readFileSync('./prompts/default.txt', 'utf8');
+    } catch (exception) {
+      console.error('[AGENT]', 'Could not load default prompt:', exception);
+    }
+  }
+
   start () {
     return new Promise((resolve, reject) => {
       this.fabric.start().then((node) => {
-        this.emit('debug', '[FABRIC]', 'Node:', node);
+        this.emit('debug', '[FABRIC]', 'Node:', node.id);
 
+        // Load default prompt.
+        this.loadDefaultPrompt();
+
+        // Attach event handlers.
         this.services.mistral.on('debug', (...msg) => {
           console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
+        });
+
+        this.services.mistral.on('ready', () => {
+          console.log('[AGENT]', '[MISTRAL]', 'Ready.');
+        });
+
+        this.services.mistral.on('message', (msg) => {
+          console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
         });
 
         this.services.openai.on('debug', (...msg) => {
@@ -165,8 +235,10 @@ class Agent extends Service {
         // Start OpenAI.
         this.services.openai.start();
 
+        // Assert that Agent is ready.
         this.emit('ready');
 
+        // Resolve with Agent.
         resolve(this);
       }).catch(reject);
     });

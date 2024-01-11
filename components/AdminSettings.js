@@ -245,6 +245,11 @@ class AdminSettings extends React.Component {
               <Table.Cell><Label>ready</Label></Table.Cell>
             </Table.Row>
             <Table.Row>
+              <Table.Cell>Mistral 7B</Table.Cell>
+              <Table.Cell>mistral-7b</Table.Cell>
+              <Table.Cell><Label>stopped</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
               <Table.Cell>GPT 3.5 Turbo</Table.Cell>
               <Table.Cell>gpt-3.5-turbo</Table.Cell>
               <Table.Cell><Label>ready</Label></Table.Cell>
@@ -267,11 +272,6 @@ class AdminSettings extends React.Component {
             <Table.Row>
               <Table.Cell>Falcon 40B</Table.Cell>
               <Table.Cell>falcon-40b</Table.Cell>
-              <Table.Cell><Label>stopped</Label></Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>Mistral 7B</Table.Cell>
-              <Table.Cell>mistral-7b</Table.Cell>
               <Table.Cell><Label>stopped</Label></Table.Cell>
             </Table.Row>
           </Table.Body>
