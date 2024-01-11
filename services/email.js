@@ -51,7 +51,7 @@ class EmailService extends Service {
     } catch (error) {
       this.emit('error', `[${this.settings.name}] Error delivering message: ${error.message}`);
     }
-  
+
     return this;
   }
 

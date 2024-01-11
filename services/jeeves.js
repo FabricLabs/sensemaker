@@ -365,7 +365,7 @@ class Jeeves extends Service {
             from: 'agent@jeeves.dev',
             to: 'tech@jeeves.dev',
             subject: 'Jeeves Alert',
-            body: message
+            html: message
         });
         console.log('Alert email sent successfully');
     } catch (error) {
@@ -1286,28 +1286,28 @@ class Jeeves extends Service {
                                 </html>
                               `;
 
-    try {
-      await this.email.send({
-          from: 'nahuel_vignattasdsai@hotmail.com',
-          to: email,
-          subject: 'Password Reset',
-          html: htmlContent
-      });
+        try {
+          await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: email,
+            subject: 'Password Reset',
+            html: htmlContent
+          });
 
-      return res.json({
-          message: 'Token sent successfully.',
-      });
-  } catch (error) {
-      console.error('Error sending email', error);
-      return res.status(500).json({
-          message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
-      });
-  }
-} catch (error) {
-  console.error('Error processing request', error);
-  return res.status(500).json({ message: 'Internal server error.' });
-}
-});
+          return res.json({
+            message: 'Token sent successfully.',
+          });
+        } catch (error) {
+          console.error('Error sending email', error);
+          return res.status(500).json({
+            message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
+          });
+        }
+      } catch (error) {
+        console.error('Error processing request', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
 
     //function to check if the reset token for password is valid
     this.http._addRoute('POST', '/resettokencheck', async (req, res, next) => {
