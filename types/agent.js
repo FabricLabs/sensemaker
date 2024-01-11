@@ -1,11 +1,15 @@
 'use strict';
 
+// Constants
 const {
   AGENT_MAX_TOKENS,
   AGENT_TEMPERATURE,
   CHATGPT_MAX_TOKENS,
   MAX_MEMORY_SIZE
 } = require('../constants');
+
+// Local Constants
+const FAILURE_PROBABILTY = 0;
 
 // Dependencies
 const fs = require('fs');
@@ -83,10 +87,23 @@ class Agent extends Service {
       listen: this.settings.fabric.listen
     });
 
+    // Assign prompts
+    this.settings.openai.model = this.settings.model;
+    // TODO: add configurable rules
+    this.settings.openai.prompt = `RULES:\n- do not provide hypotheticals\n\n` + this.settings.prompt;
+
+    // Services
     this.services = {
       mistral: new Mistral(this.settings.mistral),
       openai: new OpenAIService(this.settings.openai)
     };
+
+    // Memory
+    Object.defineProperty(this, 'memory', {
+      get: function () {
+        return Buffer.from(state.memory);
+      }
+    });
 
     // State
     Object.defineProperty(this, 'state', {
@@ -95,16 +112,10 @@ class Agent extends Service {
       }
     });
 
-    // Memory
-    Object.defineProperty(this, 'memory', {
-      get: function () {
-        return state.memory;
-      }
-    });
-
     this._state = {
       model: this.settings.model,
-      content: this.settings.state
+      content: this.settings.state,
+      prompt: this.settings.prompt
     };
 
     // Ensure chainability
@@ -151,8 +162,9 @@ class Agent extends Service {
       this.emit('debug', '[AGENT]', 'Querying:', request);
       const responses = {
         // TODO: Mistral 7B for local installs
-        openai: this.services.openai._streamConversationRequest({
+        openai: await this.services.openai._streamConversationRequest({
           messages: [
+            { role: 'system', content: this.prompt },
             { role: 'user', content: request.query }
           ]
         })
@@ -160,13 +172,26 @@ class Agent extends Service {
 
       // Wait for all responses to resolve or reject.
       await Promise.allSettled(Object.values(responses));
+      console.debug('[AGENT]', 'Query:', request.query);
+      console.debug('[AGENT]', 'Prompt:', this.prompt);
+      console.debug('[AGENT]', 'Responses:', responses);
+
+      let response = '';
+
+      if (FAILURE_PROBABILTY > Math.random()) {
+        response = 'I am sorry, I do not understand.';
+      } else if (responses.openai && responses.openai.content) {
+        response = responses.openai.content;
+      } else {
+        response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
+      }
 
       resolve({
         type: 'AgentResponse',
         status: 'success',
         query: request.query,
-        response: responses.openai.content,
-        content: responses.openai.content
+        response: response,
+        content: response
       });
     });
   }

@@ -5,6 +5,7 @@ const {
 } = require('../constants');
 
 const { Configuration, OpenAIApi, OpenAI } = require('openai');
+const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
 class OpenAIService extends Service {
@@ -77,7 +78,9 @@ class OpenAIService extends Service {
 
   async _streamConversationRequest (request) {
     return new Promise(async (resolve, reject) => {
-      const message = { id: request.message_id };
+      const entropy = request.entropy || 0.0;
+      const seed = new Actor({ name: `entropies/${entropy + ''}` });
+      const message = (request.message_id) ? { id: request.message_id } : { id: seed.id };
 
       try {
         const stream = this.openai.beta.chat.completions.stream({
@@ -104,7 +107,7 @@ class OpenAIService extends Service {
           console.debug('FINAL CHAT COMPLETION:', completion);
 
           // Attach message content
-          message.content = completion.choices[0].message.content;
+          if (message) message.content = completion.choices[0].message.content;
 
           // Notify the message is complete
           this.emit('MessageEnd', message);

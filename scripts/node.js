@@ -14,6 +14,7 @@ const handleJeevesWarning = require('../contracts/handleJeevesWarning');
 // Main Function
 async function main (input = {}) {
   // Create Node
+  const start = new Date();
   const jeeves = new Jeeves(input);
 
   // Handlers
@@ -21,7 +22,7 @@ async function main (input = {}) {
   jeeves.on('log', handleJeevesLog);
   jeeves.on('warning', handleJeevesWarning);
   jeeves.on('debug', (...debug) => {
-    console.debug('[JEEVES]', '[DEBUG]', ...debug);
+    console.debug(`[${(new Date() - start)}]`, '[JEEVES]', '[DEBUG]', ...debug);
   });
 
   // Start Node
