@@ -32,7 +32,8 @@ class Agent extends Service {
       status: 'initialized',
       memory: Buffer.alloc(MAX_MEMORY_SIZE),
       messages: [],
-      hash: null
+      hash: null,
+      version: 0
     };
 
     // Settings
@@ -40,6 +41,7 @@ class Agent extends Service {
       name: 'agent',
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
+      frequency: 1, // 1 Hz
       database: {
         type: 'memory'
       },
@@ -142,12 +144,53 @@ class Agent extends Service {
       }
     });
 
+    this._state = {
+      model: this.settings.model,
+      content: this.settings.state
+    };
+
     // Ensure chainability
     return this;
   }
 
+  get interval () {
+    return 1000 / this.settings.frequency;
+  }
+
+  get prompt () {
+    return this._state.prompt;
+  }
+
+  set prompt (value) {
+    this._state.prompt = value;
+  }
+
+  get model () {
+    return this._state.model;
+  }
+
+  async _handleRequest (request) {
+    switch (request.type) {
+      case 'Query':
+        return this.query(request.content);
+      case 'Message':
+        return this.message(request);
+      case 'MessageChunk':
+        return this.messageChunk(request);
+      case 'MessageStart':
+        return this.messageStart(request);
+      case 'MessageEnd':
+        return this.messageEnd(request);
+      case 'MessageAck':
+        return this.messageAck(request);
+      default:
+        throw new Error(`Unhandled Agent request type: ${request.type}`);
+    }
+  }
+
   query (request) {
     return new Promise((resolve, reject) => {
+      this.emit('debug', '[AGENT]', 'Querying:', request);
       resolve({
         status: 'success',
         query: request.query
@@ -155,13 +198,33 @@ class Agent extends Service {
     });
   }
 
+  loadDefaultPrompt () {
+    try {
+      this.prompt = fs.readFileSync('../prompts/default.txt', 'utf8');
+    } catch (exception) {
+      console.error('[AGENT]', 'Could not load default prompt:', exception);
+    }
+  }
+
   start () {
     return new Promise((resolve, reject) => {
       this.fabric.start().then((node) => {
         this.emit('debug', '[FABRIC]', 'Node:', node);
 
+        // Load default prompt.
+        this.loadDefaultPrompt();
+
+        // Attach event handlers.
         this.services.mistral.on('debug', (...msg) => {
           console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
+        });
+
+        this.services.mistral.on('ready', () => {
+          console.log('[AGENT]', '[MISTRAL]', 'Ready.');
+        });
+
+        this.services.mistral.on('message', (msg) => {
+          console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
         });
 
         this.services.openai.on('debug', (...msg) => {
@@ -174,8 +237,10 @@ class Agent extends Service {
         // Start OpenAI.
         this.services.openai.start();
 
+        // Assert that Agent is ready.
         this.emit('ready');
 
+        // Resolve with Agent.
         resolve(this);
       }).catch(reject);
     });
