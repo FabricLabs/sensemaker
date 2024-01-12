@@ -415,7 +415,8 @@ class ChatBox extends React.Component {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      marginBottom: 0
+      marginBottom: 0,
+      marginTop: 0,
     };
 
     const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'}
