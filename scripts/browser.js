@@ -35,8 +35,15 @@ const {
 
 // ## Invitation Actions
 const {
+  fetchInvitation,
   fetchInvitations
 } = require('../actions/invitationActions');
+
+// ## Inquiries Actions
+const {
+  fetchInquirie,
+  fetchInquiries
+} = require('../actions/inquiriesActions');
 
 // ## Case Actions
 const {
@@ -149,6 +156,8 @@ async function main (input = {}) {
       people: state.people,
       opinions: state.opinions,
       error: state.auth.error,
+      inquiries: state.inquiries,
+      invitation: state.invitation,
       isAuthenticated: state.auth.isAuthenticated,
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
@@ -169,6 +178,9 @@ async function main (input = {}) {
     fetchCourt: fetchCourt,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    fetchInquirie: fetchInquirie,
+    fetchInquiries: fetchInquiries,
+    fetchInvitation: fetchInvitation,
     fetchInvitations: fetchInvitations,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
