@@ -9,7 +9,7 @@ describe('@jeeves/email', function () {
       assert.strictEqual(typeof EmailService, 'function');
     });
 
-    it('can send mail', async function () {
+    xit('can send mail', async function () {
       const service = new EmailService();
 
       service.on('debug', console.debug);

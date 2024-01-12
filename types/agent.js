@@ -112,6 +112,7 @@ class Agent extends Service {
       }
     });
 
+    // Local State
     this._state = {
       model: this.settings.model,
       content: this.settings.state,
