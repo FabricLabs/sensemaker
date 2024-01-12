@@ -14,6 +14,8 @@ const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
 const courtReducer = require('../reducers/courtReducer');
 const documentReducer = require('../reducers/documentReducer');
+const inquiriesReducer = require('../reducers/inquiriesReducer');
+const invitationReducer = require('../reducers/invitationReducer');
 const personReducer = require('../reducers/personReducer');
 const volumeReducer = require('../reducers/volumeReducer');
 
@@ -29,7 +31,9 @@ const rootReducer = combineReducers({
   documents: documentReducer,
   stats: adminReducer,
   people: personReducer,
-  volumes: volumeReducer
+  volumes: volumeReducer,
+  inquiries: inquiriesReducer,
+  invitation: invitationReducer
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));
