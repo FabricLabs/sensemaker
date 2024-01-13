@@ -112,6 +112,7 @@ class Agent extends Service {
       }
     });
 
+    // Local State
     this._state = {
       model: this.settings.model,
       content: this.settings.state,
@@ -230,7 +231,7 @@ class Agent extends Service {
         });
 
         // Start Mistral.
-        this.services.mistral.start();
+        // this.services.mistral.start();
 
         // Start OpenAI.
         this.services.openai.start();

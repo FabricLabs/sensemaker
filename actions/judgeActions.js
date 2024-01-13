@@ -7,20 +7,20 @@ async function fetchJudgesFromAPI (token) {
 }
 
 // Action types
-const FETCH_DOCUMENTS_REQUEST = 'FETCH_DOCUMENTS_REQUEST';
-const FETCH_DOCUMENTS_SUCCESS = 'FETCH_DOCUMENTS_SUCCESS';
-const FETCH_DOCUMENTS_FAILURE = 'FETCH_DOCUMENTS_FAILURE';
-const FETCH_DOCUMENT_REQUEST = 'FETCH_DOCUMENT_REQUEST';
-const FETCH_DOCUMENT_SUCCESS = 'FETCH_DOCUMENT_SUCCESS';
-const FETCH_DOCUMENT_FAILURE = 'FETCH_DOCUMENT_FAILURE';
+const FETCH_JUDGES_REQUEST = 'FETCH_JUDGES_REQUEST';
+const FETCH_JUDGES_SUCCESS = 'FETCH_JUDGES_SUCCESS';
+const FETCH_JUDGES_FAILURE = 'FETCH_JUDGES_FAILURE';
+const FETCH_JUDGE_REQUEST = 'FETCH_JUDGE_REQUEST';
+const FETCH_JUDGE_SUCCESS = 'FETCH_JUDGE_SUCCESS';
+const FETCH_JUDGE_FAILURE = 'FETCH_JUDGE_FAILURE';
 
 // Action creators
-const fetchJudgesRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST, loading: true });
-const fetchJudgesSuccess = (judges) => ({ type: FETCH_DOCUMENTS_SUCCESS, payload: judges, loading: false });
-const fetchJudgesFailure = (error) => ({ type: FETCH_DOCUMENTS_FAILURE, payload: error, loading: false  });
-const fetchJudgeRequest = () => ({ type: FETCH_DOCUMENT_REQUEST, loading: true });
-const fetchJudgeSuccess = (instance) => ({ type: FETCH_DOCUMENT_SUCCESS, payload: instance, loading: false });
-const fetchJudgeFailure = (error) => ({ type: FETCH_DOCUMENT_FAILURE, payload: error, loading: false });
+const fetchJudgesRequest = () => ({ type: FETCH_JUDGES_REQUEST, loading: true });
+const fetchJudgesSuccess = (judges) => ({ type: FETCH_JUDGES_SUCCESS, payload: judges, loading: false });
+const fetchJudgesFailure = (error) => ({ type: FETCH_JUDGES_FAILURE, payload: error, loading: false  });
+const fetchJudgeRequest = () => ({ type: FETCH_JUDGE_REQUEST, loading: true });
+const fetchJudgeSuccess = (instance) => ({ type: FETCH_JUDGE_SUCCESS, payload: instance, loading: false });
+const fetchJudgeFailure = (error) => ({ type: FETCH_JUDGE_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchJudges = () => {
@@ -52,10 +52,10 @@ const fetchJudge = (id) => {
 module.exports = {
   fetchJudge,
   fetchJudges,
-  FETCH_DOCUMENT_REQUEST,
-  FETCH_DOCUMENT_SUCCESS,
-  FETCH_DOCUMENT_FAILURE,
-  FETCH_DOCUMENTS_REQUEST,
-  FETCH_DOCUMENTS_SUCCESS,
-  FETCH_DOCUMENTS_FAILURE
+  FETCH_JUDGE_REQUEST,
+  FETCH_JUDGE_SUCCESS,
+  FETCH_JUDGE_FAILURE,
+  FETCH_JUDGES_REQUEST,
+  FETCH_JUDGES_SUCCESS,
+  FETCH_JUDGES_FAILURE
 };

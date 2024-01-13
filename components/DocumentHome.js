@@ -87,7 +87,6 @@ class DocumentHome extends React.Component {
                   this.handleSearchChange(query); // Call the debounce function with the query
                 }}
               />
-
               <i aria-hidden="true" className="search icon"></i>
             </div>
           </jeeves-search>
