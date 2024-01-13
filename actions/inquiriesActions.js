@@ -10,17 +10,17 @@ async function fetchInquiriesFromAPI(token) {
 const FETCH_INQUIRIES_REQUEST = 'FETCH_INQUIRIES_REQUEST';
 const FETCH_INQUIRIES_SUCCESS = 'FETCH_INQUIRIES_SUCCESS';
 const FETCH_INQUIRIES_FAILURE = 'FETCH_INQUIRIES_FAILURE';
-const FETCH_INQUIRIE_REQUEST = 'FETCH_INQUIRIE_REQUEST';
-const FETCH_INQUIRIE_SUCCESS = 'FETCH_INQUIRIE_SUCCESS';
-const FETCH_INQUIRIE_FAILURE = 'FETCH_INQUIRIE_FAILURE';
+const FETCH_INQUIRY_REQUEST = 'FETCH_INQUIRY_REQUEST';
+const FETCH_INQUIRY_SUCCESS = 'FETCH_INQUIRY_SUCCESS';
+const FETCH_INQUIRY_FAILURE = 'FETCH_INQUIRY_FAILURE';
 
 // Action creators
 const fetchInquiriesRequest = () => ({ type: FETCH_INQUIRIES_REQUEST, loading: true });
 const fetchInquiriesSuccess = (inquiries) => ({ type: FETCH_INQUIRIES_SUCCESS, payload: inquiries, loading: false });
 const fetchInquiriesFailure = (error) => ({ type: FETCH_INQUIRIES_FAILURE, payload: error, loading: false });
-const fetchInquirieRequest = () => ({ type: FETCH_INQUIRIE_REQUEST, loading: true });
-const fetchInquirieSuccess = (inquiries) => ({ type: FETCH_INQUIRIE_SUCCESS, payload: inquiries, loading: false });
-const fetchInquirieFailure = (error) => ({ type: FETCH_INQUIRIE_FAILURE, payload: error, loading: false });
+const fetchInquiryRequest = () => ({ type: FETCH_INQUIRY_REQUEST, loading: true });
+const fetchInquirySuccess = (instance) => ({ type: FETCH_INQUIRY_SUCCESS, payload: instance, loading: false });
+const fetchInquiryFailure = (error) => ({ type: FETCH_INQUIRY_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchInquiries = () => {
@@ -36,25 +36,25 @@ const fetchInquiries = () => {
   };
 };
 
-const fetchInquirie = (id) => {
+const fetchInquiry = (id) => {
   return async (dispatch, getState) => {
-    dispatch(fetchInquirieRequest());
+    dispatch(fetchInquiryRequest());
     const { token } = getState().auth.token;
     try {
       const instance = await fetchFromAPI(`/inquiries/${id}`, null, token);
-      dispatch(fetchInquirieSuccess(instance));
+      dispatch(fetchInquirySuccess(instance));
     } catch (error) {
-      dispatch(fetchInquirieFailure(error));
+      dispatch(fetchInquiryFailure(error));
     }
   };
 };
 
 module.exports = {
-  fetchInquirie,
+  fetchInquiry,
   fetchInquiries,
-  FETCH_INQUIRIE_REQUEST,
-  FETCH_INQUIRIE_SUCCESS,
-  FETCH_INQUIRIE_FAILURE,
+  FETCH_INQUIRY_REQUEST,
+  FETCH_INQUIRY_SUCCESS,
+  FETCH_INQUIRY_FAILURE,
   FETCH_INQUIRIES_REQUEST,
   FETCH_INQUIRIES_SUCCESS,
   FETCH_INQUIRIES_FAILURE

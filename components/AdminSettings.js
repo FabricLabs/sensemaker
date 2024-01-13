@@ -180,7 +180,7 @@ class AdminSettings extends React.Component {
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
         <Header as='h4'>Waitlist</Header>
-        <Table celled striped>
+        <Table celled striped className='admin-table-inquiries'>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>ID</Table.HeaderCell>

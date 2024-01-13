@@ -41,7 +41,7 @@ const {
 
 // ## Inquiries Actions
 const {
-  fetchInquirie,
+  fetchInquiry,
   fetchInquiries
 } = require('../actions/inquiriesActions');
 
@@ -178,7 +178,7 @@ async function main (input = {}) {
     fetchCourt: fetchCourt,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
-    fetchInquirie: fetchInquirie,
+    fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
     fetchInvitation: fetchInvitation,
     fetchInvitations: fetchInvitations,

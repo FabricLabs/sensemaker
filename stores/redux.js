@@ -35,7 +35,9 @@ const rootReducer = combineReducers({
   people: personReducer,
   opinions: opinionReducer,
   judges: judgeReducer,
-  volumes: volumeReducer
+  volumes: volumeReducer,
+  inquiries: inquiriesReducer,
+  invitation: invitationReducer
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));
