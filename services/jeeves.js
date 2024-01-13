@@ -3,8 +3,6 @@
 // Prepare transpilation
 require('@babel/register');
 
-const why = require('why-is-node-running');
-
 // Package
 const definition = require('../package');
 const {
@@ -15,17 +13,19 @@ const {
 
 // Dependencies
 const fs = require('fs');
+const crypto = require('crypto');
+const fetch = require('cross-fetch');
+const merge = require('lodash.merge');
+// const levelgraph = require('levelgraph');
+const knex = require('knex');
 
 // External Dependencies
 // const { ApolloServer, gql } = require('apollo-server-express');
-const { hashSync, compareSync, genSaltSync } = require('bcrypt');
-const { getEncoding, encodingForModel } = require('js-tiktoken');
-const fetch = require('cross-fetch');
-const merge = require('lodash.merge');
-const levelgraph = require('levelgraph');
-const knex = require('knex');
-const { attachPaginate } = require('knex-paginate');
-const crypto = require('crypto');
+// TODO: use bcryptjs instead of bcrypt?
+// TODO: use levelgraph instead of level?
+const { attachPaginate } = require('knex-paginate'); // pagination
+const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
+const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -365,19 +365,21 @@ class Jeeves extends Service {
   } */
 
   async alert (message) {
-    try {
-      // Alert Tech
-      await this.email.send({
-          from: 'agent@jeeves.dev',
-          to: 'tech@jeeves.dev',
-          subject: `[ALERT] [JEEVES] Jeeves Alert`,
-          html: message
-      });
-      console.debug('Alert email sent successfully!');
-    } catch (error) {
-      console.error('Error sending alert email:', error);
+    if (this.email) {
+      try {
+        // Alert Tech
+        await this.email.send({
+            from: 'agent@jeeves.dev',
+            to: 'tech@jeeves.dev',
+            subject: `[ALERT] [JEEVES] Jeeves Alert`,
+            html: message
+        });
+        console.debug('Alert email sent successfully!');
+      } catch (error) {
+        console.error('Error sending alert email:', error);
+      }
     }
-}
+  }
 
   async tick () {
     const now = (new Date()).toISOString();
@@ -400,6 +402,8 @@ class Jeeves extends Service {
 
   async beat () {
     const now = (new Date()).toISOString();
+    const start = JSON.parse(JSON.stringify(this.clock));
+    console.debug('[JEEVES]', '[BEAT]', 'Start:', start);
 
     // TODO: remove async, use local state instead
     // i.e., queue worker job
@@ -1030,6 +1034,25 @@ class Jeeves extends Service {
     }
 
     // Internal APIs
+    // Counts
+    this.http._addRoute('HEAD', '/people', async (req, res) => {
+      const count = await this.db('people').count('id as count').first();
+      res.set('X-Count', count.count);
+      res.send();
+    });
+
+    this.http._addRoute('HEAD', '/documents', async (req, res) => {
+      const count = await this.db('documents').count('id as count').first();
+      res.set('X-Count', count.count);
+      res.send();
+    });
+
+    this.http._addRoute('HEAD', '/cases', async (req, res) => {
+      const count = await this.db('cases').count('id as count').first();
+      res.set('X-Count', count.count);
+      res.send();
+    });
+
     // Search
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
@@ -2312,19 +2335,40 @@ class Jeeves extends Service {
       query: 'North\nCarolina',
       model: 'jeeves-0.2.0-RC1'
     });
+    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
 
     // Test the CourtListener database
-    const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
-      query: 'North\nCarolina',
-      model: 'jeeves-0.2.0-RC1'
-    });
+    if (this.courtlistener) {
+      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
+        query: 'North\nCarolina',
+        model: 'jeeves-0.2.0-RC1'
+      });
+      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
+    }
+
+    // Simulate Network
+    const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
+
+    // Agents in the simulated network
+    const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
+    // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
+    // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
+
+    // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+    const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
+    // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
+    // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [1]: yes\n[2]: yes\n[3]: no\n```'
+      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+'\n- [BETA]: undefined\n- [GAMMA]: undefined\n```',
+      messages: [
+        {
+          role: 'user',
+          content: `[ALPHA] ${ALPHA_FIXTURE.content}`
+        }
+      ]
     });
 
-    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
-    console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
     console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
 
     // Test Extractor

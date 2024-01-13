@@ -104,14 +104,12 @@ class OpenAIService extends Service {
         });
 
         stream.on('finalChatCompletion', (completion) => {
-          console.debug('FINAL CHAT COMPLETION:', completion);
-
+          // console.debug('FINAL CHAT COMPLETION:', completion);
           // Attach message content
           if (message) message.content = completion.choices[0].message.content;
 
           // Notify the message is complete
           this.emit('MessageEnd', message);
-
           resolve(message);
         });
       } catch (exception) {
