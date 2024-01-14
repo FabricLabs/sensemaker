@@ -3,6 +3,7 @@
 // Constants
 const RELEASE_NAME = 'beta-1.0.0-pre';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
+const MAX_RESPONSE_TIME_MS = 60000; // 10 seconds
 
 // Fabric
 const GENESIS_HASH = '';
@@ -48,11 +49,12 @@ const CHATGPT_MAX_TOKENS = 4096;
 
 // Exports
 module.exports = {
-  GENESIS_HASH,
-  RELEASE_NAME,
-  RELEASE_DESCRIPTION,
-  BITCOIN_NETWORK,
-  FIXTURE_SEED,
+  GENESIS_HASH, // TODO: use a real genesis hash
+  RELEASE_NAME, // TODO: use a real release name
+  RELEASE_DESCRIPTION, // TODO: use a real release description
+  MAX_RESPONSE_TIME_MS, // 60 seconds for maximum response time
+  BITCOIN_NETWORK, // Use mainnet for production
+  FIXTURE_SEED, // Use a fixture seed for development
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
