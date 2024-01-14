@@ -155,7 +155,7 @@ class Bridge extends React.Component {
         console.warn('[BRIDGE]', 'Unhandled Bridge job type:', job.type);
         break;
       case 'MessageChunk':
-        console.debug('[BRIDGE]', 'MessageChunk:', job.data);
+       // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
         break;
       case 'MessageEnd':
         console.debug('[BRIDGE]', 'MessageEnd:', job.data);

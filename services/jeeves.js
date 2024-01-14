@@ -1086,6 +1086,18 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/inquiries', async (req, res) => {
+      try {
+        const inquiries = await this.db('inquiries')
+          .select('*')
+          .orderBy('created_at', 'asc');
+        res.send(inquiries);
+      } catch (error) {
+        console.error('Error fetching inquiries:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
     this.http._addRoute('POST', '/invitations', async (req, res) => {
       // TODO: check for admin token
       const { inquiry_id } = req.body;

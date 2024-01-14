@@ -53,7 +53,9 @@ class AdminSettings extends React.Component {
 
   componentDidMount () {
     this.props.fetchAdminStats();
-    this.props.fetchAllConversationsFromAPI();
+    //this is not doing anything yet
+    //this.props.fetchAllConversationsFromAPI();
+    this.props.fetchInquiries();
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -70,7 +72,7 @@ class AdminSettings extends React.Component {
   };
 
   render () {
-    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats  } = this.props;
+    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries  } = this.props;
     const { currentPage, windowWidth } = this.state;
 
     // Math for pagination of conversation list
@@ -155,7 +157,7 @@ class AdminSettings extends React.Component {
           </Table.Body>
         </Table>
       </Tab.Pane> },
-      { menuItem: 'Growth', render: () => <Tab.Pane loading={this.state.loading}>
+      { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
           <Statistic.Value>???</Statistic.Value>
@@ -178,7 +180,7 @@ class AdminSettings extends React.Component {
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
         <Header as='h4'>Waitlist</Header>
-        <Table celled striped>
+        <Table celled striped className='admin-table-inquiries'>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>ID</Table.HeaderCell>
@@ -189,15 +191,17 @@ class AdminSettings extends React.Component {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>
-                <Button>Send Invitation</Button>
-              </Table.Cell>
-            </Table.Row>
+            {(inquiries && inquiries.inquiries && inquiries.inquiries.length > 0) && (inquiries.inquiries.map(instance => (
+              <Table.Row key={instance.id}>
+                <Table.Cell>{instance.id}</Table.Cell>
+                <Table.Cell>{instance.created_at}</Table.Cell>
+                <Table.Cell>{instance.email}</Table.Cell>
+                <Table.Cell>-</Table.Cell>
+                <Table.Cell>
+                  <Button>Send Invitation</Button>
+                </Table.Cell>
+              </Table.Row>
+            )))}
           </Table.Body>
         </Table>
         <Header as='h4'>Invitations</Header>
