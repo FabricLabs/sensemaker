@@ -20,6 +20,7 @@ const {
 
 const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
+const AdminInquiries = require('./AdminSettingsInquiries')
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -55,7 +56,6 @@ class AdminSettings extends React.Component {
     this.props.fetchAdminStats();
     //this is not doing anything yet
     //this.props.fetchAllConversationsFromAPI();
-    this.props.fetchInquiries();
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -157,7 +157,7 @@ class AdminSettings extends React.Component {
           </Table.Body>
         </Table>
       </Tab.Pane> },
-      { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading}>
+      { menuItem: 'Growth', render: () => <Tab.Pane loading={false}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
           <Statistic.Value>???</Statistic.Value>
@@ -180,6 +180,7 @@ class AdminSettings extends React.Component {
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
         <Header as='h4'>Waitlist</Header>
+        {/* <div style={{overflow:'auto', maxHeight:'40vh'}}>
         <Table celled striped className='admin-table-inquiries'>
           <Table.Header>
             <Table.Row>
@@ -196,14 +197,18 @@ class AdminSettings extends React.Component {
                 <Table.Cell>{instance.id}</Table.Cell>
                 <Table.Cell>{instance.created_at}</Table.Cell>
                 <Table.Cell>{instance.email}</Table.Cell>
-                <Table.Cell>-</Table.Cell>
+                <Table.Cell>{instance.status}</Table.Cell>
+                {instance.status === 'waiting' && (
                 <Table.Cell>
-                  <Button>Send Invitation</Button>
+                  <Button onClick={this.sendInvitation(instance.email)}>Send Invitation</Button>
                 </Table.Cell>
+                )}
               </Table.Row>
             )))}
           </Table.Body>
         </Table>
+        </div> */}
+        <AdminInquiries inquiries={inquiries} fetchInquiries={this.props.fetchInquiries}/>
         <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>

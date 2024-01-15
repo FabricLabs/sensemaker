@@ -135,7 +135,7 @@ class Waitlist extends React.Component {
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
                   <label>Email Address</label>
-                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} />
+                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email'/>
                 </Form.Field>
                 <div>
                   <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>

@@ -747,31 +747,31 @@ class Jeeves extends Service {
       this.courtlistener.on('sync', (sync) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
       });
-  
+
       this.courtlistener.on('debug', (...debug) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
       });
-  
+
       this.courtlistener.on('error', (...error) => {
         console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
       });
-  
+
       this.courtlistener.on('warning', (...warning) => {
         console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
       });
-  
+
       this.courtlistener.on('message', (message) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
       });
-  
+
       this.courtlistener.on('document', async (actor) => {
         console.debug('[DOCUMENT]', 'Received document:', actor);
-  
+
         const document = actor.content;
         // TODO: store sample.id as fabric_id
         const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
         const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
-  
+
         if (!target) {
           console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
           await this.db('documents').insert({
@@ -794,7 +794,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('court', async (court) => {
         const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
         const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
@@ -814,7 +814,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -836,11 +836,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
       this.courtlistener.on('opinioncluster', async (cluster) => {
         const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             courtlistener_cluster_id: cluster.id,
@@ -877,11 +877,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('opinion', async (opinion) => {
         const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
         const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             sha1: opinion.sha1,
@@ -905,7 +905,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -1099,16 +1099,38 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('POST', '/invitations', async (req, res) => {
-      // TODO: check for admin token
-      const { inquiry_id } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        inquiry_id: inquiry_id
-      });
+      const { email } = req.body;
 
-      res.send({
-        message: 'Invitation created successfully!'
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
+
+        //TO DO: 
+        //- write target correctly
+        //- send the email
+
+        const invitation = await this.db('invitations').insert({
+          sender_id: req.user.id,
+          target: email,
+        });
+
+        // Update the inquiry status
+        const inquryUpdate = await this.db('inquiries').where('email', email).update({
+          status: 'invited',
+        });
+        if (!inquryUpdate) {
+          return res.status(500).json({ message: 'Error updating the inquiry status.' });
+        }
+
+        res.send({
+          message: 'Invitation created successfully!'
+        });
+      } catch (error) {
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
 
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
