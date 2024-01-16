@@ -1101,15 +1101,14 @@ class Jeeves extends Service {
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
       const { email } = req.body;
-
+      
       try {
-        // const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        // if (!user || user.is_admin !== 1) {
-        //   return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        // }
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
 
         //TO DO:
-        //- write target correctly
         //- send the email
 
         const invitation = await this.db('invitations').insert({

@@ -179,35 +179,6 @@ class AdminSettings extends React.Component {
           <Statistic.Value>0</Statistic.Value>
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
-        <Header as='h4'>Waitlist</Header>
-        {/* <div style={{overflow:'auto', maxHeight:'40vh'}}>
-        <Table celled striped className='admin-table-inquiries'>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Date</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {(inquiries && inquiries.inquiries && inquiries.inquiries.length > 0) && (inquiries.inquiries.map(instance => (
-              <Table.Row key={instance.id}>
-                <Table.Cell>{instance.id}</Table.Cell>
-                <Table.Cell>{instance.created_at}</Table.Cell>
-                <Table.Cell>{instance.email}</Table.Cell>
-                <Table.Cell>{instance.status}</Table.Cell>
-                {instance.status === 'waiting' && (
-                <Table.Cell>
-                  <Button onClick={this.sendInvitation(instance.email)}>Send Invitation</Button>
-                </Table.Cell>
-                )}
-              </Table.Row>
-            )))}
-          </Table.Body>
-        </Table>
-        </div> */}
         <AdminInquiries inquiries={inquiries} fetchInquiries={this.props.fetchInquiries} sendInvitation={this.props.sendInvitation} invitation={this.props.invitation}/>
         <Header as='h4'>Invitations</Header>
         <Table celled striped>

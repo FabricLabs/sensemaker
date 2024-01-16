@@ -45,7 +45,7 @@ const fetchInvitations = () => {
 const fetchInvitation = (id) => {
   return async (dispatch, getState) => {
     dispatch(fetchInvitationRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try {
       const instance = await fetchFromAPI(`/invitations/${id}`, null, token);
       dispatch(fetchInvitationSuccess(instance));
@@ -57,11 +57,8 @@ const fetchInvitation = (id) => {
 
 const sendInvitation = (email) => {
   return async (dispatch, getState) => {
-    // console.log("vino al actions, con este mail",email);
-    //   // const { token } = getState().auth;
-    //   console.log("esta en el return, con este mail y token",email,token);
     dispatch(sendInvitationRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try{
     const response = await fetch('/invitations', {
       method: "POST",
@@ -71,7 +68,6 @@ const sendInvitation = (email) => {
       },
       body: JSON.stringify({ email }),
     });
-    console.log("la respuesta", response);
     dispatch(sendInvitationSuccess(response));
   }catch (error){
     dispatch(sendInvitationFailure(error));

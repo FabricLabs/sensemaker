@@ -430,6 +430,19 @@ fabric-motd {
 
 }
 
+/*Admin Settings*/
+
+/*Admin Settings Inquiries*/
+
+.inquiries-head{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
 @media (max-width: 1280px) {
 
   .settings-container .ui.table {
