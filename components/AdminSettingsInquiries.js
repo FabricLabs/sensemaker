@@ -29,16 +29,16 @@ class AdminInquiries extends React.Component {
         const state = store.getState();
         const token = state.auth.token;
 
-        this.setState({ sendingInvitationId: id }); // Set the sending invitation ID       
+        this.setState({ sendingInvitationId: id }); // Set the sending invitation ID
 
-        const fetchPromise = fetch("/invitations", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email }),
-        });
+        // const fetchPromise = fetch("/invitations", {
+        //     method: "POST",
+        //     headers: {
+        //         Authorization: `Bearer ${token}`,
+        //         "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify({ email }),
+        // });
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
                 reject(new Error("Fetch timed out"));
@@ -46,8 +46,9 @@ class AdminInquiries extends React.Component {
         });
 
         try {
-            const response = await Promise.race([timeoutPromise, fetchPromise]);
-            if (response.ok) {
+            const response = await Promise.race([timeoutPromise, this.props.sendInvitation(email,token)]);
+            if (this.props.invitation.current.ok) {
+                console.log("ENTRO POR EL OK", response);
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 this.setState({ sent: true });
                 await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -67,10 +68,10 @@ class AdminInquiries extends React.Component {
     render() {
         const { sent, sendingInvitationId, errorSending } = this.state;
         const { inquiries } = this.props;
-
+        console.log("el state de invitaciones",this.props);
         return (
             <div style={{ overflow: 'auto', maxHeight: '40vh' }}>
-                <Table celled striped>
+                <Table celled striped loading={inquiries.loading}>
                     <Table.Header>
                         <Table.Row>
                             <Table.HeaderCell>ID</Table.HeaderCell>

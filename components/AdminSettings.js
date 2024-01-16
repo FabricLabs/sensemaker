@@ -208,7 +208,7 @@ class AdminSettings extends React.Component {
           </Table.Body>
         </Table>
         </div> */}
-        <AdminInquiries inquiries={inquiries} fetchInquiries={this.props.fetchInquiries}/>
+        <AdminInquiries inquiries={inquiries} fetchInquiries={this.props.fetchInquiries} sendInvitation={this.props.sendInvitation} invitation={this.props.invitation}/>
         <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>
