@@ -2,9 +2,14 @@
 
 // Constants
 const {
-  RELEASE_NAME
+  RELEASE_NAME,
+  AGENT_MAX_TOKENS
 } = require('../constants');
 
+// Dependencies
+const fetch = require('cross-fetch');
+
+// Types
 const Peer = require('@fabric/core/types/peer');
 const Service = require('@fabric/core/types/service');
 const HTTPClient = require('@fabric/http/types/client');
@@ -26,7 +31,8 @@ class Mistral extends Service {
     this.settings = Object.assign({
       name: 'mistral',
       description: 'A service for interacting with a Mistral-based AI.',
-      authority: 'https://mistral.on.fabric.pub',
+      authority: 'https://api.mistral.ai',
+      // model: '',
       version: RELEASE_NAME
     }, settings);
 
@@ -39,8 +45,49 @@ class Mistral extends Service {
     return this;
   }
 
+  async _streamConversationRequest (request) {
+    return new Promise(async (resolve, reject) => {
+      const entropy = request.entropy || 0.0;
+      const seed = new Actor({ name: `entropies/${entropy + ''}` });
+      const message = (request.message_id) ? { id: request.message_id } : { id: seed.id };
+
+      const result = await fetch(`${this.settings.authority}/v1/completions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          max_tokens: AGENT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model
+        })
+      });
+
+      console.debug('[MISTRAL] COMPLETION RESULT:', result);
+
+      // Notify the message is complete
+      this.emit('MessageEnd', message);
+      resolve(message);
+    });
+  }
+
+  async query (request) {
+    return new Promise(async (resolve, reject) => {
+      const result = await fetch(`${this.settings.authority}/v1/completions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          max_tokens: AGENT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model
+        })
+      });
+
+      const object = await result.json();
+      console.debug('RESULT:', object);
+
+      resolve(object);
+    });
+  }
+
   async start () {
-    await super.start();
+    // await super.start();
 
     this.fabric.on('debug', (...msg) => {
       console.debug('[MISTRAL]', '[DEBUG]', ...msg);
@@ -49,15 +96,6 @@ class Mistral extends Service {
     // Once Fabric is ready, start Mistral.
     this.fabric.on('ready', () => {
       console.log('[MISTRAL] Fabric Core is ready.');
-
-      // Start Mistral.
-      this.remote = new HTTPClient({
-        name: 'Mistral',
-        host: this.settings.authority,
-        port: 443,
-        secure: true
-      });
-      // this.engine = this.remote
 
       // Assert that Mistral is ready.
       this.emit('ready');
@@ -69,7 +107,7 @@ class Mistral extends Service {
     return this;
   }
 
-  stop () {
+  async stop () {
     super.stop();
 
     return this;
