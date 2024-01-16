@@ -20,7 +20,8 @@ const {
 
 const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
-const AdminInquiries = require('./AdminSettingsInquiries')
+const AdminInquiries = require('./AdminSettingsInquiries');
+const AdminInvitations = require('./AdminSettingsInvitations');
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -72,7 +73,7 @@ class AdminSettings extends React.Component {
   };
 
   render () {
-    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries  } = this.props;
+    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries, invitation  } = this.props;
     const { currentPage, windowWidth } = this.state;
 
     // Math for pagination of conversation list
@@ -157,7 +158,7 @@ class AdminSettings extends React.Component {
           </Table.Body>
         </Table>
       </Tab.Pane> },
-      { menuItem: 'Growth', render: () => <Tab.Pane loading={false}>
+         { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading || invitation.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
           <Statistic.Value>???</Statistic.Value>
@@ -179,8 +180,15 @@ class AdminSettings extends React.Component {
           <Statistic.Value>0</Statistic.Value>
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
-        <AdminInquiries inquiries={inquiries} fetchInquiries={this.props.fetchInquiries} sendInvitation={this.props.sendInvitation} invitation={this.props.invitation}/>
-        <Header as='h4'>Invitations</Header>
+        <AdminInquiries 
+          inquiries={inquiries} 
+          fetchInquiries={this.props.fetchInquiries} 
+          fetchInvitations= {this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation} 
+          invitation={invitation}
+          />
+        <AdminInvitations invitation={invitation} fetchInvitations={this.props.fetchInvitations} sendInvitation={this.props.sendInvitation}/>
+        {/* <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>
             <Table.Row>
@@ -202,9 +210,10 @@ class AdminSettings extends React.Component {
               </Table.Cell>
             </Table.Row>
           </Table.Body>
-        </Table>
+        </Table> */}
       </Tab.Pane> },
       { menuItem: 'Agents', render: () => <Tab.Pane loading={this.state.loading}>
+
        <Table celled striped>
           <Table.Header>
             <Table.Row>

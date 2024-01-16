@@ -7,7 +7,8 @@ const {
     Table,
     Message,
     Header,
-    Checkbox
+    Checkbox,
+    Segment
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -20,18 +21,11 @@ class AdminInquiries extends React.Component {
             sent: false,
             errorSending: false,
             sendingInvitationId: null, //this is used to know exactly wich inquiry we are sending so it changes uses the loading icon and messages
-            showAllInquiries: false,
         };
     }
 
     componentDidMount() {
         this.props.fetchInquiries();
-    }
-
-    toggleShowAllInquiries = () => {
-        this.setState(prevState => ({
-            showAllInquiries: !prevState.showAllInquiries
-        }));
     }
 
     sendInvitation = async (email, id) => {
@@ -53,9 +47,10 @@ class AdminInquiries extends React.Component {
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 this.setState({ sent: true });
                 //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Inquiries wich
-                //updates the Inquiries list, with this one changing its status to "Invited" and not being displayed (see below in render)
+                //updates the Inquiries list, and not being displayed in this list anymore
                 await new Promise((resolve) => setTimeout(resolve, 1000));
                 await this.props.fetchInquiries();
+                await this.props.fetchInvitations();
             } else {
                 console.error("API request failed with status:", response.status);
             }
@@ -69,72 +64,59 @@ class AdminInquiries extends React.Component {
     }
 
     render() {
-        const { sent, sendingInvitationId, errorSending, showAllInquiries } = this.state;
+        const { sent, sendingInvitationId, errorSending } = this.state;
         const { inquiries } = this.props;
 
         return (
             <section>
-                <div className='inquiries-head'>
-                    <Header as='h4' style={{ margin: '0' }}>Waitlist</Header>
-                    <Checkbox
-                        toggle
-                        label='Show Invited'
-                        onChange={this.toggleShowAllInquiries}
-                        checked={showAllInquiries}                        
-                    />
-                </div>
-                <div style={{ overflow: 'auto', maxHeight: '40vh' }}>
-                    <Table celled striped loading={inquiries.loading}>
+                <Header as='h4' >Waitlist</Header>
+                <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>
+                    <Table celled striped>
                         <Table.Header>
                             <Table.Row>
-                                <Table.HeaderCell>ID</Table.HeaderCell>
-                                <Table.HeaderCell>Date</Table.HeaderCell>
-                                <Table.HeaderCell>Email</Table.HeaderCell>
-                                <Table.HeaderCell>Status</Table.HeaderCell>
-                                <Table.HeaderCell></Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
+                                <Table.HeaderCell width={5}>Date</Table.HeaderCell>
+                                <Table.HeaderCell width={5}>Email</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={5}>Invite</Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
-                        <Table.Body loading={inquiries.loading}>
+                        <Table.Body>
                             {inquiries && inquiries.inquiries && inquiries.inquiries.map(instance => {
-                                if (showAllInquiries || instance.status === 'waiting') {
-                                    return (
-                                        <Table.Row key={instance.id}>
-                                            <Table.Cell>{instance.id}</Table.Cell>
-                                            <Table.Cell>{instance.created_at}</Table.Cell>
-                                            <Table.Cell>{instance.email}</Table.Cell>
-                                            <Table.Cell >{instance.status}</Table.Cell>
-                                            <Table.Cell textAlign="center">
-                                                {(sent && sendingInvitationId === instance.id && !errorSending) &&
-                                                    <Message positive textAlign="center">
-                                                        <Message.Content>
-                                                            Invitation Sent
-                                                        </Message.Content>
-                                                    </Message>
-                                                }
-                                                {(sent && sendingInvitationId === instance.id && errorSending) &&
-                                                    <Message negative textAlign="center">
-                                                        <Message.Content>
-                                                            Invitation not sent, try again later
-                                                        </Message.Content>
-                                                    </Message>
-                                                }
-                                                {((!sent || sendingInvitationId !== instance.id) && instance.status === 'waiting') && (
-                                                    <Button
-                                                        icon='send'
-                                                        loading={sendingInvitationId === instance.id}
-                                                        onClick={() => this.sendInvitation(instance.email, instance.id)}
-                                                        content='Send Invitation'
-                                                    />
-                                                )}
-                                            </Table.Cell>
-                                        </Table.Row>
-                                    );
-                                }
-                                return null;
+                                return (
+                                    <Table.Row key={instance.id}>
+                                        <Table.Cell textAlign="center">{instance.id}</Table.Cell>
+                                        <Table.Cell>{instance.created_at}</Table.Cell>
+                                        <Table.Cell>{instance.email}</Table.Cell>
+                                        <Table.Cell textAlign="center">
+                                            {(sent && sendingInvitationId === instance.id && !errorSending) &&
+                                                <Message positive textAlign="center">
+                                                    <Message.Content>
+                                                        Invitation Sent
+                                                    </Message.Content>
+                                                </Message>
+                                            }
+                                            {(sent && sendingInvitationId === instance.id && errorSending) &&
+                                                <Message negative textAlign="center">
+                                                    <Message.Content>
+                                                        Invitation not sent, try again later
+                                                    </Message.Content>
+                                                </Message>
+                                            }
+                                            {(!sent || sendingInvitationId !== instance.id) && (
+                                                <Button
+                                                    icon='send'
+                                                    loading={sendingInvitationId === instance.id}
+                                                    onClick={() => this.sendInvitation(instance.email, instance.id)}
+                                                    content='Send Invitation'
+                                                />
+                                            )}
+                                        </Table.Cell>
+                                    </Table.Row>
+                                )
                             })}
                         </Table.Body>
                     </Table>
-                </div>
+                </Segment>
             </section>
         );
     };

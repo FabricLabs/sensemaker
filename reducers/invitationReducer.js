@@ -13,13 +13,14 @@ const {
 const initialState = {
     current: {},
     error: null,
-    loading: true
+    loading: false,
+    sending: false
 };
 
 function invitationReducer(state = initialState, action) {
     switch (action.type) {
         case FETCH_INVITATION_REQUEST:
-            return { ...state };
+            return { ...state, loading: true };
         case FETCH_INVITATION_SUCCESS:
             return { ...state, current: action.payload, loading: false };
         case FETCH_INVITATION_FAILURE:
@@ -33,11 +34,11 @@ function invitationReducer(state = initialState, action) {
             console.debug('fetch invitations failure:', state, action);
             return { ...state, error: action.payload, loading: false };
         case SEND_INVITATION_REQUEST:
-            return { ...state };
+            return { ...state, sending: true };
         case SEND_INVITATION_SUCCESS:
-            return { ...state, current: action.payload };
+            return { ...state, current: action.payload, sending: false };
         case SEND_INVITATION_FAILURE:
-            return { ...state, error: action.payload, current: {} };
+            return { ...state, error: action.payload, current: {}, sending: false };
         default:
             return state;
     }

@@ -434,7 +434,7 @@ fabric-motd {
 
 /*Admin Settings Inquiries*/
 
-.inquiries-head{
+.growth-section-head{
   display: flex;
   flex-direction: row;
   justify-content: space-between;

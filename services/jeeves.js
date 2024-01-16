@@ -1090,44 +1090,52 @@ class Jeeves extends Service {
       try {
         const inquiries = await this.db('inquiries')
           .select('*')
-          .orderBy('created_at', 'asc');
+          .orderBy('created_at', 'desc');
         res.send(inquiries);
       } catch (error) {
         console.error('Error fetching inquiries:', error);
         res.status(500).json({ message: 'Internal server error.' });
       }
-    });
+    });    
 
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
       const { email } = req.body;
-      
+
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-
+        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
         //TO DO:
         //- send the email
+        if (!existingInvite) {
+          const invitation = await this.db('invitations').insert({
+            sender_id: req.user.id,
+            target: email,
+          });
 
-        const invitation = await this.db('invitations').insert({
-          sender_id: req.user.id,
-          target: email,
-        });
+          // Delete the inquiry from the waitlist
+          const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
 
-        // Update the inquiry status
-        const inquryUpdate = await this.db('inquiries').where('email', email).update({
-          status: 'invited',
-        });
-        if (!inquryUpdate) {
-          return res.status(500).json({ message: 'Error updating the inquiry status.' });
+          if (!deleteInquiryResult) {
+              return res.status(500).json({ message: 'Error deleting the inquiry.' });
+          }
+        } else {
+            const updateResult = await this.db('invitations')
+            .where({ target: email })
+            .increment('invitation_count', 1);
+
+          if (!updateResult) {
+            return res.status(500).json({ message: 'Error updating the invitation count.' });
+          }
         }
-
         res.send({
           message: 'Invitation created successfully!'
         });
       } catch (error) {
+        console.error('Error occurred:', error);
         res.status(500).json({ message: 'Error sending invitation.' });
       }
     });
@@ -1150,6 +1158,18 @@ class Jeeves extends Service {
       // - create user account
       // - set user password
       // - create help conversation
+    });
+
+    this.http._addRoute('GET', '/invitations', async (req, res) => {
+      try {
+        const invitations = await this.db('invitations')
+          .select('*')
+          .orderBy('created_at', 'desc');
+        res.send(invitations);
+      } catch (error) {
+        console.error('Error fetching invitations:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
     });
 
     this.http._addRoute('GET', '/dockets', async (req, res) => {
