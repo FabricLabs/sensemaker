@@ -60,11 +60,15 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 // const Prices = require('@portal/feed');
 
+// Providers
+// const StatuteProvider = require('@jeeves/statute-scraper');
+
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
 const PACER = require('./pacer');
 const Harvard = require('./harvard');
+const Mistral = require('./mistral');
 const OpenAI = require('./openai');
 // TODO: Mistral
 // TODO: HarvardCaseLaw
@@ -81,6 +85,9 @@ const Worker = require('../types/worker');
 const CaseHome = require('../components/CaseHome');
 const CaseView = require('../components/CaseView');
 const Conversations = require('../components/Conversations');
+
+// Functions
+const toMySQLDatetime = require('../functions/toMySQLDatetime');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -198,6 +205,7 @@ class Jeeves extends Service {
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
+    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
     this.pacer = new PACER(this.settings.pacer);
@@ -441,6 +449,41 @@ class Jeeves extends Service {
     });
 
     return beat;
+  }
+
+  async createTimedRequest (request, timeout = 60000) {
+    const now = new Date().toISOString();
+    const created = now.toISOString();
+    const message = Message.fromVector(['TimedRequest', JSON.stringify({
+      created: created,
+      request: request
+    })]);
+
+    const inserted = await this.db('requests').insert({
+      created_at: toMySQLDatetime(now),
+      content: JSON.stringify(request)
+    });
+
+    this.emit('request', { id: inserted [0] });
+
+    const agentResults = Promise.allSettled([
+      this.alpha.query(request),
+      this.mistral.query(request)
+    ]);
+
+    Promise.race([
+      new Promise((resolve, reject) => {
+        setTimeout(reject, timeout, new Error('Timeout!'));
+      }),
+      agentResults
+    ]).then((results) => {
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    }).catch((exception) => {
+      console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
+    });
+
+    return message;
   }
 
   async findCaseByName (name) {
@@ -1058,6 +1101,7 @@ class Jeeves extends Service {
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
     // TODO: move all handlers to class methods
@@ -2047,6 +2091,17 @@ class Jeeves extends Service {
           user_id: req.user.id
         });
 
+        // Core Pipeline
+        this.createTimedRequest({
+          query: content
+        }).catch((exception) => {
+          console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
+        }).then((request) => {
+          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+        });
+        // End Core Pipeline
+
+        // pre-release pipeline
         const inserted = await this.db('requests').insert({
           message_id: newMessage[0],
           content: 'Jeeves is thinking...'
@@ -2362,17 +2417,20 @@ class Jeeves extends Service {
     const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
 
     // Agents in the simulated network
+    const agentMistral = new Mistral({ name: 'Mistral-V2', prompt: this.settings.prompt });
     const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
     // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
     // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
 
     // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+    const MISTRAL_FIXTURE = await agentMistral.query({ query: summarizerQuery });
     const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
     // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
     // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
+    console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+'\n- [BETA]: undefined\n- [GAMMA]: undefined\n```',
+      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {
           role: 'user',
@@ -2614,6 +2672,28 @@ class Jeeves extends Service {
       res.status(503);
       return res.send({
         type: 'SearchCourtsError',
+        content: exception
+      });
+    }
+  }
+
+  async _handleJurisdictionSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const jurisdictions = await this._searchJurisdictions(request);
+      const result = {
+        jurisdictions: jurisdictions || []
+      };
+
+      return res.send({
+        type: 'SearchJurisdictionsResult',
+        content: result,
+        results: jurisdictions
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchJurisdictionsError',
         content: exception
       });
     }
@@ -3248,6 +3328,22 @@ class Jeeves extends Service {
         resolve(object.results);
       }).catch(reject);
     });
+  }
+
+  async _searchJurisdictions (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching jurisdictions:', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    const response = [];
+
+    try {
+      await this.db('jurisdictions').select('*').where('name', 'like', `%${request.query}%`);
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search jurisdictions:', exception);
+    }
+
+    return response;
   }
 
   async _searchPeople (request) {

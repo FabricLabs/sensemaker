@@ -45,7 +45,7 @@ const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
 
 // ChatGPT
-const CHATGPT_MAX_TOKENS = 4096;
+const CHATGPT_MAX_TOKENS = AGENT_MAX_TOKENS;
 
 // Exports
 module.exports = {
