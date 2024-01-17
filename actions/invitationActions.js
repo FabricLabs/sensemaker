@@ -55,6 +55,7 @@ const fetchInvitation = (id) => {
   };
 };
 
+//used to send the first invitations, this will actually create the new invitation for the user, if it didn't exist
 const sendInvitation = (email) => {
   return async (dispatch, getState) => {
     dispatch(sendInvitationRequest());
@@ -76,10 +77,32 @@ const sendInvitation = (email) => {
   }
 }
 
+//re send the invitation that was created before
+const reSendInvitation = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(sendInvitationRequest());
+    const { token } = getState().auth;
+    try{
+    const response = await fetch(`/invitations/${id}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },      
+    });
+    dispatch(sendInvitationSuccess(response));
+  }catch (error){
+    dispatch(sendInvitationFailure(error));
+  }
+
+  }
+}
+
 module.exports = {
   fetchInvitation,
   fetchInvitations,
   sendInvitation,
+  reSendInvitation,
   FETCH_INVITATION_REQUEST,
   FETCH_INVITATION_SUCCESS,
   FETCH_INVITATION_FAILURE,

@@ -38,6 +38,7 @@ const {
   fetchInvitation,
   fetchInvitations,
   sendInvitation,
+  reSendInvitation
 } = require('../actions/invitationActions');
 
 // ## Inquiries Actions
@@ -184,6 +185,7 @@ async function main (input = {}) {
     fetchInvitation: fetchInvitation,
     fetchInvitations: fetchInvitations,
     sendInvitation: sendInvitation,
+    reSendInvitation: reSendInvitation,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
     fetchPeople: fetchPeople,

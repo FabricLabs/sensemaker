@@ -187,7 +187,7 @@ class AdminSettings extends React.Component {
           sendInvitation={this.props.sendInvitation} 
           invitation={invitation}
           />
-        <AdminInvitations invitation={invitation} fetchInvitations={this.props.fetchInvitations} sendInvitation={this.props.sendInvitation}/>
+        <AdminInvitations invitation={invitation} fetchInvitations={this.props.fetchInvitations} sendInvitation={this.props.sendInvitation} reSendInvitation={this.props.reSendInvitation}/>
         {/* <Header as='h4'>Invitations</Header>
         <Table celled striped>
           <Table.Header>

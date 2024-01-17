@@ -6,9 +6,9 @@ const {
     Button,
     Table,
     Message,
-    Header,
-    Checkbox,
-    Segment
+    Header,    
+    Segment,
+    Input
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -21,6 +21,7 @@ class AdminInquiries extends React.Component {
             sent: false,
             errorSending: false,
             sendingInvitationId: null, //this is used to know exactly wich inquiry we are sending so it changes uses the loading icon and messages
+            searchQuery: '',
         };
     }
 
@@ -28,9 +29,7 @@ class AdminInquiries extends React.Component {
         this.props.fetchInquiries();
     }
 
-    sendInvitation = async (email, id) => {
-        const state = store.getState();
-        const token = state.auth.token;
+    createInvitation = async (email, id) => {
 
         this.setState({ sendingInvitationId: id }); // Set the sending invitation ID
 
@@ -49,8 +48,6 @@ class AdminInquiries extends React.Component {
                 //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Inquiries wich
                 //updates the Inquiries list, and not being displayed in this list anymore
                 await new Promise((resolve) => setTimeout(resolve, 1000));
-                await this.props.fetchInquiries();
-                await this.props.fetchInvitations();
             } else {
                 console.error("API request failed with status:", response.status);
             }
@@ -59,9 +56,23 @@ class AdminInquiries extends React.Component {
             this.setState({ errorSending: true });
             await new Promise((resolve) => setTimeout(resolve, 2000));
         } finally {
+            await this.props.fetchInquiries();
+            await this.props.fetchInvitations();
             this.setState({ sendingInvitationId: null, sent: false, errorSending: false }); // Reset the sending invitation ID
         }
     }
+
+    formatDateTime(dateTimeStr) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return new Date(dateTimeStr).toLocaleString('en-US', options);
+    }
+
+    handleInputChange = (event) => {
+        this.setState({
+            [event.target.name]: event.target.value
+        });
+    };
+
 
     render() {
         const { sent, sendingInvitationId, errorSending } = this.state;
@@ -69,7 +80,17 @@ class AdminInquiries extends React.Component {
 
         return (
             <section>
-                <Header as='h4' >Waitlist</Header>
+                <div className='growth-section-head'>
+                    <Header as='h4' >Waitlist</Header>
+                    <Input
+                        icon='search'
+                        placeholder='Search by email...'
+                        name='searchQuery'
+                        onChange={this.handleInputChange}
+                        style={{ marginLeft: '20px' }}
+                    >
+                    </Input>
+                </div>
                 <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>
                     <Table celled striped>
                         <Table.Header>
@@ -81,39 +102,42 @@ class AdminInquiries extends React.Component {
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
-                            {inquiries && inquiries.inquiries && inquiries.inquiries.map(instance => {
-                                return (
-                                    <Table.Row key={instance.id}>
-                                        <Table.Cell textAlign="center">{instance.id}</Table.Cell>
-                                        <Table.Cell>{instance.created_at}</Table.Cell>
-                                        <Table.Cell>{instance.email}</Table.Cell>
-                                        <Table.Cell textAlign="center">
-                                            {(sent && sendingInvitationId === instance.id && !errorSending) &&
-                                                <Message positive textAlign="center">
-                                                    <Message.Content>
-                                                        Invitation Sent
-                                                    </Message.Content>
-                                                </Message>
-                                            }
-                                            {(sent && sendingInvitationId === instance.id && errorSending) &&
-                                                <Message negative textAlign="center">
-                                                    <Message.Content>
-                                                        Invitation not sent, try again later
-                                                    </Message.Content>
-                                                </Message>
-                                            }
-                                            {(!sent || sendingInvitationId !== instance.id) && (
-                                                <Button
-                                                    icon='send'
-                                                    loading={sendingInvitationId === instance.id}
-                                                    onClick={() => this.sendInvitation(instance.email, instance.id)}
-                                                    content='Send Invitation'
-                                                />
-                                            )}
-                                        </Table.Cell>
-                                    </Table.Row>
-                                )
-                            })}
+                            {inquiries && inquiries.inquiries && inquiries.inquiries
+                                .filter(instance =>
+                                    instance.email.toLowerCase().includes(this.state.searchQuery.toLowerCase()))
+                                .map(instance => {
+                                    return (
+                                        <Table.Row key={instance.id}>
+                                            <Table.Cell textAlign="center">{instance.id}</Table.Cell>
+                                            <Table.Cell>{this.formatDateTime(instance.created_at)}</Table.Cell>
+                                            <Table.Cell>{instance.email}</Table.Cell>
+                                            <Table.Cell textAlign="center">
+                                                {(sent && sendingInvitationId === instance.id && !errorSending) &&
+                                                    <Message positive textAlign="center">
+                                                        <Message.Content>
+                                                            Invitation Sent
+                                                        </Message.Content>
+                                                    </Message>
+                                                }
+                                                {(sendingInvitationId === instance.id && errorSending) &&
+                                                    <Message negative textAlign="center">
+                                                        <Message.Content>
+                                                            Invitation not sent, try again later
+                                                        </Message.Content>
+                                                    </Message>
+                                                }
+                                                {((!sent || sendingInvitationId !== instance.id) && !errorSending) && (
+                                                    <Button
+                                                        icon='send'
+                                                        loading={sendingInvitationId === instance.id}
+                                                        onClick={() => this.createInvitation(instance.email, instance.id)}
+                                                        content='Send Invitation'
+                                                    />
+                                                )}
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    )
+                                })}
                         </Table.Body>
                     </Table>
                 </Segment>

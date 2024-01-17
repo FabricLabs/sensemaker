@@ -1110,6 +1110,7 @@ class Jeeves extends Service {
         const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
         //TO DO:
         //- send the email
+
         if (!existingInvite) {
           const invitation = await this.db('invitations').insert({
             sender_id: req.user.id,
@@ -1120,17 +1121,20 @@ class Jeeves extends Service {
           const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
 
           if (!deleteInquiryResult) {
-              return res.status(500).json({ message: 'Error deleting the inquiry.' });
+            return res.status(500).json({ message: 'Error deleting the inquiry.' });
           }
         } else {
-            const updateResult = await this.db('invitations')
-            .where({ target: email })
-            .increment('invitation_count', 1);
-
-          if (!updateResult) {
-            return res.status(500).json({ message: 'Error updating the invitation count.' });
-          }
+          return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
+
+        //   const updateResult = await this.db('invitations')
+        //   .where({ target: email })
+        //   .increment('invitation_count', 1);
+
+        // if (!updateResult) {
+        //   return res.status(500).json({ message: 'Error updating the invitation count.' });
+        // }
+
         res.send({
           message: 'Invitation created successfully!'
         });
@@ -1141,16 +1145,31 @@ class Jeeves extends Service {
     });
 
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-      // TODO: check for admin token
-      const { status } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        status: status
-      });
+      console.log("vino por aca y este es el params:",req.params.id );
 
-      res.send({
-        message: 'Invitation re-sent successfully!'
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
+        //send the email
+
+        const updateResult = await this.db('invitations')
+          .where({ id: req.params.id })
+          .increment('invitation_count', 1);
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation count.' });
+        }
+
+        res.send({
+          message: 'Invitation re-sent successfully!'
+        });
+      } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
 
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
