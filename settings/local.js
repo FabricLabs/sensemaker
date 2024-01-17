@@ -117,6 +117,11 @@ module.exports = {
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
   },
+  google: {
+    ai: {
+      token: 'get from google'
+    }
+  },
   harvard: {
     enable: true,
     token: '83bb54f6f8f622c4b928cbdba657048007e60449'
