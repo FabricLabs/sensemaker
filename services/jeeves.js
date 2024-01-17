@@ -1146,8 +1146,6 @@ class Jeeves extends Service {
 
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
 
-      console.log("vino por aca y este es el params:",req.params.id );
-
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
@@ -1155,9 +1153,17 @@ class Jeeves extends Service {
         }
         //send the email
 
+        // const updateResult = await this.db('invitations')
+        //   .where({ id: req.params.id })
+        //   .increment('invitation_count', 1);
+
         const updateResult = await this.db('invitations')
           .where({ id: req.params.id })
-          .increment('invitation_count', 1);
+          .increment('invitation_count', 1)
+          .update({
+            updated_at: new Date(),
+            sender_id: req.user.id
+          });
 
         if (!updateResult) {
           return res.status(500).json({ message: 'Error updating the invitation count.' });
@@ -1181,9 +1187,16 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/invitations', async (req, res) => {
       try {
+        // const invitations = await this.db('invitations')
+        //   .select('*')
+        //   .orderBy('created_at', 'desc');
+        // res.send(invitations);
+
         const invitations = await this.db('invitations')
-          .select('*')
-          .orderBy('created_at', 'desc');
+        .join('users', 'invitations.sender_id', '=', 'users.id')
+        .select('invitations.*', 'users.username as sender_username')
+        .orderBy('invitations.created_at', 'desc');
+
         res.send(invitations);
       } catch (error) {
         console.error('Error fetching invitations:', error);

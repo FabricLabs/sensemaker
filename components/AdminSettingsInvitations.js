@@ -53,6 +53,7 @@ class AdminInvitations extends React.Component {
                 //first timeout is to show the loading icon
                 await new Promise((resolve) => setTimeout(resolve, 1500));
                 this.setState({ sent: true });
+                await this.props.fetchInvitations();
                 //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Invitations wich
                 //updates the Invitations list, with this one changing its status to "Invited" and not being displayed (see below in render)
                 await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -64,7 +65,6 @@ class AdminInvitations extends React.Component {
             await new Promise((resolve) => setTimeout(resolve, 3000));
         } finally {
             this.setState({ sendingInvitationID: null, sent: false, errorSending: false }); // Reset the sending invitation ID
-            await this.props.fetchInvitations();
         }
     }
 
@@ -107,11 +107,12 @@ class AdminInvitations extends React.Component {
                         <Table.Header>
                             <Table.Row>
                                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={1}>Sender</Table.HeaderCell>
                                 <Table.HeaderCell width={4}>Date</Table.HeaderCell>
                                 <Table.HeaderCell width={4}>Email</Table.HeaderCell>
-                                <Table.HeaderCell width={2}>Status</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={1}>Status</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={1}>Times Sent</Table.HeaderCell>
-                                <Table.HeaderCell textAlign="center" width={4}>Invite</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={3}>Invite</Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
@@ -123,20 +124,21 @@ class AdminInvitations extends React.Component {
                                         return (
                                             <Table.Row key={instance.id}>
                                                 <Table.Cell textAlign="center">{instance.id}</Table.Cell>
+                                                <Table.Cell textAlign="center">{instance.sender_username}</Table.Cell>
                                                 <Table.Cell>{this.formatDateTime(instance.created_at)}</Table.Cell>
                                                 <Table.Cell>{instance.target}</Table.Cell>
-                                                <Table.Cell >{instance.status}</Table.Cell>
-                                                <Table.Cell textAlign="center" >{instance.invitation_count}</Table.Cell>
+                                                <Table.Cell textAlign="center">{instance.status}</Table.Cell>
+                                                <Table.Cell textAlign="center">{instance.invitation_count}</Table.Cell>
                                                 <Table.Cell textAlign="center">
                                                     {(sent && sendingInvitationID === instance.id && !errorSending) &&
-                                                        <Message positive textAlign="center">
+                                                        <Message positive textAlign="center" size='small'>
                                                             <Message.Content>
                                                                 Invitation Sent
                                                             </Message.Content>
                                                         </Message>
                                                     }
                                                     {(sendingInvitationID === instance.id && errorSending) &&
-                                                        <Message negative textAlign="center">
+                                                        <Message negative textAlign="center" size='small'>
                                                             <Message.Content>
                                                                 Invitation not sent, try again later
                                                             </Message.Content>
@@ -147,7 +149,7 @@ class AdminInvitations extends React.Component {
                                                             icon='redo'
                                                             loading={sendingInvitationID === instance.id}
                                                             onClick={() => this.reSendInvite(instance.id)}
-                                                            content='Send Again'
+                                                            content='Re-Send'
                                                         />
                                                     )}
                                                 </Table.Cell>

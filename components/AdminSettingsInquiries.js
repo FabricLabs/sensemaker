@@ -113,14 +113,14 @@ class AdminInquiries extends React.Component {
                                             <Table.Cell>{instance.email}</Table.Cell>
                                             <Table.Cell textAlign="center">
                                                 {(sent && sendingInvitationId === instance.id && !errorSending) &&
-                                                    <Message positive textAlign="center">
+                                                    <Message positive textAlign="center" size='small'>
                                                         <Message.Content>
                                                             Invitation Sent
                                                         </Message.Content>
                                                     </Message>
                                                 }
                                                 {(sendingInvitationId === instance.id && errorSending) &&
-                                                    <Message negative textAlign="center">
+                                                    <Message negative textAlign="center" size='small'>
                                                         <Message.Content>
                                                             Invitation not sent, try again later
                                                         </Message.Content>
