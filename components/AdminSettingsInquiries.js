@@ -6,7 +6,7 @@ const {
     Button,
     Table,
     Message,
-    Header,    
+    Header,
     Segment,
     Input
 } = require('semantic-ui-react');
@@ -84,7 +84,7 @@ class AdminInquiries extends React.Component {
                     <Header as='h4' >Waitlist</Header>
                     <Input
                         icon='search'
-                        placeholder='Search by email...'
+                        placeholder='Find by email'
                         name='searchQuery'
                         onChange={this.handleInputChange}
                         style={{ marginLeft: '20px' }}
@@ -96,8 +96,8 @@ class AdminInquiries extends React.Component {
                         <Table.Header>
                             <Table.Row>
                                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
-                                <Table.HeaderCell width={5}>Date</Table.HeaderCell>
-                                <Table.HeaderCell width={5}>Email</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={5}>Date</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={5}>Email</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={5}>Invite</Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
@@ -109,8 +109,8 @@ class AdminInquiries extends React.Component {
                                     return (
                                         <Table.Row key={instance.id}>
                                             <Table.Cell textAlign="center">{instance.id}</Table.Cell>
-                                            <Table.Cell>{this.formatDateTime(instance.created_at)}</Table.Cell>
-                                            <Table.Cell>{instance.email}</Table.Cell>
+                                            <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
+                                            <Table.Cell textAlign="center">{instance.email}</Table.Cell>
                                             <Table.Cell textAlign="center">
                                                 {(sent && sendingInvitationId === instance.id && !errorSending) &&
                                                     <Message positive textAlign="center" size='small'>

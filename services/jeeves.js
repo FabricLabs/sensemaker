@@ -1096,7 +1096,7 @@ class Jeeves extends Service {
         console.error('Error fetching inquiries:', error);
         res.status(500).json({ message: 'Internal server error.' });
       }
-    });    
+    });
 
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
@@ -1108,13 +1108,25 @@ class Jeeves extends Service {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
         const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
-        //TO DO:
-        //- send the email
+
+        //acaaa
+
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
 
         if (!existingInvite) {
           const invitation = await this.db('invitations').insert({
             sender_id: req.user.id,
             target: email,
+            token: invitationToken
           });
 
           // Delete the inquiry from the waitlist
@@ -1126,14 +1138,6 @@ class Jeeves extends Service {
         } else {
           return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
-
-        //   const updateResult = await this.db('invitations')
-        //   .where({ target: email })
-        //   .increment('invitation_count', 1);
-
-        // if (!updateResult) {
-        //   return res.status(500).json({ message: 'Error updating the invitation count.' });
-        // }
 
         res.send({
           message: 'Invitation created successfully!'
@@ -1157,12 +1161,24 @@ class Jeeves extends Service {
         //   .where({ id: req.params.id })
         //   .increment('invitation_count', 1);
 
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
+
         const updateResult = await this.db('invitations')
           .where({ id: req.params.id })
           .increment('invitation_count', 1)
           .update({
             updated_at: new Date(),
-            sender_id: req.user.id
+            sender_id: req.user.id,
+            token: invitationToken
           });
 
         if (!updateResult) {
@@ -1386,7 +1402,16 @@ class Jeeves extends Service {
           });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex');
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let resetToken = '';
+        while (!uniqueTokenFound) {
+          resetToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('password_resets').where({ token: resetToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
 
         const newReset = await this.db('password_resets').insert({
           user_id: existingUser.id,
@@ -1412,7 +1437,8 @@ class Jeeves extends Service {
 
         try {
           await this.email.send({
-            from: 'agent@jeeves.dev',
+            // from: 'agent@jeeves.dev',
+            from: 'nahuel_vignatti@hotmail.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent

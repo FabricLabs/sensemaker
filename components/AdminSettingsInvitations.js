@@ -89,7 +89,7 @@ class AdminInvitations extends React.Component {
                     <Header as='h4' style={{ margin: '0' }}>Invitations</Header>
                     <Input
                         icon='search'
-                        placeholder='Search by email...'
+                        placeholder='Find by Email/Sender'
                         name='searchQuery'
                         onChange={this.handleInputChange}
                         style={{ marginLeft: '20px' }}
@@ -108,8 +108,8 @@ class AdminInvitations extends React.Component {
                             <Table.Row>
                                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={1}>Sender</Table.HeaderCell>
-                                <Table.HeaderCell width={4}>Date</Table.HeaderCell>
-                                <Table.HeaderCell width={4}>Email</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={4}>Date</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={4}>Email</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={1}>Status</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={1}>Times Sent</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={3}>Invite</Table.HeaderCell>
@@ -117,16 +117,20 @@ class AdminInvitations extends React.Component {
                         </Table.Header>
                         <Table.Body>
                             {invitation && invitation.invitations && invitation.invitations
+                                //.filter(instance =>
+                                //    instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()))
                                 .filter(instance =>
-                                    instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()))
+                                    instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
+                                    instance.sender_username.toLowerCase().includes(this.state.searchQuery.toLowerCase())
+                                )
                                 .map(instance => {
                                     if (instance.status === 'pending') {
                                         return (
                                             <Table.Row key={instance.id}>
                                                 <Table.Cell textAlign="center">{instance.id}</Table.Cell>
                                                 <Table.Cell textAlign="center">{instance.sender_username}</Table.Cell>
-                                                <Table.Cell>{this.formatDateTime(instance.created_at)}</Table.Cell>
-                                                <Table.Cell>{instance.target}</Table.Cell>
+                                                <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
+                                                <Table.Cell textAlign="center">{instance.target}</Table.Cell>
                                                 <Table.Cell textAlign="center">{instance.status}</Table.Cell>
                                                 <Table.Cell textAlign="center">{instance.invitation_count}</Table.Cell>
                                                 <Table.Cell textAlign="center">
