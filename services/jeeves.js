@@ -140,6 +140,11 @@ class Jeeves extends Service {
       pacer: {},
       harvard: {},
       courtlistener: {},
+      statutes: {
+        jurisdictions: [
+          'Texas'
+        ]
+      },
       services: [
         'bitcoin',
         'harvard',
@@ -2397,6 +2402,13 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    if (this.statutes) {
+      const STATUTE_FIXTURE = await this.statutes.search({
+        query: 'Texas'
+      });
+      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
+    }
 
     const FABRIC_FIXTURE = await this.fabric.search({
       query: 'North\nCarolina',

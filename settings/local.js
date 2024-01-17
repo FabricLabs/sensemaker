@@ -105,6 +105,10 @@ module.exports = {
     ],
     token: null
   },
+  statutes: {
+    enable: false,
+    jurisdictions: ['Texas']
+  },
   courtlistener: {
     enable: false,
     type: 'postgresql',
