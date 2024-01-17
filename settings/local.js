@@ -105,6 +105,10 @@ module.exports = {
     ],
     token: null
   },
+  statutes: {
+    enable: false,
+    jurisdictions: ['Texas']
+  },
   courtlistener: {
     enable: false,
     type: 'postgresql',
@@ -112,6 +116,11 @@ module.exports = {
     database: 'courtlistener',
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
+  },
+  google: {
+    ai: {
+      token: 'get from google'
+    }
   },
   harvard: {
     enable: true,

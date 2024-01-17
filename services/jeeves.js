@@ -117,6 +117,9 @@ class Jeeves extends Service {
       coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
       frequency: 0.01, // Hz (once every ~100 seconds)
       temperature: 0,
+      rules: [
+        'do not provide hypotheticals'
+      ],
       db: {
         host: 'localhost',
         user: 'db_user_jeeves',
@@ -136,10 +139,16 @@ class Jeeves extends Service {
         }
       },
       matrix: {},
+      agents: null,
       openai: {},
       pacer: {},
       harvard: {},
       courtlistener: {},
+      statutes: {
+        jurisdictions: [
+          'Texas'
+        ]
+      },
       services: [
         'bitcoin',
         'harvard',
@@ -147,6 +156,7 @@ class Jeeves extends Service {
       ],
       state: {
         status: 'INITIALIZED',
+        agents: {},
         collections: {
           cases: {},
           courts: {},
@@ -299,6 +309,11 @@ class Jeeves extends Service {
       path: './stores'
     });
 
+    // Sensemaker
+    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
+    this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+
     // Streaming
     this.completions = {};
 
@@ -307,6 +322,7 @@ class Jeeves extends Service {
       clock: this.clock,
       status: 'STOPPED',
       actors: {},
+      agents: {},
       audits: {},
       epochs: [],
       messages: {},
@@ -371,6 +387,25 @@ class Jeeves extends Service {
     // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
   } */
+
+  /**
+   * Creates (and registers) a new {@link Agent} instance.
+   * @param {Object} configuration Settings for the {@link Agent}.
+   */
+  createAgent (configuration = {}) {
+    const agent = new Agent(configuration);
+    this._state.agents[agent.id] = agent;
+    this._state.content.agents[agent.id] = configuration;
+    this.commit();
+    this.emit('agent', agent);
+    return agent;
+  }
+
+  estimateTokens (input) {
+    const tokens = input.split(/\s+/g);
+    const estimate = tokens.length * 4;
+    return estimate;
+  }
 
   async alert (message) {
     if (this.email) {
@@ -452,7 +487,7 @@ class Jeeves extends Service {
   }
 
   async createTimedRequest (request, timeout = 60000) {
-    const now = new Date().toISOString();
+    const now = new Date();
     const created = now.toISOString();
     const message = Message.fromVector(['TimedRequest', JSON.stringify({
       created: created,
@@ -466,9 +501,34 @@ class Jeeves extends Service {
 
     this.emit('request', { id: inserted [0] });
 
+    // TODO: prepare maximum token length
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+
+    // Compute most relevant tokens
+    const words = request.query.split(/\s+/g); // TODO: vector search, sort by relevance
+    const caseCount = await this.db('cases').count('id as count').first();
+    const cases = await this.db('cases').select('id', 'title').where('title', 'like', `%${words[0]}%`).limit(10);
+    const hypotheticals = await this.lennon.query({ query: request.query });
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+
+    const meta = `\n` +
+      `metadata:\n` +
+      `  cases: ` + cases.map((x) => `"${x.title}"`).join(', ') + `\n` +
+      `  counts:\n` +
+      `    cases: ` + caseCount.count + `\n` +
+      ``;
+
+    const query = `---` +
+      `---\n` +
+      `${request.query}`;
+
+    const metaTokenCount = this.estimateTokens(meta);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+
     const agentResults = Promise.allSettled([
-      this.alpha.query(request),
-      this.mistral.query(request)
+      this.alpha.query({ query }),
+      this.mistral.query({ query })
     ]);
 
     Promise.race([
@@ -476,9 +536,50 @@ class Jeeves extends Service {
         setTimeout(reject, timeout, new Error('Timeout!'));
       }),
       agentResults
-    ]).then((results) => {
+    ]).then(async (results) => {
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+      const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+
+      // TODO: loop over all agents
+      // TODO: compress to 4096 tokens
+      const summarized = await this.summarizer.query({
+        query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${answers[0]?.content}`+`\n- [BETA]: ${answers[1]?.content}\n\`\`\``,
+      });
+
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+
+      const extracted = await this.extractor.query({
+        query: `$CONTENT\n\`\`\`${summarized.content}\n\`\`\``
+      });
+      console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+      if (extracted && extracted.content) {
+        try {
+          const caseCards = JSON.parse(extracted.content).map((x) => {
+            const actor = new Actor({ name: x });
+            return {
+              type: 'CaseCard',
+              content: {
+                id: actor.id,
+                title: x
+              }
+            };
+          });
+
+          console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+          // Find each case in the database and reject if not found
+          /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+            cards: JSON.stringify(caseCards.map((x) => x.content.id))
+          }); */
+        } catch (exception) {
+          console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+        }
+      }
+
+      const end = new Date();
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
     }).catch((exception) => {
       console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
     });
@@ -2397,6 +2498,13 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
+
+    if (this.statutes) {
+      const STATUTE_FIXTURE = await this.statutes.search({
+        query: 'Texas'
+      });
+      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
+    }
 
     const FABRIC_FIXTURE = await this.fabric.search({
       query: 'North\nCarolina',

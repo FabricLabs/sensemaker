@@ -58,6 +58,9 @@ class Agent extends Service {
       },
       model: 'gpt-4-1106-preview',
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
+      rules: [
+        'do not provide hypotheticals'
+      ],
       timeout: {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
@@ -90,7 +93,7 @@ class Agent extends Service {
     // Assign prompts
     this.settings.openai.model = this.settings.model;
     // TODO: add configurable rules
-    this.settings.openai.prompt = `RULES:\n- do not provide hypotheticals\n\n` + this.settings.prompt;
+    this.settings.openai.prompt = `RULES:\n- ${this.settings.rules.join('\n- ')}\n\n` + this.settings.prompt;
 
     // Services
     this.services = {
