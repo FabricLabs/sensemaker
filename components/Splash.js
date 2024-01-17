@@ -23,25 +23,27 @@ const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 const ResetPasswordForm = require('./ResetPasswordForm');
+const SingUpForm = require('./SingUpForm');
 
 class Splash extends React.Component {
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
-      <jeeves-splash class="fade-in">
-        <fabric-component>
-          <Image src="/images/jeeves-brand.png" size='small' centered />
-          <div style={{textAlign: 'center'}}>
+      <jeeves-splash class="fade-in splash">
+
+          <Image src="/images/novo-logo.svg" size='medium' centered />
+          {/* <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
-          </div>
-        </fabric-component>
+          </div> */}
+
         <fabric-component class="ui primary action fluid container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm/>} />
+            <Route path="/singup/:invitationToken" element={<SingUpForm/>} />
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>

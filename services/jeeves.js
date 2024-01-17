@@ -1098,6 +1098,10 @@ class Jeeves extends Service {
       }
     });
 
+    this.http._addRoute('GET', '/singup/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
       const { email } = req.body;
@@ -1156,10 +1160,6 @@ class Jeeves extends Service {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
         //send the email
-
-        // const updateResult = await this.db('invitations')
-        //   .where({ id: req.params.id })
-        //   .increment('invitation_count', 1);
 
         // Generate a unique token
         let uniqueTokenFound = false;

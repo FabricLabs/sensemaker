@@ -69,6 +69,14 @@
   animation: fadeIn 1.5s forwards;
 }
 
+.splash{
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
