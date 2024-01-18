@@ -29,7 +29,6 @@ class SingUpForm extends React.Component {
       updatedPassword: false, //flag to check if API updated the password
       updateError: false, //true if an error comes from the API while updating
       errorContent: '',
-      pwdModalOpen: false //this is to open a modal to let the user ask again for the token to reset password
     };
   }
 
@@ -37,42 +36,25 @@ class SingUpForm extends React.Component {
     //when the user is sent to /passwordreset/:resetToken, first when this componen mounts
     //it checks if the :resetToken is a valid one
 
-    const { invitationToken } = this.props;
-
-    const fetchPromise = fetch('/resettokencheck', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ resetToken }),
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Error, please check your internet connection.'));
-      }, 15000);
-    });
-
+    const { invitationToken, invitation, invitationError } = this.props;
+    this.setState({ loading: true });
     try {
-      const response = await Promise.race([timeoutPromise, fetchPromise]);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      //if comes here, the token is valid
-      this.setState({ tokenError: false });
-
+      await this.props.checkInvitationToken(invitationToken);
     } catch (error) {
-      //forced delay
-      this.setState({ tokenError: true, errorContent: error.message });
+      this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
     }
-  }
+  };
 
-  // Toggle the modal
-  togglePasswordModal = () => {
-    this.setState(prevState => ({
-      pwdModalOpen: !prevState.pwdModalOpen
-    }));
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.invitation !== this.props.invitation) {
+      const { invitation, invitationError } = this.props;
+      if (invitation.invitationValid) {
+        this.setState({ loading: false, tokenError: false, errorContent: '' });
+      } else {
+        this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+      }
+    }
   };
 
   handleInputChange = (event) => {
@@ -100,7 +82,7 @@ class SingUpForm extends React.Component {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ newPassword,resetToken }),
+      body: JSON.stringify({ newPassword, resetToken }),
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -160,8 +142,8 @@ class SingUpForm extends React.Component {
       updateError,
       updatedPassword,
       tokenError,
-      pwdModalOpen
     } = this.state;
+
 
     //these next const are for the popup errors showed in the inputs
     const passwordErrorMessage = (!passwordError || !newPassword) ? null : {
@@ -175,8 +157,8 @@ class SingUpForm extends React.Component {
     };
 
     return (
-      <Form onSubmit={this.handleSubmit}>
-        {(!updatedPassword && !tokenError) && (
+      <Form onSubmit={this.handleSubmit} className='fade-in' loading={this.state.loading}>
+        {(!tokenError) && (
           <section>
             <p>Please choose a new Password for your account. It must have at least 8 characters, a capital letter and a number.</p>
             <Form.Input
@@ -212,13 +194,9 @@ class SingUpForm extends React.Component {
             />
           </section>
         )}
-        {(updateError || tokenError) && (
+        {tokenError && (
           <Message negative>
             <p>{errorContent}</p>
-            {/* if the token has a problem/expired it lets you open the modal to ask for a password reset email */}
-            {tokenError && (
-              <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a>
-            )}
           </Message>
         )}
         {updatedPassword && (

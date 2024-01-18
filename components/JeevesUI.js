@@ -163,6 +163,8 @@
                   login={this.props.login}
                   register={this.props.register}
                   error={this.props.error}
+                  checkInvitationToken = {this.props.checkInvitationToken}
+                  invitation={this.props.invitation}
                 />
               ) : !this.props.auth.isCompliant ? (
                 <TermsOfUseModal

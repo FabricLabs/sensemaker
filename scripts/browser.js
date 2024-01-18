@@ -38,7 +38,8 @@ const {
   fetchInvitation,
   fetchInvitations,
   sendInvitation,
-  reSendInvitation
+  reSendInvitation,
+  checkInvitationToken,
 } = require('../actions/invitationActions');
 
 // ## Inquiries Actions
@@ -186,6 +187,7 @@ async function main (input = {}) {
     fetchInvitations: fetchInvitations,
     sendInvitation: sendInvitation,
     reSendInvitation: reSendInvitation,
+    checkInvitationToken: checkInvitationToken,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
     fetchPeople: fetchPeople,

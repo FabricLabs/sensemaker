@@ -16,6 +16,9 @@ const FETCH_INVITATION_FAILURE = 'FETCH_INVITATION_FAILURE';
 const SEND_INVITATION_REQUEST = 'SEND_INVITATION_REQUEST';
 const SEND_INVITATION_SUCCESS = 'SEND_INVITATION_SUCCESS';
 const SEND_INVITATION_FAILURE = 'SEND_INVITATION_FAILURE';
+const CHECK_INVITATION_TOKEN_REQUEST = 'CHECK_INVITATION_TOKEN_REQUEST';
+const CHECK_INVITATION_TOKEN_SUCCESS = 'CHECK_INVITATION_TOKEN_SUCCESS';
+const CHECK_INVITATION_TOKEN_FAILURE = 'CHECK_INVITATION_TOKEN_FAILURE';
 
 // Action creators
 const fetchInvitationsRequest = () => ({ type: FETCH_INVITATIONS_REQUEST, loading: true });
@@ -25,8 +28,11 @@ const fetchInvitationRequest = () => ({ type: FETCH_INVITATION_REQUEST, loading:
 const fetchInvitationSuccess = (instance) => ({ type: FETCH_INVITATION_SUCCESS, payload: instance, loading: false });
 const fetchInvitationFailure = (error) => ({ type: FETCH_INVITATION_FAILURE, payload: error, loading: false });
 const sendInvitationRequest = () => ({ type: SEND_INVITATION_REQUEST, loading: true });
-const sendInvitationSuccess = (response) => ({ type: SEND_INVITATION_SUCCESS, payload: response});
-const sendInvitationFailure = (error) => ({ type: SEND_INVITATION_FAILURE, payload: error});
+const sendInvitationSuccess = (response) => ({ type: SEND_INVITATION_SUCCESS, payload: response });
+const sendInvitationFailure = (error) => ({ type: SEND_INVITATION_FAILURE, payload: error });
+const checkInvitationTokenRequest = () => ({ type: CHECK_INVITATION_TOKEN_REQUEST });
+const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKEN_SUCCESS, payload: response });
+const checkInvitationTokenFailure = (error) => ({ type: CHECK_INVITATION_TOKEN_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchInvitations = () => {
@@ -60,19 +66,19 @@ const sendInvitation = (email) => {
   return async (dispatch, getState) => {
     dispatch(sendInvitationRequest());
     const { token } = getState().auth;
-    try{
-    const response = await fetch('/invitations', {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
-    dispatch(sendInvitationSuccess(response));
-  }catch (error){
-    dispatch(sendInvitationFailure(error));
-  }
+    try {
+      const response = await fetch('/invitations', {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      dispatch(sendInvitationSuccess(response));
+    } catch (error) {
+      dispatch(sendInvitationFailure(error));
+    }
 
   }
 }
@@ -82,27 +88,55 @@ const reSendInvitation = (id) => {
   return async (dispatch, getState) => {
     dispatch(sendInvitationRequest());
     const { token } = getState().auth;
-    try{
-    const response = await fetch(`/invitations/${id}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },      
-    });
-    dispatch(sendInvitationSuccess(response));
-  }catch (error){
-    dispatch(sendInvitationFailure(error));
-  }
+    try {
+      const response = await fetch(`/invitations/${id}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      dispatch(sendInvitationSuccess(response));
+    } catch (error) {
+      dispatch(sendInvitationFailure(error));
+    }
 
   }
 }
+
+const checkInvitationToken = (invitationToken) => {
+  return async (dispatch) => {
+    dispatch(checkInvitationTokenRequest());   
+    try {
+      const response = await fetch(`/checkInvitationToken/${invitationToken}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+
+      console.log('vino por el success');
+      dispatch(checkInvitationTokenSuccess(data));
+    } catch (error) {
+      dispatch(checkInvitationTokenFailure(error.message));
+    }
+  }
+}
+
 
 module.exports = {
   fetchInvitation,
   fetchInvitations,
   sendInvitation,
   reSendInvitation,
+  checkInvitationToken,
   FETCH_INVITATION_REQUEST,
   FETCH_INVITATION_SUCCESS,
   FETCH_INVITATION_FAILURE,
@@ -111,5 +145,8 @@ module.exports = {
   FETCH_INVITATIONS_FAILURE,
   SEND_INVITATION_REQUEST,
   SEND_INVITATION_SUCCESS,
-  SEND_INVITATION_FAILURE
+  SEND_INVITATION_FAILURE,
+  CHECK_INVITATION_TOKEN_REQUEST,
+  CHECK_INVITATION_TOKEN_SUCCESS,
+  CHECK_INVITATION_TOKEN_FAILURE,
 };
