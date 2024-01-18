@@ -29,6 +29,11 @@ class SingUpForm extends React.Component {
       updatedPassword: false, //flag to check if API updated the password
       updateError: false, //true if an error comes from the API while updating
       errorContent: '',
+      firstName: '',
+      lastName: '',
+      firmName: '',
+      firmSize: 0,
+      username:''
     };
   }
 
@@ -142,6 +147,11 @@ class SingUpForm extends React.Component {
       updateError,
       updatedPassword,
       tokenError,
+      firstName,
+      lastName,
+      firmName,
+      firmSize,
+      username
     } = this.state;
 
 
@@ -160,29 +170,88 @@ class SingUpForm extends React.Component {
       <Form onSubmit={this.handleSubmit} className='fade-in' loading={this.state.loading}>
         {(!tokenError) && (
           <section>
-            <p>Please choose a new Password for your account. It must have at least 8 characters, a capital letter and a number.</p>
-            <Form.Input
-              size='mini'
-              label='New Password'
-              type='password'
-              name='newPassword'
-              error={passwordErrorMessage}
-              onChange={this.handleInputChange}
-              autoComplete="new-password"
-              vale={newPassword}
-              required
-            />
-            <Form.Input
-              size='mini'
-              label='Confirm New Password'
-              type='password'
-              name='confirmedNewPassword'
-              error={passwordNotMatchError}
-              onChange={this.handleInputChange}
-              autoComplete="new-password"
-              value={confirmedNewPassword}
-              required
-            />
+            <Form.Field>
+              <Form.Input
+                size='small'
+                label='First name'
+                type='text'
+                name='firstName'
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                vale={firstName}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Last name'
+                type='text'
+                name='lastName'
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                vale={lastName}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Firm name'
+                type='text'
+                name='firmName'
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                vale={firmName}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Firm size'
+                icon='users'
+                iconPosition='left'
+                type='number'
+                name='firmSize'
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                vale={firmSize}
+                required
+              />
+
+              <Form.Input
+                size='small'
+                label='Username'
+                icon='users'
+                iconPosition='left'
+                type='text'
+                name='username'
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                vale={username}
+                required
+              />
+
+              <p>Password must have at least 8 characters, a capital letter and a number.</p>
+
+              <Form.Input
+                size='small'
+                label='New Password'
+                type='password'
+                name='newPassword'
+                error={passwordErrorMessage}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                vale={newPassword}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Confirm New Password'
+                type='password'
+                name='confirmedNewPassword'
+                error={passwordNotMatchError}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                value={confirmedNewPassword}
+                required
+              />
+            </Form.Field>
             <Button
               content='Submit'
               icon='checkmark'
@@ -192,6 +261,7 @@ class SingUpForm extends React.Component {
               primary
               disabled={passwordError || !passwordMatch}
             />
+
           </section>
         )}
         {tokenError && (

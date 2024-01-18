@@ -62,6 +62,31 @@ class AdminInquiries extends React.Component {
         }
     }
 
+    deleteInquiry = async (ID) => {
+        try {
+            // const response = await Promise.race([timeoutPromise, this.props.reSendInvitation(ID)]);
+            // if (this.props.invitation.current && this.props.invitation.current.ok) {
+            //     //first timeout is to show the loading icon
+            //     await new Promise((resolve) => setTimeout(resolve, 1500));
+            //     this.setState({ sent: true });
+            //     await this.props.fetchInvitations();
+            //     //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Invitations wich
+            //     //updates the Invitations list, with this one changing its status to "Invited" and not being displayed (see below in render)
+            //     await new Promise((resolve) => setTimeout(resolve, 3000));
+            // } else {
+            //     console.log("vino por este else");
+            // }
+            console.log('Deleting Inquiry ', ID, 'not ready yet');
+        } catch (error) {
+            // this.setState({ errorSending: true });
+            // await new Promise((resolve) => setTimeout(resolve, 3000));
+            console.log(error);
+        } finally {
+            this.props.fetchInquiries();
+        }
+
+    }
+
     formatDateTime(dateTimeStr) {
         const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateTimeStr).toLocaleString('en-US', options);
@@ -92,13 +117,14 @@ class AdminInquiries extends React.Component {
                     </Input>
                 </div>
                 <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>
-                    <Table celled striped>
+                    <Table celled striped size='small'>
                         <Table.Header>
                             <Table.Row>
                                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={5}>Date</Table.HeaderCell>
                                 <Table.HeaderCell textAlign="center" width={5}>Email</Table.HeaderCell>
-                                <Table.HeaderCell textAlign="center" width={5}>Invite</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={4}>Invite</Table.HeaderCell>
+                                <Table.HeaderCell textAlign="center" width={1}>Delete</Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
@@ -129,11 +155,19 @@ class AdminInquiries extends React.Component {
                                                 {((!sent || sendingInvitationId !== instance.id) && !errorSending) && (
                                                     <Button
                                                         icon='send'
+                                                        size='mini'
                                                         loading={sendingInvitationId === instance.id}
                                                         onClick={() => this.createInvitation(instance.email, instance.id)}
                                                         content='Send Invitation'
                                                     />
                                                 )}
+                                            </Table.Cell>
+                                            <Table.Cell textAlign="center">
+                                                <Button
+                                                    icon='trash alternate'
+                                                    disabled={sendingInvitationId === instance.id}
+                                                    onClick={() => this.deleteInquiry(instance.id)}
+                                                />
                                             </Table.Cell>
                                         </Table.Row>
                                     )

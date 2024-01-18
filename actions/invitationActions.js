@@ -106,15 +106,22 @@ const reSendInvitation = (id) => {
 
 const checkInvitationToken = (invitationToken) => {
   return async (dispatch) => {
-    dispatch(checkInvitationTokenRequest());   
+    dispatch(checkInvitationTokenRequest());
     try {
-      const response = await fetch(`/checkInvitationToken/${invitationToken}`, {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Error: Please check your internet connection"));
+        }, 15000);
+      });
+
+      const fetchPromise = fetch(`/checkInvitationToken/${invitationToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Server error');

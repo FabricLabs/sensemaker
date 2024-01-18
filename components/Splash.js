@@ -43,12 +43,12 @@ class Splash extends React.Component {
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
-            <Route path="/singup/:invitationToken"
+            {/* <Route path="/singup/:invitationToken"
               element={
                 <SingUpForm
                   checkInvitationToken={this.props.checkInvitationToken}
-                  invitation={this.props.invitation}                  
-                />} />
+                  invitation={this.props.invitation}
+                />} /> */}
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>
@@ -58,6 +58,17 @@ class Splash extends React.Component {
               </Card.Content>
             </Card>
           ) : null */}
+        </fabric-component>
+        {/* need to fix height */}
+        <fabric-component class="ui primary action fluid container" style={{ maxWidth: '30vw' }}>
+          <Routes>
+            <Route path="/singup/:invitationToken"
+              element={
+                <SingUpForm
+                  checkInvitationToken={this.props.checkInvitationToken}
+                  invitation={this.props.invitation}
+                />} />
+          </Routes>
         </fabric-component>
         <fabric-component className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}

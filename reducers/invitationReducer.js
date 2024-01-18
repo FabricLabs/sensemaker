@@ -34,7 +34,7 @@ function invitationReducer(state = initialState, action) {
 
         //actions to get the list of invitations
         case FETCH_INVITATIONS_REQUEST:
-            return { ...state };
+            return { ...state, loading: true };
         case FETCH_INVITATIONS_SUCCESS:
             return { ...state, invitations: action.payload, loading: false };
         case FETCH_INVITATIONS_FAILURE:
