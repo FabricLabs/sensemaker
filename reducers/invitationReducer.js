@@ -19,6 +19,7 @@ const initialState = {
     error: null,
     loading: false,
     sending: false,
+    invitationValid: false,
 };
 
 function invitationReducer(state = initialState, action) {

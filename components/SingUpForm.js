@@ -23,10 +23,10 @@ class SingUpForm extends React.Component {
     super(props);
 
     this.state = {
-      newPassword: '',
-      confirmedNewPassword: '',
+      password: '',
+      confirmedPassword: '',
       passwordError: false, //flag to know if the password matches all the conditions
-      passwordMatch: false, //flag for matching between newPassword and confirmedNewPassword
+      passwordMatch: false, //flag for matching between password and confirmedPassword
       tokenError: false,
       loading: false,
       updatedPassword: false, //flag to check if API updated the password
@@ -37,6 +37,11 @@ class SingUpForm extends React.Component {
       firmName: '',
       firmSize: 0,
       username: '',
+      email: '',
+      isNewUserValid: false,
+      usernameError: '',
+      isEmailValid: false,
+      emailError: '',
     };
   }
 
@@ -59,11 +64,24 @@ class SingUpForm extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.invitation !== this.props.invitation) {
-      const { invitation, invitationError } = this.props;
+      const { invitation } = this.props;
       if (invitation.invitationValid) {
         this.setState({ loading: false, tokenError: false, errorContent: '' });
       } else {
         this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+      }
+    }
+    if (prevProps.auth !== this.props.auth) {
+      const { auth } = this.props;
+      if (auth.usernameAvailable && this.state.username) {
+        this.setState({ isNewUserValid: true, usernameError: '' });
+      } else {
+        this.setState({ isNewUserValid: false, usernameError: 'Username already exists. Please choose a different one.' });
+      }
+      if (auth.emailAvailable && this.state.email) {
+        this.setState({ isEmailValid: true, emailError: '' });
+      } else {
+        this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose a differnt one.' });
       }
     }
   };
@@ -71,14 +89,21 @@ class SingUpForm extends React.Component {
   handleInputChange = (event) => {
     this.setState({ [event.target.name]: event.target.value }, () => {
       //here we have the validations for the new password the user is choosing
-      if (event.target.name === 'newPassword') {
+      if (event.target.name === 'password') {
         this.setState({
-          passwordError: this.validateNewPassword(event.target.value) ? false : true,
+          passwordError: this.validatepassword(event.target.value) ? false : true,
         });
       }
       this.setState({
         passwordMatch: this.validatePasswordsMatch() ? true : false,
       });
+      if (event.target.name === 'username') {
+        this.validateUsername(event.target.value);
+
+      }
+      if (event.target.name === 'email') {
+        this.props.checkEmailAvailable(event.target.value);
+      }
     });
   };
 
@@ -86,14 +111,14 @@ class SingUpForm extends React.Component {
     //this is the function to update the new password for the user
     event.preventDefault();
     const { resetToken } = this.props;
-    const { passwordError, passwordMatch, newPassword } = this.state;
+    const { passwordError, passwordMatch, password } = this.state;
 
     const fetchPromise = fetch('/passwordRestore', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ newPassword, resetToken }),
+      body: JSON.stringify({ password, resetToken }),
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -129,23 +154,42 @@ class SingUpForm extends React.Component {
     }
   }
 
-  validateNewPassword = (newPassword) => {
-    const hasEightCharacters = newPassword.length >= 8;
-    const hasCapitalLetter = /[A-Z]/.test(newPassword);
-    const hasNumber = /[0-9]/.test(newPassword);
+  validateUsername = (value) => {
+    // Check for special characters and whitespace
+    if ((/[^a-zA-Z0-9]/.test(value))) {
+      this.setState({
+        isNewUserValid: false,
+        usernameError: 'Username must not contain special characters or spaces.',
+      });
+    } else {
+      if (value.length < 3) {
+        this.setState({
+          isNewUserValid: false,
+          usernameError: 'Username must have at least 3 characters.',
+        });
+      } else {
+        this.props.checkUsernameAvailable(value);
+      }
+    }
+  }
+
+  validatepassword = (password) => {
+    const hasEightCharacters = password.length >= 8;
+    const hasCapitalLetter = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
 
     return hasEightCharacters && hasCapitalLetter && hasNumber;
   };
 
   validatePasswordsMatch = () => {
-    return (this.state.newPassword && this.state.confirmedNewPassword && this.state.newPassword === this.state.confirmedNewPassword);
+    return (this.state.password && this.state.confirmedPassword && this.state.password === this.state.confirmedPassword);
   }
 
   render() {
 
     const {
-      newPassword,
-      confirmedNewPassword,
+      password,
+      confirmedPassword,
       loading,
       passwordError,
       passwordMatch,
@@ -157,20 +201,35 @@ class SingUpForm extends React.Component {
       lastName,
       firmName,
       firmSize,
-      username
+      username,
+      isNewUserValid,
+      usernameError,
+      email,
+      isEmailValid,
+      emailError,
     } = this.state;
 
-
     //these next const are for the popup errors showed in the inputs
-    const passwordErrorMessage = (!passwordError || !newPassword) ? null : {
+    const passwordErrorMessage = (!passwordError || !password) ? null : {
       content: 'The password must be at least 8 characters, include a capital letter and a number.',
       pointing: 'above',
     };
 
-    const passwordNotMatchError = (passwordMatch || !confirmedNewPassword) ? null : {
+    const passwordNotMatchErrorMsg = (passwordMatch || !confirmedPassword) ? null : {
       content: 'Both passwords must match.',
       pointing: 'above',
     };
+
+    const userErrorMsg = (isNewUserValid || !username) ? null : {
+      content: usernameError,
+      pointing: 'above',
+    };
+
+    const emailErrorMsg = (isEmailValid || !email) ? null : {
+      content: emailError,
+      pointing: 'above',
+    };
+
 
     return (
       <div className='fade-in singup-form'>
@@ -188,7 +247,7 @@ class SingUpForm extends React.Component {
                     name='firstName'
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={firstName}
+                    value={firstName}
                     required
                   />
                   <Form.Input
@@ -198,7 +257,7 @@ class SingUpForm extends React.Component {
                     name='lastName'
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={lastName}
+                    value={lastName}
                     required
                   />
                 </Form.Group>
@@ -210,7 +269,7 @@ class SingUpForm extends React.Component {
                     name='firmName'
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={firmName}
+                    value={firmName}
                   />
                   <Form.Input
                     size='small'
@@ -219,7 +278,7 @@ class SingUpForm extends React.Component {
                     name='firmSize'
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={firmSize}
+                    value={firmSize}
                   />
                 </Form.Group>
                 <Form.Group className='singup-form-group'>
@@ -228,9 +287,10 @@ class SingUpForm extends React.Component {
                     label='Username'
                     type='text'
                     name='username'
+                    error={userErrorMsg}
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={username}
+                    value={username}
                     required
                   />
                   <Form.Input
@@ -238,9 +298,10 @@ class SingUpForm extends React.Component {
                     label='Email'
                     type='email'
                     name='email'
+                    error={emailErrorMsg}
                     onChange={this.handleInputChange}
                     autoComplete="off"
-                    vale={username}
+                    value={email}
                     required
                   />
                 </Form.Group>
@@ -251,22 +312,22 @@ class SingUpForm extends React.Component {
                     size='small'
                     label='Password'
                     type='password'
-                    name='newPassword'
+                    name='password'
                     error={passwordErrorMessage}
                     onChange={this.handleInputChange}
                     autoComplete="new-password"
-                    vale={newPassword}
+                    value={password}
                     required
                   />
                   <Form.Input
                     size='small'
                     label='Confirm Password'
                     type='password'
-                    name='confirmedNewPassword'
-                    error={passwordNotMatchError}
+                    name='confirmedPassword'
+                    error={passwordNotMatchErrorMsg}
                     onChange={this.handleInputChange}
                     autoComplete="new-password"
-                    value={confirmedNewPassword}
+                    value={confirmedPassword}
                     required
                   />
                 </Form.Group>
@@ -278,9 +339,12 @@ class SingUpForm extends React.Component {
                   type='submit'
                   fluid
                   primary
-                  disabled={passwordError || !passwordMatch}
+                  disabled={
+                    passwordError || !passwordMatch ||
+                    !isNewUserValid || usernameError ||
+                    !isEmailValid || emailError
+                  }//the button submit is disabled until all requiriments and validations are correct
                 />
-
               </section>
             )}
             {tokenError && (

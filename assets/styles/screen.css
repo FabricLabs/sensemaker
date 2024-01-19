@@ -87,25 +87,7 @@
 }
 
 .singup-form{
-  max-width: 70vw;
-}
-
-@media (min-width: 768px) {
-  .singup-form{
-    max-width: 65vw;
-  }
-}
-
-@media (min-width: 1200px) {
-  .singup-form{
-    max-width: 40vw;
-  }
-}
-
-@media (min-width: 1400px) {
-  .singup-form{
-    max-width: 35vw;
-  }
+  max-width: 500px;
 }
 
 .singup-form-group{

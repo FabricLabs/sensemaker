@@ -1295,6 +1295,44 @@ class Jeeves extends Service {
       }
     });
 
+    //endpoint to check if the username is available
+    this.http._addRoute('POST', '/users/:id', async (req, res) => {
+      const  username = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ username: username }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
+        }
+        res.json({ message: 'Username avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+
+    //endpoint to check if the email is available
+    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
+      const  email = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ email: email }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
+        }
+        res.json({ message: 'Email avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });

@@ -129,7 +129,6 @@ const checkInvitationToken = (invitationToken) => {
 
       const data = await response.json();
 
-      console.log('vino por el success');
       dispatch(checkInvitationTokenSuccess(data));
     } catch (error) {
       dispatch(checkInvitationTokenFailure(error.message));
