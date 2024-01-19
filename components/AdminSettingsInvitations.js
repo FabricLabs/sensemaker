@@ -169,7 +169,6 @@ class AdminInvitations extends React.Component {
                                                     }
                                                     {((!sent || sendingInvitationID !== instance.id) && instance.status === 'pending' && !errorSending) && (
                                                         <Button
-                                                            icon='redo'
                                                             size='mini'
                                                             loading={sendingInvitationID === instance.id}
                                                             onClick={() => this.reSendInvite(instance.id)}

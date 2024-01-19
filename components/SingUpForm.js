@@ -12,6 +12,9 @@ const {
   Form,
   Button,
   Message,
+  Header,
+  Segment,
+  Label
 } = require('semantic-ui-react');
 
 //this is the form that lets you choose a new password if you come with a valid token
@@ -33,13 +36,16 @@ class SingUpForm extends React.Component {
       lastName: '',
       firmName: '',
       firmSize: 0,
-      username:''
+      username: '',
     };
   }
 
   componentDidMount = async () => {
     //when the user is sent to /passwordreset/:resetToken, first when this componen mounts
     //it checks if the :resetToken is a valid one
+
+    //NOTE: I DON'T LIKE THIS TITLE SETTING
+    document.title = "Novo · Your Legal Assistant";
 
     const { invitationToken, invitation, invitationError } = this.props;
     this.setState({ loading: true });
@@ -167,116 +173,131 @@ class SingUpForm extends React.Component {
     };
 
     return (
-      <Form onSubmit={this.handleSubmit} className='fade-in' loading={this.state.loading}>
-        {(!tokenError) && (
-          <section>
-            <Form.Field>
-              <Form.Input
-                size='small'
-                label='First name'
-                type='text'
-                name='firstName'
-                onChange={this.handleInputChange}
-                autoComplete="off"
-                vale={firstName}
-                required
-              />
-              <Form.Input
-                size='small'
-                label='Last name'
-                type='text'
-                name='lastName'
-                onChange={this.handleInputChange}
-                autoComplete="off"
-                vale={lastName}
-                required
-              />
-              <Form.Input
-                size='small'
-                label='Firm name'
-                type='text'
-                name='firmName'
-                onChange={this.handleInputChange}
-                autoComplete="off"
-                vale={firmName}
-                required
-              />
-              <Form.Input
-                size='small'
-                label='Firm size'
-                icon='users'
-                iconPosition='left'
-                type='number'
-                name='firmSize'
-                onChange={this.handleInputChange}
-                autoComplete="off"
-                vale={firmSize}
-                required
-              />
+      <div className='fade-in singup-form'>
+        <Segment>
+          <Form onSubmit={this.handleSubmit} loading={this.state.loading} centered>
+            {(!tokenError) && (
+              <section>
+                <Header as='h3' textAlign="center">Sing Up Form</Header>
+                <p>Please complete the registration form below to create your account and access our services.</p>
+                <Form.Group className='singup-form-group'>
+                  <Form.Input
+                    size='small'
+                    label='First name'
+                    type='text'
+                    name='firstName'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={firstName}
+                    required
+                  />
+                  <Form.Input
+                    size='small'
+                    label='Last name'
+                    type='text'
+                    name='lastName'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={lastName}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className='singup-form-group'>
+                  <Form.Input
+                    size='small'
+                    label='Firm name'
+                    type='text'
+                    name='firmName'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={firmName}
+                  />
+                  <Form.Input
+                    size='small'
+                    label='Firm size'
+                    type='number'
+                    name='firmSize'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={firmSize}
+                  />
+                </Form.Group>
+                <Form.Group className='singup-form-group'>
+                  <Form.Input
+                    size='small'
+                    label='Username'
+                    type='text'
+                    name='username'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={username}
+                    required
+                  />
+                  <Form.Input
+                    size='small'
+                    label='Email'
+                    type='email'
+                    name='email'
+                    onChange={this.handleInputChange}
+                    autoComplete="off"
+                    vale={username}
+                    required
+                  />
+                </Form.Group>
 
-              <Form.Input
-                size='small'
-                label='Username'
-                icon='users'
-                iconPosition='left'
-                type='text'
-                name='username'
-                onChange={this.handleInputChange}
-                autoComplete="off"
-                vale={username}
-                required
-              />
+                <p>Password must have at least 8 characters, a capital letter and a number.</p>
+                <Form.Group className='singup-form-group'>
+                  <Form.Input
+                    size='small'
+                    label='Password'
+                    type='password'
+                    name='newPassword'
+                    error={passwordErrorMessage}
+                    onChange={this.handleInputChange}
+                    autoComplete="new-password"
+                    vale={newPassword}
+                    required
+                  />
+                  <Form.Input
+                    size='small'
+                    label='Confirm Password'
+                    type='password'
+                    name='confirmedNewPassword'
+                    error={passwordNotMatchError}
+                    onChange={this.handleInputChange}
+                    autoComplete="new-password"
+                    value={confirmedNewPassword}
+                    required
+                  />
+                </Form.Group>
 
-              <p>Password must have at least 8 characters, a capital letter and a number.</p>
+                <Button
+                  content='Submit'
+                  icon='checkmark'
+                  loading={loading}
+                  type='submit'
+                  fluid
+                  primary
+                  disabled={passwordError || !passwordMatch}
+                />
 
-              <Form.Input
-                size='small'
-                label='New Password'
-                type='password'
-                name='newPassword'
-                error={passwordErrorMessage}
-                onChange={this.handleInputChange}
-                autoComplete="new-password"
-                vale={newPassword}
-                required
-              />
-              <Form.Input
-                size='small'
-                label='Confirm New Password'
-                type='password'
-                name='confirmedNewPassword'
-                error={passwordNotMatchError}
-                onChange={this.handleInputChange}
-                autoComplete="new-password"
-                value={confirmedNewPassword}
-                required
-              />
-            </Form.Field>
-            <Button
-              content='Submit'
-              icon='checkmark'
-              loading={loading}
-              type='submit'
-              fluid
-              primary
-              disabled={passwordError || !passwordMatch}
-            />
-
-          </section>
-        )}
-        {tokenError && (
-          <Message negative>
-            <p>{errorContent}</p>
-          </Message>
-        )}
-        {updatedPassword && (
-          <Message positive>
-            <Message.Header>Password updated</Message.Header>
-            <p>Your new password has been changed successfully. Use your new password to log in.</p>
-            <a href="/sessions/new">Log In &raquo;</a>
-          </Message>
-        )}
-      </Form>
+              </section>
+            )}
+            {tokenError && (
+              <Message negative>
+                <p>{errorContent}</p>
+              </Message>
+            )}
+            {updatedPassword && (
+              <Message positive>
+                <Message.Header>Password updated</Message.Header>
+                <p>Your new password has been changed successfully. Use your new password to log in.</p>
+                <a href="/sessions/new">Log In &raquo;</a>
+              </Message>
+            )}
+          </Form>
+        </Segment>
+      </div>
     );
   }
 }

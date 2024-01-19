@@ -32,23 +32,17 @@ class Splash extends React.Component {
     return (
       <jeeves-splash class="fade-in splash">
 
-          <Image src="/images/novo-logo.svg" size='medium' centered />
+          <Image src="/images/novo-logo.svg" size='small' centered />
           {/* <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
           </div> */}
 
-        <fabric-component class="ui primary action fluid container">
+        <fabric-component class="ui primary action container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
-            {/* <Route path="/singup/:invitationToken"
-              element={
-                <SingUpForm
-                  checkInvitationToken={this.props.checkInvitationToken}
-                  invitation={this.props.invitation}
-                />} /> */}
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>
@@ -59,8 +53,7 @@ class Splash extends React.Component {
             </Card>
           ) : null */}
         </fabric-component>
-        {/* need to fix height */}
-        <fabric-component class="ui primary action fluid container" style={{ maxWidth: '30vw' }}>
+        <section>
           <Routes>
             <Route path="/singup/:invitationToken"
               element={
@@ -69,11 +62,11 @@ class Splash extends React.Component {
                   invitation={this.props.invitation}
                 />} />
           </Routes>
-        </fabric-component>
-        <fabric-component className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
+        </section>
+        <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
-        </fabric-component>
+        </section>
       </jeeves-splash>
     );
   }
