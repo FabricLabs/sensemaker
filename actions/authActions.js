@@ -13,26 +13,41 @@ const fetch = require('cross-fetch');
 const LOGIN_REQUEST = 'LOGIN_REQUEST';
 const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
 const LOGIN_FAILURE = 'LOGIN_FAILURE';
+
 const REGISTER_REQUEST = 'REGISTER_REQUEST';
 const REGISTER_SUCCESS = 'REGISTER_SUCCESS';
 const REGISTER_FAILURE = 'REGISTER_FAILURE';
+
+const FULL_REGISTER_REQUEST = 'REGISTER_REQUEST';
+const FULL_REGISTER_SUCCESS = 'REGISTER_SUCCESS';
+const FULL_REGISTER_FAILURE = 'REGISTER_FAILURE';
+
 const CHECK_USERNAME_AVAILABLE_REQUEST = 'CHECK_USERNAME_AVAILABLE_REQUEST';
 const CHECK_USERNAME_AVAILABLE_SUCCESS = 'CHECK_USERNAME_AVAILABLE_SUCCESS';
 const CHECK_USERNAME_AVAILABLE_FAILURE = 'CHECK_USERNAME_AVAILABLE_FAILURE';
+
 const CHECK_EMAIL_AVAILABLE_REQUEST = 'CHECK_EMAIL_AVAILABLE_REQUEST';
 const CHECK_EMAIL_AVAILABLE_SUCCESS = 'CHECK_EMAIL_AVAILABLE_SUCCESS';
 const CHECK_EMAIL_AVAILABLE_FAILURE = 'CHECK_EMAIL_AVAILABLE_FAILURE';
+
 
 // Sync Action Creators
 const loginRequest = () => ({ type: LOGIN_REQUEST });
 const loginSuccess = (session) => ({ type: LOGIN_SUCCESS, payload: session });
 const loginFailure = error => ({ type: LOGIN_FAILURE, payload: error, error: error });
+
 const registerRequest = () => ({ type: REGISTER_REQUEST });
 const registerSuccess = token => ({ type: REGISTER_SUCCESS, payload: { token } });
 const registerFailure = error => ({ type: REGISTER_FAILURE, payload: error, error: error });
+
+const fullRegisterRequest = () => ({ type: FULL_REGISTER_REQUEST });
+const fullRegisterSuccess = (response) => ({ type: FULL_REGISTER_SUCCESS });
+const fullRegisterFailure = (error) => ({ type: FULL_REGISTER_FAILURE, payload: error, error: error });
+
 const checkUsernameAvailableRequest = () => ({ type: CHECK_USERNAME_AVAILABLE_REQUEST });
 const checkUsernameAvailableSuccess = () => ({ type: CHECK_USERNAME_AVAILABLE_SUCCESS });
 const checkUsernameAvailableFailure = (error) => ({ type: CHECK_USERNAME_AVAILABLE_FAILURE, payload: error });
+
 const checkEmailAvailableRequest = () => ({ type: CHECK_EMAIL_AVAILABLE_REQUEST });
 const checkEmailAvailableSuccess = () => ({ type: CHECK_EMAIL_AVAILABLE_SUCCESS });
 const checkEmailAvailableFailure = (error) => ({ type: CHECK_EMAIL_AVAILABLE_FAILURE, payload: error });
@@ -148,6 +163,39 @@ const register = (username, password) => {
   };
 };
 
+const fullRegister = (username, password, email,  firstName, lastName, firmName, firmSize) => {
+  return async dispatch => {
+    dispatch(fullRegisterRequest());
+    try{
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
+        }, 15000);
+      });
+
+      const fetchPromise = fetch('/users/full', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password, email,  firstName, lastName, firmName, firmSize }),
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      dispatch(fullRegisterSuccess(response));
+    }catch(error){
+      dispatch(fullRegisterFailure(error.message));
+    }
+
+  }
+}
+
 const logout = () => {
   return async dispatch => {
     const request = indexedDB.open(BROWSER_DATABASE_NAME, 1);
@@ -177,7 +225,6 @@ const checkUsernameAvailable = (username) => {
   return async (dispatch) => {
     dispatch(checkUsernameAvailableRequest());
     try {
-
       const response = await fetch(`/users/${username}`, {
         method: 'POST',
         headers: {
@@ -228,6 +275,7 @@ module.exports = {
   logout,
   checkUsernameAvailable,
   checkEmailAvailable,
+  fullRegister,
   LOGIN_SUCCESS,
   LOGIN_FAILURE,
   LOGIN_REQUEST,
@@ -240,4 +288,7 @@ module.exports = {
   CHECK_EMAIL_AVAILABLE_REQUEST,
   CHECK_EMAIL_AVAILABLE_SUCCESS,
   CHECK_EMAIL_AVAILABLE_FAILURE,
+  FULL_REGISTER_REQUEST,
+  FULL_REGISTER_SUCCESS,
+  FULL_REGISTER_FAILURE,
 };

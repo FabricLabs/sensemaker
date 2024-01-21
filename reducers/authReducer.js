@@ -8,6 +8,9 @@ const {
   CHECK_EMAIL_AVAILABLE_REQUEST,
   CHECK_EMAIL_AVAILABLE_SUCCESS,
   CHECK_EMAIL_AVAILABLE_FAILURE,
+  FULL_REGISTER_REQUEST,
+  FULL_REGISTER_SUCCESS,
+  FULL_REGISTER_FAILURE,
 
 } = require('../actions/authActions');
 
@@ -22,6 +25,8 @@ const initialState = {
   error: null,
   usernameAvailable: false,
   emailAvailable: false,
+  registering: false,
+  registerSuccess: false,
 };
 
 function authReducer(state = initialState, action) {
@@ -33,6 +38,7 @@ function authReducer(state = initialState, action) {
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
       return { ...state, isAuthenticated: false, token: null, error: action.payload };
+
     case SIGN_CONTRACT_SUCCESS:
       return { ...state, isCompliant: true };
 
@@ -52,6 +58,14 @@ function authReducer(state = initialState, action) {
     case CHECK_EMAIL_AVAILABLE_FAILURE:
       return { ...state, error: action.payload, emailAvailable: false, loading: false };
 
+    //actions for registering an user
+    case FULL_REGISTER_REQUEST:
+      return { ...state, registering: true };
+    case FULL_REGISTER_SUCCESS:
+      console.log("entro por el reducer success");
+      return { ...state, registerSuccess: true, registering: false };
+    case FULL_REGISTER_FAILURE:
+      return { ...state, error: action.payload, registerSuccess: false, registering: false };
     default:
       return state;
   }

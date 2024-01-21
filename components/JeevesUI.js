@@ -168,6 +168,7 @@
                   checkEmailAvailable={this.props.checkEmailAvailable}
                   invitation={this.props.invitation}
                   auth={this.props.auth}
+                  fullRegister={this.props.fullRegister}
                   />
               ) : !this.props.auth.isCompliant ? (
                 <TermsOfUseModal

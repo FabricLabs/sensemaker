@@ -65,6 +65,7 @@ class Splash extends React.Component {
                   checkEmailAvailable={this.props.checkEmailAvailable}
                   auth={this.props.auth}
                   invitation={this.props.invitation}
+                  fullRegister={this.props.fullRegister}
                 />} />
           </Routes>
         </section>

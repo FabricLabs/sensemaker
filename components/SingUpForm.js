@@ -17,6 +17,8 @@ const {
   Label
 } = require('semantic-ui-react');
 
+const checkInvitationToken = require('../actions/invitationActions');
+
 //this is the form that lets you choose a new password if you come with a valid token
 class SingUpForm extends React.Component {
   constructor(props) {
@@ -29,19 +31,20 @@ class SingUpForm extends React.Component {
       passwordMatch: false, //flag for matching between password and confirmedPassword
       tokenError: false,
       loading: false,
-      updatedPassword: false, //flag to check if API updated the password
-      updateError: false, //true if an error comes from the API while updating
+      registerSuccess: false,
+      registerError: false,
       errorContent: '',
       firstName: '',
       lastName: '',
       firmName: '',
-      firmSize: 0,
+      firmSize: null,
       username: '',
       email: '',
       isNewUserValid: false,
       usernameError: '',
       isEmailValid: false,
       emailError: '',
+
     };
   }
 
@@ -72,6 +75,7 @@ class SingUpForm extends React.Component {
       }
     }
     if (prevProps.auth !== this.props.auth) {
+      console.log("las auth en el didUpdate", this.props.auth);
       const { auth } = this.props;
       if (auth.usernameAvailable && this.state.username) {
         this.setState({ isNewUserValid: true, usernameError: '' });
@@ -82,6 +86,16 @@ class SingUpForm extends React.Component {
         this.setState({ isEmailValid: true, emailError: '' });
       } else {
         this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose a differnt one.' });
+      }
+      //checks if the state.registering is true (because we pressed submit and started handleSubmit)
+      //and auth.registering is false when the reducer finished processing actions
+      if (this.state.registering && !auth.registering) {
+        this.setState({ registering: false });
+        if (auth.registerSuccess) {
+          this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
+        } else {
+          this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
+        }
       }
     }
   };
@@ -111,47 +125,19 @@ class SingUpForm extends React.Component {
     //this is the function to update the new password for the user
     event.preventDefault();
     const { resetToken } = this.props;
-    const { passwordError, passwordMatch, password } = this.state;
+    const { username, password, email, firstName, lastName, firmName, firmSize } = this.state;
 
-    const fetchPromise = fetch('/passwordRestore', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password, resetToken }),
-    });
+    try {
+      this.setState({ registering: true });
+      //forced delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Error updating your password, please check your internet connection.'));
-      }, 15000);
-    });
+      await this.props.fullRegister(username, password, email, firstName, lastName, firmName, firmSize);
 
-    if (!passwordError && passwordMatch) {
-      try {
-        this.setState({
-          loading: true,
-          updatedPassword: false,
-          updateError: false,
-        });
-
-        const response = await Promise.race([timeoutPromise, fetchPromise]);
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message);
-        }
-
-        //forced delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-
-        this.setState({ updatedPassword: true, passwordModalLoading: false });
-
-      } catch (error) {
-        //forced delay
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        this.setState({ updateError: true, errorContent: error.message, loading: false, });
-      }
+    } catch (error) {
+      this.setState({ registering: false });
     }
+
   }
 
   validateUsername = (value) => {
@@ -194,8 +180,6 @@ class SingUpForm extends React.Component {
       passwordError,
       passwordMatch,
       errorContent,
-      updateError,
-      updatedPassword,
       tokenError,
       firstName,
       lastName,
@@ -207,6 +191,9 @@ class SingUpForm extends React.Component {
       email,
       isEmailValid,
       emailError,
+      registerSuccess,
+      registerError,
+      registering,
     } = this.state;
 
     //these next const are for the popup errors showed in the inputs
@@ -235,7 +222,7 @@ class SingUpForm extends React.Component {
       <div className='fade-in singup-form'>
         <Segment>
           <Form onSubmit={this.handleSubmit} loading={this.state.loading} centered>
-            {(!tokenError) && (
+            {(!tokenError && !registerSuccess) && (
               <section>
                 <Header as='h3' textAlign="center">Sing Up Form</Header>
                 <p>Please complete the registration form below to create your account and access our services.</p>
@@ -331,11 +318,15 @@ class SingUpForm extends React.Component {
                     required
                   />
                 </Form.Group>
-
+                {(registerError) && (
+                  <Message negative>
+                    <p>{errorContent}</p>
+                  </Message>
+                )}
                 <Button
                   content='Submit'
                   icon='checkmark'
-                  loading={loading}
+                  loading={registering}
                   type='submit'
                   fluid
                   primary
@@ -347,18 +338,24 @@ class SingUpForm extends React.Component {
                 />
               </section>
             )}
-            {tokenError && (
+            {(tokenError) && (
               <Message negative>
                 <p>{errorContent}</p>
               </Message>
             )}
-            {updatedPassword && (
-              <Message positive>
-                <Message.Header>Password updated</Message.Header>
-                <p>Your new password has been changed successfully. Use your new password to log in.</p>
-                <a href="/sessions/new">Log In &raquo;</a>
+            {registerSuccess && (
+              <Message positive centered>
+                <Message.Header>Registration Successful</Message.Header>
+                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
+                <p>Please log in to access your account and start utilizing our services.</p>
+                <Button primary href="/sessions/new">Log In</Button>
               </Message>
             )}
+            {/* <Message negative>
+              <Message.Header>Invitation Declined</Message.Header>
+              <p>We have registered that you declined our invitation. We will not send any further requests or communications.</p>
+              <p>Should you change your mind or have any questions in the future, please feel free to contact us.</p>
+            </Message> */}
           </Form>
         </Segment>
       </div>
