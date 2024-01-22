@@ -23,14 +23,12 @@ class LoginPage extends React.Component {
 
     return (
       <jeeves-login-page class="fade-in">
-        <fabric-component class="ui primary action fluid container">
           <Card>
             <Card.Content>
               <Card.Header as='h2'>Log In</Card.Header>
               <LoginForm {...this.props} login={login} error={error} onLoginSuccess={onLoginSuccess} />
             </Card.Content>
           </Card>
-        </fabric-component>
       </jeeves-login-page>
     );
   }

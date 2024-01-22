@@ -3,13 +3,13 @@ const { FETCH_INQUIRIES_REQUEST, FETCH_INQUIRIES_SUCCESS, FETCH_INQUIRIES_FAILUR
 const initialState = {
   inquiries: [],
   error: null,
-  loading: true
+  loading: false
 };
 
 function inquiriesReducer (state = initialState, action) {
   switch (action.type) {
     case FETCH_INQUIRIES_REQUEST:
-      return { ...state };
+      return { ...state, loading: true };
     case FETCH_INQUIRIES_SUCCESS:
       return { ...state, inquiries: action.payload, loading: false};
     case FETCH_INQUIRIES_FAILURE:

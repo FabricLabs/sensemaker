@@ -57,10 +57,10 @@ class LoginForm extends React.Component {
   };
 
   // Toggle the modal
-  togglePasswordModal = () => {    
+  togglePasswordModal = () => {
     this.setState(prevState => ({
       pwdModalOpen: !prevState.pwdModalOpen
-    }));    
+    }));
   };
 
   render () {
@@ -68,7 +68,7 @@ class LoginForm extends React.Component {
     const { error } = this.props;
 
     return (
-      <fabric-react-component class="ui primary action fluid text container">
+      <fabric-react-component class="ui primary action fluid text container" style={{paddingTop:'0'}}>
         <Form onSubmit={this.handleSubmit} size={this.props.size} method="POST">
           <Form.Field>
             <label>Username</label>
@@ -84,7 +84,7 @@ class LoginForm extends React.Component {
           </Button.Group>
           <p style={{ marginTop: '2em' }}>Did you forget your password? Restore it <a onClick={this.togglePasswordModal}>Here</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
-        </Form>        
+        </Form>
         <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal}/>
       </fabric-react-component>
     );

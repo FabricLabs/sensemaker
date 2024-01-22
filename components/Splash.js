@@ -23,25 +23,27 @@ const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 const ResetPasswordForm = require('./ResetPasswordForm');
+const SingUpForm = require('./SingUpForm');
+const DeclinedInvitation = require('./DeclinedInvitation');
 
 class Splash extends React.Component {
   render () {
     const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
-      <jeeves-splash class="fade-in">
-        <fabric-component>
-          <Image src="/images/jeeves-brand.png" size='small' centered />
-          <div style={{textAlign: 'center'}}>
+      <jeeves-splash class="fade-in splash">
+
+          <Image src="/images/novo-logo.svg" size='small' centered />
+          {/* <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
-          </div>
-        </fabric-component>
-        <fabric-component class="ui primary action fluid container">
+          </div> */}
+
+        <fabric-component class="ui primary action container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
-            <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm/>} />
+            <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>
@@ -52,10 +54,36 @@ class Splash extends React.Component {
             </Card>
           ) : null */}
         </fabric-component>
-        <fabric-component className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
+        {/* This is not good, to take this route apart, but fabric component up there won't let me handle my SingUpForm width like i want,
+        right now i made this route apart, probably splash component needs a rebuild later */}
+        <section>
+          <Routes>
+            <Route path="/singup/:invitationToken"
+              element={
+                <SingUpForm
+                  checkInvitationToken={this.props.checkInvitationToken}
+                  checkUsernameAvailable={this.props.checkUsernameAvailable}
+                  checkEmailAvailable={this.props.checkEmailAvailable}
+                  auth={this.props.auth}
+                  invitation={this.props.invitation}
+                  fullRegister={this.props.fullRegister}
+                  acceptInvitation={this.props.acceptInvitation}
+                />}
+            />
+            <Route path="/singup/decline/:invitationToken"
+              element={
+                <DeclinedInvitation
+                  checkInvitationToken={this.props.checkInvitationToken}
+                  declineInvitation={this.props.declineInvitation}
+                  invitation={this.props.invitation}
+                />}
+            />
+          </Routes>
+        </section>
+        <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
-        </fabric-component>
+        </section>
       </jeeves-splash>
     );
   }

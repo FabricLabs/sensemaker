@@ -20,6 +20,8 @@ const {
 
 const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
+const AdminInquiries = require('./AdminSettingsInquiries');
+const AdminInvitations = require('./AdminSettingsInvitations');
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -55,7 +57,6 @@ class AdminSettings extends React.Component {
     this.props.fetchAdminStats();
     //this is not doing anything yet
     //this.props.fetchAllConversationsFromAPI();
-    this.props.fetchInquiries();
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -72,7 +73,7 @@ class AdminSettings extends React.Component {
   };
 
   render () {
-    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries  } = this.props;
+    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries, invitation  } = this.props;
     const { currentPage, windowWidth } = this.state;
 
     // Math for pagination of conversation list
@@ -157,7 +158,7 @@ class AdminSettings extends React.Component {
           </Table.Body>
         </Table>
       </Tab.Pane> },
-      { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading}>
+         { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading || invitation.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
           <Statistic.Value>???</Statistic.Value>
@@ -179,56 +180,25 @@ class AdminSettings extends React.Component {
           <Statistic.Value>0</Statistic.Value>
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
-        <Header as='h4'>Waitlist</Header>
-        <Table celled striped className='admin-table-inquiries'>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Date</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {(inquiries && inquiries.inquiries && inquiries.inquiries.length > 0) && (inquiries.inquiries.map(instance => (
-              <Table.Row key={instance.id}>
-                <Table.Cell>{instance.id}</Table.Cell>
-                <Table.Cell>{instance.created_at}</Table.Cell>
-                <Table.Cell>{instance.email}</Table.Cell>
-                <Table.Cell>-</Table.Cell>
-                <Table.Cell>
-                  <Button>Send Invitation</Button>
-                </Table.Cell>
-              </Table.Row>
-            )))}
-          </Table.Body>
-        </Table>
-        <Header as='h4'>Invitations</Header>
-        <Table celled striped>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Date</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>
-                <Button>Re-send</Button>
-              </Table.Cell>
-            </Table.Row>
-          </Table.Body>
-        </Table>
+        <AdminInquiries
+          inquiries={inquiries}
+          fetchInquiries={this.props.fetchInquiries}
+          fetchInvitations= {this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation}
+          invitation={invitation}
+          deleteInquiry={this.props.deleteInquiry}
+          />
+        <AdminInvitations
+          invitation={invitation}
+          fetchInvitations={this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation}
+          reSendInvitation={this.props.reSendInvitation}
+          deleteInvitation={this.props.deleteInvitation}
+        />
+
       </Tab.Pane> },
       { menuItem: 'Agents', render: () => <Tab.Pane loading={this.state.loading}>
+
        <Table celled striped>
           <Table.Header>
             <Table.Row>

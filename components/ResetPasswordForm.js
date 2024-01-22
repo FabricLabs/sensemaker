@@ -43,7 +43,7 @@ class ResetPasswordForm extends React.Component {
     const { resetToken } = this.props;
 
     //NOTE: I DON'T LIKE THIS TITLE SETTING
-    document.title = "Jeeves · Your Legal Assistant";
+    document.title = "Novo · Your Legal Assistant";
 
     const fetchPromise = fetch('/resettokencheck', {
       method: 'POST',

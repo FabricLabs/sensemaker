@@ -891,31 +891,31 @@ class Jeeves extends Service {
       this.courtlistener.on('sync', (sync) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
       });
-  
+
       this.courtlistener.on('debug', (...debug) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
       });
-  
+
       this.courtlistener.on('error', (...error) => {
         console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
       });
-  
+
       this.courtlistener.on('warning', (...warning) => {
         console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
       });
-  
+
       this.courtlistener.on('message', (message) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
       });
-  
+
       this.courtlistener.on('document', async (actor) => {
         console.debug('[DOCUMENT]', 'Received document:', actor);
-  
+
         const document = actor.content;
         // TODO: store sample.id as fabric_id
         const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
         const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
-  
+
         if (!target) {
           console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
           await this.db('documents').insert({
@@ -938,7 +938,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('court', async (court) => {
         const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
         const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
@@ -958,7 +958,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -980,11 +980,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
       this.courtlistener.on('opinioncluster', async (cluster) => {
         const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             courtlistener_cluster_id: cluster.id,
@@ -1021,11 +1021,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('opinion', async (opinion) => {
         const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
         const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             sha1: opinion.sha1,
@@ -1049,7 +1049,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -1235,7 +1235,7 @@ class Jeeves extends Service {
       try {
         const inquiries = await this.db('inquiries')
           .select('*')
-          .orderBy('created_at', 'asc');
+          .orderBy('created_at', 'desc');
         res.send(inquiries);
       } catch (error) {
         console.error('Error fetching inquiries:', error);
@@ -1243,37 +1243,309 @@ class Jeeves extends Service {
       }
     });
 
+    //endpoint to delete inquiry from admin panel
+    this.http._addRoute('PATCH', '/inquiries/delete/:id', async (req, res) => {
+      const inquiryID = req.params.id;
+      try {
+        const inquiry = await this.db.select('*').from('inquiries').where({ id: inquiryID }).first();
+
+        if (!inquiry) {
+          return res.status(404).json({ message: 'Invalid inquiry' });
+        }
+
+        // Delete the inquiry from the waitlist
+        const deleteInquiry = await this.db('inquiries').where('id', inquiryID).delete();
+
+        if (!deleteInquiry) {
+          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    this.http._addRoute('GET', '/singup/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+    this.http._addRoute('GET', '/singup/decline/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+
+    //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', async (req, res) => {
-      // TODO: check for admin token
-      const { inquiry_id } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        inquiry_id: inquiry_id
-      });
+      const { email } = req.body;
 
-      res.send({
-        message: 'Invitation created successfully!'
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
+        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
+
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
+
+        //Flag for Eric
+        //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
+        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
+
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: 'nahuel_vignatti@hotmail.com',
+          to: email,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
+
+        if (!existingInvite) {
+          const invitation = await this.db('invitations').insert({
+            sender_id: req.user.id,
+            target: email,
+            token: invitationToken
+          });
+
+
+          // Delete the inquiry from the waitlist
+          const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
+
+          if (!deleteInquiryResult) {
+            return res.status(500).json({ message: 'Error deleting the inquiry.' });
+          }
+        } else {
+          return res.status(500).json({ message: 'Error: Invitation already exist.' });
+        }
+
+
+
+        res.send({
+          message: 'Invitation created successfully!'
+        });
+      } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
 
+    //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-      // TODO: check for admin token
-      const { status } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        status: status
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
 
-      res.send({
-        message: 'Invitation re-sent successfully!'
-      });
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
+
+        const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
+
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: 'nahuel_vignatti@hotmail.com',
+          to: invitation.target,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
+
+        const updateResult = await this.db('invitations')
+          .where({ id: req.params.id })
+          .increment('invitation_count', 1)
+          .update({
+            updated_at: new Date(),
+            sender_id: req.user.id,
+            token: invitationToken
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation count.' });
+        }
+
+        res.send({
+          message: 'Invitation re-sent successfully!'
+        });
+      } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
+
 
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
       // - create user account
       // - set user password
       // - create help conversation
+    });
+
+    this.http._addRoute('GET', '/invitations', async (req, res) => {
+      try {
+        const invitations = await this.db('invitations')
+        .join('users', 'invitations.sender_id', '=', 'users.id')
+        .select('invitations.*', 'users.username as sender_username')
+        .orderBy('invitations.created_at', 'desc');
+
+        res.send(invitations);
+      } catch (error) {
+        console.error('Error fetching invitations:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/checkInvitationToken/:id', async (req, res) => {
+      const  invitationToken = req.params.id;
+
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Yor invitation link is not valid.' });
+        }
+
+        // Check if the invitation has already been accepted or declined
+        if (invitation.status === 'accepted') {
+          return res.status(409).json({
+            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.'
+          });
+        } else if (invitation.status === 'declined') {
+          return res.status(409).json({
+            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.'
+          });
+        }
+
+        // Check if the token is older than 30 days
+        const tokenAgeInDays = (new Date() - new Date(invitation.updated_at)) / (1000 * 60 * 60 * 24);
+        if (tokenAgeInDays > 30) {
+          return res.status(410).json({ message: 'Your invitation link has expired.' });
+        }
+
+        res.json({ message: 'Invitation token is valid and pending.', invitation });
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to change the status of an invitation when its accepted
+    this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'accepted',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation accepted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to change the status of an invitation when its declined
+    this.http._addRoute('PATCH', '/invitations/decline/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'declined',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation declined successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to delete invitation from admin panel
+    this.http._addRoute('PATCH', '/invitations/delete/:id', async (req, res) => {
+      const invitationID = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ id: invitationID }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation' });
+        }
+
+        // Delete the inquiry from the waitlist
+        const deleteInvitation = await this.db('invitations').where('id', invitationID).delete();
+
+        if (!deleteInvitation) {
+          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
     });
 
     this.http._addRoute('GET', '/dockets', async (req, res) => {
@@ -1320,6 +1592,93 @@ class Jeeves extends Service {
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
+
+    this.http._addRoute('POST', '/users/full', async (req, res) => {
+      const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
+
+      // Check if the username and password are provided
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required.' });
+      }
+
+      try {
+        // Check if the username already exists
+        const existingUser = await this.db('users').where('username', username).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Username already exists.' });
+        }
+
+        // Check if the email already exists
+        const existingEmail = await this.db('users').where('email', email).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Email already registered.' });
+        }
+
+        // Generate a salt and hash the password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(password, salt);
+
+        // Insert the new user into the database
+        const newUser = await this.db('users').insert({
+          username: username,
+          password: hashedPassword,
+          salt: salt,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          firm_name: firmName,
+          firm_size: firmSize,
+          firm_name: firmName ? firmName : null,
+          firm_size: firmSize || firmSize === 0 ? firmSize : null,
+        });
+
+        console.log('New user registered:', username);
+
+        return res.json({ message: 'User registered successfully.' });
+      } catch (error) {
+        console.error('Error registering user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //endpoint to check if the username is available
+    this.http._addRoute('POST', '/users/:id', async (req, res) => {
+      const  username = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ username: username }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
+        }
+        res.json({ message: 'Username avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+
+    //endpoint to check if the email is available
+    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
+      const  email = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ email: email }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
+        }
+        res.json({ message: 'Email avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
 
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
@@ -1458,7 +1817,16 @@ class Jeeves extends Service {
           });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex');
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let resetToken = '';
+        while (!uniqueTokenFound) {
+          resetToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('password_resets').where({ token: resetToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
 
         const newReset = await this.db('password_resets').insert({
           user_id: existingUser.id,
@@ -1484,7 +1852,8 @@ class Jeeves extends Service {
 
         try {
           await this.email.send({
-            from: 'agent@jeeves.dev',
+           // from: 'agent@jeeves.dev',
+            from: 'nahuel_vignatti@hotmail.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -2621,6 +2990,92 @@ class Jeeves extends Service {
     return this;
   }
 
+  //function that creates the template to email invitations sendig
+  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {
+    return `
+          <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                    }
+
+                    .button {
+                        background-color: #1f487c;
+                        border: none;
+                        color: white;
+                        padding: 10px 20px;
+                        text-align: center;
+                        text-decoration: none;
+                        display: inline-block;
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 4px 2px;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        width: 150px;
+                    }
+
+                    .button:hover {
+                        background-color: #163d5c;
+                    }
+
+                    .decline {
+                        color: #ca392f;
+                        text-decoration: none;
+                        font-size: 14px;
+                        margin-top: 20px;
+                        display: inline-block;
+                    }
+
+                    .container {
+                        text-align: center;
+                        max-width: 500px;
+                        margin: 0 auto;
+                    }
+
+                    .footer {
+                        margin-top: 30px;
+                        font-size: 0.8em;
+                    }
+                    table {
+                      width: 100%;
+                  }
+
+                  .content {
+                      text-align: center;
+                  }
+                </style>
+            </head>
+
+            <body>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td>
+                            <div class="container">
+                                <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                                    <tr>
+                                        <td class="content">
+                                            <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                            <h3>Hello, You have been invited to join Novo.</h3>
+                                            <p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.</p>
+                                            <a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo</a>
+                                            <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="footer">
+                                    <p>For any inquiries, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+
+          </html>`;
+  }
   /**
    * Stop the process.
    * @return {Promise} Resolves once the process has been stopped.

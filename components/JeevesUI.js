@@ -163,7 +163,15 @@
                   login={this.props.login}
                   register={this.props.register}
                   error={this.props.error}
-                />
+                  checkInvitationToken = {this.props.checkInvitationToken}
+                  checkUsernameAvailable={this.props.checkUsernameAvailable}
+                  checkEmailAvailable={this.props.checkEmailAvailable}
+                  invitation={this.props.invitation}
+                  auth={this.props.auth}
+                  fullRegister={this.props.fullRegister}
+                  acceptInvitation={this.props.acceptInvitation}
+                  declineInvitation={this.props.declineInvitation}
+                  />
               ) : !this.props.auth.isCompliant ? (
                 <TermsOfUseModal
                   {...this.props}
