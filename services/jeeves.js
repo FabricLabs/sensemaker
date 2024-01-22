@@ -1105,6 +1105,7 @@ class Jeeves extends Service {
       return res.send(this.http.app.render());
     });
 
+    //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
       const { email } = req.body;
@@ -1116,8 +1117,6 @@ class Jeeves extends Service {
         }
         const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
 
-        //acaaa
-
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
@@ -1129,12 +1128,30 @@ class Jeeves extends Service {
           }
         };
 
+        //Flag for Eric
+        //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
+        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
+
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: 'nahuel_vignatti@hotmail.com',
+          to: email,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
+
         if (!existingInvite) {
           const invitation = await this.db('invitations').insert({
             sender_id: req.user.id,
             target: email,
             token: invitationToken
           });
+
 
           // Delete the inquiry from the waitlist
           const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
@@ -1146,6 +1163,8 @@ class Jeeves extends Service {
           return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
 
+
+
         res.send({
           message: 'Invitation created successfully!'
         });
@@ -1155,6 +1174,7 @@ class Jeeves extends Service {
       }
     });
 
+    //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
 
       try {
@@ -1162,7 +1182,6 @@ class Jeeves extends Service {
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-        //send the email
 
         // Generate a unique token
         let uniqueTokenFound = false;
@@ -1174,6 +1193,21 @@ class Jeeves extends Service {
             uniqueTokenFound = true;
           }
         };
+
+        const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
+
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: 'nahuel_vignatti@hotmail.com',
+          to: invitation.target,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
 
         const updateResult = await this.db('invitations')
           .where({ id: req.params.id })
@@ -1619,8 +1653,8 @@ class Jeeves extends Service {
 
         try {
           await this.email.send({
-            // from: 'agent@jeeves.dev',
-            from: 'nahuel_vignatti@hotmail.com',
+            from: 'agent@jeeves.dev',
+            //from: 'nahuel_vignatti@hotmail.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -2736,6 +2770,92 @@ class Jeeves extends Service {
     return this;
   }
 
+  //function that creates the template to email invitations sendig
+  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {  
+    return `
+          <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                    }
+
+                    .button {
+                        background-color: #1f487c;
+                        border: none;
+                        color: white;
+                        padding: 10px 20px;
+                        text-align: center;
+                        text-decoration: none;
+                        display: inline-block;
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 4px 2px;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        width: 150px;
+                    }
+
+                    .button:hover {
+                        background-color: #163d5c;
+                    }
+
+                    .decline {
+                        color: #ca392f;
+                        text-decoration: none;
+                        font-size: 14px;
+                        margin-top: 20px;
+                        display: inline-block;
+                    }
+
+                    .container {
+                        text-align: center;
+                        max-width: 500px;
+                        margin: 0 auto;
+                    }
+
+                    .footer {
+                        margin-top: 30px;
+                        font-size: 0.8em;
+                    }
+                    table {
+                      width: 100%;
+                  }
+
+                  .content {
+                      text-align: center;
+                  }
+                </style>
+            </head>
+
+            <body>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td>
+                            <div class="container">
+                                <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                                    <tr>
+                                        <td class="content">
+                                            <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                            <h3>Hello, You have been invited to join Novo.</h3>
+                                            <p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.</p>
+                                            <a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo</a>
+                                            <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="footer">
+                                    <p>For any inquiries, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+
+          </html>`;
+  }
   /**
    * Stop the process.
    * @return {Promise} Resolves once the process has been stopped.
