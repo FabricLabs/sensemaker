@@ -64,22 +64,8 @@ class AdminInquiries extends React.Component {
 
     deleteInquiry = async (ID) => {
         try {
-            // const response = await Promise.race([timeoutPromise, this.props.reSendInvitation(ID)]);
-            // if (this.props.invitation.current && this.props.invitation.current.ok) {
-            //     //first timeout is to show the loading icon
-            //     await new Promise((resolve) => setTimeout(resolve, 1500));
-            //     this.setState({ sent: true });
-            //     await this.props.fetchInvitations();
-            //     //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Invitations wich
-            //     //updates the Invitations list, with this one changing its status to "Invited" and not being displayed (see below in render)
-            //     await new Promise((resolve) => setTimeout(resolve, 3000));
-            // } else {
-            //     console.log("vino por este else");
-            // }
-            console.log('Deleting Inquiry ', ID, 'not ready yet');
+            this.props.deleteInquiry(ID);
         } catch (error) {
-            // this.setState({ errorSending: true });
-            // await new Promise((resolve) => setTimeout(resolve, 3000));
             console.log(error);
         } finally {
             this.props.fetchInquiries();
@@ -106,14 +92,13 @@ class AdminInquiries extends React.Component {
         return (
             <section>
                 <div className='growth-section-head'>
-                    <Header as='h4' >Waitlist</Header>
+                    <Header as='h3' >Waitlist</Header>
                     <Input
                         icon='search'
                         placeholder='Find by email'
                         name='searchQuery'
                         onChange={this.handleInputChange}
-                        style={{ marginLeft: '20px' }}
-                    >
+                        style={{ marginLeft: '20px' }}>
                     </Input>
                 </div>
                 <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>

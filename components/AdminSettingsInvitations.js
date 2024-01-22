@@ -22,19 +22,15 @@ class AdminInvitations extends React.Component {
             sent: false,
             errorSending: false,
             sendingInvitationID: null, //this is used to know exactly wich inquiry we are sending so it changes uses the loading icon and messages
-            showAllInvitations: false,
             searchQuery: '',
+            showPending: true, // state for pending checkbox
+            showAccepted: false, // state for accepted checkbox
+            showDeclined: false, // state for declined checkbox
         };
     }
 
     componentDidMount() {
         this.props.fetchInvitations();
-    }
-
-    toggleShowAllInvitations = () => {
-        this.setState(prevState => ({
-            showAllInvitations: !prevState.showAllInvitations
-        }));
     }
 
     reSendInvite = async (ID) => {
@@ -69,24 +65,9 @@ class AdminInvitations extends React.Component {
     }
 
     deleteInvite = async (ID) => {
-
         try {
-            // const response = await Promise.race([timeoutPromise, this.props.reSendInvitation(ID)]);
-            // if (this.props.invitation.current && this.props.invitation.current.ok) {
-            //     //first timeout is to show the loading icon
-            //     await new Promise((resolve) => setTimeout(resolve, 1500));
-            //     this.setState({ sent: true });
-            //     await this.props.fetchInvitations();
-            //     //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Invitations wich
-            //     //updates the Invitations list, with this one changing its status to "Invited" and not being displayed (see below in render)
-            //     await new Promise((resolve) => setTimeout(resolve, 3000));
-            // } else {
-            //     console.log("vino por este else");
-            // }
-            console.log('Deleting Invite ', ID, 'not ready yet');
+            this.props.deleteInvitation(ID);
         } catch (error) {
-            // this.setState({ errorSending: true });
-            // await new Promise((resolve) => setTimeout(resolve, 3000));
             console.log(error);
         } finally {
             this.props.fetchInvitations();
@@ -105,14 +86,39 @@ class AdminInvitations extends React.Component {
         });
     };
 
+    toggleCheckbox = (event) => {
+        this.setState({
+            [event.target.name]: event.target.checked
+        });
+    }
+    
+
     render() {
-        const { sent, sendingInvitationID, errorSending, showAllInvitations } = this.state;
+        const { sent, sendingInvitationID, errorSending, showPending, showAccepted, showDeclined } = this.state;
         const { invitation } = this.props;
 
         return (
             <section>
                 <div className='growth-section-head'>
                     <Header as='h4' style={{ margin: '0' }}>Invitations</Header>
+                    <Checkbox
+                        label='Pending'
+                        name='showPending'
+                        checked={showPending}
+                        onChange={this.toggleCheckbox}                        
+                    />
+                    <Checkbox
+                        label='Accepted'
+                        name='showAccepted'
+                        checked={showAccepted}
+                        onChange={this.toggleCheckbox}
+                    />
+                    <Checkbox
+                        label='Declined'
+                        name='showDeclined'
+                        checked={showDeclined}
+                        onChange={this.toggleCheckbox}
+                    />
                     <Input
                         icon='search'
                         placeholder='Find by Email/Sender'
@@ -142,8 +148,19 @@ class AdminInvitations extends React.Component {
                                     instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
                                     instance.sender_username.toLowerCase().includes(this.state.searchQuery.toLowerCase())
                                 )
+                                // .filter(instance =>
+                                //     (showPending && instance.status === 'pending') ||
+                                //     (showAccepted && instance.status === 'accepted') ||
+                                //     (showDeclined && instance.status === 'declined') ||
+                                //     instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
+                                //     instance.sender_username.toLowerCase().includes(this.state.searchQuery.toLowerCase())
+                                // )
+
                                 .map(instance => {
-                                    if (instance.status === 'pending') {
+                                    if ((instance.status === 'pending' && showPending) ||
+                                        (instance.status === 'accepted' && showAccepted) ||
+                                        (instance.status === 'declined' && showDeclined)
+                                    ) {
                                         return (
                                             <Table.Row key={instance.id}>
                                                 <Table.Cell textAlign="center">{instance.id}</Table.Cell>

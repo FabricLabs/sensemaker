@@ -27,6 +27,10 @@ const DECLINE_INVITATION_REQUEST = 'DECLINE_INVITATION_REQUEST';
 const DECLINE_INVITATION_SUCCESS = 'DECLINE_INVITATION_SUCCESS';
 const DECLINE_INVITATION_FAILURE = 'DECLINE_INVITATION_FAILURE';
 
+const DELETE_INVITATION_REQUEST = 'DELETE_INVITATION_REQUEST';
+const DELETE_INVITATION_SUCCESS = 'DELETE_INVITATION_SUCCESS';
+const DELETE_INVITATION_FAILURE = 'DELETE_INVITATION_FAILURE';
+
 const CHECK_INVITATION_TOKEN_REQUEST = 'CHECK_INVITATION_TOKEN_REQUEST';
 const CHECK_INVITATION_TOKEN_SUCCESS = 'CHECK_INVITATION_TOKEN_SUCCESS';
 const CHECK_INVITATION_TOKEN_FAILURE = 'CHECK_INVITATION_TOKEN_FAILURE';
@@ -55,6 +59,10 @@ const acceptInvitationFailure = (error) => ({ type: ACCEPT_INVITATION_FAILURE, p
 const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUEST});
 const declineInvitationSuccess = (data) => ({ type: DECLINE_INVITATION_SUCCESS, payload: data });
 const declineInvitationFailure = (error) => ({ type: DECLINE_INVITATION_FAILURE, payload: error })
+
+const deleteInvitationRequest = () => ({ type: DELETE_INVITATION_REQUEST});
+const deleteInvitationSuccess = (data) => ({ type: DELETE_INVITATION_SUCCESS, payload: data });
+const deleteInvitationFailure = (error) => ({ type: DELETE_INVITATION_FAILURE, payload: error })
 
 // Thunk action creator
 const fetchInvitations = () => {
@@ -207,6 +215,30 @@ const declineInvitation = (invitationToken)=>{
   }
 }
 
+const deleteInvitation = (ID)=>{
+  return async dispatch =>{
+    dispatch(deleteInvitationRequest());
+    try{
+      const response = await fetch(`/invitations/delete/${ID}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+      dispatch(deleteInvitationSuccess(data));
+    }catch(error){
+      console.log("Error deleting invitation:", error.message);
+      dispatch(deleteInvitationFailure(error.message));
+    }
+  }
+}
+
 
 module.exports = {
   fetchInvitation,
@@ -216,6 +248,7 @@ module.exports = {
   checkInvitationToken,
   acceptInvitation,
   declineInvitation,
+  deleteInvitation,
   FETCH_INVITATION_REQUEST,
   FETCH_INVITATION_SUCCESS,
   FETCH_INVITATION_FAILURE,
@@ -234,4 +267,7 @@ module.exports = {
   DECLINE_INVITATION_REQUEST,
   DECLINE_INVITATION_SUCCESS,
   DECLINE_INVITATION_FAILURE,  
+  DELETE_INVITATION_REQUEST,
+  DELETE_INVITATION_SUCCESS,
+  DELETE_INVITATION_FAILURE,
 };

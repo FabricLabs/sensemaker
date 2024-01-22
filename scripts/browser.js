@@ -42,12 +42,14 @@ const {
   checkInvitationToken,
   acceptInvitation,
   declineInvitation,
+  deleteInvitation,
 } = require('../actions/invitationActions');
 
 // ## Inquiries Actions
 const {
   fetchInquiry,
-  fetchInquiries
+  fetchInquiries,
+  deleteInquiry,
 } = require('../actions/inquiriesActions');
 
 // ## Case Actions
@@ -185,6 +187,7 @@ async function main (input = {}) {
     fetchDocument: fetchDocument,
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
+    deleteInquiry: deleteInquiry,
     fetchInvitation: fetchInvitation,
     fetchInvitations: fetchInvitations,
     sendInvitation: sendInvitation,
@@ -192,6 +195,7 @@ async function main (input = {}) {
     checkInvitationToken: checkInvitationToken,
     acceptInvitation: acceptInvitation,
     declineInvitation: declineInvitation,
+    deleteInvitation: deleteInvitation,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
     fetchPeople: fetchPeople,

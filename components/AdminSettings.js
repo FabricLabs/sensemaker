@@ -180,37 +180,22 @@ class AdminSettings extends React.Component {
           <Statistic.Value>0</Statistic.Value>
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
         </Statistic>
-        <AdminInquiries 
-          inquiries={inquiries} 
-          fetchInquiries={this.props.fetchInquiries} 
+        <AdminInquiries
+          inquiries={inquiries}
+          fetchInquiries={this.props.fetchInquiries}
           fetchInvitations= {this.props.fetchInvitations}
-          sendInvitation={this.props.sendInvitation} 
+          sendInvitation={this.props.sendInvitation}
           invitation={invitation}
+          deleteInquiry={this.props.deleteInquiry}
           />
-        <AdminInvitations invitation={invitation} fetchInvitations={this.props.fetchInvitations} sendInvitation={this.props.sendInvitation} reSendInvitation={this.props.reSendInvitation}/>
-        {/* <Header as='h4'>Invitations</Header>
-        <Table celled striped>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Date</Table.HeaderCell>
-              <Table.HeaderCell>Email</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>
-                <Button>Re-send</Button>
-              </Table.Cell>
-            </Table.Row>
-          </Table.Body>
-        </Table> */}
+        <AdminInvitations
+          invitation={invitation}
+          fetchInvitations={this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation}
+          reSendInvitation={this.props.reSendInvitation}
+          deleteInvitation={this.props.deleteInvitation}
+        />
+
       </Tab.Pane> },
       { menuItem: 'Agents', render: () => <Tab.Pane loading={this.state.loading}>
 

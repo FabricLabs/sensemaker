@@ -1098,6 +1098,33 @@ class Jeeves extends Service {
       }
     });
 
+    //endpoint to delete inquiry from admin panel
+    this.http._addRoute('PATCH', '/inquiries/delete/:id', async (req, res) => {
+      const inquiryID = req.params.id;
+      try {
+        const inquiry = await this.db.select('*').from('inquiries').where({ id: inquiryID }).first();
+
+        if (!inquiry) {
+          return res.status(404).json({ message: 'Invalid inquiry' });
+        }
+
+        // Delete the inquiry from the waitlist
+        const deleteInquiry = await this.db('inquiries').where('id', inquiryID).delete();
+
+        if (!deleteInquiry) {
+          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
     this.http._addRoute('GET', '/singup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -1341,6 +1368,33 @@ class Jeeves extends Service {
 
         res.send({
           message: 'Invitation declined successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to delete invitation from admin panel
+    this.http._addRoute('PATCH', '/invitations/delete/:id', async (req, res) => {
+      const invitationID = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ id: invitationID }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation' });
+        }
+
+        // Delete the inquiry from the waitlist
+        const deleteInvitation = await this.db('invitations').where('id', invitationID).delete();
+
+        if (!deleteInvitation) {
+          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
         });
 
       } catch (error) {
