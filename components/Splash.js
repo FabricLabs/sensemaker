@@ -24,6 +24,7 @@ const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 const ResetPasswordForm = require('./ResetPasswordForm');
 const SingUpForm = require('./SingUpForm');
+const DeclinedInvitation = require('./DeclinedInvitation');
 
 class Splash extends React.Component {
   render () {
@@ -67,7 +68,16 @@ class Splash extends React.Component {
                   invitation={this.props.invitation}
                   fullRegister={this.props.fullRegister}
                   acceptInvitation={this.props.acceptInvitation}
-                />} />
+                />}
+            />
+            <Route path="/singup/decline/:invitationToken"
+              element={
+                <DeclinedInvitation
+                  checkInvitationToken={this.props.checkInvitationToken}
+                  declineInvitation={this.props.declineInvitation}
+                  invitation={this.props.invitation}
+                />}
+            />
           </Routes>
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>

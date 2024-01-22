@@ -17,9 +17,6 @@ const {
   Label
 } = require('semantic-ui-react');
 
-const checkInvitationToken = require('../actions/invitationActions');
-
-//this is the form that lets you choose a new password if you come with a valid token
 class SingUpForm extends React.Component {
   constructor(props) {
     super(props);
@@ -49,8 +46,6 @@ class SingUpForm extends React.Component {
   }
 
   componentDidMount = async () => {
-    //when the user is sent to /passwordreset/:resetToken, first when this componen mounts
-    //it checks if the :resetToken is a valid one
 
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "Novo · Your Legal Assistant";
@@ -222,7 +217,7 @@ class SingUpForm extends React.Component {
     return (
       <div className='fade-in singup-form'>
         <Segment>
-          <Form onSubmit={this.handleSubmit} loading={this.state.loading} centered>
+          <Form onSubmit={this.handleSubmit} loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
                 <Header as='h3' textAlign="center">Sing Up Form</Header>

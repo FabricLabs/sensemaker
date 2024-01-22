@@ -1101,6 +1101,9 @@ class Jeeves extends Service {
     this.http._addRoute('GET', '/singup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+    this.http._addRoute('GET', '/singup/decline/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
     this.http._addRoute('POST', '/invitations', async (req, res) => {
 
@@ -1204,11 +1207,6 @@ class Jeeves extends Service {
 
     this.http._addRoute('GET', '/invitations', async (req, res) => {
       try {
-        // const invitations = await this.db('invitations')
-        //   .select('*')
-        //   .orderBy('created_at', 'desc');
-        // res.send(invitations);
-
         const invitations = await this.db('invitations')
         .join('users', 'invitations.sender_id', '=', 'users.id')
         .select('invitations.*', 'users.username as sender_username')

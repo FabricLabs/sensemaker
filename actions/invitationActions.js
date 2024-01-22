@@ -49,12 +49,12 @@ const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKE
 const checkInvitationTokenFailure = (error) => ({ type: CHECK_INVITATION_TOKEN_FAILURE, payload: error });
 
 const acceptInvitationRequest = () => ({ type: ACCEPT_INVITATION_REQUEST});
-const acceptInvitationSuccess = (data) => ({ type: ACCEPT_INVITATION_SUCCESS, payload: response });
+const acceptInvitationSuccess = (data) => ({ type: ACCEPT_INVITATION_SUCCESS, payload: data });
 const acceptInvitationFailure = (error) => ({ type: ACCEPT_INVITATION_FAILURE, payload: error });
 
-const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUESTINVITATION_REQUEST});
-const declineInvitationSuccess = (data) => ({ type: DECLINE_INVITATION_REQUESTINVITATION_SUCCESS, payload: response });
-const declineInvitationFailure = (error) => ({ type: DECLINE_INVITATION_REQUESTINVITATION_FAILURE, payload: error })
+const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUEST});
+const declineInvitationSuccess = (data) => ({ type: DECLINE_INVITATION_SUCCESS, payload: data });
+const declineInvitationFailure = (error) => ({ type: DECLINE_INVITATION_FAILURE, payload: error })
 
 // Thunk action creator
 const fetchInvitations = () => {
