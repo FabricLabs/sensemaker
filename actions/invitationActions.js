@@ -10,12 +10,23 @@ async function fetchInvitationsFromAPI(token) {
 const FETCH_INVITATIONS_REQUEST = 'FETCH_INVITATIONS_REQUEST';
 const FETCH_INVITATIONS_SUCCESS = 'FETCH_INVITATIONS_SUCCESS';
 const FETCH_INVITATIONS_FAILURE = 'FETCH_INVITATIONS_FAILURE';
+
 const FETCH_INVITATION_REQUEST = 'FETCH_INVITATION_REQUEST';
 const FETCH_INVITATION_SUCCESS = 'FETCH_INVITATION_SUCCESS';
 const FETCH_INVITATION_FAILURE = 'FETCH_INVITATION_FAILURE';
+
 const SEND_INVITATION_REQUEST = 'SEND_INVITATION_REQUEST';
 const SEND_INVITATION_SUCCESS = 'SEND_INVITATION_SUCCESS';
 const SEND_INVITATION_FAILURE = 'SEND_INVITATION_FAILURE';
+
+const ACCEPT_INVITATION_REQUEST = 'ACCEPT_INVITATION_REQUEST';
+const ACCEPT_INVITATION_SUCCESS = 'ACCEPT_INVITATION_SUCCESS';
+const ACCEPT_INVITATION_FAILURE = 'ACCEPT_INVITATION_FAILURE';
+
+const DECLINE_INVITATION_REQUEST = 'DECLINE_INVITATION_REQUEST';
+const DECLINE_INVITATION_SUCCESS = 'DECLINE_INVITATION_SUCCESS';
+const DECLINE_INVITATION_FAILURE = 'DECLINE_INVITATION_FAILURE';
+
 const CHECK_INVITATION_TOKEN_REQUEST = 'CHECK_INVITATION_TOKEN_REQUEST';
 const CHECK_INVITATION_TOKEN_SUCCESS = 'CHECK_INVITATION_TOKEN_SUCCESS';
 const CHECK_INVITATION_TOKEN_FAILURE = 'CHECK_INVITATION_TOKEN_FAILURE';
@@ -24,15 +35,26 @@ const CHECK_INVITATION_TOKEN_FAILURE = 'CHECK_INVITATION_TOKEN_FAILURE';
 const fetchInvitationsRequest = () => ({ type: FETCH_INVITATIONS_REQUEST, loading: true });
 const fetchInvitationsSuccess = (invitations) => ({ type: FETCH_INVITATIONS_SUCCESS, payload: invitations, loading: false });
 const fetchInvitationsFailure = (error) => ({ type: FETCH_INVITATIONS_FAILURE, payload: error, loading: false });
+
 const fetchInvitationRequest = () => ({ type: FETCH_INVITATION_REQUEST, loading: true });
 const fetchInvitationSuccess = (instance) => ({ type: FETCH_INVITATION_SUCCESS, payload: instance, loading: false });
 const fetchInvitationFailure = (error) => ({ type: FETCH_INVITATION_FAILURE, payload: error, loading: false });
+
 const sendInvitationRequest = () => ({ type: SEND_INVITATION_REQUEST, loading: true });
 const sendInvitationSuccess = (response) => ({ type: SEND_INVITATION_SUCCESS, payload: response });
 const sendInvitationFailure = (error) => ({ type: SEND_INVITATION_FAILURE, payload: error });
+
 const checkInvitationTokenRequest = () => ({ type: CHECK_INVITATION_TOKEN_REQUEST });
 const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKEN_SUCCESS, payload: response });
 const checkInvitationTokenFailure = (error) => ({ type: CHECK_INVITATION_TOKEN_FAILURE, payload: error });
+
+const acceptInvitationRequest = () => ({ type: ACCEPT_INVITATION_REQUEST});
+const acceptInvitationSuccess = (data) => ({ type: ACCEPT_INVITATION_SUCCESS, payload: response });
+const acceptInvitationFailure = (error) => ({ type: ACCEPT_INVITATION_FAILURE, payload: error });
+
+const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUESTINVITATION_REQUEST});
+const declineInvitationSuccess = (data) => ({ type: DECLINE_INVITATION_REQUESTINVITATION_SUCCESS, payload: response });
+const declineInvitationFailure = (error) => ({ type: DECLINE_INVITATION_REQUESTINVITATION_FAILURE, payload: error })
 
 // Thunk action creator
 const fetchInvitations = () => {
@@ -136,6 +158,55 @@ const checkInvitationToken = (invitationToken) => {
   }
 }
 
+const acceptInvitation = (invitationToken)=>{
+  return async dispatch =>{
+    dispatch(acceptInvitationRequest());
+    try{
+      const response = await fetch(`/invitations/accept/${invitationToken}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+      dispatch(acceptInvitationSuccess(data));
+    }catch(error){
+      console.log("Error updating invitation status:", error.message);
+      dispatch(acceptInvitationFailure(error.message));
+    }
+
+  }
+}
+
+const declineInvitation = (invitationToken)=>{
+  return async dispatch =>{
+    dispatch(declineInvitationRequest());
+    try{
+      const response = await fetch(`/invitations/decline/${invitationToken}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+      dispatch(declineInvitationSuccess(data));
+    }catch(error){
+      console.log("Error updating invitation status:", error.message);
+      dispatch(declineInvitationFailure(error.message));
+    }
+  }
+}
+
 
 module.exports = {
   fetchInvitation,
@@ -143,6 +214,8 @@ module.exports = {
   sendInvitation,
   reSendInvitation,
   checkInvitationToken,
+  acceptInvitation,
+  declineInvitation,
   FETCH_INVITATION_REQUEST,
   FETCH_INVITATION_SUCCESS,
   FETCH_INVITATION_FAILURE,
@@ -155,4 +228,10 @@ module.exports = {
   CHECK_INVITATION_TOKEN_REQUEST,
   CHECK_INVITATION_TOKEN_SUCCESS,
   CHECK_INVITATION_TOKEN_FAILURE,
+  ACCEPT_INVITATION_REQUEST,
+  ACCEPT_INVITATION_SUCCESS,
+  ACCEPT_INVITATION_FAILURE,
+  DECLINE_INVITATION_REQUEST,
+  DECLINE_INVITATION_SUCCESS,
+  DECLINE_INVITATION_FAILURE,  
 };

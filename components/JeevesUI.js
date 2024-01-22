@@ -169,6 +169,7 @@
                   invitation={this.props.invitation}
                   auth={this.props.auth}
                   fullRegister={this.props.fullRegister}
+                  acceptInvitation={this.props.acceptInvitation}
                   />
               ) : !this.props.auth.isCompliant ? (
                 <TermsOfUseModal

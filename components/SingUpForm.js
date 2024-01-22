@@ -93,6 +93,7 @@ class SingUpForm extends React.Component {
         this.setState({ registering: false });
         if (auth.registerSuccess) {
           this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
+          this.props.acceptInvitation(this.props.invitationToken);
         } else {
           this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
         }
@@ -340,15 +341,18 @@ class SingUpForm extends React.Component {
             )}
             {(tokenError) && (
               <Message negative>
+                <Message.Header style={{ marginBottom: '1rem' }}>Something went wrong.</Message.Header>
                 <p>{errorContent}</p>
               </Message>
             )}
             {registerSuccess && (
               <Message positive centered>
-                <Message.Header>Registration Successful</Message.Header>
+                <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
                 <p>Please log in to access your account and start utilizing our services.</p>
-                <Button primary href="/sessions/new">Log In</Button>
+                <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
+                  <Button primary href="/sessions/new" >Log In</Button>
+                </div>
               </Message>
             )}
             {/* <Message negative>

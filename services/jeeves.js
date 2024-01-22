@@ -1194,6 +1194,7 @@ class Jeeves extends Service {
       }
     });
 
+    
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
       // - create user account
@@ -1225,16 +1226,20 @@ class Jeeves extends Service {
 
       try {
         const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
+        
         if (!invitation) {
           return res.status(404).json({ message: 'Yor invitation link is not valid.' });
         }
 
         // Check if the invitation has already been accepted or declined
         if (invitation.status === 'accepted') {
-          return res.status(409).json({ message: 'The invitation was already accepted.' });
+          return res.status(409).json({ 
+            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.' 
+          });
         } else if (invitation.status === 'declined') {
-          return res.status(409).json({ message: 'The invitation was declined.' });
+          return res.status(409).json({ 
+            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.' 
+          });
         }
 
         // Check if the token is older than 30 days
@@ -1250,6 +1255,68 @@ class Jeeves extends Service {
 
     });
 
+    //endpoint to change the status of an invitation when its accepted
+    this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'accepted',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation accepted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to change the status of an invitation when its declined
+    this.http._addRoute('PATCH', '/invitations/decline/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'declined',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation declined successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+    
     this.http._addRoute('GET', '/dockets', async (req, res) => {
       const dockets = await this.courtlistener.paginateDockets();
       res.send(dockets);
@@ -1304,40 +1371,40 @@ class Jeeves extends Service {
       }
 
       try {
-        // // Check if the username already exists
-        // const existingUser = await this.db('users').where('username', username).first();
-        // if (existingUser) {
-        //   return res.status(409).json({ message: 'Username already exists.' });
-        // }
+        // Check if the username already exists
+        const existingUser = await this.db('users').where('username', username).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Username already exists.' });
+        }
 
-        // // Check if the email already exists
-        // const existingEmail = await this.db('users').where('email', email).first();
-        // if (existingUser) {
-        //   return res.status(409).json({ message: 'Email already registered.' });
-        // }
+        // Check if the email already exists
+        const existingEmail = await this.db('users').where('email', email).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Email already registered.' });
+        }
 
-        // // Generate a salt and hash the password
-        // const saltRounds = 10;
-        // const salt = genSaltSync(saltRounds);
-        // const hashedPassword = hashSync(password, salt);
+        // Generate a salt and hash the password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(password, salt);
 
-        // // Insert the new user into the database
-        // const newUser = await this.db('users').insert({
-        //   username: username,
-        //   password: hashedPassword,
-        //   salt: salt,
-        //   email: email,
-        //   first_name: firstName,
-        //   last_name: lastName,
-        //   firm_name: firmName,
-        //   firm_size: firmSize,
-        //   firm_name: firmName ? firmName : null,
-        //   firm_size: firmSize || firmSize === 0 ? firmSize : null,
-        // });
+        // Insert the new user into the database
+        const newUser = await this.db('users').insert({
+          username: username,
+          password: hashedPassword,
+          salt: salt,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          firm_name: firmName,
+          firm_size: firmSize,
+          firm_name: firmName ? firmName : null,
+          firm_size: firmSize || firmSize === 0 ? firmSize : null,
+        });
 
-        // console.log('New user registered:', username);
+        console.log('New user registered:', username);
 
-        // return res.json({ message: 'User registered successfully.' });
+        return res.json({ message: 'User registered successfully.' });
       } catch (error) {
         console.error('Error registering user: ', error);
         return res.status(500).json({ message: 'Internal server error.' });

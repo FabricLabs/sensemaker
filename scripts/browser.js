@@ -24,7 +24,7 @@ const store = require('../stores/redux');
 // Actions drive the application.  They are the only way to change the state.
 
 // ## Authentication (and Authorization) Actions
-const { login, reLogin, register, logout, checkUsernameAvailable, checkEmailAvailable } = require('../actions/authActions');
+const { login, reLogin, register, logout, checkUsernameAvailable, checkEmailAvailable, fullRegister } = require('../actions/authActions');
 
 // ## Admin Actions
 const {
@@ -40,6 +40,8 @@ const {
   sendInvitation,
   reSendInvitation,
   checkInvitationToken,
+  acceptInvitation,
+  declineInvitation,
 } = require('../actions/invitationActions');
 
 // ## Inquiries Actions
@@ -188,6 +190,8 @@ async function main (input = {}) {
     sendInvitation: sendInvitation,
     reSendInvitation: reSendInvitation,
     checkInvitationToken: checkInvitationToken,
+    acceptInvitation: acceptInvitation,
+    declineInvitation: declineInvitation,
     fetchJudges: fetchJudges,
     fetchJudge: fetchJudge,
     fetchPeople: fetchPeople,
@@ -202,6 +206,7 @@ async function main (input = {}) {
     logout: logout,
     reLogin: reLogin,
     register: register,
+    fullRegister:fullRegister,
     checkUsernameAvailable: checkUsernameAvailable,
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,
