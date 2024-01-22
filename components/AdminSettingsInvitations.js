@@ -66,11 +66,11 @@ class AdminInvitations extends React.Component {
 
     deleteInvite = async (ID) => {
         try {
-            this.props.deleteInvitation(ID);
+            await this.props.deleteInvitation(ID);
         } catch (error) {
             console.log(error);
         } finally {
-            this.props.fetchInvitations();
+            await this.props.fetchInvitations();
         }
 
     }
@@ -86,12 +86,11 @@ class AdminInvitations extends React.Component {
         });
     };
 
-    toggleCheckbox = (event) => {
-        this.setState({
-            [event.target.name]: event.target.checked
-        });
+    toggleCheckbox = (checkboxName) => {
+        this.setState(prevState => ({
+            [checkboxName]: !prevState[checkboxName]
+        }));
     }
-    
 
     render() {
         const { sent, sendingInvitationID, errorSending, showPending, showAccepted, showDeclined } = this.state;
@@ -104,20 +103,26 @@ class AdminInvitations extends React.Component {
                     <Checkbox
                         label='Pending'
                         name='showPending'
-                        checked={showPending}
-                        onChange={this.toggleCheckbox}                        
+                        // checked={showPending}
+                        //onChange={this.toggleCheckbox}
+                        onChange={() => this.toggleCheckbox('showPending')}
+                        defaultChecked
                     />
                     <Checkbox
                         label='Accepted'
                         name='showAccepted'
-                        checked={showAccepted}
-                        onChange={this.toggleCheckbox}
+                        // checked={showAccepted}
+                        //onChange={this.toggleCheckbox}
+                        onChange={() => this.toggleCheckbox('showAccepted')}
+
                     />
                     <Checkbox
                         label='Declined'
                         name='showDeclined'
-                        checked={showDeclined}
-                        onChange={this.toggleCheckbox}
+                        // checked={showDeclined}
+                        //onChange={this.toggleCheckbox}
+                        onChange={() => this.toggleCheckbox('showDeclined')}
+
                     />
                     <Input
                         icon='search'
@@ -148,14 +153,6 @@ class AdminInvitations extends React.Component {
                                     instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
                                     instance.sender_username.toLowerCase().includes(this.state.searchQuery.toLowerCase())
                                 )
-                                // .filter(instance =>
-                                //     (showPending && instance.status === 'pending') ||
-                                //     (showAccepted && instance.status === 'accepted') ||
-                                //     (showDeclined && instance.status === 'declined') ||
-                                //     instance.target.toLowerCase().includes(this.state.searchQuery.toLowerCase()) ||
-                                //     instance.sender_username.toLowerCase().includes(this.state.searchQuery.toLowerCase())
-                                // )
-
                                 .map(instance => {
                                     if ((instance.status === 'pending' && showPending) ||
                                         (instance.status === 'accepted' && showAccepted) ||

@@ -64,11 +64,11 @@ class AdminInquiries extends React.Component {
 
     deleteInquiry = async (ID) => {
         try {
-            this.props.deleteInquiry(ID);
+            await this.props.deleteInquiry(ID);
         } catch (error) {
             console.log(error);
         } finally {
-            this.props.fetchInquiries();
+            await this.props.fetchInquiries();
         }
 
     }

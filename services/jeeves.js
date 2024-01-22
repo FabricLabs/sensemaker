@@ -1258,7 +1258,7 @@ class Jeeves extends Service {
       }
     });
 
-    
+
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
       // - create user account
@@ -1285,19 +1285,19 @@ class Jeeves extends Service {
 
       try {
         const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-        
+
         if (!invitation) {
           return res.status(404).json({ message: 'Yor invitation link is not valid.' });
         }
 
         // Check if the invitation has already been accepted or declined
         if (invitation.status === 'accepted') {
-          return res.status(409).json({ 
-            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.' 
+          return res.status(409).json({
+            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.'
           });
         } else if (invitation.status === 'declined') {
-          return res.status(409).json({ 
-            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.' 
+          return res.status(409).json({
+            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.'
           });
         }
 
@@ -1402,7 +1402,7 @@ class Jeeves extends Service {
       }
 
     });
-    
+
     this.http._addRoute('GET', '/dockets', async (req, res) => {
       const dockets = await this.courtlistener.paginateDockets();
       res.send(dockets);
@@ -1707,8 +1707,8 @@ class Jeeves extends Service {
 
         try {
           await this.email.send({
-            from: 'agent@jeeves.dev',
-            //from: 'nahuel_vignatti@hotmail.com',
+           // from: 'agent@jeeves.dev',
+            from: 'nahuel_vignatti@hotmail.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -2825,7 +2825,7 @@ class Jeeves extends Service {
   }
 
   //function that creates the template to email invitations sendig
-  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {  
+  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {
     return `
           <html>
             <head>

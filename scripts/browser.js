@@ -24,7 +24,15 @@ const store = require('../stores/redux');
 // Actions drive the application.  They are the only way to change the state.
 
 // ## Authentication (and Authorization) Actions
-const { login, reLogin, register, logout, checkUsernameAvailable, checkEmailAvailable, fullRegister } = require('../actions/authActions');
+const {
+  login,
+  reLogin,
+  register,
+  logout,
+  checkUsernameAvailable,
+  checkEmailAvailable,
+  fullRegister
+} = require('../actions/authActions');
 
 // ## Admin Actions
 const {
