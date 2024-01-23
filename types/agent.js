@@ -25,7 +25,6 @@ const OpenAIService = require('../services/openai');
 
 /**
  * The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
- * @type {Agent} An Agent is a type of Service.
  */
 class Agent extends Service {
   constructor (settings = {}) {

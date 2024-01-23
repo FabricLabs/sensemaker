@@ -489,7 +489,14 @@ class Jeeves extends Hub {
     return beat;
   }
 
-  async createTimedRequest (request, timeout = 60000, depth = 1) {
+  /**
+   * Execute the default pipeline for an inbound request.
+   * @param {Object} request Request object.
+   * @param {Number} [timeout] How long to wait for a response.
+   * @param {Number} [depth] How many times to recurse.
+   * @returns {Message} Request as a Fabric {@link Message}.
+   */
+  async createTimedRequest (request, timeout = 60000, depth = 0) {
     const now = new Date();
     const created = now.toISOString();
     const message = Message.fromVector(['TimedRequest', JSON.stringify({
@@ -555,6 +562,7 @@ class Jeeves extends Hub {
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
+    // TODO: execute RAG query for additional metadata
     const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".`, openai: this.settings.openai });
     const ragged = await ragger.query({ query: request.query });
 
@@ -610,6 +618,20 @@ class Jeeves extends Hub {
         } catch (exception) {
           console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
         }
+      }
+
+      try {
+        const responseIDs = await this.db('responses').insert({
+          actor: this.summarizer.id,
+          content: summarized.content
+        });
+
+        this.emit('response', {
+          id: responseIDs[0],
+          content: summarized.content
+        })
+      } catch (exception) {
+        console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
       }
 
       const end = new Date();
