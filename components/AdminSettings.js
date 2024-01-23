@@ -251,26 +251,21 @@ class AdminSettings extends React.Component {
             <Table.Row>
               <Table.Cell>Mistral 7B</Table.Cell>
               <Table.Cell>mistral-7b</Table.Cell>
+              <Table.Cell><Label>ready</Label></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell>Mistral 8x7B</Table.Cell>
+              <Table.Cell>mistral-8x7b</Table.Cell>
               <Table.Cell><Label>stopped</Label></Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>GPT 3.5 Turbo</Table.Cell>
-              <Table.Cell>gpt-3.5-turbo</Table.Cell>
+              <Table.Cell>GPT 3.5</Table.Cell>
+              <Table.Cell>gpt-3.5</Table.Cell>
               <Table.Cell><Label>ready</Label></Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell>GPT 4</Table.Cell>
               <Table.Cell>gpt-4</Table.Cell>
-              <Table.Cell><Label>ready</Label></Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>GPT 4 32k</Table.Cell>
-              <Table.Cell>gpt-4-32k</Table.Cell>
-              <Table.Cell><Label>ready</Label></Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell>GPT 4 Turbo</Table.Cell>
-              <Table.Cell>gpt-4-turbo</Table.Cell>
               <Table.Cell><Label>ready</Label></Table.Cell>
             </Table.Row>
             <Table.Row>

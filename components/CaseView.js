@@ -45,6 +45,9 @@ class CaseView extends React.Component {
           <Label.Group>
             <Label icon='calendar'>{formatDate(cases.current.decision_date)}</Label>
             <Label icon='law'>{cases.current.court_name}</Label>
+            {(cases.current.ia_url) ? (
+              <Label icon='pdf'>file</Label>
+            ) : null}
           </Label.Group>
           <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
           <div style={{ marginTop: '1em' }}>
