@@ -43,7 +43,7 @@ class AdminInquiries extends React.Component {
       const response = await Promise.race([timeoutPromise, this.props.sendInvitation(email)]);
       if (this.props.invitation.current.ok) {
         //first timeout is to show the loading icon
-        await new Promise((resolve) => setTimeout(resolve,500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         this.setState({ sent: true });
         //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Inquiries wich
         //updates the Inquiries list, and not being displayed in this list anymore
@@ -115,45 +115,47 @@ class AdminInquiries extends React.Component {
                 .filter(instance =>
                   instance.email.toLowerCase().includes(this.state.searchQuery.toLowerCase()))
                 .map(instance => {
-                  return (
-                    <Table.Row key={instance.id}>
-                      <Table.Cell textAlign="center">{instance.id}</Table.Cell>
-                      <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
-                      <Table.Cell textAlign="center">{instance.email}</Table.Cell>
-                      <Table.Cell textAlign="center">
-                        {(sent && sendingInvitationId === instance.id && !errorSending) &&
-                          <Message positive textAlign="center" size='small'>
-                            <Message.Content>
-                              Invitation Sent
-                            </Message.Content>
-                          </Message>
-                        }
-                        {(sendingInvitationId === instance.id && errorSending) &&
-                          <Message negative textAlign="center" size='small'>
-                            <Message.Content>
-                              Invitation not sent, try again later
-                            </Message.Content>
-                          </Message>
-                        }
-                        {((!sent || sendingInvitationId !== instance.id) && !errorSending) && (
+                  if (instance.status === 'waiting') {
+                    return (
+                      <Table.Row key={instance.id}>
+                        <Table.Cell textAlign="center">{instance.id}</Table.Cell>
+                        <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
+                        <Table.Cell textAlign="center">{instance.email}</Table.Cell>
+                        <Table.Cell textAlign="center">
+                          {(sent && sendingInvitationId === instance.id && !errorSending) &&
+                            <Message positive textAlign="center" size='small'>
+                              <Message.Content>
+                                Invitation Sent
+                              </Message.Content>
+                            </Message>
+                          }
+                          {(sendingInvitationId === instance.id && errorSending) &&
+                            <Message negative textAlign="center" size='small'>
+                              <Message.Content>
+                                Invitation not sent, try again later
+                              </Message.Content>
+                            </Message>
+                          }
+                          {((!sent || sendingInvitationId !== instance.id) && !errorSending) && (
+                            <Button
+                              icon='send'
+                              size='mini'
+                              loading={sendingInvitationId === instance.id}
+                              onClick={() => this.createInvitation(instance.email, instance.id)}
+                              content='Send Invitation'
+                            />
+                          )}
+                        </Table.Cell>
+                        <Table.Cell textAlign="center">
                           <Button
-                            icon='send'
-                            size='mini'
-                            loading={sendingInvitationId === instance.id}
-                            onClick={() => this.createInvitation(instance.email, instance.id)}
-                            content='Send Invitation'
+                            icon='trash alternate'
+                            disabled={sendingInvitationId === instance.id}
+                            onClick={() => this.deleteInquiry(instance.id)}
                           />
-                        )}
-                      </Table.Cell>
-                      <Table.Cell textAlign="center">
-                        <Button
-                          icon='trash alternate'
-                          disabled={sendingInvitationId === instance.id}
-                          onClick={() => this.deleteInquiry(instance.id)}
-                        />
-                      </Table.Cell>
-                    </Table.Row>
-                  )
+                        </Table.Cell>
+                      </Table.Row>
+                    )
+                  }
                 })}
             </Table.Body>
           </Table>
