@@ -36,7 +36,7 @@ class AdminInquiries extends React.Component {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error("Fetch timed out"));
-      }, 15000);
+      }, 60000);
     });
 
     try {
