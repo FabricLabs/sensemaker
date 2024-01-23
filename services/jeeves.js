@@ -1270,10 +1270,10 @@ class Jeeves extends Service {
 
     });
 
-    this.http._addRoute('GET', '/singup/:invitationToken', async (req, res, next) => {
+    this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
-    this.http._addRoute('GET', '/singup/decline/:invitationToken', async (req, res, next) => {
+    this.http._addRoute('GET', '/signup/decline/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
 
@@ -1304,14 +1304,14 @@ class Jeeves extends Service {
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
           //from: 'agent@jeeves.dev',
-          from: 'nahuel_vignatti@hotmail.com',
+          from: this.settings.email.username,
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1368,14 +1368,14 @@ class Jeeves extends Service {
 
         const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
 
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/singup/decline/${invitationToken}`;
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
           //from: 'agent@jeeves.dev',
-          from: 'nahuel_vignatti@hotmail.com',
+          from: this.settings.email.username,
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1853,7 +1853,7 @@ class Jeeves extends Service {
         try {
           await this.email.send({
            // from: 'agent@jeeves.dev',
-            from: 'nahuel_vignatti@hotmail.com',
+            from: this.settings.email.username,
             to: email,
             subject: 'Password Reset',
             html: htmlContent
