@@ -1069,10 +1069,16 @@ class Jeeves extends Service {
       }
 
       try {
-        // Check if the username already exists
+        // Check if the email already exists in the waitlist
         const existingInquiry = await this.db('inquiries').where('email', email).first();
         if (existingInquiry) {
           return res.status(409).json({ message: "You're already on the waitlist!" });
+        }
+
+        //checks if there is an user with that email already
+        const existingEmailUser = await this.db('users').where('email', email).first();
+        if (existingEmailUser) {
+          return res.status(409).json({ message: "This email is " });
         }
 
         // Insert the new user into the database
@@ -1108,11 +1114,16 @@ class Jeeves extends Service {
           return res.status(404).json({ message: 'Invalid inquiry' });
         }
 
-        // Delete the inquiry from the waitlist
-        const deleteInquiry = await this.db('inquiries').where('id', inquiryID).delete();
+        // update the invitation status to deleted from the invitations list
+        const inquiryDeleteStatus = await this.db('inquiries')
+          .where({ id: inquiryID })
+          .update({
+            updated_at: new Date(),
+            status: 'deleted',
+          });
 
-        if (!deleteInquiry) {
-          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        if (!inquiryDeleteStatus) {
+          return res.status(500).json({ message: 'Error deleting the invitation.' });
         }
 
         res.send({
@@ -1142,8 +1153,7 @@ class Jeeves extends Service {
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
-
+        
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
@@ -1154,15 +1164,15 @@ class Jeeves extends Service {
             uniqueTokenFound = true;
           }
         };
-
+        
         //Flag for Eric
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
-
+        
         const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
         const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
+        
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
           //from: 'agent@jeeves.dev',
@@ -1172,7 +1182,10 @@ class Jeeves extends Service {
           html: htmlContent
         });
 
+        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
+        
         if (!existingInvite) {
+
           const invitation = await this.db('invitations').insert({
             sender_id: req.user.id,
             target: email,
@@ -1180,18 +1193,21 @@ class Jeeves extends Service {
           });
 
 
-          // Delete the inquiry from the waitlist
-          const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
+          // update the inquiry status to invited from the waitlist
+          const inquiryInvitedStatus = await this.db('inquiries')
+          .where({ email: email })
+          .update({
+            updated_at: new Date(),
+            status: 'invited',
+          });
 
-          if (!deleteInquiryResult) {
-            return res.status(500).json({ message: 'Error deleting the inquiry.' });
+          if (!inquiryInvitedStatus) {
+            return res.status(500).json({ message: 'Error updating the inquiry.' });
           }
+
         } else {
           return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
-
-
-
         res.send({
           message: 'Invitation created successfully!'
         });
@@ -1386,11 +1402,16 @@ class Jeeves extends Service {
           return res.status(404).json({ message: 'Invalid invitation' });
         }
 
-        // Delete the inquiry from the waitlist
-        const deleteInvitation = await this.db('invitations').where('id', invitationID).delete();
+        // update the invitation status to deleted from the invitations list
+        const invitationDeleteStatus = await this.db('invitations')
+          .where({ id: invitationID })
+          .update({
+            updated_at: new Date(),
+            status: 'deleted',
+          });
 
-        if (!deleteInvitation) {
-          return res.status(500).json({ message: 'Error deleting the inquiry.' });
+        if (!invitationDeleteStatus) {
+          return res.status(500).json({ message: 'Error deleting the invitation.' });
         }
 
         res.send({
@@ -1693,17 +1714,18 @@ class Jeeves extends Service {
 
         const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        const htmlContent = `
-                                <html>
-                                  <body>
-                                    <p>Hello,</p>
-                                    <p>Please click on the link below to reset your password:</p>
-                                    <p><a href="${resetLink}">Reset Password</a></p>
-                                    <p>If you did not request a password reset, please ignore this email.</p>
-                                    <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                                  </body>
-                                </html>
-                              `;
+        // const htmlContent = `
+        //                         <html>
+        //                           <body>
+        //                             <p>Hello,</p>
+        //                             <p>Please click on the link below to reset your password:</p>
+        //                             <p><a href="${resetLink}">Reset Password</a></p>
+        //                             <p>If you did not request a password reset, please ignore this email.</p>
+        //                             <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+        //                           </body>
+        //                         </html>
+        //                       `;
+        const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {
           await this.email.send({
@@ -2910,6 +2932,75 @@ class Jeeves extends Service {
 
           </html>`;
   }
+  createPasswordResetEmailContent(resetLink, imgSrc) {
+    return `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+              }
+
+              .button {
+                background-color: #1f487c;
+                border: none;
+                color: white;
+                padding: 10px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                font-weight: bold;
+                margin: 4px 2px;
+                cursor: pointer;
+                border-radius: 8px;
+                width: 150px;
+              }
+
+              .button:hover {
+                background-color: #163d5c;
+              }
+
+              .container {
+                text-align: center;
+                max-width: 500px;
+                margin: 0 auto;
+              }
+
+              .footer {
+                margin-top: 30px;
+                font-size: 0.8em;
+              }
+            </style>
+          </head>
+          <body>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td>
+                  <div class="container">
+                    <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                      <tr>
+                        <td class="content">
+                          <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                          <h3>Password Reset Request</h3>
+                          <p>You have requested to reset your password. Please click the button below to set a new password.</p>
+                          <a href=${resetLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Reset Password</a>
+                          <p>If you did not request a password reset, please ignore this email.</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <div class="footer">
+                      <p>If you have any issues or questions, please contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>`;
+  }
+
   /**
    * Stop the process.
    * @return {Promise} Resolves once the process has been stopped.

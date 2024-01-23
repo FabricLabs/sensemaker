@@ -20,6 +20,7 @@ const initialState = {
     loading: false,
     sending: false,
     invitationValid: false,
+    invitationSent: false,
 };
 
 function invitationReducer(state = initialState, action) {
@@ -46,9 +47,9 @@ function invitationReducer(state = initialState, action) {
         case SEND_INVITATION_REQUEST:
             return { ...state, sending: true };
         case SEND_INVITATION_SUCCESS:
-            return { ...state, current: action.payload, sending: false };
+            return { ...state, invitationSent: true, sending: false };
         case SEND_INVITATION_FAILURE:
-            return { ...state, error: action.payload, current: {}, sending: false };
+            return { ...state, error: action.payload, invitationSent: false, sending: false };
 
         //actions for checking if the invitation token is valid
         case CHECK_INVITATION_TOKEN_REQUEST:
