@@ -363,6 +363,10 @@ class Jeeves extends Hub {
     return this;
   }
 
+  get authority () {
+    return `https://${this.settings.domain}`;
+  }
+
   get version () {
     return definition.version;
   }
@@ -385,10 +389,21 @@ class Jeeves extends Hub {
     return [...new Set(result.map((item) => item.trim()))];
   }
 
-  /* commit () {
+  commit () {
+    // console.debug('[JEEVES]', '[COMMIT]', 'Committing state:', this._state);
+    const commit = new Actor({
+      type: 'Commit',
+      object: {
+        content: this.state
+      }
+    });
+
     // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
-  } */
+    this.emit('commit', commit);
+
+    return this;
+  }
 
   /**
    * Creates (and registers) a new {@link Agent} instance.
@@ -431,7 +446,11 @@ class Jeeves extends Hub {
     const now = (new Date()).toISOString();
     this._lastTick = now;
     this._state.clock = ++this.clock;
-    return this.commit();
+    this.commit();
+    return {
+      clock: this.clock,
+      timestamp: now
+    };
   }
 
   async ff (count = 0) {
@@ -590,6 +609,11 @@ class Jeeves extends Hub {
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+      const actor = new Actor({ content: summarized.content });
+      const bundle = {
+        type: 'TimedResponse',
+        content: summarized.content
+      };
 
       const extracted = await this.extractor.query({
         query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
@@ -621,9 +645,14 @@ class Jeeves extends Hub {
       }
 
       try {
+        const documentIDs = await this.db('documents').insert({
+          fabric_id: actor.id,
+          content: summarized.content
+        });
+
         const responseIDs = await this.db('responses').insert({
           actor: this.summarizer.id,
-          content: summarized.content
+          content: `/documents/${documentIDs[0]}`
         });
 
         this.emit('response', {
@@ -1335,7 +1364,6 @@ class Jeeves extends Hub {
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', async (req, res) => {
-
       const { email } = req.body;
 
       try {
@@ -1348,6 +1376,7 @@ class Jeeves extends Hub {
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
+
         while (!uniqueTokenFound) {
           invitationToken = crypto.randomBytes(20).toString('hex');
           const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
@@ -1360,11 +1389,12 @@ class Jeeves extends Hub {
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
+        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
+        // TODO: serve from assets (@nplayer89)
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+
         await this.email.send({
           //from: 'agent@jeeves.dev',
           from: this.settings.email.username,
@@ -1379,19 +1409,9 @@ class Jeeves extends Hub {
             target: email,
             token: invitationToken
           });
-
-
-          // Delete the inquiry from the waitlist
-          const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
-
-          if (!deleteInquiryResult) {
-            return res.status(500).json({ message: 'Error deleting the inquiry.' });
-          }
         } else {
           return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
-
-
 
         res.send({
           message: 'Invitation created successfully!'
@@ -2643,7 +2663,7 @@ class Jeeves extends Hub {
         }).then(async (output) => {
           console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
           const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`${output.content}\n\`\`\``
+            query: `$CONTENT\n\`\`\`\n${output.content}\n\`\`\``
           });
           console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
