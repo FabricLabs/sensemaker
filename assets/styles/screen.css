@@ -86,18 +86,15 @@
   align-items: center;
 }
 
-.singup-form{
+.signup-form{
   max-width: 500px;
 }
 
-.singup-form-group{
+.signup-form-group{
   display: flex;
   flex-direction: row;
   justify-content: center;
 }
-
-
-
 
 .dashboard-header{
   display: flex;

@@ -23,18 +23,18 @@ const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 const ResetPasswordForm = require('./ResetPasswordForm');
-const SingUpForm = require('./SingUpForm');
+const SignUpForm = require('./SignUpForm');
 const DeclinedInvitation = require('./DeclinedInvitation');
 
 class Splash extends React.Component {
-  render () {
+  render() {
     const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
       <jeeves-splash class="fade-in splash">
 
-          <Image src="/images/novo-logo.svg" size='small' centered />
-          {/* <div style={{textAlign: 'center'}}>
+        <Image src="/images/novo-logo.svg" size='small' centered />
+        {/* <div style={{textAlign: 'center'}}>
             <Header>JEEVES</Header>
           </div> */}
 
@@ -54,13 +54,13 @@ class Splash extends React.Component {
             </Card>
           ) : null */}
         </fabric-component>
-        {/* This is not good, to take this route apart, but fabric component up there won't let me handle my SingUpForm width like i want,
+        {/* This is not good, to take this route apart, but fabric component up there won't let me handle my SignUpForm width like i want,
         right now i made this route apart, probably splash component needs a rebuild later */}
         <section>
           <Routes>
-            <Route path="/singup/:invitationToken"
+            <Route path="/signup/:invitationToken"
               element={
-                <SingUpForm
+                <SignUpForm
                   checkInvitationToken={this.props.checkInvitationToken}
                   checkUsernameAvailable={this.props.checkUsernameAvailable}
                   checkEmailAvailable={this.props.checkEmailAvailable}
@@ -70,7 +70,7 @@ class Splash extends React.Component {
                   acceptInvitation={this.props.acceptInvitation}
                 />}
             />
-            <Route path="/singup/decline/:invitationToken"
+            <Route path="/signup/decline/:invitationToken"
               element={
                 <DeclinedInvitation
                   checkInvitationToken={this.props.checkInvitationToken}

@@ -17,7 +17,7 @@ const {
   Label
 } = require('semantic-ui-react');
 
-class SingUpForm extends React.Component {
+class SignUpForm extends React.Component {
   constructor(props) {
     super(props);
 
@@ -215,14 +215,14 @@ class SingUpForm extends React.Component {
 
 
     return (
-      <div className='fade-in singup-form'>
+      <div className='fade-in signup-form'>
         <Segment>
           <Form onSubmit={this.handleSubmit} loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sing Up Form</Header>
+                <Header as='h3' textAlign="center">Sign up Form</Header>
                 <p>Please complete the registration form below to create your account and access our services.</p>
-                <Form.Group className='singup-form-group'>
+                <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
                     label='First name'
@@ -244,7 +244,7 @@ class SingUpForm extends React.Component {
                     required
                   />
                 </Form.Group>
-                <Form.Group className='singup-form-group'>
+                <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
                     label='Firm name'
@@ -264,7 +264,7 @@ class SingUpForm extends React.Component {
                     value={firmSize}
                   />
                 </Form.Group>
-                <Form.Group className='singup-form-group'>
+                <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
                     label='Username'
@@ -290,7 +290,7 @@ class SingUpForm extends React.Component {
                 </Form.Group>
 
                 <p>Password must have at least 8 characters, a capital letter and a number.</p>
-                <Form.Group className='singup-form-group'>
+                <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
                     label='Password'
@@ -362,8 +362,8 @@ class SingUpForm extends React.Component {
   }
 }
 
-function SingUp(props) {
+function SignUp(props) {
   const { invitationToken } = useParams();
-  return <SingUpForm invitationToken={invitationToken} {...props} />;
+  return <SignUpForm invitationToken={invitationToken} {...props} />;
 }
-module.exports = SingUp;
+module.exports = SignUp;

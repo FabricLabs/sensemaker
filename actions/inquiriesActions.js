@@ -28,7 +28,7 @@ const fetchInquiryRequest = () => ({ type: FETCH_INQUIRY_REQUEST, loading: true 
 const fetchInquirySuccess = (instance) => ({ type: FETCH_INQUIRY_SUCCESS, payload: instance, loading: false });
 const fetchInquiryFailure = (error) => ({ type: FETCH_INQUIRY_FAILURE, payload: error, loading: false });
 
-const deleteInquiryRequest = () => ({ type: DELETE_INQUIRY_REQUEST});
+const deleteInquiryRequest = () => ({ type: DELETE_INQUIRY_REQUEST });
 const deleteInquirySuccess = (data) => ({ type: DELETE_INQUIRY_SUCCESS, payload: data });
 const deleteInquiryFailure = (error) => ({ type: DELETE_INQUIRY_FAILURE, payload: error })
 
@@ -60,10 +60,10 @@ const fetchInquiry = (id) => {
   };
 };
 
-const deleteInquiry = (ID)=>{
-  return async dispatch =>{
+const deleteInquiry = (ID) => {
+  return async dispatch => {
     dispatch(deleteInquiryRequest());
-    try{
+    try {
       const response = await fetch(`/inquiries/delete/${ID}`, {
         method: 'PATCH',
         headers: {
@@ -77,7 +77,7 @@ const deleteInquiry = (ID)=>{
 
       const data = await response.json();
       dispatch(deleteInquirySuccess(data));
-    }catch(error){
+    } catch (error) {
       console.log("Error updating invitation status:", error.message);
       dispatch(deleteInquiryFailure(error.message));
     }

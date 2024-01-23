@@ -52,15 +52,15 @@ const checkInvitationTokenRequest = () => ({ type: CHECK_INVITATION_TOKEN_REQUES
 const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKEN_SUCCESS, payload: response });
 const checkInvitationTokenFailure = (error) => ({ type: CHECK_INVITATION_TOKEN_FAILURE, payload: error });
 
-const acceptInvitationRequest = () => ({ type: ACCEPT_INVITATION_REQUEST});
+const acceptInvitationRequest = () => ({ type: ACCEPT_INVITATION_REQUEST });
 const acceptInvitationSuccess = (data) => ({ type: ACCEPT_INVITATION_SUCCESS, payload: data });
 const acceptInvitationFailure = (error) => ({ type: ACCEPT_INVITATION_FAILURE, payload: error });
 
-const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUEST});
+const declineInvitationRequest = () => ({ type: DECLINE_INVITATION_REQUEST });
 const declineInvitationSuccess = (data) => ({ type: DECLINE_INVITATION_SUCCESS, payload: data });
 const declineInvitationFailure = (error) => ({ type: DECLINE_INVITATION_FAILURE, payload: error })
 
-const deleteInvitationRequest = () => ({ type: DELETE_INVITATION_REQUEST});
+const deleteInvitationRequest = () => ({ type: DELETE_INVITATION_REQUEST });
 const deleteInvitationSuccess = (data) => ({ type: DELETE_INVITATION_SUCCESS, payload: data });
 const deleteInvitationFailure = (error) => ({ type: DELETE_INVITATION_FAILURE, payload: error })
 
@@ -166,10 +166,10 @@ const checkInvitationToken = (invitationToken) => {
   }
 }
 
-const acceptInvitation = (invitationToken)=>{
-  return async dispatch =>{
+const acceptInvitation = (invitationToken) => {
+  return async dispatch => {
     dispatch(acceptInvitationRequest());
-    try{
+    try {
       const response = await fetch(`/invitations/accept/${invitationToken}`, {
         method: 'PATCH',
         headers: {
@@ -183,7 +183,7 @@ const acceptInvitation = (invitationToken)=>{
 
       const data = await response.json();
       dispatch(acceptInvitationSuccess(data));
-    }catch(error){
+    } catch (error) {
       console.log("Error updating invitation status:", error.message);
       dispatch(acceptInvitationFailure(error.message));
     }
@@ -191,10 +191,10 @@ const acceptInvitation = (invitationToken)=>{
   }
 }
 
-const declineInvitation = (invitationToken)=>{
-  return async dispatch =>{
+const declineInvitation = (invitationToken) => {
+  return async dispatch => {
     dispatch(declineInvitationRequest());
-    try{
+    try {
       const response = await fetch(`/invitations/decline/${invitationToken}`, {
         method: 'PATCH',
         headers: {
@@ -208,17 +208,17 @@ const declineInvitation = (invitationToken)=>{
 
       const data = await response.json();
       dispatch(declineInvitationSuccess(data));
-    }catch(error){
+    } catch (error) {
       console.log("Error updating invitation status:", error.message);
       dispatch(declineInvitationFailure(error.message));
     }
   }
 }
 
-const deleteInvitation = (ID)=>{
-  return async dispatch =>{
+const deleteInvitation = (ID) => {
+  return async dispatch => {
     dispatch(deleteInvitationRequest());
-    try{
+    try {
       const response = await fetch(`/invitations/delete/${ID}`, {
         method: 'PATCH',
         headers: {
@@ -232,7 +232,7 @@ const deleteInvitation = (ID)=>{
 
       const data = await response.json();
       dispatch(deleteInvitationSuccess(data));
-    }catch(error){
+    } catch (error) {
       console.log("Error deleting invitation:", error.message);
       dispatch(deleteInvitationFailure(error.message));
     }
@@ -266,7 +266,7 @@ module.exports = {
   ACCEPT_INVITATION_FAILURE,
   DECLINE_INVITATION_REQUEST,
   DECLINE_INVITATION_SUCCESS,
-  DECLINE_INVITATION_FAILURE,  
+  DECLINE_INVITATION_FAILURE,
   DELETE_INVITATION_REQUEST,
   DELETE_INVITATION_SUCCESS,
   DELETE_INVITATION_FAILURE,
