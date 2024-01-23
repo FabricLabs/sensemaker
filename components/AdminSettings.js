@@ -92,76 +92,16 @@ class AdminSettings extends React.Component {
       { menuItem: 'Overview', render: () => <Tab.Pane loading={stats.loading}>
         <Header as='h4'>Metrics</Header>
         <Statistic>
+          <Statistic.Value>???</Statistic.Value>
+          <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
+        </Statistic>
+        <Statistic>
           <Statistic.Value>{inquiriesTotal}</Statistic.Value>
           <Statistic.Label>Waiting</Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>{invitationsTotal}</Statistic.Value>
           <Statistic.Label>Sent</Statistic.Label>
-        </Statistic>
-        <Statistic>
-          <Statistic.Value>{usersTotal}</Statistic.Value>
-          <Statistic.Label>Users</Statistic.Label>
-        </Statistic>
-        <Header as='h4'>Resources</Header>
-        <List>
-          <List.Item>
-            <Icon name='file alternate outline' />
-            <a href="/courts.sql">Courts (SQL)</a>
-          </List.Item>
-        </List>
-      </Tab.Pane> },
-      { menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
-        <Header as='h4'>Datasets</Header>
-        <Table celled striped>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell></Table.HeaderCell>
-              <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>CaselawAccessProject (Harvard)</Table.Cell>
-              <Table.Cell><Label>started</Label></Table.Cell>
-              <Table.Cell>
-                <Label><Icon name='check' />Cases</Label>
-                <Label><Icon name='check' />Courts</Label>
-              </Table.Cell>
-              <Table.Cell></Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>CourtListener</Table.Cell>
-              <Table.Cell><Label>started</Label></Table.Cell>
-              <Table.Cell>
-                <Label><Icon name='remove' />Cases</Label>
-                <Label><Icon name='check' />Courts</Label>
-              </Table.Cell>
-              <Table.Cell></Table.Cell>
-            </Table.Row>
-            <Table.Row>
-              <Table.Cell></Table.Cell>
-              <Table.Cell>PACER</Table.Cell>
-              <Table.Cell><Label>started</Label></Table.Cell>
-              <Table.Cell>
-                <Label><Icon name='remove' />Cases</Label>
-                <Label><Icon name='check' />Courts</Label>
-              </Table.Cell>
-              <Table.Cell></Table.Cell>
-            </Table.Row>
-          </Table.Body>
-        </Table>
-      </Tab.Pane> },
-      { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading}>
-        <Header as='h4'>Metrics</Header>
-        <Statistic>
-          <Statistic.Value>???</Statistic.Value>
-          <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>{usersTotal}</Statistic.Value>
@@ -178,6 +118,28 @@ class AdminSettings extends React.Component {
         <Statistic>
           <Statistic.Value>0</Statistic.Value>
           <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
+        </Statistic>
+        <Header as='h4'>Resources</Header>
+        <List>
+          <List.Item>
+            <Icon name='file alternate outline' />
+            <a href="/courts.sql">Courts (SQL)</a>
+          </List.Item>
+        </List>
+      </Tab.Pane> },
+      { menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading}>
+        <Header as='h4'>Metrics</Header>
+        <Statistic>
+          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+          <Statistic.Label>Waiting</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>{invitationsTotal}</Statistic.Value>
+          <Statistic.Label>Sent</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>{usersTotal}</Statistic.Value>
+          <Statistic.Label>Accounts</Statistic.Label>
         </Statistic>
         <Header as='h4'>Waitlist</Header>
         <Table celled striped className='admin-table-inquiries'>
@@ -224,6 +186,52 @@ class AdminSettings extends React.Component {
               <Table.Cell>
                 <Button>Re-send</Button>
               </Table.Cell>
+            </Table.Row>
+          </Table.Body>
+        </Table>
+      </Tab.Pane> },
+      { menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
+        <Header as='h4'>Datasets</Header>
+        <Table celled striped>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell>Name</Table.HeaderCell>
+              <Table.HeaderCell>Status</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>CaselawAccessProject (Harvard)</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='check' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>CourtListener</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='remove' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell></Table.Cell>
+              <Table.Cell>PACER</Table.Cell>
+              <Table.Cell><Label>started</Label></Table.Cell>
+              <Table.Cell>
+                <Label><Icon name='remove' />Cases</Label>
+                <Label><Icon name='check' />Courts</Label>
+              </Table.Cell>
+              <Table.Cell></Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>

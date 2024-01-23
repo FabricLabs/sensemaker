@@ -393,6 +393,7 @@ class Jeeves extends Hub {
   /**
    * Creates (and registers) a new {@link Agent} instance.
    * @param {Object} configuration Settings for the {@link Agent}.
+   * @returns {Agent} Instance of the {@link Agent}.
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
@@ -554,6 +555,11 @@ class Jeeves extends Hub {
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".`, openai: this.settings.openai });
+    const ragged = await ragger.query({ query: request.query });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
+
     const agentResults = Promise.allSettled([
       this.alpha.query({ query }),
       this.mistral.query({ query })
@@ -578,7 +584,7 @@ class Jeeves extends Hub {
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
 
       const extracted = await this.extractor.query({
-        query: `$CONTENT\n\`\`\`${summarized.content}\n\`\`\``
+        query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
       });
       console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
@@ -3321,12 +3327,15 @@ class Jeeves extends Hub {
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
-    const courtListenerResults = await this.courtlistener.search({
-      query: request.query,
-      model: 'jeeves-0.2.0-RC1'
-    });
+    if (this.courtlistener) {
+      const courtListenerResults = await this.courtlistener.search({
+        query: request.query,
+        model: 'jeeves-0.2.0-RC1'
+      });
 
-    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      // TODO: concat into results
+    }
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
