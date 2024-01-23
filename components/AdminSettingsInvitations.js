@@ -9,7 +9,8 @@ const {
   Header,
   Checkbox,
   Segment,
-  Input
+  Input,
+  Modal
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -26,6 +27,8 @@ class AdminInvitations extends React.Component {
       showPending: true, // state for pending checkbox
       showAccepted: false, // state for accepted checkbox
       showDeclined: false, // state for declined checkbox
+      confirmDeleteModalOpen: false,
+      deleteInvitationID: null,
     };
   }
 
@@ -33,46 +36,86 @@ class AdminInvitations extends React.Component {
     this.props.fetchInvitations();
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.invitation !== this.props.invitation) {
+      const { invitation } = this.props;
+      const { sendingInvitationID } = this.state;
+
+      //if sendingInvitationID is not null its beacause we are sending an invitation
+      if (sendingInvitationID && !invitation.sending) {
+        this.delayedFetchInvitations();
+      }
+    }
+  };
+
+  delayedFetchInvitations = async () => {
+
+    if (this.props.invitation.invitationSent) {
+      this.setState({ sent: true });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await this.props.fetchInvitations();
+    } else {
+      this.setState({ errorSending: true });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+    this.setState({ sendingInvitationID: null, sent: false, errorSending: false }); // Reset the sending invitation ID
+  }
+
   reSendInvite = async (ID) => {
 
     this.setState({ sendingInvitationID: ID }); // Set the sending invitation ID
 
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Fetch timed out"));
-      }, 60000);
-    });
-
     try {
-      const response = await Promise.race([timeoutPromise, this.props.reSendInvitation(ID)]);
-      if (this.props.invitation.current && this.props.invitation.current.ok) {
-        //first timeout is to show the loading icon
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        this.setState({ sent: true });
-        await this.props.fetchInvitations();
-        //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Invitations wich
-        //updates the Invitations list, with this one changing its status to "Invited" and not being displayed (see below in render)
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-    } catch (error) {
-      this.setState({ errorSending: true });
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    } finally {
-      this.setState({ sendingInvitationID: null, sent: false, errorSending: false }); // Reset the sending invitation ID
-    }
-  }
+      await this.props.reSendInvitation(ID);
 
-  deleteInvite = async (ID) => {
-    try {
-      await this.props.deleteInvitation(ID);
     } catch (error) {
       console.log(error);
-    } finally {
-      await this.props.fetchInvitations();
+      this.setState({ errorSending: true });
     }
   }
 
-  formatDateTime(dateTimeStr) {
+  openConfirmDeleteModal = (ID) => {
+    this.setState({ confirmDeleteModalOpen: true, deleteInvitationID: ID });
+  }
+
+  closeConfirmDeleteModal = () => {
+    this.setState({ confirmDeleteModalOpen: false, deleteInvitationID: null });
+  }
+
+  confirmDelete = async () => {
+    const { deleteInvitationID } = this.state;
+    if (deleteInvitationID) {
+      try {
+        await this.props.deleteInvitation(deleteInvitationID);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        await this.props.fetchInvitations();
+      }
+      this.closeConfirmDeleteModal();
+    }
+  }
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.confirmDeleteModalOpen}
+        onClose={this.closeConfirmDeleteModal}
+      >
+        <Modal.Header>Delete Invitation</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to delete this invitation?</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button secondary onClick={this.closeConfirmDeleteModal}>No</Button>
+          <Button negative onClick={this.confirmDelete}>Yes, delete it</Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  }
+
+  formatDateTime = (dateTimeStr) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateTimeStr).toLocaleString('en-US', options);
   }
@@ -186,7 +229,7 @@ class AdminInvitations extends React.Component {
                           <Button
                             icon='trash alternate'
                             disabled={sendingInvitationID === instance.id}
-                            onClick={() => this.deleteInvite(instance.id)}
+                            onClick={() => this.openConfirmDeleteModal(instance.id)}
                           />
                         </Table.Cell>
                       </Table.Row>
@@ -197,6 +240,7 @@ class AdminInvitations extends React.Component {
             </Table.Body>
           </Table>
         </Segment>
+        {this.renderConfirmModal()}
       </section>
     );
   };

@@ -97,7 +97,13 @@ const sendInvitation = (email) => {
     dispatch(sendInvitationRequest());
     const { token } = getState().auth;
     try {
-      const response = await fetch('/invitations', {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 60000);
+      });
+
+      const fetchPromise = fetch('/invitations', {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -105,7 +111,15 @@ const sendInvitation = (email) => {
         },
         body: JSON.stringify({ email }),
       });
-      dispatch(sendInvitationSuccess(response));
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+      dispatch(sendInvitationSuccess(data));
     } catch (error) {
       dispatch(sendInvitationFailure(error));
     }
@@ -118,15 +132,30 @@ const reSendInvitation = (id) => {
   return async (dispatch, getState) => {
     dispatch(sendInvitationRequest());
     const { token } = getState().auth;
+
     try {
-      const response = await fetch(`/invitations/${id}`, {
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 60000);
+      });
+
+      const fetchPromise = fetch(`/invitations/${id}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      dispatch(sendInvitationSuccess(response));
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      const data = await response.json();
+      dispatch(sendInvitationSuccess(data));
     } catch (error) {
       dispatch(sendInvitationFailure(error));
     }
