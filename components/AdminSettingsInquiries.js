@@ -8,7 +8,8 @@ const {
   Message,
   Header,
   Segment,
-  Input
+  Input,
+  Modal
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -20,8 +21,10 @@ class AdminInquiries extends React.Component {
     this.state = {
       sent: false,
       errorSending: false,
-      sendingInvitationId: null, //this is used to know exactly wich inquiry we are sending so it changes uses the loading icon and messages
+      sendingInvitationID: null, //this is used to know exactly wich inquiry we are sending so it changes uses the loading icon and messages
       searchQuery: '',
+      confirmDeleteModalOpen: false,
+      deleteInquiryID: null,
     };
   }
 
@@ -29,46 +32,83 @@ class AdminInquiries extends React.Component {
     this.props.fetchInquiries();
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.invitation !== this.props.invitation) {
+      const { invitation } = this.props;
+      const { sendingInvitationID } = this.state;
+
+      //if sendingInvitationID is not null its beacause we are sending an invitation
+      if (sendingInvitationID && !invitation.sending) {
+        this.delayedFetchInvitations();
+      }
+    }
+  };
+
+  delayedFetchInvitations = async () => {
+
+    if (this.props.invitation.invitationSent) {
+      this.setState({ sent: true });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await this.props.fetchInquiries();
+      await this.props.fetchInvitations();
+    } else {
+      this.setState({ errorSending: true });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+    this.setState({ sendingInvitationID: null, sent: false, errorSending: false }); // Reset the sending invitation ID
+  }
+
   createInvitation = async (email, id) => {
 
-    this.setState({ sendingInvitationId: id }); // Set the sending invitation ID
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error("Fetch timed out"));
-      }, 60000);
-    });
-
+    this.setState({ sendingInvitationID: id }); // Set the sending invitation ID
     try {
-      const response = await Promise.race([timeoutPromise, this.props.sendInvitation(email)]);
-      if (this.props.invitation.current.ok) {
-        //first timeout is to show the loading icon
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        this.setState({ sent: true });
-        //second timeout its after setting "sent" to true to show the message "invitation sent" before fetching for Inquiries wich
-        //updates the Inquiries list, and not being displayed in this list anymore
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
+      await this.props.sendInvitation(email);
     } catch (error) {
       console.log(error.message);
       this.setState({ errorSending: true });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    } finally {
-      await this.props.fetchInquiries();
-      await this.props.fetchInvitations();
-      this.setState({ sendingInvitationId: null, sent: false, errorSending: false }); // Reset the sending invitation ID
     }
   }
 
-  deleteInquiry = async (ID) => {
-    try {
-      await this.props.deleteInquiry(ID);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      await this.props.fetchInquiries();
-    }
 
+  openConfirmDeleteModal = (ID) => {
+    this.setState({ confirmDeleteModalOpen: true, deleteInquiryID: ID });
+  }
+
+  closeConfirmDeleteModal = () => {
+    this.setState({ confirmDeleteModalOpen: false, deleteInquiryID: null });
+  }
+
+  confirmDelete = async () => {
+    const { deleteInquiryID } = this.state;
+    if (deleteInquiryID) {
+      try {
+        await this.props.deleteInquiry(deleteInquiryID);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        await this.props.fetchInquiries();
+      }
+      this.closeConfirmDeleteModal();
+    }
+  }
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.confirmDeleteModalOpen}
+        onClose={this.closeConfirmDeleteModal}
+      >
+        <Modal.Header>Delete Inquiry</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to delete this inquiry?</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button secondary onClick={this.closeConfirmDeleteModal}>No</Button>
+          <Button negative onClick={this.confirmDelete}>Yes, delete it</Button>
+        </Modal.Actions>
+      </Modal>
+    )
   }
 
   formatDateTime(dateTimeStr) {
@@ -84,7 +124,7 @@ class AdminInquiries extends React.Component {
 
 
   render() {
-    const { sent, sendingInvitationId, errorSending } = this.state;
+    const { sent, sendingInvitationID, errorSending } = this.state;
     const { inquiries } = this.props;
 
     return (
@@ -122,25 +162,25 @@ class AdminInquiries extends React.Component {
                         <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
                         <Table.Cell textAlign="center">{instance.email}</Table.Cell>
                         <Table.Cell textAlign="center">
-                          {(sent && sendingInvitationId === instance.id && !errorSending) &&
+                          {(sent && sendingInvitationID === instance.id && !errorSending) &&
                             <Message positive textAlign="center" size='small'>
                               <Message.Content>
                                 Invitation Sent
                               </Message.Content>
                             </Message>
                           }
-                          {(sendingInvitationId === instance.id && errorSending) &&
+                          {(sendingInvitationID === instance.id && errorSending) &&
                             <Message negative textAlign="center" size='small'>
                               <Message.Content>
                                 Invitation not sent, try again later
                               </Message.Content>
                             </Message>
                           }
-                          {((!sent || sendingInvitationId !== instance.id) && !errorSending) && (
+                          {((!sent || sendingInvitationID !== instance.id) && !errorSending) && (
                             <Button
                               icon='send'
                               size='mini'
-                              loading={sendingInvitationId === instance.id}
+                              loading={sendingInvitationID === instance.id}
                               onClick={() => this.createInvitation(instance.email, instance.id)}
                               content='Send Invitation'
                             />
@@ -149,8 +189,10 @@ class AdminInquiries extends React.Component {
                         <Table.Cell textAlign="center">
                           <Button
                             icon='trash alternate'
-                            disabled={sendingInvitationId === instance.id}
-                            onClick={() => this.deleteInquiry(instance.id)}
+                            disabled={sendingInvitationID === instance.id}
+                            // onClick={() => this.deleteInquiry(instance.id)}
+                            onClick={() => this.openConfirmDeleteModal(instance.id)}
+
                           />
                         </Table.Cell>
                       </Table.Row>
@@ -160,6 +202,7 @@ class AdminInquiries extends React.Component {
             </Table.Body>
           </Table>
         </Segment>
+        {this.renderConfirmModal()}
       </section>
     );
   };
