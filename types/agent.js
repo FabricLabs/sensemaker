@@ -25,7 +25,6 @@ const OpenAIService = require('../services/openai');
 
 /**
  * The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
- * @type {Agent} An Agent is a type of Service.
  */
 class Agent extends Service {
   constructor (settings = {}) {
@@ -59,7 +58,7 @@ class Agent extends Service {
       model: 'gpt-4-1106-preview',
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
-        'do not provide hypotheticals'
+        'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
       ],
       timeout: {
         tolerance: 0.5 * 1000 // tolerance in seconds
@@ -165,13 +164,18 @@ class Agent extends Service {
     return new Promise(async (resolve, reject) => {
       this.emit('debug', '[AGENT]', 'Querying:', request);
       const responses = {
-        // TODO: Mistral 7B for local installs
+        alpha: null,
+        beta: null,
+        gamma: null,
+        mistral: null,
         openai: await this.services.openai._streamConversationRequest({
           messages: [
             { role: 'system', content: this.prompt },
             { role: 'user', content: request.query }
           ]
-        })
+        }),
+        rag: null,
+        sensemaker: null
       };
 
       // Wait for all responses to resolve or reject.

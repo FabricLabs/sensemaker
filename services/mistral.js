@@ -80,7 +80,7 @@ class Mistral extends Service {
       });
 
       const object = await result.json();
-      console.debug('RESULT:', object);
+      console.debug('[MISTRAL]', 'RESULT:', object);
 
       resolve(object);
     });

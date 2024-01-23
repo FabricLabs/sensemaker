@@ -448,7 +448,7 @@ class ChatBox extends React.Component {
                 <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
                   <p>
                     <strong>Hello,</strong> I'm{" "}
-                    <abbr title="Yes, what about it?">JeevesAI</abbr>, your
+                    <abbr title="Yes, what about it?">Jeeves</abbr>, your
                     legal research companion.
                   </p>
                 </div>

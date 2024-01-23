@@ -26,6 +26,7 @@ const knex = require('knex');
 const { attachPaginate } = require('knex-paginate'); // pagination
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
+const Hub = require('@fabric/hub'); // decentralized messaging
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -61,7 +62,7 @@ const Matrix = require('@fabric/matrix');
 // const Prices = require('@portal/feed');
 
 // Providers
-// const StatuteProvider = require('@jeeves/statute-scraper');
+// const { StatuteProvider } = require('@jeeves/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
@@ -95,7 +96,7 @@ const toMySQLDatetime = require('../functions/toMySQLDatetime');
  * @type {Object}
  * @extends {Service}
  */
-class Jeeves extends Service {
+class Jeeves extends Hub {
   /**
    * Constructor for the Jeeves application.
    * @param  {Object} [settings={}] Map of configuration values.
@@ -192,7 +193,8 @@ class Jeeves extends Service {
       crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
-      workers: 1
+      verify: true,
+      workers: 1,
     }, settings);
 
     // Vector Clock
@@ -361,6 +363,10 @@ class Jeeves extends Service {
     return this;
   }
 
+  get authority () {
+    return `https://${this.settings.domain}`;
+  }
+
   get version () {
     return definition.version;
   }
@@ -383,14 +389,26 @@ class Jeeves extends Service {
     return [...new Set(result.map((item) => item.trim()))];
   }
 
-  /* commit () {
+  commit () {
+    // console.debug('[JEEVES]', '[COMMIT]', 'Committing state:', this._state);
+    const commit = new Actor({
+      type: 'Commit',
+      object: {
+        content: this.state
+      }
+    });
+
     // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
-  } */
+    this.emit('commit', commit);
+
+    return this;
+  }
 
   /**
    * Creates (and registers) a new {@link Agent} instance.
    * @param {Object} configuration Settings for the {@link Agent}.
+   * @returns {Agent} Instance of the {@link Agent}.
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
@@ -428,7 +446,11 @@ class Jeeves extends Service {
     const now = (new Date()).toISOString();
     this._lastTick = now;
     this._state.clock = ++this.clock;
-    return this.commit();
+    this.commit();
+    return {
+      clock: this.clock,
+      timestamp: now
+    };
   }
 
   async ff (count = 0) {
@@ -486,7 +508,14 @@ class Jeeves extends Service {
     return beat;
   }
 
-  async createTimedRequest (request, timeout = 60000) {
+  /**
+   * Execute the default pipeline for an inbound request.
+   * @param {Object} request Request object.
+   * @param {Number} [timeout] How long to wait for a response.
+   * @param {Number} [depth] How many times to recurse.
+   * @returns {Message} Request as a Fabric {@link Message}.
+   */
+  async createTimedRequest (request, timeout = 60000, depth = 0) {
     const now = new Date();
     const created = now.toISOString();
     const message = Message.fromVector(['TimedRequest', JSON.stringify({
@@ -511,20 +540,52 @@ class Jeeves extends Service {
     const hypotheticals = await this.lennon.query({ query: request.query });
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
 
-    const meta = `\n` +
-      `metadata:\n` +
+    const meta = `metadata:\n` +
       `  cases: ` + cases.map((x) => `"${x.title}"`).join(', ') + `\n` +
       `  counts:\n` +
       `    cases: ` + caseCount.count + `\n` +
       ``;
 
-    const query = `---` +
+    const query = `---\n` +
+      meta +
       `---\n` +
       `${request.query}`;
 
     const metaTokenCount = this.estimateTokens(meta);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+
+    let messages = [];
+
+    if (request.conversation_id) {
+      // Resume conversation
+      const prev = await this._getConversationMessages(request.conversation_id);
+      messages = prev.map((x) => {
+        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+      });
+    } else {
+      // New conversation
+      messages = messages.concat([{ role: 'user', content: request.query }]);
+    }
+
+    if (request.subject) {
+      // Subject material provided
+      messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
+    }
+
+    // Prompt
+    messages.unshift({
+      role: 'system',
+      content: this.settings.prompt
+    });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
+
+    // TODO: execute RAG query for additional metadata
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".`, openai: this.settings.openai });
+    const ragged = await ragger.query({ query: request.query });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
 
     const agentResults = Promise.allSettled([
       this.alpha.query({ query }),
@@ -548,9 +609,14 @@ class Jeeves extends Service {
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+      const actor = new Actor({ content: summarized.content });
+      const bundle = {
+        type: 'TimedResponse',
+        content: summarized.content
+      };
 
       const extracted = await this.extractor.query({
-        query: `$CONTENT\n\`\`\`${summarized.content}\n\`\`\``
+        query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
       });
       console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
@@ -576,6 +642,25 @@ class Jeeves extends Service {
         } catch (exception) {
           console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
         }
+      }
+
+      try {
+        const documentIDs = await this.db('documents').insert({
+          fabric_id: actor.id,
+          content: summarized.content
+        });
+
+        const responseIDs = await this.db('responses').insert({
+          actor: this.summarizer.id,
+          content: `/documents/${documentIDs[0]}`
+        });
+
+        this.emit('response', {
+          id: responseIDs[0],
+          content: summarized.content
+        })
+      } catch (exception) {
+        console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
       }
 
       const end = new Date();
@@ -1279,7 +1364,6 @@ class Jeeves extends Service {
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', async (req, res) => {
-
       const { email } = req.body;
 
       try {
@@ -1292,6 +1376,7 @@ class Jeeves extends Service {
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
+
         while (!uniqueTokenFound) {
           invitationToken = crypto.randomBytes(20).toString('hex');
           const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
@@ -1304,11 +1389,12 @@ class Jeeves extends Service {
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
+        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
+        // TODO: serve from assets (@nplayer89)
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+
         await this.email.send({
           //from: 'agent@jeeves.dev',
           from: this.settings.email.username,
@@ -1323,19 +1409,9 @@ class Jeeves extends Service {
             target: email,
             token: invitationToken
           });
-
-
-          // Delete the inquiry from the waitlist
-          const deleteInquiryResult = await this.db('inquiries').where('email', email).delete();
-
-          if (!deleteInquiryResult) {
-            return res.status(500).json({ message: 'Error deleting the inquiry.' });
-          }
         } else {
           return res.status(500).json({ message: 'Error: Invitation already exist.' });
         }
-
-
 
         res.send({
           message: 'Invitation created successfully!'
@@ -2587,7 +2663,7 @@ class Jeeves extends Service {
         }).then(async (output) => {
           console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
           const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`${output.content}\n\`\`\``
+            query: `$CONTENT\n\`\`\`\n${output.content}\n\`\`\``
           });
           console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
@@ -2867,98 +2943,7 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
-
-    if (this.statutes) {
-      const STATUTE_FIXTURE = await this.statutes.search({
-        query: 'Texas'
-      });
-      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
-    }
-
-    const FABRIC_FIXTURE = await this.fabric.search({
-      query: 'North\nCarolina',
-      model: 'jeeves-0.2.0-RC1'
-    });
-    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
-
-    // Test the CourtListener database
-    if (this.courtlistener) {
-      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
-        query: 'North\nCarolina',
-        model: 'jeeves-0.2.0-RC1'
-      });
-      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
-    }
-
-    // Simulate Network
-    const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
-
-    // Agents in the simulated network
-    const agentMistral = new Mistral({ name: 'Mistral-V2', prompt: this.settings.prompt });
-    const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
-    // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
-    // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
-
-    // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
-    const MISTRAL_FIXTURE = await agentMistral.query({ query: summarizerQuery });
-    const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
-    // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
-    // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
-    console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
-
-    const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
-      messages: [
-        {
-          role: 'user',
-          content: `[ALPHA] ${ALPHA_FIXTURE.content}`
-        }
-      ]
-    });
-
-    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
-
-    // Test Extractor
-    let randomCases = await this.openai._streamConversationRequest({
-      messages: [
-        {
-          role: 'user',
-          content: 'Provide a list of 10 random cases from North Carolina.'
-        }
-      ]
-    });
-
-    if (!randomCases) {
-      const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
-      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
-    }
-
-    console.debug('GOT RANDOM CASES:', randomCases);
-
-    const AUGMENTOR_FIXTURE = await this.augmentor.query({
-      query: `Name an individual in an interesting case in North Carolina`
-    });
-
-    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
-
-    // Test Extractor
-    const EXTRACTOR_FIXTURE = await this.extractor.query({
-      query: randomCases.content
-    });
-
-    // Test Validator
-    const VALIDATOR_FIXTURE = await this.validator.query({
-      query: EXTRACTOR_FIXTURE.response
-    });
-
-    // Test RAG Query
-    const RAG_FIXTURE = await this.rag.query({
-      query: `Find a case that is similar to ${randomCases.content.split(' ').slice(2).join(' ')}.`
-    });
-
-    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
-    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
-    console.debug('RAG FIXTURE:', RAG_FIXTURE);
+    if (this.settings.verify) await this._runFixtures();
 
     // GraphQL
     /* this.apollo.applyMiddleware({
@@ -3778,7 +3763,7 @@ class Jeeves extends Service {
 
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
-      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.`;
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = {
         input: query,
         messages: messages
@@ -3839,12 +3824,15 @@ class Jeeves extends Service {
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
-    const courtListenerResults = await this.courtlistener.search({
-      query: request.query,
-      model: 'jeeves-0.2.0-RC1'
-    });
+    if (this.courtlistener) {
+      const courtListenerResults = await this.courtlistener.search({
+        query: request.query,
+        model: 'jeeves-0.2.0-RC1'
+      });
 
-    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      // TODO: concat into results
+    }
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
@@ -4007,6 +3995,100 @@ class Jeeves extends Service {
     await this.commit();
 
     return this;
+  }
+
+  async _runFixtures () {
+    if (this.statutes) {
+      const STATUTE_FIXTURE = await this.statutes.search({
+        query: 'Texas'
+      });
+      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
+    }
+
+    const FABRIC_FIXTURE = await this.fabric.search({
+      query: 'North\nCarolina',
+      model: 'jeeves-0.2.0-RC1'
+    });
+    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
+
+    // Test the CourtListener database
+    if (this.courtlistener) {
+      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
+        query: 'North\nCarolina',
+        model: 'jeeves-0.2.0-RC1'
+      });
+      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
+    }
+
+    // Simulate Network
+    const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
+
+    // Agents in the simulated network
+    const agentMistral = new Mistral({ name: 'Mistral-V2', prompt: this.settings.prompt });
+    const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
+    // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
+    // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
+
+    // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+    const MISTRAL_FIXTURE = await agentMistral.query({ query: summarizerQuery });
+    const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
+    // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
+    // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
+    console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
+
+    const SUMMARIZER_FIXTURE = await this.summarizer.query({
+      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
+      messages: [
+        {
+          role: 'user',
+          content: `[ALPHA] ${ALPHA_FIXTURE.content}`
+        }
+      ]
+    });
+
+    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
+
+    // Test Extractor
+    let randomCases = await this.openai._streamConversationRequest({
+      messages: [
+        {
+          role: 'user',
+          content: 'Provide a list of 10 random cases from North Carolina.'
+        }
+      ]
+    });
+
+    if (!randomCases) {
+      const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
+      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
+    }
+
+    console.debug('GOT RANDOM CASES:', randomCases);
+
+    const AUGMENTOR_FIXTURE = await this.augmentor.query({
+      query: `Name an individual in an interesting case in North Carolina`
+    });
+
+    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
+
+    // Test Extractor
+    const EXTRACTOR_FIXTURE = await this.extractor.query({
+      query: randomCases.content
+    });
+
+    // Test Validator
+    const VALIDATOR_FIXTURE = await this.validator.query({
+      query: EXTRACTOR_FIXTURE.response
+    });
+
+    // Test RAG Query
+    const RAG_FIXTURE = await this.rag.query({
+      query: `Find a case that is similar to ${randomCases.content.split(' ').slice(2).join(' ')}.`
+    });
+
+    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
+    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
+    console.debug('RAG FIXTURE:', RAG_FIXTURE);
   }
 
   _handleServiceMessage (source, message) {

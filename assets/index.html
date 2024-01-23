@@ -23,21 +23,17 @@
   <link rel="icon" href="/images/favicon.ico" />
 </head>
 <body>
-  <div data-hash="1aecb8a863d9f31ac82cbeb7d51523d170996ae67696b16767c154432fd0f2eb" id="application-target">
+  <div data-hash="b04350b52dc65b50b87c923731830a075b80e18ab124b1434a2af160d5b4339b" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application" style="height:100vh;display:flex;flex-direction:column">
-        <jeeves-splash class="fade-in">
-          <fabric-component><img src="/images/jeeves-brand.png" class="ui small centered image" />
-            <div style="text-align:center">
-              <div class="ui header">JEEVES</div>
-            </div>
-          </fabric-component>
-          <fabric-component class="ui primary action fluid container"></fabric-component>
-          <fabric-component className="fade-in" style="clear:both;text-align:center">
+        <jeeves-splash class="fade-in splash"><img src="/images/novo-logo.svg" class="ui small centered image" />
+          <fabric-component class="ui primary action container"></fabric-component>
+          <section></section>
+          <section class="fade-in" style="clear:both;text-align:center">
             <p style="margin-top:2em">Already have an account? <a href="/sessions/new">Log In »</a></p>
             <p style="clear:both;margin-top:4em;font-size:0.8em">© 2023 Legal Tools &amp; Technology, Inc.</p>
-          </fabric-component>
+          </section>
         </jeeves-splash>
       </fabric-react-component>
     </jeeves-ui>

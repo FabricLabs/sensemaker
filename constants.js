@@ -3,7 +3,7 @@
 // Constants
 const RELEASE_NAME = 'beta-1.0.0-pre';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 60000; // 10 seconds
+const MAX_RESPONSE_TIME_MS = 60000; // 60 seconds
 
 // Fabric
 const GENESIS_HASH = '';

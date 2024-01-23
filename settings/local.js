@@ -181,5 +181,6 @@ module.exports = {
     ]
   },
   verbosity: 2,
+  verify: false,
   version: VERSION
-}
+};
