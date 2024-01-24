@@ -6,7 +6,7 @@ const $ = require('jquery');
 const marked = require('marked');
 
 const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./SuggestionOptions');
-const FeedbackSidebar  = require('./FeedbackSidebar');
+const InformationSidebar  = require('./InformationSidebar');
 
 // Semantic UI
 const {
@@ -41,8 +41,8 @@ class ChatBox extends React.Component {
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
       ratingMessageID: 0,//id from the message rating
-      feedbackSidebarOpen: false,
-      resetFeedbackSidebar: false,
+      informationSidebarOpen: false,
+      resetInformationSidebar: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -201,21 +201,21 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  toggleFeedbackSidebar = () => {
+  toggleInformationSidebar = () => {
     this.setState(prevState => ({
-      feedbackSidebarOpen: !prevState.feedbackSidebarOpen
+      informationSidebarOpen: !prevState.informationSidebarOpen
     }));
   };
 
   messageInfo = (ID) => {
     if(ID == this.state.ratingMessageID){
-      this.toggleFeedbackSidebar();
+      this.toggleInformationSidebar();
     } else {
-      this.setState({feedbackSidebarOpen: true});
+      this.setState({informationSidebarOpen: true});
     }
     this.setState(prevState => ({
       ratingMessageID: ID,
-      resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
+      resetInformationSidebar: !prevState.resetInformationSidebar,
     }));
   }
 
@@ -370,7 +370,7 @@ class ChatBox extends React.Component {
       query,
       windowWidth,
       windowHeight,
-      feedbackSidebarOpen,
+      informationSidebarOpen,
       ratingMessageID
     } = this.state;
 
@@ -424,11 +424,11 @@ class ChatBox extends React.Component {
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
-          <FeedbackSidebar
+          <InformationSidebar
             ratingMessageID={ratingMessageID}
-            visible={feedbackSidebarOpen}
-            toggleFeedbackSidebar={this.toggleFeedbackSidebar}
-            resetFeedbackSidebar={this.state.resetFeedbackSidebar}
+            visible={informationSidebarOpen}
+            toggleInformationSidebar={this.toggleInformationSidebar}
+            resetInformationSidebar={this.state.resetInformationSidebar}
             />
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (

@@ -16,7 +16,7 @@ const { Rating } = require('react-simple-star-rating');
 const store = require('../stores/redux');
 
 
-class FeedbackSidebar extends React.Component {
+class InformationSidebar extends React.Component {
 
   constructor (props) {
     super(props);
@@ -34,8 +34,8 @@ class FeedbackSidebar extends React.Component {
   }
 
   componentDidUpdate (prevProps) {
-    // Check if the resetFeedbackSidebar prop has changed
-    if (this.props.resetFeedbackSidebar !== prevProps.resetFeedbackSidebar) {
+    // Check if the resetInformationSidebar prop has changed
+    if (this.props.resetInformationSidebar !== prevProps.resetInformationSidebar) {
       this.resetState();
     }
   }
@@ -63,7 +63,7 @@ class FeedbackSidebar extends React.Component {
 
   handleClose = () => {
     this.resetState();
-    this.props.toggleFeedbackSidebar();
+    this.props.toggleInformationSidebar();
   }
 
   sendFeedback = async () => {
@@ -265,4 +265,4 @@ class FeedbackSidebar extends React.Component {
   };
 }
 
-module.exports = FeedbackSidebar;
+module.exports = InformationSidebar;
