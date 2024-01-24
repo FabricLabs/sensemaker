@@ -1308,7 +1308,7 @@ class Jeeves extends Hub {
         //checks if there is an user with that email already
         const existingEmailUser = await this.db('users').where('email', email).first();
         if (existingEmailUser) {
-          return res.status(409).json({ message: "This email is " });
+          return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
         }
 
         // Insert the new user into the database
