@@ -58,6 +58,7 @@ const {
   fetchInquiry,
   fetchInquiries,
   deleteInquiry,
+  createInquiry
 } = require('../actions/inquiriesActions');
 
 // ## Case Actions
@@ -196,6 +197,7 @@ async function main (input = {}) {
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
     deleteInquiry: deleteInquiry,
+    createInquiry: createInquiry,
     fetchInvitation: fetchInvitation,
     fetchInvitations: fetchInvitations,
     sendInvitation: sendInvitation,

@@ -122,6 +122,10 @@ class AdminInquiries extends React.Component {
     });
   };
 
+  reloadInquiries = async () => {
+    await this.props.fetchInquiries();
+  }
+
 
   render() {
     const { sent, sendingInvitationID, errorSending } = this.state;
@@ -130,7 +134,16 @@ class AdminInquiries extends React.Component {
     return (
       <section>
         <div className='growth-section-head'>
-          <Header as='h3' >Waitlist</Header>
+          <Header as='h3'>Waitlist</Header>
+          <div>
+            <Button
+              icon='redo'
+              title='Update inquiries'
+              size='medium'
+              onClick={this.reloadInquiries}
+              basic
+              style={{border: 'none', backgroundColor: 'transparent', boxShadow: 'none'}}
+            />
           <Input
             icon='search'
             placeholder='Find by email'
@@ -138,6 +151,7 @@ class AdminInquiries extends React.Component {
             onChange={this.handleInputChange}
             style={{ marginLeft: '20px' }}>
           </Input>
+          </div>
         </div>
         <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>
           <Table celled striped size='small'>
