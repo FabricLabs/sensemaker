@@ -40,7 +40,7 @@ class Splash extends React.Component {
 
         <fabric-component class="ui primary action container">
           <Routes>
-            <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+            <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
             <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
