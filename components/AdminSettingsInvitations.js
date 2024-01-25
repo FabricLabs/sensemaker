@@ -137,7 +137,7 @@ class AdminInvitations extends React.Component {
     const { invitation } = this.props;
 
     return (
-      <section>
+      <section className='fade-in'>
         <div className='growth-section-head'>
           <Header as='h3' style={{ margin: '0' }}>Invitations</Header>
           <Checkbox

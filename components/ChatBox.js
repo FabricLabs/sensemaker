@@ -5,8 +5,8 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 
-const {caseDropOptions,draftDropOptions,outlineDropOptions} = require('./SuggestionOptions');
-const FeedbackSidebar  = require('./FeedbackSidebar');
+const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
+const InformationSidebar = require('./InformationSidebar');
 
 // Semantic UI
 const {
@@ -25,14 +25,14 @@ const TextareaAutosize = require('react-textarea-autosize').default;
 
 
 class ChatBox extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.state = {
       query: '',
       generatingReponse: false,
       reGeneratingReponse: false,
-      groupedMessages: (props.chat.messages.length > 0)? this.groupMessages(props.chat.messages):[],
+      groupedMessages: (props.chat.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,
@@ -40,22 +40,24 @@ class ChatBox extends React.Component {
       copiedStatus: {},
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
-      ratingMessageID: 0,//id from the message rating
-      feedbackSidebarOpen: false,
-      resetFeedbackSidebar: false,
+      checkingMessageID: 0,//id from the message rating
+      informationSidebarOpen: false,
+      resetInformationSidebar: false,
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
 
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     const { messages } = this.props.chat;
 
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
@@ -64,11 +66,11 @@ class ChatBox extends React.Component {
     // we go this way if we have more messages than before or if the content of the last message
     // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
-        (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)  ) {
+      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
 
-      if (messages && messages.length > 0){
+      if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
 
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
@@ -76,7 +78,7 @@ class ChatBox extends React.Component {
           this.setState({ reGeneratingReponse: false });
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
-          if(!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)){
+          if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
             this.setState({ generatingReponse: true });
           }
         }
@@ -85,7 +87,7 @@ class ChatBox extends React.Component {
     }
   }
 
-  componentWillUnmount () {
+  componentWillUnmount() {
     this.props.resetChat();
     clearInterval(this.watcher); //ends de sync in case you switch to other component
 
@@ -102,7 +104,7 @@ class ChatBox extends React.Component {
   }
 
   handleResize = () => {
-    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight,});
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight, });
   };
 
   handleChange = (e, { name, value }) => {
@@ -110,17 +112,17 @@ class ChatBox extends React.Component {
   }
 
   handleChangeDropdown = (e, { name, value }) => {
-    if(value!=''){
+    if (value != '') {
       this.setState({ query: value });
       const { message } = this.props.chat;
       let dataToSubmit;
 
       this.setState({ loading: true });
 
-        dataToSubmit = {
-          conversation_id: message?.conversation,
-          content: value,
-        }
+      dataToSubmit = {
+        conversation_id: message?.conversation,
+        content: value,
+      }
 
       // dispatch submitMessage
       this.props.submitMessage(
@@ -141,7 +143,7 @@ class ChatBox extends React.Component {
 
       // Clear the input after sending the message
       this.setState({ query: '' });
-   }
+    }
   }
 
   handleClick = (e) => {
@@ -154,26 +156,26 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const {caseTitle , caseID} = this.props;
+    const { caseTitle, caseID } = this.props;
     let dataToSubmit;
 
     this.setState({ loading: true, previousFlag: true });
 
     //if we have caseID its beacause we are on a specific case chat
-    if(caseID){
+    if (caseID) {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
-        case: caseTitle+'_'+caseID,
+        case: caseTitle + '_' + caseID,
       }
-    }else{
+    } else {
       //if we don't have previous chat it means this is a new conversation
-      if(!this.props.previousChat){
+      if (!this.props.previousChat) {
         dataToSubmit = {
           conversation_id: message?.conversation,
           content: query,
         }
-      }else{
+      } else {
         //else, we are in a previous one and we already have a conversationID for this
         dataToSubmit = {
           conversation_id: this.props.conversationID,
@@ -201,23 +203,79 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  toggleFeedbackSidebar = () => {
+  toggleInformationSidebar = () => {
     this.setState(prevState => ({
-      feedbackSidebarOpen: !prevState.feedbackSidebarOpen
+      informationSidebarOpen: !prevState.informationSidebarOpen
     }));
   };
 
   messageInfo = (ID) => {
-    if(ID == this.state.ratingMessageID){
-      this.toggleFeedbackSidebar();
-    } else {
-      this.setState({feedbackSidebarOpen: true});
+    let newState = {
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,
+      checkingMessageID: ID,
+      informationSidebarOpen: true
+    };
+
+    // if sidebar is open and checkingMessageID === actual clicked message,
+    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
+    // icon twice for the same message)
+    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
+      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
+      newState.informationSidebarOpen = false;
     }
-    this.setState(prevState => ({
-      ratingMessageID: ID,
-      resetFeedbackSidebar: !prevState.resetFeedbackSidebar,
-    }));
-  }
+
+    this.setState(newState);
+    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+
+  };
+
+
+  // thumbs up handler
+  thumbsUp = (ID) => {
+    this.setState({ thumbsDownClicked: false });
+
+    // if thumbsUp was clicked for this message already, close sidebar
+    if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
+      this.setState({
+        informationSidebarOpen: false,
+        thumbsUpClicked: false,
+        thumbsDownClicked: false
+      });
+    } else {
+      //else, open (or keep open) sidebar, and fix states
+      this.setState({
+        thumbsUpClicked: true,
+        thumbsDownClicked: false,
+        checkingMessageID: ID,
+        informationSidebarOpen: true
+      });
+    }
+    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+
+  };
+
+  // thumbs down handler
+  thumbsDown = (ID) => {
+    this.setState({ thumbsUpClicked: false });
+    // if thumbsDown was clicked for this message already, close sidebar
+    if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
+      this.setState({
+        informationSidebarOpen: false,
+        thumbsUpClicked: false,
+        thumbsDownClicked: false
+      });
+    } else {
+      //else, open (or keep open) sidebar, and fix states
+      this.setState({
+        thumbsUpClicked: false,
+        thumbsDownClicked: true,
+        checkingMessageID: ID,
+        informationSidebarOpen: true
+      });
+    }
+    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  };
 
   regenerateAnswer = (event) => {
     event.preventDefault();
@@ -229,7 +287,7 @@ class ChatBox extends React.Component {
     let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
 
-    const messageRegen = groupedMessages[groupedMessages.length-2].messages[0];
+    const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
@@ -250,7 +308,7 @@ class ChatBox extends React.Component {
           content: messageRegen.content,
           id: messageRegen.id
         }
-      //else, we are in a previous one and we already have a conversationID for this
+        //else, we are in a previous one and we already have a conversationID for this
       } else {
         dataToSubmit = {
           conversation_id: this.props.conversationID,
@@ -360,7 +418,7 @@ class ChatBox extends React.Component {
     });
   }
 
-  render () {
+  render() {
 
     const { messages } = this.props.chat;
     const {
@@ -370,8 +428,8 @@ class ChatBox extends React.Component {
       query,
       windowWidth,
       windowHeight,
-      feedbackSidebarOpen,
-      ratingMessageID
+      informationSidebarOpen,
+      checkingMessageID
     } = this.state;
 
     const {
@@ -406,12 +464,12 @@ class ChatBox extends React.Component {
       };
     }
 
-    const messagesContainerStyle ={
+    const messagesContainerStyle = {
       overflowY: 'auto',
       transition: 'height 1s',
       marginBottom: '0'
     }
-    const announcementStyle =  {
+    const announcementStyle = {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
@@ -419,25 +477,27 @@ class ChatBox extends React.Component {
       marginTop: 0,
     };
 
-    const controlsStyle =  {border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em'}
+    const controlsStyle = { border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em' }
 
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
-          <FeedbackSidebar
-            ratingMessageID={ratingMessageID}
-            visible={feedbackSidebarOpen}
-            toggleFeedbackSidebar={this.toggleFeedbackSidebar}
-            resetFeedbackSidebar={this.state.resetFeedbackSidebar}
-            />
+          <InformationSidebar
+            checkingMessageID={checkingMessageID}
+            visible={informationSidebarOpen}
+            toggleInformationSidebar={this.toggleInformationSidebar}
+            resetInformationSidebar={this.state.resetInformationSidebar}
+            thumbsUpClicked={this.state.thumbsUpClicked}
+            thumbsDownClicked={this.state.thumbsDownClicked}
+          />
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (
             <Message info style={announcementStyle}>
               <Message.Header>
-                <span dangerouslySetInnerHTML={{__html: marked.parse(announTitle), }}/>
+                <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle), }} />
               </Message.Header>
               <Message.Content>
-                <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }}/>
+                <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
               </Message.Content>
             </Message>
           )}
@@ -495,9 +555,21 @@ class ChatBox extends React.Component {
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
                           <Icon
+                            name="thumbs down outline"
+                            color="grey"
+                            style={{ cursor: "pointer", marginLeft: "1rem", marginTop: "0.5rem" }}
+                            onClick={() => this.thumbsDown(message.id)}
+                          />
+                          <Icon
+                            name="thumbs up outline"
+                            color="grey"
+                            style={{ cursor: "pointer", marginLeft: "0.1rem" }}
+                            onClick={() => this.thumbsUp(message.id)}
+                          />
+                          <Icon
                             name="info"
                             color="blue"
-                            style={{ cursor: "pointer", marginLeft: "1rem" }}
+                            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
                             onClick={() => this.messageInfo(message.id)}
                           />
                         </div>
@@ -505,7 +577,7 @@ class ChatBox extends React.Component {
                     </Feed.Summary>
                     <Feed.Extra text>
                       {message.status !== "computing" && (
-                        <span dangerouslySetInnerHTML={{__html: marked.parse(message.content || ""),}}/>
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || ""), }} />
                       )}
                     </Feed.Extra>
                     <Feed.Extra text>
@@ -519,7 +591,7 @@ class ChatBox extends React.Component {
                         )}
                       {reGeneratingReponse &&
                         group ===
-                          this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
+                        this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
                           <Header
                             size="small"
                             style={{ fontSize: "1em", marginTop: "1.5em" }}
@@ -544,9 +616,8 @@ class ChatBox extends React.Component {
                             />
                             <span
                               style={{ fontWeight: "bold", color: "grey" }}
-                            >{`${group.activeMessageIndex + 1} / ${
-                              group.messages.length
-                            }`}</span>
+                            >{`${group.activeMessageIndex + 1} / ${group.messages.length
+                              }`}</span>
                             <Button
                               icon="angle right"
                               size="tiny"
