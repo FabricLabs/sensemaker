@@ -26,7 +26,7 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  */
 module.exports = {
   alias: NAME,
-  domain: 'beta.jeeves.dev',
+  domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
   name: 'jeeves',
@@ -41,7 +41,8 @@ module.exports = {
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ]
   },
   db: {

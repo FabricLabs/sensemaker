@@ -106,9 +106,22 @@ class OpenAIService extends Service {
         });
 
         stream.on('finalChatCompletion', (completion) => {
-          // console.debug('FINAL CHAT COMPLETION:', completion);
-          // Attach message content
-          if (message) message.content = completion.choices[0].message.content;
+          const choice = completion.choices[0];
+          if (!choice) reject(new Error('No choices given.'));
+
+          switch (choice.finish_reason) {
+            default:
+              console.warn('Unhandled finish reason:', choice.finish_reason);
+              break;
+            case 'stop':
+              // Attach message content
+              if (message) message.content = completion.choices[0].message.content;
+              break;
+            case 'tool_calls':
+              console.debug('[AGENT]', '[RAG]', 'Message:', choice.message);
+              console.debug('[AGENT]', '[RAG]', 'Tool calls:', choice.message.tool_calls);
+              break;
+          }
 
           // Notify the message is complete
           this.emit('MessageEnd', message);

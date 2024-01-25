@@ -374,6 +374,8 @@ class Jeeves extends Hub {
 
   combinationsOf (tokens, prefix = '') {
     if (!tokens.length) return prefix;
+    if (tokens.length > 10) tokens = tokens.slice(0, 10);
+
     let result = [];
 
     // Recursively combine tokens
@@ -424,6 +426,49 @@ class Jeeves extends Hub {
     const tokens = input.split(/\s+/g);
     const estimate = tokens.length * 4;
     return estimate;
+  }
+
+  importantPhrases (input) {
+    const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
+    const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
+
+    uniques.sort((a, b) => {
+      return b.length - a.length;
+    });
+
+    return uniques;
+  }
+
+  importantWords (input) {
+    const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
+    const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
+    const nouns = this.properNouns(input);
+
+    uniques.sort((a, b) => {
+      return b.length - a.length;
+    });
+
+    uniques.sort((a, b) => {
+      return nouns.includes(b) - nouns.includes(a);
+    });
+
+    return uniques;
+  }
+
+  properNouns (input) {
+    return this.uniqueWords(input).filter((word) => /^[A-Z][a-z]*$/.test(word));
+  }
+
+  uniqueWords (input) {
+    return [...new Set(this.words(input))].filter((x) => x.length > 3);
+  }
+
+  words (input) {
+    return this.wordTokens(input);
+  }
+
+  wordTokens (input) {
+    return input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
   }
 
   async alert (message) {
@@ -539,18 +584,20 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
     // Compute most relevant tokens
-    const words = new Set(request.query.split(/\s+/g)); // TODO: vector search, sort by relevance
     const caseCount = await this.db('cases').count('id as count').first();
-    const cases = await this._vectorSearchCases(words);
     const hypotheticals = await this.lennon.query({ query: request.query });
+    const words = this.importantWords(request.query);
+    const phrases = this.importantPhrases(request.query);
+    const cases = await this._vectorSearchCases(words.slice(0, 10));
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
 
     // Format Metadata
     const meta = `metadata:\n` +
       `  cases:\n` +
-      cases.map((x) => `    - [novo/cases/${x.id}]"${x.title}"`).join('\n') +
+      cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
       `\n` +
       `  counts:\n` +
       `    cases: ` + caseCount.count + `\n` +
@@ -593,7 +640,7 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
     // TODO: execute RAG query for additional metadata
-    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".`, openai: this.settings.openai });
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
     const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
@@ -632,6 +679,7 @@ class Jeeves extends Hub {
       console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
       if (extracted && extracted.content) {
+        console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
         try {
           const caseCards = JSON.parse(extracted.content).map((x) => {
             const actor = new Actor({ name: x });
@@ -4230,7 +4278,7 @@ class Jeeves extends Hub {
   async _vectorSearchCases (words) {
     const uniques = [...new Set(words)];
 
-    console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.size} uniques.`);
+    console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
     console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', uniques)
 
     // TODO: Redis
