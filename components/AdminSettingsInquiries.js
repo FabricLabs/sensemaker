@@ -132,7 +132,7 @@ class AdminInquiries extends React.Component {
     const { inquiries } = this.props;
 
     return (
-      <section>
+      <section className='fade-in'>
         <div className='growth-section-head'>
           <Header as='h3'>Waitlist</Header>
           <div>
@@ -204,9 +204,7 @@ class AdminInquiries extends React.Component {
                           <Button
                             icon='trash alternate'
                             disabled={sendingInvitationID === instance.id}
-                            // onClick={() => this.deleteInquiry(instance.id)}
                             onClick={() => this.openConfirmDeleteModal(instance.id)}
-
                           />
                         </Table.Cell>
                       </Table.Row>

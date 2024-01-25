@@ -209,24 +209,6 @@ class ChatBox extends React.Component {
     }));
   };
 
-  // // Método para manejar los eventos de clic en el botón de información
-  // messageInfo = (ID) => {
-  //   let newState = {
-  //     thumbsUpClicked: false,
-  //     thumbsDownClicked: false
-  //   };
-
-  //   // Si la sidebar está abierta y es el mismo mensaje, cierra la sidebar.
-  //   // De lo contrario, simplemente actualiza el checkingMessageID y deja la sidebar abierta.
-  //   if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID) {
-  //     newState.informationSidebarOpen = false;
-  //   } else {
-  //     newState.checkingMessageID = ID;
-  //     newState.informationSidebarOpen = true;
-  //   }
-
-  //   this.setState(newState);
-  // };
   messageInfo = (ID) => {
     let newState = {
       thumbsUpClicked: false,
@@ -235,8 +217,9 @@ class ChatBox extends React.Component {
       informationSidebarOpen: true
     };
 
-    // Si la sidebar está abierta y el checkingMessageID es el mismo que el del mensaje actual, 
-    // y ninguno de los estados de los thumbs está activo, entonces cierra la sidebar.
+    // if sidebar is open and checkingMessageID === actual clicked message,
+    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
+    // icon twice for the same message)
     if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
       !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
       newState.informationSidebarOpen = false;
@@ -248,9 +231,11 @@ class ChatBox extends React.Component {
   };
 
 
-  // Método para manejar los eventos de clic en el botón de thumbsUp
+  // thumbs up handler
   thumbsUp = (ID) => {
-    // Si ya se hizo clic en thumbsUp para este mensaje, cerrar la sidebar.
+    this.setState({ thumbsDownClicked: false });
+
+    // if thumbsUp was clicked for this message already, close sidebar
     if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
       this.setState({
         informationSidebarOpen: false,
@@ -258,7 +243,7 @@ class ChatBox extends React.Component {
         thumbsDownClicked: false
       });
     } else {
-      // Si no, abrir (o mantener abierta) la sidebar y ajustar los estados apropiadamente.
+      //else, open (or keep open) sidebar, and fix states
       this.setState({
         thumbsUpClicked: true,
         thumbsDownClicked: false,
@@ -270,9 +255,10 @@ class ChatBox extends React.Component {
 
   };
 
-  // Método para manejar los eventos de clic en el botón de thumbsDown
+  // thumbs down handler
   thumbsDown = (ID) => {
-    // Si ya se hizo clic en thumbsDown para este mensaje, cerrar la sidebar.
+    this.setState({ thumbsUpClicked: false });
+    // if thumbsDown was clicked for this message already, close sidebar
     if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
       this.setState({
         informationSidebarOpen: false,
@@ -280,7 +266,7 @@ class ChatBox extends React.Component {
         thumbsDownClicked: false
       });
     } else {
-      // Si no, abrir (o mantener abierta) la sidebar y ajustar los estados apropiadamente.
+      //else, open (or keep open) sidebar, and fix states
       this.setState({
         thumbsUpClicked: false,
         thumbsDownClicked: true,
@@ -290,113 +276,6 @@ class ChatBox extends React.Component {
     }
     this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
   };
-
-
-  // messageInfo = (ID) => {
-  //   // if (ID == this.state.checkingMessageID) {
-  //   //   this.toggleInformationSidebar();
-  //   // } else {
-  //   //   this.setState({ informationSidebarOpen: true });
-  //   // }
-  //   // this.setState(prevState => ({
-  //   //   checkingMessageID: ID,
-  //   //   resetInformationSidebar: !prevState.resetInformationSidebar,
-  //   // }));
-
-  //   if (this.state.thumbsUpClicked || this.state.thumbsDownClicked) {
-  //     this.setState({ thumbsDownClicked: false, thumbsUpClicked: false });
-  //     if (this.state.informationSidebarOpen && (ID != this.state.checkingMessageID)) {
-  //       this.setState(prevState => ({
-  //         checkingMessageID: ID,
-  //         resetInformationSidebar: !prevState.resetInformationSidebar,
-  //       }));
-  //     } else {
-  //       this.setState({ informationSidebarOpen: true });
-  //       this.setState(prevState => ({
-  //         checkingMessageID: ID,
-  //         resetInformationSidebar: !prevState.resetInformationSidebar,
-  //       }));
-  //     }
-  //   } else {
-  //     if (this.state.informationSidebarOpen) {
-  //       if (ID != this.state.checkingMessageID) {
-  //         this.setState(prevState => ({
-  //           checkingMessageID: ID,
-  //           resetInformationSidebar: !prevState.resetInformationSidebar,
-  //         }));
-  //       } else {
-  //         this.toggleInformationSidebar();
-  //       }
-  //     } else {
-  //       this.setState(prevState => ({
-  //         checkingMessageID: ID,
-  //         resetInformationSidebar: !prevState.resetInformationSidebar,
-  //       }));
-  //       this.setState({ informationSidebarOpen: true });
-  //     }
-  //   }
-
-  //   const { thumbsUpClicked, thumbsDownClicked, informationSidebarOpen, checkingMessageID } = this.state;
-
-  //   // Reset thumbs up/down state if any is clicked
-  //   if (thumbsUpClicked || thumbsDownClicked) {
-  //       this.setState({ thumbsDownClicked: false, thumbsUpClicked: false });
-  //   }
-
-  //   // Toggle the information sidebar based on the conditions
-  //   if (!informationSidebarOpen || ID !== checkingMessageID) {
-  //       this.setState({ informationSidebarOpen: true });
-  //   } else if (ID === checkingMessageID) {
-  //       this.toggleInformationSidebar();
-  //       return; // Return early to avoid further state updates after toggle
-  //   }
-
-  //   // Update the checkingMessageID and resetInformationSidebar state
-  //   this.setState(prevState => ({
-  //       checkingMessageID: ID,
-  //       resetInformationSidebar: !prevState.resetInformationSidebar,
-  //   }));
-
-  //   // if (this.state.thumbsUpClicked || this.state.thumbsDownClicked) {
-  //   //   this.setState({ thumbsDownClicked: false, thumbsUpClicked: false });
-  //   // }
-
-  //   // if (ID == this.state.checkingMessageID) {
-
-  //   // }
-  //   // if (this.state.thumbsUpClicked || this.state.thumbsDownClicked) {
-  //   //   this.setState({ thumbsDownClicked: false, thumbsUpClicked: false });
-  //   // } else {
-  //   //   this.openSidebar(ID);
-  //   // }
-
-  //   // this.setState({thumbsDownClicked: false, thumbsUpClicked: false}, () =>{
-  //   //   this.openSidebar(ID);
-  //   // });
-  // }
-
-  // thumbsUp = (ID) => {
-  //   this.setState({ thumbsUpClicked: true, thumbsDownClicked: false }, () => {
-  //     this.openSidebar(ID);
-  //   })
-  // }
-  // thumbsDown = (ID) => {
-  //   this.setState({ thumbsUpClicked: false, thumbsDownClicked: true }, () => {
-  //     this.openSidebar(ID);
-  //   })
-  // }
-
-  // openSidebar = (ID) => {
-  //   // if (ID == this.state.checkingMessageID) {
-  //   //   this.toggleInformationSidebar();
-  //   // } else {
-  //   // }
-  //   this.setState({ informationSidebarOpen: true });
-  //   this.setState(prevState => ({
-  //     checkingMessageID: ID,
-  //     resetInformationSidebar: !prevState.resetInformationSidebar,
-  //   }));
-  // }
 
   regenerateAnswer = (event) => {
     event.preventDefault();

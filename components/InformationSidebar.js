@@ -67,7 +67,8 @@ class InformationSidebar extends React.Component {
   }
 
   sendFeedback = async () => {
-    const { rating, comment, thumbsUpClicked, thumbsDownClicked, checkingMessageID } = this.state;
+    const { rating, comment } = this.state;
+    const { thumbsUpClicked, thumbsDownClicked, checkingMessageID } = this.props;
     const state = store.getState();
     const token = state.auth.token;
 
@@ -78,6 +79,8 @@ class InformationSidebar extends React.Component {
       thumbsDownClicked,
       message: checkingMessageID,
     };
+
+    console.log(dataToSend);
     this.setState({ sending: true });
 
     const fetchPromise = fetch("/reviews", {
@@ -141,10 +144,10 @@ class InformationSidebar extends React.Component {
     } = this.state;
     const { visible } = this.props;
 
-    // Style for active buttons
-    const activeButtonStyle = {
-      border: '2px solid #cfcdca',
-    };
+    // // Style for active buttons
+    // const activeButtonStyle = {
+    //   border: '2px solid #cfcdca',
+    // };
 
     return (
       <Sidebar
@@ -153,75 +156,61 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        className='info-sidebar'>
-        {(this.props.thumbsUpClicked || this.props.thumbsDownClicked) ? (<div>
+      >
+        {(this.props.thumbsUpClicked || this.props.thumbsDownClicked) ?
+        (<div className='info-sidebar center-elements-column'>
 
-          <Header as='h3' style={{ color: '#fff' }} >Feedback</Header>
+          <Header as='h2' style={{ color: '#fff', marginBottom: '2rem' }} >Feedback</Header>
           <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
-          <Button.Group size='mini'>
-            <Popup trigger={
-              <Button
-                icon='thumbs down'
-                color='grey'
-                size='tiny'
-                onClick={() => this.setState({ thumbsDownClicked: true, thumbsUpClicked: false, })}
-                active={thumbsDownClicked}
-                style={thumbsDownClicked ? activeButtonStyle : {}}
-              />
-            }>
-              <Popup.Content>
-                <p>Report something wrong with this statement.</p>
-              </Popup.Content>
-            </Popup>
-            <Popup trigger={
-              <Button
-                icon='thumbs up'
-                size='tiny'
-                color='green'
-                onClick={() => this.setState({ thumbsDownClicked: false, thumbsUpClicked: true, })}
-                active={thumbsUpClicked}
-                style={thumbsUpClicked ? activeButtonStyle : {}}
-              />
-            }>
-              <Popup.Header>Tell Us What You Liked!</Popup.Header>
-              <Popup.Content>
-                <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-              </Popup.Content>
-            </Popup>
+          <Button.Group size='medium'>
+            {(this.props.thumbsDownClicked) ? (
+              <Popup
+                trigger={
+                  <Button icon='thumbs down' color='grey' size='medium' />
+                }>
+                <Popup.Content>
+                  <p>Report something wrong with this statement.</p>
+                </Popup.Content>
+              </Popup>
+            ) : (
+              <Popup
+                trigger={
+                  <Button icon='thumbs up' size='medium' color='green' />
+                }>
+                <Popup.Header>Tell Us What You Liked!</Popup.Header>
+                <Popup.Content>
+                  <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+                </Popup.Content>
+              </Popup>
+            )}
           </Button.Group>
-          <p>Let us know your opinion!</p>
-          <Header>Cases Sourced</Header>
-          {
-            // TODO: implement message->case API
-            // All cases retuned by the search against the message ID (inline = true)
-          }
-          <fabric-search-results>
-            <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
-            <fabric-state>
-              <code>{JSON.stringify(this.state, null, '  ')}</code>
-            </fabric-state>
-          </fabric-search-results>
-
-          {(!feedbackSent && !connectionProblem) && (<div>
-            <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />
-            <Form.Field>
+          <Header size='small' style={{ color: '#fff'}}>Let us know your opinion!</Header>
+          {(!feedbackSent && !connectionProblem) && (<Form.Field>
+            <div style={{marginBottom:'0.5rem'}} className='center-elements-row'>
+            <Rating
+              size={35}
+              transition={true}
+              onClick={this.handleRatingChange}
+              initialValue={rating}
+              />
+              </div>
               <Header style={{ color: '#fff' }}>Comment</Header>
               <Form.TextArea
                 placeholder='Enter your comment...'
                 style={{ resize: 'none' }}
-                rows={3}
+                rows={4}
                 name='comment'
                 onChange={this.handleInputChange}
               />
             </Form.Field>
-          </div>
+
           )}
           <Form.Field>
             {/*When the feedback is sent it shows this message  */}
             {feedbackSent && (
               <Message positive>
                 <Message.Header>Feedback Sent!</Message.Header>
-                <p>Your comment has been successfully sent.</p>
+                <Message.Content>Your comment has been successfully sent.</Message.Content>
               </Message>
             )}
             {/*When the feedback could not be sent it shows this message  */}
@@ -262,8 +251,21 @@ class InformationSidebar extends React.Component {
             </Button.Group>
           </Form.Field>
         </div>) : (
-
-          <p>{this.props.checkingMessageID}</p>
+          <div className='info-sidebar'>
+            <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
+            <p>{this.props.checkingMessageID}</p>
+            <Header>Cases Sourced</Header>
+            {
+              // TODO: implement message->case API
+              // All cases retuned by the search against the message ID (inline = true)
+            }
+            <fabric-search-results>
+              <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
+              <fabric-state>
+                <code>{JSON.stringify(this.state, null, '  ')}</code>
+              </fabric-state>
+            </fabric-search-results>
+          </div>
         )}
       </Sidebar>
     )
