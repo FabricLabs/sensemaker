@@ -18,7 +18,7 @@ const store = require('../stores/redux');
 
 class InformationSidebar extends React.Component {
 
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.state = {
@@ -33,7 +33,7 @@ class InformationSidebar extends React.Component {
     };
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     // Check if the resetInformationSidebar prop has changed
     if (this.props.resetInformationSidebar !== prevProps.resetInformationSidebar) {
       this.resetState();
@@ -67,7 +67,7 @@ class InformationSidebar extends React.Component {
   }
 
   sendFeedback = async () => {
-    const { rating, comment, thumbsUpClicked, thumbsDownClicked, ratingMessageID } = this.state;
+    const { rating, comment, thumbsUpClicked, thumbsDownClicked, checkingMessageID } = this.state;
     const state = store.getState();
     const token = state.auth.token;
 
@@ -76,7 +76,7 @@ class InformationSidebar extends React.Component {
       comment,
       thumbsUpClicked,
       thumbsDownClicked,
-      message: this.props.ratingMessageID,
+      message: checkingMessageID,
     };
     this.setState({ sending: true });
 
@@ -128,7 +128,7 @@ class InformationSidebar extends React.Component {
    * Render to HTML DOM
    * @returns the feedback sidebar, as a React Component
    */
-  render () {
+  render() {
     const {
       // modalOpen,
       rating,
@@ -141,10 +141,10 @@ class InformationSidebar extends React.Component {
     } = this.state;
     const { visible } = this.props;
 
-        // Style for active buttons
-        const activeButtonStyle = {
-          border: '2px solid #cfcdca',
-        };
+    // Style for active buttons
+    const activeButtonStyle = {
+      border: '2px solid #cfcdca',
+    };
 
     return (
       <Sidebar
@@ -154,112 +154,117 @@ class InformationSidebar extends React.Component {
         visible={visible}
         width='wide'
         className='info-sidebar'>
+        {(this.props.thumbsUpClicked || this.props.thumbsDownClicked) ? (<div>
 
-        <Header as='h3' style={{ color: '#fff' }} >Feedback</Header>
-        <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
-        <Button.Group size='mini'>
-          <Popup trigger={
-            <Button
-              icon='thumbs down'
-              color='grey'
-              size='tiny'
-              onClick={() => this.setState({ thumbsDownClicked: true, thumbsUpClicked: false, })}
-              active={thumbsDownClicked}
-              style={thumbsDownClicked ? activeButtonStyle : {}}
-            />
-          }>
-            <Popup.Content>
-              <p>Report something wrong with this statement.</p>
-            </Popup.Content>
-          </Popup>
-          <Popup trigger={
-            <Button
-              icon='thumbs up'
-              size='tiny'
-              color='green'
-              onClick={() => this.setState({ thumbsDownClicked: false, thumbsUpClicked: true, })}
-              active={thumbsUpClicked}
-              style={thumbsUpClicked ? activeButtonStyle : {}}
-            />
-          }>
-            <Popup.Header>Tell Us What You Liked!</Popup.Header>
-            <Popup.Content>
-              <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
-            </Popup.Content>
-          </Popup>
-        </Button.Group>
-        <p>Let us know your opinion!</p>
-        <Header>Cases Sourced</Header>
-        {
-          // TODO: implement message->case API
-          // All cases retuned by the search against the message ID (inline = true)
-        }
-        <fabric-search-results>
-          <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
-          <fabric-state>
-            <code>{JSON.stringify(this.state, null, '  ')}</code>
-          </fabric-state>
-        </fabric-search-results>
-
-        {(!feedbackSent && !connectionProblem) && (<div>
-          <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />
-          <Form.Field>
-            <Header style={{ color: '#fff' }}>Comment</Header>
-            <Form.TextArea
-              placeholder='Enter your comment...'
-              style={{ resize: 'none' }}
-              rows={3}
-              name='comment'
-              onChange={this.handleInputChange}
-            />
-          </Form.Field>
-        </div>
-        )}
-        <Form.Field>
-          {/*When the feedback is sent it shows this message  */}
-          {feedbackSent && (
-            <Message positive>
-              <Message.Header>Feedback Sent!</Message.Header>
-              <p>Your comment has been successfully sent.</p>
-            </Message>
-          )}
-          {/*When the feedback could not be sent it shows this message  */}
-          {feedbackFail && (
-            <Message negative>
-              <Message.Header>Feedback could not be sent</Message.Header>
-              <p>Please try again later.</p>
-            </Message>
-          )}
-          {connectionProblem && (
-            <Message negative>
-              <Message.Header>Feedback could not be sent</Message.Header>
-              <p>Please check your internet connection.</p>
-            </Message>
-          )}
-        </Form.Field>
-        <Form.Field>
-          <Button.Group >
-            <Button
-              content="Close"
-              icon='close'
-              onClick={() => this.handleClose()}
-              labelPosition='right'
-              size='small'
-              color='grey'
-            />
-            {/*This button is shown only if Feedback wasnt sent yet */}
-            {(!feedbackSent && !connectionProblem) && (
+          <Header as='h3' style={{ color: '#fff' }} >Feedback</Header>
+          <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
+          <Button.Group size='mini'>
+            <Popup trigger={
               <Button
-                content="Send"
-                icon={sending ? 'spinner' : 'checkmark'}
-                onClick={this.sendFeedback}
+                icon='thumbs down'
+                color='grey'
+                size='tiny'
+                onClick={() => this.setState({ thumbsDownClicked: true, thumbsUpClicked: false, })}
+                active={thumbsDownClicked}
+                style={thumbsDownClicked ? activeButtonStyle : {}}
+              />
+            }>
+              <Popup.Content>
+                <p>Report something wrong with this statement.</p>
+              </Popup.Content>
+            </Popup>
+            <Popup trigger={
+              <Button
+                icon='thumbs up'
+                size='tiny'
+                color='green'
+                onClick={() => this.setState({ thumbsDownClicked: false, thumbsUpClicked: true, })}
+                active={thumbsUpClicked}
+                style={thumbsUpClicked ? activeButtonStyle : {}}
+              />
+            }>
+              <Popup.Header>Tell Us What You Liked!</Popup.Header>
+              <Popup.Content>
+                <p>We provide human feedback to our models, so you can annotate this message with a comment.</p>
+              </Popup.Content>
+            </Popup>
+          </Button.Group>
+          <p>Let us know your opinion!</p>
+          <Header>Cases Sourced</Header>
+          {
+            // TODO: implement message->case API
+            // All cases retuned by the search against the message ID (inline = true)
+          }
+          <fabric-search-results>
+            <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
+            <fabric-state>
+              <code>{JSON.stringify(this.state, null, '  ')}</code>
+            </fabric-state>
+          </fabric-search-results>
+
+          {(!feedbackSent && !connectionProblem) && (<div>
+            <Rating size={35} transition={true} onClick={this.handleRatingChange} initialValue={rating} style={{ marginBottom: '0.5em' }} />
+            <Form.Field>
+              <Header style={{ color: '#fff' }}>Comment</Header>
+              <Form.TextArea
+                placeholder='Enter your comment...'
+                style={{ resize: 'none' }}
+                rows={3}
+                name='comment'
+                onChange={this.handleInputChange}
+              />
+            </Form.Field>
+          </div>
+          )}
+          <Form.Field>
+            {/*When the feedback is sent it shows this message  */}
+            {feedbackSent && (
+              <Message positive>
+                <Message.Header>Feedback Sent!</Message.Header>
+                <p>Your comment has been successfully sent.</p>
+              </Message>
+            )}
+            {/*When the feedback could not be sent it shows this message  */}
+            {feedbackFail && (
+              <Message negative>
+                <Message.Header>Feedback could not be sent</Message.Header>
+                <p>Please try again later.</p>
+              </Message>
+            )}
+            {connectionProblem && (
+              <Message negative>
+                <Message.Header>Feedback could not be sent</Message.Header>
+                <p>Please check your internet connection.</p>
+              </Message>
+            )}
+          </Form.Field>
+          <Form.Field>
+            <Button.Group >
+              <Button
+                content="Close"
+                icon='close'
+                onClick={() => this.handleClose()}
                 labelPosition='right'
                 size='small'
-                loading={sending}
-                positive
-              />)}
-          </Button.Group>
-        </Form.Field>
+                color='grey'
+              />
+              {/*This button is shown only if Feedback wasnt sent yet */}
+              {(!feedbackSent && !connectionProblem) && (
+                <Button
+                  content="Send"
+                  icon={sending ? 'spinner' : 'checkmark'}
+                  onClick={this.sendFeedback}
+                  labelPosition='right'
+                  size='small'
+                  loading={sending}
+                  positive
+                />)}
+            </Button.Group>
+          </Form.Field>
+        </div>) : (
+
+          <p>{this.props.checkingMessageID}</p>
+        )}
       </Sidebar>
     )
   };
