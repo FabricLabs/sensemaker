@@ -8,6 +8,7 @@ const definition = require('../package');
 const {
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
+  SEARCH_CASES_MAX_WORDS,
   USER_QUERY_TIMEOUT_MS
 } = require('../constants');
 
@@ -518,34 +519,44 @@ class Jeeves extends Hub {
   async createTimedRequest (request, timeout = 60000, depth = 0) {
     const now = new Date();
     const created = now.toISOString();
+
+    // Create Request Message
     const message = Message.fromVector(['TimedRequest', JSON.stringify({
       created: created,
       request: request
     })]);
 
+    // Add Request to Database
     const inserted = await this.db('requests').insert({
       created_at: toMySQLDatetime(now),
       content: JSON.stringify(request)
     });
 
+    // Notify workers
     this.emit('request', { id: inserted [0] });
 
     // TODO: prepare maximum token length
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
     // Compute most relevant tokens
-    const words = request.query.split(/\s+/g); // TODO: vector search, sort by relevance
+    const words = new Set(request.query.split(/\s+/g)); // TODO: vector search, sort by relevance
     const caseCount = await this.db('cases').count('id as count').first();
-    const cases = await this.db('cases').select('id', 'title').where('title', 'like', `%${words[0]}%`).limit(10);
+    const cases = await this._vectorSearchCases(words);
     const hypotheticals = await this.lennon.query({ query: request.query });
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
 
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+
+    // Format Metadata
     const meta = `metadata:\n` +
-      `  cases: ` + cases.map((x) => `"${x.title}"`).join(', ') + `\n` +
+      `  cases:\n` +
+      cases.map((x) => `    - [novo/cases/${x.id}]"${x.title}"`).join('\n') +
+      `\n` +
       `  counts:\n` +
       `    cases: ` + caseCount.count + `\n` +
       ``;
 
+    // Format Query Text
     const query = `---\n` +
       meta +
       `---\n` +
@@ -583,7 +594,7 @@ class Jeeves extends Hub {
 
     // TODO: execute RAG query for additional metadata
     const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".`, openai: this.settings.openai });
-    const ragged = await ragger.query({ query: request.query });
+    const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
 
@@ -4214,6 +4225,30 @@ class Jeeves extends Hub {
     console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
     console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
     console.debug('RAG FIXTURE:', RAG_FIXTURE);
+  }
+
+  async _vectorSearchCases (words) {
+    const uniques = [...new Set(words)];
+
+    console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.size} uniques.`);
+    console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', uniques)
+
+    // TODO: Redis
+    // TODO: Vector Search
+    // TODO: Vector Search (ChatGPT Embeddings)
+    const results = await Promise.all(uniques.map((word) => {
+      return this.db('cases').select('id', 'title').where('title', 'like', `%${word}%`).limit(10);
+    }));
+
+    let cases = [];
+
+    for (let i = 0; i < results.length; i++) {
+      cases = cases.concat(results[i]);
+    }
+
+    if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+
+    return cases;
   }
 
   _handleServiceMessage (source, message) {

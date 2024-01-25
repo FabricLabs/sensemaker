@@ -87,7 +87,9 @@ class OpenAIService extends Service {
           max_tokens: CHATGPT_MAX_TOKENS,
           messages: request.messages,
           model: this.settings.model,
-          stream: true
+          stream: true,
+          tool_choice: request.tool_choice,
+          tools: request.tools
         });
 
         this.emit('MessageStart', {

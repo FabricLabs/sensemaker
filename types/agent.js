@@ -97,16 +97,23 @@ class Agent extends Service {
             }
           },
           searchHost: {
-            name: 'search_host',
-            description: 'Search the specified host for a query.',
-            parameters: {
-              host: {
-                type: 'String',
-                description: 'The host to search.'
-              },
-              query: {
-                type: 'Object',
-                description: 'The query to send to the host.'
+            type: 'function',
+            function: {
+              name: 'search_host',
+              description: 'Search the specified host for a query.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  host: {
+                    type: 'string',
+                    description: 'The host to search.'
+                  },
+                  query: {
+                    type: 'string',
+                    description: 'The JSON-encoded query object to send to the host.'
+                  }
+                },
+                required: ['host']
               }
             }
           }
@@ -166,16 +173,22 @@ class Agent extends Service {
     return this._state.prompt;
   }
 
-  set prompt (value) {
-    this._state.prompt = value;
-  }
-
   get functions () {
     return this.settings.documentation.methods;
   }
 
   get model () {
     return this._state.model;
+  }
+
+  get tools () {
+    return Object.values(this.settings.documentation.methods).filter((x) => {
+      return (x.type == 'function');
+    });
+  }
+
+  set prompt (value) {
+    this._state.prompt = value;
   }
 
   async _handleRequest (request) {
@@ -209,7 +222,8 @@ class Agent extends Service {
           messages: [
             { role: 'system', content: this.prompt },
             { role: 'user', content: request.query }
-          ]
+          ],
+          tools: this.tools
         }),
         rag: null,
         sensemaker: null
@@ -217,8 +231,8 @@ class Agent extends Service {
 
       // Wait for all responses to resolve or reject.
       await Promise.allSettled(Object.values(responses));
-      console.debug('[AGENT]', 'Query:', request.query);
       console.debug('[AGENT]', 'Prompt:', this.prompt);
+      console.debug('[AGENT]', 'Query:', request.query);
       console.debug('[AGENT]', 'Responses:', responses);
 
       let response = '';
