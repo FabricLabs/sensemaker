@@ -78,6 +78,39 @@ class Agent extends Service {
         // frequency_penalty: 0,
         // presence_penalty: 0.6,
         // stop: ['\n'] // TODO: eliminate need for stop tokens
+      },
+      documentation: {
+        description: 'The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.',
+        type: 'Service',
+        methods: {
+          query: {
+            description: 'Query the AI agent.',
+            parameters: {
+              query: {
+                type: 'String',
+                description: 'The query to send to the AI agent.'
+              }
+            },
+            returns: {
+              type: 'Object',
+              description: 'The response from the AI agent.'
+            }
+          },
+          searchHost: {
+            name: 'search_host',
+            description: 'Search the specified host for a query.',
+            parameters: {
+              host: {
+                type: 'String',
+                description: 'The host to search.'
+              },
+              query: {
+                type: 'Object',
+                description: 'The query to send to the host.'
+              }
+            }
+          }
+        }
       }
     }, settings);
 
@@ -135,6 +168,10 @@ class Agent extends Service {
 
   set prompt (value) {
     this._state.prompt = value;
+  }
+
+  get methods () {
+    return this.settings.documentation.methods;
   }
 
   get model () {

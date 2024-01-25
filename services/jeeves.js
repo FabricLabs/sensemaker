@@ -1463,7 +1463,6 @@ class Jeeves extends Hub {
         };
 
         const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-
         const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
         const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
