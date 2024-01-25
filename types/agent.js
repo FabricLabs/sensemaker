@@ -170,7 +170,7 @@ class Agent extends Service {
     this._state.prompt = value;
   }
 
-  get methods () {
+  get functions () {
     return this.settings.documentation.methods;
   }
 

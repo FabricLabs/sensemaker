@@ -1290,49 +1290,12 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Services
+    this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+
     // TODO: move all handlers to class methods
-    this.http._addRoute('POST', '/inquiries', async (req, res) => {
-      const { email } = req.body;
-
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required.' });
-      }
-
-      try {
-        // Check if the email already exists in the waitlist
-        const existingInquiry = await this.db('inquiries').where('email', email).first();
-        if (existingInquiry) {
-          return res.status(409).json({ message: "You're already on the waitlist!" });
-        }
-
-        //checks if there is an user with that email already
-        const existingEmailUser = await this.db('users').where('email', email).first();
-        if (existingEmailUser) {
-          return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
-        }
-
-        // Insert the new user into the database
-        const newInquiry = await this.db('inquiries').insert({
-          email: email
-        });
-
-        return res.json({ message: "You've been added to the waitlist!" });
-      } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.  Try again later.' });
-      }
-    });
-
-    this.http._addRoute('GET', '/inquiries', async (req, res) => {
-      try {
-        const inquiries = await this.db('inquiries')
-          .select('*')
-          .orderBy('created_at', 'desc');
-        res.send(inquiries);
-      } catch (error) {
-        console.error('Error fetching inquiries:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
+    this.http._addRoute('GET', '/inquiries', this._handleInquiryListRequest.bind(this));
 
     //endpoint to delete inquiry from admin panel
     this.http._addRoute('PATCH', '/inquiries/delete/:id', async (req, res) => {
@@ -3224,6 +3187,31 @@ class Jeeves extends Hub {
     }
   }
 
+  async _handleFeedbackRequest (req, res, next) {
+    // TODO: check token
+    const request = req.body;
+
+    try {
+      await this.db('feedback').insert({
+        creator: req.user.id,
+        content: request.comment
+      });
+
+      return res.send({
+        type: 'SubmitFeedbackResult',
+        content: {
+          message: 'Success!',
+          status: 'success'
+        }
+      });
+    } catch (exception) {
+      return res.send({
+        type: 'SubmitFeedbackError',
+        content: exception
+      });
+    }
+  }
+
   async _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
     console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
@@ -3243,6 +3231,49 @@ class Jeeves extends Hub {
         results: results
       });
     });
+  }
+
+  async _handleInquiryListRequest (req, res, next) {
+    try {
+      const inquiries = await this.db('inquiries')
+        .select('*')
+        .orderBy('created_at', 'desc');
+      res.send(inquiries);
+    } catch (error) {
+      console.error('Error fetching inquiries:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  }
+
+  async _handleInquiryCreateRequest (req, res, next) {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    try {
+      // Check if the email already exists in the waitlist
+      const existingInquiry = await this.db('inquiries').where('email', email).first();
+      if (existingInquiry) {
+        return res.status(409).json({ message: "You're already on the waitlist!" });
+      }
+
+      //checks if there is an user with that email already
+      const existingEmailUser = await this.db('users').where('email', email).first();
+      if (existingEmailUser) {
+        return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
+      }
+
+      // Insert the new user into the database
+      const newInquiry = await this.db('inquiries').insert({
+        email: email
+      });
+
+      return res.json({ message: "You've been added to the waitlist!" });
+    } catch (error) {
+      return res.status(500).json({ message: 'Internal server error.  Try again later.' });
+    }
   }
 
   async _handleRAGQuery (query) {
