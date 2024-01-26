@@ -295,7 +295,7 @@ class Dashboard extends React.Component {
             <Menu.Item style={{ borderBottom: 0 }}>
               <Bridge />
               {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
-              <p style={{ marginTop: '2em' }}><small className="subtle" style={{ fontSize: '0.6em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</small></p>
+              <p style={{ marginTop: '2em' }}><small className="subtle" style={{ fontSize: '0.6em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
               {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
             </Menu.Item>
           </Sidebar>

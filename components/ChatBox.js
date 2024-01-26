@@ -90,6 +90,7 @@ class ChatBox extends React.Component {
       this.scrollToBottom();
     }
   }
+  
 
   componentWillUnmount() {
     this.props.resetChat();
@@ -568,7 +569,7 @@ class ChatBox extends React.Component {
                           <Icon
                             name="thumbs down outline"
                             color="grey"
-                            style={{ cursor: "pointer", marginLeft: "1rem", marginTop: "0.5rem" }}
+                            style={{ cursor: "pointer", marginLeft: "1rem"}}
                             onClick={() => this.thumbsDown(message.id)}
                           />
                           <Icon

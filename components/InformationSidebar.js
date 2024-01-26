@@ -139,15 +139,8 @@ class InformationSidebar extends React.Component {
       feedbackFail,
       sending,
       connectionProblem,
-      thumbsDownClicked,
-      thumbsUpClicked,
     } = this.state;
     const { visible } = this.props;
-
-    // // Style for active buttons
-    // const activeButtonStyle = {
-    //   border: '2px solid #cfcdca',
-    // };
 
     return (
       <Sidebar
