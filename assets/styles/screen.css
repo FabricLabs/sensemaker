@@ -391,8 +391,9 @@ fabric-motd {
   margin-top: 2em;
 }
 .home-dropdowns .ui.dropdown{
-  font-family: 'Roboto Mono', sans-serif !important;
-  min-width: 20em !important;
+  font-family: 'Martian Mono', serif !important;
+  min-width: 17.5em !important;
+  font-size: 1em;
 }
 
 @media (max-width: 768px) {

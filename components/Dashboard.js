@@ -19,6 +19,7 @@ const {
   Search,
   Segment,
   Sidebar,
+  Progress,
 } = require('semantic-ui-react');
 
 const {
@@ -300,64 +301,64 @@ class Dashboard extends React.Component {
           </Sidebar>
         </div>
         <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}>
-            <Container fluid style={{ margin: '1em 1em 0 1em' }}>
-              {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
-              {this.state.debug ? (
-                <div>
-                  <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
-                  <strong><code>isCompliant</code>:</strong> <span>{(this.props.isCompliant) ? 'yes' : 'no'}</span><br />
-                  <strong><code>auth</code>:</strong> <code>{(this.props.auth) ? JSON.stringify(this.props.auth, null, '  ') : 'undefined'}</code>
-                  {/* <strong><code>state.auth.isAdmin</code></strong> <span>{this.state.auth.isAdmin}</span>
-                  <strong><code>state.auth.isCompliant</code></strong> <span>{this.state.auth.isCompliant}</span> */}
-                </div>
-              ) : null}
-              {this.state.isLoading ? null : (
-                <Routes>
-                  <Route path="*" element={<Navigate to='/' replace />} />
-                  <Route path="/" element={
-                    <Home
-                      auth={this.props.auth}
-                      fetchConversations={this.props.fetchConversations}
-                      getMessages={this.props.getMessages}
-                      submitMessage={this.props.submitMessage}
-                      regenAnswer={this.props.regenAnswer}
-                      onMessageSuccess={this.props.onMessageSuccess}
-                      resetChat={this.props.resetChat}
-                      chat={this.props.chat}
-                    />
-                  } />
-                  <Route path="/workspaces" element={<Workspaces />} />
-                  <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer}/>}/>
-                  <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat}/>} />
-                  <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
-                  <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
-                  {/**
-                   * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
-                   * - [ ] Judges
-                   * - [ ] Opinions
-                   * - [ ] Documents
-                   * - [ ] People
-                   * - [ ] Reporters
-                   * - [ ] Jurisdictions
-                   * - [ ] Volumes
-                   * - [ ] Resolutions
-                   */}
-                  <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat}/>} />
-                  <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
-                  <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
-                  <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                  <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                  <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                  <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat}/>} />
-                  <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
-                  <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth}/>} />
-                  <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                  <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
-                  <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
-                </Routes>
-              )}
-            </Container>
-          </div>
+          <Container fluid style={{ margin: '1em 1em 0 1em' }}>
+            {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
+            {this.state.debug ? (
+              <div>
+                <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
+                <strong><code>isCompliant</code>:</strong> <span>{(this.props.isCompliant) ? 'yes' : 'no'}</span><br />
+                <strong><code>auth</code>:</strong> <code>{(this.props.auth) ? JSON.stringify(this.props.auth, null, '  ') : 'undefined'}</code>
+                {/* <strong><code>state.auth.isAdmin</code></strong> <span>{this.state.auth.isAdmin}</span>
+                <strong><code>state.auth.isCompliant</code></strong> <span>{this.state.auth.isCompliant}</span> */}
+              </div>
+            ) : null}
+            {this.state.isLoading ? null : (
+              <Routes>
+                <Route path="*" element={<Navigate to='/' replace />} />
+                <Route path="/" element={
+                  <Home
+                    auth={this.props.auth}
+                    fetchConversations={this.props.fetchConversations}
+                    getMessages={this.props.getMessages}
+                    submitMessage={this.props.submitMessage}
+                    regenAnswer={this.props.regenAnswer}
+                    onMessageSuccess={this.props.onMessageSuccess}
+                    resetChat={this.props.resetChat}
+                    chat={this.props.chat}
+                  />
+                } />
+                <Route path="/workspaces" element={<Workspaces />} />
+                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer}/>}/>
+                <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat}/>} />
+                <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                {/**
+                 * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
+                 * - [ ] Judges
+                 * - [ ] Opinions
+                 * - [ ] Documents
+                 * - [ ] People
+                 * - [ ] Reporters
+                 * - [ ] Jurisdictions
+                 * - [ ] Volumes
+                 * - [ ] Resolutions
+                 */}
+                <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat}/>} />
+                <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
+                <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
+                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
+                <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat}/>} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer}/>} />
+                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth}/>} />
+                <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
+                <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
+                <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
+              </Routes>
+            )}
+          </Container>
+        </div>
       </jeeves-dashboard>
     );
   }

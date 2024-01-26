@@ -3,17 +3,17 @@
 // Dependencies
 const React = require('react');
 const $ = require('jquery');
-const marked = require('marked');
 
+// React
 const store = require('../stores/redux');
+
+// Components
 const ChatBox = require('./ChatBox');
 
 // Semantic UI
 const {
-  Header,
-  Image, 
-  Feed,
-  Message  
+  Progress,
+  Segment
 } = require('semantic-ui-react');
 
 
@@ -92,17 +92,19 @@ class Chat extends React.Component {
     const {announTitle, announBody} = this.state;
     const { messages } = this.props.chat;
 
+    const VERTICAL_MARGIN = '2.5';
+
     const componentStyle = messages.length>0 ? {
       display: 'absolute',
       left: 'calc(350px + 1em)',
-      height: 'calc(100vh - 2.5rem)', // Set a maximum height
+      height: `calc(100vh - ${VERTICAL_MARGIN}rem)`, // Set a maximum height
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column',
       paddingBottom: '0'
     } : {
-      height: 'calc(100vh - 2.5rem)',
+      height: `calc(100vh - ${VERTICAL_MARGIN}rem)`,
       display: 'flex',
       flexDirection: 'column',
       paddingBottom: '0'

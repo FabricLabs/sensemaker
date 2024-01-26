@@ -11,18 +11,22 @@ const InformationSidebar = require('./InformationSidebar');
 // Semantic UI
 const {
   Button,
+  Container,
   Feed,
   Form,
+  Grid,
+  GridColumn,
   Header,
   Icon,
   Message,
   Popup,
   Dropdown,
-  Image
+  Image,
+  Progress,
+  Segment
 } = require('semantic-ui-react');
 
 const TextareaAutosize = require('react-textarea-autosize').default;
-
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -503,19 +507,26 @@ class ChatBox extends React.Component {
           )}
           {homePage && (
             <div>
-              <Feed.Extra text style={{ display: "flex" }}>
-                <Image src="/images/jeeves-brand.png" size="small" floated="left" />
-                <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
-                  <p>
-                    <strong>Hello,</strong> I'm{" "}
-                    <abbr title="Yes, what about it?">Jeeves</abbr>, your
-                    legal research companion.
-                  </p>
-                </div>
-              </Feed.Extra>
-              <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
-                How can I help you today?
-              </Header>
+              <div className='desktop-only'>
+                <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
+                  <Progress value={100} total={100} color='blue' progress='ratio' />
+                </Segment>
+              </div>
+              <div>
+                <Feed.Extra text style={{ display: "flex" }}>
+                  <Image src="/images/jeeves-brand.png" size="small" floated="left" />
+                  <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
+                    <p>
+                      <strong>Hello,</strong> I'm{" "}
+                      <abbr title="Yes, what about it?">Jeeves</abbr>, your
+                      legal research companion.
+                    </p>
+                  </div>
+                </Feed.Extra>
+                <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
+                  How can I help you today?
+                </Header>
+              </div>
             </div>
           )}
           {caseID && (
@@ -705,39 +716,44 @@ class ChatBox extends React.Component {
           </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (
-          <section>
-            <Header as="h4" style={{ textAlign: "center", marginTop: "1em" }}>
-              Chat suggestions you can try:
-            </Header>
-            <div
-              className="home-dropdowns"
-              onBlur={() => this.setState({ query: "" })}
-            >
-              <Dropdown
-                size="tiny"
-                placeholder="Find a case that..."
-                selection
-                text="Find a case that..."
-                options={caseDropOptions}
-                onChange={this.handleChangeDropdown}
-              />
-              <Dropdown
-                size="tiny"
-                placeholder="Draft a brief..."
-                selection
-                text="Draft a brief..."
-                options={draftDropOptions}
-                onChange={this.handleChangeDropdown}
-              />
-              <Dropdown
-                size="tiny"
-                placeholder="Outline a motion..."
-                selection
-                text="Outline a motion..."
-                options={outlineDropOptions}
-                onChange={this.handleChangeDropdown}
-              />
-            </div>
+          <section className='desktop-only'>
+            <Container>
+              <Header as="h4" style={{ marginTop: '2em', marginBottom: '2em' }}>
+                You can try...
+              </Header>
+              <Grid columns='equal' className="home-dropdowns" onBlur={() => this.setState({ query: "" })}>
+                <GridColumn>
+                  <Dropdown
+                    size="huge"
+                    placeholder="Find a case that..."
+                    selection
+                    text="Find a case that..."
+                    options={caseDropOptions}
+                    onChange={this.handleChangeDropdown}
+                  />
+                </GridColumn>
+                <GridColumn>
+                  <Dropdown
+                    size="huge"
+                    placeholder="Draft a brief..."
+                    selection
+                    text="Draft a brief..."
+                    options={draftDropOptions}
+                    onChange={this.handleChangeDropdown}
+                  />
+                </GridColumn>
+                <GridColumn>
+                  <Dropdown
+                    size="huge"
+                    placeholder="Outline a motion..."
+                    selection
+                    text="Outline a motion..."
+                    options={outlineDropOptions}
+                    onChange={this.handleChangeDropdown}
+                  />
+                </GridColumn>
+              </Grid>
+            </Container>
           </section>
         )}
       </section>

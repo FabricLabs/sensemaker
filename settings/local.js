@@ -42,8 +42,10 @@ module.exports = {
       { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
-      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
-    ]
+      { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+    ],
+    search: false,
+    sync: false
   },
   db: {
     type: 'mysql',

@@ -62,6 +62,9 @@ class FabricService extends Service {
   }
 
   async search (request) {
+    if (!this.settings.search) return [];
+
+    // Begin Search
     this.emit('debug', 'Searching...', request);
     let results = [];
 
@@ -100,6 +103,8 @@ class FabricService extends Service {
   }
 
   async sync () {
+    if (!this.settings.sync) return this;
+
     this.emit('debug', 'Syncing...');
 
     // For each Remote, synchronize documents
