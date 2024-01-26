@@ -3281,7 +3281,7 @@ class Jeeves extends Hub {
       res.setHeader('X-Fabric-Type', 'SearchResults');
       res.setHeader('X-Pagination', true);
       res.setHeader('X-Pagination-Current', `${results.pagination.from}-${results.pagination.to}`);
-      res.setHeader('X-Pagination-Per', results.pagination.perPage);
+      res.setHeader('X-Pagination-Per', results.pagination.per_page);
       res.setHeader('X-Pagination-Total', results.pagination.total);
 
       res.json({
