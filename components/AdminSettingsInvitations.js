@@ -135,7 +135,7 @@ class AdminInvitations extends React.Component {
   render() {
     const { sent, sendingInvitationID, errorSending, showPending, showAccepted, showDeclined } = this.state;
     const { invitation } = this.props;
-
+    console.log("the invitation in render", invitation);
     return (
       <section className='fade-in'>
         <div className='growth-section-head'>

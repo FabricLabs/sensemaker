@@ -90,7 +90,7 @@ class ChatBox extends React.Component {
       this.scrollToBottom();
     }
   }
-  
+
 
   componentWillUnmount() {
     this.props.resetChat();
@@ -566,23 +566,38 @@ class ChatBox extends React.Component {
                       </Feed.Date>
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
-                          <Icon
-                            name="thumbs down outline"
-                            color="grey"
-                            style={{ cursor: "pointer", marginLeft: "1rem"}}
-                            onClick={() => this.thumbsDown(message.id)}
+                          <Popup
+                            content="Rate this message"
+                            trigger={
+                              <Icon
+                                name="thumbs down outline"
+                                color="grey"
+                                style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                onClick={() => this.thumbsDown(message.id)}
+                              />
+                            }
                           />
-                          <Icon
-                            name="thumbs up outline"
-                            color="grey"
-                            style={{ cursor: "pointer", marginLeft: "0.1rem" }}
-                            onClick={() => this.thumbsUp(message.id)}
+                          <Popup
+                            content="Rate this message"
+                            trigger={
+                              <Icon
+                                name="thumbs up outline"
+                                color="grey"
+                                style={{ cursor: "pointer", marginLeft: "0.1rem" }}
+                                onClick={() => this.thumbsUp(message.id)}
+                              />
+                            }
                           />
-                          <Icon
-                            name="info"
-                            color="blue"
-                            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                            onClick={() => this.messageInfo(message.id)}
+                          <Popup
+                            content="More information"
+                            trigger={
+                              <Icon
+                                name="info"
+                                color="blue"
+                                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                                onClick={() => this.messageInfo(message.id)}
+                              />
+                            }
                           />
                         </div>
                       )}

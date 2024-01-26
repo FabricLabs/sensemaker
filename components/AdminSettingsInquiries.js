@@ -130,7 +130,7 @@ class AdminInquiries extends React.Component {
   render() {
     const { sent, sendingInvitationID, errorSending } = this.state;
     const { inquiries } = this.props;
-
+    console.log("the inquiries in render", inquiries);
     return (
       <section className='fade-in'>
         <div className='growth-section-head'>
