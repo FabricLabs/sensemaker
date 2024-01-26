@@ -368,8 +368,9 @@ fabric-motd {
 
 /* this is to change the TextAreaAutosize style*/
 .ui.form textarea:not([rows]).prompt-bar{
-  font-size: 1rem;
+  /* font-size: 1rem; */
   min-height: 0;
+  overflow: hidden;
 }
 .info-icon{
   display: none;
