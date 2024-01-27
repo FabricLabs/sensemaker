@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  BRAND_NAME
+} = require('../constants');
+
 const debounce = require('lodash.debounce');
 const fetch = require('cross-fetch');
 
@@ -66,6 +70,7 @@ class CaseHome extends React.Component {
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
         <h1>Cases</h1>
+        <p>{BRAND_NAME} is tracking <strong>{totalCases}</strong> cases in {totalJurisdictions} jurisictions.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input

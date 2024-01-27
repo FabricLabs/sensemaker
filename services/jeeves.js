@@ -639,16 +639,13 @@ class Jeeves extends Hub {
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
-    // TODO: execute RAG query for additional metadata
-    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
-    const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
-
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-
     const agentResults = Promise.allSettled([
       this.alpha.query({ query }),
       this.mistral.query({ query })
     ]);
+
+    // TODO: execute RAG query for additional metadata
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
 
     Promise.race([
       new Promise((resolve, reject) => {
@@ -659,6 +656,12 @@ class Jeeves extends Hub {
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
       const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+
+      for (let i = 0; i < answers.length; i++) {
+        const answer = answers[i];
+        const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
+      }
 
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
@@ -1221,11 +1224,20 @@ class Jeeves extends Hub {
     this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+
+    const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
+    const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
+
     this.rag = new Agent({
       name: 'AugmentorRAG',
       listen: this.settings.fabric.listen,
       openai: this.settings.openai,
-      // prompt: this.settings.prompt
+      prompt: 'You are AugmentorRAG, designed to return an SQL query that returns any cases that match the provided titles.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.\n\n' +
+        'Supported tables:\n' +
+        '  - cases\n' +
+        '    ```' +
+        caseDef[0][0]['Create Table'] +
+        '    ```\n'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -1466,7 +1478,6 @@ class Jeeves extends Hub {
 
     //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
@@ -1491,8 +1502,7 @@ class Jeeves extends Hub {
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -2479,6 +2489,19 @@ class Jeeves extends Hub {
       messages = messages.map((m) => {
         return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
       });
+
+      const cards = await Promise.all(messages.map(async (message) => {
+        return new Promise(async (resolve, reject) => {
+          try {
+            const card = await this.extractor.query({ query: `$CONTENT\n\`\`\`\n${message.content}\n\`\`\`` });
+            resolve(card);
+          } catch (exception) {
+            reject(exception);
+          }
+        });
+      }));
+
+      console.debug('got cards:', cards);
 
       res.send(messages);
     });
