@@ -317,6 +317,15 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
 
+    // Pipeline Datasources
+    this.datasources = {
+      bitcoin: { name: 'Bitcoin' },
+      courtlistener: { name: 'CourtListener' },
+      harvard: { name: 'Harvard' },
+      pacer: { name: 'PACER' },
+      statutes: { name: 'Statutes' }
+    };
+
     // Streaming
     this.completions = {};
 
@@ -752,6 +761,65 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', 'Court search by name, results:', result);
 
     return court;
+  }
+
+  async _getState () {
+    const cases = await this.db('cases').select('id').from('cases');
+    const courts = await this.db('courts').select('id').from('courts');
+    const conversations = await this.db('conversations').select('id').from('conversations');
+    const documents = await this.db('documents').select('id').from('documents');
+    const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
+    const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
+    const messages = await this.db('messages').select('id').from('messages');
+
+    // User Analytics
+    const users = await this.db('users').select('id', 'username');
+
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
+      const messages = await this.db('messages').select('id').where({ user_id: user.id });
+
+      user.conversations = conversations.length;
+      user.messages = messages.length;
+    }
+
+    const state = {
+      cases: {
+        total: cases.length,
+        // content: cases.map(x => x.id)
+      },
+      conversations: {
+        total: conversations.length,
+        // content: conversations.map(x => x.id)
+      },
+      courts: {
+        total: courts.length,
+        // content: courts.map(x => x.id)
+      },
+      documents: {
+        total: documents.length,
+        // content: documents.map(x => x.id)
+      },
+      inquiries: {
+        total: inquiries.length,
+        content: inquiries
+      },
+      invitations: {
+        total: invitations.length,
+        content: invitations
+      },
+      messages: {
+        total: messages.length
+        // content: messages.map(x => x.id)
+      },
+      users: {
+        total: users.length,
+        content: users
+      },
+    };
+
+    return state;
   }
 
   async query (query) {
@@ -2495,7 +2563,7 @@ class Jeeves extends Hub {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status', 'messages.cards').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -2505,19 +2573,6 @@ class Jeeves extends Hub {
       messages = messages.map((m) => {
         return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
       });
-
-      /* const cards = await Promise.all(messages.map(async (message) => {
-        return new Promise(async (resolve, reject) => {
-          try {
-            const card = await this.extractor.query({ query: `$CONTENT\n\`\`\`\n${message.content}\n\`\`\`` });
-            resolve(card);
-          } catch (exception) {
-            reject(exception);
-          }
-        });
-      }));
-
-      console.debug('got cards:', cards); */
 
       res.send(messages);
     });
@@ -2541,60 +2596,36 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
-      const cases = await this.db('cases').select('id').from('cases');
-      const courts = await this.db('courts').select('id').from('courts');
-      const conversations = await this.db('conversations').select('id').from('conversations');
-      const documents = await this.db('documents').select('id').from('documents');
-      const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
-      const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
-      const messages = await this.db('messages').select('id').from('messages');
+      const current = await this._getState();
+      res.send(current);
+    });
 
-      // User Analytics
-      const users = await this.db('users').select('id', 'username');
-
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-        const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
-        const messages = await this.db('messages').select('id').where({ user_id: user.id });
-
-        user.conversations = conversations.length;
-        user.messages = messages.length;
-      }
-
+    this.http._addRoute('GET', '/statistics/sync', async (req, res, next) => {
+      const current = await this._getState();
       const state = {
-        cases: {
-          total: cases.length,
-          // content: cases.map(x => x.id)
-        },
-        conversations: {
-          total: conversations.length,
-          // content: conversations.map(x => x.id)
-        },
-        courts: {
-          total: courts.length,
-          // content: courts.map(x => x.id)
-        },
-        documents: {
-          total: documents.length,
-          // content: documents.map(x => x.id)
-        },
-        inquiries: {
-          total: inquiries.length,
-          content: inquiries
-        },
-        invitations: {
-          total: invitations.length,
-          content: invitations
-        },
-        messages: {
-          total: messages.length
-          // content: messages.map(x => x.id)
-        },
-        users: {
-          total: users.length,
-          content: users
-        },
+        current: current,
+        datasources: {}
       };
+
+      for (let [name, datasource] of Object.entries(this.datasources)) {
+        let source = { name: datasource.name };
+        switch (name) {
+          case 'courtlistener':
+            if (this.courtlistener) source.counts = await this.courtlistener.getCounts();
+            break;
+          case 'harvard':
+            if (this.harvard) source.counts = await this.harvard.getCounts();
+            break;
+          case 'pacer':
+            if (this.pacer) source.counts = await this.pacer.getCounts();
+            break;
+          default:
+            console.warn('[JEEVES]', 'Unhandled Datasource:', name);
+            break;
+        }
+
+        state.datasources[name] = source.counts;
+      }
 
       res.send(state);
     });
