@@ -15,6 +15,18 @@ async function fetchStatsFromAPI (token) {
   return await response.json();
 }
 
+async function fetchSyncStatsFromAPI (token) {
+  const response = await fetch('/statistics/sync', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+  });
+
+  return await response.json();
+}
+
 async function createInvitationThroughAPI (invitation, token) {
   const response = await fetch('/invitations', {
     method: 'POST',
@@ -32,6 +44,9 @@ async function createInvitationThroughAPI (invitation, token) {
 const FETCH_ADMIN_STATS_REQUEST = 'FETCH_ADMIN_STATS_REQUEST';
 const FETCH_ADMIN_STATS_SUCCESS = 'FETCH_ADMIN_STATS_SUCCESS';
 const FETCH_ADMIN_STATS_FAILURE = 'FETCH_ADMIN_STATS_FAILURE';
+const FETCH_SYNC_STATS_REQUEST = 'FETCH_SYNC_STATS_REQUEST';
+const FETCH_SYNC_STATS_SUCCESS = 'FETCH_SYNC_STATS_SUCCESS';
+const FETCH_SYNC_STATS_FAILURE = 'FETCH_SYNC_STATS_FAILURE';
 const FETCH_ALL_CONVERSATIONS_SUCCESS = 'FETCH_ALL_CONVERSATIONS_SUCCESS';
 const FETCH_ALL_CONVERSATIONS_FAILURE = 'FETCH_ALL_CONVERSATIONS_FAILURE';
 const CREATE_INVITATION_REQUEST = 'CREATE_INVITATION_REQUEST';
@@ -41,7 +56,10 @@ const CREATE_INVITATION_FAILURE = 'CREATE_INVITATION_FAILURE';
 // Action creators
 const fetchAdminStatsRequest = () => ({ type: FETCH_ADMIN_STATS_REQUEST });
 const fetchAdminStatsSuccess = (stats) => ({ type: FETCH_ADMIN_STATS_SUCCESS, payload: stats });
-const fetchAdminStatsFailure = (error) => ({ type: FETCH_ADMIN_STATS_FAILURE, payload: error });
+const fetchSyncStatsFailure = (error) => ({ type: FETCH_ADMIN_STATS_FAILURE, payload: error });
+const fetchSyncStatsRequest = () => ({ type: FETCH_SYNC_STATS_REQUEST });
+const fetchSyncStatsSuccess = (stats) => ({ type: FETCH_SYNC_STATS_SUCCESS, payload: stats });
+const fetchAdminStatsFailure = (error) => ({ type: FETCH_SYNC_STATS_FAILURE, payload: error });
 const fetchAllConversationsSuccess = (conversations) => ({ type: FETCH_ALL_CONVERSATIONS_SUCCESS, payload: conversations });
 const fetchAllConversationsFailure = (error) => ({ type: FETCH_ALL_CONVERSATIONS_FAILURE, payload: error });
 const createInvitationRequest = () => ({ type: CREATE_INVITATION_REQUEST });
@@ -58,6 +76,19 @@ const fetchAdminStats = () => {
       dispatch(fetchAdminStatsSuccess(stats));
     } catch (error) {
       dispatch(fetchAdminStatsFailure(error));
+    }
+  };
+};
+
+const fetchSyncStats = () => {
+  return async (dispatch, getState) => {
+    dispatch(fetchSyncStatsRequest());
+    const { token } = getState().auth;
+    try {
+      const stats = await fetchSyncStatsFromAPI(token);
+      dispatch(fetchSyncStatsSuccess(stats));
+    } catch (error) {
+      dispatch(fetchSyncStatsFailure(error));
     }
   };
 };
@@ -98,6 +129,7 @@ const createInvitation = (invitation) => {
 module.exports = {
   fetchAdminStats,
   fetchAllConversationsFromAPI,
+  fetchSyncStats,
   createInvitation,
   FETCH_ADMIN_STATS_REQUEST,
   FETCH_ADMIN_STATS_SUCCESS,
