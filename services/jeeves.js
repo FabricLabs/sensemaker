@@ -861,6 +861,17 @@ class Jeeves extends Hub {
     return results;
   }
 
+  async secureEmbeddingsForCase (id) {
+    const target = await this.db('cases').where('id', id).first();
+    console.debug('secured:', target);
+
+    // Secure Summary
+    if (!target.summary) {
+      console.debug('No summary found for case:', target);
+      return;
+    }
+  }
+
   /**
    * Start the process.
    * @return {Promise} Resolves once the process has been started.
@@ -2152,6 +2163,12 @@ class Jeeves extends Hub {
 
       if (!instance) return res.status(404).json({ message: 'Case not found.' });
       // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
+
+      this.secureEmbeddingsForCase(instance.id).then((output) => {
+        console.debug('Secure embeddings for case:', output);
+      }).catch((exception) => {
+        console.debug('Secure embeddings error:', exception);
+      });
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
