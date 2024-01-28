@@ -18,7 +18,6 @@ const {
 } = require('semantic-ui-react');
 
 // Components
-const AccountCreator = require('./AccountCreator');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
@@ -32,12 +31,7 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-
-        <Image src="/images/novo-logo.svg" size='small' centered />
-        {/* <div style={{textAlign: 'center'}}>
-            <Header>JEEVES</Header>
-          </div> */}
-
+        <Image src="/images/novo-logo.svg" size='small' centered style={{ marginTop: '2em' }} />
         <fabric-component class="ui primary action container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
