@@ -62,6 +62,7 @@ module.exports = {
     port: 3045
   },
   email: {
+    key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
     username: 'agent@jeeves.dev',
