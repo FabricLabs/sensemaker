@@ -1450,8 +1450,7 @@ class Jeeves extends Hub {
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
 
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
