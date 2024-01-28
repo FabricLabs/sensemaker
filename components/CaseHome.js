@@ -67,10 +67,13 @@ class CaseHome extends React.Component {
     const { loading, error } = this.props;
     const { filteredCases, searchQuery, searching } = this.state;
 
+    const totalCases = 0;
+    const totalJurisdictions = 0;
+
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
         <h1>Cases</h1>
-        <p>{BRAND_NAME} is tracking <strong>{totalCases}</strong> cases in {totalJurisdictions} jurisictions.</p>
+        <p>{BRAND_NAME} is tracking <strong>{totalCases}</strong> cases in <strong>{totalJurisdictions}</strong> jurisictions.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input
