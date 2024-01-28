@@ -2506,7 +2506,7 @@ class Jeeves extends Hub {
         return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
       });
 
-      const cards = await Promise.all(messages.map(async (message) => {
+      /* const cards = await Promise.all(messages.map(async (message) => {
         return new Promise(async (resolve, reject) => {
           try {
             const card = await this.extractor.query({ query: `$CONTENT\n\`\`\`\n${message.content}\n\`\`\`` });
@@ -2517,7 +2517,7 @@ class Jeeves extends Hub {
         });
       }));
 
-      console.debug('got cards:', cards);
+      console.debug('got cards:', cards); */
 
       res.send(messages);
     });
