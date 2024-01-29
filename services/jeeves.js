@@ -649,6 +649,8 @@ class Jeeves extends Hub {
 
       for (let i = 0; i < answers.length; i++) {
         const answer = answers[i];
+        if (!answer.content) continue;
+
         const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
       }
@@ -2248,7 +2250,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
       const origin = {};
       const updates = {};
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_pdf', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
 
@@ -2260,6 +2262,12 @@ class Jeeves extends Hub {
       }).catch((exception) => {
         console.debug('Secure embeddings error:', exception);
       });
+
+      if (this.settings.courtlistener.enable) {
+        this.courtlistener.search({ query: instance.title }).then((clr) => {
+          console.debug('[NOVO]', '[COURTLISTENER]', '[SEARCH]', 'Jeeves got results:', clr);
+        });
+      }
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
@@ -2784,7 +2792,7 @@ class Jeeves extends Hub {
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
         }).then((request) => {
-          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request.toBuffer().toString('hex'));
         });
         // End Core Pipeline
 

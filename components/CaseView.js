@@ -48,6 +48,9 @@ class CaseView extends React.Component {
             {(cases.current.ia_url) ? (
               <Label icon='pdf'>file</Label>
             ) : null}
+            {(cases.current.harvard_case_law_pdf) ? (
+              <a href={cases.current.harvard_case_law_pdf}><Icon name='pdf' /></a>
+            ) : null}
           </Label.Group>
           <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
           <div style={{ marginTop: '1em' }}>
