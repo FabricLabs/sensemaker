@@ -116,11 +116,9 @@ class Waitlist extends React.Component {
           ) : (
             <div className="fade-in">
               <Header>Join the Waitlist!</Header>
-              <p>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-              <br />
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
-                  <label>Be among the first to try {BRAND_NAME}:</label>
+                  <label>Be among the first to try {BRAND_NAME} by joining the waitlist.  Enter your email to be notified when we launch!</label>
                   <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                 </Form.Field>
                 <div>

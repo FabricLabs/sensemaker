@@ -2,6 +2,7 @@
 
 // Constants
 const {
+  BRAND_NAME,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION
 } = require('../constants');
@@ -14,7 +15,8 @@ const { Link, Route, Routes, Switch } = require('react-router-dom');
 const {
   Card,
   Header,
-  Image
+  Image,
+  Segment
 } = require('semantic-ui-react');
 
 // Components
@@ -32,6 +34,13 @@ class Splash extends React.Component {
     return (
       <jeeves-splash class="fade-in splash">
         <Image src="/images/novo-logo.svg" size='small' centered style={{ marginTop: '2em' }} />
+        <section>
+          <Segment>
+            <p>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+            <div id="countdown"></div>
+            <script src="/scripts/countdown.js"></script>
+          </Segment>
+        </section>
         <fabric-component class="ui primary action container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
