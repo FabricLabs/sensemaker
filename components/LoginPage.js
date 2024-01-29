@@ -23,7 +23,7 @@ class LoginPage extends React.Component {
 
     return (
       <jeeves-login-page class="fade-in">
-          <Card>
+          <Card fluid>
             <Card.Content>
               <Card.Header as='h2'>Log In</Card.Header>
               <LoginForm {...this.props} login={login} error={error} onLoginSuccess={onLoginSuccess} />
