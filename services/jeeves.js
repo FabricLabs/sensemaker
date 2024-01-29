@@ -281,29 +281,10 @@ class Jeeves extends Hub {
       sessions: false
     });
 
-    /* const resolvers = require('../resolvers');
-    const typeDefs = gql`
-      type User {
-        id: ID!
-        email: String!
-      }
-
-      type Query {
-        users: [User]
-      }
-    `; */
-
     this.openai.settings.temperature = this.settings.temperature;
-    this.apollo = null; /* new ApolloServer({
-      typeDefs,
-      resolvers,
-      context: ({ req }) => {
-        return {
-          db: this.db
-        };
-      }
-    }); */
+    this.apollo = null;
 
+    // Internals
     this.services = {};
     this.sources = {};
     this.workers = [];
@@ -820,6 +801,49 @@ class Jeeves extends Hub {
     };
 
     return state;
+  }
+
+  async processData (limit = 1000) {
+    const now = new Date();
+    const stats = { total: 0, processed: 0, unprocessed: 0 };
+    const other = await this._getUnprocessedCaseStats();
+    const chunk = await this._getUnprocessedCases(limit);
+
+    console.debug('[JEEVES]', '[ETL]', 'Stats:', other, stats);
+
+    const start = new Date();
+    for (let i = 0; i < chunk.length; i++) {
+      const instance = chunk[i];
+      console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      const titleEmbedding = await this._generateEmbedding(instance.title);
+      await this.db('cases').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
+      stats.processed++;
+    }
+
+    console.debug('[JEEVES]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    console.debug('[JEEVES]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
+
+    return this;
+  }
+
+  async _getUnprocessedCases (limit = 20) {
+    const cases = await this.db('cases').select('id', 'title', 'summary', 'title_embedding_id', 'body_embedding_id').where(function () {
+      this.whereNull('title_embedding_id')// .orWhereNull('body_embedding_id')
+    }).limit(limit);
+
+    return cases;
+  }
+
+  async _getUnprocessedCaseStats () {
+    const caseCount = await this.db('cases').count('id as count').first();
+    const withTitleEmbeddings = await this.db('cases').count('id as count').whereNotNull('title_embedding_id').first();
+    const missingTitleEmbeddings = await this.db('cases').count('id as count').whereNull('title_embedding_id').first();
+
+    return {
+      total: caseCount,
+      withTitleEmbeddings: withTitleEmbeddings,
+      missingTitleEmbeddings: missingTitleEmbeddings
+    };
   }
 
   async query (query) {
@@ -4047,20 +4071,23 @@ class Jeeves extends Hub {
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const actor = new Actor({ content: text });
-    const embedding = await this.openai.generateEmbedding(text, model);
-    console.debug('got embedding:', embedding);
-    if (embedding.length !== 1) throw new Error('Embedding length mismatch!');
+    const embeddings = await this.openai.generateEmbedding(text, model);
+    if (embeddings.length !== 1) throw new Error('Embedding length mismatch!');
 
+    const embedding = embeddings[0].embedding;
+    const blob = JSON.stringify(embedding);
+    const actor = new Actor({ content: blob });
     const inserted = await this.db('embeddings').insert({
       fabric_id: actor.id,
       text: text,
-      model: embedding[0].model,
-      content: JSON.stringify(embedding[0].embedding)
+      model: embeddings[0].model,
+      content: blob
     });
 
     return {
-      id: inserted[0]
+      id: inserted[0],
+      model: model,
+      content: embedding
     };
   }
 
