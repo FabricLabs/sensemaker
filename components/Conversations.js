@@ -6,7 +6,15 @@ const ReactDOMServer = require('react-dom/server');
 
 // Semantic UI
 const { Link } = require('react-router-dom');
-const { Label, Segment, Pagination, Divider, Button, Icon, Form } = require('semantic-ui-react');
+const {
+  Label,
+  Segment,
+  Pagination,
+  Divider,
+  Button,
+  Icon,
+  Form
+} = require('semantic-ui-react');
 
 // Components
 const ChatBox = require('./ChatBox');
@@ -102,7 +110,6 @@ class Conversations extends React.Component {
     const { loading, error, conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
 
-
     if (loading) {
       return <div>Loading...</div>;
     }
@@ -130,9 +137,12 @@ class Conversations extends React.Component {
       paddingBottom: '0'
     };
 
+    const conversationCount = conversations.length;
+
     return (
       <Segment className='fade-in' fluid>
         <h2>Conversations</h2>
+        <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div
             key={conversation.id}

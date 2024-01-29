@@ -695,9 +695,8 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "99%" }}
-        >
-          <Form.Input>
+          style={{ width: "99%" }} >
+          <Form.Input icon>
             <TextareaAutosize
               id="primary-query"
               className="prompt-bar"
@@ -717,6 +716,7 @@ class ChatBox extends React.Component {
               }}
               style={{ resize: "none" }}
             />
+            <i aria-hidden="true" class="microphone icon"></i>
           </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (

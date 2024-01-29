@@ -6,11 +6,19 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  AGENT_MAX_TOKENS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
   USER_QUERY_TIMEOUT_MS
 } = require('../constants');
+
+// TODO: fix.
+const ROUTES = {
+  cases: {
+    list: require('../routes/cases/get_cases'),
+  }
+};
 
 // Dependencies
 const fs = require('fs');
@@ -600,8 +608,11 @@ class Jeeves extends Hub {
       `${request.query}`;
 
     const metaTokenCount = this.estimateTokens(meta);
+    const requestTokenCount = this.estimateTokens(request.query);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
 
     let messages = [];
 
@@ -2223,30 +2234,7 @@ class Jeeves extends Hub {
       res.send(stats);
     });
 
-    this.http._addRoute('GET', '/cases', async (req, res, next) => {
-      res.format({
-        json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name', 'harvard_case_law_id').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
-            perPage: PER_PAGE_LIMIT,
-            currentPage: 1
-          });
-
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
-          res.setHeader('X-Pagination-Per', cases.pagination.perPage);
-          res.setHeader('X-Pagination-Total', cases.pagination.total);
-
-          res.send(cases.data);
-        },
-        html: () => {
-          // TODO: import auth token, load data
-          const page = new CaseHome({});
-          const output = page.toHTML();
-          return res.send(this.http.app._renderWith(output));
-        }
-      });
-    });
-
+    this.http._addRoute('GET', '/cases', ROUTES.cases.list.bind(this));
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
       const origin = {};
       const updates = {};
@@ -2630,6 +2618,34 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
       const current = await this._getState();
       res.send(current);
+    });
+
+    this.http._addRoute('GET', '/statistics/accuracy', async (req, res, next) => {
+      const reviews = await this.db('reviews').whereNotNull('id');
+      const response = {
+        accuracy: {
+          positive: 0,
+          negative: 0,
+          neutral: 0
+        },
+        total: reviews.length
+      };
+
+      for (let review of reviews) {
+        switch (review.intended_sentiment) {
+          case 'positive':
+            response.accuracy.positive++;
+            break;
+          case 'negative':
+            response.accuracy.negative++;
+            break;
+          default:
+            response.accuracy.neutral++;
+            break;
+        }
+      }
+
+      res.send(response);
     });
 
     this.http._addRoute('GET', '/statistics/sync', async (req, res, next) => {
