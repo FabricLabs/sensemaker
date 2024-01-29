@@ -5,30 +5,12 @@
   font-style: normal;
 }
 
-html {
-  font-size: 16px;
-}
-
 body {
-  background-color: white;
-  text-align: center;
-  font-family: "AvGardd", Arial, sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  align-content: center;
-  justify-content: center;
-  height: 100vh;
-  overflow: hidden;
-}
-
-img {
-  max-width: 30%;
-  height: auto;
+  font-family: 'AvGardd', Arial, sans-serif;
 }
 
 #countdown {
-  font-family: "AvGardd", Arial, sans-serif;
+  font-family: 'AvGardd', Arial, sans-serif;
   font-size: 1.5rem;
 }
 
@@ -52,11 +34,6 @@ img {
   font-size: 2rem;
 }
 
-@media (max-width: 720px) {
-  img {
-    max-width: 60%;
-  }
-}
 @media (min-width: 1440px) {
   .number {
     font-size: 4rem;
