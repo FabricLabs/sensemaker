@@ -85,6 +85,8 @@ class ChatBox extends React.Component {
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
+          this.props.getMessageInformation(lastMessage.content);
+
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
@@ -170,6 +172,8 @@ class ChatBox extends React.Component {
     let dataToSubmit;
 
     this.setState({ loading: true, previousFlag: true });
+
+    this.props.getMessageInformation(query);
 
     //if we have caseID its beacause we are on a specific case chat
     if (caseID) {
@@ -743,7 +747,7 @@ class ChatBox extends React.Component {
               <Grid columns='equal' className="home-dropdowns" onBlur={() => this.setState({ query: "" })}>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Find a case that..."
                     selection
                     text="Find a case that..."
@@ -753,7 +757,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Draft a brief..."
                     selection
                     text="Draft a brief..."
@@ -763,7 +767,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Outline a motion..."
                     selection
                     text="Outline a motion..."

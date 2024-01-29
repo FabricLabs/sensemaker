@@ -53,22 +53,22 @@ class Conversation extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',  
-      paddingBottom: '0'     
+      flexDirection: 'column',
+      paddingBottom: '0'
     };
 
-    return (       
+    return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-           <ChatBox 
+           <ChatBox
             {...this.props}
             chat={chat} messages={messages}
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}
             placeholder={'Ask me anything...'}
             previousChat={true}
-            conversationID={id}          
+            conversationID={id}
           />
-       </fabric-component>         
+       </fabric-component>
 
     );
   }

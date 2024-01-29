@@ -78,7 +78,8 @@ const {
   resetChat,
   submitMessage,
   regenAnswer,
-  getMessages
+  getMessages,
+  getMessageInformation,
 } = require('../actions/chatActions');
 
 // ## Conversation Actions
@@ -227,7 +228,8 @@ async function main (input = {}) {
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,
-    getMessages: getMessages
+    getMessages: getMessages,
+    getMessageInformation: getMessageInformation,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
