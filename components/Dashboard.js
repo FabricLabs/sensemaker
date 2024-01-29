@@ -26,6 +26,7 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
   ENABLE_JUDGE_SEARCH,
@@ -219,6 +220,11 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
+            {ENABLE_MATTERS && (
+              <Menu.Item as={Link} to='/matters'>
+                <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             {ENABLE_CASE_SEARCH && (
               <Menu.Item as={Link} to='/cases'>
                 <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>

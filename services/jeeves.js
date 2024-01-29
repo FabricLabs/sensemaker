@@ -17,6 +17,10 @@ const {
 const ROUTES = {
   cases: {
     list: require('../routes/cases/get_cases'),
+  },
+  matters: {
+    create: require('../routes/matters/create_matter'),
+    list: require('../routes/matters/list_matters')
   }
 };
 
@@ -1476,6 +1480,9 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
+
+    this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
+    this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
