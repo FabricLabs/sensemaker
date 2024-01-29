@@ -33,13 +33,10 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-        <Image src="/images/novo-logo.svg" size='small' centered style={{ marginTop: '2em' }} />
+        <Image src="/images/novo-logo.svg" size='large' centered style={{ margin: '0 1em 2em 1em', maxWidth: '80%' }} />
         <section>
-          <Segment>
-            <p>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-            <div id="countdown"></div>
-            <script src="/scripts/countdown.js"></script>
-          </Segment>
+          <div id="countdown"></div>
+          <p style={{ fontSize: '1.2em', marginTop: '2em', maxWidth: '28em' }}>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
         </section>
         <fabric-component class="ui primary action container">
           <Routes>
@@ -87,6 +84,7 @@ class Splash extends React.Component {
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
         </section>
+        <script src="/scripts/countdown.js"></script>
       </jeeves-splash>
     );
   }

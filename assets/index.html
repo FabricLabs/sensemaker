@@ -23,19 +23,16 @@
   <link rel="icon" href="/images/favicon.ico" />
 </head>
 <body>
-  <div data-hash="e0d5037125bb9ea1800c3d45198ae919126dd2e35305160f676ebfc83d813bf1" id="application-target">
+  <div data-hash="234f87f44a4831ffeb059d69c9b55c34c8ade933a0c61e53738577f693c687ce" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application" style="height:100vh;display:flex;flex-direction:column">
-        <jeeves-splash class="fade-in splash"><img style="margin-top:2em" src="/images/novo-logo.svg" class="ui small centered image" />
+        <jeeves-splash class="fade-in splash"><img style="margin:0 1em 2em 1em;max-width:80%" src="/images/novo-logo.svg" class="ui large centered image" />
           <section>
-            <div class="ui segment">
-              <p>Novo
-                <!-- --> is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.
-              </p>
-              <div id="countdown"></div>
-              <script src="/scripts/countdown.js"></script>
-            </div>
+            <div id="countdown"></div>
+            <p style="font-size:1.2em;margin-top:2em;max-width:28em">Novo
+              <!-- --> is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.
+            </p>
           </section>
           <fabric-component class="ui primary action container"></fabric-component>
           <section></section>
@@ -43,6 +40,7 @@
             <p style="margin-top:2em">Already have an account? <a href="/sessions/new">Log In »</a></p>
             <p style="clear:both;margin-top:4em;font-size:0.8em">© 2023 Legal Tools &amp; Technology, Inc.</p>
           </section>
+          <script src="/scripts/countdown.js"></script>
         </jeeves-splash>
       </fabric-react-component>
     </jeeves-ui>
