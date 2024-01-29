@@ -536,8 +536,8 @@ class ChatBox extends React.Component {
               <div>
                 <Feed.Extra text style={{ display: "flex" }}>
                   <Image src="/images/jeeves-brand.png" size="small" floated="left" />
-                  <div style={{ paddingTop: "2em", maxWidth: '18em' }}>
-                    <p><strong>Hello,</strong> I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
+                  <div style={{ paddingTop: "2em" }}>
+                    <p style={{ fontSize: '1.5em' }}>Hello!  I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
                 </Feed.Extra>
                 <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
