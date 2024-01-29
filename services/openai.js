@@ -106,6 +106,7 @@ class OpenAIService extends Service {
         });
 
         stream.on('finalChatCompletion', (completion) => {
+          console.debug('FINAL CHAT COMPLETION:', completion);
           const choice = completion.choices[0];
           if (!choice) reject(new Error('No choices given.'));
 
@@ -120,6 +121,26 @@ class OpenAIService extends Service {
             case 'tool_calls':
               console.debug('[AGENT]', '[RAG]', 'Message:', choice.message);
               console.debug('[AGENT]', '[RAG]', 'Tool calls:', choice.message.tool_calls);
+
+              for (let i = 0; i < choice.message.tool_calls.length; i++) {
+                const toolcall = choice.message.tool_calls[i];
+                switch (toolcall.type) {
+                  case 'function':
+                    console.debug('[AGENT]', '[RAG]', 'Tool call:', toolcall);
+                    switch (toolcall.function.name) {
+                      case 'search_host':
+                        console.debug('[AGENT]', '[RAG]', '[SEARCH]', toolcall);
+                        break;
+                      default:
+                        console.debug('[AGENT]', '[RAG]', 'Unhandled tool call:', toolcall);
+                        break;
+                    }
+                    break;
+                  default:
+                    console.warn('[AGENT]', '[RAG]', 'Unhandled tool call type:', toolcall.type);
+                    break;
+                }
+              }
               break;
           }
 
