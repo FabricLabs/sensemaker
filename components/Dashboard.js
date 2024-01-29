@@ -212,11 +212,6 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/" onClick={()=> this.props.resetChat()}>
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
-            {ENABLE_MATTERS && (
-              <Menu.Item as={Link} to='/matters'>
-                <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
             {ENABLE_STATUTE_SEARCH && (
               <Menu.Item as={Link} to='/statues'>
                 <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
@@ -225,6 +220,11 @@ class Dashboard extends React.Component {
             <Menu.Item as={Link} to="/conversations">
               <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
             </Menu.Item>
+            {ENABLE_MATTERS && (
+              <Menu.Item as={Link} to='/matters'>
+                <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='green'>New!</Label></div>
+              </Menu.Item>
+            )}
             {ENABLE_CASE_SEARCH && (
               <Menu.Item as={Link} to='/cases'>
                 <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>
