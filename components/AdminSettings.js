@@ -1,23 +1,27 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 const { Link } = require('react-router-dom');
 
+// Semantic UI
 const {
   Button,
+  Divider,
   Header,
   Icon,
   Label,
   List,
+  Loader,
+  Pagination,
+  Progress,
   Segment,
   Statistic,
   Tab,
-  Table,
-  Pagination,
-  Divider,
-  Loader
+  Table
 } = require('semantic-ui-react');
 
+// Components
 const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminInquiries = require('./AdminSettingsInquiries');
@@ -165,6 +169,28 @@ class AdminSettings extends React.Component {
       },
       {
         menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
+          <Header as='h4'>Sources</Header>
+          <Table celled striped>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>Name</Table.HeaderCell>
+                <Table.HeaderCell>Status</Table.HeaderCell>
+                <Table.HeaderCell>Last Update</Table.HeaderCell>
+                <Table.HeaderCell></Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {/* Example Row */}
+              <Table.Row>
+                <Table.Cell>SOME NAME</Table.Cell>
+                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell></Table.Cell>
+                <Table.Cell>
+                  <Progress percent={33} indicating />
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
           <Header as='h4'>Datasets</Header>
           <Table celled striped>
             <Table.Header>
