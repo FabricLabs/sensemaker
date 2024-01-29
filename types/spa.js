@@ -20,12 +20,10 @@ class SPA extends FabricSPA {
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-G4NJT3T2KL"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-
       function gtag() {
         dataLayer.push(arguments);
       }
       gtag('js', new Date());
-
       gtag('config', 'G-G4NJT3T2KL');
     </script>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -34,6 +32,7 @@ class SPA extends FabricSPA {
     <!-- <link rel="manifest" href="/manifest.json"> -->
     <link rel="stylesheet" type="text/css" href="/semantic.min.css" />
     <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/styles.css" />
     <script src="/scripts/jquery-3.4.1.js"></script>
     <script src="/semantic.min.js"></script>
     <link rel="icon" href="/images/favicon.ico" />

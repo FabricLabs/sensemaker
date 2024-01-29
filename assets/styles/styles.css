@@ -1,0 +1,45 @@
+@font-face {
+  font-family: 'AvGardd';
+  src: url('/fonts/AVGARDD_2.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  font-family: 'AvGardd', Arial, sans-serif;
+}
+
+#countdown {
+  font-family: 'AvGardd', Arial, sans-serif;
+  font-size: 1.5rem;
+}
+
+.time-unit {
+  display: inline-block;
+  margin: 0 10px;
+  text-align: center;
+}
+
+.number {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.label {
+  display: block;
+  font-size: 1rem;
+}
+
+.coming-soon {
+  font-size: 2rem;
+}
+
+@media (min-width: 1440px) {
+  .number {
+    font-size: 4rem;
+  }
+
+  .label {
+    font-size: 2rem;
+  }
+}

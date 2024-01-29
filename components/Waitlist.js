@@ -105,7 +105,7 @@ class Waitlist extends React.Component {
     const { email, error, joined } = this.state;
 
     return (
-      <Card fluid>
+      <Card fluid style={{ textAlign: 'left' }}>
         <Card.Content>
           {joined ? (
             <div className="fade-in">
@@ -116,15 +116,13 @@ class Waitlist extends React.Component {
           ) : (
             <div className="fade-in">
               <Header>Join the Waitlist!</Header>
-              <p>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-              <br />
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
-                  <label>Be among the first to try {BRAND_NAME}:</label>
+                  <p style={{ marginBottom: '2em' }}>Be among the first to try {BRAND_NAME} by joining the waitlist.  Enter your email to be notified when we launch!</p>
                   <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                 </Form.Field>
                 <div>
-                  <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>
+                  <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Join the Waitlist <Icon name='right chevron' /></Button>
                   {error && <Message error visible content={error} className="fade-in" />}
                   {/* <Button fluid color='blue' onClick={this.revealLoginForm}>I already have a login</Button> */}
                 </div>
