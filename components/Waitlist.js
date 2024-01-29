@@ -1,6 +1,7 @@
 'use strict';
 
 const {
+  BRAND_NAME,
   ENABLE_LOGIN
 } = require('../constants');
 
@@ -104,22 +105,22 @@ class Waitlist extends React.Component {
     const { email, error, joined } = this.state;
 
     return (
-      <Card>
+      <Card fluid>
         <Card.Content>
           {joined ? (
             <div className="fade-in">
               <Header as="h3">You're on the list!</Header>
-              <p>Thanks for your interest!  We'll notify you as soon as Jeeves is available.</p>
+              <p>Thanks for your interest!  We'll notify you as soon as {BRAND_NAME} is available.</p>
               <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
             </div>
           ) : (
             <div className="fade-in">
               <Header>Join the Waitlist!</Header>
-              <p>Jeeves is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
-              <p>Be among the first to try Jeeves:</p>
+              <p>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+              <br />
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
-                  <label>Email Address</label>
+                  <label>Be among the first to try {BRAND_NAME}:</label>
                   <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                 </Form.Field>
                 <div>

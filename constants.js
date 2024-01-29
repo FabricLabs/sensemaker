@@ -21,7 +21,8 @@ const ENABLE_REGISTRATION = true;
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_CASE_SEARCH = false;
+const ENABLE_BILLING = false;
+const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = false;
 const ENABLE_JUDGE_SEARCH = false;
 const ENABLE_OPINION_SEARCH = false;
@@ -59,6 +60,7 @@ module.exports = {
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  ENABLE_BILLING,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
   ENABLE_CHAT,

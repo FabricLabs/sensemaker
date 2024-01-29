@@ -12,6 +12,7 @@ const {
   Card,
   Grid,
   Header,
+  Icon,
   Label,
   Segment
 } = require('semantic-ui-react');
@@ -47,6 +48,9 @@ class CaseView extends React.Component {
             <Label icon='law'>{cases.current.court_name}</Label>
             {(cases.current.ia_url) ? (
               <Label icon='pdf'>file</Label>
+            ) : null}
+            {(cases.current.harvard_case_law_pdf) ? (
+              <a href={cases.current.harvard_case_law_pdf}><Icon name='file pdf' /></a>
             ) : null}
           </Label.Group>
           <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />

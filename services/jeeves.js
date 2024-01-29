@@ -6,11 +6,19 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  AGENT_MAX_TOKENS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
   USER_QUERY_TIMEOUT_MS
 } = require('../constants');
+
+// TODO: fix.
+const ROUTES = {
+  cases: {
+    list: require('../routes/cases/get_cases'),
+  }
+};
 
 // Dependencies
 const fs = require('fs');
@@ -281,29 +289,10 @@ class Jeeves extends Hub {
       sessions: false
     });
 
-    /* const resolvers = require('../resolvers');
-    const typeDefs = gql`
-      type User {
-        id: ID!
-        email: String!
-      }
-
-      type Query {
-        users: [User]
-      }
-    `; */
-
     this.openai.settings.temperature = this.settings.temperature;
-    this.apollo = null; /* new ApolloServer({
-      typeDefs,
-      resolvers,
-      context: ({ req }) => {
-        return {
-          db: this.db
-        };
-      }
-    }); */
+    this.apollo = null;
 
+    // Internals
     this.services = {};
     this.sources = {};
     this.workers = [];
@@ -316,6 +305,15 @@ class Jeeves extends Hub {
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+
+    // Pipeline Datasources
+    this.datasources = {
+      bitcoin: { name: 'Bitcoin' },
+      courtlistener: { name: 'CourtListener' },
+      harvard: { name: 'Harvard' },
+      pacer: { name: 'PACER' },
+      statutes: { name: 'Statutes' }
+    };
 
     // Streaming
     this.completions = {};
@@ -610,8 +608,11 @@ class Jeeves extends Hub {
       `${request.query}`;
 
     const metaTokenCount = this.estimateTokens(meta);
+    const requestTokenCount = this.estimateTokens(request.query);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
 
     let messages = [];
 
@@ -639,16 +640,13 @@ class Jeeves extends Hub {
 
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
-    // TODO: execute RAG query for additional metadata
-    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
-    const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
-
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-
     const agentResults = Promise.allSettled([
       this.alpha.query({ query }),
       this.mistral.query({ query })
     ]);
+
+    // TODO: execute RAG query for additional metadata
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
 
     Promise.race([
       new Promise((resolve, reject) => {
@@ -659,6 +657,14 @@ class Jeeves extends Hub {
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
       const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+
+      for (let i = 0; i < answers.length; i++) {
+        const answer = answers[i];
+        if (!answer.content) continue;
+
+        const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
+      }
 
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
@@ -749,6 +755,108 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', 'Court search by name, results:', result);
 
     return court;
+  }
+
+  async _getState () {
+    const cases = await this.db('cases').select('id').from('cases');
+    const courts = await this.db('courts').select('id').from('courts');
+    const conversations = await this.db('conversations').select('id').from('conversations');
+    const documents = await this.db('documents').select('id').from('documents');
+    const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
+    const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
+    const messages = await this.db('messages').select('id').from('messages');
+
+    // User Analytics
+    const users = await this.db('users').select('id', 'username');
+
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
+      const messages = await this.db('messages').select('id').where({ user_id: user.id });
+
+      user.conversations = conversations.length;
+      user.messages = messages.length;
+    }
+
+    const state = {
+      cases: {
+        total: cases.length,
+        // content: cases.map(x => x.id)
+      },
+      conversations: {
+        total: conversations.length,
+        // content: conversations.map(x => x.id)
+      },
+      courts: {
+        total: courts.length,
+        // content: courts.map(x => x.id)
+      },
+      documents: {
+        total: documents.length,
+        // content: documents.map(x => x.id)
+      },
+      inquiries: {
+        total: inquiries.length,
+        content: inquiries
+      },
+      invitations: {
+        total: invitations.length,
+        content: invitations
+      },
+      messages: {
+        total: messages.length
+        // content: messages.map(x => x.id)
+      },
+      users: {
+        total: users.length,
+        content: users
+      },
+    };
+
+    return state;
+  }
+
+  async processData (limit = 1000) {
+    const now = new Date();
+    const stats = { total: 0, processed: 0, unprocessed: 0 };
+    const other = await this._getUnprocessedCaseStats();
+    const chunk = await this._getUnprocessedCases(limit);
+
+    console.debug('[JEEVES]', '[ETL]', 'Stats:', other, stats);
+
+    const start = new Date();
+    for (let i = 0; i < chunk.length; i++) {
+      const instance = chunk[i];
+      console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      const titleEmbedding = await this._generateEmbedding(instance.title);
+      await this.db('cases').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
+      stats.processed++;
+    }
+
+    console.debug('[JEEVES]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    console.debug('[JEEVES]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
+
+    return this;
+  }
+
+  async _getUnprocessedCases (limit = 20) {
+    const cases = await this.db('cases').select('id', 'title', 'summary', 'title_embedding_id', 'body_embedding_id').where(function () {
+      this.whereNull('title_embedding_id')// .orWhereNull('body_embedding_id')
+    }).limit(limit);
+
+    return cases;
+  }
+
+  async _getUnprocessedCaseStats () {
+    const caseCount = await this.db('cases').count('id as count').first();
+    const withTitleEmbeddings = await this.db('cases').count('id as count').whereNotNull('title_embedding_id').first();
+    const missingTitleEmbeddings = await this.db('cases').count('id as count').whereNull('title_embedding_id').first();
+
+    return {
+      total: caseCount,
+      withTitleEmbeddings: withTitleEmbeddings,
+      missingTitleEmbeddings: missingTitleEmbeddings
+    };
   }
 
   async query (query) {
@@ -856,6 +964,17 @@ class Jeeves extends Hub {
     };
 
     return results;
+  }
+
+  async secureEmbeddingsForCase (id) {
+    const target = await this.db('cases').where('id', id).first();
+    console.debug('secured:', target);
+
+    // Secure Summary
+    if (!target.summary) {
+      console.debug('No summary found for case:', target);
+      return;
+    }
   }
 
   /**
@@ -1221,11 +1340,20 @@ class Jeeves extends Hub {
     this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+
+    const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
+    const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
+
     this.rag = new Agent({
       name: 'AugmentorRAG',
       listen: this.settings.fabric.listen,
       openai: this.settings.openai,
-      // prompt: this.settings.prompt
+      prompt: 'You are AugmentorRAG, designed to return an SQL query that returns any cases that match the provided titles.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.\n\n' +
+        'Supported tables:\n' +
+        '  - cases\n' +
+        '    ```' +
+        caseDef[0][0]['Create Table'] +
+        '    ```\n'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -1427,8 +1555,7 @@ class Jeeves extends Hub {
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
 
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1466,7 +1593,6 @@ class Jeeves extends Hub {
 
     //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
@@ -1491,8 +1617,7 @@ class Jeeves extends Hub {
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -2109,39 +2234,28 @@ class Jeeves extends Hub {
       res.send(stats);
     });
 
-    this.http._addRoute('GET', '/cases', async (req, res, next) => {
-      res.format({
-        json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name', 'harvard_case_law_id').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
-            perPage: PER_PAGE_LIMIT,
-            currentPage: 1
-          });
-
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
-          res.setHeader('X-Pagination-Per', cases.pagination.perPage);
-          res.setHeader('X-Pagination-Total', cases.pagination.total);
-
-          res.send(cases.data);
-        },
-        html: () => {
-          // TODO: import auth token, load data
-          const page = new CaseHome({});
-          const output = page.toHTML();
-          return res.send(this.http.app._renderWith(output));
-        }
-      });
-    });
-
+    this.http._addRoute('GET', '/cases', ROUTES.cases.list.bind(this));
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
       const origin = {};
       const updates = {};
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_pdf', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
 
       if (!instance) return res.status(404).json({ message: 'Case not found.' });
       // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
+
+      this.secureEmbeddingsForCase(instance.id).then((output) => {
+        console.debug('Secure embeddings for case:', output);
+      }).catch((exception) => {
+        console.debug('Secure embeddings error:', exception);
+      });
+
+      if (this.settings.courtlistener.enable) {
+        this.courtlistener.search({ query: instance.title }).then((clr) => {
+          console.debug('[NOVO]', '[COURTLISTENER]', '[SEARCH]', 'Jeeves got results:', clr);
+        });
+      }
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
@@ -2469,7 +2583,7 @@ class Jeeves extends Hub {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status', 'messages.cards').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -2502,60 +2616,64 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
-      const cases = await this.db('cases').select('id').from('cases');
-      const courts = await this.db('courts').select('id').from('courts');
-      const conversations = await this.db('conversations').select('id').from('conversations');
-      const documents = await this.db('documents').select('id').from('documents');
-      const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
-      const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
-      const messages = await this.db('messages').select('id').from('messages');
+      const current = await this._getState();
+      res.send(current);
+    });
 
-      // User Analytics
-      const users = await this.db('users').select('id', 'username');
+    this.http._addRoute('GET', '/statistics/accuracy', async (req, res, next) => {
+      const reviews = await this.db('reviews').whereNotNull('id');
+      const response = {
+        accuracy: {
+          positive: 0,
+          negative: 0,
+          neutral: 0
+        },
+        total: reviews.length
+      };
 
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-        const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
-        const messages = await this.db('messages').select('id').where({ user_id: user.id });
-
-        user.conversations = conversations.length;
-        user.messages = messages.length;
+      for (let review of reviews) {
+        switch (review.intended_sentiment) {
+          case 'positive':
+            response.accuracy.positive++;
+            break;
+          case 'negative':
+            response.accuracy.negative++;
+            break;
+          default:
+            response.accuracy.neutral++;
+            break;
+        }
       }
 
+      res.send(response);
+    });
+
+    this.http._addRoute('GET', '/statistics/sync', async (req, res, next) => {
+      const current = await this._getState();
       const state = {
-        cases: {
-          total: cases.length,
-          // content: cases.map(x => x.id)
-        },
-        conversations: {
-          total: conversations.length,
-          // content: conversations.map(x => x.id)
-        },
-        courts: {
-          total: courts.length,
-          // content: courts.map(x => x.id)
-        },
-        documents: {
-          total: documents.length,
-          // content: documents.map(x => x.id)
-        },
-        inquiries: {
-          total: inquiries.length,
-          content: inquiries
-        },
-        invitations: {
-          total: invitations.length,
-          content: invitations
-        },
-        messages: {
-          total: messages.length
-          // content: messages.map(x => x.id)
-        },
-        users: {
-          total: users.length,
-          content: users
-        },
+        current: current,
+        datasources: {}
       };
+
+      for (let [name, datasource] of Object.entries(this.datasources)) {
+        let source = { name: datasource.name };
+        switch (name) {
+          case 'courtlistener':
+            if (this.courtlistener) source.counts = await this.courtlistener.getCounts();
+            break;
+          case 'harvard':
+            if (this.harvard) source.counts = await this.harvard.getCounts();
+            break;
+          case 'pacer':
+            if (this.pacer) source.counts = await this.pacer.getCounts();
+            break;
+          default:
+            console.warn('[JEEVES]', 'Unhandled Datasource:', name);
+            break;
+        }
+
+        state.datasources[name] = source.counts;
+      }
 
       res.send(state);
     });
@@ -2690,7 +2808,7 @@ class Jeeves extends Hub {
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
         }).then((request) => {
-          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request.toBuffer().toString('hex'));
         });
         // End Core Pipeline
 
@@ -3977,20 +4095,23 @@ class Jeeves extends Hub {
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const actor = new Actor({ content: text });
-    const embedding = await this.openai.generateEmbedding(text, model);
-    console.debug('got embedding:', embedding);
-    if (embedding.length !== 1) throw new Error('Embedding length mismatch!');
+    const embeddings = await this.openai.generateEmbedding(text, model);
+    if (embeddings.length !== 1) throw new Error('Embedding length mismatch!');
 
+    const embedding = embeddings[0].embedding;
+    const blob = JSON.stringify(embedding);
+    const actor = new Actor({ content: blob });
     const inserted = await this.db('embeddings').insert({
       fabric_id: actor.id,
       text: text,
-      model: embedding[0].model,
-      content: JSON.stringify(embedding[0].embedding)
+      model: embeddings[0].model,
+      content: blob
     });
 
     return {
-      id: inserted[0]
+      id: inserted[0],
+      model: model,
+      content: embedding
     };
   }
 

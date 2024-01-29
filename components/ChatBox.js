@@ -1,5 +1,10 @@
 'use strict';
 
+const {
+  BRAND_NAME,
+  ENABLE_BILLING
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
 const $ = require('jquery');
@@ -508,20 +513,18 @@ class ChatBox extends React.Component {
           )}
           {homePage && (
             <div>
-              <div className='desktop-only'>
-                <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
-                  <Progress value={100} total={100} color='blue' progress='ratio' />
-                </Segment>
-              </div>
+              {ENABLE_BILLING && (
+                <div className='desktop-only'>
+                  <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
+                    <Progress value={100} total={100} color='blue' progress='ratio' />
+                  </Segment>
+                </div>
+              )}
               <div>
                 <Feed.Extra text style={{ display: "flex" }}>
                   <Image src="/images/jeeves-brand.png" size="small" floated="left" />
-                  <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
-                    <p>
-                      <strong>Hello,</strong> I'm{" "}
-                      <abbr title="Yes, what about it?">Jeeves</abbr>, your
-                      legal research companion.
-                    </p>
+                  <div style={{ paddingTop: "2em", maxWidth: '18em' }}>
+                    <p><strong>Hello,</strong> I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
                 </Feed.Extra>
                 <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
@@ -707,9 +710,8 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "99%" }}
-        >
-          <Form.Input>
+          style={{ width: "99%" }} >
+          <Form.Input icon>
             <TextareaAutosize
               id="primary-query"
               className="prompt-bar"
@@ -729,6 +731,7 @@ class ChatBox extends React.Component {
               }}
               style={{ resize: "none" }}
             />
+            <i aria-hidden="true" class="microphone icon"></i>
           </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (
