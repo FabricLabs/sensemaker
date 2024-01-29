@@ -17,16 +17,16 @@ const InformationSidebar = require('./InformationSidebar');
 const {
   Button,
   Container,
+  Dropdown,
   Feed,
   Form,
   Grid,
   GridColumn,
   Header,
   Icon,
+  Image,
   Message,
   Popup,
-  Dropdown,
-  Image,
   Progress,
   Segment
 } = require('semantic-ui-react');
@@ -428,8 +428,27 @@ class ChatBox extends React.Component {
     });
   }
 
-  render() {
+  handleMicrophoneClick = () => {
+    console.debug('[NOVO]', 'Microphone click');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      console.log("getUserMedia supported.");
+      navigator.mediaDevices
+        .getUserMedia(
+          // constraints - only audio needed for this app
+          {
+            audio: true,
+          },
+        )
+        .then((stream) => {})
+        .catch((err) => {
+          console.error(`The following getUserMedia error occurred: ${err}`);
+        });
+    } else {
+      console.log("getUserMedia not supported on your browser!");
+    }
+  }
 
+  render() {
     const { messages } = this.props.chat;
     const {
       loading,
@@ -716,7 +735,7 @@ class ChatBox extends React.Component {
               }}
               style={{ resize: "none" }}
             />
-            <i aria-hidden="true" class="microphone icon"></i>
+            <i aria-hidden="true" class="microphone icon" onClick={this.handleMicrophoneClick.bind(this)}></i>
           </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (
