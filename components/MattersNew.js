@@ -15,10 +15,12 @@ const {
   Label,
   List,
   Loader,
-  Icon
+  Icon,
+  Button,
+  Form
 } = require('semantic-ui-react');
 
-class MattersHome extends React.Component {
+class MattersNew extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
@@ -46,16 +48,11 @@ class MattersHome extends React.Component {
 
     return (
       <Segment loading={matters.loading} style={{marginRight: '1em'}}>
-        <Header as='h1'>My Matters</Header>
-        <List>
-          {matters && matters.matters && matters.matters
-            .map(instance => {
-              return (
-                <List.Item><Header as='h3'><Link to={"/matters/" + instance.id}>{instance.title}</Link></Header></List.Item>
-              )
-            })}
-        </List>
-        <Link to={"/matters/new"}>+ New Matter </Link>
+        <Header as='h1'>New Matters</Header>
+        <Form>
+        </Form>
+ 
+        <Link to={"/matters/"}>Back to Matters </Link>
       </Segment>
     );
   }
@@ -69,4 +66,4 @@ class MattersHome extends React.Component {
   }
 }
 
-module.exports = MattersHome;
+module.exports = MattersNew;
