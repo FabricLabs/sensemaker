@@ -1,6 +1,6 @@
 'use strict';
 
-// Constansts
+// Constants
 const {
   PER_PAGE_LIMIT
 } = require('../../constants');

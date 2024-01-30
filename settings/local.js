@@ -68,6 +68,12 @@ module.exports = {
     username: 'agent@jeeves.dev',
     password: 'generate app-specific password'
   },
+  stripe: {
+    token: {
+      public: 'pk_test_51NLE0lHoVtrEXpIkwVlVukGcEwKXQz7qHqQ80FWg1YAPL1MmYl3HEifAcW1g4Frb70De1l7ENwh5aSPLnmF4Nl0y00A3AcE0bD',
+      private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
+    }
+  },
   interval: 1000, // 1 Hz
   persistent: false,
   peers: [
