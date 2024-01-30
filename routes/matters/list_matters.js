@@ -6,7 +6,7 @@ const {
 } = require('../../constants');
 
 // Components
-const CaseHome = require('../../components/CaseHome');
+const MattersHome = require('../../components/MattersHome');
 
 module.exports = function (req, res, next) {
   res.format({
@@ -21,7 +21,7 @@ module.exports = function (req, res, next) {
     },
     html: () => {
       // TODO: import auth token, load data
-      const page = new CaseHome({});
+      const page = new MattersHome({});
       const output = page.toHTML();
       return res.send(this.http.app._renderWith(output));
     }

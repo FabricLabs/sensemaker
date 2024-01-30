@@ -405,6 +405,17 @@ fabric-motd {
   }
 }
 
+.microphone.icon{  
+    cursor: pointer;
+    z-index: 10;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10; 
+}
+
 .answer-controls{
   display: flex;
   align-items: center;
