@@ -38,6 +38,7 @@ class Home extends React.Component {
           chat={this.props.chat}
           placeholder="Ask me anything..."
           includeFeed={true}
+          getMessageInformation={this.props.getMessageInformation}
         />
         {/* <Header as='h4'>You can try&hellip;</Header>
         <Card.Group>

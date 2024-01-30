@@ -20,7 +20,9 @@ const ROUTES = {
   },
   matters: {
     create: require('../routes/matters/create_matter'),
-    view: require('../routes/matters/view_matter'),
+    new: require('../routes/matters/new_matter'),
+    // view: require('../routes/matters/view_matter'),
+    view: require('../routes/matters/matter_view'),
     list: require('../routes/matters/list_matters')
   },
   products: {
@@ -1490,6 +1492,7 @@ class Jeeves extends Hub {
     // Matters
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
+    this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 

@@ -78,7 +78,8 @@ const {
   resetChat,
   submitMessage,
   regenAnswer,
-  getMessages
+  getMessages,
+  getMessageInformation,
 } = require('../actions/chatActions');
 
 // ## Conversation Actions
@@ -122,6 +123,11 @@ const {
   fetchDocuments,
   fetchDocument
 } = require('../actions/documentActions');
+
+// ## Matters Actions
+const {
+  fetchMatters,
+} = require('../actions/mattersActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -179,7 +185,8 @@ async function main (input = {}) {
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
       token: state.auth.token,
-      stats: state.stats
+      stats: state.stats,
+      matters: state.matters,
     }
   };
 
@@ -227,7 +234,9 @@ async function main (input = {}) {
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,
-    getMessages: getMessages
+    getMessages: getMessages,
+    getMessageInformation: getMessageInformation,
+    fetchMatters: fetchMatters,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

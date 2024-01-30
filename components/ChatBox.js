@@ -54,6 +54,7 @@ class ChatBox extends React.Component {
       resetInformationSidebar: false,
       thumbsUpClicked: false,
       thumbsDownClicked: false,
+      isTextareaFocused: false, //this is needed to work on the microphone icon color
     };
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
@@ -85,6 +86,8 @@ class ChatBox extends React.Component {
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
+          this.props.getMessageInformation(lastMessage.content);
+
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
@@ -112,6 +115,16 @@ class ChatBox extends React.Component {
     });
     window.removeEventListener('resize', this.handleResize);
   }
+
+  //these 2 works for the microphone icon color, they are necessary
+  handleTextareaFocus = () => {
+    this.setState({ isTextareaFocused: true });
+  };
+  
+  handleTextareaBlur = () => {
+    this.setState({ isTextareaFocused: false });
+  };
+  
 
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight, });
@@ -170,6 +183,8 @@ class ChatBox extends React.Component {
     let dataToSubmit;
 
     this.setState({ loading: true, previousFlag: true });
+
+    this.props.getMessageInformation(query);
 
     //if we have caseID its beacause we are on a specific case chat
     if (caseID) {
@@ -724,28 +739,37 @@ class ChatBox extends React.Component {
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
           style={{ width: "99%" }} >
-          <Form.Input icon>
-            <TextareaAutosize
-              id="primary-query"
-              className="prompt-bar"
-              name="query"
-              required
-              placeholder={placeholder}
-              onChange={(e) => this.setState({ query: e.target.value })}
-              disabled={isSending}
-              loading={isSending}
-              value={query}
-              maxRows={5}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  this.handleSubmit(e);
-                }
-              }}
-              style={{ resize: "none" }}
-            />
-            <i aria-hidden="true" class="microphone icon" onClick={this.handleMicrophoneClick.bind(this)}></i>
-          </Form.Input>
+            <Form.Input>
+              <TextareaAutosize
+                id="primary-query"
+                className="prompt-bar"
+                name="query"
+                required
+                placeholder={placeholder}
+                onChange={(e) => this.setState({ query: e.target.value })}
+                disabled={isSending}
+                loading={isSending}
+                value={query}
+                maxRows={5}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    this.handleSubmit(e);
+                  }
+                }}
+                onFocus={this.handleTextareaFocus}
+                onBlur={this.handleTextareaBlur}
+                style={{ resize: "none", zIndex: '1' }}
+              />
+              <Icon
+                name="microphone icon"
+                color="grey"
+                className='microphone icon'
+                onClick={() => this.handleMicrophoneClick(this)}
+                //this inline style is necessary to make the icon look lighter when the textarea is not focused
+                style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
+              />
+            </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (
           <section className='desktop-only'>
@@ -756,7 +780,7 @@ class ChatBox extends React.Component {
               <Grid columns='equal' className="home-dropdowns" onBlur={() => this.setState({ query: "" })}>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Find a case that..."
                     selection
                     text="Find a case that..."
@@ -766,7 +790,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Draft a brief..."
                     selection
                     text="Draft a brief..."
@@ -776,7 +800,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Outline a motion..."
                     selection
                     text="Outline a motion..."
