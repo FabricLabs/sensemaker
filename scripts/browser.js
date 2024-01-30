@@ -124,6 +124,11 @@ const {
   fetchDocument
 } = require('../actions/documentActions');
 
+// ## Matters Actions
+const {
+  fetchMatters,
+} = require('../actions/mattersActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -180,7 +185,8 @@ async function main (input = {}) {
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
       token: state.auth.token,
-      stats: state.stats
+      stats: state.stats,
+      matters: state.matters,
     }
   };
 
@@ -230,6 +236,7 @@ async function main (input = {}) {
     regenAnswer: regenAnswer,
     getMessages: getMessages,
     getMessageInformation: getMessageInformation,
+    fetchMatters: fetchMatters,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
