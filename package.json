@@ -94,7 +94,8 @@
     "redux-thunk": "2.4.2",
     "smtp-client": "0.4.0",
     "sqlite3": "5.1.6",
-    "stream-browserify": "3.0.0"
+    "stream-browserify": "3.0.0",
+    "stripe": "14.14.0"
   },
   "devDependencies": {
     "@babel/preset-env": "7.22.5",

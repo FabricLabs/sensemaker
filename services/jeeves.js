@@ -20,7 +20,11 @@ const ROUTES = {
   },
   matters: {
     create: require('../routes/matters/create_matter'),
+    view: require('../routes/matters/view_matter'),
     list: require('../routes/matters/list_matters')
+  },
+  products: {
+    list: require('../routes/products/list_products')
   }
 };
 
@@ -84,10 +88,9 @@ const PACER = require('./pacer');
 const Harvard = require('./harvard');
 const Mistral = require('./mistral');
 const OpenAI = require('./openai');
-// TODO: Mistral
-// TODO: HarvardCaseLaw
 const CourtListener = require('./courtlistener');
 // const WestLaw = require('./westlaw');
+const Stripe = require('./stripe');
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -236,6 +239,7 @@ class Jeeves extends Hub {
     this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
     this.harvard = new Harvard(this.settings.harvard);
+    this.stripe = new Stripe(this.settings.stripe);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -1005,6 +1009,8 @@ class Jeeves extends Hub {
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
+    this.products = await this.stripe.enumerateProducts();
+
     // Primary Worker
     // Job Types
     this.worker.register('SearchCourts', async (...params) => {
@@ -1481,8 +1487,11 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Matters
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
+    this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
