@@ -1,9 +1,5 @@
 'use strict';
 
-const {
-  BRAND_NAME
-} = require('../constants');
-
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
@@ -51,7 +47,7 @@ class MattersHome extends React.Component {
           {matters && matters.matters && matters.matters
             .map(instance => {
               return (
-                <List.Item><Header as='h3'><Link to={"/matters/" + instance.id}>{instance.title}</Link></Header></List.Item>
+                <List.Item><Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header></List.Item>
               )
             })}
         </List>

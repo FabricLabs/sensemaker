@@ -55,6 +55,7 @@ const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const MattersHome = require('./MattersHome');
 const MattersNew = require('./MattersNew');
+const MatterView = require('./MatterView');
 const Room = require('./Room');
 const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
@@ -363,6 +364,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
                 <Route path="/matters/new" element={<MattersNew {...this.props}/>} />
+                <Route path="/matter/:id" element={<MatterView {...this.props}/>} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />

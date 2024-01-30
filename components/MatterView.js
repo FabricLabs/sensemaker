@@ -2,7 +2,7 @@
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const { Link, useParams } = require('react-router-dom');
 
 const {
   Card,
@@ -16,7 +16,7 @@ const {
   Form
 } = require('semantic-ui-react');
 
-class MattersNew extends React.Component {
+class MatterView extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
@@ -25,7 +25,7 @@ class MattersNew extends React.Component {
   }
 
   componentDidMount() {
-    this.props.fetchMatters();
+    //this.props.fetchMatters();
   }
 
   componentDidUpdate(prevProps) {
@@ -44,7 +44,7 @@ class MattersNew extends React.Component {
 
     return (
       <Segment loading={matters.loading} style={{marginRight: '1em'}}>
-        <Header as='h1'>New Matters</Header>
+        <Header as='h1'>{this.props.matterID}</Header>
         <Form>
         </Form>
  
@@ -62,4 +62,8 @@ class MattersNew extends React.Component {
   }
 }
 
-module.exports = MattersNew;
+function MattView(props) {
+  const { matterID } = useParams();
+  return <MatterView matterID={matterID} {...props} />;
+}
+module.exports = MattView;
