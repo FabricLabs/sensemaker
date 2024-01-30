@@ -35,7 +35,7 @@ class Splash extends React.Component {
       <jeeves-splash class="fade-in splash">
         <Image src="/images/novo-logo.svg" size='large' centered style={{ margin: '0 1em 2em 1em', maxWidth: '80%' }} />
         <section>
-          <div id="countdown"></div>
+          <div id="countdown" className='center-elements-row'></div>
           <p style={{ fontSize: '1.2em', marginTop: '2em', maxWidth: '28em' }}>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
         </section>
         <fabric-component class="ui primary action container">
