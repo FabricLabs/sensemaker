@@ -41,10 +41,10 @@ const fetchMatters = () => {
 };
 
 const createMatter = (title, description, plaintiff, defendant, representing, jurisdiction_id, court_id) => {
-  return async dispatch => {
+  return async (dispatch, getState) => {
     dispatch(createMatterRequest());
     try {
-
+      const { token } = getState().auth;
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
           reject(new Error('Matter creation could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
@@ -54,6 +54,7 @@ const createMatter = (title, description, plaintiff, defendant, representing, ju
       const fetchPromise = fetch('/matters', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ title, description, plaintiff, defendant, representing, jurisdiction_id, court_id }),

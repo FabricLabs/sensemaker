@@ -28,15 +28,17 @@ class MattersNew extends React.Component {
     super(settings);
     this.state = {
       loading: false,
-      selectedOption: 'Plaintiff',
+      representingOption: 'Plaintiff',
       jurisdictionsOptions: null,
       courtsOptions: null,
       title: '',
-      description:'',
-      plaintiff:'',
-      representing:'',
+      description: null,
+      plaintiff: '',
+      defendant: '',
       court_id: null,
       jurisdiction_id: null,
+      jurisdictionError: false,
+      creating: false,
 
     };
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -49,7 +51,7 @@ class MattersNew extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { jurisdictions, courts } = this.props;
+    const { jurisdictions, courts, matters } = this.props;
     if (prevProps.jurisdictions !== jurisdictions) {
       if (jurisdictions.jurisdictions.length > 0) {
         const options = jurisdictions.jurisdictions.map(instance => ({
@@ -77,6 +79,17 @@ class MattersNew extends React.Component {
         this.setState({ courtsOptions: options });
       }
     }
+    if (this.state.creating) {
+      if (prevProps.matters !== matters && !matters.loading) {
+        if(matters.creationSuccess)
+        {
+          console.log("matter creado");
+        } else {
+          console.log(matters.error);
+
+        }
+      }
+    }
   };
 
   handleInputChange = (event) => {
@@ -86,40 +99,67 @@ class MattersNew extends React.Component {
   };
 
   handleSubmit = async (event) => {
+    const {
+      representingOption,
+      title,
+      description,
+      defendant,
+      plaintiff,
+      court_id,
+      jurisdiction_id
+    } = this.state;
     event.preventDefault();
-
+    if (jurisdiction_id === null) {
+      this.setState({ jurisdictionError: true });
+    } else {
+      this.setState({ creating: true });
+      const representing = (representingOption === 'Plaintiff' ? 'P' : 'D');
+      this.props.createMatter(title, plaintiff, defendant, representing, jurisdiction_id, court_id);
+      console.log
+        (representing,
+          title,
+          description,
+          plaintiff,
+          defendant,
+          court_id,
+          jurisdiction_id);
+    }
   }
 
   render() {
     const { jurisdictions, courts } = this.props;
-    const { loading, selectedOption, courtsOptions, jurisdictionsOptions } = this.state;
+    const { loading, representingOption, courtsOptions, jurisdictionsOptions, jurisdictionError } = this.state;
 
-    console.log("jurisdictions", jurisdictions);
-    console.log("courts", courts);
-
+    const jurisdictionErrorMessage = (!jurisdictionError) ? null : {
+      content: 'Please select a jurisdiction',
+      pointing: 'above',
+    };
     return (
-      <Segment style={{ marginRight: '1em', height: '97vh' }} className='center-elements-column'>
-        <Header as='h1'>New Matters</Header>
-        <Form onSubmit={this.handleSubmit} style={{ minWidth: '500px', marginTop: '2em' }} loading={(jurisdictions.loading || courts.loading)}>
-
-          {/* <Table basic='very' stripped> */}
-          <Table basic stripped>
+      <Segment style={{ marginRight: '1em', height: '97vh', overflow: 'visible' }} className='center-elements-column'>
+        <Header as='h1'>New Matter</Header>
+        <Form
+          onSubmit={this.handleSubmit}
+          loading={(jurisdictions.loading || courts.loading)}
+          className='ui segment new-matter-form'
+          style={{ position: 'relative', zIndex: 1000, overflow: 'visible' }}
+        >
+          <Table basic='very' stripped>
             <Table.Body>
               <Table.Row >
-                <Table.Cell width={5}>
+                <Table.Cell width={3}>
                   <Header as='h4'>Matter Name</Header>
                 </Table.Cell>
-                <Table.Cell width={10}>
-                  <Form.Input name='title' required onChange={this.handleInputChange}/>
+                <Table.Cell width={12}>
+                  <Form.Input name='title' required onChange={this.handleInputChange} />
                 </Table.Cell>
                 <Table.Cell width={1} />
               </Table.Row>
               <Table.Row>
-                <Table.Cell width={5}>
+                <Table.Cell width={3}>
                   <Header as='h4'  >Plaintiff</Header>
                 </Table.Cell>
-                <Table.Cell width={10}>
-                  <Form.Input name='plaintiff' required onChange={this.handleInputChange}/>
+                <Table.Cell width={12}>
+                  <Form.Input name='plaintiff' required onChange={this.handleInputChange} />
                 </Table.Cell>
                 <Table.Cell width={1}>
                   <Popup trigger={<Icon name='info circle' />}>
@@ -130,11 +170,11 @@ class MattersNew extends React.Component {
                 </Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell width={5}>
+                <Table.Cell width={3}>
                   <Header as='h4'>Defendant</Header>
                 </Table.Cell>
-                <Table.Cell width={10}>
-                  <Form.Input name='defendant' required onChange={this.handleInputChange}/>
+                <Table.Cell width={12}>
+                  <Form.Input name='defendant' required onChange={this.handleInputChange} />
                 </Table.Cell>
                 <Table.Cell width={1}>
                   <Popup trigger={<Icon name='info circle' />}>
@@ -145,18 +185,18 @@ class MattersNew extends React.Component {
                 </Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell width={5}>
+                <Table.Cell width={3}>
                   <Header as='h4'>Who are you representing?</Header>
                 </Table.Cell>
-                <Table.Cell width={10}>
+                <Table.Cell width={12}>
                   <FormField>
                     <Checkbox
                       radio
                       label='Plaintiff'
                       name='checkboxRadioGroup'
                       value='Plaintiff'
-                      checked={selectedOption === 'Plaintiff'}
-                      onChange={(e, data) => this.setState({ selectedOption: data.value })}
+                      checked={representingOption === 'Plaintiff'}
+                      onChange={(e, data) => this.setState({ representingOption: data.value })}
                     />
                   </FormField>
                   <FormField>
@@ -165,8 +205,8 @@ class MattersNew extends React.Component {
                       label='Defendant'
                       name='checkboxRadioGroup'
                       value='Defendant'
-                      checked={selectedOption === 'Defendant'}
-                      onChange={(e, data) => this.setState({ selectedOption: data.value })}
+                      checked={representingOption === 'Defendant'}
+                      onChange={(e, data) => this.setState({ representingOption: data.value })}
                     />
                   </FormField>
                 </Table.Cell>
@@ -181,9 +221,10 @@ class MattersNew extends React.Component {
                     fluid
                     search
                     selection
-                    required
+                    required={true}
                     options={jurisdictionsOptions}
-                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value })}
+                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                    error={jurisdictionErrorMessage}
                   />
                 </Table.Cell>
                 <Table.Cell />
@@ -206,13 +247,17 @@ class MattersNew extends React.Component {
               <Table.Row>
                 <Table.Cell />
                 <Table.Cell>
-                  <Form.TextArea name='description' label='Description' rows={4} />
+                  <Form.TextArea
+                    name='description'
+                    label='Description (optional)'
+                    rows={4}
+                    onChange={this.handleInputChange} />
                 </Table.Cell>
                 <Table.Cell />
               </Table.Row>
               <Table.Row>
                 <Table.Cell />
-                <Table.Cell>
+                <Table.Cell >
                   <Button.Group>
                     <Link to={"/matters/"}>
                       <Form.Button

@@ -14,6 +14,7 @@ const initialState = {
   sending: false,
   matters: null,
   creationSuccess: false,
+  idCreated: null,
 };
 
 function mattersReducer(state = initialState, action) {
@@ -28,10 +29,10 @@ function mattersReducer(state = initialState, action) {
     case CREATE_MATTER_REQUEST:
       return { ...state, loading: true };
     case CREATE_MATTER_SUCCESS:
-      return { ...state, creationSuccess: true, loading: false };
+      return { ...state, creationSuccess: true, idCreated: action.payload.content, loading: false };
     case CREATE_MATTER_FAILURE:
       console.debug('create matter failure:', state, action);
-      return { ...state, error: action.payload, creationSuccess: false, loading: false };
+      return { ...state, error: action.payload, creationSuccess: false, idCreated: null, loading: false };
     default:
       return state;
   }
