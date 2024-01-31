@@ -10,6 +10,8 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 
+const toRelativeTime = require('../functions/toRelativeTime');
+
 const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
 const InformationSidebar = require('./InformationSidebar');
 
@@ -590,11 +592,7 @@ class ChatBox extends React.Component {
                       <Feed.User>
                         {message.author || message.user_id}{" "}
                       </Feed.User>
-                      <Feed.Date>
-                        <abbr title={message.created_at}>
-                          {message.created_at}
-                        </abbr>
-                      </Feed.Date>
+                      <Feed.Date as='abbr' title={message.created_at} class='relative'>{toRelativeTime(message.created_at)}</Feed.Date>
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
                           <Popup
