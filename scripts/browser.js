@@ -9,6 +9,9 @@ const React = require('react');
 const ReactDOM = require('react-dom/client');
 const { Provider, connect } = require('react-redux');
 
+// Functions
+const toRelativeTime = require('../functions/toRelativeTime');
+
 // Components
 const JeevesUI = require('../components/JeevesUI');
 
@@ -253,6 +256,13 @@ async function main (input = {}) {
       <ConnectedUI />
     </Provider>
   );
+
+  // Updates (1s)
+  setInterval(() => {
+    document.querySelectorAll('abbr.relative-time').forEach((el) => {
+      el.innerHTML = toRelativeTime(el.getAttribute('title'));
+    });
+  }, 1000); // 1 second
 
   // Return
   return {
