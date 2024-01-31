@@ -31,7 +31,16 @@ class MattersNew extends React.Component {
       selectedOption: 'Plaintiff',
       jurisdictionsOptions: null,
       courtsOptions: null,
+      title: '',
+      description:'',
+      plaintiff:'',
+      representing:'',
+      court_id: null,
+      jurisdiction_id: null,
+
     };
+    this.handleSubmit = this.handleSubmit.bind(this);
+
   }
 
   componentDidMount() {
@@ -70,6 +79,16 @@ class MattersNew extends React.Component {
     }
   };
 
+  handleInputChange = (event) => {
+    this.setState({
+      [event.target.name]: event.target.value
+    });
+  };
+
+  handleSubmit = async (event) => {
+    event.preventDefault();
+
+  }
 
   render() {
     const { jurisdictions, courts } = this.props;
@@ -81,25 +100,26 @@ class MattersNew extends React.Component {
     return (
       <Segment style={{ marginRight: '1em', height: '97vh' }} className='center-elements-column'>
         <Header as='h1'>New Matters</Header>
-        <Form style={{ minWidth: '500px', marginTop: '2em' }} loading={(jurisdictions.loading || courts.loading)}>
+        <Form onSubmit={this.handleSubmit} style={{ minWidth: '500px', marginTop: '2em' }} loading={(jurisdictions.loading || courts.loading)}>
 
-          <Table basic='very' stripped>
+          {/* <Table basic='very' stripped> */}
+          <Table basic stripped>
             <Table.Body>
               <Table.Row >
                 <Table.Cell width={5}>
                   <Header as='h4'>Matter Name</Header>
                 </Table.Cell>
                 <Table.Cell width={10}>
-                  <Form.Input required />
+                  <Form.Input name='title' required onChange={this.handleInputChange}/>
                 </Table.Cell>
                 <Table.Cell width={1} />
               </Table.Row>
               <Table.Row>
                 <Table.Cell width={5}>
-                  <Header as='h4'>Plaintiff</Header>
+                  <Header as='h4'  >Plaintiff</Header>
                 </Table.Cell>
                 <Table.Cell width={10}>
-                  <Form.Input required />
+                  <Form.Input name='plaintiff' required onChange={this.handleInputChange}/>
                 </Table.Cell>
                 <Table.Cell width={1}>
                   <Popup trigger={<Icon name='info circle' />}>
@@ -114,7 +134,7 @@ class MattersNew extends React.Component {
                   <Header as='h4'>Defendant</Header>
                 </Table.Cell>
                 <Table.Cell width={10}>
-                  <Form.Input required />
+                  <Form.Input name='defendant' required onChange={this.handleInputChange}/>
                 </Table.Cell>
                 <Table.Cell width={1}>
                   <Popup trigger={<Icon name='info circle' />}>
@@ -163,6 +183,7 @@ class MattersNew extends React.Component {
                     selection
                     required
                     options={jurisdictionsOptions}
+                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value })}
                   />
                 </Table.Cell>
                 <Table.Cell />
@@ -177,6 +198,7 @@ class MattersNew extends React.Component {
                     search
                     selection
                     options={courtsOptions}
+                    onChange={(e, { value }) => this.setState({ court_id: value })}
                   />
                 </Table.Cell>
                 <Table.Cell />
@@ -192,16 +214,17 @@ class MattersNew extends React.Component {
                 <Table.Cell />
                 <Table.Cell>
                   <Button.Group>
-                  <Link to={"/matters/"}> 
-                    <Form.Button
-                      secondary
-                      content='Cancel'
-                    />
+                    <Link to={"/matters/"}>
+                      <Form.Button
+                        secondary
+                        content='Cancel'
+                      />
                     </Link>
                     <Form.Button
                       primary
                       content='Create'
                       style={{ marginLeft: '1em' }}
+                      type='submit'
                     />
                   </Button.Group>
                 </Table.Cell>

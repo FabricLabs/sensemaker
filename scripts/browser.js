@@ -136,6 +136,7 @@ const {
 // ## Matters Actions
 const {
   fetchMatters,
+  createMatter,
 } = require('../actions/mattersActions');
 
 // ## Main Process
@@ -249,6 +250,7 @@ async function main (input = {}) {
     getMessages: getMessages,
     getMessageInformation: getMessageInformation,
     fetchMatters: fetchMatters,
+    createMatter: createMatter,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
