@@ -70,11 +70,17 @@ const {
   fetchCase
 } = require('../actions/caseActions');
 
-// ## Chat Actions
+// ## Courts Actions
 const {
   fetchCourts,
   fetchCourt
 } = require('../actions/courtActions');
+
+// ## Jurisdiction Actions
+const {
+  fetchJurisdictions,
+  fetchJurisdiction
+} = require('../actions/jurisdictionsActions');
 
 // ## Contract Actions
 const {
@@ -190,6 +196,7 @@ async function main (input = {}) {
       token: state.auth.token,
       stats: state.stats,
       matters: state.matters,
+      jurisdictions: state.jurisdictions
     }
   };
 
@@ -202,6 +209,8 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    fetchJurisdictions: fetchJurisdictions,
+    fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
     fetchInquiry: fetchInquiry,
