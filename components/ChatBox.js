@@ -592,7 +592,7 @@ class ChatBox extends React.Component {
                       <Feed.User>
                         {message.author || message.user_id}{" "}
                       </Feed.User>
-                      <Feed.Date as='abbr' title={message.created_at} class='relative'>{toRelativeTime(message.created_at)}</Feed.Date>
+                      <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
                           <Popup

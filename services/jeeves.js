@@ -2602,7 +2602,7 @@ class Jeeves extends Hub {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status', 'messages.cards').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -4035,7 +4035,8 @@ class Jeeves extends Hub {
     const content = response.content.trim();
     const updated = await this.db('messages').where({ id: inserted[0] }).update({
       status: 'ready',
-      content: content
+      content: content,
+      updated_at: this.db.fn.now()
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
