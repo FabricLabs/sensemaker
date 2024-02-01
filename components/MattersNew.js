@@ -2,7 +2,7 @@
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const { Link, Navigate } = require('react-router-dom');
 
 const {
   Card,
@@ -21,6 +21,7 @@ const {
   Checkbox,
   Dropdown,
   TextArea,
+  Message,
 } = require('semantic-ui-react');
 
 class MattersNew extends React.Component {
@@ -81,12 +82,12 @@ class MattersNew extends React.Component {
     }
     if (this.state.creating) {
       if (prevProps.matters !== matters && !matters.loading) {
-        if(matters.creationSuccess)
-        {
+        if (matters.creationSuccess) {
+          this.setState({ creating: false });
           console.log("matter creado");
         } else {
           console.log(matters.error);
-
+          this.setState({ creating: false });
         }
       }
     }
@@ -114,172 +115,178 @@ class MattersNew extends React.Component {
     } else {
       this.setState({ creating: true });
       const representing = (representingOption === 'Plaintiff' ? 'P' : 'D');
-      this.props.createMatter(title, plaintiff, defendant, representing, jurisdiction_id, court_id);
-      console.log
-        (representing,
-          title,
-          description,
-          plaintiff,
-          defendant,
-          court_id,
-          jurisdiction_id);
+      this.props.createMatter(title, description, plaintiff, defendant, representing, jurisdiction_id, court_id);
     }
   }
 
   render() {
-    const { jurisdictions, courts } = this.props;
-    const { loading, representingOption, courtsOptions, jurisdictionsOptions, jurisdictionError } = this.state;
+    const { jurisdictions, courts, matters } = this.props;
+    const { loading, representingOption, courtsOptions, jurisdictionsOptions, jurisdictionError, title } = this.state;
 
     const jurisdictionErrorMessage = (!jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
+
+    console.log(this.props.matters);
     return (
       <Segment style={{ marginRight: '1em', height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
-        <Form
-          onSubmit={this.handleSubmit}
-          loading={(jurisdictions.loading || courts.loading)}
-          className='ui segment new-matter-form'
-          style={{ position: 'relative', zIndex: 1000, overflow: 'visible' }}
-        >
-          <Table basic='very' stripped>
-            <Table.Body>
-              <Table.Row >
-                <Table.Cell width={3}>
-                  <Header as='h4'>Matter Name</Header>
-                </Table.Cell>
-                <Table.Cell width={12}>
-                  <Form.Input name='title' required onChange={this.handleInputChange} />
-                </Table.Cell>
-                <Table.Cell width={1} />
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell width={3}>
-                  <Header as='h4'  >Plaintiff</Header>
-                </Table.Cell>
-                <Table.Cell width={12}>
-                  <Form.Input name='plaintiff' required onChange={this.handleInputChange} />
-                </Table.Cell>
-                <Table.Cell width={1}>
-                  <Popup trigger={<Icon name='info circle' />}>
-                    <Popup.Content>
-                      <p>Write however these will appear in court documents</p>
-                    </Popup.Content>
-                  </Popup>
-                </Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell width={3}>
-                  <Header as='h4'>Defendant</Header>
-                </Table.Cell>
-                <Table.Cell width={12}>
-                  <Form.Input name='defendant' required onChange={this.handleInputChange} />
-                </Table.Cell>
-                <Table.Cell width={1}>
-                  <Popup trigger={<Icon name='info circle' />}>
-                    <Popup.Content>
-                      <p>Write however these will appear in court documents</p>
-                    </Popup.Content>
-                  </Popup>
-                </Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell width={3}>
-                  <Header as='h4'>Who are you representing?</Header>
-                </Table.Cell>
-                <Table.Cell width={12}>
-                  <FormField>
-                    <Checkbox
-                      radio
-                      label='Plaintiff'
-                      name='checkboxRadioGroup'
-                      value='Plaintiff'
-                      checked={representingOption === 'Plaintiff'}
-                      onChange={(e, data) => this.setState({ representingOption: data.value })}
-                    />
-                  </FormField>
-                  <FormField>
-                    <Checkbox
-                      radio
-                      label='Defendant'
-                      name='checkboxRadioGroup'
-                      value='Defendant'
-                      checked={representingOption === 'Defendant'}
-                      onChange={(e, data) => this.setState({ representingOption: data.value })}
-                    />
-                  </FormField>
-                </Table.Cell>
-                <Table.Cell width={1} />
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell />
-                <Table.Cell>
-                  <Form.Dropdown
-                    placeholder='Select Jurisdiction'
-                    label='Jurisdiction'
-                    fluid
-                    search
-                    selection
-                    required={true}
-                    options={jurisdictionsOptions}
-                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
-                    error={jurisdictionErrorMessage}
-                  />
-                </Table.Cell>
-                <Table.Cell />
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell />
-                <Table.Cell>
-                  <Form.Dropdown
-                    placeholder='Select Court'
-                    label='Court (optional)'
-                    fluid
-                    search
-                    selection
-                    options={courtsOptions}
-                    onChange={(e, { value }) => this.setState({ court_id: value })}
-                  />
-                </Table.Cell>
-                <Table.Cell />
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell />
-                <Table.Cell>
-                  <Form.TextArea
-                    name='description'
-                    label='Description (optional)'
-                    rows={4}
-                    onChange={this.handleInputChange} />
-                </Table.Cell>
-                <Table.Cell />
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell />
-                <Table.Cell >
-                  <Button.Group>
-                    <Link to={"/matters/"}>
-                      <Form.Button
-                        secondary
-                        content='Cancel'
+        {/* <Input label='Matter Name' name='matterName'></Input> */}
+        {(matters && matters.idCreated) ? (
+          <Message positive>
+            <Message.Header>Matter successfully created!</Message.Header>
+            <Message.Content className='center-elements-column'>
+              <p>Your Matter was created, you can add files and notes to it, you can visit your Matter page by clicking here:</p>
+              <Link to={`/matter/${matters.idCreated}`}>{title}</Link>
+              <Link to={`/matters`}><Button primary content='Go back to Matters list'/></Link>
+            </Message.Content>
+          </Message>
+        ) : (
+          <Form
+            onSubmit={this.handleSubmit}
+            loading={(jurisdictions.loading || courts.loading)}
+            className='ui segment new-matter-form'
+            style={{ position: 'relative', zIndex: 1000, overflow: 'visible' }}
+          >
+            <Table basic='very' stripped>
+              <Table.Body>
+                <Table.Row >
+                  <Table.Cell width={3}>
+                    <Header as='h4'>Matter Name</Header>
+                  </Table.Cell>
+                  <Table.Cell width={12}>
+                    <Form.Input name='title' required onChange={this.handleInputChange} />
+                  </Table.Cell>
+                  <Table.Cell width={1} />
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell width={3}>
+                    <Header as='h4'  >Plaintiff</Header>
+                  </Table.Cell>
+                  <Table.Cell width={12}>
+                    <Form.Input name='plaintiff' required onChange={this.handleInputChange} />
+                  </Table.Cell>
+                  <Table.Cell width={1}>
+                    <Popup trigger={<Icon name='info circle' />}>
+                      <Popup.Content>
+                        <p>Write however these will appear in court documents</p>
+                      </Popup.Content>
+                    </Popup>
+                  </Table.Cell>
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell width={3}>
+                    <Header as='h4'>Defendant</Header>
+                  </Table.Cell>
+                  <Table.Cell width={12}>
+                    <Form.Input name='defendant' required onChange={this.handleInputChange} />
+                  </Table.Cell>
+                  <Table.Cell width={1}>
+                    <Popup trigger={<Icon name='info circle' />}>
+                      <Popup.Content>
+                        <p>Write however these will appear in court documents</p>
+                      </Popup.Content>
+                    </Popup>
+                  </Table.Cell>
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell width={3}>
+                    <Header as='h4'>Who are you representing?</Header>
+                  </Table.Cell>
+                  <Table.Cell width={12}>
+                    <FormField>
+                      <Checkbox
+                        radio
+                        label='Plaintiff'
+                        name='checkboxRadioGroup'
+                        value='Plaintiff'
+                        checked={representingOption === 'Plaintiff'}
+                        onChange={(e, data) => this.setState({ representingOption: data.value })}
                       />
-                    </Link>
-                    <Form.Button
-                      primary
-                      content='Create'
-                      style={{ marginLeft: '1em' }}
-                      type='submit'
+                    </FormField>
+                    <FormField>
+                      <Checkbox
+                        radio
+                        label='Defendant'
+                        name='checkboxRadioGroup'
+                        value='Defendant'
+                        checked={representingOption === 'Defendant'}
+                        onChange={(e, data) => this.setState({ representingOption: data.value })}
+                      />
+                    </FormField>
+                  </Table.Cell>
+                  <Table.Cell width={1} />
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell />
+                  <Table.Cell>
+                    <Form.Dropdown
+                      placeholder='Select Jurisdiction'
+                      label='Jurisdiction'
+                      fluid
+                      search
+                      selection
+                      required={true}
+                      options={jurisdictionsOptions}
+                      onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                      error={jurisdictionErrorMessage}
                     />
-                  </Button.Group>
-                </Table.Cell>
-                <Table.Cell />
-              </Table.Row>
-            </Table.Body>
-          </Table>
-          {/* <Input label='Matter Name' name='matterName'></Input> */}
-
-        </Form>
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell />
+                  <Table.Cell>
+                    <Form.Dropdown
+                      placeholder='Select Court'
+                      label='Court (optional)'
+                      fluid
+                      search
+                      selection
+                      options={courtsOptions}
+                      onChange={(e, { value }) => this.setState({ court_id: value })}
+                    />
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell />
+                  <Table.Cell>
+                    <Form.TextArea
+                      name='description'
+                      label='Description (optional)'
+                      rows={4}
+                      onChange={this.handleInputChange} />
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell />
+                  <Table.Cell >
+                    <Button.Group>
+                      <Link to={"/matters/"}>
+                        <Form.Button
+                          secondary
+                          content='Cancel'
+                          disabled={this.state.creating}
+                        />
+                      </Link>
+                      <Form.Button
+                        primary
+                        content='Create'
+                        style={{ marginLeft: '1em' }}
+                        type='submit'
+                        loading={this.state.creating}
+                      />
+                    </Button.Group>
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+              </Table.Body>
+            </Table>
+          </Form>
+        )}
 
         {/* <Link to={"/matters/"}>Back to Matters </Link> */}
       </Segment>
