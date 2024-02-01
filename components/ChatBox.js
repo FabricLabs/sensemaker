@@ -9,6 +9,7 @@ const {
 const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
+const hark = require('hark');
 
 const toRelativeTime = require('../functions/toRelativeTime');
 
@@ -449,15 +450,54 @@ class ChatBox extends React.Component {
     console.debug('[NOVO]', 'Microphone click');
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        const chunks = [];
+        console.debug('[NOVO]', 'Got audio stream:', stream);
+
         const recorder = new MediaRecorder(stream);
+        const speaker = hark(stream, {});
+        const chunks = [];
+
+        speaker.on('silence', () => {
+          console.debug('[NOVO]', 'Silence detected');
+        });
+
+        speaker.on('speaking', () => {
+          console.debug('[NOVO]', 'Speaking detected');
+        });
+
+        speaker.on('stopped_speaking', () => {
+          console.debug('[NOVO]', 'Speaking stopped');
+          console.debug('[NOVO]', 'All chunks:', chunks);
+
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+
+          reader.onload = function () {
+            console.debug('[NOVO]', 'Reader loaded:', reader.result);
+            const recognition = new webkitSpeechRecognition();
+
+            recognition.onresult = function (event) {
+              console.debug('[NOVO]', 'Transcribed text:', event.results[0][0].transcript);
+            };
+
+            recognition.onnomatch = (event) => {
+              console.debug('[NOVO]', 'No match:', event);
+            }
+
+            recognition.start();
+            console.debug('[NOVO]', 'Recognition started...', recognition);
+          }
+
+          reader.readAsDataURL(blob);
+          console.debug('[NOVO]', 'Reader is reading...', blob);
+        });
 
         recorder.ondataavailable = (e) => {
-          console.debug('[NOVO]', 'Audio Chunk:', e.data);
+          // console.debug('[NOVO]', 'Audio Chunk:', e.data);
           chunks.push(e.data);
         };
 
-        recorder.start();
+        recorder.start(1000);
+        console.debug('[NOVO]', 'Recorder started:', recorder);
       }).catch((err) => {
         console.error(`The following getUserMedia error occurred: ${err}`);
       });
