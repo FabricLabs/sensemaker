@@ -525,7 +525,7 @@
   color: rgba(0, 0, 0, 0.95) !important;
 }
 .ui.toggle.checkbox input:checked ~ label:before {
-  background-color: #2185D0 !important;
+  background-color: #336699 !important;
 }
 .ui.toggle.checkbox input:checked ~ label:after {
   left: 2.15rem;
@@ -538,7 +538,7 @@
   color: rgba(0, 0, 0, 0.95) !important;
 }
 .ui.toggle.checkbox input:focus:checked ~ label:before {
-  background-color: #0d71bb !important;
+  background-color: #215283 !important;
 }
 .ui.right.aligned.toggle.checkbox label {
   padding-left: 0;
@@ -637,7 +637,7 @@
   color: #ffffff !important;
 }
 .ui.inverted.toggle.checkbox input:checked ~ label:before {
-  background-color: #2185D0 !important;
+  background-color: #336699 !important;
 }
 
 /* Toggle Active Focus */
@@ -645,7 +645,7 @@
   color: #ffffff !important;
 }
 .ui.inverted.toggle.checkbox input:focus:checked ~ label:before {
-  background-color: #0d71bb !important;
+  background-color: #215283 !important;
 }
 
 /*--------------------
