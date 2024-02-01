@@ -25,7 +25,8 @@ class MatterView extends React.Component {
   }
 
   componentDidMount() {
-    //this.props.fetchMatters();
+    console.log("el id", this.props.id);
+    this.props.fetchMatter(this.props.id);
   }
 
   componentDidUpdate(prevProps) {
@@ -41,13 +42,15 @@ class MatterView extends React.Component {
   render() {
     const { matters } = this.props;
     const { loading } = this.state;
+    console.log("el matter", matters);
+    console.log("el id", this.props.id);
 
     return (
       <Segment loading={matters.loading} style={{marginRight: '1em'}}>
-        <Header as='h1'>{this.props.matterID}</Header>
+        <Header as='h1'>{this.props.id}</Header>
         <Form>
         </Form>
- 
+
         <Link to={"/matters/"}>Back to Matters </Link>
       </Segment>
     );
@@ -63,7 +66,7 @@ class MatterView extends React.Component {
 }
 
 function MattView(props) {
-  const { matterID } = useParams();
-  return <MatterView matterID={matterID} {...props} />;
+  const { id } = useParams();
+  return <MatterView id={id} {...props} />;
 }
 module.exports = MattView;
