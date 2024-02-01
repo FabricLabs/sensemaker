@@ -405,7 +405,7 @@ fabric-motd {
   }
 }
 
-.microphone.icon{  
+.microphone.icon{
     cursor: pointer;
     z-index: 10;
     position: absolute;
@@ -413,7 +413,7 @@ fabric-motd {
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
-    z-index: 10; 
+    z-index: 10;
 }
 
 .answer-controls{
@@ -528,4 +528,21 @@ fabric-motd {
 .conversation-line-input{
   width: 90%;
   margin-right: 1rem;
+}
+
+/* Matters CSS */
+
+.new-matter-form{
+  min-width: 650px;
+}
+
+@media (max-width: 500px) {
+  .new-matter-form{
+    min-width: 0;
+  }
+}
+@media (min-width: 1441px) {
+  .new-matter-form{
+    min-width: 750px;
+  }
 }

@@ -2560,7 +2560,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/jurisdictions', async (req, res, next) => {
-      const jurisdictions = await this.db.select('id').from('jurisdictions').orderBy('id', 'desc');
+      const jurisdictions = await this.db.select('id','name','name_short','harvard_id').from('jurisdictions').orderBy('id', 'desc');
       res.format({
         json: () => {
           res.send(jurisdictions);

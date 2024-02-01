@@ -10,15 +10,11 @@ const MatterView = require('../../components/MatterView');
 
 module.exports = function (req, res, next) {
    res.format({
-  //   json: async () => {
-  //     // TODO: pagination
-  //     const matters = await this.db('matters').where('creator', req.user.id).paginate({
-  //       perPage: PER_PAGE_LIMIT,
-  //       currentPage: 1
-  //     });
-
-  //     res.send(matters.data);
-  //   },
+    json: async () => {
+      // TODO: pagination
+      const matter = await this.db('matters').where('id', req.param.id).first();
+      res.send(matter);
+    },
     html: () => {
       // TODO: import auth token, load data
       const page = new MatterView({});

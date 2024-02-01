@@ -19,11 +19,11 @@ const CREATE_MATTER_FAILURE = 'CREATE_MATTER_FAILURE';
 // Action creators
 const fetchMattersRequest = () => ({ type: FETCH_MATTERS_REQUEST });
 const fetchMattersSuccess = (matters) => ({ type: FETCH_MATTERS_SUCCESS, payload: matters });
-const fetchMattersFailure = (error) => ({ type: FETCH_MATTERS_FAILURE, payload: error});
+const fetchMattersFailure = (error) => ({ type: FETCH_MATTERS_FAILURE, payload: error });
 
-// const createMatterRequest = () => ({ type: CREATE_MATTER_REQUEST, loading: true });
-// const createMatterSuccess = (response) => ({ type: CREATE_MATTER_SUCCESS, payload: response});
-// const createMatterFailure = (error) => ({ type: CREATE_MATTER_FAILURE, payload: error});
+const createMatterRequest = () => ({ type: CREATE_MATTER_REQUEST, loading: true });
+const createMatterSuccess = (response) => ({ type: CREATE_MATTER_SUCCESS, payload: response });
+const createMatterFailure = (error) => ({ type: CREATE_MATTER_FAILURE, payload: error });
 
 
 // Thunk action creator
@@ -39,6 +39,40 @@ const fetchMatters = () => {
     }
   };
 };
+
+const createMatter = (title, description, plaintiff, defendant, representing, jurisdiction_id, court_id) => {
+  return async (dispatch, getState) => {
+    dispatch(createMatterRequest());
+    try {
+      const { token } = getState().auth;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Matter creation could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
+        }, 15000);
+      });
+
+      const fetchPromise = fetch('/matters', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, description, plaintiff, defendant, representing, jurisdiction_id, court_id }),
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
+      dispatch(createMatterSuccess(response));
+    } catch (error) {
+      dispatch(createMatterFailure(error.message));
+    }
+
+  }
+}
 
 // const fetchInvitation = (id) => {
 //   return async (dispatch, getState) => {
@@ -233,6 +267,7 @@ const fetchMatters = () => {
 
 module.exports = {
   fetchMatters,
+  createMatter,
   FETCH_MATTERS_REQUEST,
   FETCH_MATTERS_SUCCESS,
   FETCH_MATTERS_FAILURE,

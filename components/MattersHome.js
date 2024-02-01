@@ -11,6 +11,7 @@ const {
   Label,
   List,
   Loader,
+  Button,
   Icon
 } = require('semantic-ui-react');
 
@@ -41,17 +42,19 @@ class MattersHome extends React.Component {
     const { loading } = this.state;
 
     return (
-      <Segment loading={matters.loading} style={{marginRight: '1em'}}>
+      <Segment loading={matters.loading} style={{ marginRight: '1em' }}>
         <Header as='h1'>My Matters</Header>
         <List>
           {matters && matters.matters && matters.matters
             .map(instance => {
               return (
-                <List.Item><Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header></List.Item>
+                <List.Item style={{ marginTop: '0.5em' }}><Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header></List.Item>
               )
             })}
         </List>
-        <Link to={"/matters/new"}>+ New Matter </Link>
+        <Link to={"/matters/new"}>
+          <Button primary content='+ New Matter' />
+        </Link>
       </Segment>
     );
   }

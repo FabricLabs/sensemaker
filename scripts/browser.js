@@ -70,11 +70,17 @@ const {
   fetchCase
 } = require('../actions/caseActions');
 
-// ## Chat Actions
+// ## Courts Actions
 const {
   fetchCourts,
   fetchCourt
 } = require('../actions/courtActions');
+
+// ## Jurisdiction Actions
+const {
+  fetchJurisdictions,
+  fetchJurisdiction
+} = require('../actions/jurisdictionsActions');
 
 // ## Contract Actions
 const {
@@ -130,6 +136,7 @@ const {
 // ## Matters Actions
 const {
   fetchMatters,
+  createMatter,
 } = require('../actions/mattersActions');
 
 // ## Main Process
@@ -190,6 +197,7 @@ async function main (input = {}) {
       token: state.auth.token,
       stats: state.stats,
       matters: state.matters,
+      jurisdictions: state.jurisdictions
     }
   };
 
@@ -202,6 +210,8 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    fetchJurisdictions: fetchJurisdictions,
+    fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
     fetchInquiry: fetchInquiry,
@@ -240,6 +250,7 @@ async function main (input = {}) {
     getMessages: getMessages,
     getMessageInformation: getMessageInformation,
     fetchMatters: fetchMatters,
+    createMatter: createMatter,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

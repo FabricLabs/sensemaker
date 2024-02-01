@@ -13,6 +13,7 @@ const chatReducer = require('../reducers/chatReducer');
 const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
 const courtReducer = require('../reducers/courtReducer');
+const jurisdictionsReducer = require('../reducers/jurisdictionsReducer');
 const documentReducer = require('../reducers/documentReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
@@ -40,6 +41,7 @@ const rootReducer = combineReducers({
   inquiries: inquiriesReducer,
   invitation: invitationReducer,
   matters: mattersReducer,
+  jurisdictions: jurisdictionsReducer,
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));
