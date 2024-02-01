@@ -9,11 +9,22 @@
 const MatterView = require('../../components/MatterView');
 
 module.exports = function (req, res, next) {
-   res.format({
+  res.format({
     json: async () => {
       // TODO: pagination
-      const matter = await this.db('matters').where('id', req.param.id).first();
-      res.send(matter);
+      
+      const matter = await this.db('matters').select('*').where('id', req.params.id).first();
+      console.log("el creador", matter.creator);
+      console.log("el del token", req.user.id);
+      if (matter.creator == req.user.id) {
+        res.send(matter);
+      } else {
+        res.status(401);
+        return res.send({
+          type: 'FetchMatchError',
+          content: 'Invalid Matter'
+        });
+      }
     },
     html: () => {
       // TODO: import auth token, load data

@@ -136,6 +136,7 @@ const {
 // ## Matters Actions
 const {
   fetchMatters,
+  fetchMatter,
   createMatter,
 } = require('../actions/mattersActions');
 
@@ -250,6 +251,7 @@ async function main (input = {}) {
     getMessages: getMessages,
     getMessageInformation: getMessageInformation,
     fetchMatters: fetchMatters,
+    fetchMatter: fetchMatter,
     createMatter: createMatter,
   };
 

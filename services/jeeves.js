@@ -1493,7 +1493,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
-    this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Services
