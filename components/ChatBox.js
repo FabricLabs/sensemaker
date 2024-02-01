@@ -448,9 +448,16 @@ class ChatBox extends React.Component {
   handleMicrophoneClick = () => {
     console.debug('[NOVO]', 'Microphone click');
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      console.debug('getUserMedia supported.');
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        console.debug('getUserMedia success');
+        const chunks = [];
+        const recorder = new MediaRecorder(stream);
+
+        recorder.ondataavailable = (e) => {
+          console.debug('[NOVO]', 'Audio Chunk:', e.data);
+          chunks.push(e.data);
+        };
+
+        recorder.start();
       }).catch((err) => {
         console.error(`The following getUserMedia error occurred: ${err}`);
       });

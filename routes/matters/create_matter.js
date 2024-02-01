@@ -1,6 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res) {
+  console.debug('[NOVO]', 'Creating matter...');
   try {
     // const request = req.body;
     const {title, description, plaintiff, defendant, representing, jurisdiction_id, court_id} = req.body;
@@ -22,6 +23,7 @@ module.exports = async function (req, res) {
       content: result
     });
   } catch (exception) {
+    console.debug('[NOVO]', 'Error creating matter:', exception);
     res.status(503);
     return res.send({
       type: 'CreateMatterError',
