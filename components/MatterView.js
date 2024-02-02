@@ -25,7 +25,6 @@ class MatterView extends React.Component {
   }
 
   componentDidMount() {
-    console.log("el id", this.props.id);
     this.props.fetchMatter(this.props.id);
   }
 
@@ -42,8 +41,6 @@ class MatterView extends React.Component {
   render() {
     const { matters } = this.props;
     const { loading } = this.state;
-    console.log("el matter", matters);
-    console.log("el id", this.props.id);
 
     return (
       <Segment loading={matters.loading} style={{marginRight: '1em'}}>

@@ -12,10 +12,7 @@ module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       // TODO: pagination
-      
       const matter = await this.db('matters').select('*').where('id', req.params.id).first();
-      console.log("el creador", matter.creator);
-      console.log("el del token", req.user.id);
       if (matter.creator == req.user.id) {
         res.send(matter);
       } else {
