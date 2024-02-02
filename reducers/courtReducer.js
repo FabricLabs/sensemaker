@@ -22,13 +22,13 @@ function courtReducer (state = initialState, action) {
     case FETCH_COURT_SUCCESS:
       return { ...state, loading: false, current: action.payload };
     case FETCH_COURT_FAILURE:
-      return { ...state, loading: false, error: action.payload };
+      return { ...state, loading: false, error: action.payload, court: {}, };
     case FETCH_COURTS_REQUEST:
       return { ...state, loading: true, error: null };
     case FETCH_COURTS_SUCCESS:
       return { ...state, loading: false, courts: action.payload };
     case FETCH_COURTS_FAILURE:
-      return { ...state, loading: false, error: action.payload };
+      return { ...state, loading: false, error: action.payload, courts: [] };
     default:
       // console.warn('Unhandled action in court reducer:', action);
       return state;

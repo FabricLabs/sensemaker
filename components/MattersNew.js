@@ -5,22 +5,15 @@ const ReactDOMServer = require('react-dom/server');
 const { Link, Navigate } = require('react-router-dom');
 
 const {
-  Card,
   Segment,
   Header,
-  Label,
-  List,
-  Loader,
   Icon,
   Button,
   Form,
-  Input,
   Popup,
   Table,
   FormField,
   Checkbox,
-  Dropdown,
-  TextArea,
   Message,
 } = require('semantic-ui-react');
 
@@ -28,7 +21,6 @@ class MattersNew extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
-      loading: false,
       representingOption: 'Plaintiff',
       jurisdictionsOptions: null,
       courtsOptions: null,
@@ -100,7 +92,6 @@ class MattersNew extends React.Component {
 
   resetForm = () => {
     this.setState({
-      loading: false,
       representingOption: 'Plaintiff',
       jurisdictionsOptions: null,
       courtsOptions: null,
@@ -156,13 +147,13 @@ class MattersNew extends React.Component {
       <Segment style={{ marginRight: '1em', height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
         {/* <Input label='Matter Name' name='matterName'></Input> */}
-        {(matters && matters.idCreated && resetFlag && errorCreating) ? (
+        {(matters && matters.creationSuccess && resetFlag && !errorCreating) ? (
           <Message positive style={{ maxWidth: '350px' }}>
             <Message.Header>Matter successfully created!</Message.Header>
             <Message.Content className='center-elements-column'>
               <p>Your Matter was created, you can add files and notes to it, you can visit your Matter page by clicking here:</p>
-              <Link to={`/matter/${matters.idCreated}`} onClick={this.resetForm}>{title}</Link>
-              <Link to={`/matters`}><Button primary content='Go back to Matters list' onClick={this.resetForm} /></Link>
+              <Link to={`/matter/${matters.idCreated}`} onClick={this.resetForm}><h3>{title}</h3></Link>
+              <Link to={`/matters`} style={{ marginTop: '1em' }}><Button primary content='Go back to Matters list' onClick={this.resetForm} /></Link>
             </Message.Content>
           </Message>
         ) : (

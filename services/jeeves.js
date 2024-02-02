@@ -26,7 +26,13 @@ const ROUTES = {
     list: require('../routes/matters/list_matters')
   },
   products: {
-    list: require('../routes/products/list_products')
+    list: require('../routes/products/list_products'),
+  },
+  jurisdictions: {
+    view: require('../routes/jurisdictions/jurisdiction_view'),
+  },
+  courts: {
+    view: require('../routes/courts/court_view'),
   }
 };
 
@@ -1495,6 +1501,12 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));

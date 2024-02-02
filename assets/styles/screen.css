@@ -546,3 +546,19 @@ fabric-motd {
     min-width: 750px;
   }
 }
+
+.matter-details{
+  max-width: 650px;
+  margin-top: 2em;
+}
+
+/* @media (max-width: 500px) {
+  .new-matter-form{
+    min-width: 0;
+  }
+}
+@media (min-width: 1441px) {
+  .new-matter-form{
+    min-width: 750px;
+  }
+} */

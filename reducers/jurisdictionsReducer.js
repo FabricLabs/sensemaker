@@ -21,13 +21,13 @@ function jurisdictionsReducer (state = initialState, action) {
     case FETCH_JURISDICTION_SUCCESS:
       return { ...state, loading: false, current: action.payload, error: null };
     case FETCH_JURISDICTION_FAILURE:
-      return { ...state, loading: false, error: action.payload };
+      return { ...state, loading: false, error: action.payload, current: {} };
     case FETCH_JURISDICTIONS_REQUEST:
       return { ...state, loading: true, error: null };
     case FETCH_JURISDICTIONS_SUCCESS:
       return { ...state, loading: false, jurisdictions: action.payload, error: null };
     case FETCH_JURISDICTIONS_FAILURE:
-      return { ...state, loading: false, error: action.payload };
+      return { ...state, loading: false, error: action.payload, jurisdictions: [], };
     default:
       // console.warn('Unhandled action in jurisdiction reducer:', action);
       return state;

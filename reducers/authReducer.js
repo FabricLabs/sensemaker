@@ -27,17 +27,18 @@ const initialState = {
   emailAvailable: false,
   registering: false,
   registerSuccess: false,
+  loading: false
 };
 
 function authReducer(state = initialState, action) {
   switch (action.type) {
     case LOGIN_REQUEST:
-      return { ...state, isAuthenticated: false, token: null, error: null }; // reset state
+      return { ...state, isAuthenticated: false, token: null, error: null, loading: true }; // reset state
     case LOGIN_SUCCESS:
-      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token };
+      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, loading: false };
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
-      return { ...state, isAuthenticated: false, token: null, error: action.payload };
+      return { ...state, isAuthenticated: false, token: null, error: action.payload, loading: false };
 
     case SIGN_CONTRACT_SUCCESS:
       return { ...state, isCompliant: true };
