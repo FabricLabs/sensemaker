@@ -78,7 +78,6 @@ const Matrix = require('@fabric/matrix');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
 // const GitHub = require('@fabric/github');
-// const Prices = require('@portal/feed');
 
 // Providers
 // const { StatuteProvider } = require('@jeeves/statute-scraper');
@@ -86,6 +85,7 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const Gemini = require('./gemini');
 const PACER = require('./pacer');
 const Harvard = require('./harvard');
 const Mistral = require('./mistral');
@@ -314,6 +314,7 @@ class Jeeves extends Hub {
     // Sensemaker
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
 
     // Pipeline Datasources
@@ -573,17 +574,28 @@ class Jeeves extends Hub {
     const now = new Date();
     const created = now.toISOString();
 
-    // Create Request Message
-    const message = Message.fromVector(['TimedRequest', JSON.stringify({
-      created: created,
-      request: request
-    })]);
-
     // Add Request to Database
     const inserted = await this.db('requests').insert({
       created_at: toMySQLDatetime(now),
       content: JSON.stringify(request)
     });
+
+    // Store user request
+    const responseMessage = await this.db('messages').insert({
+      conversation_id: request.conversation_id,
+      user_id: 1,
+      status: 'computing',
+      content: `${this.settings.name} is researching your question...`
+    });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Response Message:', responseMessage);
+
+    // Create Request Message
+    const message = Message.fromVector(['TimedRequest', JSON.stringify({
+      created: created,
+      request: request,
+      response_message_id: responseMessage[0]
+    })]);
 
     // Notify workers
     this.emit('request', { id: inserted [0] });
@@ -651,8 +663,9 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
     const agentResults = Promise.allSettled([
-      this.alpha.query({ query }),
-      this.mistral.query({ query })
+      this.alpha.query({ query, messages }),
+      this.gemini.query({ query, messages }),
+      // this.mistral.query({ query })
     ]);
 
     // TODO: execute RAG query for additional metadata
@@ -664,17 +677,17 @@ class Jeeves extends Hub {
       }),
       agentResults
     ]).then(async (results) => {
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
       const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
 
-      for (let i = 0; i < answers.length; i++) {
+      /* for (let i = 0; i < answers.length; i++) {
         const answer = answers[i];
         if (!answer.content) continue;
 
         const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-      }
+      } */
 
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
@@ -689,7 +702,7 @@ class Jeeves extends Hub {
         content: summarized.content
       };
 
-      const extracted = await this.extractor.query({
+      /* const extracted = await this.extractor.query({
         query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
       });
       console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
@@ -714,10 +727,10 @@ class Jeeves extends Hub {
           /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
             cards: JSON.stringify(caseCards.map((x) => x.content.id))
           }); */
-        } catch (exception) {
+        /* } catch (exception) {
           console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
         }
-      }
+      } */
 
       try {
         const documentIDs = await this.db('documents').insert({
@@ -730,10 +743,19 @@ class Jeeves extends Hub {
           content: `/documents/${documentIDs[0]}`
         });
 
+        // Update database with completed response
+        const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+          status: 'ready',
+          content: summarized.content,
+          updated_at: this.db.fn.now()
+        });
+
+        console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
         this.emit('response', {
           id: responseIDs[0],
           content: summarized.content
-        })
+        });
       } catch (exception) {
         console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
       }
@@ -1349,7 +1371,7 @@ class Jeeves extends Hub {
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
+    this.summarizer = new Gemini({ name: 'SummarizerAI', listen: this.settings.fabric.listen, ...this.settings.gemini, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
 
@@ -2815,6 +2837,7 @@ class Jeeves extends Hub {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
 
+        // User Message
         const newMessage = await this.db('messages').insert({
           content: content,
           conversation_id: conversation_id,
@@ -2822,17 +2845,21 @@ class Jeeves extends Hub {
         });
 
         // Core Pipeline
-        this.createTimedRequest({
+        const pipeline = this.createTimedRequest({
+          conversation_id: conversation_id,
           query: content
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
-        }).then((request) => {
+        }).then(async (request) => {
           console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request.toBuffer().toString('hex'));
+          // TODO: emit message
         });
+
+        console.debug('[JEEVES]', '[HTTP]', 'Got pipeline:', pipeline);
         // End Core Pipeline
 
         // pre-release pipeline
-        const inserted = await this.db('requests').insert({
+        /* const inserted = await this.db('requests').insert({
           message_id: newMessage[0],
           content: 'Jeeves is thinking...'
         });
@@ -2867,7 +2894,7 @@ class Jeeves extends Hub {
             } catch (exception) {
               console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
             }
-          }
+          } */ 
 
           // TODO: restore response tracking
           /* this.db('responses').insert({
@@ -2876,7 +2903,7 @@ class Jeeves extends Hub {
           }); */
 
           // TODO: restore titling
-          if (isNew) {
+        /*  if (isNew) {
             const messages = await this._getConversationMessages(conversation_id);
 
             await this._summarizeMessagesToTitle(messages.map((x) => {
@@ -2891,7 +2918,7 @@ class Jeeves extends Hub {
               this.http.broadcast(message);
             });
           }
-        });
+        }); */
 
         if (!conversation.log) conversation.log = [];
         if (typeof conversation.log == 'string') {
