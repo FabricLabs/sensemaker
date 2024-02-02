@@ -6,7 +6,9 @@ const {
   Button,
   Form,
   Modal,
-  Icon
+  Icon,
+  Divider,
+  Header
 } = require('semantic-ui-react');
 
 
@@ -27,13 +29,15 @@ class MatterFileModal extends React.Component {
   handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0]; // Take only the first file
-      this.setState({ files: [file] });
+    if (!this.state.note) {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const file = files[0]; // Take only the first file
+        this.setState({ files: [file] });
+      }
     }
   };
-  
+
   handleFileChange = (e) => {
     const files = e.target.files;
     if (files.length > 0) {
@@ -41,7 +45,7 @@ class MatterFileModal extends React.Component {
       this.setState({ files: [file] });
     }
   };
-  
+
 
   handleChange = (e, { value }) => {
     this.setState({ note: value });
@@ -54,43 +58,68 @@ class MatterFileModal extends React.Component {
     console.log('Submitting:', this.state.note, this.state.files); // Debugging log
   };
 
+  handleClose = () => {
+    this.setState({
+      note: '',
+      files: [],
+    });
+    this.props.onClose();
+  }
+  removeFile = () => {
+    this.setState({ files: [] });
+  };
+
   render() {
-    const { open, onClose } = this.props;
+    const { open } = this.props;
     return (
-      <Modal open={open} onClose={onClose} size="small">
+      <Modal open={open} onClose={this.handleClose} size="tiny">
         <Modal.Header>Add File or Note</Modal.Header>
         <Modal.Content>
+          {(this.state.files.length > 0) && (
+            <Header as='h4' onClick={this.removeFile} style={{ cursor: 'pointer' }}>
+              <Icon name='close' />
+              Remove file
+            </Header>
+          )}
           <div
             onClick={() => this.fileInputRef.current && this.fileInputRef.current.click()}
             onDragOver={this.handleDragOver}
             onDrop={this.handleDrop}
-            style={{ border: '2px dashed #bbb', padding: '20px', textAlign: 'center', marginBottom: '20px', cursor: 'pointer' }}
+            className={`attach-file-area ${this.state.note ? 'disabled-attach' : ''}`}
           >
             {(this.state.files.length > 0) ? (
-              <>
-                <Icon name='file alternate outline' size='big'/>
+              <div className='file-container'>
+                <Icon name='file alternate' size='big' />
                 <p>{this.state.files[0].name}</p>
-              </>
-            ) : ('Drag and drop files here or click to upload')}
+              </div>
+            ) : (
+              <div>
+                <Icon name='upload' size='big' />
+                <p>Drag and drop files here or click to upload</p>
+              </div>
+            )}
 
             <input
               type="file"
               ref={this.fileInputRef}
               onChange={this.handleFileChange}
               style={{ display: 'none' }}
+              disabled={this.state.note}
             />
           </div>
+          <Divider horizontal>Or</Divider>
           <Form>
             <Form.TextArea
               label="Note"
               placeholder="Write a note..."
               value={this.state.note}
               onChange={this.handleChange}
+              disabled={(this.state.files.length > 0)}
             />
           </Form>
         </Modal.Content>
         <Modal.Actions>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={this.handleClose}>Cancel</Button>
           <Button primary onClick={this.handleSubmit}>Add</Button>
         </Modal.Actions>
       </Modal>

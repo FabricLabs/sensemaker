@@ -74,7 +74,7 @@ class MatterView extends React.Component {
           </Grid>
           <Grid columns={3}>
             <GridRow>
-              <GridColumn width={4} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Plaintiff</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -82,12 +82,12 @@ class MatterView extends React.Component {
                   <Header as='h4'>{current.plaintiff}</Header>
                 </Label>
               </GridColumn>
-              <GridColumn width={2} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Checkbox checked={current.representing === 'P' ? true : false} disabled />
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Defendant</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -95,12 +95,12 @@ class MatterView extends React.Component {
                   <Header as='h4'>{current.defendant}</Header>
                 </Label>
               </GridColumn>
-              <GridColumn width={2} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Checkbox checked={current.representing === 'D' ? true : false} disabled />
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Jurisdiction</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -111,7 +111,7 @@ class MatterView extends React.Component {
               <GridColumn width={2} />
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{display:'flex', alignItems:'center'}}>
+              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Court</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -121,30 +121,48 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={2} />
             </GridRow>
+            <GridRow>
+              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+                <Header as='h3'>Description</Header>
+              </GridColumn>
+              <GridColumn width={10}>
+                <Header as='h5'>{current.description}</Header>
+              </GridColumn>
+              <GridColumn width={2} />
+            </GridRow>
           </Grid>
         </section>
         <section className='matter-details'>
-        <Grid columns={2}>
+          <Grid columns={2}>
             <GridRow>
               <GridColumn width={13} textAlign='center'>
                 <Header as='h2'>Context</Header>
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
+            <GridRow>
+              <GridColumn width={13} textAlign='center'>
+                <Button
+                  primary
+                  content="+ Add File or Note"
+                  onClick={() => this.setState({ attachModalOpen: true })}
+                />
+              </GridColumn>
+              <GridColumn width={3} />
+            </GridRow>
           </Grid>
-          <Button
+          {/* <Button
             primary
             content="+ Add File or Note"
-            onClick={()=> this.setState({attachModalOpen: true})}
-          />
+            onClick={() => this.setState({ attachModalOpen: true })}
+          /> */}
           <MatterFileModal
-          open={this.state.attachModalOpen}
-          onClose={() => this.setState({ attachModalOpen: false })}
-          onSubmit={this.handleModalSubmit}
-        />
+            open={this.state.attachModalOpen}
+            onClose={() => this.setState({ attachModalOpen: false })}
+            onSubmit={this.handleModalSubmit}
+          />
         </section>
-
-        <Link to={"/matters/"}>Back to Matters </Link>
+        <Header as='h3' style={{marginTop:'2em'}}><Link to={"/matters/"} >Back to Matters</Link></Header>
       </Segment>
     );
   }

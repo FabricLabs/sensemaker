@@ -1,3 +1,7 @@
+:root {
+  --primary-color: #336699; /* Define a variable */
+}
+
 #main-content #input-controls {
   position: absolute;
 }
@@ -552,6 +556,21 @@ fabric-motd {
   margin-top: 2em;
 }
 
+.attach-file-area{
+  border: 2px dashed #bbb;
+  padding: 2em 1.5em 1.5em 1.5em;
+  text-align: center;
+  margin-bottom: 1.5em;
+  cursor: pointer;
+}
+.disabled-attach{
+  color:grey;
+  cursor: default;
+}
+
+.file-container{
+  color: var(--primary-color);
+}
 /* @media (max-width: 500px) {
   .new-matter-form{
     min-width: 0;
