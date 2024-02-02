@@ -18,8 +18,9 @@ const {
   GridColumn,
   Grid,
   Checkbox,
-  Modal
 } = require('semantic-ui-react');
+
+const MatterFileModal = require('./MatterFileModal');
 
 class MatterView extends React.Component {
   constructor(settings = {}) {
@@ -46,13 +47,17 @@ class MatterView extends React.Component {
     }
   };
 
+  handleModalSubmit = (note, files) => {
+    console.log("Note:", note, "Files:", files);
+    this.setState({ attachModalOpen: false });
+  };
+
 
   render() {
     const { matters, jurisdictions, courts } = this.props;
     const { loading } = this.state;
     const { current } = matters;
-    console.log("jurisdictions", jurisdictions);
-    console.log("courts", courts);
+
     return (
       <Segment loading={matters.loading || jurisdictions.loading || courts.loading} style={{ marginRight: '1em' }}>
         <Header as='h1'>{current.title}</Header>
@@ -127,11 +132,16 @@ class MatterView extends React.Component {
               <GridColumn width={3} />
             </GridRow>
           </Grid>
-          <Button 
+          <Button
             primary
             content="+ Add File or Note"
             onClick={()=> this.setState({attachModalOpen: true})}
           />
+          <MatterFileModal
+          open={this.state.attachModalOpen}
+          onClose={() => this.setState({ attachModalOpen: false })}
+          onSubmit={this.handleModalSubmit}
+        />
         </section>
 
         <Link to={"/matters/"}>Back to Matters </Link>
