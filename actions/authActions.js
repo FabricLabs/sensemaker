@@ -106,6 +106,7 @@ const login = (username, password) => {
 
 const reLogin = (token) => {
   return async dispatch => {
+    dispatch(loginRequest());
     try {
       const response = await fetch('/sessionRestore', {
         method: "GET",

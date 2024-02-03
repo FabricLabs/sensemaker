@@ -5,22 +5,15 @@ const ReactDOMServer = require('react-dom/server');
 const { Link, Navigate } = require('react-router-dom');
 
 const {
-  Card,
   Segment,
   Header,
-  Label,
-  List,
-  Loader,
   Icon,
   Button,
   Form,
-  Input,
   Popup,
   Table,
   FormField,
   Checkbox,
-  Dropdown,
-  TextArea,
   Message,
 } = require('semantic-ui-react');
 
@@ -28,7 +21,6 @@ class MattersNew extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
-      loading: false,
       representingOption: 'Plaintiff',
       jurisdictionsOptions: null,
       courtsOptions: null,
@@ -40,7 +32,8 @@ class MattersNew extends React.Component {
       jurisdiction_id: null,
       jurisdictionError: false,
       creating: false,
-
+      resetFlag: false,
+      errorCreating: '',
     };
     this.handleSubmit = this.handleSubmit.bind(this);
 
@@ -83,11 +76,9 @@ class MattersNew extends React.Component {
     if (this.state.creating) {
       if (prevProps.matters !== matters && !matters.loading) {
         if (matters.creationSuccess) {
-          this.setState({ creating: false });
-          console.log("matter creado");
+          this.setState({ creating: false, resetFlag: true, errorCreating: '' });
         } else {
-          console.log(matters.error);
-          this.setState({ creating: false });
+          this.setState({ creating: false, errorCreating: matters.error });
         }
       }
     }
@@ -98,6 +89,23 @@ class MattersNew extends React.Component {
       [event.target.name]: event.target.value
     });
   };
+
+  resetForm = () => {
+    this.setState({
+      representingOption: 'Plaintiff',
+      jurisdictionsOptions: null,
+      courtsOptions: null,
+      title: '',
+      description: null,
+      plaintiff: '',
+      defendant: '',
+      court_id: null,
+      jurisdiction_id: null,
+      jurisdictionError: false,
+      creating: false,
+      resetFlag: false,
+    })
+  }
 
   handleSubmit = async (event) => {
     const {
@@ -121,25 +129,31 @@ class MattersNew extends React.Component {
 
   render() {
     const { jurisdictions, courts, matters } = this.props;
-    const { loading, representingOption, courtsOptions, jurisdictionsOptions, jurisdictionError, title } = this.state;
+    const {
+      representingOption,
+      courtsOptions,
+      jurisdictionsOptions,
+      jurisdictionError,
+      resetFlag,
+      title,
+      errorCreating
+    } = this.state;
 
     const jurisdictionErrorMessage = (!jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
-
-    console.log(this.props.matters);
     return (
       <Segment style={{ marginRight: '1em', height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
         {/* <Input label='Matter Name' name='matterName'></Input> */}
-        {(matters && matters.idCreated) ? (
-          <Message positive>
+        {(matters && matters.creationSuccess && resetFlag && !errorCreating) ? (
+          <Message positive style={{ maxWidth: '350px' }}>
             <Message.Header>Matter successfully created!</Message.Header>
             <Message.Content className='center-elements-column'>
               <p>Your Matter was created, you can add files and notes to it, you can visit your Matter page by clicking here:</p>
-              <Link to={`/matter/${matters.idCreated}`}>{title}</Link>
-              <Link to={`/matters`}><Button primary content='Go back to Matters list'/></Link>
+              <Link to={`/matter/${matters.idCreated}`} onClick={this.resetForm}><h3>{title}</h3></Link>
+              <Link to={`/matters`} style={{ marginTop: '1em' }}><Button primary content='Go back to Matters list' onClick={this.resetForm} /></Link>
             </Message.Content>
           </Message>
         ) : (
@@ -261,11 +275,22 @@ class MattersNew extends React.Component {
                   </Table.Cell>
                   <Table.Cell />
                 </Table.Row>
+                {errorCreating && (
+                  <Table.Row>
+                    <Table.Cell />
+                    <Table.Cell>
+                      <Message negative>
+                        <Message.Header content='Error Creating this Matter' />
+                        <Message.Content content={errorCreating} />
+                      </Message>
+                    </Table.Cell>
+                    <Table.Cell />
+                  </Table.Row>)}
                 <Table.Row>
                   <Table.Cell />
                   <Table.Cell >
                     <Button.Group>
-                      <Link to={"/matters/"}>
+                      <Link to={"/matters/"} disabled={this.state.creating}>
                         <Form.Button
                           secondary
                           content='Cancel'
@@ -287,7 +312,6 @@ class MattersNew extends React.Component {
             </Table>
           </Form>
         )}
-
         {/* <Link to={"/matters/"}>Back to Matters </Link> */}
       </Segment>
     );

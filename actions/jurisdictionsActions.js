@@ -41,7 +41,7 @@ const fetchJurisdiction = (id) => {
     dispatch(fetchJurisdictionRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/courts/${id}`, null, token);
+      const instance = await fetchFromAPI(`/jurisdictions/${id}`, null, token);
       dispatch(fetchJurisdictionSuccess(instance));
     } catch (error) {
       dispatch(fetchJurisdictionFailure(error));

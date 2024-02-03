@@ -26,7 +26,8 @@
   const {
     Modal,
     Button,
-    Header
+    Header,
+    Loader
    } = require('semantic-ui-react');
 
   /**
@@ -149,107 +150,112 @@
     }
 
 
-    render () {
+    render() {
       const { modalLogOut, loggedOut } = this.state;
       return (
         <jeeves-ui id={this.id} class="fabric-site">
           <fabric-container id="react-application"></fabric-container>
-          <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
-            <BrowserRouter>
-              {!this.props.isAuthenticated ? (
-                <Splash
-                  onLoginSuccess={this.handleLoginSuccess}
-                  onRegisterSuccess={this.handleRegisterSuccess}
-                  login={this.props.login}
-                  register={this.props.register}
-                  error={this.props.error}
-                  checkInvitationToken = {this.props.checkInvitationToken}
-                  checkUsernameAvailable={this.props.checkUsernameAvailable}
-                  checkEmailAvailable={this.props.checkEmailAvailable}
-                  invitation={this.props.invitation}
-                  auth={this.props.auth}
-                  fullRegister={this.props.fullRegister}
-                  acceptInvitation={this.props.acceptInvitation}
-                  declineInvitation={this.props.declineInvitation}
-                  createInquiry={this.props.createInquiry}
-                  inquiries={this.props.inquiries}
+          <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+            {this.props.auth.loading ? (
+              <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <Loader active inline="centered" size='huge' />
+              </div>) :
+              (<BrowserRouter>
+                {!this.props.isAuthenticated ? (
+                  <Splash
+                    onLoginSuccess={this.handleLoginSuccess}
+                    onRegisterSuccess={this.handleRegisterSuccess}
+                    login={this.props.login}
+                    register={this.props.register}
+                    error={this.props.error}
+                    checkInvitationToken={this.props.checkInvitationToken}
+                    checkUsernameAvailable={this.props.checkUsernameAvailable}
+                    checkEmailAvailable={this.props.checkEmailAvailable}
+                    invitation={this.props.invitation}
+                    auth={this.props.auth}
+                    fullRegister={this.props.fullRegister}
+                    acceptInvitation={this.props.acceptInvitation}
+                    declineInvitation={this.props.declineInvitation}
+                    createInquiry={this.props.createInquiry}
+                    inquiries={this.props.inquiries}
                   />
-              ) : !this.props.auth.isCompliant ? (
-                <TermsOfUseModal
-                  {...this.props}
-                  auth={this.props.auth}
-                  signContract={this.props.signContract}
-                  logout={this.props.logout}
-                  isCompliant={this.props.isCompliant}
+                ) : !this.props.auth.isCompliant ? (
+                  <TermsOfUseModal
+                    {...this.props}
+                    auth={this.props.auth}
+                    signContract={this.props.signContract}
+                    logout={this.props.logout}
+                    isCompliant={this.props.isCompliant}
                   />
-              ) : (
-                <Dashboard
-                  auth={this.props.auth}
-                  onLogoutSuccess={this.handleLogout}
-                  onMessageSuccess={this.handleMessageSuccess}
-                  fetchContract={this.props.fetchContract}
-                  fetchConversation={this.props.fetchConversation}
-                  fetchConversations={this.props.fetchConversations}
-                  fetchAdminStats={this.props.fetchAdminStats}
-                  handleConversationSubmit={this.handleConversationSubmit}
-                  register={this.props.register}
-                  resetChat={this.props.resetChat}
-                  submitMessage={this.props.submitMessage}
-                  contracts={this.props.contracts}
-                  conversations={this.props.conversations}
-                  conversation={this.props.conversation}
-                  courts={this.props.courts}
-                  chat={this.props.chat}
-                  isAdmin={this.props.auth.isAdmin}
-                  isCompliant={this.props.auth.isCompliant}
-                  {...this.props}
-                />
+                ) : (
+                  <Dashboard
+                    auth={this.props.auth}
+                    onLogoutSuccess={this.handleLogout}
+                    onMessageSuccess={this.handleMessageSuccess}
+                    fetchContract={this.props.fetchContract}
+                    fetchConversation={this.props.fetchConversation}
+                    fetchConversations={this.props.fetchConversations}
+                    fetchAdminStats={this.props.fetchAdminStats}
+                    handleConversationSubmit={this.handleConversationSubmit}
+                    register={this.props.register}
+                    resetChat={this.props.resetChat}
+                    submitMessage={this.props.submitMessage}
+                    contracts={this.props.contracts}
+                    conversations={this.props.conversations}
+                    conversation={this.props.conversation}
+                    courts={this.props.courts}
+                    chat={this.props.chat}
+                    isAdmin={this.props.auth.isAdmin}
+                    isCompliant={this.props.auth.isCompliant}
+                    {...this.props}
+                  />
+                )}
+                <Modal
+                  onClose={this.handleModalClose}
+                  open={modalLogOut}
+                  size='mini'>
+                  <Modal.Header centered>
+                    Logging out
+                  </Modal.Header>
+                  <Modal.Content>
+                    <Modal.Description>
+                      {!loggedOut ? (
+                        <Header as='h4'>
+                          Are you sure you want to log out?
+                        </Header>
+                      ) : (
+                        <Header as='h5' className='center aligned'>
+                          You have successfully logged out. You will be redirected to the Homepage.
+                        </Header>
+                      )
+                      }
+                    </Modal.Description>
+                  </Modal.Content>
+                  <Modal.Actions>
+                    {!loggedOut && (
+                      <div>
+                        <Button
+                          content='Cancel'
+                          icon='close'
+                          onClick={this.handleModalClose}
+                          labelPosition='right'
+                          size='small'
+                          secondary
+                        />
+                        <Button
+                          content='Log out'
+                          icon='log out'
+                          onClick={this.handleLogoutSuccess}
+                          labelPosition='right'
+                          size='small'
+                          primary
+                        />
+                      </div>
+                    )}
+                  </Modal.Actions>
+                </Modal>
+              </BrowserRouter>
               )}
-              <Modal
-                onClose={this.handleModalClose}
-                open={modalLogOut}
-                size='mini'>
-                <Modal.Header centered>
-                  Logging out
-                </Modal.Header>
-                <Modal.Content>
-                  <Modal.Description>
-                    {!loggedOut ? (
-                      <Header as='h4'>
-                        Are you sure you want to log out?
-                      </Header>
-                    ) : (
-                      <Header as='h5'className='center aligned'>
-                        You have successfully logged out. You will be redirected to the Homepage.
-                      </Header>
-                    )
-                    }
-                  </Modal.Description>
-                </Modal.Content>
-                <Modal.Actions>
-                  {!loggedOut && (
-                    <div>
-                      <Button
-                        content='Cancel'
-                        icon='close'
-                        onClick={this.handleModalClose}
-                        labelPosition='right'
-                        size='small'
-                        secondary
-                      />
-                      <Button
-                        content='Log out'
-                        icon='log out'
-                        onClick={this.handleLogoutSuccess}
-                        labelPosition='right'
-                        size='small'
-                        primary
-                      />
-                    </div>
-                  )}
-                </Modal.Actions>
-              </Modal>
-            </BrowserRouter>
           </fabric-react-component>
         </jeeves-ui>
       )
