@@ -3,7 +3,7 @@
 module.exports = async function (req, res) {
   console.debug('[NOVO]', 'Creating matter...');
   try {
-    // const request = req.body;
+    const request = req.body;
     const {title, description, plaintiff, defendant, representing, jurisdiction_id, court_id} = req.body;
     const insert = await this.db('matters').insert({
       creator: req.user.id,

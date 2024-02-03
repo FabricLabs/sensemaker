@@ -26,7 +26,13 @@ const ROUTES = {
     list: require('../routes/matters/list_matters')
   },
   products: {
-    list: require('../routes/products/list_products')
+    list: require('../routes/products/list_products'),
+  },
+  jurisdictions: {
+    view: require('../routes/jurisdictions/jurisdiction_view'),
+  },
+  courts: {
+    view: require('../routes/courts/court_view'),
   }
 };
 
@@ -1371,7 +1377,7 @@ class Jeeves extends Hub {
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, /* ...this.settings.gemini,  */openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
+    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, /* ...this.settings.gemini,  */openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network, including agent names.' });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
 
@@ -1517,6 +1523,12 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
