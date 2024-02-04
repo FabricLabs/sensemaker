@@ -122,11 +122,11 @@ class ChatBox extends React.Component {
   handleTextareaFocus = () => {
     this.setState({ isTextareaFocused: true });
   };
-  
+
   handleTextareaBlur = () => {
     this.setState({ isTextareaFocused: false });
   };
-  
+
 
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight, });
@@ -629,8 +629,7 @@ class ChatBox extends React.Component {
                             trigger={
                               <Icon
                                 name="info"
-                                color="blue"
-                                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                                style={{ cursor: "pointer", marginLeft: "0.5rem", color: '#336699' }}
                                 onClick={() => this.messageInfo(message.id)}
                               />
                             }

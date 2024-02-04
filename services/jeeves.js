@@ -23,7 +23,8 @@ const ROUTES = {
     new: require('../routes/matters/new_matter'),
     // view: require('../routes/matters/view_matter'),
     view: require('../routes/matters/matter_view'),
-    list: require('../routes/matters/list_matters')
+    list: require('../routes/matters/list_matters'),
+    add_context: require('../routes/matters/add_context'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -1500,6 +1501,8 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('PATCH', '/matter/context', ROUTES.matters.add_context.bind(this));
+
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Jurisdictions
@@ -1563,7 +1566,7 @@ class Jeeves extends Hub {
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-        
+
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
@@ -1575,7 +1578,7 @@ class Jeeves extends Hub {
             uniqueTokenFound = true;
           }
         };
-        
+
         //Flag for Eric
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test

@@ -17,9 +17,18 @@ class MatterFileModal extends React.Component {
     super(props);
     this.state = {
       note: '',
-      files: [],
+      attachFile: null,
     };
     this.fileInputRef = React.createRef();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.attachFile !== prevProps.attachFile) {
+      this.setState({ attachFile: this.props.attachFile });
+    }
+    if (this.props.note !== prevProps.note) {
+      this.setState({ note: this.props.note });
+    }
   }
 
   handleDragOver = (e) => {
@@ -33,7 +42,7 @@ class MatterFileModal extends React.Component {
       const files = e.dataTransfer.files;
       if (files.length > 0) {
         const file = files[0]; // Take only the first file
-        this.setState({ files: [file] });
+        this.setState({ attachFile: file });
       }
     }
   };
@@ -42,7 +51,7 @@ class MatterFileModal extends React.Component {
     const files = e.target.files;
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
-      this.setState({ files: [file] });
+      this.setState({ attachFile: file });
     }
   };
 
@@ -52,21 +61,23 @@ class MatterFileModal extends React.Component {
   };
 
   handleSubmit = () => {
-    this.props.onSubmit(this.state.note, this.state.files);
-    // Reset the state
-    this.setState({ note: '', files: [] });
-    console.log('Submitting:', this.state.note, this.state.files); // Debugging log
+    // TO DO: HANDLE FILE FORMATS, SECURITY
+    this.props.onSubmit(this.state.note, this.state.attachFile);
+    console.log('Submitting:', this.state.note, this.state.attachFile); // Debugging log
   };
 
   handleClose = () => {
-    this.setState({
-      note: '',
-      files: [],
-    });
+    if (!this.props.attachFile) {
+      this.setState({ attachFile: null, });
+    }
+    if (!this.props.note) {
+      this.setState({ note: null, });
+    }
     this.props.onClose();
   }
   removeFile = () => {
-    this.setState({ files: [] });
+    this.setState({ attachFile: null });
+    this.props.deleteFile();
   };
 
   render() {
@@ -75,7 +86,7 @@ class MatterFileModal extends React.Component {
       <Modal open={open} onClose={this.handleClose} size="tiny">
         <Modal.Header>Add File or Note</Modal.Header>
         <Modal.Content>
-          {(this.state.files.length > 0) && (
+          {(this.state.attachFile) && (
             <Header as='h4' onClick={this.removeFile} style={{ cursor: 'pointer' }}>
               <Icon name='close' />
               Remove file
@@ -85,12 +96,12 @@ class MatterFileModal extends React.Component {
             onClick={() => this.fileInputRef.current && this.fileInputRef.current.click()}
             onDragOver={this.handleDragOver}
             onDrop={this.handleDrop}
-            className={`attach-file-area ${this.state.note ? 'disabled-attach' : ''}`}
+            className='attach-file-area'
           >
-            {(this.state.files.length > 0) ? (
+            {(this.state.attachFile) ? (
               <div className='file-container'>
                 <Icon name='file alternate' size='big' />
-                <p>{this.state.files[0].name}</p>
+                <p>{this.state.attachFile.name}</p>
               </div>
             ) : (
               <div>
@@ -104,7 +115,7 @@ class MatterFileModal extends React.Component {
               ref={this.fileInputRef}
               onChange={this.handleFileChange}
               style={{ display: 'none' }}
-              disabled={this.state.note}
+            // disabled={this.state.note}
             />
           </div>
           <Divider horizontal>Or</Divider>
@@ -114,7 +125,7 @@ class MatterFileModal extends React.Component {
               placeholder="Write a note..."
               value={this.state.note}
               onChange={this.handleChange}
-              disabled={(this.state.files.length > 0)}
+            // disabled={(this.state.attachFile)}
             />
           </Form>
         </Modal.Content>
