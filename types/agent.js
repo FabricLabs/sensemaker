@@ -108,12 +108,22 @@ class Agent extends Service {
                     type: 'string',
                     description: 'The host to search.'
                   },
-                  query: {
+                  path: {
                     type: 'string',
-                    description: 'The JSON-encoded query object to send to the host.'
+                    description: 'The path to search.'
+                  },
+                  body: {
+                    type: 'object',
+                    description: 'Query object to send to host, with required string parameter "query" designating the search term.',
+                    properties: {
+                      query: {
+                        type: 'string',
+                        description: 'The search term.'
+                      }
+                    }
                   }
                 },
-                required: ['host']
+                required: ['host', 'path', 'body']
               }
             }
           }
@@ -242,11 +252,13 @@ class Agent extends Service {
       } else if (responses.openai && responses.openai.content) {
         response = responses.openai.content;
       } else {
+        console.debug('[AGENT]', 'No response:', responses);
         response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
       }
 
       resolve({
         type: 'AgentResponse',
+        name: this.settings.name,
         status: 'success',
         query: request.query,
         response: response,

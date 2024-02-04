@@ -101,6 +101,7 @@ class Scraper extends Service {
         // this._state.content.objects[object.id] = object;
         // this._state.content.cases[actor.id] = candidate;
 
+        console.debug('citations:', candidate.citations);
         this.emit('case', mine.toJSON());
       }
 

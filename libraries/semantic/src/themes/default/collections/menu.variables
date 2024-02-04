@@ -11,7 +11,7 @@
 @horizontalMargin: 0;
 @margin: @verticalMargin @horizontalMargin;
 @background: #FFFFFF;
-@fontFamily: @pageFont;
+@fontFamily: 'AvGardd';
 @itemBackground: none;
 @fontWeight: @normal;
 @borderWidth: 1px;
