@@ -2,6 +2,7 @@
 
   // Constants
   const {
+    BRAND_NAME,
     BROWSER_DATABASE_NAME,
     BROWSER_DATABASE_TOKEN_TABLE
   } = require('../constants');
@@ -215,7 +216,7 @@
                   open={modalLogOut}
                   size='mini'>
                   <Modal.Header centered>
-                    Logging out
+                    Log Out of {BRAND_NAME}?
                   </Modal.Header>
                   <Modal.Content>
                     <Modal.Description>
@@ -225,7 +226,7 @@
                         </Header>
                       ) : (
                         <Header as='h5' className='center aligned'>
-                          You have successfully logged out. You will be redirected to the Homepage.
+                          You have been logged out.  Returning to the home page...
                         </Header>
                       )
                       }
@@ -233,7 +234,7 @@
                   </Modal.Content>
                   <Modal.Actions>
                     {!loggedOut && (
-                      <div>
+                      <Button.Group>
                         <Button
                           content='Cancel'
                           icon='close'
@@ -250,7 +251,7 @@
                           size='small'
                           primary
                         />
-                      </div>
+                      </Button.Group>
                     )}
                   </Modal.Actions>
                 </Modal>
