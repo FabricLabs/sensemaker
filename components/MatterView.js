@@ -28,6 +28,8 @@ class MatterView extends React.Component {
     this.state = {
       loading: false,
       attachModalOpen: false,
+      note: null,
+      file: null
     };
   }
 
@@ -49,6 +51,12 @@ class MatterView extends React.Component {
 
   handleModalSubmit = (note, files) => {
     console.log("Note:", note, "Files:", files);
+    if (files.length > 0) {
+      this.setState({ file: files[0] });
+    }
+    if (note) {
+      this.setState({ note: note });
+    }
     this.setState({ attachModalOpen: false });
   };
 
@@ -58,6 +66,7 @@ class MatterView extends React.Component {
     const { loading } = this.state;
     const { current } = matters;
 
+    console.log(this.state.note, this.state.file);
     return (
       <Segment loading={matters.loading || jurisdictions.loading || courts.loading} style={{ marginRight: '1em' }}>
         <Header as='h1'>{current.title}</Header>
@@ -140,6 +149,22 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
+            {this.state.file &&
+              <GridRow>
+                <GridColumn width={13} textAlign='center'>
+                  <Label>{this.state.file.name}</Label>
+                </GridColumn>
+                <GridColumn width={3} />
+              </GridRow>
+            }
+            {this.state.note &&
+              <GridRow>
+                <GridColumn width={13} textAlign='center'>
+                  <Header as='h5'>{this.state.note}</Header>
+                </GridColumn>
+                <GridColumn width={3} />
+              </GridRow>
+            }
             <GridRow>
               <GridColumn width={13} textAlign='center'>
                 <Button
@@ -162,7 +187,7 @@ class MatterView extends React.Component {
             onSubmit={this.handleModalSubmit}
           />
         </section>
-        <Header as='h3' style={{marginTop:'2em'}}><Link to={"/matters/"} >Back to Matters</Link></Header>
+        <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header>
       </Segment>
     );
   }
