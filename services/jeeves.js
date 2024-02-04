@@ -701,7 +701,7 @@ class Jeeves extends Hub {
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
       const summarized = await this.summarizer.query({
-        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
+        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
@@ -4405,7 +4405,7 @@ class Jeeves extends Hub {
     console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.\n' + 
+      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' + 
         ':\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {
