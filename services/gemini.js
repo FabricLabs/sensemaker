@@ -53,6 +53,7 @@ class Gemini extends Agent {
 
         resolve({
           type: 'AgentResponse',
+          name: this.settings.name,
           status: 'success',
           query: request.query,
           response: response,

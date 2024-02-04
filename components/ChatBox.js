@@ -564,7 +564,14 @@ class ChatBox extends React.Component {
       marginTop: 0,
     };
 
-    const controlsStyle = { border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em' }
+    const controlsStyle = {
+      border: 'none',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      paddingRight: '0.5em',
+      paddingLeft: '0.5em',
+      // maxWidth: 'none'
+    };
 
     return (
       <section style={chatContainerStyle}>
@@ -601,7 +608,7 @@ class ChatBox extends React.Component {
                 <Feed.Extra text style={{ display: "flex" }}>
                   <Image src="/images/jeeves-brand.png" size="small" floated="left" />
                   <div style={{ paddingTop: "2em" }}>
-                    <p style={{ fontSize: '1.5em' }}>Hello!  I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
+                    <p style={{ fontSize: '1.5em', fontFamily: 'AvGardd' }}><span style={{ fontSize: '1.5em' }}>Hello!</span><br />I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
                 </Feed.Extra>
                 <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
@@ -642,39 +649,85 @@ class ChatBox extends React.Component {
                       <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
-                          <Popup
-                            content="Rate this message"
-                            trigger={
-                              <Icon
-                                name="thumbs down outline"
-                                color="grey"
-                                style={{ cursor: "pointer", marginLeft: "1rem" }}
-                                onClick={() => this.thumbsDown(message.id)}
+                          <Button.Group basic size='mini'>
+                            <Popup
+                              content="More information"
+                              trigger={
+                                <Button icon>
+                                  <Icon
+                                    name="info"
+                                    color="blue"
+                                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                                    onClick={() => this.messageInfo(message.id)}
+                                  />
+                                </Button>
+                              }
+                            />
+                            {/* the regenerate answer button only shows in the last answer */}
+                            {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                              message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
+                                <Popup
+                                  content="Regenerate this answer"
+                                  trigger={
+                                    <Button icon>
+                                      <Icon
+                                        name="redo"
+                                        color="grey"
+                                        onClick={this.regenerateAnswer}
+                                        style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                      />
+                                    </Button>
+                                  }
+                                />
+                              )}
+                            {message.role === "assistant" && (
+                              <Popup
+                                content="Copied to clipboard"
+                                on="click"
+                                open={this.state.copiedStatus[message.id] || false}
+                                trigger={
+                                  <Popup content='Copy to clipboard' trigger={
+                                    <Button
+                                    onClick={() =>
+                                      this.copyToClipboard(
+                                        message.id,
+                                        marked.parse(message.content)
+                                      )
+                                    }
+                                  icon>
+                                    <Icon name="clipboard outline" />
+                                  </Button>
+                                  } />
+                                }
                               />
-                            }
-                          />
-                          <Popup
-                            content="Rate this message"
-                            trigger={
-                              <Icon
-                                name="thumbs up outline"
-                                color="grey"
-                                style={{ cursor: "pointer", marginLeft: "0.1rem" }}
-                                onClick={() => this.thumbsUp(message.id)}
-                              />
-                            }
-                          />
-                          <Popup
-                            content="More information"
-                            trigger={
-                              <Icon
-                                name="info"
-                                color="blue"
-                                style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                                onClick={() => this.messageInfo(message.id)}
-                              />
-                            }
-                          />
+                            )}
+                            <Popup
+                              content="Rate this message"
+                              trigger={
+                                <Button icon>
+                                  <Icon
+                                    name="thumbs down outline"
+                                    color="grey"
+                                    style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                    onClick={() => this.thumbsDown(message.id)}
+                                  />
+                                </Button>
+                              }
+                            />
+                            <Popup
+                              content="Rate this message"
+                              trigger={
+                                <Button icon>
+                                  <Icon
+                                    name="thumbs up outline"
+                                    color="grey"
+                                    style={{ cursor: "pointer", marginLeft: "0.1rem" }}
+                                    onClick={() => this.thumbsUp(message.id)}
+                                  />
+                                </Button>
+                              }
+                            />
+                          </Button.Group>
                         </div>
                       )}
                     </Feed.Summary>
@@ -689,7 +742,7 @@ class ChatBox extends React.Component {
                         !reGeneratingReponse && (
                           <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                             <Icon name="spinner" loading />
-                            Jeeves is generating a response
+                            {BRAND_NAME} is generating a response...
                           </Header>
                         )}
                       {reGeneratingReponse &&
@@ -699,8 +752,7 @@ class ChatBox extends React.Component {
                             size="small"
                             style={{ fontSize: "1em", marginTop: "1.5em" }}
                           >
-                            <Icon name="spinner" loading /> Jeeves is
-                            regenerating the response
+                            <Icon name="spinner" loading /> Novo is trying again...
                           </Header>
                         )}
                       <div className="answer-controls" text>
@@ -735,42 +787,6 @@ class ChatBox extends React.Component {
                               }
                             />
                           </div>
-                        )}
-                        {/* the regenerate answer button only shows in the last answer */}
-                        {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                          message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
-                            <Popup
-                              content="Regenerate this answer"
-                              trigger={
-                                <Button
-                                  icon="redo"
-                                  onClick={this.regenerateAnswer}
-                                  style={controlsStyle}
-                                  size="tiny"
-                                />
-                              }
-                            />
-                          )}
-                        {message.role === "assistant" && (
-                          <Popup
-                            content="Copied to clipboard"
-                            on="click"
-                            open={this.state.copiedStatus[message.id] || false}
-                            trigger={
-                              <Button
-                                onClick={() =>
-                                  this.copyToClipboard(
-                                    message.id,
-                                    marked.parse(message.content)
-                                  )
-                                }
-                                style={controlsStyle}
-                                size="tiny"
-                              >
-                                <Icon name="clipboard outline" />
-                              </Button>
-                            }
-                          />
                         )}
                       </div>
                     </Feed.Extra>
