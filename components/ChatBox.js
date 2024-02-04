@@ -353,7 +353,7 @@ class ChatBox extends React.Component {
       if (!this.watcher) {
         this.watcher = setInterval(() => {
           this.props.getMessages({ conversation_id: message?.conversation });
-        }, 15000);
+        }, 5000);
       }
 
       this.setState({ loading: false });
