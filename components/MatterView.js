@@ -30,7 +30,7 @@ class MatterView extends React.Component {
       loading: false,
       attachModalOpen: false,
       note: null,
-      attachFile: null,
+      filename: null,
       addingContext: false,
     };
   }
@@ -42,11 +42,11 @@ class MatterView extends React.Component {
   componentDidUpdate(prevProps) {
     const { matters } = this.props;
     if (prevProps.matters.current !== matters.current) {
-      if(matters.current.file){
-        this.setState({attachFile: matters.current.file})
+      if (matters.current.file) {
+        this.setState({ filename: matters.current.file })
       }
-      if(matters.current.note){
-        this.setState({note: matters.current.note})
+      if (matters.current.note) {
+        this.setState({ note: matters.current.note })
       }
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
@@ -54,40 +54,46 @@ class MatterView extends React.Component {
       if (matters.current.court_id) {
         this.props.fetchCourt(matters.current.court_id);
       }
-      if(matters.addingContext){
+    }
+    if (prevProps.matters !== matters && !matters.loading) {
+      if (this.state.addingContext) {
         //TO DO, HANDLING SITUATIONS
-        if(matters.contextSuccess){
+        console.log("el matter en la creacion",matters);
+        if (matters.contextSuccess) {
           console.log("matter context added");
-        }else{
+        } else {
           console.log("error adding context");
         }
-        this.setState({addingContext: false});
+        this.setState({ addingContext: false });
       }
     }
   };
 
-  handleModalSubmit = (note, file) => {
+  handleModalSubmit = (note, filename, file) => {
     console.log("Note:", note, "Files:", file);
     const id = this.props.id;
-    const filename = file.name;
 
     //TO DO: STORE THE FILE SOMEWHERE
+    //the actual full file is in "file"
 
-    if (file) {
-      this.setState({ attachFile: file });
+    if (filename) {
+      this.setState({ filename: filename });
     }
     if (note) {
       this.setState({ note: note });
     }
 
     this.setState({ attachModalOpen: false, addingContext: true });
-    this.props.addContext({note, filename, id})
+    this.props.addContext(note, filename, id);
   };
 
+  deleteFile = () => {
+    this.setState({ filename: null });
+    this.props.removeFile(this.props.id);
+  }
 
   render() {
     const { matters, jurisdictions, courts } = this.props;
-    const { loading } = this.state;
     const { current } = matters;
 
     return (
@@ -180,10 +186,10 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
-            {this.state.attachFile &&
+            {this.state.filename &&
               <GridRow>
                 <GridColumn width={13} textAlign='center'>
-                  <Label>{this.state.attachFile.name}</Label>
+                  <Label>{this.state.filename}</Label>
                 </GridColumn>
                 <GridColumn width={3} />
               </GridRow>
@@ -211,8 +217,8 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
-            attachFile={this.state.attachFile}
-            deleteFile={() => this.setState({ attachFile: null })}
+            filename={this.state.filename}
+            deleteFile={this.deleteFile}
             note={this.state.note}
           />
         </section>

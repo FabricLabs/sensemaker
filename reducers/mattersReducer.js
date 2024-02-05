@@ -11,6 +11,9 @@ const {
   ADD_CONTEXT_REQUEST,
   ADD_CONTEXT_SUCCESS,
   ADD_CONTEXT_FAILURE,
+  REMOVE_FILE_REQUEST,
+  REMOVE_FILE_SUCCESS,
+  REMOVE_FILE_FAILURE,
 } = require('../actions/mattersActions');
 
 
@@ -23,6 +26,7 @@ const initialState = {
   creationSuccess: false,
   idCreated: null,
   contextSuccess: false,
+  fileDeletion: false,
 };
 
 function mattersReducer(state = initialState, action) {
@@ -55,6 +59,13 @@ function mattersReducer(state = initialState, action) {
     case ADD_CONTEXT_FAILURE:
       console.debug('create matter failure:', state, action);
       return { ...state, error: action.payload, contextSuccess: false, loading: false };
+    case REMOVE_FILE_REQUEST:
+      return { ...state, loading: true };
+    case REMOVE_FILE_SUCCESS:
+      return { ...state, fileDeletion: true, error: null, loading: false };
+    case REMOVE_FILE_FAILURE:
+      console.debug('Delete file from matter failure:', state, action);
+      return { ...state, error: action.payload, fileDeletion: false, loading: false };
     default:
       return state;
   }

@@ -24,7 +24,8 @@ const ROUTES = {
     // view: require('../routes/matters/view_matter'),
     view: require('../routes/matters/matter_view'),
     list: require('../routes/matters/list_matters'),
-    add_context: require('../routes/matters/add_context'),
+    addContext: require('../routes/matters/add_context'),
+    removeFile: require('../routes/matters/remove_file'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -1527,7 +1528,8 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
-    this.http._addRoute('PATCH', '/matter/context', ROUTES.matters.add_context.bind(this));
+    this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
+    this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
 
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
@@ -2828,7 +2830,7 @@ class Jeeves extends Hub {
 
       if (!conversation_id) {
         isNew = true;
-
+        
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
         /* const room = await this.matrix.client.createRoom({ name: name }); */
