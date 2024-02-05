@@ -85,7 +85,6 @@ const Matrix = require('@fabric/matrix');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
 // const GitHub = require('@fabric/github');
-// const Prices = require('@portal/feed');
 
 // Providers
 // const { StatuteProvider } = require('@jeeves/statute-scraper');
@@ -93,6 +92,7 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const Gemini = require('./gemini');
 const PACER = require('./pacer');
 const Harvard = require('./harvard');
 const Mistral = require('./mistral');
@@ -319,8 +319,9 @@ class Jeeves extends Hub {
     });
 
     // Sensemaker
-    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
+    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
 
     // Pipeline Datasources
@@ -580,17 +581,28 @@ class Jeeves extends Hub {
     const now = new Date();
     const created = now.toISOString();
 
-    // Create Request Message
-    const message = Message.fromVector(['TimedRequest', JSON.stringify({
-      created: created,
-      request: request
-    })]);
-
     // Add Request to Database
     const inserted = await this.db('requests').insert({
       created_at: toMySQLDatetime(now),
       content: JSON.stringify(request)
     });
+
+    // Store user request
+    const responseMessage = await this.db('messages').insert({
+      conversation_id: request.conversation_id,
+      user_id: 1,
+      status: 'computing',
+      content: `${this.settings.name} is researching your question...`
+    });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Response Message:', responseMessage);
+
+    // Create Request Message
+    const message = Message.fromVector(['TimedRequest', JSON.stringify({
+      created: created,
+      request: request,
+      response_message_id: responseMessage[0]
+    })]);
 
     // Notify workers
     this.emit('request', { id: inserted [0] });
@@ -600,12 +612,12 @@ class Jeeves extends Hub {
 
     // Compute most relevant tokens
     const caseCount = await this.db('cases').count('id as count').first();
-    const hypotheticals = await this.lennon.query({ query: request.query });
+    // const hypotheticals = await this.lennon.query({ query: request.query });
     const words = this.importantWords(request.query);
     const phrases = this.importantPhrases(request.query);
     const cases = await this._vectorSearchCases(words.slice(0, 10));
 
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+    // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
 
@@ -620,7 +632,7 @@ class Jeeves extends Hub {
 
     // Format Query Text
     const query = `---\n` +
-      meta +
+      // meta +
       `---\n` +
       `${request.query}`;
 
@@ -658,8 +670,10 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
     const agentResults = Promise.allSettled([
-      this.alpha.query({ query }),
-      this.mistral.query({ query })
+      this.alpha.query({ query, messages }),
+      this.gemini.query({ query, messages }),
+      this.lennon.query({ query, messages }),
+      // this.mistral.query({ query })
     ]);
 
     // TODO: execute RAG query for additional metadata
@@ -671,22 +685,24 @@ class Jeeves extends Hub {
       }),
       agentResults
     ]).then(async (results) => {
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
       const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
 
-      for (let i = 0; i < answers.length; i++) {
+      /* for (let i = 0; i < answers.length; i++) {
         const answer = answers[i];
         if (!answer.content) continue;
 
         const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-      }
+      } */
 
+      const agentList = `${answers.map((x) => `- [${x.name}] ${x.content}`).join('\n')}`;
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
       const summarized = await this.summarizer.query({
-        query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${answers[0]?.content}`+`\n- [BETA]: ${answers[1]?.content}\n\`\`\``,
+        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
@@ -696,7 +712,7 @@ class Jeeves extends Hub {
         content: summarized.content
       };
 
-      const extracted = await this.extractor.query({
+      /* const extracted = await this.extractor.query({
         query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
       });
       console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
@@ -721,10 +737,10 @@ class Jeeves extends Hub {
           /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
             cards: JSON.stringify(caseCards.map((x) => x.content.id))
           }); */
-        } catch (exception) {
+        /* } catch (exception) {
           console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
         }
-      }
+      } */
 
       try {
         const documentIDs = await this.db('documents').insert({
@@ -737,10 +753,19 @@ class Jeeves extends Hub {
           content: `/documents/${documentIDs[0]}`
         });
 
+        // Update database with completed response
+        const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+          status: 'ready',
+          content: summarized.content,
+          updated_at: this.db.fn.now()
+        });
+
+        console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
         this.emit('response', {
           id: responseIDs[0],
           content: summarized.content
-        })
+        });
       } catch (exception) {
         console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
       }
@@ -845,6 +870,7 @@ class Jeeves extends Hub {
     for (let i = 0; i < chunk.length; i++) {
       const instance = chunk[i];
       console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      // const nativeEmbedding = await this._generateEmbedding(`[novo/cases/${instance.id}] ${instance.title}`);
       const titleEmbedding = await this._generateEmbedding(instance.title);
       await this.db('cases').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
       stats.processed++;
@@ -1355,10 +1381,10 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
 
     const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
     const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
@@ -2396,9 +2422,9 @@ class Jeeves extends Hub {
         html: () => {
           // TODO: provide state
           // const page = new Conversations({});
-          // const html = page.toHTML();
-          // return res.send(this.http.app._renderWith(html));
-          return res.send(this.http.app._renderWith(''));
+          const page = new CaseHome({}); // TODO: use Conversations
+          const html = page.toHTML();
+          return res.send(this.http.app._renderWith(html));
         }
       });
     });
@@ -2830,6 +2856,7 @@ class Jeeves extends Hub {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
 
+        // User Message
         const newMessage = await this.db('messages').insert({
           content: content,
           conversation_id: conversation_id,
@@ -2837,17 +2864,21 @@ class Jeeves extends Hub {
         });
 
         // Core Pipeline
-        this.createTimedRequest({
+        const pipeline = this.createTimedRequest({
+          conversation_id: conversation_id,
           query: content
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
-        }).then((request) => {
+        }).then(async (request) => {
           console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request.toBuffer().toString('hex'));
+          // TODO: emit message
         });
+
+        console.debug('[JEEVES]', '[HTTP]', 'Got pipeline:', pipeline);
         // End Core Pipeline
 
         // pre-release pipeline
-        const inserted = await this.db('requests').insert({
+        /* const inserted = await this.db('requests').insert({
           message_id: newMessage[0],
           content: 'Jeeves is thinking...'
         });
@@ -2882,7 +2913,7 @@ class Jeeves extends Hub {
             } catch (exception) {
               console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
             }
-          }
+          } */ 
 
           // TODO: restore response tracking
           /* this.db('responses').insert({
@@ -2891,7 +2922,7 @@ class Jeeves extends Hub {
           }); */
 
           // TODO: restore titling
-          if (isNew) {
+        /*  if (isNew) {
             const messages = await this._getConversationMessages(conversation_id);
 
             await this._summarizeMessagesToTitle(messages.map((x) => {
@@ -2906,7 +2937,7 @@ class Jeeves extends Hub {
               this.http.broadcast(message);
             });
           }
-        });
+        }); */
 
         if (!conversation.log) conversation.log = [];
         if (typeof conversation.log == 'string') {
@@ -4377,7 +4408,8 @@ class Jeeves extends Hub {
     console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
+      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' + 
+        ':\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {
           role: 'user',

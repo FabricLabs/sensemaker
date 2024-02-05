@@ -22,7 +22,6 @@
 @googleProtocol    : 'https://';
 @googleFontRequest : '@{googleFontName}:@{googleFontSizes}&subset=@{googleSubset}&display=@{googleFontDisplay}';
 
-
 @bold              : bold;
 @normal            : normal;
 

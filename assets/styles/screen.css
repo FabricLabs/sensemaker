@@ -383,6 +383,7 @@ fabric-motd {
 
 .chat-feed .event:hover .controls {
   display: inline !important;
+  margin-left: 0.5em;
 }
 
 .home-dropdowns{

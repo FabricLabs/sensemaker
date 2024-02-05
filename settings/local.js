@@ -29,7 +29,7 @@ module.exports = {
   domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
-  name: 'jeeves',
+  name: 'Novo',
   mode: 'production',
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
@@ -67,6 +67,10 @@ module.exports = {
     service: 'gmail',
     username: 'agent@jeeves.dev',
     password: 'generate app-specific password'
+  },
+  gemini: {
+    model: 'gemini-pro',
+    token: 'AIzaSyC2lGAZznayOAvs8dzAtqzpsS2rtcmruEk'
   },
   stripe: {
     token: {
