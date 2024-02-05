@@ -642,7 +642,7 @@ class ChatBox extends React.Component {
                 <Feed.Event key={message.id} data-message-id={message.id}>
                   <Feed.Content>
                     {/* Actual content of message */}
-                    <Feed.Summary>
+                    <Feed.Summary className='info-assistant-header'>
                       <Feed.User>
                         {message.author || message.user_id}{" "}
                       </Feed.User>
@@ -653,12 +653,11 @@ class ChatBox extends React.Component {
                             <Popup
                               content="More information"
                               trigger={
-                                <Button icon>
+                                <Button icon onClick={() => this.messageInfo(message.id)}>
                                   <Icon
                                     name="info"
                                     color="blue"
                                     style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                                    onClick={() => this.messageInfo(message.id)}
                                   />
                                 </Button>
                               }
@@ -669,11 +668,10 @@ class ChatBox extends React.Component {
                                 <Popup
                                   content="Regenerate this answer"
                                   trigger={
-                                    <Button icon>
+                                    <Button icon onClick={this.regenerateAnswer}>
                                       <Icon
                                         name="redo"
                                         color="grey"
-                                        onClick={this.regenerateAnswer}
                                         style={{ cursor: "pointer", marginLeft: "1rem" }}
                                       />
                                     </Button>
@@ -704,12 +702,11 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon>
+                                <Button icon  onClick={() => this.thumbsDown(message.id)}>
                                   <Icon
                                     name="thumbs down outline"
                                     color="grey"
                                     style={{ cursor: "pointer", marginLeft: "1rem" }}
-                                    onClick={() => this.thumbsDown(message.id)}
                                   />
                                 </Button>
                               }
@@ -717,12 +714,11 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon>
+                                <Button icon onClick={() => this.thumbsUp(message.id)}>
                                   <Icon
                                     name="thumbs up outline"
                                     color="grey"
                                     style={{ cursor: "pointer", marginLeft: "0.1rem" }}
-                                    onClick={() => this.thumbsUp(message.id)}
                                   />
                                 </Button>
                               }
