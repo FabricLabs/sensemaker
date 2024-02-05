@@ -324,6 +324,7 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.', openai: this.settings.openai });
 
     // Pipeline Datasources
     this.datasources = {
@@ -618,9 +619,15 @@ class Jeeves extends Hub {
     const phrases = this.importantPhrases(request.query);
     const cases = await this._vectorSearchCases(words.slice(0, 10));
 
+    const searchterm = await this.searcher.query({ query: request.query });
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
+
+    const realCases = await this.harvard.search({ query: searchterm.content });
+
     // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
 
     // Format Metadata
     const meta = `metadata:\n` +
