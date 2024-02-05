@@ -26,7 +26,7 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  */
 module.exports = {
   alias: NAME,
-  domain: 'beta.jeeves.dev',
+  domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
   name: 'jeeves',
@@ -41,7 +41,8 @@ module.exports = {
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ]
   },
   db: {
@@ -105,6 +106,10 @@ module.exports = {
     ],
     token: null
   },
+  statutes: {
+    enable: false,
+    jurisdictions: ['Texas']
+  },
   courtlistener: {
     enable: false,
     type: 'postgresql',
@@ -112,6 +117,11 @@ module.exports = {
     database: 'courtlistener',
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
+  },
+  google: {
+    ai: {
+      token: 'get from google'
+    }
   },
   harvard: {
     enable: true,
@@ -172,5 +182,6 @@ module.exports = {
     ]
   },
   verbosity: 2,
+  verify: false,
   version: VERSION
-}
+};

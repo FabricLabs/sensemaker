@@ -20,8 +20,6 @@ const {
   Message
 } = require('semantic-ui-react');
 
-const LoginForm = require('./LoginForm');
-
 class Waitlist extends React.Component {
   constructor(props) {
     super(props);
@@ -38,6 +36,28 @@ class Waitlist extends React.Component {
     $('input[name=email]').focus();
   }
 
+  componentDidUpdate(prevProps) {
+    if (prevProps.inquiries !== this.props.inquiries) {
+      const { inquiries } = this.props;
+
+      if (this.state.loading && !inquiries.creating) {
+        if (inquiries.createdSuccess) {
+
+          this.setState({
+            error: null,
+            loading: false,
+            joined: true
+          });
+        } else {
+          this.setState({
+            error: inquiries.error,
+            loading: false
+          });
+        }
+      }
+    }
+  };
+
   handleChange = (e, { name, value }) => {
     this.setState({ [name]: value });
   };
@@ -52,43 +72,9 @@ class Waitlist extends React.Component {
 
     const { email } = this.state;
 
-  
+
     try {
-
-      const fetchPromise = fetch('/inquiries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      })
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Request timed out. Please check your internet connection.'));
-        }, 15000); 
-      });
-
-      const results = await Promise.all([
-        new Promise((resolve, reject) => {
-          setTimeout(resolve, 1500);
-        }),
-        //Whichever promise completes first will determine the outcome.
-        await Promise.race([fetchPromise, timeoutPromise])
-      ]);
-
-      const response = results[1];
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-
-      this.setState({
-        error: null,
-        loading: false,
-        joined: true
-      });
+      await this.props.createInquiry(email);
     } catch (error) {
       this.setState({
         error: error.message,
@@ -116,7 +102,6 @@ class Waitlist extends React.Component {
 
   render() {
     const { email, error, joined } = this.state;
-    const { login, onLoginSuccess } = this.props;
 
     return (
       <Card>
@@ -135,7 +120,7 @@ class Waitlist extends React.Component {
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
                   <label>Email Address</label>
-                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} />
+                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                 </Form.Field>
                 <div>
                   <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Add Me To The Waitlist <Icon name='right chevron' /></Button>

@@ -3,6 +3,7 @@
 // Constants
 const RELEASE_NAME = 'beta-1.0.0-pre';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
+const MAX_RESPONSE_TIME_MS = 60000; // 60 seconds
 
 // Fabric
 const GENESIS_HASH = '';
@@ -32,6 +33,7 @@ const ENABLE_STATUTE_SEARCH = false;
 const ENABLE_VOLUME_SEARCH = false;
 const ENABLE_LIBRARY = false;
 const ENABLE_CHAT = true;
+const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
 const INTEGRITY_CHECK = true;
 
@@ -44,15 +46,16 @@ const PER_PAGE_LIMIT = 100;
 const PER_PAGE_DEFAULT = 30;
 
 // ChatGPT
-const CHATGPT_MAX_TOKENS = 4096;
+const CHATGPT_MAX_TOKENS = AGENT_MAX_TOKENS;
 
 // Exports
 module.exports = {
-  GENESIS_HASH,
-  RELEASE_NAME,
-  RELEASE_DESCRIPTION,
-  BITCOIN_NETWORK,
-  FIXTURE_SEED,
+  GENESIS_HASH, // TODO: use a real genesis hash
+  RELEASE_NAME, // TODO: use a real release name
+  RELEASE_DESCRIPTION, // TODO: use a real release description
+  MAX_RESPONSE_TIME_MS, // 60 seconds for maximum response time
+  BITCOIN_NETWORK, // Use mainnet for production
+  FIXTURE_SEED, // Use a fixture seed for development
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
@@ -72,6 +75,7 @@ module.exports = {
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
+  SEARCH_CASES_MAX_WORDS,
   BROWSER_DATABASE_NAME,
   BROWSER_DATABASE_TOKEN_TABLE,
   BRAND_NAME,

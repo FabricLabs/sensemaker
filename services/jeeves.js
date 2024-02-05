@@ -8,6 +8,7 @@ const definition = require('../package');
 const {
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
+  SEARCH_CASES_MAX_WORDS,
   USER_QUERY_TIMEOUT_MS
 } = require('../constants');
 
@@ -26,6 +27,7 @@ const knex = require('knex');
 const { attachPaginate } = require('knex-paginate'); // pagination
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
+const Hub = require('@fabric/hub'); // decentralized messaging
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server');
@@ -60,11 +62,15 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 // const Prices = require('@portal/feed');
 
+// Providers
+// const { StatuteProvider } = require('@jeeves/statute-scraper');
+
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
 const PACER = require('./pacer');
 const Harvard = require('./harvard');
+const Mistral = require('./mistral');
 const OpenAI = require('./openai');
 // TODO: Mistral
 // TODO: HarvardCaseLaw
@@ -82,13 +88,16 @@ const CaseHome = require('../components/CaseHome');
 const CaseView = require('../components/CaseView');
 const Conversations = require('../components/Conversations');
 
+// Functions
+const toMySQLDatetime = require('../functions/toMySQLDatetime');
+
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
  * once started by the user.  By default, earnings are enabled.
  * @type {Object}
  * @extends {Service}
  */
-class Jeeves extends Service {
+class Jeeves extends Hub {
   /**
    * Constructor for the Jeeves application.
    * @param  {Object} [settings={}] Map of configuration values.
@@ -110,6 +119,9 @@ class Jeeves extends Service {
       coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
       frequency: 0.01, // Hz (once every ~100 seconds)
       temperature: 0,
+      rules: [
+        'do not provide hypotheticals'
+      ],
       db: {
         host: 'localhost',
         user: 'db_user_jeeves',
@@ -129,10 +141,16 @@ class Jeeves extends Service {
         }
       },
       matrix: {},
+      agents: null,
       openai: {},
       pacer: {},
       harvard: {},
       courtlistener: {},
+      statutes: {
+        jurisdictions: [
+          'Texas'
+        ]
+      },
       services: [
         'bitcoin',
         'harvard',
@@ -140,6 +158,7 @@ class Jeeves extends Service {
       ],
       state: {
         status: 'INITIALIZED',
+        agents: {},
         collections: {
           cases: {},
           courts: {},
@@ -175,7 +194,8 @@ class Jeeves extends Service {
       crawlDelay: 2500,
       interval: 86400 * 1000,
       verbosity: 2,
-      workers: 1
+      verify: true,
+      workers: 1,
     }, settings);
 
     // Vector Clock
@@ -198,6 +218,7 @@ class Jeeves extends Service {
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
+    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
     this.pacer = new PACER(this.settings.pacer);
@@ -291,6 +312,11 @@ class Jeeves extends Service {
       path: './stores'
     });
 
+    // Sensemaker
+    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
+    this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+
     // Streaming
     this.completions = {};
 
@@ -299,6 +325,7 @@ class Jeeves extends Service {
       clock: this.clock,
       status: 'STOPPED',
       actors: {},
+      agents: {},
       audits: {},
       epochs: [],
       messages: {},
@@ -337,12 +364,18 @@ class Jeeves extends Service {
     return this;
   }
 
+  get authority () {
+    return `https://${this.settings.domain}`;
+  }
+
   get version () {
     return definition.version;
   }
 
   combinationsOf (tokens, prefix = '') {
     if (!tokens.length) return prefix;
+    if (tokens.length > 10) tokens = tokens.slice(0, 10);
+
     let result = [];
 
     // Recursively combine tokens
@@ -359,10 +392,84 @@ class Jeeves extends Service {
     return [...new Set(result.map((item) => item.trim()))];
   }
 
-  /* commit () {
+  commit () {
+    // console.debug('[JEEVES]', '[COMMIT]', 'Committing state:', this._state);
+    const commit = new Actor({
+      type: 'Commit',
+      object: {
+        content: this.state
+      }
+    });
+
     // console.warn('Jeeves is attempting a safe shutdown...');
     // TODO: safe shutdown
-  } */
+    this.emit('commit', commit);
+
+    return this;
+  }
+
+  /**
+   * Creates (and registers) a new {@link Agent} instance.
+   * @param {Object} configuration Settings for the {@link Agent}.
+   * @returns {Agent} Instance of the {@link Agent}.
+   */
+  createAgent (configuration = {}) {
+    const agent = new Agent(configuration);
+    this._state.agents[agent.id] = agent;
+    this._state.content.agents[agent.id] = configuration;
+    this.commit();
+    this.emit('agent', agent);
+    return agent;
+  }
+
+  estimateTokens (input) {
+    const tokens = input.split(/\s+/g);
+    const estimate = tokens.length * 4;
+    return estimate;
+  }
+
+  importantPhrases (input) {
+    const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
+    const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
+
+    uniques.sort((a, b) => {
+      return b.length - a.length;
+    });
+
+    return uniques;
+  }
+
+  importantWords (input) {
+    const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
+    const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
+    const nouns = this.properNouns(input);
+
+    uniques.sort((a, b) => {
+      return b.length - a.length;
+    });
+
+    uniques.sort((a, b) => {
+      return nouns.includes(b) - nouns.includes(a);
+    });
+
+    return uniques;
+  }
+
+  properNouns (input) {
+    return this.uniqueWords(input).filter((word) => /^[A-Z][a-z]*$/.test(word));
+  }
+
+  uniqueWords (input) {
+    return [...new Set(this.words(input))].filter((x) => x.length > 3);
+  }
+
+  words (input) {
+    return this.wordTokens(input);
+  }
+
+  wordTokens (input) {
+    return input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
+  }
 
   async alert (message) {
     if (this.email) {
@@ -385,7 +492,11 @@ class Jeeves extends Service {
     const now = (new Date()).toISOString();
     this._lastTick = now;
     this._state.clock = ++this.clock;
-    return this.commit();
+    this.commit();
+    return {
+      clock: this.clock,
+      timestamp: now
+    };
   }
 
   async ff (count = 0) {
@@ -441,6 +552,183 @@ class Jeeves extends Service {
     });
 
     return beat;
+  }
+
+  /**
+   * Execute the default pipeline for an inbound request.
+   * @param {Object} request Request object.
+   * @param {Number} [timeout] How long to wait for a response.
+   * @param {Number} [depth] How many times to recurse.
+   * @returns {Message} Request as a Fabric {@link Message}.
+   */
+  async createTimedRequest (request, timeout = 60000, depth = 0) {
+    const now = new Date();
+    const created = now.toISOString();
+
+    // Create Request Message
+    const message = Message.fromVector(['TimedRequest', JSON.stringify({
+      created: created,
+      request: request
+    })]);
+
+    // Add Request to Database
+    const inserted = await this.db('requests').insert({
+      created_at: toMySQLDatetime(now),
+      content: JSON.stringify(request)
+    });
+
+    // Notify workers
+    this.emit('request', { id: inserted [0] });
+
+    // TODO: prepare maximum token length
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+
+    // Compute most relevant tokens
+    const caseCount = await this.db('cases').count('id as count').first();
+    const hypotheticals = await this.lennon.query({ query: request.query });
+    const words = this.importantWords(request.query);
+    const phrases = this.importantPhrases(request.query);
+    const cases = await this._vectorSearchCases(words.slice(0, 10));
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+
+    // Format Metadata
+    const meta = `metadata:\n` +
+      `  cases:\n` +
+      cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
+      `\n` +
+      `  counts:\n` +
+      `    cases: ` + caseCount.count + `\n` +
+      ``;
+
+    // Format Query Text
+    const query = `---\n` +
+      meta +
+      `---\n` +
+      `${request.query}`;
+
+    const metaTokenCount = this.estimateTokens(meta);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+
+    let messages = [];
+
+    if (request.conversation_id) {
+      // Resume conversation
+      const prev = await this._getConversationMessages(request.conversation_id);
+      messages = prev.map((x) => {
+        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+      });
+    } else {
+      // New conversation
+      messages = messages.concat([{ role: 'user', content: request.query }]);
+    }
+
+    if (request.subject) {
+      // Subject material provided
+      messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
+    }
+
+    // Prompt
+    messages.unshift({
+      role: 'system',
+      content: this.settings.prompt
+    });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
+
+    // TODO: execute RAG query for additional metadata
+    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
+    const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
+
+    const agentResults = Promise.allSettled([
+      this.alpha.query({ query }),
+      this.mistral.query({ query })
+    ]);
+
+    Promise.race([
+      new Promise((resolve, reject) => {
+        setTimeout(reject, timeout, new Error('Timeout!'));
+      }),
+      agentResults
+    ]).then(async (results) => {
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+      const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+
+      // TODO: loop over all agents
+      // TODO: compress to 4096 tokens
+      const summarized = await this.summarizer.query({
+        query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${answers[0]?.content}`+`\n- [BETA]: ${answers[1]?.content}\n\`\`\``,
+      });
+
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+      const actor = new Actor({ content: summarized.content });
+      const bundle = {
+        type: 'TimedResponse',
+        content: summarized.content
+      };
+
+      const extracted = await this.extractor.query({
+        query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+      });
+      console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+      if (extracted && extracted.content) {
+        console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+        try {
+          const caseCards = JSON.parse(extracted.content).map((x) => {
+            const actor = new Actor({ name: x });
+            return {
+              type: 'CaseCard',
+              content: {
+                id: actor.id,
+                title: x
+              }
+            };
+          });
+
+          console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+          // Find each case in the database and reject if not found
+          /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+            cards: JSON.stringify(caseCards.map((x) => x.content.id))
+          }); */
+        } catch (exception) {
+          console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+        }
+      }
+
+      try {
+        const documentIDs = await this.db('documents').insert({
+          fabric_id: actor.id,
+          content: summarized.content
+        });
+
+        const responseIDs = await this.db('responses').insert({
+          actor: this.summarizer.id,
+          content: `/documents/${documentIDs[0]}`
+        });
+
+        this.emit('response', {
+          id: responseIDs[0],
+          content: summarized.content
+        })
+      } catch (exception) {
+        console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
+      }
+
+      const end = new Date();
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+    }).catch((exception) => {
+      console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
+    });
+
+    return message;
   }
 
   async findCaseByName (name) {
@@ -747,31 +1035,31 @@ class Jeeves extends Service {
       this.courtlistener.on('sync', (sync) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
       });
-  
+
       this.courtlistener.on('debug', (...debug) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
       });
-  
+
       this.courtlistener.on('error', (...error) => {
         console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
       });
-  
+
       this.courtlistener.on('warning', (...warning) => {
         console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
       });
-  
+
       this.courtlistener.on('message', (message) => {
         console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
       });
-  
+
       this.courtlistener.on('document', async (actor) => {
         console.debug('[DOCUMENT]', 'Received document:', actor);
-  
+
         const document = actor.content;
         // TODO: store sample.id as fabric_id
         const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
         const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
-  
+
         if (!target) {
           console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
           await this.db('documents').insert({
@@ -794,7 +1082,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('court', async (court) => {
         const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
         const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
@@ -814,7 +1102,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -836,11 +1124,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
       this.courtlistener.on('opinioncluster', async (cluster) => {
         const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             courtlistener_cluster_id: cluster.id,
@@ -877,11 +1165,11 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('opinion', async (opinion) => {
         const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
         const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
-  
+
         if (!target) {
           await this.db('opinions').insert({
             sha1: opinion.sha1,
@@ -905,7 +1193,7 @@ class Jeeves extends Service {
           });
         }
       });
-  
+
       this.courtlistener.on('person', async (person) => {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
@@ -1058,77 +1346,328 @@ class Jeeves extends Service {
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Services
+    this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+
     // TODO: move all handlers to class methods
-    this.http._addRoute('POST', '/inquiries', async (req, res) => {
-      const { email } = req.body;
+    this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
+    this.http._addRoute('GET', '/inquiries', this._handleInquiryListRequest.bind(this));
 
-      if (!email) {
-        return res.status(400).json({ message: 'Email is required.' });
-      }
-
+    //endpoint to delete inquiry from admin panel
+    this.http._addRoute('PATCH', '/inquiries/delete/:id', async (req, res) => {
+      const inquiryID = req.params.id;
       try {
-        // Check if the username already exists
-        const existingInquiry = await this.db('inquiries').where('email', email).first();
-        if (existingInquiry) {
-          return res.status(409).json({ message: "You're already on the waitlist!" });
+        const inquiry = await this.db.select('*').from('inquiries').where({ id: inquiryID }).first();
+
+        if (!inquiry) {
+          return res.status(404).json({ message: 'Invalid inquiry' });
         }
 
-        // Insert the new user into the database
-        const newInquiry = await this.db('inquiries').insert({
-          email: email
+        // update the invitation status to deleted from the invitations list
+        const inquiryDeleteStatus = await this.db('inquiries')
+          .where({ id: inquiryID })
+          .update({
+            updated_at: new Date(),
+            status: 'deleted',
+          });
+
+        if (!inquiryDeleteStatus) {
+          return res.status(500).json({ message: 'Error deleting the invitation.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
         });
 
-        return res.json({ message: "You've been added to the waitlist!" });
       } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.  Try again later.' });
+        res.status(500).json({ message: 'Internal server error.', error });
       }
+
     });
 
-    this.http._addRoute('GET', '/inquiries', async (req, res) => {
-      try {
-        const inquiries = await this.db('inquiries')
-          .select('*')
-          .orderBy('created_at', 'asc');
-        res.send(inquiries);
-      } catch (error) {
-        console.error('Error fetching inquiries:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-      }
+    this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
+    this.http._addRoute('GET', '/signup/decline/:invitationToken', async (req, res, next) => {
+      return res.send(this.http.app.render());
     });
 
+    //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', async (req, res) => {
-      // TODO: check for admin token
-      const { inquiry_id } = req.body;
+      const { email } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        inquiry_id: inquiry_id
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
+        
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
 
-      res.send({
-        message: 'Invitation created successfully!'
-      });
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
+        
+        //Flag for Eric
+        //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
+        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
+        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
+        // TODO: serve from assets (@nplayer89)
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: this.settings.email.username,
+          to: email,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
+
+        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
+        if (!existingInvite) {
+          const invitation = await this.db('invitations').insert({
+            sender_id: req.user.id,
+            target: email,
+            token: invitationToken
+          });
+
+          // update the inquiry status to invited from the waitlist
+          const inquiryInvitedStatus = await this.db('inquiries')
+            .where({ email: email })
+            .update({
+              updated_at: new Date(),
+              status: 'invited',
+            });
+          if (!inquiryInvitedStatus) {
+            return res.status(500).json({ message: 'Error updating the inquiry.' });
+          }
+        } else {
+          return res.status(500).json({ message: 'Error: Invitation already exist.' });
+        }
+        res.send({
+          message: 'Invitation created successfully!'
+        });
+      } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
 
+    //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-      // TODO: check for admin token
-      const { status } = req.body;
 
-      const inserted = await this.db('invitations').insert({
-        status: status
-      });
+      try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
+        }
 
-      res.send({
-        message: 'Invitation re-sent successfully!'
-      });
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let invitationToken = '';
+        while (!uniqueTokenFound) {
+          invitationToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
+
+        const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
+        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
+        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+
+        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
+        await this.email.send({
+          //from: 'agent@jeeves.dev',
+          from: this.settings.email.username,
+          to: invitation.target,
+          subject: 'Invitation to join Novo',
+          html: htmlContent
+        });
+
+        const updateResult = await this.db('invitations')
+          .where({ id: req.params.id })
+          .increment('invitation_count', 1)
+          .update({
+            updated_at: new Date(),
+            sender_id: req.user.id,
+            token: invitationToken
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation count.' });
+        }
+
+        res.send({
+          message: 'Invitation re-sent successfully!'
+        });
+      } catch (error) {
+        console.error('Error occurred:', error);
+        res.status(500).json({ message: 'Error sending invitation.' });
+      }
     });
+
 
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
       // - create user account
       // - set user password
       // - create help conversation
+    });
+
+    this.http._addRoute('GET', '/invitations', async (req, res) => {
+      try {
+        const invitations = await this.db('invitations')
+        .join('users', 'invitations.sender_id', '=', 'users.id')
+        .select('invitations.*', 'users.username as sender_username')
+        .orderBy('invitations.created_at', 'desc');
+
+        res.send(invitations);
+      } catch (error) {
+        console.error('Error fetching invitations:', error);
+        res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    this.http._addRoute('POST', '/checkInvitationToken/:id', async (req, res) => {
+      const  invitationToken = req.params.id;
+
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Yor invitation link is not valid.' });
+        }
+
+        // Check if the invitation has already been accepted or declined
+        if (invitation.status === 'accepted') {
+          return res.status(409).json({
+            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.'
+          });
+        } else if (invitation.status === 'declined') {
+          return res.status(409).json({
+            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.'
+          });
+        }
+
+        // Check if the token is older than 30 days
+        const tokenAgeInDays = (new Date() - new Date(invitation.updated_at)) / (1000 * 60 * 60 * 24);
+        if (tokenAgeInDays > 30) {
+          return res.status(410).json({ message: 'Your invitation link has expired.' });
+        }
+
+        res.json({ message: 'Invitation token is valid and pending.', invitation });
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to change the status of an invitation when its accepted
+    this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'accepted',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation accepted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to change the status of an invitation when its declined
+    this.http._addRoute('PATCH', '/invitations/decline/:id', async (req, res) => {
+      const invitationToken = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation token' });
+        }
+
+        const updateResult = await this.db('invitations')
+          .where({ token: invitationToken })
+          .update({
+            updated_at: new Date(),
+            status: 'declined',
+          });
+
+        if (!updateResult) {
+          return res.status(500).json({ message: 'Error updating the invitation status.' });
+        }
+
+        res.send({
+          message: 'Invitation declined successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+    //endpoint to delete invitation from admin panel
+    this.http._addRoute('PATCH', '/invitations/delete/:id', async (req, res) => {
+      const invitationID = req.params.id;
+      try {
+        const invitation = await this.db.select('*').from('invitations').where({ id: invitationID }).first();
+
+        if (!invitation) {
+          return res.status(404).json({ message: 'Invalid invitation' });
+        }
+
+        // update the invitation status to deleted from the invitations list
+        const invitationDeleteStatus = await this.db('invitations')
+          .where({ id: invitationID })
+          .update({
+            updated_at: new Date(),
+            status: 'deleted',
+          });
+
+        if (!invitationDeleteStatus) {
+          return res.status(500).json({ message: 'Error deleting the invitation.' });
+        }
+
+        res.send({
+          message: 'Invitation deleted successfully!'
+        });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
     });
 
     this.http._addRoute('GET', '/dockets', async (req, res) => {
@@ -1175,6 +1714,93 @@ class Jeeves extends Service {
         return res.status(500).json({ message: 'Internal server error.' });
       }
     });
+
+    this.http._addRoute('POST', '/users/full', async (req, res) => {
+      const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
+
+      // Check if the username and password are provided
+      if (!username || !password) {
+        return res.status(400).json({ message: 'Username and password are required.' });
+      }
+
+      try {
+        // Check if the username already exists
+        const existingUser = await this.db('users').where('username', username).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Username already exists.' });
+        }
+
+        // Check if the email already exists
+        const existingEmail = await this.db('users').where('email', email).first();
+        if (existingUser) {
+          return res.status(409).json({ message: 'Email already registered.' });
+        }
+
+        // Generate a salt and hash the password
+        const saltRounds = 10;
+        const salt = genSaltSync(saltRounds);
+        const hashedPassword = hashSync(password, salt);
+
+        // Insert the new user into the database
+        const newUser = await this.db('users').insert({
+          username: username,
+          password: hashedPassword,
+          salt: salt,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          firm_name: firmName,
+          firm_size: firmSize,
+          firm_name: firmName ? firmName : null,
+          firm_size: firmSize || firmSize === 0 ? firmSize : null,
+        });
+
+        console.log('New user registered:', username);
+
+        return res.json({ message: 'User registered successfully.' });
+      } catch (error) {
+        console.error('Error registering user: ', error);
+        return res.status(500).json({ message: 'Internal server error.' });
+      }
+    });
+
+    //endpoint to check if the username is available
+    this.http._addRoute('POST', '/users/:id', async (req, res) => {
+      const  username = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ username: username }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
+        }
+        res.json({ message: 'Username avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
+
+    //endpoint to check if the email is available
+    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
+      const  email = req.params.id;
+
+      try {
+        const user = await this.db.select('*').from('users').where({ email: email }).first();
+
+        if (user) {
+          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
+        }
+        res.json({ message: 'Email avaliable' });
+
+      } catch (error) {
+        res.status(500).json({ message: 'Internal server error.', error });
+      }
+
+    });
+
 
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
@@ -1313,7 +1939,16 @@ class Jeeves extends Service {
           });
         }
 
-        const resetToken = crypto.randomBytes(20).toString('hex');
+        // Generate a unique token
+        let uniqueTokenFound = false;
+        let resetToken = '';
+        while (!uniqueTokenFound) {
+          resetToken = crypto.randomBytes(20).toString('hex');
+          const tokenExists = await this.db.select('*').from('password_resets').where({ token: resetToken }).first();
+          if (!tokenExists) {
+            uniqueTokenFound = true;
+          }
+        };
 
         const newReset = await this.db('password_resets').insert({
           user_id: existingUser.id,
@@ -1325,21 +1960,23 @@ class Jeeves extends Service {
 
         const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        const htmlContent = `
-                                <html>
-                                  <body>
-                                    <p>Hello,</p>
-                                    <p>Please click on the link below to reset your password:</p>
-                                    <p><a href="${resetLink}">Reset Password</a></p>
-                                    <p>If you did not request a password reset, please ignore this email.</p>
-                                    <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                                  </body>
-                                </html>
-                              `;
+        // const htmlContent = `
+        //                         <html>
+        //                           <body>
+        //                             <p>Hello,</p>
+        //                             <p>Please click on the link below to reset your password:</p>
+        //                             <p><a href="${resetLink}">Reset Password</a></p>
+        //                             <p>If you did not request a password reset, please ignore this email.</p>
+        //                             <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+        //                           </body>
+        //                         </html>
+        //                       `;
+        const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {
           await this.email.send({
-            from: 'agent@jeeves.dev',
+           // from: 'agent@jeeves.dev',
+            from: this.settings.email.username,
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -2047,6 +2684,17 @@ class Jeeves extends Service {
           user_id: req.user.id
         });
 
+        // Core Pipeline
+        this.createTimedRequest({
+          query: content
+        }).catch((exception) => {
+          console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
+        }).then((request) => {
+          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+        });
+        // End Core Pipeline
+
+        // pre-release pipeline
         const inserted = await this.db('requests').insert({
           message_id: newMessage[0],
           content: 'Jeeves is thinking...'
@@ -2062,7 +2710,7 @@ class Jeeves extends Service {
         }).then(async (output) => {
           console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
           const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`${output.content}\n\`\`\``
+            query: `$CONTENT\n\`\`\`\n${output.content}\n\`\`\``
           });
           console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
@@ -2342,88 +2990,7 @@ class Jeeves extends Service {
 
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
-
-    const FABRIC_FIXTURE = await this.fabric.search({
-      query: 'North\nCarolina',
-      model: 'jeeves-0.2.0-RC1'
-    });
-    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
-
-    // Test the CourtListener database
-    if (this.courtlistener) {
-      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
-        query: 'North\nCarolina',
-        model: 'jeeves-0.2.0-RC1'
-      });
-      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
-    }
-
-    // Simulate Network
-    const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
-
-    // Agents in the simulated network
-    const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
-    // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
-    // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
-
-    // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
-    const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
-    // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
-    // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
-
-    const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+'\n- [BETA]: undefined\n- [GAMMA]: undefined\n```',
-      messages: [
-        {
-          role: 'user',
-          content: `[ALPHA] ${ALPHA_FIXTURE.content}`
-        }
-      ]
-    });
-
-    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
-
-    // Test Extractor
-    let randomCases = await this.openai._streamConversationRequest({
-      messages: [
-        {
-          role: 'user',
-          content: 'Provide a list of 10 random cases from North Carolina.'
-        }
-      ]
-    });
-
-    if (!randomCases) {
-      const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
-      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
-    }
-
-    console.debug('GOT RANDOM CASES:', randomCases);
-
-    const AUGMENTOR_FIXTURE = await this.augmentor.query({
-      query: `Name an individual in an interesting case in North Carolina`
-    });
-
-    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
-
-    // Test Extractor
-    const EXTRACTOR_FIXTURE = await this.extractor.query({
-      query: randomCases.content
-    });
-
-    // Test Validator
-    const VALIDATOR_FIXTURE = await this.validator.query({
-      query: EXTRACTOR_FIXTURE.response
-    });
-
-    // Test RAG Query
-    const RAG_FIXTURE = await this.rag.query({
-      query: `Find a case that is similar to ${randomCases.content.split(' ').slice(2).join(' ')}.`
-    });
-
-    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
-    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
-    console.debug('RAG FIXTURE:', RAG_FIXTURE);
+    if (this.settings.verify) await this._runFixtures();
 
     // GraphQL
     /* this.apollo.applyMiddleware({
@@ -2453,6 +3020,161 @@ class Jeeves extends Service {
 
     // return the instance!
     return this;
+  }
+
+  //function that creates the template to email invitations sendig
+  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {
+    return `
+          <html>
+            <head>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                    }
+
+                    .button {
+                        background-color: #1f487c;
+                        border: none;
+                        color: white;
+                        padding: 10px 20px;
+                        text-align: center;
+                        text-decoration: none;
+                        display: inline-block;
+                        font-size: 16px;
+                        font-weight: bold;
+                        margin: 4px 2px;
+                        cursor: pointer;
+                        border-radius: 8px;
+                        width: 150px;
+                    }
+
+                    .button:hover {
+                        background-color: #163d5c;
+                    }
+
+                    .decline {
+                        color: #ca392f;
+                        text-decoration: none;
+                        font-size: 14px;
+                        margin-top: 20px;
+                        display: inline-block;
+                    }
+
+                    .container {
+                        text-align: center;
+                        max-width: 500px;
+                        margin: 0 auto;
+                    }
+
+                    .footer {
+                        margin-top: 30px;
+                        font-size: 0.8em;
+                    }
+                    table {
+                      width: 100%;
+                  }
+
+                  .content {
+                      text-align: center;
+                  }
+                </style>
+            </head>
+
+            <body>
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td>
+                            <div class="container">
+                                <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                                    <tr>
+                                        <td class="content">
+                                            <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                            <h3>Hello, You have been invited to join Novo.</h3>
+                                            <p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.</p>
+                                            <a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo</a>
+                                            <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <div class="footer">
+                                    <p>For any inquiries, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+
+          </html>`;
+  }
+  createPasswordResetEmailContent(resetLink, imgSrc) {
+    return `
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+              }
+
+              .button {
+                background-color: #1f487c;
+                border: none;
+                color: white;
+                padding: 10px 20px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+                font-weight: bold;
+                margin: 4px 2px;
+                cursor: pointer;
+                border-radius: 8px;
+                width: 150px;
+              }
+
+              .button:hover {
+                background-color: #163d5c;
+              }
+
+              .container {
+                text-align: center;
+                max-width: 500px;
+                margin: 0 auto;
+              }
+
+              .footer {
+                margin-top: 30px;
+                font-size: 0.8em;
+              }
+            </style>
+          </head>
+          <body>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td>
+                  <div class="container">
+                    <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                      <tr>
+                        <td class="content">
+                          <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                          <h3>Password Reset Request</h3>
+                          <p>You have requested to reset your password. Please click the button below to set a new password.</p>
+                          <a href=${resetLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Reset Password</a>
+                          <p>If you did not request a password reset, please ignore this email.</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <div class="footer">
+                      <p>If you have any issues or questions, please contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
+          </body>
+        </html>`;
   }
 
   /**
@@ -2524,6 +3246,31 @@ class Jeeves extends Service {
     }
   }
 
+  async _handleFeedbackRequest (req, res, next) {
+    // TODO: check token
+    const request = req.body;
+
+    try {
+      await this.db('feedback').insert({
+        creator: req.user.id,
+        content: request.comment
+      });
+
+      return res.send({
+        type: 'SubmitFeedbackResult',
+        content: {
+          message: 'Success!',
+          status: 'success'
+        }
+      });
+    } catch (exception) {
+      return res.send({
+        type: 'SubmitFeedbackError',
+        content: exception
+      });
+    }
+  }
+
   async _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
     console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
@@ -2543,6 +3290,49 @@ class Jeeves extends Service {
         results: results
       });
     });
+  }
+
+  async _handleInquiryListRequest (req, res, next) {
+    try {
+      const inquiries = await this.db('inquiries')
+        .select('*')
+        .orderBy('created_at', 'desc');
+      res.send(inquiries);
+    } catch (error) {
+      console.error('Error fetching inquiries:', error);
+      res.status(500).json({ message: 'Internal server error.' });
+    }
+  }
+
+  async _handleInquiryCreateRequest (req, res, next) {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    try {
+      // Check if the email already exists in the waitlist
+      const existingInquiry = await this.db('inquiries').where('email', email).first();
+      if (existingInquiry) {
+        return res.status(409).json({ message: "You're already on the waitlist!" });
+      }
+
+      //checks if there is an user with that email already
+      const existingEmailUser = await this.db('users').where('email', email).first();
+      if (existingEmailUser) {
+        return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
+      }
+
+      // Insert the new user into the database
+      const newInquiry = await this.db('inquiries').insert({
+        email: email
+      });
+
+      return res.json({ message: "You've been added to the waitlist!" });
+    } catch (error) {
+      return res.status(500).json({ message: 'Internal server error.  Try again later.' });
+    }
   }
 
   async _handleRAGQuery (query) {
@@ -2614,6 +3404,28 @@ class Jeeves extends Service {
       res.status(503);
       return res.send({
         type: 'SearchCourtsError',
+        content: exception
+      });
+    }
+  }
+
+  async _handleJurisdictionSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const jurisdictions = await this._searchJurisdictions(request);
+      const result = {
+        jurisdictions: jurisdictions || []
+      };
+
+      return res.send({
+        type: 'SearchJurisdictionsResult',
+        content: result,
+        results: jurisdictions
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchJurisdictionsError',
         content: exception
       });
     }
@@ -3135,7 +3947,7 @@ class Jeeves extends Service {
 
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
-      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.`;
+      const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = {
         input: query,
         messages: messages
@@ -3196,12 +4008,15 @@ class Jeeves extends Service {
     const ids = harvard.results.map(x => x.id);
     const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
 
-    const courtListenerResults = await this.courtlistener.search({
-      query: request.query,
-      model: 'jeeves-0.2.0-RC1'
-    });
+    if (this.courtlistener) {
+      const courtListenerResults = await this.courtlistener.search({
+        query: request.query,
+        model: 'jeeves-0.2.0-RC1'
+      });
 
-    console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
+      // TODO: concat into results
+    }
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
@@ -3248,6 +4063,22 @@ class Jeeves extends Service {
         resolve(object.results);
       }).catch(reject);
     });
+  }
+
+  async _searchJurisdictions (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching jurisdictions:', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    const response = [];
+
+    try {
+      await this.db('jurisdictions').select('*').where('name', 'like', `%${request.query}%`);
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search jurisdictions:', exception);
+    }
+
+    return response;
   }
 
   async _searchPeople (request) {
@@ -3348,6 +4179,124 @@ class Jeeves extends Service {
     await this.commit();
 
     return this;
+  }
+
+  async _runFixtures () {
+    if (this.statutes) {
+      const STATUTE_FIXTURE = await this.statutes.search({
+        query: 'Texas'
+      });
+      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
+    }
+
+    const FABRIC_FIXTURE = await this.fabric.search({
+      query: 'North\nCarolina',
+      model: 'jeeves-0.2.0-RC1'
+    });
+    console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
+
+    // Test the CourtListener database
+    if (this.courtlistener) {
+      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
+        query: 'North\nCarolina',
+        model: 'jeeves-0.2.0-RC1'
+      });
+      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
+    }
+
+    // Simulate Network
+    const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
+
+    // Agents in the simulated network
+    const agentMistral = new Mistral({ name: 'Mistral-V2', prompt: this.settings.prompt });
+    const agentAlpha = new Agent({ name: 'ALPHA', prompt: 'You are ALPHA, the first node.', openai: this.settings.openai });
+    // const agentBeta = new Agent({ name: 'BETA', prompt: 'You are BETA, the second node.', openai: this.settings.openai });
+    // const agentGamma = new Agent({ name: 'GAMMA', prompt: 'You are GAMMA, the first production node.' });
+
+    // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+    const MISTRAL_FIXTURE = await agentMistral.query({ query: summarizerQuery });
+    const ALPHA_FIXTURE = await agentAlpha.query({ query: summarizerQuery });
+    // const BETA_FIXTURE = await agentBeta.query({ query: summarizerQuery });
+    // const GAMMA_FIXTURE = await agentGamma.query({ query: summarizerQuery });
+    console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
+
+    const SUMMARIZER_FIXTURE = await this.summarizer.query({
+      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
+      messages: [
+        {
+          role: 'user',
+          content: `[ALPHA] ${ALPHA_FIXTURE.content}`
+        }
+      ]
+    });
+
+    console.debug('SUMMARIZER FIXTURE:', SUMMARIZER_FIXTURE);
+
+    // Test Extractor
+    let randomCases = await this.openai._streamConversationRequest({
+      messages: [
+        {
+          role: 'user',
+          content: 'Provide a list of 10 random cases from North Carolina.'
+        }
+      ]
+    });
+
+    if (!randomCases) {
+      const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
+      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
+    }
+
+    console.debug('GOT RANDOM CASES:', randomCases);
+
+    const AUGMENTOR_FIXTURE = await this.augmentor.query({
+      query: `Name an individual in an interesting case in North Carolina`
+    });
+
+    console.debug('AUGMENTOR FIXTURE:', AUGMENTOR_FIXTURE);
+
+    // Test Extractor
+    const EXTRACTOR_FIXTURE = await this.extractor.query({
+      query: randomCases.content
+    });
+
+    // Test Validator
+    const VALIDATOR_FIXTURE = await this.validator.query({
+      query: EXTRACTOR_FIXTURE.response
+    });
+
+    // Test RAG Query
+    const RAG_FIXTURE = await this.rag.query({
+      query: `Find a case that is similar to ${randomCases.content.split(' ').slice(2).join(' ')}.`
+    });
+
+    console.debug('EXTRACTOR FIXTURE:', EXTRACTOR_FIXTURE);
+    console.debug('VALIDATOR FIXTURE:', VALIDATOR_FIXTURE);
+    console.debug('RAG FIXTURE:', RAG_FIXTURE);
+  }
+
+  async _vectorSearchCases (words) {
+    const uniques = [...new Set(words)];
+
+    console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
+    console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', uniques)
+
+    // TODO: Redis
+    // TODO: Vector Search
+    // TODO: Vector Search (ChatGPT Embeddings)
+    const results = await Promise.all(uniques.map((word) => {
+      return this.db('cases').select('id', 'title').where('title', 'like', `%${word}%`).limit(10);
+    }));
+
+    let cases = [];
+
+    for (let i = 0; i < results.length; i++) {
+      cases = cases.concat(results[i]);
+    }
+
+    if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+
+    return cases;
   }
 
   _handleServiceMessage (source, message) {

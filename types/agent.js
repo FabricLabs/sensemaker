@@ -25,7 +25,6 @@ const OpenAIService = require('../services/openai');
 
 /**
  * The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
- * @type {Agent} An Agent is a type of Service.
  */
 class Agent extends Service {
   constructor (settings = {}) {
@@ -58,6 +57,9 @@ class Agent extends Service {
       },
       model: 'gpt-4-1106-preview',
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
+      rules: [
+        'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
+      ],
       timeout: {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
@@ -76,6 +78,46 @@ class Agent extends Service {
         // frequency_penalty: 0,
         // presence_penalty: 0.6,
         // stop: ['\n'] // TODO: eliminate need for stop tokens
+      },
+      documentation: {
+        description: 'The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.',
+        type: 'Service',
+        methods: {
+          query: {
+            description: 'Query the AI agent.',
+            parameters: {
+              query: {
+                type: 'String',
+                description: 'The query to send to the AI agent.'
+              }
+            },
+            returns: {
+              type: 'Object',
+              description: 'The response from the AI agent.'
+            }
+          },
+          searchHost: {
+            type: 'function',
+            function: {
+              name: 'search_host',
+              description: 'Search the specified host for a query.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  host: {
+                    type: 'string',
+                    description: 'The host to search.'
+                  },
+                  query: {
+                    type: 'string',
+                    description: 'The JSON-encoded query object to send to the host.'
+                  }
+                },
+                required: ['host']
+              }
+            }
+          }
+        }
       }
     }, settings);
 
@@ -90,7 +132,7 @@ class Agent extends Service {
     // Assign prompts
     this.settings.openai.model = this.settings.model;
     // TODO: add configurable rules
-    this.settings.openai.prompt = `RULES:\n- do not provide hypotheticals\n\n` + this.settings.prompt;
+    this.settings.openai.prompt = `RULES:\n- ${this.settings.rules.join('\n- ')}\n\n` + this.settings.prompt;
 
     // Services
     this.services = {
@@ -131,12 +173,22 @@ class Agent extends Service {
     return this._state.prompt;
   }
 
-  set prompt (value) {
-    this._state.prompt = value;
+  get functions () {
+    return this.settings.documentation.methods;
   }
 
   get model () {
     return this._state.model;
+  }
+
+  get tools () {
+    return Object.values(this.settings.documentation.methods).filter((x) => {
+      return (x.type == 'function');
+    });
+  }
+
+  set prompt (value) {
+    this._state.prompt = value;
   }
 
   async _handleRequest (request) {
@@ -162,19 +214,25 @@ class Agent extends Service {
     return new Promise(async (resolve, reject) => {
       this.emit('debug', '[AGENT]', 'Querying:', request);
       const responses = {
-        // TODO: Mistral 7B for local installs
+        alpha: null,
+        beta: null,
+        gamma: null,
+        mistral: null,
         openai: await this.services.openai._streamConversationRequest({
           messages: [
             { role: 'system', content: this.prompt },
             { role: 'user', content: request.query }
-          ]
-        })
+          ],
+          tools: this.tools
+        }),
+        rag: null,
+        sensemaker: null
       };
 
       // Wait for all responses to resolve or reject.
       await Promise.allSettled(Object.values(responses));
-      console.debug('[AGENT]', 'Query:', request.query);
       console.debug('[AGENT]', 'Prompt:', this.prompt);
+      console.debug('[AGENT]', 'Query:', request.query);
       console.debug('[AGENT]', 'Responses:', responses);
 
       let response = '';
