@@ -18,6 +18,7 @@ const {
   GridColumn,
   Grid,
   Checkbox,
+  Popup,
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
@@ -28,6 +29,9 @@ class MatterView extends React.Component {
     this.state = {
       loading: false,
       attachModalOpen: false,
+      note: null,
+      filename: null,
+      addingContext: false,
     };
   }
 
@@ -38,6 +42,12 @@ class MatterView extends React.Component {
   componentDidUpdate(prevProps) {
     const { matters } = this.props;
     if (prevProps.matters.current !== matters.current) {
+      if (matters.current.file) {
+        this.setState({ filename: matters.current.file })
+      }
+      if (matters.current.note) {
+        this.setState({ note: matters.current.note })
+      }
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
       }
@@ -45,17 +55,45 @@ class MatterView extends React.Component {
         this.props.fetchCourt(matters.current.court_id);
       }
     }
+    if (prevProps.matters !== matters && !matters.loading) {
+      if (this.state.addingContext) {
+        //TO DO, HANDLING SITUATIONS
+        console.log("el matter en la creacion",matters);
+        if (matters.contextSuccess) {
+          console.log("matter context added");
+        } else {
+          console.log("error adding context");
+        }
+        this.setState({ addingContext: false });
+      }
+    }
   };
 
-  handleModalSubmit = (note, files) => {
-    console.log("Note:", note, "Files:", files);
-    this.setState({ attachModalOpen: false });
+  handleModalSubmit = (note, filename, file) => {
+    console.log("Note:", note, "Files:", file);
+    const id = this.props.id;
+
+    //TO DO: STORE THE FILE SOMEWHERE
+    //the actual full file is in "file"
+
+    if (filename) {
+      this.setState({ filename: filename });
+    }
+    if (note) {
+      this.setState({ note: note });
+    }
+
+    this.setState({ attachModalOpen: false, addingContext: true });
+    this.props.addContext(note, filename, id);
   };
 
+  deleteFile = () => {
+    this.setState({ filename: null });
+    this.props.removeFile(this.props.id);
+  }
 
   render() {
     const { matters, jurisdictions, courts } = this.props;
-    const { loading } = this.state;
     const { current } = matters;
 
     return (
@@ -136,10 +174,34 @@ class MatterView extends React.Component {
           <Grid columns={2}>
             <GridRow>
               <GridColumn width={13} textAlign='center'>
-                <Header as='h2'>Context</Header>
+                <Header as='h2'>Context
+                  <Popup trigger={<Icon name='info circle' size='small' style={{ margin: '0 0  0.2em 0.5em', color: '#336699' }} />}>
+                    <Popup.Content>
+                      <p>You can add one additional note or one file about this Matter
+                        to enhance the information available. This will enable Novo
+                        to generate more accurate and relevant answers based on the extended details provided.</p>
+                    </Popup.Content>
+                  </Popup>
+                </Header>
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
+            {this.state.filename &&
+              <GridRow>
+                <GridColumn width={13} textAlign='center'>
+                  <Label>{this.state.filename}</Label>
+                </GridColumn>
+                <GridColumn width={3} />
+              </GridRow>
+            }
+            {this.state.note &&
+              <GridRow>
+                <GridColumn width={13} textAlign='center'>
+                  <Header as='h5'>{this.state.note}</Header>
+                </GridColumn>
+                <GridColumn width={3} />
+              </GridRow>
+            }
             <GridRow>
               <GridColumn width={13} textAlign='center'>
                 <Button
@@ -151,18 +213,16 @@ class MatterView extends React.Component {
               <GridColumn width={3} />
             </GridRow>
           </Grid>
-          {/* <Button
-            primary
-            content="+ Add File or Note"
-            onClick={() => this.setState({ attachModalOpen: true })}
-          /> */}
           <MatterFileModal
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
+            filename={this.state.filename}
+            deleteFile={this.deleteFile}
+            note={this.state.note}
           />
         </section>
-        <Header as='h3' style={{marginTop:'2em'}}><Link to={"/matters/"} >Back to Matters</Link></Header>
+        <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header>
       </Segment>
     );
   }

@@ -19,6 +19,13 @@ const CREATE_MATTER_REQUEST = 'CREATE_MATTER_REQUEST';
 const CREATE_MATTER_SUCCESS = 'CREATE_MATTER_SUCCESS';
 const CREATE_MATTER_FAILURE = 'CREATE_MATTER_FAILURE';
 
+const ADD_CONTEXT_REQUEST = 'ADD_CONTEXT_REQUEST';
+const ADD_CONTEXT_SUCCESS = 'ADD_CONTEXT_SUCCESS';
+const ADD_CONTEXT_FAILURE = 'ADD_CONTEXT_FAILURE';
+
+const REMOVE_FILE_REQUEST = 'REMOVE_FILE_REQUEST';
+const REMOVE_FILE_SUCCESS = 'REMOVE_FILE_SUCCESS';
+const REMOVE_FILE_FAILURE = 'REMOVE_FILE_FAILURE';
 
 // Action creators
 const fetchMattersRequest = () => ({ type: FETCH_MATTERS_REQUEST });
@@ -33,6 +40,13 @@ const createMatterRequest = () => ({ type: CREATE_MATTER_REQUEST, loading: true 
 const createMatterSuccess = (response) => ({ type: CREATE_MATTER_SUCCESS, payload: response });
 const createMatterFailure = (error) => ({ type: CREATE_MATTER_FAILURE, payload: error });
 
+const addContextRequest = () => ({ type: ADD_CONTEXT_REQUEST, loading: true });
+const addContextSuccess = (response) => ({ type: ADD_CONTEXT_SUCCESS, payload: response });
+const addContextFailure = (error) => ({ type: ADD_CONTEXT_FAILURE, payload: error });
+
+const removeFileRequest = () => ({ type: REMOVE_FILE_REQUEST, loading: true });
+const removeFileSuccess = (response) => ({ type: REMOVE_FILE_SUCCESS, payload: response });
+const removeFileFailure = (error) => ({ type: REMOVE_FILE_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchMatters = () => {
@@ -89,10 +103,70 @@ const createMatter = (title, description, plaintiff, defendant, representing, ju
       //forced delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
       const data = await response.json();
-
       dispatch(createMatterSuccess(data));
     } catch (error) {
       dispatch(createMatterFailure(error.message));
+    }
+
+  }
+}
+
+const addContext = (note, filename, id) => {
+  console.log(note, filename, id);
+  return async (dispatch, getState) => {
+    dispatch(addContextRequest());
+    try {
+      const { token } = getState().auth;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
+        }, 15000);
+      });
+
+      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull      
+      const fetchPromise = fetch(`/matter/context/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ note, filename, id }),
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      dispatch(addContextSuccess(response));
+    } catch (error) {
+      dispatch(addContextFailure(error.message));
+    }
+
+  }
+}
+
+const removeFile = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(removeFileRequest());
+    try {
+      const { token } = getState().auth;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('File deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
+        }, 15000);
+      });
+
+      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
+      const fetchPromise = fetch(`/matter/removefile/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+
+      dispatch(removeFileSuccess(response));
+    } catch (error) {
+      dispatch(removeFileFailure(error.message));
     }
 
   }
@@ -102,6 +176,8 @@ module.exports = {
   fetchMatters,
   fetchMatter,
   createMatter,
+  addContext,
+  removeFile,
   FETCH_MATTERS_REQUEST,
   FETCH_MATTERS_SUCCESS,
   FETCH_MATTERS_FAILURE,
@@ -111,5 +187,10 @@ module.exports = {
   CREATE_MATTER_REQUEST,
   CREATE_MATTER_SUCCESS,
   CREATE_MATTER_FAILURE,
-
+  ADD_CONTEXT_REQUEST,
+  ADD_CONTEXT_SUCCESS,
+  ADD_CONTEXT_FAILURE,
+  REMOVE_FILE_REQUEST,
+  REMOVE_FILE_SUCCESS,
+  REMOVE_FILE_FAILURE,
 };

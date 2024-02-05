@@ -23,7 +23,9 @@ const ROUTES = {
     new: require('../routes/matters/new_matter'),
     // view: require('../routes/matters/view_matter'),
     view: require('../routes/matters/matter_view'),
-    list: require('../routes/matters/list_matters')
+    list: require('../routes/matters/list_matters'),
+    addContext: require('../routes/matters/add_context'),
+    removeFile: require('../routes/matters/remove_file'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -322,6 +324,7 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.', openai: this.settings.openai });
 
     // Pipeline Datasources
     this.datasources = {
@@ -616,9 +619,15 @@ class Jeeves extends Hub {
     const phrases = this.importantPhrases(request.query);
     const cases = await this._vectorSearchCases(words.slice(0, 10));
 
+    const searchterm = await this.searcher.query({ query: request.query });
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
+
+    const realCases = await this.harvard.search({ query: searchterm.content });
+
     // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
 
     // Format Metadata
     const meta = `metadata:\n` +
@@ -1526,6 +1535,9 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
+    this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
+
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Jurisdictions
@@ -1589,7 +1601,7 @@ class Jeeves extends Hub {
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-        
+
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
@@ -1601,7 +1613,7 @@ class Jeeves extends Hub {
             uniqueTokenFound = true;
           }
         };
-        
+
         //Flag for Eric
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
@@ -2825,7 +2837,7 @@ class Jeeves extends Hub {
 
       if (!conversation_id) {
         isNew = true;
-
+        
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
         /* const room = await this.matrix.client.createRoom({ name: name }); */

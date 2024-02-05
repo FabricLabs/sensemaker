@@ -157,7 +157,7 @@
         <jeeves-ui id={this.id} class="fabric-site">
           <fabric-container id="react-application"></fabric-container>
           <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {this.props.auth.loading ? (
+            {(this.props.auth && this.props.auth.loading) ? (
               <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <Loader active inline="centered" size='huge' />
               </div>) :

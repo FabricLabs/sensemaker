@@ -138,6 +138,8 @@ const {
   fetchMatters,
   fetchMatter,
   createMatter,
+  addContext,
+  removeFile,
 } = require('../actions/mattersActions');
 
 // ## Main Process
@@ -253,6 +255,8 @@ async function main (input = {}) {
     fetchMatters: fetchMatters,
     fetchMatter: fetchMatter,
     createMatter: createMatter,
+    addContext: addContext,
+    removeFile: removeFile,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
