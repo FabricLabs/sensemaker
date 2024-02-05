@@ -112,6 +112,12 @@ class Waitlist extends React.Component {
               <Header as="h3">You're on the list!</Header>
               <p>Thanks for your interest!  We'll notify you as soon as {BRAND_NAME} is available.</p>
               <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
+              {/* Google Analytics - Conversion Event */}
+              <script>
+                gtag('event', 'manual_event_SUBMIT_LEAD_FORM', {
+                  // <event_parameters>
+                });
+              </script>
             </div>
           ) : (
             <div className="fade-in">
