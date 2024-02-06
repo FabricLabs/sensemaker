@@ -141,6 +141,7 @@ const {
   createMatter,
   addContext,
   removeFile,
+  editMatter,
 } = require('../actions/mattersActions');
 
 // ## Main Process
@@ -186,6 +187,8 @@ async function main (input = {}) {
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
+      matterConversations: state.conversations.matterConversations,
+      conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
       judges: state.judges,
@@ -259,6 +262,7 @@ async function main (input = {}) {
     addContext: addContext,
     removeFile: removeFile,
     fetchMatterConversations: fetchMatterConversations,
+    editMatter: editMatter,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

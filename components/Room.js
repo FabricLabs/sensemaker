@@ -19,6 +19,9 @@ const Feed = require('./Feed');
 class Conversation extends React.Component {
   constructor (props) {
     super(props);
+    this.state = {
+      actualConversation: null,
+    };
 
     this.messagesEndRef = React.createRef();
   }
@@ -26,6 +29,9 @@ class Conversation extends React.Component {
   componentDidMount () {
     const { id } = this.props;
     const { message } = this.props.chat;
+
+    const actual = this.props.conversations.find(conversation => conversation.id == id);
+    this.setState({actualConversation: actual});
 
     // this.props.fetchConversation(id);
     this.props.getMessages({ conversation_id: id });
@@ -67,6 +73,7 @@ class Conversation extends React.Component {
             placeholder={'Ask me anything...'}
             previousChat={true}
             conversationID={id}
+            actualConversation={this.state.actualConversation}
           />
        </fabric-component>
 
