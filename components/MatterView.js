@@ -165,7 +165,7 @@ class MatterView extends React.Component {
   }
 
   saveChanges = async () => {
-    
+
     await this.props.editMatter(
       this.props.id,
       this.state.title,
@@ -191,7 +191,7 @@ class MatterView extends React.Component {
 
     return (
       <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversationsLoading} style={{ marginRight: '1em' }}>
-
+        <section className='matter-header'>
         {this.state.isEditMode ? (
           <Grid columns={2}>
             <GridRow>
@@ -203,7 +203,7 @@ class MatterView extends React.Component {
                   fluid
                 />
               </GridColumn>
-              <GridColumn width={6} style={{display: 'flex', alignItems:'center'}}>
+              <GridColumn width={6} style={{display: 'flex'}}>
                 <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
                 <Button primary content='Save' size='medium' onClick={this.saveChanges} />
               </GridColumn>
@@ -211,10 +211,11 @@ class MatterView extends React.Component {
           </Grid>
         ) : (
           <div style={{ display: 'flex', alignItems:'center' }}>
-            <Header as='h1'>{current.title}</Header>
-            <Icon name='edit' size='big' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
+            <Header as='h1' style={{marginTop:'0', marginBottom:'0'}}>{current.title}</Header>
+            <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode}  style={{marginLeft:'1em', cursor: 'pointer'}}/>
           </div>
         )}
+        </section>
         <section className='matter-details'>
           <Grid columns={2}>
             <GridRow>
@@ -295,7 +296,7 @@ class MatterView extends React.Component {
                     search
                     selection
                     options={this.state.jurisdictionsOptions}
-                    value={current.jurisdiction_id}
+                    value={this.state.jurisdiction_id}
                     onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
                     error={jurisdictionErrorMessage}
                   />
@@ -319,7 +320,7 @@ class MatterView extends React.Component {
                     search
                     selection
                     options={this.state.courtsOptions}
-                    value={current.court_id}
+                    value={this.state.court_id}
                     onChange={(e, { value }) => this.setState({ court_id: value })}
                   />
                 ) : (

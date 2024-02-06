@@ -574,6 +574,9 @@ fabric-motd {
   max-width: 650px;
   margin-top: 2em;
 }
+.matter-header{
+  max-width: 650px;
+}
 
 .attach-file-area{
   border: 2px dashed #bbb;
