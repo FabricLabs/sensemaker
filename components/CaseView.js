@@ -10,10 +10,12 @@ const {
 
 const {
   Card,
+  Dimmer,
   Grid,
   Header,
   Icon,
   Label,
+  Loader,
   Segment
 } = require('semantic-ui-react');
 
@@ -52,7 +54,13 @@ class CaseView extends React.Component {
               <a href={cases.current.harvard_case_law_pdf} target='_blank'><Icon name='file pdf' /></a>
             ) : null}
           </Label.Group>
-          <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
+          {(cases.current.summary) ? (
+            <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
+          ) : (
+            <Dimmer active>
+              <Loader />
+            </Dimmer>
+          )}
           <div style={{ marginTop: '1em' }}>
             <Header as='h6'>Metadata</Header>
             <code>

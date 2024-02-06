@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "outDir": "js-code",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "target": "es2017",
+    "lib": ["es2017"],
+    "types": [
+      "jquery",
+      "node"
+    ]
+  },
+  "exclude": [
+    "scrappers/Pennsylvania.ts"
+  ]
+}
