@@ -324,7 +324,7 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.', openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
 
     // Pipeline Datasources
     this.datasources = {
@@ -619,18 +619,20 @@ class Jeeves extends Hub {
     const phrases = this.importantPhrases(request.query);
     const cases = await this._vectorSearchCases(words.slice(0, 10));
 
-    const searchterm = await this.searcher.query({ query: request.query });
+    /* const searchterm = await this.searcher.query({ query: request.query, tools: null });
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
 
     const realCases = await this.harvard.search({ query: searchterm.content });
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
+    */
 
     // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
 
     // Format Metadata
     const meta = `metadata:\n` +
+      `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
       `  cases:\n` +
       cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
       `\n` +
@@ -710,6 +712,7 @@ class Jeeves extends Hub {
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
       const summarized = await this.summarizer.query({
+        messages: messages,
         query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
       });
 

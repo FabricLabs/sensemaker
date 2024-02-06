@@ -222,14 +222,14 @@ class Agent extends Service {
 
   async query (request) {
     return new Promise(async (resolve, reject) => {
-      this.emit('debug', '[AGENT]', 'Querying:', request);
+      console.debug('[AGENT]', 'Querying:', request);
       const responses = {
         alpha: null,
         beta: null,
         gamma: null,
         mistral: null,
         openai: await this.services.openai._streamConversationRequest({
-          messages: [
+          messages: /* request.messages?.filter((x) => (!x.tool_calls)) || */ [
             { role: 'system', content: this.prompt },
             { role: 'user', content: request.query }
           ],
