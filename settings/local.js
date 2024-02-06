@@ -68,6 +68,9 @@ module.exports = {
     username: 'agent@jeeves.dev',
     password: 'generate app-specific password'
   },
+  files: {
+    path: '/media/storage/node/files'
+  },
   gemini: {
     model: 'gemini-pro',
     token: 'AIzaSyC2lGAZznayOAvs8dzAtqzpsS2rtcmruEk'
@@ -120,7 +123,7 @@ module.exports = {
     token: null
   },
   statutes: {
-    enable: false,
+    enable: true,
     jurisdictions: ['Texas']
   },
   courtlistener: {

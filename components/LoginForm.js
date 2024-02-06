@@ -10,6 +10,7 @@ const AskPasswordResetModal = require('./LoginFormAskResetModal');
 const {
   Button,
   Form,
+  Icon,
   Message,
 } = require('semantic-ui-react');
 
@@ -79,10 +80,10 @@ class LoginForm extends React.Component {
             <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={password} onChange={this.handlePasswordChange} />
           </Form.Field>
           <Button.Group vertical fluid>
-            <Button fluid primary loading={loading} type="submit" size={this.props.size}>Login</Button>
-            <Button as={Link} to='/' fluid size='small'>Back to the Waitlist</Button>
+            <Button fluid primary icon labelPosition='right' loading={loading} type="submit" size={this.props.size}>Log In <Icon name='right chevron' /></Button>
+            <Button as={Link} to='/' fluid icon labelPosition='left' size='small'><Icon name='left chevron' />Back to the Waitlist</Button>
           </Button.Group>
-          <p style={{ marginTop: '2em' }}>Did you forget your password? Restore it <a onClick={this.togglePasswordModal}>Here</a></p>
+          <p style={{ marginTop: '2em' }}>Forgot your password?  <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
         </Form>
         <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal}/>
