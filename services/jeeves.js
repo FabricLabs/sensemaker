@@ -63,7 +63,7 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 
 // Providers
-// const { StatuteProvider } = require('@jeeves/statute-scraper');
+const { StatuteProvider } = require('../libraries/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
@@ -246,7 +246,7 @@ class Jeeves extends Hub {
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
-    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
+    this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
     this.pacer = new PACER(this.settings.pacer);
@@ -1068,6 +1068,12 @@ class Jeeves extends Hub {
     // await this._registerService('pricefeed', Prices);
 
     this.products = await this.stripe.enumerateProducts();
+
+    if (this.settings.statutes.enable) {
+      this.statutes.start().then((output) => {
+        console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
+      });
+    }
 
     // Primary Worker
     // Job Types
