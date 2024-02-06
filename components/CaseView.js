@@ -34,6 +34,7 @@ class CaseView extends React.Component {
 
   render () {
     const { id, loading, error, cases } = this.props;
+
     if (error) {
       return <div>Error: {error}</div>;
     }
@@ -46,9 +47,7 @@ class CaseView extends React.Component {
           <Label.Group>
             <Label icon='calendar'>{formatDate(cases.current.decision_date)}</Label>
             <Label icon='law'>{cases.current.court_name}</Label>
-            {(cases.current.ia_url) ? (
-              <Label icon='pdf'>file</Label>
-            ) : null}
+            <Label icon='law'>{cases.current.jurisdiction_name || ''}</Label>
             {(cases.current.harvard_case_law_pdf) ? (
               <a href={cases.current.harvard_case_law_pdf} target='_blank'><Icon name='file pdf' /></a>
             ) : null}
@@ -59,6 +58,10 @@ class CaseView extends React.Component {
             <code>
               <pre>
                 @id: {id}
+                @ids:
+                  PACER: {cases.current.pacer_case_id || 'unknown'}
+                  harvard: {cases.current.harvard_case_law_id || 'unknown'}
+                  courtlistener: {cases.current.courtlistener_id || 'unknown'}
               </pre>
             </code>
           </div>
