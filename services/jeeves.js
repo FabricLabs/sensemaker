@@ -107,6 +107,7 @@ const ROUTES = {
     conversation: require('../routes/matters/matter_chat'),
     newConversation: require('../routes/matters/matter_new_chat'),
     getConversations: require('../routes/matters/get_conversations'),
+    edit: require('../routes/matters/edit_matter'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -1555,6 +1556,7 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
     // Matters
+    
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
@@ -1563,6 +1565,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this));
     this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this));
     this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
+    this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this));
     this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
 
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));

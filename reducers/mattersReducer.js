@@ -8,6 +8,9 @@ const {
   CREATE_MATTER_REQUEST,
   CREATE_MATTER_SUCCESS,
   CREATE_MATTER_FAILURE,
+  EDIT_MATTER_REQUEST,
+  EDIT_MATTER_SUCCESS,
+  EDIT_MATTER_FAILURE,
   ADD_CONTEXT_REQUEST,
   ADD_CONTEXT_SUCCESS,
   ADD_CONTEXT_FAILURE,
@@ -26,6 +29,7 @@ const initialState = {
   creationSuccess: false,
   idCreated: null,
   contextSuccess: false,
+  editingSuccess: true,
   fileDeletion: false,
 };
 
@@ -52,6 +56,13 @@ function mattersReducer(state = initialState, action) {
     case CREATE_MATTER_FAILURE:
       console.debug('create matter failure:', state, action);
       return { ...state, error: action.payload, creationSuccess: false, idCreated: null, loading: false };
+    case EDIT_MATTER_REQUEST:
+      return { ...state, loading: true };
+    case EDIT_MATTER_SUCCESS:
+      return { ...state, editingSuccess: true, loading: false };
+    case EDIT_MATTER_FAILURE:
+      console.debug('edit matter failure:', state, action);
+      return { ...state, error: action.payload, editingSuccess: false, idCreated: null };
     case ADD_CONTEXT_REQUEST:
       return { ...state, loading: true };
     case ADD_CONTEXT_SUCCESS:
