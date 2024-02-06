@@ -97,6 +97,8 @@ class SignUpForm extends React.Component {
   };
 
   handleInputChange = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     this.setState({ [event.target.name]: event.target.value }, () => {
       //here we have the validations for the new password the user is choosing
       if (event.target.name === 'password') {

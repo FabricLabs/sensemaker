@@ -189,7 +189,7 @@ class Dashboard extends React.Component {
                     <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
-                        <p>Send us an email: <a href="mailto:support@jeeves.dev">support@jeeves.dev</a></p>
+                        <p>Send us an email: <a href="mailto:support@jeeves.dev">support@trynovo.com</a></p>
                         {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                       </Popup.Content>
                     </Popup>

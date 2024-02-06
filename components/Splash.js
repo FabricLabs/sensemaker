@@ -82,7 +82,7 @@ class Splash extends React.Component {
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
-          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
+          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
         <script src="/scripts/countdown.js"></script>
       </jeeves-splash>
