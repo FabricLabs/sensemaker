@@ -1,0 +1,16 @@
+FROM node:21.4.0-bullseye
+
+RUN apt-get update
+RUN apt-get --no-install-recommends install -y zip
+RUN apt-get --no-install-recommends install -y unzip
+RUN apt-get --no-install-recommends install -y xvfb
+RUN apt-get --no-install-recommends install -y xauth
+
+RUN npm install -g ts-node
+RUN npm install -g typescript
+
+COPY scrapper/package.* .
+
+RUN npm install
+RUN npx playwright install
+RUN npx playwright install-deps
