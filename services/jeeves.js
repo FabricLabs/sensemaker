@@ -13,34 +13,6 @@ const {
   USER_QUERY_TIMEOUT_MS
 } = require('../constants');
 
-// TODO: fix.
-const ROUTES = {
-  cases: {
-    list: require('../routes/cases/get_cases'),
-  },
-  matters: {
-    create: require('../routes/matters/create_matter'),
-    new: require('../routes/matters/new_matter'),
-    // view: require('../routes/matters/view_matter'),
-    view: require('../routes/matters/matter_view'),
-    list: require('../routes/matters/list_matters'),
-    addContext: require('../routes/matters/add_context'),
-    removeFile: require('../routes/matters/remove_file'),
-    conversation: require('../routes/matters/matter_chat'),
-    newConversation: require('../routes/matters/matter_new_chat'),
-    getConversations: require('../routes/matters/get_conversations'),
-  },
-  products: {
-    list: require('../routes/products/list_products'),
-  },
-  jurisdictions: {
-    view: require('../routes/jurisdictions/jurisdiction_view'),
-  },
-  courts: {
-    view: require('../routes/courts/court_view'),
-  }
-};
-
 // Dependencies
 const fs = require('fs');
 const crypto = require('crypto');
@@ -118,6 +90,34 @@ const Conversations = require('../components/Conversations');
 
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
+
+// Routes (Request Handlers)
+const ROUTES = {
+  cases: {
+    list: require('../routes/cases/get_cases'),
+  },
+  matters: {
+    create: require('../routes/matters/create_matter'),
+    new: require('../routes/matters/new_matter'),
+    // view: require('../routes/matters/view_matter'),
+    view: require('../routes/matters/matter_view'),
+    list: require('../routes/matters/list_matters'),
+    addContext: require('../routes/matters/add_context'),
+    removeFile: require('../routes/matters/remove_file'),
+    conversation: require('../routes/matters/matter_chat'),
+    newConversation: require('../routes/matters/matter_new_chat'),
+    getConversations: require('../routes/matters/get_conversations'),
+  },
+  products: {
+    list: require('../routes/products/list_products'),
+  },
+  jurisdictions: {
+    view: require('../routes/jurisdictions/jurisdiction_view'),
+  },
+  courts: {
+    view: require('../routes/courts/court_view'),
+  }
+};
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously

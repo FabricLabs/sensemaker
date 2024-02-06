@@ -6,6 +6,8 @@ const {
 } = require('../../constants');
 
 // Components
+const JeevesUI = require('../../components/JeevesUI');
+const CaseHome = require('../../components/CaseHome');
 const MattersHome = require('../../components/MattersHome');
 
 module.exports = function (req, res, next) {
@@ -21,7 +23,7 @@ module.exports = function (req, res, next) {
     },
     html: () => {
       // TODO: import auth token, load data
-      const page = new MattersHome({});
+      const page = new CaseHome({});
       const output = page.toHTML();
       return res.send(this.http.app._renderWith(output));
     }
