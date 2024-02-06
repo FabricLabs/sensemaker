@@ -296,7 +296,7 @@ class MatterView extends React.Component {
                     search
                     selection
                     options={this.state.jurisdictionsOptions}
-                    value={current.jurisdiction_id}
+                    value={this.state.jurisdiction_id}
                     onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
                     error={jurisdictionErrorMessage}
                   />
@@ -320,7 +320,7 @@ class MatterView extends React.Component {
                     search
                     selection
                     options={this.state.courtsOptions}
-                    value={current.court_id}
+                    value={this.state.court_id}
                     onChange={(e, { value }) => this.setState({ court_id: value })}
                   />
                 ) : (
