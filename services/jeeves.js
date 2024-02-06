@@ -26,6 +26,9 @@ const ROUTES = {
     list: require('../routes/matters/list_matters'),
     addContext: require('../routes/matters/add_context'),
     removeFile: require('../routes/matters/remove_file'),
+    conversation: require('../routes/matters/matter_chat'),
+    newConversation: require('../routes/matters/matter_new_chat'),
+    getConversations: require('../routes/matters/get_conversations'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -1538,6 +1541,9 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('GET', '/matters/conversation/new/:matterID', ROUTES.matters.newConversation.bind(this));
+    this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this));
+    this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this));
     this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
     this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
 
@@ -2835,12 +2841,13 @@ class Jeeves extends Hub {
       let {
         case_id,
         conversation_id,
-        content
+        content,
+        matter_id
       } = req.body;
 
       if (!conversation_id) {
         isNew = true;
-        
+
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
         /* const room = await this.matrix.client.createRoom({ name: name }); */
@@ -2848,6 +2855,7 @@ class Jeeves extends Hub {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
+          matter_id: matter_id,
           // matrix_room_id: room.room_id
         });
 
@@ -2925,7 +2933,7 @@ class Jeeves extends Hub {
             } catch (exception) {
               console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
             }
-          } */ 
+          } */
 
           // TODO: restore response tracking
           /* this.db('responses').insert({
@@ -4420,7 +4428,7 @@ class Jeeves extends Hub {
     console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' + 
+      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' +
         ':\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {

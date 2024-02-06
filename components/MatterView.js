@@ -37,6 +37,7 @@ class MatterView extends React.Component {
 
   componentDidMount() {
     this.props.fetchMatter(this.props.id);
+    this.props.fetchMatterConversations(this.props.id);
   }
 
   componentDidUpdate(prevProps) {
@@ -58,7 +59,7 @@ class MatterView extends React.Component {
     if (prevProps.matters !== matters && !matters.loading) {
       if (this.state.addingContext) {
         //TO DO, HANDLING SITUATIONS
-        console.log("el matter en la creacion",matters);
+        console.log("el matter en la creacion", matters);
         if (matters.contextSuccess) {
           console.log("matter context added");
         } else {
@@ -93,11 +94,11 @@ class MatterView extends React.Component {
   }
 
   render() {
-    const { matters, jurisdictions, courts } = this.props;
+    const { matters, jurisdictions, courts, conversations } = this.props;
     const { current } = matters;
 
     return (
-      <Segment loading={matters.loading || jurisdictions.loading || courts.loading} style={{ marginRight: '1em' }}>
+      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading} style={{ marginRight: '1em' }}>
         <Header as='h1'>{current.title}</Header>
         <section className='matter-details'>
           <Grid columns={2}>
@@ -209,6 +210,49 @@ class MatterView extends React.Component {
                   content="+ Add File or Note"
                   onClick={() => this.setState({ attachModalOpen: true })}
                 />
+              </GridColumn>
+              <GridColumn width={3} />
+            </GridRow>
+          </Grid>
+          <Grid columns={2}>
+            <GridRow>
+              <GridColumn width={13} textAlign='center'>
+                <Header as='h2'>Matter Conversations</Header>
+              </GridColumn>
+              <GridColumn width={3} />
+            </GridRow>
+            {this.state.filename &&
+              <GridRow>
+                <GridColumn width={13} textAlign='center'>
+                  <List>
+                    {(conversations && conversations.matterConversations && conversations.matterConversations.length > 0) && conversations.matterConversations
+                      .map(instance => {
+                        return (
+                          <div>
+                            <List.Item style={{ marginTop: '0.5em' }}>
+                              {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
+                              <Link to={'/matter/conversations/' + instance.id}>
+                                {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                                {instance.title}
+                              </Link>
+
+                            </List.Item>
+                            {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+                          </div>)
+                      })}
+                  </List>
+                </GridColumn>
+                <GridColumn width={3} />
+              </GridRow>
+            }
+            <GridRow>
+              <GridColumn width={13} textAlign='center'>
+                <Link to={'/matters/conversation/new/'+this.props.id} >
+                <Button
+                  primary
+                  content="Start a new conversation"
+                />
+                </Link>
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>

@@ -182,7 +182,7 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID } = this.props;
     let dataToSubmit;
 
     this.setState({ loading: true, previousFlag: true });
@@ -213,7 +213,8 @@ class ChatBox extends React.Component {
     }
     // dispatch submitMessage
     this.props.submitMessage(
-      dataToSubmit
+      dataToSubmit,
+      matterID
     ).then((output) => {
 
       // dispatch getMessages
