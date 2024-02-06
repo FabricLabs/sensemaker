@@ -37,8 +37,10 @@ const {
 const TextareaAutosize = require('react-textarea-autosize').default;
 
 class ChatBox extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
+
+    this.settings = Object.assign({}, props);
 
     this.state = {
       query: '',
@@ -59,18 +61,18 @@ class ChatBox extends React.Component {
       thumbsDownClicked: false,
       isTextareaFocused: false, //this is needed to work on the microphone icon color
     };
+
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
-
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { messages } = this.props.chat;
 
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
@@ -102,8 +104,7 @@ class ChatBox extends React.Component {
     }
   }
 
-
-  componentWillUnmount() {
+  componentWillUnmount () {
     this.props.resetChat();
     clearInterval(this.watcher); //ends de sync in case you switch to other component
 
@@ -116,6 +117,7 @@ class ChatBox extends React.Component {
       message: null,
       messages: [],
     });
+
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -161,7 +163,7 @@ class ChatBox extends React.Component {
         if (!this.watcher) {
           this.watcher = setInterval(() => {
             this.props.getMessages({ conversation_id: message?.conversation });
-          }, 15000);
+          }, 5000);
         }
 
         this.setState({ loading: false });
@@ -223,7 +225,7 @@ class ChatBox extends React.Component {
       if (!this.watcher) {
         this.watcher = setInterval(() => {
           this.props.getMessages({ conversation_id: message?.conversation });
-        }, 15000);
+        }, 5000);
       }
       this.setState({ loading: false });
     });
@@ -507,7 +509,7 @@ class ChatBox extends React.Component {
     }
   }
 
-  render() {
+  render () {
     const { messages } = this.props.chat;
     const {
       loading,

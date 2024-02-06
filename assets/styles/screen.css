@@ -392,6 +392,10 @@ fabric-motd {
   margin-left: 0.5em;
 }
 
+.ui.feed > .event:last-child {
+  margin-bottom: 2em;
+}
+
 .home-dropdowns{
 
   text-align: center;
