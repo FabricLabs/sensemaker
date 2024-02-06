@@ -40,20 +40,23 @@ const resetChat = (message) => {
   };
 }
 
-const submitMessage = (message) => {
+const submitMessage = (message, matter_id) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
 
     const token = getState().auth.token;
 
     try {
+      console.log("en el actions",matter_id);
+      const requestBody = matter_id !== null ? { ...message, matter_id } : message;
+
       const response = await fetch('/messages', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(message)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {

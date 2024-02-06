@@ -26,6 +26,9 @@ const ROUTES = {
     list: require('../routes/matters/list_matters'),
     addContext: require('../routes/matters/add_context'),
     removeFile: require('../routes/matters/remove_file'),
+    conversation: require('../routes/matters/matter_chat'),
+    newConversation: require('../routes/matters/matter_new_chat'),
+    getConversations: require('../routes/matters/get_conversations'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -324,7 +327,7 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.', openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
 
     // Pipeline Datasources
     this.datasources = {
@@ -619,18 +622,20 @@ class Jeeves extends Hub {
     const phrases = this.importantPhrases(request.query);
     const cases = await this._vectorSearchCases(words.slice(0, 10));
 
-    const searchterm = await this.searcher.query({ query: request.query });
+    /* const searchterm = await this.searcher.query({ query: request.query, tools: null });
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
 
     const realCases = await this.harvard.search({ query: searchterm.content });
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
+    */
 
     // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
     console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
 
     // Format Metadata
     const meta = `metadata:\n` +
+      `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
       `  cases:\n` +
       cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
       `\n` +
@@ -668,6 +673,15 @@ class Jeeves extends Hub {
       // Subject material provided
       messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
     }
+
+    if (request.matter_id) {
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
+      const matter = await this.db('matters').where({ id: request.matter_id }).first();
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+      messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
+    }
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
 
     // Prompt
     messages.unshift({
@@ -710,7 +724,8 @@ class Jeeves extends Hub {
       // TODO: loop over all agents
       // TODO: compress to 4096 tokens
       const summarized = await this.summarizer.query({
-        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
+        messages: messages,
+        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
@@ -1535,6 +1550,9 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('GET', '/matters/conversation/new/:matterID', ROUTES.matters.newConversation.bind(this));
+    this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this));
+    this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this));
     this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
     this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
 
@@ -2832,12 +2850,13 @@ class Jeeves extends Hub {
       let {
         case_id,
         conversation_id,
-        content
+        content,
+        matter_id
       } = req.body;
 
       if (!conversation_id) {
         isNew = true;
-        
+
         const now = new Date();
         const name = `Conversation Started ${now.toISOString()}`;
         /* const room = await this.matrix.client.createRoom({ name: name }); */
@@ -2845,6 +2864,7 @@ class Jeeves extends Hub {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
+          matter_id: matter_id,
           // matrix_room_id: room.room_id
         });
 
@@ -2875,6 +2895,7 @@ class Jeeves extends Hub {
         // Core Pipeline
         const pipeline = this.createTimedRequest({
           conversation_id: conversation_id,
+          matter_id: matter_id,
           query: content
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
@@ -2922,7 +2943,7 @@ class Jeeves extends Hub {
             } catch (exception) {
               console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
             }
-          } */ 
+          } */
 
           // TODO: restore response tracking
           /* this.db('responses').insert({
@@ -4417,7 +4438,7 @@ class Jeeves extends Hub {
     console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' + 
+      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' +
         ':\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {

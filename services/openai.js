@@ -121,9 +121,8 @@ class OpenAIService extends Service {
               if (message) message.content = completion.choices[0].message.content;
               break;
             case 'tool_calls':
-              console.debug('[AGENT]', '[RAG]', 'Message:', choice.message);
-              console.debug('[AGENT]', '[RAG]', 'Tool calls:', choice.message.tool_calls);
-
+              // console.debug('[AGENT]', '[RAG]', 'Message:', choice.message);
+              // console.debug('[AGENT]', '[RAG]', 'Tool calls:', choice.message.tool_calls);
               for (let i = 0; i < choice.message.tool_calls.length; i++) {
                 const toolcall = choice.message.tool_calls[i];
                 switch (toolcall.type) {

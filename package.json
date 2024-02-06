@@ -71,6 +71,7 @@
     "fast-json-patch": "3.1.1",
     "fomantic-ui": "2.9.3",
     "hark": "1.2.3",
+    "http-proxy": "1.18.1",
     "js-tiktoken": "1.0.8",
     "jsdom": "22.1.0",
     "knex": "2.4.2",
@@ -97,7 +98,8 @@
     "smtp-client": "0.4.0",
     "sqlite3": "5.1.6",
     "stream-browserify": "3.0.0",
-    "stripe": "14.14.0"
+    "stripe": "14.14.0",
+    "undici": "^6.6.1"
   },
   "devDependencies": {
     "@babel/preset-env": "7.22.5",
