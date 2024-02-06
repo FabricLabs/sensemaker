@@ -49,7 +49,7 @@ const fetchConversations = () => {
 const fetchConversation = (id) => {
   return async (dispatch, getState) => {
     dispatch(fetchConversationRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try {
       const conversation = await fetchFromAPI(`/conversations/${id}`, token);
       dispatch(fetchConversationSuccess(conversation));
@@ -62,8 +62,7 @@ const fetchConversation = (id) => {
 const fetchMatterConversations = (matterID) => {
   return async (dispatch, getState) => {
     dispatch(fetchMatterConversationsRequest());
-    const { token } = getState().auth.token;
-    console.log("fetch en el reducer",matterID,token);
+    const { token } = getState().auth;
     try {
       const conversations = await fetch(`/matter/conversations/${matterID}`, {
         method: 'GET',
@@ -72,7 +71,8 @@ const fetchMatterConversations = (matterID) => {
           'Content-Type': 'application/json',
         }
       });
-      dispatch(fetchMatterConversationsSuccess(conversations));
+      const data = await conversations.json();
+      dispatch(fetchMatterConversationsSuccess(data));
     } catch (error) {
       dispatch(fetchMatterConversationsFailure(error));
     }

@@ -26,6 +26,7 @@ class MatterNewChat extends React.Component {
 
     // this.props.fetchConversation(id);
     this.props.resetChat();
+    this.props.fetchMatter(this.props.matterID);
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -39,7 +40,7 @@ class MatterNewChat extends React.Component {
   };
 
   render () {
-    const { id, chat, messages, matterID } = this.props;
+    const { id, chat, messages, matterID, matters } = this.props;
 
     const componentStyle = {
       display: 'absolute',
@@ -63,6 +64,7 @@ class MatterNewChat extends React.Component {
             includeFeed={true}
             placeholder={'Ask me anything...'}
             matterID={matterID}
+            matterTitle={(matters && matters.current && matters.current.title)? matters.current.title : null}
           />
        </fabric-component>
     );

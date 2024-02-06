@@ -5,8 +5,8 @@ module.exports = function (req, res, next) {
     json: async () => {
       // TODO: pagination
       try {
-        console.log("esta es la func de get",req.params.id, req.user.id)
-        const conversations = await this.db('conversations').select('*').where({matter_id: req.params.id, creator_id: req.user.id});
+        const conversations = await this.db.select('*').from('conversations').where({matter_id: req.params.matterID, creator_id: req.user.id});
+        console.log("nahuel conversations", conversations);
         res.send(conversations);
       } catch (exception) {
         res.status(503);

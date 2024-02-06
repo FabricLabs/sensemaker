@@ -10,7 +10,7 @@ const ChatBox = require('./ChatBox');
 
 
 // Semantic UI
-const {  
+const {
   Feed,
   Header,
 } = require('semantic-ui-react');
@@ -29,7 +29,7 @@ class CaseChat extends React.Component {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
-  } 
+  }
 
   componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
@@ -41,7 +41,7 @@ class CaseChat extends React.Component {
   };
 
   render () {
-    
+
     const {windowHeight} = this.state;
     const { messages } = this.props.chat;
 
@@ -54,27 +54,27 @@ class CaseChat extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column', 
-      paddingBottom: '0'     
+      flexDirection: 'column',
+      paddingBottom: '0'
     } : {
       height: 'auto',
       display: 'flex',
-      flexDirection: 'column',  
-      
+      flexDirection: 'column',
+
     };
 
 
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-          <ChatBox 
-            {...this.props}  
+          <ChatBox
+            {...this.props}
             placeholder={'Ask me anything about this case...'}
             messagesEndRef={this.messagesEndRef}
-            />        
+            />
       </fabric-component>
     );
-  }  
+  }
 }
 
 module.exports = CaseChat;
