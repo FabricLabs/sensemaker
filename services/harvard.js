@@ -189,6 +189,11 @@ class Harvard extends Service {
     return courts;
   }
 
+  async getCaseByID (id) {
+    const instance = await fetch(`https://api.case.law/v1/cases/${id}?full_case=true`);
+    return instance.json();
+  }
+
   async getJurisdictionByID (id) {
     return this.state.collections.jurisdictions[id];
   }
