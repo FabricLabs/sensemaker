@@ -59,7 +59,6 @@ class MatterView extends React.Component {
     if (prevProps.matters !== matters && !matters.loading) {
       if (this.state.addingContext) {
         //TO DO, HANDLING SITUATIONS
-        console.log("el matter en la creacion", matters);
         if (matters.contextSuccess) {
           console.log("matter context added");
         } else {
@@ -94,11 +93,11 @@ class MatterView extends React.Component {
   }
 
   render() {
-    const { matters, jurisdictions, courts, conversations } = this.props;
+    const { matters, jurisdictions, courts, matterConversations, conversationsLoading } = this.props;
     const { current } = matters;
-
+    console.log("las conversations en el matter", matterConversations);
     return (
-      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading} style={{ marginRight: '1em' }}>
+      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversationsLoading} style={{ marginRight: '1em' }}>
         <Header as='h1'>{current.title}</Header>
         <section className='matter-details'>
           <Grid columns={2}>
@@ -189,18 +188,22 @@ class MatterView extends React.Component {
             </GridRow>
             {this.state.filename &&
               <GridRow>
-                <GridColumn width={13} textAlign='center'>
+                <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+                  <Header as='h3'>File</Header>
+                </GridColumn>
+                <GridColumn width={12}>
                   <Label>{this.state.filename}</Label>
                 </GridColumn>
-                <GridColumn width={3} />
               </GridRow>
             }
             {this.state.note &&
               <GridRow>
-                <GridColumn width={13} textAlign='center'>
+                <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+                  <Header as='h3'>Aditional Note</Header>
+                </GridColumn>
+                <GridColumn width={12}>
                   <Header as='h5'>{this.state.note}</Header>
                 </GridColumn>
-                <GridColumn width={3} />
               </GridRow>
             }
             <GridRow>
@@ -223,35 +226,37 @@ class MatterView extends React.Component {
             </GridRow>
             {this.state.filename &&
               <GridRow>
-                <GridColumn width={13} textAlign='center'>
-                  <List>
-                    {(conversations && conversations.matterConversations && conversations.matterConversations.length > 0) && conversations.matterConversations
-                      .map(instance => {
-                        return (
-                          <div>
-                            <List.Item style={{ marginTop: '0.5em' }}>
-                              {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
-                              <Link to={'/matter/conversations/' + instance.id}>
-                                {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
-                                {instance.title}
-                              </Link>
-
-                            </List.Item>
-                            {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
-                          </div>)
-                      })}
-                  </List>
-                </GridColumn>
                 <GridColumn width={3} />
+                <GridColumn width={13}>
+                  <div>
+                    <List>
+                      {(matterConversations && matterConversations.length > 0) && matterConversations
+                        .map(instance => {
+                          return (
+                            <div>
+                              <List.Item style={{ marginTop: '0.5em' }}>
+                                {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
+                                <Link to={'/matter/conversation/' + instance.id}>
+                                  {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                                  {instance.title}
+                                </Link>
+
+                              </List.Item>
+                              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+                            </div>)
+                        })}
+                    </List>
+                  </div>
+                </GridColumn>
               </GridRow>
             }
             <GridRow>
               <GridColumn width={13} textAlign='center'>
-                <Link to={'/matters/conversation/new/'+this.props.id} >
-                <Button
-                  primary
-                  content="Start a new conversation"
-                />
+                <Link to={'/matters/conversation/new/' + this.props.id} >
+                  <Button
+                    primary
+                    content="Start a new conversation"
+                  />
                 </Link>
               </GridColumn>
               <GridColumn width={3} />

@@ -143,7 +143,6 @@ const getMessageInformation = (request) => {
     try {
       const state = getState();
       const token = state.auth.token;
-      console.log("vino por aca", request);
      // 'SEARCH', '/services/courtlistener/dockets'
       const response = await fetch('/services/courtlistener/dockets', {
         method: 'SEARCH',

@@ -186,6 +186,8 @@ async function main (input = {}) {
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
+      matterConversations: state.conversations.matterConversations,
+      conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
       judges: state.judges,

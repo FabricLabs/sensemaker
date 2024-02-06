@@ -74,7 +74,7 @@ class CaseView extends React.Component {
             </code>
           </div>
         </Segment>
-        <Grid columns='equal'>
+        <Grid columns='equal' style={{marginRight: '0'}}>
           <Grid.Row stretched>
             <Grid.Column>
               <Segment>
@@ -98,9 +98,10 @@ class CaseView extends React.Component {
             resetChat={this.props.resetChat}
             chat={this.props.chat}
             includeFeed={true}
-            isSending={loading}            
+            isSending={loading}
             caseTitle={cases.current.title}
             caseID={id}
+            getMessageInformation={this.props.getMessageInformation}
           />
       </fabric-container>
     );

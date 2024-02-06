@@ -436,6 +436,14 @@ fabric-motd {
   margin-top: 2px;
 }
 
+.link-back-matter{
+  display: flex;
+  justify-content: space-between;
+  padding-right: 1em;
+  flex-wrap: wrap;
+  padding-bottom: 1.5em;
+  margin-top: 0.5em;
+}
 /* FeedbackSidebar CSS */
 .info-sidebar{
   background-color: rgb(27, 28, 29);
