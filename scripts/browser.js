@@ -100,7 +100,8 @@ const {
 // ## Court Actions
 const {
   fetchConversations,
-  fetchConversation
+  fetchConversation,
+  fetchMatterConversations,
 } = require('../actions/conversationActions');
 
 // ## Person Actions
@@ -257,6 +258,7 @@ async function main (input = {}) {
     createMatter: createMatter,
     addContext: addContext,
     removeFile: removeFile,
+    fetchMatterConversations: fetchMatterConversations,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
