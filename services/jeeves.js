@@ -674,6 +674,15 @@ class Jeeves extends Hub {
       messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
     }
 
+    if (request.matter_id) {
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
+      const matter = await this.db('matters').where({ id: request.matter_id }).first();
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+      messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
+    }
+
+    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
+
     // Prompt
     messages.unshift({
       role: 'system',
@@ -716,7 +725,7 @@ class Jeeves extends Hub {
       // TODO: compress to 4096 tokens
       const summarized = await this.summarizer.query({
         messages: messages,
-        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```query: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
+        query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
       });
 
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
@@ -2886,6 +2895,7 @@ class Jeeves extends Hub {
         // Core Pipeline
         const pipeline = this.createTimedRequest({
           conversation_id: conversation_id,
+          matter_id: matter_id,
           query: content
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);

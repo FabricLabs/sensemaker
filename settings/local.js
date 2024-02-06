@@ -171,7 +171,8 @@ module.exports = {
   },
   openai: {
     key: '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',
-    model: 'gpt-4-1106-preview'
+    model: 'gpt-4-1106-preview',
+    temperature: 0
   },
   twilio: {
     sid: 'add your twilio sid here',
