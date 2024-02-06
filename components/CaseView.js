@@ -57,9 +57,7 @@ class CaseView extends React.Component {
           {(cases.current.summary) ? (
             <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
           ) : (
-            <Dimmer active>
-              <Loader />
-            </Dimmer>
+            <Loader />
           )}
           <div style={{ marginTop: '1em' }}>
             <Header as='h6'>Metadata</Header>
