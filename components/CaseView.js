@@ -49,7 +49,9 @@ class CaseView extends React.Component {
           <Label.Group>
             <Label icon='calendar'>{formatDate(cases.current.decision_date)}</Label>
             <Label icon='law'>{cases.current.court_name}</Label>
-            <Label icon='law'>{cases.current.jurisdiction_name || ''}</Label>
+            {(cases.current.jurisdiction_name) ? (
+              <Label icon='law'>{cases.current.jurisdiction_name || ''}</Label>
+            ) : null}
             {(cases.current.harvard_case_law_pdf) ? (
               <a href={cases.current.harvard_case_law_pdf} target='_blank'><Icon name='file pdf' /></a>
             ) : null}
@@ -63,11 +65,11 @@ class CaseView extends React.Component {
             <Header as='h6'>Metadata</Header>
             <code>
               <pre>
-                @id: {id}
-                @ids:
-                  PACER: {cases.current.pacer_case_id || 'unknown'}
-                  harvard: {cases.current.harvard_case_law_id || 'unknown'}
-                  courtlistener: {cases.current.courtlistener_id || 'unknown'}
+                @id: {id}<br />
+                @ids:<br />
+                &nbsp;&nbsp;PACER: {cases.current.pacer_case_id || 'unknown'}<br />
+                &nbsp;&nbsp;harvard: {cases.current.harvard_case_law_id || 'unknown'}<br />
+                &nbsp;&nbsp;courtlistener: {cases.current.courtlistener_id || 'unknown'}
               </pre>
             </code>
           </div>
