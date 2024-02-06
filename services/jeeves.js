@@ -2385,6 +2385,7 @@ class Jeeves extends Hub {
           console.error('FETCH FULL CASE ERROR:', exception);
         }).then(async (output) => {
           const target = await output.json();
+          console.debug('[NOVO]', '[HARVARD]', '[FULLCASE]', 'Got output:', target);
           const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
           this.http.broadcast(message);
         });
@@ -2906,55 +2907,56 @@ class Jeeves extends Hub {
         });
 
         // Core Pipeline
-        const pipeline = await this.createTimedRequest({
+        this.createTimedRequest({
           conversation_id: conversation_id,
           matter_id: matter_id,
           query: content
-        }); /* .catch((exception) => {
+        }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
         }).then(async (request) => {
-          // console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request.toBuffer().toString('hex'));
+          console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
           // TODO: emit message
-        }); */
 
-        console.debug('[JEEVES]', '[HTTP]', 'Got pipeline:', pipeline);
-        const extracted = await this.extractor.query({
-          query: `$CONTENT\n\`\`\`\n${pipeline.content}\n\`\`\``
-        });
-        console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+          // Card Extraction
+          this.extractor.query({
+            query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
+          }).then(async (extracted) => {
+            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+            if (extracted && extracted.content) {
+              try {
+                const caseCards = JSON.parse(extracted.content).map((x) => {
+                  const actor = new Actor({ name: x });
+                  return {
+                    type: 'CaseCard',
+                    content: { id: actor.id }
+                  };
+                });
 
-        if (extracted && extracted.content) {
-          try {
-            const caseCards = JSON.parse(extracted.content).map((x) => {
-              const actor = new Actor({ name: x });
-              return {
-                type: 'CaseCard',
-                content: { id: actor.id }
-              };
-            });
-
-            const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-              cards: JSON.stringify(caseCards.map((x) => x.content.id))
-            });
-          } catch (exception) {
-            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
-          }
-        }
-
-        if (isNew) {
-          const messages = await this._getConversationMessages(conversation_id);
-          await this._summarizeMessagesToTitle(messages.map((x) => {
-            return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-          })).then(async (output) => {
-            const title = output?.content;
-            if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
-
-            const conversation = { id: conversation_id, messages: messages, title: title };
-            const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
-
-            this.http.broadcast(message);
+                const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                  cards: JSON.stringify(caseCards.map((x) => x.content.id))
+                });
+              } catch (exception) {
+                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+              }
+            }
           });
-        }
+
+          if (isNew) {
+            const messages = await this._getConversationMessages(conversation_id);
+            this._summarizeMessagesToTitle(messages.map((x) => {
+              return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+            })).then(async (output) => {
+              console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
+              const title = output?.content;
+              if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
+
+              const conversation = { id: conversation_id, messages: messages, title: title };
+              const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
+
+              this.http.broadcast(message);
+            });
+          }
+        });
         // End Core Pipeline
 
         // pre-release pipeline
@@ -4178,11 +4180,11 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = {
-        input: query,
+        query: query,
         messages: messages
       };
 
-      this._handleRequest(request).then((output) => {
+      this.alpha.query(request).then((output) => {
         console.debug('got summarized title:', output);
         resolve(output);
       });
@@ -4190,7 +4192,7 @@ class Jeeves extends Hub {
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
       + ` ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
       + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
@@ -4200,6 +4202,11 @@ class Jeeves extends Hub {
       + `    \`\`\`\n${JSON.stringify(instance, null, '  ').split('\n').join('\n    ')}\n    \`\`\``;
 
       console.debug('Case to summarize:', instance);
+
+      if (instance.harvard_case_law_id) {
+        const element = await this.harvard.getCaseByID(instance.harvard_case_law_id);
+        console.debug('[NOVO]', '[SUMMARIZER]', 'Harvard case:', element);
+      }
 
       const request = { query };
 
