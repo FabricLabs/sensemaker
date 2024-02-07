@@ -9,11 +9,11 @@ const Colorado_1 = require("./scrappers/Colorado");
 const Florida_1 = require("./scrappers/Florida");
 const NewJersey_1 = require("./scrappers/NewJersey");
 const NewYork_1 = require("./scrappers/NewYork");
-const Ohio_1 = require("./scrappers/Ohio");
-// import { Pennsylvania } from "./scrappers/Pennsylvania";
+const Pennsylvania_1 = require("./scrappers/Pennsylvania");
 const Texas_1 = require("./scrappers/Texas");
 const utils_1 = require("./utils");
 const dotenv_1 = __importDefault(require("dotenv"));
+const Ohio_1 = require("./scrappers/Ohio");
 dotenv_1.default.config();
 const states_parsers = {
     'Arkansas': () => new Arkansas_1.Arkansas,
@@ -21,10 +21,10 @@ const states_parsers = {
     'Colorado': () => new Colorado_1.Colorado,
     'Florida': () => new Florida_1.Florida,
     'NewJersey': () => new NewJersey_1.NewJersey,
-    'NewYork': () => new NewYork_1.NewYork,
     'Ohio': () => new Ohio_1.Ohio,
-    // 'Pennsylvania': () => new Pennsylvania,
+    'NewYork': () => new NewYork_1.NewYork,
     'Texas': () => new Texas_1.Texas,
+    'Pennsylvania': () => new Pennsylvania_1.Pennsylvania,
 };
 const allowed_states = Object.keys(states_parsers);
 const allowed_pages = [
