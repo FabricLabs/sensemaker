@@ -11,7 +11,6 @@ const {
   Header
 } = require('semantic-ui-react');
 
-
 class MatterFileModal extends React.Component {
   constructor(props) {
     super(props);
@@ -23,7 +22,7 @@ class MatterFileModal extends React.Component {
     this.fileInputRef = React.createRef();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (this.props.filename !== prevProps.filename) {
       this.setState({ filename: this.props.filename });
     }
@@ -50,12 +49,21 @@ class MatterFileModal extends React.Component {
 
   handleFileChange = (e) => {
     const files = e.target.files;
+
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
+      const data = new FormData();
+
+      console.debug('File:', file.name, file.size, file.type); // Debugging log
       this.setState({ filename: file.name, file: file });
+
+      data.append('file', file);
+      fetch('/files', {
+        method: 'POST',
+        body: data
+      });
     }
   };
-
 
   handleChange = (e, { value }) => {
     this.setState({ note: value });
@@ -76,6 +84,7 @@ class MatterFileModal extends React.Component {
     }
     this.props.onClose();
   }
+
   removeFile = () => {
     this.setState({ filename: null, file: null });
     this.props.deleteFile();
@@ -110,8 +119,8 @@ class MatterFileModal extends React.Component {
                 <p>Drag and drop files here or click to upload</p>
               </div>
             )}
-
             <input
+              name='file'
               type="file"
               ref={this.fileInputRef}
               onChange={this.handleFileChange}
