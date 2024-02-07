@@ -124,7 +124,17 @@ module.exports = {
   },
   statutes: {
     enable: true,
-    jurisdictions: ['Texas']
+    jurisdictions: [
+      'Arkansas',
+      'California',
+      'Colorado',
+      'Florida',
+      'NewJersey',
+      'NewYork',
+      'Ohio',
+      'Pennsylvania',
+      'Texas'
+    ]
   },
   courtlistener: {
     enable: false,
