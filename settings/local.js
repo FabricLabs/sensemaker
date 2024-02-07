@@ -102,7 +102,7 @@ module.exports = {
     // 'twilio'
   ],
   site: {
-    title: 'Jeeves &middot; Your Legal Assistant'
+    title: 'Novo &middot; Your Legal Assistant'
   },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {

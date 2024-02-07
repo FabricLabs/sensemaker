@@ -80,7 +80,7 @@ class DeclinedInvitation extends React.Component {
         )}
         {(!tokenError && !declined && !cancelled) && (
           <Message>
-            <Message.Header style={{ marginBottom: '1rem' }}>Confirmation of Invitation Decline</Message.Header>
+            <Message.Header style={{ marginBottom: '1rem' }}>Are you sure you want to decline?</Message.Header>
             <p>
               Please confirm your decision to decline the invitation.
               By proceeding, you will not receive further communications regarding this invitation.
@@ -95,18 +95,13 @@ class DeclinedInvitation extends React.Component {
         {(!tokenError && declined) && (
           <Message negative>
             <Message.Header style={{ marginBottom: '1rem' }}>Invitation Declined</Message.Header>
-            <p>We have registered that you declined our invitation. We will not send any further requests or communications.</p>
-            <p>Should you change your mind or have any questions in the future, please feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a>.</p>
+            <p>You have declined your invitation to Novo. If you change your mind you can sign up at trynovo.com. If you have any questions please contact <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
           </Message>
         )}
         {(!tokenError && cancelled) && (
           <Message positive>
-            <Message.Header style={{ marginBottom: '1rem' }}>Invitation Remains Active</Message.Header>
-            <p>
-              Your decision to retain the invitation is noted.
-              Should you wish to proceed with joining Novo, please utilize the link provided in our previous email to access the sign-up form.
-              For any inquiries or assistance, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a>.
-            </p>
+            <Message.Header style={{ marginBottom: '1rem' }}>Congratulations!</Message.Header>
+            <p>Your invitation remains active and can be used to register at any time. For assistance, contact us at <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
           </Message>
         )}
       </Segment>
