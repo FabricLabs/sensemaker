@@ -100,7 +100,7 @@ class DeclinedInvitation extends React.Component {
         )}
         {(!tokenError && cancelled) && (
           <Message positive>
-            <Message.Header style={{ marginBottom: '1rem' }}>Congratulations</Message.Header>
+            <Message.Header style={{ marginBottom: '1rem' }}>Congratulations!</Message.Header>
             <p>Your invitation remains active and can be used to register at any time. For assistance, contact us at <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
           </Message>
         )}

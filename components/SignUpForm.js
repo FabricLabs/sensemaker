@@ -220,7 +220,7 @@ class SignUpForm extends React.Component {
           <Form  loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sign up Form</Header>
+                <Header as='h3' textAlign="center">Sign Up</Header>
                 <p>Complete your registration to access Novo.</p>
                 <Form.Group className='signup-form-group'>
                   <Form.Input
