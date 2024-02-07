@@ -20,9 +20,9 @@ class UserChangeModal extends React.Component {
 
     this.state = {
       newUsername: '',
-      isNewUserValid: false,     
+      isNewUserValid: false,
       usernameExists: false, //state to check if the new username already exists
-      userUpdated: false, 
+      userUpdated: false,
       userUpdateError: false,
       userModalLoading: false,
       password: '',
@@ -34,7 +34,7 @@ class UserChangeModal extends React.Component {
   userModalOpen = () => {
     this.setState({
       newUsername: '',
-      isNewUserValid: false,      
+      isNewUserValid: false,
       usernameExists: false,
       userUpdated: false,
       userUpdateError: false,
@@ -48,7 +48,7 @@ class UserChangeModal extends React.Component {
     this.props.toggleUserModal();
     this.setState({
       newUsername: '',
-      isNewUserValid: false,    
+      isNewUserValid: false,
       usernameExists: false,
       userUpdated: false,
       userUpdateError: false,
@@ -152,7 +152,7 @@ class UserChangeModal extends React.Component {
             this.setState({ userUpdateError: true, });
           }
         }
-        this.setState({ userModalLoading: false });        
+        this.setState({ userModalLoading: false });
       }
     }
 
