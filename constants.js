@@ -1,7 +1,7 @@
 'use strict';
 
 // Constants
-const RELEASE_NAME = 'beta-1.0.0-pre';
+const RELEASE_NAME = 'beta-1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
 const MAX_RESPONSE_TIME_MS = 60000; // 60 seconds
 
@@ -23,7 +23,7 @@ const ENABLE_REGISTRATION = true;
 const BRAND_NAME = 'Novo';
 const ENABLE_BILLING = false;
 const ENABLE_MATTERS = true;
-const ENABLE_CASE_SEARCH = true;
+const ENABLE_CASE_SEARCH = false;
 const ENABLE_COURT_SEARCH = false;
 const ENABLE_JUDGE_SEARCH = false;
 const ENABLE_OPINION_SEARCH = false;
