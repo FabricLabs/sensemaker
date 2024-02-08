@@ -1313,7 +1313,7 @@ class Jeeves extends Hub {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
         if (!target) {
-          console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
+          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
           await this.db('people').insert({
             fabric_id: actor.id,
             courtlistener_id: person.id,
