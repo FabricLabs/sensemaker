@@ -102,7 +102,7 @@ module.exports = {
     // 'twilio'
   ],
   site: {
-    title: 'Jeeves &middot; Your Legal Assistant'
+    title: 'Novo &middot; Your Legal Assistant'
   },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {
@@ -124,7 +124,17 @@ module.exports = {
   },
   statutes: {
     enable: true,
-    jurisdictions: ['Texas']
+    jurisdictions: [
+      'Arkansas',
+      'California',
+      'Colorado',
+      'Florida',
+      'NewJersey',
+      'NewYork',
+      'Ohio',
+      'Pennsylvania',
+      'Texas'
+    ]
   },
   courtlistener: {
     enable: false,

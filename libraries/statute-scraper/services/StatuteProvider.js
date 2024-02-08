@@ -12,6 +12,14 @@ const Service = require('@fabric/core/types/service');
 
 // States
 // TODO: request index export
+const { Arkansas } = require('../scrapper/js-code/scrappers/Arkansas');
+const { California } = require('../scrapper/js-code/scrappers/California');
+const { Colorado } = require('../scrapper/js-code/scrappers/Colorado');
+const { Florida } = require('../scrapper/js-code/scrappers/Florida');
+const { NewJersey } = require('../scrapper/js-code/scrappers/NewJersey');
+const { NewYork } = require('../scrapper/js-code/scrappers/NewYork');
+const { Ohio } = require('../scrapper/js-code/scrappers/Ohio');
+const { Pennsylvania } = require('../scrapper/js-code/scrappers/Pennsylvania');
 const { Texas } = require('../scrapper/js-code/scrappers/Texas');
 
 /**
@@ -40,6 +48,14 @@ class StatuteProvider extends Service {
     }, settings);
 
     this.scrappers = {
+      'Arkansas': new Arkansas(),
+      'California': new California(),
+      'Colorado': new Colorado(),
+      'Florida': new Florida(),
+      'NewJersey': new NewJersey(),
+      'NewYork': new NewYork(),
+      'Ohio': new Ohio(),
+      'Pennsylvania': new Pennsylvania(),
       'Texas': new Texas()
     };
 
@@ -140,7 +156,7 @@ class StatuteProvider extends Service {
     // Core Sync
     await this.syncJurisdictions();
     await this.syncConstitutions();
-    // await this.syncStatutes();
+    await this.syncStatutes();
     // await this.syncAdminCode();
     // await this.syncCourtRules();
 
@@ -152,8 +168,10 @@ class StatuteProvider extends Service {
 
   async syncConstitutions () {
     console.debug('[STATUTE] Syncing Constitutions...');
+    console.debug('[STATUTE] Scrappers:', this.scrappers)
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
+      if (!scrapper) console.error('[STATUTE] No scrapper for:', jurisdiction);
       const constitution = await scrapper.constitution();
       console.debug('[STATUTE] Got constitution:', constitution);
       // this._state.content.collections.documents[constitution.id] = constitution;
@@ -194,6 +212,19 @@ class StatuteProvider extends Service {
     } catch (exception) {
       console.error('[STATUTE] Could not fetch jurisdictions:', exception);
       return null;
+    }
+  }
+
+  async syncStatutes () {
+    console.debug('[STATUTE] Syncing Statutes...');
+    console.debug('[STATUTE] Scrappers:', this.scrappers)
+    for (let jurisdiction of this.settings.jurisdictions) {
+      const scrapper = this.scrappers[jurisdiction];
+      const statutes = await scrapper.statutes();
+      console.debug('[STATUTE] Got statutes:', statutes);
+      // this._state.content.collections.documents[statutes.id] = statutes;
+      this.commit();
+      // this.emit('document', statutes);
     }
   }
 

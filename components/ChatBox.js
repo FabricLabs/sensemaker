@@ -615,8 +615,9 @@ class ChatBox extends React.Component {
               )}
               <div>
                 <Feed.Extra text style={{ display: "flex" }}>
-                  <Image src="/images/jeeves-brand.png" size="small" floated="left" />
-                  <div style={{ paddingTop: "2em" }}>
+                  {/* <Image src="/images/jeeves-brand.png" size="small" floated="left" /> */}
+                  {/* <div style={{ paddingTop: "2em" }}> */}
+                  <div>
                     <p style={{ fontSize: '1.5em', fontFamily: 'AvGardd' }}><span style={{ fontSize: '1.5em' }}>Hello!</span><br />I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
                 </Feed.Extra>
@@ -638,7 +639,7 @@ class ChatBox extends React.Component {
             <div className='link-back-matter' >
               <Header as="h2">{actualConversation.title}</Header>
               {actualConversation.matter_id && (
-                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}>Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}>Back to Matter</Link></Header>
               )}
             </div>
           )}
@@ -710,15 +711,15 @@ class ChatBox extends React.Component {
                                 trigger={
                                   <Popup content='Copy to clipboard' trigger={
                                     <Button
-                                    onClick={() =>
-                                      this.copyToClipboard(
-                                        message.id,
-                                        marked.parse(message.content)
-                                      )
-                                    }
-                                  icon>
-                                    <Icon name="clipboard outline" />
-                                  </Button>
+                                      onClick={() =>
+                                        this.copyToClipboard(
+                                          message.id,
+                                          marked.parse(message.content)
+                                        )
+                                      }
+                                      icon>
+                                      <Icon name="clipboard outline" />
+                                    </Button>
                                   } />
                                 }
                               />
@@ -726,7 +727,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon  onClick={() => this.thumbsDown(message.id)}>
+                                <Button icon onClick={() => this.thumbsDown(message.id)}>
                                   <Icon
                                     name="thumbs down outline"
                                     color="grey"
@@ -820,37 +821,37 @@ class ChatBox extends React.Component {
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
           style={{ width: "99%" }} >
-            <Form.Input>
-              <TextareaAutosize
-                id="primary-query"
-                className="prompt-bar"
-                name="query"
-                required
-                placeholder={placeholder}
-                onChange={(e) => this.setState({ query: e.target.value })}
-                disabled={isSending}
-                loading={isSending}
-                value={query}
-                maxRows={5}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    this.handleSubmit(e);
-                  }
-                }}
-                onFocus={this.handleTextareaFocus}
-                onBlur={this.handleTextareaBlur}
-                style={{ resize: "none", zIndex: '1' }}
-              />
-              <Icon
-                name="microphone icon"
-                color="grey"
-                className='microphone icon'
-                onClick={() => this.handleMicrophoneClick(this)}
-                //this inline style is necessary to make the icon look lighter when the textarea is not focused
-                style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
-              />
-            </Form.Input>
+          <Form.Input>
+            <TextareaAutosize
+              id="primary-query"
+              className="prompt-bar"
+              name="query"
+              required
+              placeholder={placeholder}
+              onChange={(e) => this.setState({ query: e.target.value })}
+              disabled={isSending}
+              loading={isSending}
+              value={query}
+              maxRows={5}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  this.handleSubmit(e);
+                }
+              }}
+              onFocus={this.handleTextareaFocus}
+              onBlur={this.handleTextareaBlur}
+              style={{ resize: "none", zIndex: '1' }}
+            />
+            <Icon
+              name="microphone icon"
+              color="grey"
+              className='microphone icon'
+              onClick={() => this.handleMicrophoneClick(this)}
+              //this inline style is necessary to make the icon look lighter when the textarea is not focused
+              style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
+            />
+          </Form.Input>
         </Form>
         {messages.length === 0 && homePage && (
           <section className='desktop-only'>

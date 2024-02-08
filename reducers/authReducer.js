@@ -27,7 +27,8 @@ const initialState = {
   emailAvailable: false,
   registering: false,
   registerSuccess: false,
-  loading: false
+  loading: false,
+  checking: false,
 };
 
 function authReducer(state = initialState, action) {
@@ -45,19 +46,19 @@ function authReducer(state = initialState, action) {
 
     //actions for checking if the username is available
     case CHECK_USERNAME_AVAILABLE_REQUEST:
-      return { ...state, loading: true };
+      return { ...state, checking: true };
     case CHECK_USERNAME_AVAILABLE_SUCCESS:
-      return { ...state, usernameAvailable: true, loading: false };
+      return { ...state, usernameAvailable: true, checking: false };
     case CHECK_USERNAME_AVAILABLE_FAILURE:
-      return { ...state, error: action.payload, usernameAvailable: false, loading: false };
+      return { ...state, error: action.payload, usernameAvailable: false, checking: false };
 
     //actions for checking if the email is not registered
     case CHECK_EMAIL_AVAILABLE_REQUEST:
-      return { ...state, loading: true };
+      return { ...state, checking: true };
     case CHECK_EMAIL_AVAILABLE_SUCCESS:
-      return { ...state, emailAvailable: true, loading: false };
+      return { ...state, emailAvailable: true, checking: false };
     case CHECK_EMAIL_AVAILABLE_FAILURE:
-      return { ...state, error: action.payload, emailAvailable: false, loading: false };
+      return { ...state, error: action.payload, emailAvailable: false, checking: false };
 
     //actions for registering an user
     case FULL_REGISTER_REQUEST:

@@ -27,8 +27,12 @@
   "homepage": "https://github.com/lttinc/statute-scraper#readme",
   "dependencies": {
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
+    "2captcha": "3.0.7",
+    "async-mutex": "0.4.1",
     "axios": "1.6.7",
+    "bottleneck": "2.19.5",
     "crawlee": "3.7.3",
+    "playwright": "1.41.2",
     "playwright-extra": "4.3.6",
     "puppeteer-extra-plugin-stealth": "2.11.2"
   },

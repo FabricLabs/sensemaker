@@ -20,6 +20,7 @@ const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
+const multer = require('multer');
 
 // External Dependencies
 // const { ApolloServer, gql } = require('apollo-server-express');
@@ -95,6 +96,11 @@ const toMySQLDatetime = require('../functions/toMySQLDatetime');
 const ROUTES = {
   cases: {
     list: require('../routes/cases/get_cases'),
+  },
+  files: {
+    create: require('../routes/files/create_file'),
+    list: require('../routes/files/list_files'),
+    view: require('../routes/files/view_file')
   },
   matters: {
     create: require('../routes/matters/create_matter'),
@@ -310,6 +316,9 @@ class Jeeves extends Hub {
       },
       sessions: false
     });
+
+    // File Uploads
+    this.uploader = new multer({ dest: this.settings.files.path });
 
     this.openai.settings.temperature = this.settings.temperature;
     this.apollo = null;
@@ -1555,19 +1564,24 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Files
+    this.http.express.post('/files', this.uploader.single('file'), ROUTES.files.create.bind(this));
+    this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
+    this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
+
     // Matters
-    
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
-    this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this));
+    this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this)); // TODO: switch to /matters/:id
     this.http._addRoute('GET', '/matters/conversation/new/:matterID', ROUTES.matters.newConversation.bind(this));
-    this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this));
-    this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this));
-    this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this));
-    this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this));
-    this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this));
+    this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this)); // TODO: switch to /conversations/:id
+    this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this)); // TODO: switch to /matters/:id/conversations
+    this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this)); // TODO: switch to /matters...
+    this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this)); // TODO: switch to /matters/:id
+    this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this)); // TODO: switch to DELETE /matters/:id/files/:fileID
 
+    // Products
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Jurisdictions

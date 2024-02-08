@@ -70,7 +70,6 @@ class SignUpForm extends React.Component {
       }
     }
     if (prevProps.auth !== this.props.auth) {
-      console.log("las auth en el didUpdate", this.props.auth);
       const { auth } = this.props;
       if (auth.usernameAvailable && this.state.username) {
         this.setState({ isNewUserValid: true, usernameError: '' });
@@ -97,6 +96,7 @@ class SignUpForm extends React.Component {
   };
 
   handleInputChange = (event) => {
+    event.preventDefault();
     this.setState({ [event.target.name]: event.target.value }, () => {
       //here we have the validations for the new password the user is choosing
       if (event.target.name === 'password') {
@@ -217,11 +217,11 @@ class SignUpForm extends React.Component {
     return (
       <div className='fade-in signup-form'>
         <Segment>
-          <Form onSubmit={this.handleSubmit} loading={loading} centered>
+          <Form  loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sign up Form</Header>
-                <p>Please complete the registration form below to create your account and access our services.</p>
+                <Header as='h3' textAlign="center">Sign Up</Header>
+                <p>Complete your registration to access Novo.</p>
                 <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
@@ -323,7 +323,7 @@ class SignUpForm extends React.Component {
                   content='Submit'
                   icon='checkmark'
                   loading={registering}
-                  type='submit'
+                  onClick={this.handleSubmit}
                   fluid
                   primary
                   disabled={
