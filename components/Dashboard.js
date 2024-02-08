@@ -174,14 +174,22 @@ class Dashboard extends React.Component {
   }
 
   render () {
-    const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto' } : {};
+    // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
+    const sidebarStyle =  { minWidth: '300px', maxWidth: '300px', position: 'relative' } ;
+
 
     return (
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
-        <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
-          <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
+        {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
+        <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
+          <Sidebar inverted vertical visible style={{minWidth:'50px', maxWidth:'50px', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+            <Menu.Item>
+              <Icon name='comment alternate outline'/>
+            </Menu.Item>
+          </Sidebar>
+          <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} size='huge'>
             <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}} onClick={()=> this.props.resetChat()}>
               <Header className='dashboard-header'>
                 <div>
@@ -310,8 +318,8 @@ class Dashboard extends React.Component {
               {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
             </Menu.Item>
           </Sidebar>
-        </div>
-        <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}>
+        
+        {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
           <Container fluid style={{ margin: '1em 1em 0 1em' }}>
             {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
@@ -376,6 +384,7 @@ class Dashboard extends React.Component {
               </Routes>
             )}
           </Container>
+        {/* </div> */}
         </div>
       </jeeves-dashboard>
     );
