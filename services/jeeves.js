@@ -3829,6 +3829,7 @@ class Jeeves extends Hub {
       date_terminated: docket.date_terminated
     };
 
+    console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
     const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
 
     if (!target) {
@@ -3836,18 +3837,21 @@ class Jeeves extends Hub {
     }
 
     if (docket.pacer_case_id) {
-      console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
+      if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
       const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
       if (!pacer) {
-        console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
+        if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
 
         if (instance.court_id) {
+          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
           const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
           if (!court) {
             console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
             const sample = await this.courtlistener.db('search_court').where({ id: instance.court_id }).first();
+            const matches = await this.courtlistener.db('search_court').where({ id: instance.court_id });
             console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
+            console.debug('[JEEVES]', '[COURTLISTENER]', 'Matches:', matches);
           }
         }
 
