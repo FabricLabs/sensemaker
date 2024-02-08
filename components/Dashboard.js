@@ -184,13 +184,28 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
-          <Sidebar inverted vertical visible style={{minWidth:'50px', maxWidth:'50px', display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+          <Sidebar as={Menu} icon='labeled' inverted vertical visible size='huge' style={{height:'100vh', minWidth: '70px', maxWidth: '70px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center', position:'relative', borderRight: '1px solid white' }}>
+            <div>
             <Menu.Item>
-              <Icon name='comment alternate outline'/>
+              <Icon name='comment alternate outline' />
+            </Menu.Item>
+            <Menu.Item>
+              <Icon name='comment alternate outline' />
+            </Menu.Item>
+            <Menu.Item>
+              <Icon name='pencil' />
+            </Menu.Item>
+            <Menu.Item>
+              <Icon name='book' />
+            </Menu.Item>
+            </div>
+            
+            <Menu.Item>
+              <Icon name='user circle' />
             </Menu.Item>
           </Sidebar>
           <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} size='huge'>
-            <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}} onClick={()=> this.props.resetChat()}>
+            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em' }} onClick={() => this.props.resetChat()}>
               <Header className='dashboard-header'>
                 <div>
                   <div>
