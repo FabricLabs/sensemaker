@@ -67,7 +67,7 @@ const TermsOfUse = require('./TermsOfUse');
 const Bridge = require('./Bridge');
 
 class Dashboard extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.settings = Object.assign({
@@ -105,7 +105,7 @@ class Dashboard extends React.Component {
     return (<Navigate to='/settings' />);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -173,10 +173,9 @@ class Dashboard extends React.Component {
     $('.ui.sidebar').sidebar('toggle');
   }
 
-  render () {
+  render() {
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
-    const sidebarStyle =  { minWidth: '300px', maxWidth: '300px', position: 'relative' } ;
-
+    const sidebarStyle = { minWidth: '300px', maxWidth: '300px', position: 'relative' };
 
     return (
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
@@ -184,27 +183,33 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
-          <Sidebar as={Menu} icon='labeled' inverted vertical visible size='huge' style={{height:'100vh', minWidth: '70px', maxWidth: '70px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', alignItems: 'center', position:'relative', borderRight: '1px solid white' }}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge'>
             <div>
-            <Menu.Item>
-              <Icon name='comment alternate outline' />
-            </Menu.Item>
-            <Menu.Item>
-              <Icon name='comment alternate outline' />
-            </Menu.Item>
-            <Menu.Item>
-              <Icon name='pencil' />
-            </Menu.Item>
-            <Menu.Item>
-              <Icon name='book' />
-            </Menu.Item>
+              <Menu.Item as='a' style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
+                <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
+              </Menu.Item>
+              <Menu.Item as='a'>
+                <Icon name='comment outline' size='large' />
+                <p className='icon-label'>Playground</p>
+              </Menu.Item>
+              <Menu.Item as='a'>
+                <Icon name='pencil' size='large' />
+                <p className='icon-label'>Matters</p>
+              </Menu.Item>
+              <Menu.Item as='a'>
+                <Icon name='book' size='large' />
+                <p className='icon-label'>Library</p>
+              </Menu.Item>
             </div>
-            
-            <Menu.Item>
-              <Icon name='user circle' />
+
+            <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
+
+            <Menu.Item as='a'>
+              <Icon name='user circle' size='large' />
+              <p className='icon-label'>Profile</p>
             </Menu.Item>
           </Sidebar>
-          <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} size='huge'>
+          <Sidebar as={Menu} animation='overlay' icon='labeled' inverted vertical visible={true} style={sidebarStyle} size='huge'>
             <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em' }} onClick={() => this.props.resetChat()}>
               <Header className='dashboard-header'>
                 <div>
@@ -222,7 +227,7 @@ class Dashboard extends React.Component {
                     <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
                       <Popup.Content>disconnected</Popup.Content>
                     </Popup>
-                    <Popup trigger={<Label color='black' style={{borderColor:'transparent', backgroundColor: 'transparent'}}>{RELEASE_NAME}</Label>}>
+                    <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
                       <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
                     </Popup>
                   </div>
@@ -237,7 +242,7 @@ class Dashboard extends React.Component {
                 </div>
               </jeeves-search>
             </Menu.Item> */}
-            <Menu.Item as={Link} to="/" onClick={()=> this.props.resetChat()}>
+            <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
               <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
             </Menu.Item>
             {ENABLE_STATUTE_SEARCH && (
@@ -246,7 +251,7 @@ class Dashboard extends React.Component {
               </Menu.Item>
             )}
             <Menu.Item as={Link} to="/conversations">
-              <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
+              <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label> : null}</div>
             </Menu.Item>
             {ENABLE_MATTERS && (
               <Menu.Item as={Link} to='/matters'>
@@ -323,7 +328,7 @@ class Dashboard extends React.Component {
               <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
             </Menu.Item>) : null}
             {/* <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}> */}
-            <Menu.Item  onClick={this.handleLogout} loading={this.state.isLoggingOut}>
+            <Menu.Item onClick={this.handleLogout} loading={this.state.isLoggingOut}>
               <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
             </Menu.Item>
             <Menu.Item style={{ borderBottom: 0 }}>
@@ -333,8 +338,8 @@ class Dashboard extends React.Component {
               {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
             </Menu.Item>
           </Sidebar>
-        
-        {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
+
+          {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
           <Container fluid style={{ margin: '1em 1em 0 1em' }}>
             {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
@@ -363,10 +368,10 @@ class Dashboard extends React.Component {
                   />
                 } />
                 <Route path="/workspaces" element={<Workspaces />} />
-                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation}/>}/>
-                <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation}/> } />
-                <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
-                <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
+                <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
                 {/**
                  * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
                  * - [ ] Judges
@@ -378,20 +383,20 @@ class Dashboard extends React.Component {
                  * - [ ] Volumes
                  * - [ ] Resolutions
                  */}
-                <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat}/>} />
-                <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
-                <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
-                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat}/>} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/matters/new" element={<MattersNew {...this.props}/>} />
-                <Route path="/matter/:id" element={<MatterView {...this.props}/>} />
-                <Route path="/matter/conversation/:id" element={<MatterChat {...this.props}/>} />
-                <Route path="matters/conversation/new/:matterID" element={<MatterNewChat {...this.props}/>} />
+                <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
+                <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
+                <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />
+                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/matters/new" element={<MattersNew {...this.props} />} />
+                <Route path="/matter/:id" element={<MatterView {...this.props} />} />
+                <Route path="/matter/conversation/:id" element={<MatterChat {...this.props} />} />
+                <Route path="matters/conversation/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
@@ -399,7 +404,7 @@ class Dashboard extends React.Component {
               </Routes>
             )}
           </Container>
-        {/* </div> */}
+          {/* </div> */}
         </div>
       </jeeves-dashboard>
     );
