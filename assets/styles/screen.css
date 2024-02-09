@@ -147,6 +147,7 @@ jeeves-dashboard #main-sidebar{
   align-items: center;
   position: relative;
   border-right: 1px solid grey;
+  z-index: 1000;
 }
 .col-center{
   display: flex;
@@ -158,6 +159,17 @@ jeeves-dashboard #main-sidebar{
   margin-top: 0.3em;
 }
 
+.close-sidebar-arrow{
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center; */
+  width: 20px;
+  color: white;
+  position: sticky;
+  top: 50%;
+  left: 90%;
+  z-index: 1000;
+}
 .pusher {
   /* margin: 1em 0;
   height: 100%; */
@@ -554,14 +566,14 @@ fabric-motd {
 }
 
 /* Conversations CSS */
-.conversationItem .editIcon{
-  display: none;
-  margin-left: 1em;
-  cursor: pointer;
-  color: gray;
+.conversationItem div .editIcon{
+  display: none !important;
+  margin-left: 1em !important;
+  cursor: pointer !important ;
+  color: gray !important;
 }
-.conversationItem:hover .editIcon {
-  display: inline-block; /* or 'block' depending on your layout */
+.conversationItem:hover div #editIcon {
+  display: inline-block !important;
 }
 .conversation-line{
   display: flex;
