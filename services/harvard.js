@@ -260,6 +260,20 @@ class Harvard extends Service {
     });
   }
 
+  async searchCases (query) {
+    return new Promise(async (resolve, reject) => {
+      fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': (this.settings.token) ? `Bearer ${this.settings.token}` : undefined,
+          'Content-Type': 'application/json'
+        }
+      }).then(async (response) => {
+        resolve(await response.json());
+      }).catch(reject);
+    });
+  }
+
   async syncCases () {
     // TODO: this should be a stream
     const cases = await this.enumerateCases();

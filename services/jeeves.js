@@ -7,6 +7,7 @@ require('@babel/register');
 const definition = require('../package');
 const {
   AGENT_MAX_TOKENS,
+  MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
@@ -336,6 +337,7 @@ class Jeeves extends Hub {
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: '127.0.0.1:11434', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
     this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
 
@@ -592,7 +594,7 @@ class Jeeves extends Hub {
    * @param {Number} [depth] How many times to recurse.
    * @returns {Message} Request as a Fabric {@link Message}.
    */
-  async createTimedRequest (request, timeout = 60000, depth = 0) {
+  async createTimedRequest (request, timeout = MAX_RESPONSE_TIME_MS, depth = 0) {
     return new Promise(async (resolve, reject) => {
       const now = new Date();
       const created = now.toISOString();
@@ -703,10 +705,11 @@ class Jeeves extends Hub {
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
       const agentResults = Promise.allSettled([
-        this.alpha.query({ query, messages }),
-        this.gemini.query({ query, messages }),
-        this.lennon.query({ query, messages }),
-        // this.mistral.query({ query })
+        // this.alpha.query({ query, messages }),
+        // this.gemini.query({ query, messages }),
+        // this.lennon.query({ query, messages }),
+        this.llama.query({ query, messages }),
+        // this.mistral.query({ query, messages })
       ]);
 
       // TODO: execute RAG query for additional metadata
