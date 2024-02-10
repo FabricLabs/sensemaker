@@ -569,7 +569,7 @@ class ChatBox extends React.Component {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      marginBottom: 0,
+      marginBottom: '0.5em',
       marginTop: 0,
     };
 

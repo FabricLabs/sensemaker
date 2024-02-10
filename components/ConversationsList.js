@@ -14,7 +14,8 @@ const {
   Button,
   Icon,
   Form,
-  Menu
+  Menu,
+
 } = require('semantic-ui-react');
 
 // Components
@@ -131,12 +132,29 @@ class ConversationsList extends React.Component {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
-      display: 'block', // Ensure the link fills the Menu.Item for better clickability
-      maxWidth: '100%' // Ensure it respects the parent's width
+      display: 'block',
+      maxWidth: '100%',
+      color: '#e4dfda',
     }
 
     return (
       <div>
+        <h4 style={{ marginBottom: '0' }}>
+        <div>
+              <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
+              <Divider style={{ marginTop: '0', marginBottom: '1em' }}/>
+                <div style={{ display: 'flex' }}>
+                  <p style={linkStyle}>
+                    + New Conversation
+                  </p>
+                </div>
+                {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+                <Divider style={{ marginTop: '1em', marginBottom: '0' }}/>
+
+
+              </Menu.Item>
+            </div>
+        </h4>
 
         {(conversations && conversations.length) && conversations.map(conversation => (
           <div
@@ -156,6 +174,7 @@ class ConversationsList extends React.Component {
                         autoFocus
                         fluid
                         loading={editLoading}
+                        secondary
                       />
                     </div>
                     <Icon
@@ -163,7 +182,6 @@ class ConversationsList extends React.Component {
                       className='saveIcon'
                       style={{ cursor: 'pointer', color: 'grey' }}
                       onClick={() => this.handleSaveEditing(conversation.id)}
-                      size='big'
                       title='Save'
                     />
                     <Icon
@@ -171,32 +189,31 @@ class ConversationsList extends React.Component {
                       className='cancelIcon'
                       style={{ cursor: 'pointer', color: 'grey' }}
                       onClick={this.handleCancelEditing}
-                      size='big'
                       title='Cancel'
                     />
                   </div>
                 </Form>
               ) : (
                 <div>
-                  <Menu.Item as='a'>
-                    <div style={{display:'flex'}}>
-                    <Icon
-                      name='edit'
-                      id='editIcon'
-                      className='editIcon'
-                      onClick={() => this.handleEditClick(conversation.id, conversation.title)}
-                      title='Edit'
-                    />
-                    <Link to={'/conversations/' + conversation.id} style={linkStyle} white>
-                      {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
-                      {conversation.title}
-                    </Link>
+                  <Menu.Item as={Link} to={'/conversations/' + conversation.id}>
+                    <div style={{ display: 'flex' }}>
+
+                      <Link to={'/conversations/' + conversation.id} style={linkStyle}>
+                        {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
+                        {conversation.title}
+                      </Link>
+                      <Icon
+                        name='edit'
+                        id='editIcon'
+                        className='editIcon'
+                        onClick={() => this.handleEditClick(conversation.id, conversation.title)}
+                        title='Edit'
+                      />
                     </div>
                   </Menu.Item>
                 </div>
               )}
             </h4>
-            <Divider style={{ marginTop: '0.3em', marginBottom: '0.5em' }} />
           </div>
         ))}
       </div>

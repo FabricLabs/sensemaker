@@ -267,7 +267,7 @@ class Dashboard extends React.Component {
             </div>
             {this.state.openPlayground && (
               <section>
-                <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', paddingTop: '0em' }} onClick={() => this.props.resetChat()}>
+                <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>
                   <Header className='dashboard-header'>
                     <div>
                       <div>
@@ -278,7 +278,7 @@ class Dashboard extends React.Component {
                             {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                           </Popup.Content>
                         </Popup>
-                        <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '55%', verticalAlign: 'top' }} />
+                        <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
                       </div>
                       <div style={{ marginTop: '0.5em' }}>
                         <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
