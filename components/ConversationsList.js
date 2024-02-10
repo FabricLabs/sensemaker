@@ -37,6 +37,7 @@ class ConversationsList extends React.Component {
       editingID: null, // ID of the conversation being edited
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
+      showOlder: false,
     };
   }
 
@@ -108,6 +109,124 @@ class ConversationsList extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
+  // Helper method to get the difference in days between two dates
+  getDaysAgo(date) {
+    const today = new Date();
+    const createdAt = new Date(date);
+    const differenceInTime = today.getTime() - createdAt.getTime();
+    return Math.floor(differenceInTime / (1000 * 3600 * 24));
+  }
+
+  // Method to group conversations by when they were created
+  groupConversationsByDate() {
+    const groupedConversations = {
+      today: [],
+      yesterday: [],
+      last7Days: [],
+      last30Days: [],
+      older: []
+    };
+
+    this.props.conversations.forEach(conversation => {
+      const daysAgo = this.getDaysAgo(conversation.created_at);
+
+      if (daysAgo === 0) {
+        groupedConversations.today.push(conversation);
+      } else if (daysAgo === 1) {
+        groupedConversations.yesterday.push(conversation);
+      } else if (daysAgo <= 7) {
+        groupedConversations.last7Days.push(conversation);
+      } else if (daysAgo <= 30) {
+        groupedConversations.last30Days.push(conversation);
+      } else {
+        groupedConversations.older.push(conversation);
+      }
+    });
+
+    return groupedConversations;
+  }
+
+  renderConversationsSection(title, conversations) {
+    const linkStyle = {
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: 'block',
+      maxWidth: '100%',
+      color: '#e4dfda',
+    }
+
+    return (
+      <div>
+        {(title !== 'Older') ? (
+          <h3 style={{ color: 'grey' }}>{title}</h3>
+        ) : (
+          <h3 style={{ color: 'grey', cursor: 'pointer' }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
+        )}
+        {((title !== 'Older') || (this.state.showOlder)) && (
+          conversations.map(conversation => (
+            <div key={conversation.id} className="conversationItem">
+              {/* Render each conversation item */}
+              <h4 style={{ marginBottom: '0' }}>
+                {this.state.editingID === conversation.id ? (
+                  <Form>
+                    <div className='conversation-line'>
+                      <div className='conversation-line-input'>
+                        <Form.Input
+                          type="text"
+                          maxLength={255}
+                          value={this.state.editedTitle}
+                          onChange={(e) => this.setState({ editedTitle: e.target.value })}
+                          autoFocus
+                          fluid
+                          loading={editLoading}
+                          secondary
+                        />
+                      </div>
+                      <Icon
+                        name='check'
+                        className='saveIcon'
+                        style={{ cursor: 'pointer', color: 'grey' }}
+                        onClick={() => this.handleSaveEditing(conversation.id)}
+                        title='Save'
+                      />
+                      <Icon
+                        name='cancel'
+                        className='cancelIcon'
+                        style={{ cursor: 'pointer', color: 'grey' }}
+                        onClick={this.handleCancelEditing}
+                        title='Cancel'
+                      />
+                    </div>
+                  </Form>
+                ) : (
+                  <div>
+                    <Menu.Item as={Link} to={'/conversations/' + conversation.id} >
+                      <div style={{ display: 'flex' }}>
+
+                        <Link to={'/conversations/' + conversation.id} style={linkStyle}>
+                          {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
+                          {conversation.title}
+                        </Link>
+                        <Icon
+                          name='edit'
+                          id='editIcon'
+                          className='editIcon'
+                          onClick={() => this.handleEditClick(conversation.id, conversation.title)}
+                          title='Edit'
+                        />
+                      </div>
+                    </Menu.Item>
+                  </div>
+                )}
+              </h4>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  }
+
   render() {
     const { loading, error, conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
@@ -137,85 +256,36 @@ class ConversationsList extends React.Component {
       color: '#e4dfda',
     }
 
+    const groupedConversations = this.groupConversationsByDate();
+
     return (
       <div>
         <h4 style={{ marginBottom: '0' }}>
-        <div>
-              <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
-              <Divider style={{ marginTop: '0', marginBottom: '1em' }}/>
-                <div style={{ display: 'flex' }}>
-                  <p style={linkStyle}>
-                    + New Conversation
-                  </p>
-                </div>
-                {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
-                <Divider style={{ marginTop: '1em', marginBottom: '0' }}/>
+          <div>
+            <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
+              <Divider style={{ marginTop: '0', marginBottom: '1em' }} />
+              <div style={{ display: 'flex' }}>
+                <p style={linkStyle}>
+                  + New Conversation
+                </p>
+              </div>
+              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+              <Divider style={{ marginTop: '1em', marginBottom: '0' }} />
 
 
-              </Menu.Item>
-            </div>
+            </Menu.Item>
+          </div>
         </h4>
 
-        {(conversations && conversations.length) && conversations.map(conversation => (
-          <div
-            key={conversation.id}
-            className="conversationItem"
-          >
-            <h4 style={{ marginBottom: '0' }}>
-              {this.state.editingID === conversation.id ? (
-                <Form>
-                  <div className='conversation-line'>
-                    <div className='conversation-line-input'>
-                      <Form.Input
-                        type="text"
-                        maxLength={255}
-                        value={this.state.editedTitle}
-                        onChange={(e) => this.setState({ editedTitle: e.target.value })}
-                        autoFocus
-                        fluid
-                        loading={editLoading}
-                        secondary
-                      />
-                    </div>
-                    <Icon
-                      name='check'
-                      className='saveIcon'
-                      style={{ cursor: 'pointer', color: 'grey' }}
-                      onClick={() => this.handleSaveEditing(conversation.id)}
-                      title='Save'
-                    />
-                    <Icon
-                      name='cancel'
-                      className='cancelIcon'
-                      style={{ cursor: 'pointer', color: 'grey' }}
-                      onClick={this.handleCancelEditing}
-                      title='Cancel'
-                    />
-                  </div>
-                </Form>
-              ) : (
-                <div>
-                  <Menu.Item as={Link} to={'/conversations/' + conversation.id}>
-                    <div style={{ display: 'flex' }}>
+        <div>
+          {groupedConversations.today.length > 0 && this.renderConversationsSection("Today", groupedConversations.today)}
+          {groupedConversations.yesterday.length > 0 && this.renderConversationsSection("Yesterday", groupedConversations.yesterday)}
+          {groupedConversations.last7Days.length > 0 && this.renderConversationsSection("Last 7 Days", groupedConversations.last7Days)}
+          {groupedConversations.last30Days.length > 0 && this.renderConversationsSection("Last 30 Days", groupedConversations.last30Days)}
+          {groupedConversations.older.length > 0 && this.renderConversationsSection("Older", groupedConversations.older)}
+        </div>
 
-                      <Link to={'/conversations/' + conversation.id} style={linkStyle}>
-                        {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
-                        {conversation.title}
-                      </Link>
-                      <Icon
-                        name='edit'
-                        id='editIcon'
-                        className='editIcon'
-                        onClick={() => this.handleEditClick(conversation.id, conversation.title)}
-                        title='Edit'
-                      />
-                    </div>
-                  </Menu.Item>
-                </div>
-              )}
-            </h4>
-          </div>
-        ))}
+
       </div>
     );
   }
