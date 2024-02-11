@@ -37,7 +37,9 @@ const {
   ENABLE_REPORTER_SEARCH,
   ENABLE_STATUTE_SEARCH,
   ENABLE_VOLUME_SEARCH,
-  ENABLE_LIBRARY
+  ENABLE_LIBRARY,
+  USER_HINT_TIME_MS,
+  USER_MENU_HOVER_TIME_MS
 } = require('../constants');
 
 // Components
@@ -284,10 +286,19 @@ class Dashboard extends React.Component {
                 <p className='icon-label'>Home</p>
               </Menu.Item>
               {(USER_IS_BETA || USER_IS_ALPHA || USER_IS_ADMIN) && (
-                <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
-                  <Icon name='gavel' size='large' />
-                  <p className='icon-label'>Matters</p>
-                </Menu.Item>
+                <Popup
+                  mouseEnterDelay={USER_HINT_TIME_MS}
+                  position='right center'
+                  trigger={(
+                  <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
+                    <Icon name='gavel' size='large' />
+                    <p className='icon-label'>Matters</p>
+                  </Menu.Item>
+                )}>
+                  <Popup.Content>
+                    <p>Upload notes, files, and more to give context to a matter</p>
+                  </Popup.Content>
+                </Popup>
               )}
               <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
                 <Icon name='comment alternate outline' size='large' />

@@ -3,7 +3,7 @@
 // Constants
 const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 240000;
+const MAX_RESPONSE_TIME_MS = 240000; // 4 minutes
 
 // Fabric
 const GENESIS_HASH = '';
@@ -37,6 +37,8 @@ const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
+const USER_MENU_HOVER_TIME_MS = 1000;
+const USER_HINT_TIME_MS = 3000;
 const INTEGRITY_CHECK = false;
 
 // Browser
@@ -85,5 +87,7 @@ module.exports = {
   BRAND_NAME,
   CHATGPT_MAX_TOKENS,
   AGENT_TEMPERATURE,
-  USER_QUERY_TIMEOUT_MS
+  USER_QUERY_TIMEOUT_MS,
+  USER_HINT_TIME_MS,
+  USER_MENU_HOVER_TIME_MS
 };

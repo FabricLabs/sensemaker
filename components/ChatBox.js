@@ -18,7 +18,6 @@ const InformationSidebar = require('./InformationSidebar');
 
 const { Link, useParams } = require('react-router-dom');
 
-
 // Semantic UI
 const {
   Button,
@@ -639,7 +638,7 @@ class ChatBox extends React.Component {
             <div className='link-back-matter' >
               <Header as="h2">{actualConversation.title}</Header>
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}>Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
             </div>
           )}
@@ -647,7 +646,7 @@ class ChatBox extends React.Component {
           {matterID && (
             <div className='link-back-matter'>
               <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}>Back to Matter</Link></Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
           {/* The chat messages start rendering here */}
