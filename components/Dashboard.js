@@ -231,27 +231,27 @@ class Dashboard extends React.Component {
                 <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
-            {ENABLE_CASE_SEARCH && (
+            {USER_IS_BETA && ENABLE_CASE_SEARCH && (
               <Menu.Item as={Link} to='/cases'>
-                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>
+                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
-            {ENABLE_COURT_SEARCH && (
+            {USER_IS_BETA && ENABLE_COURT_SEARCH && (
               <Menu.Item as={Link} to='/courts'>
                 <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
-            {ENABLE_JUDGE_SEARCH && (
+            {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
               <Menu.Item as={Link} to='/judges'>
                 <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
-            {ENABLE_OPINION_SEARCH && (
+            {USER_IS_BETA && ENABLE_OPINION_SEARCH && (
               <Menu.Item as={Link} to='/opinions'>
                 <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>
             )}
-            {ENABLE_DOCUMENT_SEARCH && (
+            {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
               <Menu.Item as={Link} to='/documents'>
                 <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini' color='green'>New!</Label></div>
               </Menu.Item>

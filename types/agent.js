@@ -243,6 +243,10 @@ class Agent extends Service {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
+
+      // TODO: consider not concatenating the prompt
+      // If we don't concatenate the prompt, we can use the prompt as a "seed" for the conversation.
+      // Further, the prompt is sometimes duplicated with some upstream use...
       const messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
 
       // Check for local agent
@@ -274,7 +278,8 @@ class Agent extends Service {
             status: 'success',
             query: request.query,
             response: base,
-            content: base.choices[0].message.content
+            content: base.choices[0].message.content,
+            messages: messages
           });
         } catch (exception) {
           console.error('[AGENT]', 'Could not fetch completions:', exception);
@@ -325,6 +330,19 @@ class Agent extends Service {
           content: response
         });
       }
+    });
+  }
+
+  async requery (request, timeout = 120000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Requery timed out.'));
+      }, timeout);
+
+      this.query(request).then((response) => {
+        clearTimeout(timer);
+        resolve(response);
+      }).catch(reject);
     });
   }
 
