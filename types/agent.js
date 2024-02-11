@@ -244,42 +244,42 @@ class Agent extends Service {
       if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
       const messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+
+      // Check for local agent
       if (this.settings.host) {
         // Happy Path
-        console.debug('[AGENT]', '[QUERY]', 'Fetching completions from Llama...', this.settings.host);
-        const response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: this.settings.model,
-            prompt: this.prompt,
-            messages: messages
-          })
-        });
-
+        if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        let response = null;
         let base = null;
 
         try {
+          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: this.settings.model,
+              prompt: this.prompt,
+              messages: messages
+            })
+          });
+
           base = await response.json();
+          if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
+
+          return resolve({
+            type: 'AgentResponse',
+            name: this.settings.name,
+            status: 'success',
+            query: request.query,
+            response: base,
+            content: base.choices[0].message.content
+          });
         } catch (exception) {
-          console.error('[AGENT]', 'Could not parse JSON:', exception);
-          reject(exception);
+          console.error('[AGENT]', 'Could not fetch completions:', exception);
+          return reject(exception);
         }
-
-        if (!base || !base.choices || !base.choices[0]) {
-          return reject(new Error('Could not find a response.'));
-        }
-
-        return resolve({
-          type: 'AgentResponse',
-          name: this.settings.name,
-          status: 'success',
-          query: request.query,
-          response: base,
-          content: base.choices[0].content
-        });
       } else {
         // Failure Path
         const responses = {
@@ -287,7 +287,7 @@ class Agent extends Service {
           beta: null,
           gamma: null,
           mistral: null,
-          openai: (this.settings.openai.enabled) ? await this.services.openai._streamConversationRequest({
+          openai: (this.settings.openai.enable) ? await this.services.openai._streamConversationRequest({
             messages:  messages.concat([
               { role: 'user', content: request.query }
             ]),
