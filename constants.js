@@ -21,19 +21,19 @@ const ENABLE_REGISTRATION = true;
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_BILLING = false;
+const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_MATTERS = true;
 const ENABLE_CASE_SEARCH = true;
-const ENABLE_COURT_SEARCH = false;
+const ENABLE_COURT_SEARCH = true;
 const ENABLE_JUDGE_SEARCH = false;
 const ENABLE_OPINION_SEARCH = false;
 const ENABLE_DOCUMENT_SEARCH = false;
 const ENABLE_PERSON_SEARCH = false;
-const ENABLE_JURISDICTION_SEARCH = false;
+const ENABLE_JURISDICTION_SEARCH = true;
 const ENABLE_REPORTER_SEARCH = false;
 const ENABLE_STATUTE_SEARCH = false;
 const ENABLE_VOLUME_SEARCH = false;
-const ENABLE_LIBRARY = false;
+const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
