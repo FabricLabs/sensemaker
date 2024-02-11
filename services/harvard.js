@@ -260,7 +260,7 @@ class Harvard extends Service {
     });
   }
 
-  async searchCases (query) {
+  async searchCases (request) {
     return new Promise(async (resolve, reject) => {
       fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
         headers: {

@@ -7,7 +7,7 @@ class Colorado extends LexisScrapper_1.LexisScrapper {
     constructor() {
         super(Colorado.name);
         this.statutes = async () => {
-            return this.parseStatutes('https://advance.lexis.com/container?config=0345494EJAA5ZjE0MDIyYy1kNzZkLTRkNzktYTkxMS04YmJhNjBlNWUwYzYKAFBvZENhdGFsb2e4CaPI4cak6laXLCWyLBO9&crid=ceb0105a-8d1e-422a-9700-02f9463ee294');
+            this.parseStatutes('https://advance.lexis.com/container?config=0345494EJAA5ZjE0MDIyYy1kNzZkLTRkNzktYTkxMS04YmJhNjBlNWUwYzYKAFBvZENhdGFsb2e4CaPI4cak6laXLCWyLBO9&crid=ceb0105a-8d1e-422a-9700-02f9463ee294');
         };
         this.rulesOfCourt = async () => {
             let self = this;

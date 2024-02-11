@@ -61,17 +61,10 @@ export class Pennsylvania extends StateScrapper implements StateScrapperInterfac
   public constitution = async () => {
     let self = this;
     await this.runCheerio(async ({ $, request, enqueueLinks }) => {
-      console.log(request.url)
-
-      let iframeItems = $('.BodyContainer')
-
-      let pTags = iframeItems.find('p');
-      let bTags = iframeItems.find('b');
-      let allTexts = pTags.text() + bTags.text();
+      console.log(request.url);
 
       const path:string[] = ['Pennsylvania-Constitution' + '.html'];
-      await self.storeConstitution(allTexts, path)
-      
+      await self.storeConstitution($('.BodyContainer').html(), path);
     }, 'https://www.legis.state.pa.us//WU01/LI/LI/CT/HTM/00/00.HTM?49'); //iframe URL
   }
   

@@ -12,10 +12,10 @@ chromium.use(stealthPlugin());
 firefox.use(stealthPlugin());
 
 export interface StateScrapperInterface {
-  statutes();
-  constitution();
-  rulesOfCourt();
-  administrativeCodes();
+  statutes(): Promise<void>;
+  constitution(): Promise<void>;
+  rulesOfCourt(): Promise<void>;
+  administrativeCodes(): Promise<void>;
 }
 
 export interface DownloadableFile {
@@ -48,7 +48,7 @@ export class StateScrapper {
       const config = Configuration.getGlobalConfig();
       config.set('defaultRequestQueueId', `cheerioStack.${Math.random()}`)
     }
-    
+
     const options: CheerioCrawlerOptions = {};
     options.requestHandlerTimeoutSecs = 3600;
     options.requestHandler = requestHandler;
@@ -75,7 +75,7 @@ export class StateScrapper {
     }
     const options: PlaywrightCrawlerOptions = {};
     options.requestHandlerTimeoutSecs = 999999;
-    options.headless = true;
+    options.headless = false;
     options.launchContext = {
       launcher: chromium,
       launchOptions: {
