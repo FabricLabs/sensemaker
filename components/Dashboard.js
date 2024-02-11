@@ -86,10 +86,11 @@ class Dashboard extends React.Component {
         progress: 0,
         isLoading: true,
         isLoggingOut: false,
-        openPlayground: true,
         openMatters: false,
         openLibrary: false,
+        openConversations: false,
         openSectionBar: false,
+
         steps: [
           {
             target: '.my-first-step',
@@ -184,39 +185,16 @@ class Dashboard extends React.Component {
 
   handleMenuItemClick = (menu) => {
     const newState = {
-      openPlayground: false,
       openMatters: false,
       openLibrary: false,
+      openConversations: false,
     };
 
     // Update the state based on the menu item clicked
     switch (menu) {
       case 'home':
-        if (this.state.openPlayground && this.state.openSectionBar) {
-          this.setState({ openSectionBar: false });
-        } else {
-          newState.openPlayground = true;
-          this.setState({ openSectionBar: false });
-          this.props.resetChat();
-        }
-        break;
-      case 'playground':
-        if (this.state.openPlayground && this.state.openSectionBar) {
-          this.setState({ openSectionBar: false });
-        } else {
-          newState.openPlayground = true;
-          this.setState({ openSectionBar: true });
-          this.props.resetChat();
-        }
-        break;
-      case 'conversations':
-        if (this.state.openPlayground && this.state.openSectionBar) {
-          this.setState({ openSectionBar: false });
-        } else {
-          newState.openPlayground = true;
-          this.setState({ openSectionBar: true });
-          this.props.resetChat();
-        }
+        this.setState({ openSectionBar: false });
+        this.props.resetChat();
         break;
       case 'matters':
         if (this.state.openMatters && this.state.openSectionBar) {
@@ -226,7 +204,15 @@ class Dashboard extends React.Component {
           this.setState({ openSectionBar: true });
           this.props.resetChat();
         }
-        // newState.openMatters = true;
+        break;
+      case 'conversations':
+        if (this.state.openConversations && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openConversations = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
         break;
       case 'library':
         if (this.state.openLibrary && this.state.openSectionBar) {
@@ -236,7 +222,6 @@ class Dashboard extends React.Component {
           this.setState({ openSectionBar: true });
           this.props.resetChat();
         }
-        // newState.openLibrary = true;
         break;
       default:
         console.error('Unknown menu item');
@@ -247,7 +232,7 @@ class Dashboard extends React.Component {
     this.setState(newState);
   };
 
-  render () {
+  render() {
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
@@ -290,11 +275,11 @@ class Dashboard extends React.Component {
                   mouseEnterDelay={USER_HINT_TIME_MS}
                   position='right center'
                   trigger={(
-                  <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
-                    <Icon name='gavel' size='large' />
-                    <p className='icon-label'>Matters</p>
-                  </Menu.Item>
-                )}>
+                    <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
+                      <Icon name='gavel' size='large' />
+                      <p className='icon-label'>Matters</p>
+                    </Menu.Item>
+                  )}>
                   <Popup.Content>
                     <p>Upload notes, files, and more to give context to a matter</p>
                   </Popup.Content>
@@ -310,9 +295,9 @@ class Dashboard extends React.Component {
               </Menu.Item>
               {USER_IS_ADMIN && (
                 <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
-                <Icon name='lab' size='large' />
-                <p className='icon-label'>Lab</p>
-              </Menu.Item>
+                  <Icon name='lab' size='large' />
+                  <p className='icon-label'>Lab</p>
+                </Menu.Item>
               )}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
@@ -366,7 +351,7 @@ class Dashboard extends React.Component {
                 </div>
               </Header>
             </Menu.Item>
-            {this.state.openPlayground && (
+            {this.state.openConversations && (
               <section className='fade-in'>
                 <ConversationsList {...this.props} />
               </section>
@@ -491,7 +476,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
-          <Container fluid style={containerStyle} onClick={()=> this.setState({openSectionBar: false})}>
+          <Container fluid style={containerStyle} onClick={() => this.setState({ openSectionBar: false })}>
             {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
               <div>

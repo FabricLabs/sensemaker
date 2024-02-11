@@ -151,6 +151,14 @@ jeeves-dashboard #main-sidebar{
   border-right: 1px solid grey;
   z-index: 1000;
 }
+
+
+@media (max-width: 1440px) {
+  jeeves-dashboard #main-sidebar{
+    min-width: 100px;
+    max-width: 100px;
+  }
+}
 .col-center{
   display: flex;
   flex-direction: column;
