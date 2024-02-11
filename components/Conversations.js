@@ -140,7 +140,7 @@ class Conversations extends React.Component {
     const conversationCount = conversations.length;
 
     return (
-      <Segment className='fade-in' fluid>
+      <Segment className='fade-in' fluid style={{ minHeight: '34em' }}>
         <h2>Conversations</h2>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (

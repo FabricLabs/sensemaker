@@ -208,7 +208,8 @@ class Dashboard extends React.Component {
     this.setState(newState);
   };
 
-  render() {
+  render () {
+    const USER_IS_BETA = this.props.auth.isBeta || false;
     const { openSectionBar } = this.state;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
