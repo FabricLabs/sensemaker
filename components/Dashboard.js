@@ -237,10 +237,10 @@ class Dashboard extends React.Component {
         <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
             <div>
-              <Menu.Item as='a' style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
+              <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
               </Menu.Item>
-              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('playground')}>
+              <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('playground')}>
                 <Icon name='comment outline' size='large' />
                 <p className='icon-label'>Playground</p>
               </Menu.Item>
@@ -255,8 +255,8 @@ class Dashboard extends React.Component {
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             {!this.state.openSectionBar && (
-              <div className='open-sidebar-arrow'>
-                <Icon name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
+              <div className='expand-sidebar-arrow'>
+                <Icon id='expand-sidebar-icon' name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
               </div>
             )}
 
@@ -278,7 +278,7 @@ class Dashboard extends React.Component {
             </div>
           </Sidebar>
           <Sidebar as={Menu} animation='overlay' icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
-            <div className='close-sidebar-arrow'>
+            <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
             <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>

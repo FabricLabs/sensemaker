@@ -158,7 +158,7 @@ class ConversationsList extends React.Component {
         {(title !== 'Older') ? (
           <h3 style={{ color: 'grey', marginBottom: '0', marginTop: '0', textTransform: 'none' }}>{title}</h3>
         ) : (
-          <h3 style={{ color: 'grey', cursor: 'pointer', marginBottom: '0', marginTop: '0', textTransform: 'none'  }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
+          <h3 style={{ color: 'grey', cursor: 'pointer', marginBottom: '0', marginTop: '0', textTransform: 'none' }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
         )}
         {((title !== 'Older') || (this.state.showOlder)) && (
           conversations.map(conversation => (
