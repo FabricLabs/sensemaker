@@ -152,7 +152,7 @@ class ConversationsList extends React.Component {
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       display: 'block',
-      maxWidth: '100%',
+      maxWidth: '92%',
       color: '#e4dfda',
     }
 
@@ -179,7 +179,7 @@ class ConversationsList extends React.Component {
                           onChange={(e) => this.setState({ editedTitle: e.target.value })}
                           autoFocus
                           fluid
-                          loading={editLoading}
+                          loading={this.state.editLoading}
                           secondary
                         />
                       </div>
