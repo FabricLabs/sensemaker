@@ -321,17 +321,17 @@ class Dashboard extends React.Component {
               </jeeves-search>
             </Menu.Item> */}
 
-                <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
+                {/* <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
                   <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
-                </Menu.Item>
+                </Menu.Item> */}
                 {ENABLE_STATUTE_SEARCH && (
                   <Menu.Item as={Link} to='/statues'>
                     <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                <Menu.Item as={Link} to="/conversations">
+                {/* <Menu.Item as={Link} to="/conversations">
                   <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label> : null}</div>
-                </Menu.Item>
+                </Menu.Item> */}
                 {ENABLE_MATTERS && (
                   <Menu.Item as={Link} to='/matters'>
                     <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='green'>New!</Label></div>
