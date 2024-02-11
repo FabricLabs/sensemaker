@@ -450,7 +450,6 @@ fabric-motd {
 }
 
 .home-dropdowns{
-
   text-align: center;
   display: flex;
   flex-direction: row;
@@ -460,6 +459,7 @@ fabric-motd {
   gap: 2em;
   margin-top: 2em;
 }
+
 .home-dropdowns .ui.dropdown{
   font-family: 'AvGardd', serif !important;
   min-width: 17.5em !important;
@@ -473,15 +473,24 @@ fabric-motd {
   }
 }
 
-.microphone.icon{
-    cursor: pointer;
-    z-index: 10;
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    z-index: 10;
+.slide-in {
+  transition: max-height 0.25s ease-in;
+}
+
+.slide-out {
+  height: 0;
+  transition: max-height 0.25s ease-out;
+}
+
+.microphone.icon {
+  cursor: pointer;
+  z-index: 10;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 10;
 }
 
 .answer-controls{
