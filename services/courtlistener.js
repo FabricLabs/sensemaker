@@ -227,10 +227,15 @@ class CourtListener extends Service {
     console.debug('[COURTLISTENER]', 'Searching...', request);
     if (!request.query) throw new Error('No query provided.');
     const tokens = request.query.split(/\s/g);
+
+    tokens.sort((a, b) => {
+      return b.length - a.length;
+    });
+
     console.debug('[COURTLISTENER]', 'Tokens:', tokens);
 
     // Vector Search
-    const combos = this.combinationsOf(tokens);
+    const combos = this.combinationsOf(tokens.slice(0, SEARCH_FANOUT_LIMIT));
     console.debug('[COURTLISTENER]', 'Combos:', combos);
 
     let dockets = [];
@@ -336,6 +341,18 @@ class CourtListener extends Service {
     return opinions;
   }
 
+  async syncOpinionSamples () {
+    // TODO: this should be a stream
+    const opinions = await this.sampleOpinions();
+
+    for (let i = 0; i < opinions.length; i++) {
+      const opinion = opinions[i];
+      this.emit('opinion', opinion);
+    }
+
+    return opinions;
+  }
+
   async syncOpinionClusters () {
     // TODO: this should be a stream
     const clusters = await this.sampleOpinionClusters();
@@ -371,7 +388,8 @@ class CourtListener extends Service {
     return Promise.all([
       this.syncDocketSamples(),
       this.syncPeopleSamples(),
-      this.syncRecapDocuments()
+      this.syncRecapDocuments(),
+      this.syncOpinionSamples()
     ]);
   }
 

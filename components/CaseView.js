@@ -10,9 +10,12 @@ const {
 
 const {
   Card,
+  Dimmer,
   Grid,
   Header,
+  Icon,
   Label,
+  Loader,
   Segment
 } = require('semantic-ui-react');
 
@@ -33,6 +36,7 @@ class CaseView extends React.Component {
 
   render () {
     const { id, loading, error, cases } = this.props;
+
     if (error) {
       return <div>Error: {error}</div>;
     }
@@ -45,21 +49,32 @@ class CaseView extends React.Component {
           <Label.Group>
             <Label icon='calendar'>{formatDate(cases.current.decision_date)}</Label>
             <Label icon='law'>{cases.current.court_name}</Label>
-            {(cases.current.ia_url) ? (
-              <Label icon='pdf'>file</Label>
+            {(cases.current.jurisdiction_name) ? (
+              <Label icon='law'>{cases.current.jurisdiction_name || ''}</Label>
+            ) : null}
+            {(cases.current.harvard_case_law_pdf) ? (
+              <a href={cases.current.harvard_case_law_pdf} target='_blank'><Icon name='file pdf' /></a>
             ) : null}
           </Label.Group>
-          <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
+          {(cases.current.summary) ? (
+            <div dangerouslySetInnerHTML={{ __html: marked.parse(cases.current.summary || '') }} />
+          ) : (
+            <Loader />
+          )}
           <div style={{ marginTop: '1em' }}>
             <Header as='h6'>Metadata</Header>
             <code>
               <pre>
-                @id: {id}
+                @id: {id}<br />
+                @ids:<br />
+                &nbsp;&nbsp;PACER: {cases.current.pacer_case_id || 'unknown'}<br />
+                &nbsp;&nbsp;harvard: {cases.current.harvard_case_law_id || 'unknown'}<br />
+                &nbsp;&nbsp;courtlistener: {cases.current.courtlistener_id || 'unknown'}
               </pre>
             </code>
           </div>
         </Segment>
-        <Grid columns='equal'>
+        <Grid columns='equal' style={{marginRight: '0'}}>
           <Grid.Row stretched>
             <Grid.Column>
               <Segment>
@@ -83,9 +98,10 @@ class CaseView extends React.Component {
             resetChat={this.props.resetChat}
             chat={this.props.chat}
             includeFeed={true}
-            isSending={loading}            
+            isSending={loading}
             caseTitle={cases.current.title}
             caseID={id}
+            getMessageInformation={this.props.getMessageInformation}
           />
       </fabric-container>
     );

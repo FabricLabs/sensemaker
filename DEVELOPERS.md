@@ -16,3 +16,17 @@
   - PyTorch HTTP Client
 - Services: provided an HTTP API
   - PyTorch
+
+## Tips
+- You can use `scripts/node.js` to quickly run the service without building: `node scripts/node.js`
+- Use `nodemon` to monitor for changes: `nodemon scripts/node.js`
+- Re-build UI when necessary: `npm run build`
+- Re-build semantic styling (CSS) when necessary: `npm run build:semantic`
+
+You can pass `webpack` configuration options in `types/compiler.js` to tweak various settings, such as live reloading.
+
+All other configuration options for your local node live in `settings/local.js` — some important settings include:
+
+- `email` — configures email settings
+  - `enable` — boolean (true or false)
+  - `host` — hostname for outbound email

@@ -8,7 +8,7 @@
        Fonts
 --------------------*/
 
-@fontName          : 'Martian Mono';
+@fontName          : 'AvGardd';
 
 @headerFont        : @fontName, 'Helvetica Neue', Arial, Helvetica, sans-serif;
 @pageFont          : @fontName, 'Helvetica Neue', Arial, Helvetica, sans-serif;
@@ -21,7 +21,6 @@
 
 @googleProtocol    : 'https://';
 @googleFontRequest : '@{googleFontName}:@{googleFontSizes}&subset=@{googleSubset}&display=@{googleFontDisplay}';
-
 
 @bold              : bold;
 @normal            : normal;
@@ -53,7 +52,7 @@
     Brand Colors
 --------------------*/
 
-@primaryColor        : @blue;
+@primaryColor        : #336699;
 @secondaryColor      : @black;
 
 @lightPrimaryColor   : @lightBlue;

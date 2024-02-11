@@ -19,6 +19,9 @@ const Feed = require('./Feed');
 class Conversation extends React.Component {
   constructor (props) {
     super(props);
+    this.state = {
+      actualConversation: null,
+    };
 
     this.messagesEndRef = React.createRef();
   }
@@ -26,6 +29,9 @@ class Conversation extends React.Component {
   componentDidMount () {
     const { id } = this.props;
     const { message } = this.props.chat;
+
+    const actual = this.props.conversations.find(conversation => conversation.id == id);
+    this.setState({actualConversation: actual});
 
     // this.props.fetchConversation(id);
     this.props.getMessages({ conversation_id: id });
@@ -53,22 +59,23 @@ class Conversation extends React.Component {
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
-      flexDirection: 'column',  
-      paddingBottom: '0'     
+      flexDirection: 'column',
+      paddingBottom: '0'
     };
 
-    return (       
+    return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-           <ChatBox 
+           <ChatBox
             {...this.props}
             chat={chat} messages={messages}
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}
             placeholder={'Ask me anything...'}
             previousChat={true}
-            conversationID={id}          
+            conversationID={id}
+            actualConversation={this.state.actualConversation}
           />
-       </fabric-component>         
+       </fabric-component>
 
     );
   }

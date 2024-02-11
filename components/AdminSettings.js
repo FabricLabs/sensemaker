@@ -1,23 +1,29 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 const { Link } = require('react-router-dom');
 
+// Semantic UI
 const {
   Button,
+  Divider,
   Header,
   Icon,
   Label,
   List,
+  Loader,
+  Pagination,
+  Progress,
   Segment,
   Statistic,
   Tab,
-  Table,
-  Pagination,
-  Divider,
-  Loader
+  Table
 } = require('semantic-ui-react');
 
+const toRelativeTime = require('../functions/toRelativeTime');
+
+// Components
 const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminInquiries = require('./AdminSettingsInquiries');
@@ -73,6 +79,7 @@ class AdminSettings extends React.Component {
   };
 
   render() {
+    const start = new Date();
     const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries, invitation } = this.props;
     const { currentPage, windowWidth } = this.state;
 
@@ -165,6 +172,49 @@ class AdminSettings extends React.Component {
       },
       {
         menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
+          <Header as='h4'>Sources</Header>
+          <Table celled striped>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>Name</Table.HeaderCell>
+                <Table.HeaderCell>Type</Table.HeaderCell>
+                <Table.HeaderCell>Status</Table.HeaderCell>
+                <Table.HeaderCell>Last Update</Table.HeaderCell>
+                <Table.HeaderCell></Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {/* Example Row */}
+              <Table.Row>
+                <Table.Cell>@sensemaker/core</Table.Cell>
+                <Table.Cell><Label>Internal</Label></Table.Cell>
+                <Table.Cell><Label>complete</Label></Table.Cell>
+                <Table.Cell><abbr title={start.toISOString()} class='relative'>{toRelativeTime(start)}</abbr></Table.Cell>
+                <Table.Cell>
+                  <Progress percent={100} />
+                </Table.Cell>
+              </Table.Row>
+              {/* Estimates */}
+              <Table.Row>
+                <Table.Cell>Caselaw Access Project</Table.Cell>
+                <Table.Cell><Label>External</Label></Table.Cell>
+                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell></Table.Cell>
+                <Table.Cell>
+                  <Progress percent={70} indicating />
+                </Table.Cell>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell>Courtlistener</Table.Cell>
+                <Table.Cell><Label>External</Label></Table.Cell>
+                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell></Table.Cell>
+                <Table.Cell>
+                  <Progress percent={5} indicating />
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
           <Header as='h4'>Datasets</Header>
           <Table celled striped>
             <Table.Header>

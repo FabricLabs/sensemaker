@@ -29,7 +29,7 @@ module.exports = {
   domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
-  name: 'jeeves',
+  name: 'Novo',
   mode: 'production',
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
@@ -62,10 +62,24 @@ module.exports = {
     port: 3045
   },
   email: {
+    key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
     username: 'agent@jeeves.dev',
     password: 'generate app-specific password'
+  },
+  files: {
+    path: '/media/storage/node/files'
+  },
+  gemini: {
+    model: 'gemini-pro',
+    token: 'AIzaSyC2lGAZznayOAvs8dzAtqzpsS2rtcmruEk'
+  },
+  stripe: {
+    token: {
+      public: 'pk_test_51NLE0lHoVtrEXpIkwVlVukGcEwKXQz7qHqQ80FWg1YAPL1MmYl3HEifAcW1g4Frb70De1l7ENwh5aSPLnmF4Nl0y00A3AcE0bD',
+      private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
+    }
   },
   interval: 1000, // 1 Hz
   persistent: false,
@@ -88,7 +102,7 @@ module.exports = {
     // 'twilio'
   ],
   site: {
-    title: 'Jeeves &middot; Your Legal Assistant'
+    title: 'Novo &middot; Your Legal Assistant'
   },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {
@@ -110,7 +124,17 @@ module.exports = {
   },
   statutes: {
     enable: false,
-    jurisdictions: ['Texas']
+    jurisdictions: [
+      'Arkansas',
+      'California',
+      'Colorado',
+      'Florida',
+      'NewJersey',
+      'NewYork',
+      'Ohio',
+      'Pennsylvania',
+      'Texas'
+    ]
   },
   courtlistener: {
     enable: false,
@@ -159,8 +183,10 @@ module.exports = {
     enable: true
   },
   openai: {
+    enable: true,
     key: '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',
-    model: 'gpt-4-1106-preview'
+    model: 'gpt-4-1106-preview',
+    temperature: 0
   },
   twilio: {
     sid: 'add your twilio sid here',

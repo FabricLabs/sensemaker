@@ -1,6 +1,7 @@
 'use strict';
 
 // Dependencies
+const fetch = require('cross-fetch');
 const nodemailer = require('nodemailer');
 const {
   SMTPClient
@@ -59,23 +60,24 @@ class EmailService extends Service {
     this.emit('debug', `[${this.settings.name}] Sending message...`, message);
 
     try {
-      const transporter = nodemailer.createTransport({
-        service: this.settings.service,
-        host: this.settings.host,
-        port: this.settings.port,
-        secure: this.settings.secure,
-        auth: {
-          user: this.settings.username,
-          pass: this.settings.password
-        }
+      const result = await fetch(`https://api.postmarkapp.com/email`, {
+        method: 'POST',
+        headers: {
+          'X-Postmark-Server-Token': `${this.settings.key}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          From: message.from,
+          To: message.to,
+          Subject: message.subject,
+          HtmlBody: message.html,
+          TextBody: message.text,
+          MessageStream: 'outbound'
+        })
       });
-
-      const result = await transporter.sendMail(message);
-      this.emit('debug', `[${this.settings.name}] Message sent: ${result.messageId}`);
-      this.emit('debug', `[${this.settings.name}] Message sent: ${Object.keys(result)}`, result);
-    } catch (error) {
-      this.emit('error', `[${this.settings.name}] Error sending message: ${error.message}`);
-      throw error; // Rethrow the error
+      console.debug('result:', result);
+    } catch (exception) {
+      console.debug('could not send email:', exception);
     }
 
     return this;

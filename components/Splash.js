@@ -2,6 +2,7 @@
 
 // Constants
 const {
+  BRAND_NAME,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION
 } = require('../constants');
@@ -14,11 +15,11 @@ const { Link, Route, Routes, Switch } = require('react-router-dom');
 const {
   Card,
   Header,
-  Image
+  Image,
+  Segment
 } = require('semantic-ui-react');
 
 // Components
-const AccountCreator = require('./AccountCreator');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
@@ -32,12 +33,11 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-
-        <Image src="/images/novo-logo.svg" size='small' centered />
-        {/* <div style={{textAlign: 'center'}}>
-            <Header>JEEVES</Header>
-          </div> */}
-
+        <Image src="/images/novo-logo.svg" size='large' centered style={{ margin: '0 1em 2em 1em', maxWidth: '80%' }} />
+        <section>
+          <div id="countdown" className='center-elements-row'></div>
+          <p style={{ fontSize: '1.2em', marginTop: '2em', maxWidth: '28em' }}>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
+        </section>
         <fabric-component class="ui primary action container">
           <Routes>
             <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
@@ -82,8 +82,9 @@ class Splash extends React.Component {
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
           {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
-          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2023 Legal Tools &amp; Technology, Inc.</p>
+          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
+        <script src="/scripts/countdown.js"></script>
       </jeeves-splash>
     );
   }

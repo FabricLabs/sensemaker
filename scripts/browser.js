@@ -9,6 +9,9 @@ const React = require('react');
 const ReactDOM = require('react-dom/client');
 const { Provider, connect } = require('react-redux');
 
+// Functions
+const toRelativeTime = require('../functions/toRelativeTime');
+
 // Components
 const JeevesUI = require('../components/JeevesUI');
 
@@ -67,18 +70,25 @@ const {
   fetchCase
 } = require('../actions/caseActions');
 
-// ## Chat Actions
+// ## Courts Actions
 const {
   fetchCourts,
   fetchCourt
 } = require('../actions/courtActions');
+
+// ## Jurisdiction Actions
+const {
+  fetchJurisdictions,
+  fetchJurisdiction
+} = require('../actions/jurisdictionsActions');
 
 // ## Contract Actions
 const {
   resetChat,
   submitMessage,
   regenAnswer,
-  getMessages
+  getMessages,
+  getMessageInformation,
 } = require('../actions/chatActions');
 
 // ## Conversation Actions
@@ -90,7 +100,8 @@ const {
 // ## Court Actions
 const {
   fetchConversations,
-  fetchConversation
+  fetchConversation,
+  fetchMatterConversations,
 } = require('../actions/conversationActions');
 
 // ## Person Actions
@@ -122,6 +133,16 @@ const {
   fetchDocuments,
   fetchDocument
 } = require('../actions/documentActions');
+
+// ## Matters Actions
+const {
+  fetchMatters,
+  fetchMatter,
+  createMatter,
+  addContext,
+  removeFile,
+  editMatter,
+} = require('../actions/mattersActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -166,6 +187,8 @@ async function main (input = {}) {
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
+      matterConversations: state.conversations.matterConversations,
+      conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
       judges: state.judges,
@@ -179,7 +202,9 @@ async function main (input = {}) {
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
       token: state.auth.token,
-      stats: state.stats
+      stats: state.stats,
+      matters: state.matters,
+      jurisdictions: state.jurisdictions
     }
   };
 
@@ -192,6 +217,8 @@ async function main (input = {}) {
     fetchConversations: fetchConversations,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    fetchJurisdictions: fetchJurisdictions,
+    fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
     fetchInquiry: fetchInquiry,
@@ -227,7 +254,15 @@ async function main (input = {}) {
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,
-    getMessages: getMessages
+    getMessages: getMessages,
+    getMessageInformation: getMessageInformation,
+    fetchMatters: fetchMatters,
+    fetchMatter: fetchMatter,
+    createMatter: createMatter,
+    addContext: addContext,
+    removeFile: removeFile,
+    fetchMatterConversations: fetchMatterConversations,
+    editMatter: editMatter,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
@@ -244,6 +279,13 @@ async function main (input = {}) {
       <ConnectedUI />
     </Provider>
   );
+
+  // Updates (1s)
+  setInterval(() => {
+    document.querySelectorAll('abbr.relative-time').forEach((el) => {
+      el.innerHTML = toRelativeTime(el.getAttribute('title'));
+    });
+  }, 1000); // 1 second
 
   // Return
   return {

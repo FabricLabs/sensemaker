@@ -6,6 +6,8 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  AGENT_MAX_TOKENS,
+  MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
@@ -19,6 +21,7 @@ const fetch = require('cross-fetch');
 const merge = require('lodash.merge');
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
+const multer = require('multer');
 
 // External Dependencies
 // const { ApolloServer, gql } = require('apollo-server-express');
@@ -60,22 +63,21 @@ const Matrix = require('@fabric/matrix');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
 // const GitHub = require('@fabric/github');
-// const Prices = require('@portal/feed');
 
 // Providers
-// const { StatuteProvider } = require('@jeeves/statute-scraper');
+const { StatuteProvider } = require('../libraries/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const Gemini = require('./gemini');
 const PACER = require('./pacer');
 const Harvard = require('./harvard');
 const Mistral = require('./mistral');
 const OpenAI = require('./openai');
-// TODO: Mistral
-// TODO: HarvardCaseLaw
 const CourtListener = require('./courtlistener');
 // const WestLaw = require('./westlaw');
+const Stripe = require('./stripe');
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -90,6 +92,40 @@ const Conversations = require('../components/Conversations');
 
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
+
+// Routes (Request Handlers)
+const ROUTES = {
+  cases: {
+    list: require('../routes/cases/get_cases'),
+  },
+  files: {
+    create: require('../routes/files/create_file'),
+    list: require('../routes/files/list_files'),
+    view: require('../routes/files/view_file')
+  },
+  matters: {
+    create: require('../routes/matters/create_matter'),
+    new: require('../routes/matters/new_matter'),
+    // view: require('../routes/matters/view_matter'),
+    view: require('../routes/matters/matter_view'),
+    list: require('../routes/matters/list_matters'),
+    addContext: require('../routes/matters/add_context'),
+    removeFile: require('../routes/matters/remove_file'),
+    conversation: require('../routes/matters/matter_chat'),
+    newConversation: require('../routes/matters/matter_new_chat'),
+    getConversations: require('../routes/matters/get_conversations'),
+    edit: require('../routes/matters/edit_matter'),
+  },
+  products: {
+    list: require('../routes/products/list_products'),
+  },
+  jurisdictions: {
+    view: require('../routes/jurisdictions/jurisdiction_view'),
+  },
+  courts: {
+    view: require('../routes/courts/court_view'),
+  }
+};
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -224,6 +260,7 @@ class Jeeves extends Hub {
     this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
     this.harvard = new Harvard(this.settings.harvard);
+    this.stripe = new Stripe(this.settings.stripe);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -281,29 +318,13 @@ class Jeeves extends Hub {
       sessions: false
     });
 
-    /* const resolvers = require('../resolvers');
-    const typeDefs = gql`
-      type User {
-        id: ID!
-        email: String!
-      }
-
-      type Query {
-        users: [User]
-      }
-    `; */
+    // File Uploads
+    this.uploader = new multer({ dest: this.settings.files.path });
 
     this.openai.settings.temperature = this.settings.temperature;
-    this.apollo = null; /* new ApolloServer({
-      typeDefs,
-      resolvers,
-      context: ({ req }) => {
-        return {
-          db: this.db
-        };
-      }
-    }); */
+    this.apollo = null;
 
+    // Internals
     this.services = {};
     this.sources = {};
     this.workers = [];
@@ -313,9 +334,21 @@ class Jeeves extends Hub {
     });
 
     // Sensemaker
-    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of case titles most relevant to the user\'s query.`, openai: this.settings.openai });
+    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: '127.0.0.1:11434', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
+
+    // Pipeline Datasources
+    this.datasources = {
+      bitcoin: { name: 'Bitcoin' },
+      courtlistener: { name: 'CourtListener' },
+      harvard: { name: 'Harvard' },
+      pacer: { name: 'PACER' },
+      statutes: { name: 'Statutes' }
+    };
 
     // Streaming
     this.completions = {};
@@ -561,174 +594,229 @@ class Jeeves extends Hub {
    * @param {Number} [depth] How many times to recurse.
    * @returns {Message} Request as a Fabric {@link Message}.
    */
-  async createTimedRequest (request, timeout = 60000, depth = 0) {
-    const now = new Date();
-    const created = now.toISOString();
+  async createTimedRequest (request, timeout = MAX_RESPONSE_TIME_MS, depth = 0) {
+    return new Promise(async (resolve, reject) => {
+      const now = new Date();
+      const created = now.toISOString();
 
-    // Create Request Message
-    const message = Message.fromVector(['TimedRequest', JSON.stringify({
-      created: created,
-      request: request
-    })]);
-
-    // Add Request to Database
-    const inserted = await this.db('requests').insert({
-      created_at: toMySQLDatetime(now),
-      content: JSON.stringify(request)
-    });
-
-    // Notify workers
-    this.emit('request', { id: inserted [0] });
-
-    // TODO: prepare maximum token length
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
-
-    // Compute most relevant tokens
-    const caseCount = await this.db('cases').count('id as count').first();
-    const hypotheticals = await this.lennon.query({ query: request.query });
-    const words = this.importantWords(request.query);
-    const phrases = this.importantPhrases(request.query);
-    const cases = await this._vectorSearchCases(words.slice(0, 10));
-
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
-
-    // Format Metadata
-    const meta = `metadata:\n` +
-      `  cases:\n` +
-      cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
-      `\n` +
-      `  counts:\n` +
-      `    cases: ` + caseCount.count + `\n` +
-      ``;
-
-    // Format Query Text
-    const query = `---\n` +
-      meta +
-      `---\n` +
-      `${request.query}`;
-
-    const metaTokenCount = this.estimateTokens(meta);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
-
-    let messages = [];
-
-    if (request.conversation_id) {
-      // Resume conversation
-      const prev = await this._getConversationMessages(request.conversation_id);
-      messages = prev.map((x) => {
-        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-      });
-    } else {
-      // New conversation
-      messages = messages.concat([{ role: 'user', content: request.query }]);
-    }
-
-    if (request.subject) {
-      // Subject material provided
-      messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
-    }
-
-    // Prompt
-    messages.unshift({
-      role: 'system',
-      content: this.settings.prompt
-    });
-
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
-
-    // TODO: execute RAG query for additional metadata
-    const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
-    const ragged = await ragger.query({ query: request.query, tool_choice: 'search_host' });
-
-    console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-
-    const agentResults = Promise.allSettled([
-      this.alpha.query({ query }),
-      this.mistral.query({ query })
-    ]);
-
-    Promise.race([
-      new Promise((resolve, reject) => {
-        setTimeout(reject, timeout, new Error('Timeout!'));
-      }),
-      agentResults
-    ]).then(async (results) => {
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
-      const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
-
-      // TODO: loop over all agents
-      // TODO: compress to 4096 tokens
-      const summarized = await this.summarizer.query({
-        query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${answers[0]?.content}`+`\n- [BETA]: ${answers[1]?.content}\n\`\`\``,
+      // Add Request to Database
+      const inserted = await this.db('requests').insert({
+        created_at: toMySQLDatetime(now),
+        content: JSON.stringify(request)
       });
 
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
-      const actor = new Actor({ content: summarized.content });
-      const bundle = {
-        type: 'TimedResponse',
-        content: summarized.content
-      };
-
-      const extracted = await this.extractor.query({
-        query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+      // Store user request
+      const responseMessage = await this.db('messages').insert({
+        conversation_id: request.conversation_id,
+        user_id: 1,
+        status: 'computing',
+        content: `${this.settings.name} is researching your question...`
       });
-      console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
-      if (extracted && extracted.content) {
-        console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Response Message:', responseMessage);
+
+      // Create Request Message
+      const message = Message.fromVector(['TimedRequest', JSON.stringify({
+        created: created,
+        request: request,
+        response_message_id: responseMessage[0]
+      })]);
+
+      // Notify workers
+      this.emit('request', { id: inserted [0] });
+
+      // TODO: prepare maximum token length
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+
+      // Compute most relevant tokens
+      const caseCount = await this.db('cases').count('id as count').first();
+      // const hypotheticals = await this.lennon.query({ query: request.query });
+      const words = this.importantWords(request.query);
+      const phrases = this.importantPhrases(request.query);
+      const cases = await this._vectorSearchCases(words.slice(0, 10));
+
+      /* const searchterm = await this.searcher.query({ query: request.query, tools: null });
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
+
+      const realCases = await this.harvard.search({ query: searchterm.content });
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
+      */
+
+      // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+
+      // Format Metadata
+      const meta = `metadata:\n` +
+        `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
+        `  cases:\n` +
+        cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
+        `\n` +
+        `  counts:\n` +
+        `    cases: ` + caseCount.count + `\n` +
+        ``;
+
+      // Format Query Text
+      const query = `---\n` +
+        // meta +
+        `---\n` +
+        `${request.query}`;
+
+      const metaTokenCount = this.estimateTokens(meta);
+      const requestTokenCount = this.estimateTokens(request.query);
+
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
+
+      let messages = [];
+
+      if (request.conversation_id) {
+        // Resume conversation
+        const prev = await this._getConversationMessages(request.conversation_id);
+        messages = prev.map((x) => {
+          return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+        });
+      } else {
+        // New conversation
+        messages = messages.concat([{ role: 'user', content: request.query }]);
+      }
+
+      if (request.subject) {
+        // Subject material provided
+        messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
+      }
+
+      if (request.matter_id) {
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
+        const matter = await this.db('matters').where({ id: request.matter_id }).first();
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+        messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
+      }
+
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
+
+      // Prompt
+      messages.unshift({
+        role: 'system',
+        content: this.settings.prompt
+      });
+
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
+
+      const agentResults = Promise.allSettled([
+        this.alpha.query({ query, messages }),
+        this.gemini.query({ query, messages }),
+        this.lennon.query({ query, messages }),
+        this.llama.query({ query, messages }),
+        // this.mistral.query({ query, messages })
+      ]);
+
+      // TODO: execute RAG query for additional metadata
+      const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
+
+      Promise.race([
+        new Promise((resolve, reject) => {
+          setTimeout(reject, timeout, new Error('Timeout!'));
+        }),
+        agentResults
+      ]).then(async (results) => {
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+        const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+
+        /* for (let i = 0; i < answers.length; i++) {
+          const answer = answers[i];
+          if (!answer.content) continue;
+
+          const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
+        } */
+
+        const agentList = `${answers.map((x) => `- [${x.name}] ${x.content}`).join('\n')}`;
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
+        // TODO: loop over all agents
+        // TODO: compress to 4096 tokens
+        const summarized = await this.summarizer.query({
+          messages: messages,
+          query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
+        });
+
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+        const actor = new Actor({ content: summarized.content });
+        const bundle = {
+          type: 'TimedResponse',
+          content: summarized.content
+        };
+
+        /* const extracted = await this.extractor.query({
+          query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+        });
+        console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+        if (extracted && extracted.content) {
+          console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+          try {
+            const caseCards = JSON.parse(extracted.content).map((x) => {
+              const actor = new Actor({ name: x });
+              return {
+                type: 'CaseCard',
+                content: {
+                  id: actor.id,
+                  title: x
+                }
+              };
+            });
+
+            console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+            // Find each case in the database and reject if not found
+            /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+              cards: JSON.stringify(caseCards.map((x) => x.content.id))
+            }); */
+          /* } catch (exception) {
+            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+          }
+        } */
+
         try {
-          const caseCards = JSON.parse(extracted.content).map((x) => {
-            const actor = new Actor({ name: x });
-            return {
-              type: 'CaseCard',
-              content: {
-                id: actor.id,
-                title: x
-              }
-            };
+          const documentIDs = await this.db('documents').insert({
+            fabric_id: actor.id,
+            content: summarized.content
           });
 
-          console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+          const responseIDs = await this.db('responses').insert({
+            actor: this.summarizer.id,
+            content: `/documents/${documentIDs[0]}`
+          });
 
-          // Find each case in the database and reject if not found
-          /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-            cards: JSON.stringify(caseCards.map((x) => x.content.id))
-          }); */
+          // Update database with completed response
+          const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+            status: 'ready',
+            content: summarized.content,
+            updated_at: this.db.fn.now()
+          });
+
+          console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
+          this.emit('response', {
+            id: responseIDs[0],
+            content: summarized.content
+          });
         } catch (exception) {
-          console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+          console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
         }
-      }
 
-      try {
-        const documentIDs = await this.db('documents').insert({
-          fabric_id: actor.id,
-          content: summarized.content
-        });
+        const end = new Date();
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
 
-        const responseIDs = await this.db('responses').insert({
-          actor: this.summarizer.id,
-          content: `/documents/${documentIDs[0]}`
-        });
-
-        this.emit('response', {
-          id: responseIDs[0],
-          content: summarized.content
-        })
-      } catch (exception) {
-        console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
-      }
-
-      const end = new Date();
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
-    }).catch((exception) => {
-      console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
+        resolve(summarized);
+      }).catch((exception) => {
+        console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
+        reject(exception);
+      });
     });
-
-    return message;
   }
 
   async findCaseByName (name) {
@@ -749,6 +837,109 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', 'Court search by name, results:', result);
 
     return court;
+  }
+
+  async _getState () {
+    const cases = await this.db('cases').select('id').from('cases');
+    const courts = await this.db('courts').select('id').from('courts');
+    const conversations = await this.db('conversations').select('id').from('conversations');
+    const documents = await this.db('documents').select('id').from('documents');
+    const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
+    const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
+    const messages = await this.db('messages').select('id').from('messages');
+
+    // User Analytics
+    const users = await this.db('users').select('id', 'username');
+
+    for (let i = 0; i < users.length; i++) {
+      const user = users[i];
+      const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
+      const messages = await this.db('messages').select('id').where({ user_id: user.id });
+
+      user.conversations = conversations.length;
+      user.messages = messages.length;
+    }
+
+    const state = {
+      cases: {
+        total: cases.length,
+        // content: cases.map(x => x.id)
+      },
+      conversations: {
+        total: conversations.length,
+        // content: conversations.map(x => x.id)
+      },
+      courts: {
+        total: courts.length,
+        // content: courts.map(x => x.id)
+      },
+      documents: {
+        total: documents.length,
+        // content: documents.map(x => x.id)
+      },
+      inquiries: {
+        total: inquiries.length,
+        content: inquiries
+      },
+      invitations: {
+        total: invitations.length,
+        content: invitations
+      },
+      messages: {
+        total: messages.length
+        // content: messages.map(x => x.id)
+      },
+      users: {
+        total: users.length,
+        content: users
+      },
+    };
+
+    return state;
+  }
+
+  async processData (limit = 1000) {
+    const now = new Date();
+    const stats = { total: 0, processed: 0, unprocessed: 0 };
+    const other = await this._getUnprocessedCaseStats();
+    const chunk = await this._getUnprocessedCases(limit);
+
+    console.debug('[JEEVES]', '[ETL]', 'Stats:', other, stats);
+
+    const start = new Date();
+    for (let i = 0; i < chunk.length; i++) {
+      const instance = chunk[i];
+      console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      // const nativeEmbedding = await this._generateEmbedding(`[novo/cases/${instance.id}] ${instance.title}`);
+      const titleEmbedding = await this._generateEmbedding(instance.title);
+      await this.db('cases').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
+      stats.processed++;
+    }
+
+    console.debug('[JEEVES]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    console.debug('[JEEVES]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
+
+    return this;
+  }
+
+  async _getUnprocessedCases (limit = 20) {
+    const cases = await this.db('cases').select('id', 'title', 'summary', 'title_embedding_id', 'body_embedding_id').where(function () {
+      this.whereNull('title_embedding_id')// .orWhereNull('body_embedding_id')
+    }).limit(limit);
+
+    return cases;
+  }
+
+  async _getUnprocessedCaseStats () {
+    const caseCount = await this.db('cases').count('id as count').first();
+    const withTitleEmbeddings = await this.db('cases').count('id as count').whereNotNull('title_embedding_id').first();
+    const missingTitleEmbeddings = await this.db('cases').count('id as count').whereNull('title_embedding_id').first();
+
+    return {
+      total: caseCount,
+      withTitleEmbeddings: withTitleEmbeddings,
+      missingTitleEmbeddings: missingTitleEmbeddings
+    };
   }
 
   async query (query) {
@@ -858,6 +1049,17 @@ class Jeeves extends Hub {
     return results;
   }
 
+  async secureEmbeddingsForCase (id) {
+    const target = await this.db('cases').where('id', id).first();
+    console.debug('secured:', target);
+
+    // Secure Summary
+    if (!target.summary) {
+      console.debug('No summary found for case:', target);
+      return;
+    }
+  }
+
   /**
    * Start the process.
    * @return {Promise} Resolves once the process has been started.
@@ -881,6 +1083,14 @@ class Jeeves extends Hub {
     // await this._registerService('shyft', Shyft);
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
+
+    this.products = await this.stripe.enumerateProducts();
+
+    if (this.settings.statutes.enable) {
+      this.statutes.start().then((output) => {
+        console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
+      });
+    }
 
     // Primary Worker
     // Job Types
@@ -1107,7 +1317,7 @@ class Jeeves extends Hub {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
         if (!target) {
-          console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
+          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
           await this.db('people').insert({
             fabric_id: actor.id,
             courtlistener_id: person.id,
@@ -1217,15 +1427,24 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: 'SummarizerAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are SummarizerAI, designed to summarize the output of each agent into a single response.  Use deductive logic to infer accurate information, resolving any conflicting information with your knowledge.  Write your response as if you speak for the network, not needing to mention any discarded results.  All responses should be written as a singular entity, not mentioning any of the agents or the design of the network.' });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: this.settings.fabric.listen, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+
+    const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
+    const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
+
     this.rag = new Agent({
       name: 'AugmentorRAG',
       listen: this.settings.fabric.listen,
       openai: this.settings.openai,
-      // prompt: this.settings.prompt
+      prompt: 'You are AugmentorRAG, designed to return an SQL query that returns any cases that match the provided titles.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.\n\n' +
+        'Supported tables:\n' +
+        '  - cases\n' +
+        '    ```' +
+        caseDef[0][0]['Create Table'] +
+        '    ```\n'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -1349,6 +1568,32 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Files
+    this.http.express.post('/files', this.uploader.single('file'), ROUTES.files.create.bind(this));
+    this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
+    this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
+
+    // Matters
+    this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
+    this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
+    this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
+    this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this)); // TODO: switch to /matters/:id
+    this.http._addRoute('GET', '/matters/conversation/new/:matterID', ROUTES.matters.newConversation.bind(this));
+    this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this)); // TODO: switch to /conversations/:id
+    this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this)); // TODO: switch to /matters/:id/conversations
+    this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this)); // TODO: switch to /matters...
+    this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this)); // TODO: switch to /matters/:id
+    this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this)); // TODO: switch to DELETE /matters/:id/files/:fileID
+
+    // Products
+    this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
+
+    // Jurisdictions
+    this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
+
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
 
@@ -1404,7 +1649,7 @@ class Jeeves extends Hub {
         if (!user || user.is_admin !== 1) {
           return res.status(401).json({ message: 'User not allowed to send Invitations.' });
         }
-        
+
         // Generate a unique token
         let uniqueTokenFound = false;
         let invitationToken = '';
@@ -1416,7 +1661,7 @@ class Jeeves extends Hub {
             uniqueTokenFound = true;
           }
         };
-        
+
         //Flag for Eric
         //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
@@ -1427,8 +1672,7 @@ class Jeeves extends Hub {
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
 
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1466,7 +1710,6 @@ class Jeeves extends Hub {
 
     //this endponint resends invitations to the ones created before
     this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
@@ -1491,8 +1734,7 @@ class Jeeves extends Hub {
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
-          //from: 'agent@jeeves.dev',
-          from: this.settings.email.username,
+          from: 'agent@jeeves.dev',
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1801,10 +2043,15 @@ class Jeeves extends Hub {
 
     });
 
+    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
+    // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -1823,7 +2070,10 @@ class Jeeves extends Hub {
 
         // Set Roles
         const roles = ['user'];
+
+        // Special Roles
         if (user.is_admin) roles.unshift('admin');
+        if (user.is_beta) roles.unshift('beta');
 
         // Create Token
         const token = new Token({
@@ -1841,6 +2091,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {
@@ -1860,6 +2111,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {
@@ -2109,39 +2361,28 @@ class Jeeves extends Hub {
       res.send(stats);
     });
 
-    this.http._addRoute('GET', '/cases', async (req, res, next) => {
-      res.format({
-        json: async () => {
-          const cases = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'harvard_case_law_court_name as court_name', 'harvard_case_law_id').from('cases').whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc').paginate({
-            perPage: PER_PAGE_LIMIT,
-            currentPage: 1
-          });
-
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
-          res.setHeader('X-Pagination-Per', cases.pagination.perPage);
-          res.setHeader('X-Pagination-Total', cases.pagination.total);
-
-          res.send(cases.data);
-        },
-        html: () => {
-          // TODO: import auth token, load data
-          const page = new CaseHome({});
-          const output = page.toHTML();
-          return res.send(this.http.app._renderWith(output));
-        }
-      });
-    });
-
+    this.http._addRoute('GET', '/cases', ROUTES.cases.list.bind(this));
     this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
       const origin = {};
       const updates = {};
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
+      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_pdf', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
         id: req.params.id
       }).first();
 
       if (!instance) return res.status(404).json({ message: 'Case not found.' });
       // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
+
+      this.secureEmbeddingsForCase(instance.id).then((output) => {
+        console.debug('Secure embeddings for case:', output);
+      }).catch((exception) => {
+        console.debug('Secure embeddings error:', exception);
+      });
+
+      if (this.settings.courtlistener.enable) {
+        this.courtlistener.search({ query: instance.title }).then((clr) => {
+          console.debug('[NOVO]', '[COURTLISTENER]', '[SEARCH]', 'Jeeves got results:', clr);
+        });
+      }
 
       const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
 
@@ -2175,6 +2416,7 @@ class Jeeves extends Hub {
           console.error('FETCH FULL CASE ERROR:', exception);
         }).then(async (output) => {
           const target = await output.json();
+          console.debug('[NOVO]', '[HARVARD]', '[FULLCASE]', 'Got output:', target);
           const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
           this.http.broadcast(message);
         });
@@ -2191,6 +2433,10 @@ class Jeeves extends Hub {
           console.debug('[JEEVES]', '[SEARCH]', 'Jeeves search results:', results);
           const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
           this.http.broadcast(message);
+
+          if (results.cases && results.cases.length > 0) {
+            const first = results.cases[0];
+          }
         });
       }
 
@@ -2235,7 +2481,7 @@ class Jeeves extends Hub {
 
           // TODO: re-evaluate security of `is_admin` check
           if (req.user?.state?.roles?.includes('admin')) {
-            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
+            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name','matter_id').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
           } else {
             results = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
             // TODO: update the conversation upon change (new user message, new agent message)
@@ -2248,9 +2494,9 @@ class Jeeves extends Hub {
         html: () => {
           // TODO: provide state
           // const page = new Conversations({});
-          // const html = page.toHTML();
-          // return res.send(this.http.app._renderWith(html));
-          return res.send(this.http.app._renderWith(''));
+          const page = new CaseHome({}); // TODO: use Conversations
+          const html = page.toHTML();
+          return res.send(this.http.app._renderWith(html));
         }
       });
     });
@@ -2427,7 +2673,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/jurisdictions', async (req, res, next) => {
-      const jurisdictions = await this.db.select('id').from('jurisdictions').orderBy('id', 'desc');
+      const jurisdictions = await this.db.select('id','name','name_short','harvard_id').from('jurisdictions').orderBy('id', 'desc');
       res.format({
         json: () => {
           res.send(jurisdictions);
@@ -2469,7 +2715,7 @@ class Jeeves extends Hub {
       let messages = [];
 
       if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.content', 'messages.status').where({
+        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
           conversation_id: req.query.conversation_id
         }).orderBy('created_at', 'asc');
       } else {
@@ -2502,60 +2748,64 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
-      const cases = await this.db('cases').select('id').from('cases');
-      const courts = await this.db('courts').select('id').from('courts');
-      const conversations = await this.db('conversations').select('id').from('conversations');
-      const documents = await this.db('documents').select('id').from('documents');
-      const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
-      const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
-      const messages = await this.db('messages').select('id').from('messages');
+      const current = await this._getState();
+      res.send(current);
+    });
 
-      // User Analytics
-      const users = await this.db('users').select('id', 'username');
+    this.http._addRoute('GET', '/statistics/accuracy', async (req, res, next) => {
+      const reviews = await this.db('reviews').whereNotNull('id');
+      const response = {
+        accuracy: {
+          positive: 0,
+          negative: 0,
+          neutral: 0
+        },
+        total: reviews.length
+      };
 
-      for (let i = 0; i < users.length; i++) {
-        const user = users[i];
-        const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
-        const messages = await this.db('messages').select('id').where({ user_id: user.id });
-
-        user.conversations = conversations.length;
-        user.messages = messages.length;
+      for (let review of reviews) {
+        switch (review.intended_sentiment) {
+          case 'positive':
+            response.accuracy.positive++;
+            break;
+          case 'negative':
+            response.accuracy.negative++;
+            break;
+          default:
+            response.accuracy.neutral++;
+            break;
+        }
       }
 
+      res.send(response);
+    });
+
+    this.http._addRoute('GET', '/statistics/sync', async (req, res, next) => {
+      const current = await this._getState();
       const state = {
-        cases: {
-          total: cases.length,
-          // content: cases.map(x => x.id)
-        },
-        conversations: {
-          total: conversations.length,
-          // content: conversations.map(x => x.id)
-        },
-        courts: {
-          total: courts.length,
-          // content: courts.map(x => x.id)
-        },
-        documents: {
-          total: documents.length,
-          // content: documents.map(x => x.id)
-        },
-        inquiries: {
-          total: inquiries.length,
-          content: inquiries
-        },
-        invitations: {
-          total: invitations.length,
-          content: invitations
-        },
-        messages: {
-          total: messages.length
-          // content: messages.map(x => x.id)
-        },
-        users: {
-          total: users.length,
-          content: users
-        },
+        current: current,
+        datasources: {}
       };
+
+      for (let [name, datasource] of Object.entries(this.datasources)) {
+        let source = { name: datasource.name };
+        switch (name) {
+          case 'courtlistener':
+            if (this.courtlistener) source.counts = await this.courtlistener.getCounts();
+            break;
+          case 'harvard':
+            if (this.harvard) source.counts = await this.harvard.getCounts();
+            break;
+          case 'pacer':
+            if (this.pacer) source.counts = await this.pacer.getCounts();
+            break;
+          default:
+            console.warn('[JEEVES]', 'Unhandled Datasource:', name);
+            break;
+        }
+
+        state.datasources[name] = source.counts;
+      }
 
       res.send(state);
     });
@@ -2645,7 +2895,8 @@ class Jeeves extends Hub {
       let {
         case_id,
         conversation_id,
-        content
+        content,
+        matter_id
       } = req.body;
 
       if (!conversation_id) {
@@ -2658,6 +2909,7 @@ class Jeeves extends Hub {
           creator_id: req.user.id,
           log: JSON.stringify([]),
           title: name,
+          matter_id: matter_id,
           // matrix_room_id: room.room_id
         });
 
@@ -2678,6 +2930,7 @@ class Jeeves extends Hub {
         const conversation = await this.db('conversations').where({ id: conversation_id }).first();
         if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
 
+        // User Message
         const newMessage = await this.db('messages').insert({
           content: content,
           conversation_id: conversation_id,
@@ -2686,16 +2939,59 @@ class Jeeves extends Hub {
 
         // Core Pipeline
         this.createTimedRequest({
+          conversation_id: conversation_id,
+          matter_id: matter_id,
           query: content
         }).catch((exception) => {
           console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
-        }).then((request) => {
+        }).then(async (request) => {
           console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+          // TODO: emit message
+
+          // Card Extraction
+          this.extractor.query({
+            query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
+          }).then(async (extracted) => {
+            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted.content);
+            if (extracted && extracted.content) {
+              try {
+                const caseCards = JSON.parse(extracted.content).map((x) => {
+                  const actor = new Actor({ name: x });
+                  return {
+                    type: 'CaseCard',
+                    content: { id: actor.id }
+                  };
+                });
+
+                const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                  cards: JSON.stringify(caseCards.map((x) => x.content.id))
+                });
+              } catch (exception) {
+                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+              }
+            }
+          });
+
+          if (isNew) {
+            const messages = await this._getConversationMessages(conversation_id);
+            this._summarizeMessagesToTitle(messages.map((x) => {
+              return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+            })).then(async (output) => {
+              console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
+              const title = output?.content;
+              if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
+
+              const conversation = { id: conversation_id, messages: messages, title: title };
+              const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
+
+              this.http.broadcast(message);
+            });
+          }
         });
         // End Core Pipeline
 
         // pre-release pipeline
-        const inserted = await this.db('requests').insert({
+        /* const inserted = await this.db('requests').insert({
           message_id: newMessage[0],
           content: 'Jeeves is thinking...'
         });
@@ -2709,28 +3005,7 @@ class Jeeves extends Hub {
           // target: activity.target // candidate 1
         }).then(async (output) => {
           console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
-          const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`\n${output.content}\n\`\`\``
-          });
-          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
-
-          if (extracted && extracted.content) {
-            try {
-              const caseCards = JSON.parse(extracted.content).map((x) => {
-                const actor = new Actor({ name: x });
-                return {
-                  type: 'CaseCard',
-                  content: { id: actor.id }
-                };
-              });
-
-              const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-                cards: JSON.stringify(caseCards.map((x) => x.content.id))
-              });
-            } catch (exception) {
-              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
-            }
-          }
+        */
 
           // TODO: restore response tracking
           /* this.db('responses').insert({
@@ -2739,22 +3014,8 @@ class Jeeves extends Hub {
           }); */
 
           // TODO: restore titling
-          if (isNew) {
-            const messages = await this._getConversationMessages(conversation_id);
-
-            await this._summarizeMessagesToTitle(messages.map((x) => {
-              return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-            })).then(async (output) => {
-              const title = output?.content;
-              if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
-
-              const conversation = { id: conversation_id, messages: messages, title: title };
-              const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
-
-              this.http.broadcast(message);
-            });
-          }
-        });
+        /*  
+        }); */
 
         if (!conversation.log) conversation.log = [];
         if (typeof conversation.log == 'string') {
@@ -3582,6 +3843,7 @@ class Jeeves extends Hub {
       date_terminated: docket.date_terminated
     };
 
+    console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
     const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
 
     if (!target) {
@@ -3589,18 +3851,21 @@ class Jeeves extends Hub {
     }
 
     if (docket.pacer_case_id) {
-      console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
+      if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
       const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
       if (!pacer) {
-        console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
+        if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
 
         if (instance.court_id) {
+          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
           const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
           if (!court) {
             console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
             const sample = await this.courtlistener.db('search_court').where({ id: instance.court_id }).first();
+            const matches = await this.courtlistener.db('search_court').where({ id: instance.court_id });
             console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
+            console.debug('[JEEVES]', '[COURTLISTENER]', 'Matches:', matches);
           }
         }
 
@@ -3898,7 +4163,8 @@ class Jeeves extends Hub {
     const content = response.content.trim();
     const updated = await this.db('messages').where({ id: inserted[0] }).update({
       status: 'ready',
-      content: content
+      content: content,
+      updated_at: this.db.fn.now()
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
@@ -3949,11 +4215,11 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = {
-        input: query,
+        query: query,
         messages: messages
       };
 
-      this._handleRequest(request).then((output) => {
+      this.alpha.query(request).then((output) => {
         console.debug('got summarized title:', output);
         resolve(output);
       });
@@ -3961,36 +4227,49 @@ class Jeeves extends Hub {
   }
 
   async _summarizeCaseToLength (instance, max = 2048) {
-    const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
+    return new Promise(async (resolve, reject) => {
+      const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
       + ` ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
       + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
       + `Additional information:\n`
-      + `  PACER Case ID: ${instance.pacer_case_id}`;
+      + `  PACER Case ID: ${instance.pacer_case_id}`
+      + `  Object:\n`
+      + `    \`\`\`\n${JSON.stringify(instance, null, '  ').split('\n').join('\n    ')}\n    \`\`\``;
 
-    console.debug('Case to summarize:', instance);
+      console.debug('Case to summarize:', instance);
 
-    const request = { input: query };
+      if (instance.harvard_case_law_id) {
+        const element = await this.harvard.getCaseByID(instance.harvard_case_law_id);
+        console.debug('[NOVO]', '[SUMMARIZER]', 'Harvard case:', element);
+      }
 
-    this._handleRequest(request).then((output) => {
-      console.debug('got summarized case:', output);
+      const request = { query };
+
+      this.createTimedRequest(request).then((output) => {
+        console.debug('got summarized case:', output);
+        resolve(output.content);
+      });
     });
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const actor = new Actor({ content: text });
-    const embedding = await this.openai.generateEmbedding(text, model);
-    console.debug('got embedding:', embedding);
-    if (embedding.length !== 1) throw new Error('Embedding length mismatch!');
+    const embeddings = await this.openai.generateEmbedding(text, model);
+    if (embeddings.length !== 1) throw new Error('Embedding length mismatch!');
 
+    const embedding = embeddings[0].embedding;
+    const blob = JSON.stringify(embedding);
+    const actor = new Actor({ content: blob });
     const inserted = await this.db('embeddings').insert({
       fabric_id: actor.id,
       text: text,
-      model: embedding[0].model,
-      content: JSON.stringify(embedding[0].embedding)
+      model: embeddings[0].model,
+      content: blob
     });
 
     return {
-      id: inserted[0]
+      id: inserted[0],
+      model: model,
+      content: embedding
     };
   }
 
@@ -4221,7 +4500,8 @@ class Jeeves extends Hub {
     console.debug('MISTRAL FIXTURE:', MISTRAL_FIXTURE);
 
     const SUMMARIZER_FIXTURE = await this.summarizer.query({
-      query: 'Summarize:\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
+      query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n' +
+        ':\n```\nagents:\n- [ALPHA]: '+`${ALPHA_FIXTURE.content}`+`\n- [BETA]: ${MISTRAL_FIXTURE.content}\n- [GAMMA]: undefined\n\`\`\``,
       messages: [
         {
           role: 'user',

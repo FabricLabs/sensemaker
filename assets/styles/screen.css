@@ -1,3 +1,7 @@
+:root {
+  --primary-color: #336699; /* Define a variable */
+}
+
 #main-content #input-controls {
   position: absolute;
 }
@@ -165,8 +169,9 @@ h1, h2, h3 {
 .ui.primary.action {
   margin-left: auto;
   margin-right: auto;
+  margin-top: 2em;
   max-height: 36em;
-  max-width: 20em;
+  max-width: 30em;
   padding-top: 2em;
 }
 
@@ -372,12 +377,23 @@ fabric-motd {
   min-height: 0;
   overflow: hidden;
 }
+.info-assistant-header{
+  height: 1.5em;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
 .info-icon{
   display: none;
 }
 
 .chat-feed .event:hover .controls {
   display: inline !important;
+  margin-left: 0.5em;
+}
+
+.ui.feed > .event:last-child {
+  margin-bottom: 2em;
 }
 
 .home-dropdowns{
@@ -392,7 +408,7 @@ fabric-motd {
   margin-top: 2em;
 }
 .home-dropdowns .ui.dropdown{
-  font-family: 'Martian Mono', serif !important;
+  font-family: 'AvGardd', serif !important;
   min-width: 17.5em !important;
   font-size: 1em;
 }
@@ -404,6 +420,17 @@ fabric-motd {
   }
 }
 
+.microphone.icon{
+    cursor: pointer;
+    z-index: 10;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 10;
+}
+
 .answer-controls{
   display: flex;
   align-items: center;
@@ -413,6 +440,14 @@ fabric-motd {
   margin-top: 2px;
 }
 
+.link-back-matter{
+  display: flex;
+  justify-content: space-between;
+  padding-right: 1em;
+  flex-wrap: wrap;
+  padding-bottom: 1.5em;
+  margin-top: 0.5em;
+}
 /* FeedbackSidebar CSS */
 .info-sidebar{
   background-color: rgb(27, 28, 29);
@@ -517,3 +552,54 @@ fabric-motd {
   width: 90%;
   margin-right: 1rem;
 }
+
+/* Matters CSS */
+
+.new-matter-form{
+  min-width: 650px;
+}
+
+@media (max-width: 500px) {
+  .new-matter-form{
+    min-width: 0;
+  }
+}
+@media (min-width: 1441px) {
+  .new-matter-form{
+    min-width: 750px;
+  }
+}
+
+.matter-details{
+  max-width: 650px;
+  margin-top: 2em;
+}
+.matter-header{
+  max-width: 650px;
+}
+
+.attach-file-area{
+  border: 2px dashed #bbb;
+  padding: 2em 1.5em 1.5em 1.5em;
+  text-align: center;
+  margin-bottom: 1.5em;
+  cursor: pointer;
+}
+.disabled-attach{
+  color:grey;
+  cursor: default;
+}
+
+.file-container{
+  color: var(--primary-color);
+}
+/* @media (max-width: 500px) {
+  .new-matter-form{
+    min-width: 0;
+  }
+}
+@media (min-width: 1441px) {
+  .new-matter-form{
+    min-width: 750px;
+  }
+} */

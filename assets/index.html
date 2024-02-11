@@ -9,31 +9,38 @@
       dataLayer.push(arguments);
     }
     gtag('js', new Date());
-
     gtag('config', 'G-G4NJT3T2KL');
   </script>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Jeeves &middot; Your Legal Assistant</title>
+  <title>Novo &middot; Your Legal Assistant</title>
   <!-- <link rel="manifest" href="/manifest.json"> -->
   <link rel="stylesheet" type="text/css" href="/semantic.min.css" />
   <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
+  <link rel="stylesheet" type="text/css" href="/styles/styles.css" />
   <script src="/scripts/jquery-3.4.1.js"></script>
   <script src="/semantic.min.js"></script>
-  <link rel="icon" href="/images/favicon.ico" />
+  <link rel="icon" href="/images/favicon.svg" />
 </head>
 <body>
-  <div data-hash="b04350b52dc65b50b87c923731830a075b80e18ab124b1434a2af160d5b4339b" id="application-target">
+  <div data-hash="11fca4555f83ef09bcaf8ee99955cfb0a08f968af8d17b417dc0536d3362630b" id="application-target">
     <jeeves-ui class="fabric-site">
       <fabric-container id="react-application"></fabric-container>
       <fabric-react-component id="jeeves-application" style="height:100vh;display:flex;flex-direction:column">
-        <jeeves-splash class="fade-in splash"><img src="/images/novo-logo.svg" class="ui small centered image" />
+        <jeeves-splash class="fade-in splash"><img style="margin:0 1em 2em 1em;max-width:80%" src="/images/novo-logo.svg" class="ui large centered image" />
+          <section>
+            <div id="countdown" class="center-elements-row"></div>
+            <p style="font-size:1.2em;margin-top:2em;max-width:28em">Novo
+              <!-- --> is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.
+            </p>
+          </section>
           <fabric-component class="ui primary action container"></fabric-component>
           <section></section>
           <section class="fade-in" style="clear:both;text-align:center">
             <p style="margin-top:2em">Already have an account? <a href="/sessions/new">Log In »</a></p>
-            <p style="clear:both;margin-top:4em;font-size:0.8em">© 2023 Legal Tools &amp; Technology, Inc.</p>
+            <p style="clear:both;margin-top:4em;font-size:0.8em">© 2024 Legal Tools &amp; Technology, Inc.</p>
           </section>
+          <script src="/scripts/countdown.js"></script>
         </jeeves-splash>
       </fabric-react-component>
     </jeeves-ui>

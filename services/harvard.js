@@ -189,6 +189,11 @@ class Harvard extends Service {
     return courts;
   }
 
+  async getCaseByID (id) {
+    const instance = await fetch(`https://api.case.law/v1/cases/${id}?full_case=true`);
+    return instance.json();
+  }
+
   async getJurisdictionByID (id) {
     return this.state.collections.jurisdictions[id];
   }
@@ -239,6 +244,34 @@ class Harvard extends Service {
         serialization: json.length
       }
     }
+  }
+
+  async search (request) {
+    return new Promise(async (resolve, reject) => {
+      fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': (this.settings.token) ? `Bearer ${this.settings.token}` : undefined,
+          'Content-Type': 'application/json'
+        }
+      }).then(async (response) => {
+        resolve(await response.json());
+      }).catch(reject);
+    });
+  }
+
+  async searchCases (request) {
+    return new Promise(async (resolve, reject) => {
+      fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': (this.settings.token) ? `Bearer ${this.settings.token}` : undefined,
+          'Content-Type': 'application/json'
+        }
+      }).then(async (response) => {
+        resolve(await response.json());
+      }).catch(reject);
+    });
   }
 
   async syncCases () {

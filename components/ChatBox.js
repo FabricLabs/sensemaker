@@ -1,27 +1,38 @@
 'use strict';
 
+const {
+  BRAND_NAME,
+  ENABLE_BILLING
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
+const hark = require('hark');
+
+const toRelativeTime = require('../functions/toRelativeTime');
 
 const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
 const InformationSidebar = require('./InformationSidebar');
+
+const { Link, useParams } = require('react-router-dom');
+
 
 // Semantic UI
 const {
   Button,
   Container,
+  Dropdown,
   Feed,
   Form,
   Grid,
   GridColumn,
   Header,
   Icon,
+  Image,
   Message,
   Popup,
-  Dropdown,
-  Image,
   Progress,
   Segment
 } = require('semantic-ui-react');
@@ -29,8 +40,10 @@ const {
 const TextareaAutosize = require('react-textarea-autosize').default;
 
 class ChatBox extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
+
+    this.settings = Object.assign({}, props);
 
     this.state = {
       query: '',
@@ -49,19 +62,20 @@ class ChatBox extends React.Component {
       resetInformationSidebar: false,
       thumbsUpClicked: false,
       thumbsDownClicked: false,
+      isTextareaFocused: false, //this is needed to work on the microphone icon color
     };
+
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
-
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { messages } = this.props.chat;
 
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
@@ -80,6 +94,8 @@ class ChatBox extends React.Component {
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
+          this.props.getMessageInformation(lastMessage.content);
+
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
@@ -90,9 +106,8 @@ class ChatBox extends React.Component {
       this.scrollToBottom();
     }
   }
-  
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     this.props.resetChat();
     clearInterval(this.watcher); //ends de sync in case you switch to other component
 
@@ -105,8 +120,19 @@ class ChatBox extends React.Component {
       message: null,
       messages: [],
     });
+
     window.removeEventListener('resize', this.handleResize);
   }
+
+  //these 2 works for the microphone icon color, they are necessary
+  handleTextareaFocus = () => {
+    this.setState({ isTextareaFocused: true });
+  };
+
+  handleTextareaBlur = () => {
+    this.setState({ isTextareaFocused: false });
+  };
+
 
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight, });
@@ -140,7 +166,7 @@ class ChatBox extends React.Component {
         if (!this.watcher) {
           this.watcher = setInterval(() => {
             this.props.getMessages({ conversation_id: message?.conversation });
-          }, 15000);
+          }, 5000);
         }
 
         this.setState({ loading: false });
@@ -161,10 +187,12 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID } = this.props;
     let dataToSubmit;
 
     this.setState({ loading: true, previousFlag: true });
+
+    this.props.getMessageInformation(query);
 
     //if we have caseID its beacause we are on a specific case chat
     if (caseID) {
@@ -190,7 +218,8 @@ class ChatBox extends React.Component {
     }
     // dispatch submitMessage
     this.props.submitMessage(
-      dataToSubmit
+      dataToSubmit,
+      matterID
     ).then((output) => {
 
       // dispatch getMessages
@@ -199,7 +228,7 @@ class ChatBox extends React.Component {
       if (!this.watcher) {
         this.watcher = setInterval(() => {
           this.props.getMessages({ conversation_id: message?.conversation });
-        }, 15000);
+        }, 5000);
       }
       this.setState({ loading: false });
     });
@@ -330,7 +359,7 @@ class ChatBox extends React.Component {
       if (!this.watcher) {
         this.watcher = setInterval(() => {
           this.props.getMessages({ conversation_id: message?.conversation });
-        }, 15000);
+        }, 5000);
       }
 
       this.setState({ loading: false });
@@ -423,8 +452,67 @@ class ChatBox extends React.Component {
     });
   }
 
-  render() {
+  handleMicrophoneClick = () => {
+    console.debug('[NOVO]', 'Microphone click');
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+        console.debug('[NOVO]', 'Got audio stream:', stream);
 
+        const recorder = new MediaRecorder(stream);
+        const speaker = hark(stream, {});
+        const chunks = [];
+
+        speaker.on('silence', () => {
+          console.debug('[NOVO]', 'Silence detected');
+        });
+
+        speaker.on('speaking', () => {
+          console.debug('[NOVO]', 'Speaking detected');
+        });
+
+        speaker.on('stopped_speaking', () => {
+          console.debug('[NOVO]', 'Speaking stopped');
+          console.debug('[NOVO]', 'All chunks:', chunks);
+
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+
+          reader.onload = function () {
+            console.debug('[NOVO]', 'Reader loaded:', reader.result);
+            const recognition = new webkitSpeechRecognition();
+
+            recognition.onresult = function (event) {
+              console.debug('[NOVO]', 'Transcribed text:', event.results[0][0].transcript);
+            };
+
+            recognition.onnomatch = (event) => {
+              console.debug('[NOVO]', 'No match:', event);
+            }
+
+            recognition.start();
+            console.debug('[NOVO]', 'Recognition started...', recognition);
+          }
+
+          reader.readAsDataURL(blob);
+          console.debug('[NOVO]', 'Reader is reading...', blob);
+        });
+
+        recorder.ondataavailable = (e) => {
+          // console.debug('[NOVO]', 'Audio Chunk:', e.data);
+          chunks.push(e.data);
+        };
+
+        recorder.start(1000);
+        console.debug('[NOVO]', 'Recorder started:', recorder);
+      }).catch((err) => {
+        console.error(`The following getUserMedia error occurred: ${err}`);
+      });
+    } else {
+      console.debug('getUserMedia not supported on your browser!');
+    }
+  }
+
+  render () {
     const { messages } = this.props.chat;
     const {
       loading,
@@ -444,7 +532,10 @@ class ChatBox extends React.Component {
       announTitle,
       announBody,
       caseID,
-      conversationID
+      conversationID,
+      matterID,
+      matterTitle,
+      actualConversation,
     } = this.props;
 
     //this is the style of the chat container with no messages on the chat
@@ -478,11 +569,18 @@ class ChatBox extends React.Component {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      marginBottom: 0,
+      // marginBottom: 0,
       marginTop: 0,
     };
 
-    const controlsStyle = { border: 'none', backgroundColor: 'transparent', boxShadow: 'none', paddingRight: '0.5em', paddingLeft: '0.5em' }
+    const controlsStyle = {
+      border: 'none',
+      backgroundColor: 'transparent',
+      boxShadow: 'none',
+      paddingRight: '0.5em',
+      paddingLeft: '0.5em',
+      // maxWidth: 'none'
+    };
 
     return (
       <section style={chatContainerStyle}>
@@ -508,20 +606,19 @@ class ChatBox extends React.Component {
           )}
           {homePage && (
             <div>
-              <div className='desktop-only'>
-                <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
-                  <Progress value={100} total={100} color='blue' progress='ratio' />
-                </Segment>
-              </div>
+              {ENABLE_BILLING && (
+                <div className='desktop-only'>
+                  <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
+                    <Progress value={100} total={100} color='blue' progress='ratio' />
+                  </Segment>
+                </div>
+              )}
               <div>
                 <Feed.Extra text style={{ display: "flex" }}>
-                  <Image src="/images/jeeves-brand.png" size="small" floated="left" />
-                  <div style={{ paddingTop: "2em", maxWidth: "10em" }}>
-                    <p>
-                      <strong>Hello,</strong> I'm{" "}
-                      <abbr title="Yes, what about it?">Jeeves</abbr>, your
-                      legal research companion.
-                    </p>
+                  {/* <Image src="/images/jeeves-brand.png" size="small" floated="left" /> */}
+                  {/* <div style={{ paddingTop: "2em" }}> */}
+                  <div>
+                    <p style={{ fontSize: '1.5em', fontFamily: 'AvGardd' }}><span style={{ fontSize: '1.5em' }}>Hello!</span><br />I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
                 </Feed.Extra>
                 <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
@@ -531,12 +628,27 @@ class ChatBox extends React.Component {
             </div>
           )}
           {caseID && (
-            <Feed.Extra text style={{ paddingBottom: "2em" }}>
+            <Feed.Extra text style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}>
               <Header>Can I help you with this case?</Header>
             </Feed.Extra>
           )}
-          {conversationID && (
-            <Header as="h2">Conversation #{conversationID}</Header>
+          {(conversationID && !actualConversation) && (
+            <Header as="h2" style={{ marginTop: '0.5rem' }}>Conversation #{conversationID}</Header>
+          )}
+          {(conversationID && actualConversation) && (
+            <div className='link-back-matter' >
+              <Header as="h2">{actualConversation.title}</Header>
+              {actualConversation.matter_id && (
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}>Back to Matter</Link></Header>
+              )}
+            </div>
+          )}
+          {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
+          {matterID && (
+            <div className='link-back-matter'>
+              <Header as="h2">{matterTitle}</Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}>Back to Matter</Link></Header>
+            </div>
           )}
           {/* The chat messages start rendering here */}
           {this.props.includeFeed &&
@@ -555,35 +667,88 @@ class ChatBox extends React.Component {
                 <Feed.Event key={message.id} data-message-id={message.id}>
                   <Feed.Content>
                     {/* Actual content of message */}
-                    <Feed.Summary>
+                    <Feed.Summary className='info-assistant-header'>
                       <Feed.User>
                         {message.author || message.user_id}{" "}
                       </Feed.User>
-                      <Feed.Date>
-                        <abbr title={message.created_at}>
-                          {message.created_at}
-                        </abbr>
-                      </Feed.Date>
+                      <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
                       {message.role === "assistant" && (
                         <div className="controls info-icon">
-                          <Icon
-                            name="thumbs down outline"
-                            color="grey"
-                            style={{ cursor: "pointer", marginLeft: "1rem"}}
-                            onClick={() => this.thumbsDown(message.id)}
-                          />
-                          <Icon
-                            name="thumbs up outline"
-                            color="grey"
-                            style={{ cursor: "pointer", marginLeft: "0.1rem" }}
-                            onClick={() => this.thumbsUp(message.id)}
-                          />
-                          <Icon
-                            name="info"
-                            color="blue"
-                            style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                            onClick={() => this.messageInfo(message.id)}
-                          />
+                          <Button.Group basic size='mini'>
+                            <Popup
+                              content="More information"
+                              trigger={
+                                <Button icon onClick={() => this.messageInfo(message.id)}>
+                                  <Icon
+                                    name="info"
+                                    color="blue"
+                                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
+                                  />
+                                </Button>
+                              }
+                            />
+                            {/* the regenerate answer button only shows in the last answer */}
+                            {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                              message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
+                                <Popup
+                                  content="Regenerate this answer"
+                                  trigger={
+                                    <Button icon onClick={this.regenerateAnswer}>
+                                      <Icon
+                                        name="redo"
+                                        color="grey"
+                                        style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                      />
+                                    </Button>
+                                  }
+                                />
+                              )}
+                            {message.role === "assistant" && (
+                              <Popup
+                                content="Copied to clipboard"
+                                on="click"
+                                open={this.state.copiedStatus[message.id] || false}
+                                trigger={
+                                  <Popup content='Copy to clipboard' trigger={
+                                    <Button
+                                      onClick={() =>
+                                        this.copyToClipboard(
+                                          message.id,
+                                          marked.parse(message.content)
+                                        )
+                                      }
+                                      icon>
+                                      <Icon name="clipboard outline" />
+                                    </Button>
+                                  } />
+                                }
+                              />
+                            )}
+                            <Popup
+                              content="Rate this message"
+                              trigger={
+                                <Button icon onClick={() => this.thumbsDown(message.id)}>
+                                  <Icon
+                                    name="thumbs down outline"
+                                    color="grey"
+                                    style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                  />
+                                </Button>
+                              }
+                            />
+                            <Popup
+                              content="Rate this message"
+                              trigger={
+                                <Button icon onClick={() => this.thumbsUp(message.id)}>
+                                  <Icon
+                                    name="thumbs up outline"
+                                    color="grey"
+                                    style={{ cursor: "pointer", marginLeft: "0.1rem" }}
+                                  />
+                                </Button>
+                              }
+                            />
+                          </Button.Group>
                         </div>
                       )}
                     </Feed.Summary>
@@ -598,7 +763,7 @@ class ChatBox extends React.Component {
                         !reGeneratingReponse && (
                           <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                             <Icon name="spinner" loading />
-                            Jeeves is generating a response
+                            {BRAND_NAME} is generating a response...
                           </Header>
                         )}
                       {reGeneratingReponse &&
@@ -608,8 +773,7 @@ class ChatBox extends React.Component {
                             size="small"
                             style={{ fontSize: "1em", marginTop: "1.5em" }}
                           >
-                            <Icon name="spinner" loading /> Jeeves is
-                            regenerating the response
+                            <Icon name="spinner" loading /> Novo is trying again...
                           </Header>
                         )}
                       <div className="answer-controls" text>
@@ -645,42 +809,6 @@ class ChatBox extends React.Component {
                             />
                           </div>
                         )}
-                        {/* the regenerate answer button only shows in the last answer */}
-                        {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                          message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
-                            <Popup
-                              content="Regenerate this answer"
-                              trigger={
-                                <Button
-                                  icon="redo"
-                                  onClick={this.regenerateAnswer}
-                                  style={controlsStyle}
-                                  size="tiny"
-                                />
-                              }
-                            />
-                          )}
-                        {message.role === "assistant" && (
-                          <Popup
-                            content="Copied to clipboard"
-                            on="click"
-                            open={this.state.copiedStatus[message.id] || false}
-                            trigger={
-                              <Button
-                                onClick={() =>
-                                  this.copyToClipboard(
-                                    message.id,
-                                    marked.parse(message.content)
-                                  )
-                                }
-                                style={controlsStyle}
-                                size="tiny"
-                              >
-                                <Icon name="clipboard outline" />
-                              </Button>
-                            }
-                          />
-                        )}
                       </div>
                     </Feed.Extra>
                   </Feed.Content>
@@ -692,8 +820,7 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "99%" }}
-        >
+          style={{ width: "99%" }} >
           <Form.Input>
             <TextareaAutosize
               id="primary-query"
@@ -712,7 +839,17 @@ class ChatBox extends React.Component {
                   this.handleSubmit(e);
                 }
               }}
-              style={{ resize: "none" }}
+              onFocus={this.handleTextareaFocus}
+              onBlur={this.handleTextareaBlur}
+              style={{ resize: "none", zIndex: '1' }}
+            />
+            <Icon
+              name="microphone icon"
+              color="grey"
+              className='microphone icon'
+              onClick={() => this.handleMicrophoneClick(this)}
+              //this inline style is necessary to make the icon look lighter when the textarea is not focused
+              style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
             />
           </Form.Input>
         </Form>
@@ -725,7 +862,7 @@ class ChatBox extends React.Component {
               <Grid columns='equal' className="home-dropdowns" onBlur={() => this.setState({ query: "" })}>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Find a case that..."
                     selection
                     text="Find a case that..."
@@ -735,7 +872,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Draft a brief..."
                     selection
                     text="Draft a brief..."
@@ -745,7 +882,7 @@ class ChatBox extends React.Component {
                 </GridColumn>
                 <GridColumn>
                   <Dropdown
-                    size="huge"
+                    size="big"
                     placeholder="Outline a motion..."
                     selection
                     text="Outline a motion..."

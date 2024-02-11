@@ -1,161 +1,169 @@
-  'use strict';
+'use strict';
 
-  // Constants
-  const {
-    BROWSER_DATABASE_NAME,
-    BROWSER_DATABASE_TOKEN_TABLE
-  } = require('../constants');
+// Constants
+const {
+  BRAND_NAME,
+  BROWSER_DATABASE_NAME,
+  BROWSER_DATABASE_TOKEN_TABLE
+} = require('../constants');
 
-  // Dependencies
-  const React = require('react');
-  const { renderToString } = require('react-dom/server');
-  const {
-    BrowserRouter,
-    useNavigate,
-    Navigate
-  } = require('react-router-dom');
-  const {loginSuccess} = require('../actions/authActions');
+// Dependencies
+const React = require('react');
+const ReactDOMServer = require('react-dom/server');
+const { renderToString } = require('react-dom/server');
+const {
+  BrowserRouter,
+  useNavigate,
+  Navigate
+} = require('react-router-dom');
 
-  // Components
-  const Splash = require('./Splash');
-  const Dashboard = require('./Dashboard');
-  const TermsOfUseModal = require('./TermsOfUseModal');
-  const Waitlist = require('./Waitlist');
+// Actions
+const {loginSuccess} = require('../actions/authActions');
 
-  // Semantic UI
-  const {
-    Modal,
-    Button,
-    Header
-   } = require('semantic-ui-react');
+// Components
+const Splash = require('./Splash');
+const Dashboard = require('./Dashboard');
+const TermsOfUseModal = require('./TermsOfUseModal');
+const Waitlist = require('./Waitlist');
 
-  /**
-   * The Jeeves UI.
-   */
-  class JeevesUI extends React.Component {
-    constructor (props) {
-      super(props);
+// Semantic UI
+const {
+  Modal,
+  Button,
+  Header,
+  Loader
+  } = require('semantic-ui-react');
 
-      this.state = {
-        isAuthenticated: false,
-        isLoading: true,
-        modalLogOut: false,
-        loggedOut: false,
-      }
-    }
+/**
+ * The Jeeves UI.
+ */
+class JeevesUI extends React.Component {
+  constructor (props) {
+    super(props);
 
-    handleLoginSuccess = () => {
-      console.log('setting isAuthenticated = true ...');
-      this.setState({ isAuthenticated: true });
-    }
+    this.state = {
+      isAuthenticated: false,
+      isLoading: true,
+      modalLogOut: false,
+      loggedOut: false,
+    };
+  }
 
-    handleMessageSuccess = (result) => {
-      console.log('message success! result:', result);
-      this.setState({ incomingMessage: result });
-    }
+  handleLoginSuccess = () => {
+    console.log('setting isAuthenticated = true ...');
+    this.setState({ isAuthenticated: true });
+  }
 
-    handleRegisterSuccess = () => {
-      console.log('registered = true ...');
-      this.setState({ registered: true });
-    }
+  handleMessageSuccess = (result) => {
+    console.log('message success! result:', result);
+    this.setState({ incomingMessage: result });
+  }
 
-    handleLogout = () => {
-      this.setState({
-        modalLogOut: true
-      });
-    }
+  handleRegisterSuccess = () => {
+    console.log('registered = true ...');
+    this.setState({ registered: true });
+  }
 
-    handleLogoutSuccess = () => {
-      console.log('setting isAuthenticated = false ...');
-      this.setState({ loggedOut: true });
-      setTimeout(() => {
-        this.setState({
-          isAuthenticated: false,
-          isLoading: false,
-          modalLogOut: false,
-          loggedOut: false
-        });
-        this.props.logout();
-        window.location.href = '/';
+  handleLogout = () => {
+    this.setState({
+      modalLogOut: true
+    });
+  }
 
-        //window.location.reload();
-      }, 2000)
-    }
-
-    handleModalClose = () =>{
+  handleLogoutSuccess = () => {
+    console.log('setting isAuthenticated = false ...');
+    this.setState({ loggedOut: true });
+    setTimeout(() => {
       this.setState({
         isAuthenticated: false,
         isLoading: false,
-        modalLogOut: false
+        modalLogOut: false,
+        loggedOut: false
       });
-    }
+      this.props.logout();
+      window.location.href = '/';
 
-    handleConversationSubmit = async (message) => {
-      try {
-        const response = await fetch('/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.props.token}`
-          },
-          body: JSON.stringify({ message }),
-        });
+      //window.location.reload();
+    }, 2000);
+  }
 
-        const data = await response.json();
+  handleModalClose = () =>{
+    this.setState({
+      isAuthenticated: false,
+      isLoading: false,
+      modalLogOut: false
+    });
+  }
 
-        if (data.success) {
-          this.props.fetchConversations();
-        } else {
-          throw new Error(data.message || 'Message submission failed');
-        }
-      } catch (error) {
-        console.error(error);
+  handleConversationSubmit = async (message) => {
+    try {
+      const response = await fetch('/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.props.token}`
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        this.props.fetchConversations();
+      } else {
+        throw new Error(data.message || 'Message submission failed');
       }
+    } catch (error) {
+      console.error(error);
     }
+  }
 
-    componentDidMount () {
-      const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
+  componentDidMount () {
+    const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
 
-      dbRequest.onupgradeneeded = function (event) {
+    dbRequest.onupgradeneeded = function (event) {
+      const db = event.target.result;
+
+      if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+        const objectStore = db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE, { keyPath: 'id' });
+        objectStore.createIndex("authToken", "authToken", { unique: false });
+      }
+    };
+
+    dbRequest.onsuccess = (event) => {
         const db = event.target.result;
+        const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
+        const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
+        const request = objectStore.get('authToken');
 
-        if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
-          const objectStore = db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE, { keyPath: 'id' });
-          objectStore.createIndex("authToken", "authToken", { unique: false });
-        }
-      };
+        request.onsuccess = (event) => {
+          if (request.result) {
+            this.setState({ isAuthenticated: true });
+            this.props.reLogin(request.result.value);
+          }
+        };
 
-      dbRequest.onsuccess = (event) => {
-          const db = event.target.result;
-          const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
-          const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
-          const request = objectStore.get('authToken');
+        request.onerror = (event) => {
+          console.error("IndexedDB error:", event.target.errorCode);
+        };
+    };
 
-          request.onsuccess = (event) => {
-            if (request.result) {
-              this.setState({ isAuthenticated: true });
-              this.props.reLogin(request.result.value);
-            }
-          };
+    dbRequest.onerror = function(event) {
+      console.error("IndexedDB error:", event.target.errorCode);
+    };
+  }
 
-          request.onerror = (event) => {
-            console.error("IndexedDB error:", event.target.errorCode);
-          };
-      };
-
-      dbRequest.onerror = function(event) {
-        console.error("IndexedDB error:", event.target.errorCode);
-      };
-    }
-
-
-    render () {
-      const { modalLogOut, loggedOut } = this.state;
-      return (
-        <jeeves-ui id={this.id} class="fabric-site">
-          <fabric-container id="react-application"></fabric-container>
-          <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column'}}>
-            <BrowserRouter>
+  render () {
+    const { modalLogOut, loggedOut } = this.state;
+    return (
+      <jeeves-ui id={this.id} class="fabric-site">
+        <fabric-container id="react-application"></fabric-container>
+        <fabric-react-component id='jeeves-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+          {(this.props.auth && this.props.auth.loading) ? (
+            <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Loader active inline="centered" size='huge' />
+            </div>) :
+            (<BrowserRouter>
               {!this.props.isAuthenticated ? (
                 <Splash
                   onLoginSuccess={this.handleLoginSuccess}
@@ -163,7 +171,7 @@
                   login={this.props.login}
                   register={this.props.register}
                   error={this.props.error}
-                  checkInvitationToken = {this.props.checkInvitationToken}
+                  checkInvitationToken={this.props.checkInvitationToken}
                   checkUsernameAvailable={this.props.checkUsernameAvailable}
                   checkEmailAvailable={this.props.checkEmailAvailable}
                   invitation={this.props.invitation}
@@ -173,7 +181,7 @@
                   declineInvitation={this.props.declineInvitation}
                   createInquiry={this.props.createInquiry}
                   inquiries={this.props.inquiries}
-                  />
+                />
               ) : !this.props.auth.isCompliant ? (
                 <TermsOfUseModal
                   {...this.props}
@@ -181,7 +189,7 @@
                   signContract={this.props.signContract}
                   logout={this.props.logout}
                   isCompliant={this.props.isCompliant}
-                  />
+                />
               ) : (
                 <Dashboard
                   auth={this.props.auth}
@@ -210,25 +218,21 @@
                 open={modalLogOut}
                 size='mini'>
                 <Modal.Header centered>
-                  Logging out
+                  Log Out of {BRAND_NAME}?
                 </Modal.Header>
                 <Modal.Content>
                   <Modal.Description>
                     {!loggedOut ? (
-                      <Header as='h4'>
-                        Are you sure you want to log out?
-                      </Header>
+                      <Header as='h4'>Are you sure you want to log out?</Header>
                     ) : (
-                      <Header as='h5'className='center aligned'>
-                        You have successfully logged out. You will be redirected to the Homepage.
-                      </Header>
+                      <Header as='h5' className='center aligned'>You have been logged out.<br /><br />Returning to the home page...</Header>
                     )
                     }
                   </Modal.Description>
                 </Modal.Content>
                 <Modal.Actions>
                   {!loggedOut && (
-                    <div>
+                    <Button.Group>
                       <Button
                         content='Cancel'
                         icon='close'
@@ -245,20 +249,29 @@
                         size='small'
                         primary
                       />
-                    </div>
+                    </Button.Group>
                   )}
                 </Modal.Actions>
               </Modal>
             </BrowserRouter>
-          </fabric-react-component>
-        </jeeves-ui>
-      )
-    }
-
-    _getHTML () {
-      const component = this.render();
-      return renderToString(component);
-    }
+            )}
+        </fabric-react-component>
+      </jeeves-ui>
+    )
   }
 
-  module.exports = JeevesUI;
+  _getHTML () {
+    const component = this.render();
+    return renderToString(component);
+  }
+
+  _toHTML () {
+    return ReactDOMServer.renderToString(this.render());
+  }
+
+  toHTML () {
+    return this._toHTML();
+  }
+}
+
+module.exports = JeevesUI;
