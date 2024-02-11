@@ -11,7 +11,5 @@
       "node"
     ]
   },
-  "exclude": [
-    "scrappers/Pennsylvania.ts"
-  ]
+  "exclude": []
 }

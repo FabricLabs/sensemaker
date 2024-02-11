@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  jeevs-scrapper-js:
+    build:
+      context: ..
+      dockerfile: ./docker_js/Dockerfile
+    container_name: jeevs-scrapper-js
+    command: tail -f /dev/null
+    stdin_open: true
+    tty: true
+    working_dir: /fabric
+    volumes:
+      - ..:/fabric
+      - ../data:/data

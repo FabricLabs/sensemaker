@@ -7,6 +7,7 @@ require('@babel/register');
 const definition = require('../package');
 const {
   AGENT_MAX_TOKENS,
+  MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
@@ -253,7 +254,7 @@ class Jeeves extends Hub {
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
-    this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
+    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
     this.pacer = new PACER(this.settings.pacer);
@@ -336,6 +337,7 @@ class Jeeves extends Hub {
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: '127.0.0.1:11434', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
     this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
 
@@ -592,7 +594,7 @@ class Jeeves extends Hub {
    * @param {Number} [depth] How many times to recurse.
    * @returns {Message} Request as a Fabric {@link Message}.
    */
-  async createTimedRequest (request, timeout = 60000, depth = 0) {
+  async createTimedRequest (request, timeout = MAX_RESPONSE_TIME_MS, depth = 0) {
     return new Promise(async (resolve, reject) => {
       const now = new Date();
       const created = now.toISOString();
@@ -662,10 +664,11 @@ class Jeeves extends Hub {
 
       const metaTokenCount = this.estimateTokens(meta);
       const requestTokenCount = this.estimateTokens(request.query);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
+
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
 
       let messages = [];
 
@@ -692,7 +695,7 @@ class Jeeves extends Hub {
         messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
       }
 
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
 
       // Prompt
       messages.unshift({
@@ -700,13 +703,14 @@ class Jeeves extends Hub {
         content: this.settings.prompt
       });
 
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
       const agentResults = Promise.allSettled([
         this.alpha.query({ query, messages }),
         this.gemini.query({ query, messages }),
         this.lennon.query({ query, messages }),
-        // this.mistral.query({ query })
+        this.llama.query({ query, messages }),
+        // this.mistral.query({ query, messages })
       ]);
 
       // TODO: execute RAG query for additional metadata
@@ -720,7 +724,7 @@ class Jeeves extends Hub {
       ]).then(async (results) => {
         if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
         const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
 
         /* for (let i = 0; i < answers.length; i++) {
           const answer = answers[i];
@@ -731,7 +735,7 @@ class Jeeves extends Hub {
         } */
 
         const agentList = `${answers.map((x) => `- [${x.name}] ${x.content}`).join('\n')}`;
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
         // TODO: loop over all agents
         // TODO: compress to 4096 tokens
         const summarized = await this.summarizer.query({
@@ -739,7 +743,7 @@ class Jeeves extends Hub {
           query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
         });
 
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
         const actor = new Actor({ content: summarized.content });
         const bundle = {
           type: 'TimedResponse',
@@ -1313,7 +1317,7 @@ class Jeeves extends Hub {
         const actor = new Actor({ name: `courtlistener/people/${person.id}` });
         const target = await this.db('people').where({ courtlistener_id: person.id }).first();
         if (!target) {
-          console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
+          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
           await this.db('people').insert({
             fabric_id: actor.id,
             courtlistener_id: person.id,
@@ -2039,10 +2043,15 @@ class Jeeves extends Hub {
 
     });
 
+    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
+    // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -2061,7 +2070,10 @@ class Jeeves extends Hub {
 
         // Set Roles
         const roles = ['user'];
+
+        // Special Roles
         if (user.is_admin) roles.unshift('admin');
+        if (user.is_beta) roles.unshift('beta');
 
         // Create Token
         const token = new Token({
@@ -2079,6 +2091,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {
@@ -2098,6 +2111,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {
@@ -2938,7 +2952,7 @@ class Jeeves extends Hub {
           this.extractor.query({
             query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
           }).then(async (extracted) => {
-            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted.content);
             if (extracted && extracted.content) {
               try {
                 const caseCards = JSON.parse(extracted.content).map((x) => {
@@ -3829,6 +3843,7 @@ class Jeeves extends Hub {
       date_terminated: docket.date_terminated
     };
 
+    console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
     const target = await this.db('cases').where({ courtlistener_id: docket.id }).first();
 
     if (!target) {
@@ -3836,18 +3851,21 @@ class Jeeves extends Hub {
     }
 
     if (docket.pacer_case_id) {
-      console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
+      if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
       const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
       if (!pacer) {
-        console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
+        if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
 
         if (instance.court_id) {
+          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
           const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
           if (!court) {
             console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
             const sample = await this.courtlistener.db('search_court').where({ id: instance.court_id }).first();
+            const matches = await this.courtlistener.db('search_court').where({ id: instance.court_id });
             console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
+            console.debug('[JEEVES]', '[COURTLISTENER]', 'Matches:', matches);
           }
         }
 

@@ -208,7 +208,8 @@ class Dashboard extends React.Component {
     this.setState(newState);
   };
 
-  render() {
+  render () {
+    const USER_IS_BETA = this.props.auth.isBeta || false;
     const { openSectionBar } = this.state;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
@@ -331,37 +332,37 @@ class Dashboard extends React.Component {
                 {/* <Menu.Item as={Link} to="/conversations">
                   <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label> : null}</div>
                 </Menu.Item> */}
-                {ENABLE_MATTERS && (
+                {USER_IS_BETA && ENABLE_MATTERS && (
                   <Menu.Item as={Link} to='/matters'>
-                    <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_CASE_SEARCH && (
+                {USER_IS_BETA && ENABLE_CASE_SEARCH && (
                   <Menu.Item as={Link} to='/cases'>
-                    <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_COURT_SEARCH && (
+                {USER_IS_BETA && ENABLE_COURT_SEARCH && (
                   <Menu.Item as={Link} to='/courts'>
                     <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_JUDGE_SEARCH && (
+                {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
                   <Menu.Item as={Link} to='/judges'>
                     <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_OPINION_SEARCH && (
+                {USER_IS_BETA && ENABLE_OPINION_SEARCH && (
                   <Menu.Item as={Link} to='/opinions'>
                     <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_DOCUMENT_SEARCH && (
+                {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
                   <Menu.Item as={Link} to='/documents'>
                     <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_LIBRARY && (
+                {USER_IS_BETA && ENABLE_LIBRARY && (
                   <Menu.Item disabled>
                     <div>
                       <Icon name='book' />
@@ -370,22 +371,22 @@ class Dashboard extends React.Component {
                     </div>
                   </Menu.Item>
                 )}
-                {ENABLE_PERSON_SEARCH && (
+                {USER_IS_BETA && ENABLE_PERSON_SEARCH && (
                   <Menu.Item as={Link} to='/people'>
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_REPORTER_SEARCH && (
+                {USER_IS_BETA && ENABLE_REPORTER_SEARCH && (
                   <Menu.Item as={Link} to='/reporters'>
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_JURISDICTION_SEARCH && (
+                {USER_IS_BETA && ENABLE_JURISDICTION_SEARCH && (
                   <Menu.Item as={Link} to='/jurisdictions'>
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {ENABLE_VOLUME_SEARCH && (
+                {USER_IS_BETA && ENABLE_VOLUME_SEARCH && (
                   <Menu.Item as={Link} to='/volumes'>
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>

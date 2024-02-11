@@ -18,6 +18,9 @@ class LexisScrapper extends StateScrapper_1.StateScrapper {
         this.parseRulesOfCourt = async (url) => {
             return this.parse('rulesOfCourt', url);
         };
+        this.parseAdministrativeCodes = async (url) => {
+            return this.parse('administrativeCodes', url);
+        };
         this.parse = async (type, url) => {
             let self = this;
             return await this.runPlaywright(async ({ request, page }) => {
@@ -77,7 +80,7 @@ class LexisScrapper extends StateScrapper_1.StateScrapper {
                     console.log('Awaiting for a[data-action="toclink"]');
                     await page.waitForSelector('a[data-action="toclink"]');
                     let $as = await page.$$('a[data-action="toclink"]');
-                    console.log(`There are ${(0, utils_1.green)(`${$as.length}`)} documents to download in the page`);
+                    console.log(`There are ${(0, utils_1.green)(`${$as.length}`)} documents to downloaded in the page`);
                     let downloads_this_loop = 0;
                     let n_retries = 0;
                     for (let i = scrapped; i < $as.length; i++) {

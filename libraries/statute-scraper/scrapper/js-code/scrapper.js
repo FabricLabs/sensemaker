@@ -7,10 +7,12 @@ const Arkansas_1 = require("./scrappers/Arkansas");
 const California_1 = require("./scrappers/California");
 const Colorado_1 = require("./scrappers/Colorado");
 const Florida_1 = require("./scrappers/Florida");
+const Georgia_1 = require("./scrappers/Georgia");
 const NewJersey_1 = require("./scrappers/NewJersey");
 const NewYork_1 = require("./scrappers/NewYork");
 const Ohio_1 = require("./scrappers/Ohio");
-// import { Pennsylvania } from "./scrappers/Pennsylvania";
+const Pennsylvania_1 = require("./scrappers/Pennsylvania");
+const Tennessee_1 = require("./scrappers/Tennessee");
 const Texas_1 = require("./scrappers/Texas");
 const utils_1 = require("./utils");
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -20,10 +22,12 @@ const states_parsers = {
     'California': () => new California_1.California,
     'Colorado': () => new Colorado_1.Colorado,
     'Florida': () => new Florida_1.Florida,
+    'Georgia': () => new Georgia_1.Georgia,
     'NewJersey': () => new NewJersey_1.NewJersey,
     'NewYork': () => new NewYork_1.NewYork,
     'Ohio': () => new Ohio_1.Ohio,
-    // 'Pennsylvania': () => new Pennsylvania,
+    'Pennsylvania': () => new Pennsylvania_1.Pennsylvania,
+    'Tennessee': () => new Tennessee_1.Tennessee,
     'Texas': () => new Texas_1.Texas,
 };
 const allowed_states = Object.keys(states_parsers);

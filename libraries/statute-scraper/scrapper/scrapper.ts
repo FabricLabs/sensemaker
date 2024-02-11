@@ -2,10 +2,12 @@ import { Arkansas } from "./scrappers/Arkansas";
 import { California } from "./scrappers/California";
 import { Colorado } from "./scrappers/Colorado";
 import { Florida } from "./scrappers/Florida";
+import { Georgia } from "./scrappers/Georgia";
 import { NewJersey } from "./scrappers/NewJersey";
 import { NewYork } from "./scrappers/NewYork";
 import { Ohio } from "./scrappers/Ohio";
 import { Pennsylvania } from "./scrappers/Pennsylvania";
+import { Tennessee } from "./scrappers/Tennessee";
 import { Texas } from "./scrappers/Texas";
 
 import { StateScrapperInterface } from "./scrappers/StateScrapper";
@@ -19,10 +21,12 @@ const states_parsers:{ [key: string]: () => StateScrapperInterface } = {
   'California': () => new California,
   'Colorado': () => new Colorado,
   'Florida': () => new Florida,
+  'Georgia': () => new Georgia,
   'NewJersey': () => new NewJersey,
   'NewYork': () => new NewYork,
   'Ohio': () => new Ohio,
   'Pennsylvania': () => new Pennsylvania,
+  'Tennessee': () => new Tennessee,
   'Texas': () => new Texas,
 };
 const allowed_states:string[] = Object.keys(states_parsers);

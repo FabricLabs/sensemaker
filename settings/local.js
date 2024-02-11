@@ -123,8 +123,18 @@ module.exports = {
     token: null
   },
   statutes: {
-    enable: true,
-    jurisdictions: ['Texas']
+    enable: false,
+    jurisdictions: [
+      'Arkansas',
+      'California',
+      'Colorado',
+      'Florida',
+      'NewJersey',
+      'NewYork',
+      'Ohio',
+      'Pennsylvania',
+      'Texas'
+    ]
   },
   courtlistener: {
     enable: false,
@@ -173,6 +183,7 @@ module.exports = {
     enable: true
   },
   openai: {
+    enable: true,
     key: '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',
     model: 'gpt-4-1106-preview',
     temperature: 0

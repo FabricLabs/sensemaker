@@ -1,8 +1,12 @@
 'use strict';
 
+// Package
+const definition = require('../package');
+
 // Dependencies
 const assert = require('assert');
-const definition = require('../package');
+const fs = require('fs');
+const path = require('path');
 
 // Fabric Types
 const StatuteProvider = require('../services/StatuteProvider');
@@ -31,15 +35,16 @@ describe('StatuteProvider', function () {
       assert.ok(provider.scrappers.Texas);
     });
 
-    it('provides Texas constitution', async function () {
+    it('can download the Texas constitution', async function () {
       const provider = new StatuteProvider(settings);
       assert.ok(provider);
       assert.ok(provider.scrappers);
       assert.ok(provider.scrappers.Texas);
-
-      const constitution = await provider.scrappers.Texas.constitution();
-      console.debug('[TEST:STATUTE-PROVIDER]', 'Constitution:', constitution);
-      assert.ok(constitution);
+      await provider.scrappers.Texas.constitution();
+      const file = path.join('.', 'scrapper', 'data', 'states', 'Texas', 'constitution', 'the texas constitution.pdf');
+      console.debug('file:', file);
+      const exists = fs.existsSync(file);
+      assert.ok(exists);
     });
   });
 });

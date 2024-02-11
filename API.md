@@ -37,6 +37,41 @@ once started by the user.  By default, earnings are enabled.</p>
 The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
 
 **Kind**: global class  
+
+* [Agent](#Agent)
+    * [new Agent([settings])](#new_Agent_new)
+    * [.query(request)](#Agent+query) ⇒ <code>AgentResponse</code>
+
+<a name="new_Agent_new"></a>
+
+### new Agent([settings])
+**Returns**: [<code>Agent</code>](#Agent) - Instance of the Agent.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| [settings] | <code>Object</code> | Settings for the Agent. |
+| [settings.name] | <code>String</code> | The name of the agent. |
+| [settings.type] | <code>String</code> | The type of the agent. |
+| [settings.description] | <code>String</code> | The description of the agent. |
+| [settings.frequency] | <code>Number</code> | The frequency at which the agent operates. |
+| [settings.database] | <code>Object</code> | The database settings for the agent. |
+| [settings.fabric] | <code>Object</code> | The Fabric settings for the agent. |
+| [settings.parameters] | <code>Object</code> | The parameters for the agent. |
+| [settings.model] | <code>String</code> | The model for the agent. |
+
+<a name="Agent+query"></a>
+
+### agent.query(request) ⇒ <code>AgentResponse</code>
+Query the agent with some text.
+
+**Kind**: instance method of [<code>Agent</code>](#Agent)  
+**Returns**: <code>AgentResponse</code> - Response object.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Request object. |
+| request.query | <code>String</code> | The query to send to the agent. |
+
 <a name="Clock"></a>
 
 ## Clock : <code>Object</code>

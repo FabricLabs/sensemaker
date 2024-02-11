@@ -49,8 +49,9 @@ async function main (settings = {}) {
     const updateStatements = columns.map(column => `${column} = VALUES(${column})`).join(', ');
     const query = `INSERT INTO ?? (${columnPlaceholders}) VALUES (${valuePlaceholders}) ON DUPLICATE KEY UPDATE ${updateStatements}`;
 
-    db.raw(query, [tableName, ...columns, ...values]).then((result) => {
-      console.debug('Created local case:', result);
+    db.raw(query, [tableName, ...columns, ...values]).then((set) => {
+      const result = set[0];
+      if (result.insertId) console.debug('Created local case:', result, result.insertId, actor.id, (result.insertId) ? `novo/cases/${result.insertId}` : undefined);
     }).catch(error => {
       console.error('Could not create local case:', error);
     });
