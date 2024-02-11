@@ -190,7 +190,7 @@ class MatterView extends React.Component {
   }
 
   render() {
-    const { matters, jurisdictions, courts, matterConversations, conversationsLoading } = this.props;
+    const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
 
     const jurisdictionErrorMessage = (!this.state.jurisdictionError) ? null : {
@@ -199,7 +199,7 @@ class MatterView extends React.Component {
     };
 
     return (
-      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversationsLoading} style={{ marginRight: '1em' }}>
+      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading} style={{ marginRight: '1em' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
             <Grid columns={2}>

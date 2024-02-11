@@ -171,12 +171,14 @@ jeeves-dashboard #main-sidebar{
 }
 .expand-sidebar-arrow {
   width: 20px;
-  height: 50px;
+  height: 60vh;
   color: white;
   position: absolute;
-  top: 50%;
-  left: 71%;
+  top: 20%;
+  left: 80%;
   z-index: 1000;
+  display: flex;
+  align-items: center;
 }
 
 .expand-sidebar-arrow #expand-sidebar-icon {

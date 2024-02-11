@@ -184,20 +184,38 @@ class Dashboard extends React.Component {
       openPlayground: false,
       openMatters: false,
       openLibrary: false,
-      openSectionBar: true, // This seems to be common across all clicks, so we set it true here
     };
 
     // Update the state based on the menu item clicked
     switch (menu) {
       case 'playground':
-        newState.openPlayground = true;
-        this.props.resetChat();
+        if (this.state.openPlayground && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openPlayground = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
         break;
       case 'matters':
-        newState.openMatters = true;
+        if (this.state.openMatters && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openMatters = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        // newState.openMatters = true;
         break;
       case 'library':
-        newState.openLibrary = true;
+        if (this.state.openLibrary && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openLibrary = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        // newState.openLibrary = true;
         break;
       default:
         console.error('Unknown menu item');
@@ -208,8 +226,9 @@ class Dashboard extends React.Component {
     this.setState(newState);
   };
 
-  render () {
-    const USER_IS_BETA = this.props.auth.isBeta || false;
+  render() {
+   // const USER_IS_BETA = this.props.auth.isBeta || false;
+    const USER_IS_BETA =true;
     const { openSectionBar } = this.state;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
