@@ -1,7 +1,7 @@
 'use strict';
 
 // Constants
-const RELEASE_NAME = 'beta-1.0.0-RC1';
+const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
 const MAX_RESPONSE_TIME_MS = 240000;
 
@@ -27,7 +27,7 @@ const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
 const ENABLE_JUDGE_SEARCH = false;
 const ENABLE_OPINION_SEARCH = false;
-const ENABLE_DOCUMENT_SEARCH = false;
+const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_JURISDICTION_SEARCH = true;
 const ENABLE_REPORTER_SEARCH = false;

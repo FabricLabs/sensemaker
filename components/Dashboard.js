@@ -47,6 +47,7 @@ const CaseView = require('./CaseView');
 const CourtHome = require('./CourtHome');
 const CourtView = require('./CourtView');
 const JudgeHome = require('./JudgeHome');
+const JurisdictionHome = require('./JurisdictionHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
 const PeopleHome = require('./PeopleHome');
@@ -227,10 +228,10 @@ class Dashboard extends React.Component {
   };
 
   render () {
-    // const USER_IS_BETA = true;
+    const USER_IS_ADMIN = this.props.auth.isAdmin || false;
+    const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
     const { openSectionBar } = this.state;
-    const USER_IS_ADMIN = this.props.auth.isBeta || false;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
       minWidth: '300px',
@@ -265,7 +266,10 @@ class Dashboard extends React.Component {
                 <p className='icon-label'>Playground</p>
               </Menu.Item>
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('matters')}>
-                <Icon name='pencil' size='large' />
+                <Icon.Group size='large'>
+                  <Icon name='clipboard list' />
+                  <Icon name='bell' corner color='green' />
+                </Icon.Group>
                 <p className='icon-label'>Matters</p>
               </Menu.Item>
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
@@ -331,15 +335,16 @@ class Dashboard extends React.Component {
             )}
             {this.state.openLibrary && (
               <section className='fade-in'>
-                {/* <Menu.Item>
-              <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
-                <div className="ui icon fluid input">
-                  <input disabled autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
-                  <i aria-hidden="true" className="search icon"></i>
-                </div>
-              </jeeves-search>
-            </Menu.Item> */}
-
+                {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+                  <Menu.Item>
+                    <jeeves-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
+                      <div className="ui icon fluid input">
+                        <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
+                        <i aria-hidden="true" className="search icon"></i>
+                      </div>
+                    </jeeves-search>
+                  </Menu.Item>
+                )}
                 {/* <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
                   <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
                 </Menu.Item> */}
@@ -356,9 +361,9 @@ class Dashboard extends React.Component {
                     <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 ) */}
-                {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
+                {(USER_IS_ALPHA || USER_IS_ADMIN) && ENABLE_DOCUMENT_SEARCH && (
                   <Menu.Item as={Link} to='/documents'>
-                    <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
                 {USER_IS_ADMIN && ENABLE_JURISDICTION_SEARCH && (
@@ -496,7 +501,7 @@ class Dashboard extends React.Component {
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
-                <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />

@@ -595,7 +595,7 @@ class ChatBox extends React.Component {
           />
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (
-            <Message info style={announcementStyle}>
+            <Message info style={announcementStyle} className='slide-in'>
               <Message.Header>
                 <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle), }} />
               </Message.Header>
