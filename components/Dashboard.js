@@ -184,20 +184,38 @@ class Dashboard extends React.Component {
       openPlayground: false,
       openMatters: false,
       openLibrary: false,
-      openSectionBar: true, // This seems to be common across all clicks, so we set it true here
     };
 
     // Update the state based on the menu item clicked
     switch (menu) {
       case 'playground':
-        newState.openPlayground = true;
-        this.props.resetChat();
+        if (this.state.openPlayground && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openPlayground = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
         break;
       case 'matters':
-        newState.openMatters = true;
+        if (this.state.openMatters && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openMatters = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        // newState.openMatters = true;
         break;
       case 'library':
-        newState.openLibrary = true;
+        if (this.state.openLibrary && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openLibrary = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        // newState.openLibrary = true;
         break;
       default:
         console.error('Unknown menu item');
@@ -209,9 +227,10 @@ class Dashboard extends React.Component {
   };
 
   render () {
+    // const USER_IS_BETA = true;
+    const USER_IS_BETA = this.props.auth.isBeta || false;
     const { openSectionBar } = this.state;
     const USER_IS_ADMIN = this.props.auth.isBeta || false;
-    const USER_IS_BETA = this.props.auth.isBeta || false;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
       minWidth: '300px',
@@ -238,7 +257,7 @@ class Dashboard extends React.Component {
         <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
             <div>
-              <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={this.props.resetChat()}>
+              <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
               </Menu.Item>
               <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('playground')}>
@@ -260,8 +279,6 @@ class Dashboard extends React.Component {
                 <Icon id='expand-sidebar-icon' name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
               </div>
             )}
-
-
             <div>
               <Menu.Item as={Link} to="/settings">
                 <Icon name='user circle' size='large' />
@@ -282,7 +299,8 @@ class Dashboard extends React.Component {
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
-            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>
+            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }}
+              onClick={() => { this.setState({ openSectionBar: false }); this.props.resetChat() }}>
               <Header className='dashboard-header'>
                 <div>
                   <div>
