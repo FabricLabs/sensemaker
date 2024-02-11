@@ -227,8 +227,8 @@ class Dashboard extends React.Component {
   };
 
   render() {
-   // const USER_IS_BETA = this.props.auth.isBeta || false;
-    const USER_IS_BETA =true;
+    const USER_IS_BETA = this.props.auth.isBeta || false;
+    // const USER_IS_BETA = true;
     const { openSectionBar } = this.state;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
@@ -278,8 +278,6 @@ class Dashboard extends React.Component {
                 <Icon id='expand-sidebar-icon' name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
               </div>
             )}
-
-
             <div>
               <Menu.Item as={Link} to="/settings">
                 <Icon name='user circle' size='large' />
@@ -300,7 +298,8 @@ class Dashboard extends React.Component {
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
-            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>
+            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }}
+              onClick={() => { this.setState({ openSectionBar: false }); this.props.resetChat() }}>
               <Header className='dashboard-header'>
                 <div>
                   <div>
