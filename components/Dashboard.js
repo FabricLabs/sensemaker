@@ -267,8 +267,8 @@ class Dashboard extends React.Component {
                   <Icon name='cog' size='large' />
                   <p className='icon-label'>Admin</p>
                 </Menu.Item>) : null}
-              <Menu.Item as={Link} >
-                <Icon name='log out' size='large' onClick={this.handleLogout} />
+              <Menu.Item as={Link} onClick={this.handleLogout}>
+                <Icon name='log out' size='large'  />
                 <p className='icon-label'>Log Out</p>
               </Menu.Item>
 
@@ -400,16 +400,16 @@ class Dashboard extends React.Component {
                 {/* <Menu.Item as={Link} to="/" onClick={this.handleSidebarToggle}>
               <div><Icon name={this.state.sidebarCollapsed ? 'arrow right' : 'arrow left'} /> {this.state.sidebarCollapsed ? '' : 'Collapse'}</div>
             </Menu.Item> */}
-                <Menu.Item as={Link} to="/settings">
+                {/* <Menu.Item as={Link} to="/settings">
                   <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
-                </Menu.Item>
-                {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
+                </Menu.Item> */}
+                {/* {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
                   <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
-                </Menu.Item>) : null}
+                </Menu.Item>) : null} */}
                 {/* <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}> */}
-                <Menu.Item onClick={this.handleLogout} loading={this.state.isLoggingOut}>
+                {/* <Menu.Item onClick={this.handleLogout} loading={this.state.isLoggingOut}>
                   <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
-                </Menu.Item>
+                </Menu.Item> */}
               </section>
             )}
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
