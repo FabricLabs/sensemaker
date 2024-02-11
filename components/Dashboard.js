@@ -448,7 +448,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
-          <Container fluid style={containerStyle}>
+          <Container fluid style={containerStyle} onClick={()=> this.setState({openSectionBar: false})}>
             {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
               <div>
