@@ -75,7 +75,7 @@ export class LexisScrapper extends StateScrapper {
     }, captchaResponse);
   }
 
-  protected async clickA(type: "statutes" | "constitution" | "rulesOfCourt", page: Page, $a: ElementHandle<SVGElement | HTMLElement>) {
+  protected async clickA(type: "statutes" | "constitution" | "rulesOfCourt" | "administrativeCodes", page: Page, $a: ElementHandle<SVGElement | HTMLElement>) {
     await $a.click();
 
     if (await this.waitForCaptchaOrSkip(page)) {
@@ -119,7 +119,11 @@ export class LexisScrapper extends StateScrapper {
     return this.parse('rulesOfCourt', url)
   }
 
-  public parse = async (type: "statutes" | "constitution" | "rulesOfCourt", url: string) => {
+  public parseAdministrativeCodes = async (url) => {
+    return this.parse('administrativeCodes', url)
+  }
+
+  public parse = async (type: "statutes" | "constitution" | "rulesOfCourt" | "administrativeCodes", url: string) => {
     let self = this;
     return await this.runPlaywright(async ({ request, page }) => {
       // const console_logger = (message) => {
@@ -189,7 +193,7 @@ export class LexisScrapper extends StateScrapper {
         await page.waitForSelector('a[data-action="toclink"]');
 
         let $as = await page.$$('a[data-action="toclink"]');
-        console.log(`There are ${green(`${$as.length}`)} documents to download in the page`);
+        console.log(`There are ${green(`${$as.length}`)} documents to downloaded in the page`);
         let downloads_this_loop = 0;
 
         let n_retries = 0;

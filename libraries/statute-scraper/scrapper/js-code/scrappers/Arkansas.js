@@ -6,7 +6,7 @@ class Arkansas extends LexisScrapper_1.LexisScrapper {
     constructor() {
         super(Arkansas.name);
         this.statutes = async () => {
-            return this.parseStatutes('https://advance.lexis.com/container?config=00JAA3ZTU0NTIzYy0zZDEyLTRhYmQtYmRmMS1iMWIxNDgxYWMxZTQKAFBvZENhdGFsb2cubRW4ifTiwi5vLw6cI1uX&crid=ecf8dfa4-9113-4c75-9a1f-4983f2a7878e');
+            this.parseStatutes('https://advance.lexis.com/container?config=00JAA3ZTU0NTIzYy0zZDEyLTRhYmQtYmRmMS1iMWIxNDgxYWMxZTQKAFBvZENhdGFsb2cubRW4ifTiwi5vLw6cI1uX&crid=ecf8dfa4-9113-4c75-9a1f-4983f2a7878e');
         };
         this.rulesOfCourt = async () => {
             let self = this;
@@ -18,7 +18,7 @@ class Arkansas extends LexisScrapper_1.LexisScrapper {
             }, 'https://opinions.arcourts.gov/ark/cr/en/nav_date.do?iframe=true');
         };
         this.constitution = async () => {
-            return this.parseConstitution('https://advance.lexis.com/container?config=0145JAA3MTdkMDQ2Mi01Yjg3LTQ5YjUtOTM2NS05MzE5ZjhjNGY5N2MKAFBvZENhdGFsb2cWtateMur7cOlHYN8TgmNk&crid=91b31b41-ea38-44f3-a9af-f6bc411dd799&prid=0b08b3c4-8896-4ee1-af3e-2b79bbe3e048');
+            this.parseConstitution('https://advance.lexis.com/container?config=0145JAA3MTdkMDQ2Mi01Yjg3LTQ5YjUtOTM2NS05MzE5ZjhjNGY5N2MKAFBvZENhdGFsb2cWtateMur7cOlHYN8TgmNk&crid=91b31b41-ea38-44f3-a9af-f6bc411dd799&prid=0b08b3c4-8896-4ee1-af3e-2b79bbe3e048');
         };
         this.administrativeCodes = async () => {
             let self = this;

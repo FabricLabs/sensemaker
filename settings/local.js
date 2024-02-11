@@ -123,7 +123,7 @@ module.exports = {
     token: null
   },
   statutes: {
-    enable: true,
+    enable: false,
     jurisdictions: [
       'Arkansas',
       'California',
@@ -183,6 +183,7 @@ module.exports = {
     enable: true
   },
   openai: {
+    enable: true,
     key: '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',
     model: 'gpt-4-1106-preview',
     temperature: 0

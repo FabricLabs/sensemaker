@@ -18,13 +18,13 @@ export class Ohio extends StateScrapper implements StateScrapperInterface {
   public statutes = async () => {
     const limiter = this.getLimiter();
 
-    await this.runCheerio(async ({ $, request, enqueueLinks }) => {
-      console.log(`${new Date} ${request.url}`);
+    await this.runCheerio(async ({ $, request, enqueueLinks, crawler }) => {
+      console.log(`${request.label} ${request.url}`);
       await limiter.schedule(() => {
         if (request.label == 'START') {
           enqueueLinks({
             strategy: 'same-domain',
-            selector: '.laws-table a',
+            selector: '.laws-table a[href]:not([href$=".pdf"])',
             userData: {
               label: 'TITLE'
             }
@@ -33,7 +33,7 @@ export class Ohio extends StateScrapper implements StateScrapperInterface {
         if (request.label == 'TITLE') {
           enqueueLinks({
             strategy: 'same-domain',
-            selector: '.laws-table a',
+            selector: '.laws-table a[href]:not([href$=".pdf"])',
             userData: {
               label: 'CHAPTER'
             }
@@ -42,7 +42,7 @@ export class Ohio extends StateScrapper implements StateScrapperInterface {
         if (request.label == 'CHAPTER') {
           enqueueLinks({
             strategy: 'same-domain',
-            selector: '.laws-table a',
+            selector: '.laws-table a[href]:not([href$=".pdf"])',
             userData: {
               label: 'SECTION'
             }

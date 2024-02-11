@@ -27,6 +27,19 @@ const OpenAIService = require('../services/openai');
  * The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
  */
 class Agent extends Service {
+  /**
+   * Create an instance of an {@link Agent}.
+   * @param {Object} [settings] Settings for the Agent.
+   * @param {String} [settings.name] The name of the agent.
+   * @param {String} [settings.type] The type of the agent.
+   * @param {String} [settings.description] The description of the agent.
+   * @param {Number} [settings.frequency] The frequency at which the agent operates.
+   * @param {Object} [settings.database] The database settings for the agent.
+   * @param {Object} [settings.fabric] The Fabric settings for the agent.
+   * @param {Object} [settings.parameters] The parameters for the agent.
+   * @param {String} [settings.model] The model for the agent.
+   * @returns {Agent} Instance of the Agent.
+   */
   constructor (settings = {}) {
     super(settings);
 
@@ -55,7 +68,7 @@ class Agent extends Service {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
-      model: 'gpt-4-1106-preview',
+      model: 'gpt-4-1106-preview', // TODO: default to llama2
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
@@ -140,7 +153,7 @@ class Agent extends Service {
     });
 
     // Assign prompts
-    this.settings.openai.model = this.settings.model;
+    // this.settings.openai.model = this.settings.model;
     // TODO: add configurable rules
     this.settings.openai.prompt = `RULES:\n- ${this.settings.rules.join('\n- ')}\n\n` + this.settings.prompt;
 
@@ -220,53 +233,98 @@ class Agent extends Service {
     }
   }
 
+  /**
+   * Query the agent with some text.
+   * @param {Object} request Request object.
+   * @param {String} request.query The query to send to the agent.
+   * @returns {AgentResponse} Response object.
+   */
   async query (request) {
     return new Promise(async (resolve, reject) => {
-      console.debug('[AGENT]', 'Querying:', request);
-
+      if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
-
       const messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
-      const responses = {
-        alpha: null,
-        beta: null,
-        gamma: null,
-        mistral: null,
-        openai: await this.services.openai._streamConversationRequest({
-          messages:  messages.concat([
-            { role: 'user', content: request.query }
-          ]),
-          tools: this.tools
-        }),
-        rag: null,
-        sensemaker: null
-      };
 
-      // Wait for all responses to resolve or reject.
-      await Promise.allSettled(Object.values(responses));
-      console.debug('[AGENT]', 'Prompt:', this.prompt);
-      console.debug('[AGENT]', 'Query:', request.query);
-      console.debug('[AGENT]', 'Responses:', responses);
+      // Check for local agent
+      if (this.settings.host) {
+        // Happy Path
+        if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        let response = null;
+        let base = null;
 
-      let response = '';
+        try {
+          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: this.settings.model,
+              prompt: this.prompt,
+              messages: messages
+            })
+          });
 
-      if (FAILURE_PROBABILTY > Math.random()) {
-        response = 'I am sorry, I do not understand.';
-      } else if (responses.openai && responses.openai.content) {
-        response = responses.openai.content;
+          base = await response.json();
+          if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
+
+          return resolve({
+            type: 'AgentResponse',
+            name: this.settings.name,
+            status: 'success',
+            query: request.query,
+            response: base,
+            content: base.choices[0].message.content
+          });
+        } catch (exception) {
+          console.error('[AGENT]', 'Could not fetch completions:', exception);
+          return reject(exception);
+        }
       } else {
-        console.debug('[AGENT]', 'No response:', responses);
-        response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
-      }
+        // Failure Path
+        const responses = {
+          alpha: null,
+          beta: null,
+          gamma: null,
+          mistral: null,
+          openai: (this.settings.openai.enable) ? await this.services.openai._streamConversationRequest({
+            messages:  messages.concat([
+              { role: 'user', content: request.query }
+            ]),
+            tools: this.tools
+          }) : null,
+          rag: null,
+          sensemaker: null
+        };
 
-      resolve({
-        type: 'AgentResponse',
-        name: this.settings.name,
-        status: 'success',
-        query: request.query,
-        response: response,
-        content: response
-      });
+        // Wait for all responses to resolve or reject.
+        await Promise.allSettled(Object.values(responses));
+        console.debug('[AGENT]', 'Prompt:', this.prompt);
+        console.debug('[AGENT]', 'Query:', request.query);
+        console.debug('[AGENT]', 'Responses:', responses);
+
+        let response = '';
+
+        if (FAILURE_PROBABILTY > Math.random()) {
+          response = 'I am sorry, I do not understand.';
+        } else if (responses.llama) {
+          response = responses.llama.content;
+        } else if (responses.openai && responses.openai.content) {
+          response = responses.openai.content;
+        } else {
+          console.debug('[AGENT]', 'No response:', responses);
+          response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
+        }
+
+        return resolve({
+          type: 'AgentResponse',
+          name: this.settings.name,
+          status: 'success',
+          query: request.query,
+          response: response,
+          content: response
+        });
+      }
     });
   }
 

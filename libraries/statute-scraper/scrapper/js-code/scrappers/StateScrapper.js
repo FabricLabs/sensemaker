@@ -45,7 +45,7 @@ class StateScrapper {
             }
             const options = {};
             options.requestHandlerTimeoutSecs = 999999;
-            options.headless = true;
+            options.headless = false;
             options.launchContext = {
                 launcher: playwright_extra_1.chromium,
                 launchOptions: {

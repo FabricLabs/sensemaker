@@ -157,8 +157,8 @@ class StatuteProvider extends Service {
     await this.syncJurisdictions();
     await this.syncConstitutions();
     await this.syncStatutes();
-    // await this.syncAdminCode();
-    // await this.syncCourtRules();
+    await this.syncAdminCode();
+    await this.syncCourtRules();
 
     this.commit();
     this.emit('sync', this.state);
@@ -166,17 +166,36 @@ class StatuteProvider extends Service {
     return this;
   }
 
-  async syncConstitutions () {
-    console.debug('[STATUTE] Syncing Constitutions...');
-    console.debug('[STATUTE] Scrappers:', this.scrappers)
+  async syncAdminCode () {
+    console.debug('[STATUTE] Syncing Administrative Code...');
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
-      if (!scrapper) console.error('[STATUTE] No scrapper for:', jurisdiction);
-      const constitution = await scrapper.constitution();
-      console.debug('[STATUTE] Got constitution:', constitution);
+      await scrapper.administrativeCodes();
+      // this._state.content.collections.documents[statutes.id] = statutes;
+      this.commit();
+      // this.emit('document', statutes);
+    }
+  }
+
+  async syncConstitutions () {
+    console.debug('[STATUTE] Syncing Constitutions...');
+    for (let jurisdiction of this.settings.jurisdictions) {
+      const scrapper = this.scrappers[jurisdiction];
+      await scrapper.constitution();
       // this._state.content.collections.documents[constitution.id] = constitution;
       this.commit();
       // this.emit('document', constitution);
+    }
+  }
+
+  async syncCourtRules () {
+    console.debug('[STATUTE] Syncing Court Rules...');
+    for (let jurisdiction of this.settings.jurisdictions) {
+      const scrapper = this.scrappers[jurisdiction];
+      await scrapper.rulesOfCourt();
+      // this._state.content.collections.documents[statutes.id] = statutes;
+      this.commit();
+      // this.emit('document', statutes);
     }
   }
 
