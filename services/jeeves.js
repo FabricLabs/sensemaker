@@ -2043,10 +2043,15 @@ class Jeeves extends Hub {
 
     });
 
+    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
+      return res.send(this.http.app.render());
+    });
 
+    // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
+
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -2065,7 +2070,10 @@ class Jeeves extends Hub {
 
         // Set Roles
         const roles = ['user'];
+
+        // Special Roles
         if (user.is_admin) roles.unshift('admin');
+        if (user.is_beta) roles.unshift('beta');
 
         // Create Token
         const token = new Token({
@@ -2083,6 +2091,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {
@@ -2102,6 +2111,7 @@ class Jeeves extends Hub {
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
+          isBeta: user.is_beta,
           isCompliant: user.is_compliant
         });
       } catch (error) {

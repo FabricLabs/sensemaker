@@ -122,6 +122,7 @@ const reLogin = (token) => {
         username: user.username,
         email: user.email,
         isAdmin: user.isAdmin,
+        isBeta: user.isBeta,
         isCompliant: user.isCompliant
       }
 

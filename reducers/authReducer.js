@@ -1,3 +1,5 @@
+'use strict';
+
 const {
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
@@ -16,10 +18,10 @@ const {
 
 const { SIGN_CONTRACT_SUCCESS } = require('../actions/contractActions');
 
-
 const initialState = {
   isAdmin: false,
   isAuthenticated: false,
+  isBeta: false,
   isCompliant: false,
   token: null,
   error: null,
@@ -31,12 +33,12 @@ const initialState = {
   checking: false,
 };
 
-function authReducer(state = initialState, action) {
+function authReducer (state = initialState, action) {
   switch (action.type) {
     case LOGIN_REQUEST:
       return { ...state, isAuthenticated: false, token: null, error: null, loading: true }; // reset state
     case LOGIN_SUCCESS:
-      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, loading: false };
+      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, loading: false };
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
       return { ...state, isAuthenticated: false, token: null, error: action.payload, loading: false };
