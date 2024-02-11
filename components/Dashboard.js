@@ -368,22 +368,11 @@ class Dashboard extends React.Component {
                     </jeeves-search>
                   </Menu.Item>
                 )}
-                {/* <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
-                  <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
-                </Menu.Item> */}
                 {ENABLE_STATUTE_SEARCH && (
                   <Menu.Item as={Link} to='/statues'>
                     <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {/* <Menu.Item as={Link} to="/conversations">
-                  <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label> : null}</div>
-                </Menu.Item> */}
-                {/* USER_IS_BETA && ENABLE_MATTERS && (
-                  <Menu.Item as={Link} to='/matters'>
-                    <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
-                  </Menu.Item>
-                ) */}
                 {(USER_IS_ALPHA || USER_IS_ADMIN) && ENABLE_DOCUMENT_SEARCH && (
                   <Menu.Item as={Link} to='/documents'>
                     <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div>
@@ -438,25 +427,6 @@ class Dashboard extends React.Component {
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
-                {/* <Menu.Item disabled>
-              <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item> */}
-                {/* <Menu.Item disabled as={Link} to="/workspaces">
-              <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Workspaces'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item> */}
-                {/* <Menu.Item as={Link} to="/" onClick={this.handleSidebarToggle}>
-              <div><Icon name={this.state.sidebarCollapsed ? 'arrow right' : 'arrow left'} /> {this.state.sidebarCollapsed ? '' : 'Collapse'}</div>
-            </Menu.Item> */}
-                {/* <Menu.Item as={Link} to="/settings">
-                  <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
-                </Menu.Item> */}
-                {/* {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
-                  <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
-                </Menu.Item>) : null} */}
-                {/* <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}> */}
-                {/* <Menu.Item onClick={this.handleLogout} loading={this.state.isLoggingOut}>
-                  <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
-                </Menu.Item> */}
               </section>
             )}
             {this.state.openMatters && (

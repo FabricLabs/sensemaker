@@ -202,7 +202,6 @@ class ConversationsList extends React.Component {
                       <div style={{ display: 'flex' }}>
 
                         <Link to={'/conversations/' + conversation.id} style={linkStyle}>
-                          {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
                           {conversation.title}
                         </Link>
                         <Icon

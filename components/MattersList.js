@@ -5,15 +5,7 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
-  Card,
-  Segment,
-  Header,
-  Label,
-  List,
-  Loader,
-  Button,
   Divider,
-  Icon,
   Menu
 } = require('semantic-ui-react');
 
@@ -64,7 +56,6 @@ class MattersList extends React.Component {
                   + New Matter
                 </p>
               </div>
-              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
               <Divider style={{ marginTop: '1em', marginBottom: '0' }} />
             </Menu.Item>
           </div>
@@ -74,7 +65,6 @@ class MattersList extends React.Component {
             return (<>
               <Menu.Item as={Link} to={"/matter/" + instance.id} >
                 <Link to={"/matter/" + instance.id} style={linkStyle}>
-                  {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
                   {instance.title}
                 </Link>
               </Menu.Item>
