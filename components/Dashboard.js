@@ -283,13 +283,15 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
+              {(USER_IS_BETA || USER_IS_ALPHA || USER_IS_ADMIN) && (
+                <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
+                  <Icon name='gavel' size='large' />
+                  <p className='icon-label'>Matters</p>
+                </Menu.Item>
+              )}
               <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
                 <Icon name='comment alternate outline' size='large' />
                 <p className='icon-label'>Conversations</p>
-              </Menu.Item>
-              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('matters')}>
-                <Icon name='bell' size='large' />
-                <p className='icon-label'>Matters</p>
               </Menu.Item>
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
