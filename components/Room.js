@@ -26,22 +26,48 @@ class Conversation extends React.Component {
     this.messagesEndRef = React.createRef();
   }
 
-  componentDidMount () {
-    const { id } = this.props;
-    const { message } = this.props.chat;
-
-    const actual = this.props.conversations.find(conversation => conversation.id == id);
-    this.setState({actualConversation: actual});
-
-    // this.props.fetchConversation(id);
-    this.props.getMessages({ conversation_id: id });
+  componentDidMount() {
+    this.fetchData(this.props.id);
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentWillUnmount () {
-    window.removeEventListener('resize', this.handleResize);
-
+  componentDidUpdate(prevProps) {
+    // Check if the conversation ID has changed
+    if (this.props.id !== prevProps.id) {
+      this.props.resetChat();
+      this.fetchData(this.props.id);
+    }
   }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+  }
+
+  fetchData(id) {
+    // Assuming you have a method to fetch a conversation by ID
+    const actual = this.props.conversations.find(conversation => conversation.id == id);
+    this.setState({ actualConversation: actual });
+
+    // Fetch new conversation details and messages
+    this.props.getMessages({ conversation_id: id });
+  }
+
+  // componentDidMount () {
+  //   const { id } = this.props;
+  //   const { message } = this.props.chat;
+
+  //   const actual = this.props.conversations.find(conversation => conversation.id == id);
+  //   this.setState({actualConversation: actual});
+
+  //   // this.props.fetchConversation(id);
+  //   this.props.getMessages({ conversation_id: id });
+  //   window.addEventListener('resize', this.handleResize);
+  // }
+
+  // componentWillUnmount () {
+  //   window.removeEventListener('resize', this.handleResize);
+
+  // }
   handleResize = () => {
     // Force a re-render when the window resizes
     this.forceUpdate();
