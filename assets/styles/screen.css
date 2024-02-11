@@ -161,7 +161,7 @@ jeeves-dashboard #main-sidebar{
   margin-top: 0.3em;
 }
 
-.close-sidebar-arrow{
+.collapse-sidebar-arrow{
   width: 20px;
   color: white;
   position: sticky;
@@ -169,14 +169,24 @@ jeeves-dashboard #main-sidebar{
   left: 90%;
   z-index: 1000;
 }
-.open-sidebar-arrow{
+.expand-sidebar-arrow {
   width: 20px;
+  height: 50px;
   color: white;
   position: absolute;
   top: 50%;
   left: 71%;
   z-index: 1000;
 }
+
+.expand-sidebar-arrow #expand-sidebar-icon {
+  display: none;
+}
+
+.expand-sidebar-arrow:hover #expand-sidebar-icon{
+  display: block;
+}
+
 .pusher {
   /* margin: 1em 0;
   height: 100%; */
