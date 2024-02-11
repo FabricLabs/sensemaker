@@ -69,7 +69,9 @@ class MatterView extends React.Component {
       this.props.fetchJurisdictions();
       this.props.fetchCourts();
     }
-
+    if (prevProps.matterConversations !== this.props.matterConversations) {
+      this.forceUpdate();
+    }
     if (prevProps.matters.current !== matters.current) {
       this.props.fetchMatterConversations(this.props.id);
       if (matters.current.file) {
@@ -197,7 +199,6 @@ class MatterView extends React.Component {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
-
     return (
       <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading} style={{ marginRight: '1em' }}>
         <section className='matter-header'>
@@ -416,32 +417,30 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
-            {this.state.filename &&
-              <GridRow>
-                <GridColumn width={3} />
-                <GridColumn width={13}>
-                  <div>
-                    <List>
-                      {(matterConversations && matterConversations.length > 0) && matterConversations
-                        .map(instance => {
-                          return (
-                            <div>
-                              <List.Item style={{ marginTop: '0.5em' }}>
-                                {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
-                                <Link to={'/matter/conversation/' + instance.id}>
-                                  {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
-                                  {instance.title}
-                                </Link>
+            <GridRow>
+              <GridColumn width={3} />
+              <GridColumn width={13}>
+                <div>
+                  <List>
+                    {(matterConversations && matterConversations.length > 0) && matterConversations
+                      .map(instance => {
+                        return (
+                          <div>
+                            <List.Item style={{ marginTop: '0.5em' }}>
+                              {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
+                              <Link to={'/matter/conversation/' + instance.id}>
+                                {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                                {instance.title}
+                              </Link>
 
-                              </List.Item>
-                              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
-                            </div>)
-                        })}
-                    </List>
-                  </div>
-                </GridColumn>
-              </GridRow>
-            }
+                            </List.Item>
+                            {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+                          </div>)
+                      })}
+                  </List>
+                </div>
+              </GridColumn>
+            </GridRow>
             <GridRow>
               <GridColumn width={13} textAlign='center'>
                 <Link to={'/matters/conversation/new/' + this.props.id} >
