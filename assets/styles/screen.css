@@ -172,6 +172,17 @@ jeeves-dashboard #main-sidebar{
   left: 90%;
   z-index: 1000;
 }
+.open-sidebar-arrow{
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center; */
+  width: 20px;
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  z-index: 1000;
+}
 .pusher {
   /* margin: 1em 0;
   height: 100%; */

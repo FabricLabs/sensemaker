@@ -34,6 +34,7 @@ class Conversation extends React.Component {
   componentDidUpdate(prevProps) {
     // Check if the conversation ID has changed
     if (this.props.id !== prevProps.id) {
+      this.props.resetChat();
       this.fetchData(this.props.id);
     }
   }

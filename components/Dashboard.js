@@ -82,7 +82,7 @@ class Dashboard extends React.Component {
         progress: 0,
         isLoading: true,
         isLoggingOut: false,
-        openPlayground: false,
+        openPlayground: true,
         openMatters: false,
         openLibrary: false,
         openSectionBar: false,
@@ -190,6 +190,7 @@ class Dashboard extends React.Component {
     switch (menu) {
       case 'playground':
         newState.openPlayground = true;
+        this.props.resetChat();
         break;
       case 'matters':
         newState.openMatters = true;
@@ -249,15 +250,30 @@ class Dashboard extends React.Component {
               </Menu.Item>
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
+            {!this.state.openSectionBar && (
+              <div className='open-sidebar-arrow'>
+                <Icon name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
+              </div>
+            )}
+
 
             <div>
-              <Menu.Item as='a'>
+              <Menu.Item as={Link} to="/settings">
                 <Icon name='user circle' size='large' />
-                <p className='icon-label'>Profile</p>
+                <p className='icon-label'>Settings</p>
               </Menu.Item>
+              {(this.props.auth.isAdmin) ? (
+                <Menu.Item as={Link} to="/settings/admin">
+                  <Icon name='cog' size='large' />
+                  <p className='icon-label'>Admin</p>
+                </Menu.Item>) : null}
+              <Menu.Item as={Link} >
+                <Icon name='log out' size='large' onClick={this.handleLogout} />
+                <p className='icon-label'>Log Out</p>
+              </Menu.Item>
+
               <Menu.Item as='a'>
-                <Icon name='cog' size='large' />
-                <p className='icon-label'>Admin</p>
+
               </Menu.Item>
             </div>
           </Sidebar>
@@ -265,61 +281,37 @@ class Dashboard extends React.Component {
             <div className='close-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
+            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>
+              <Header className='dashboard-header'>
+                <div>
+                  <div>
+                    <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
+                      <Popup.Header>Need Help?</Popup.Header>
+                      <Popup.Content>
+                        <p>Send us an email: <a href="mailto:support@jeeves.dev">support@trynovo.com</a></p>
+                        {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
+                      </Popup.Content>
+                    </Popup>
+                    <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
+                  </div>
+                  <div style={{ marginTop: '0.5em' }}>
+                    <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
+                      <Popup.Content>disconnected</Popup.Content>
+                    </Popup>
+                    <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
+                      <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
+                    </Popup>
+                  </div>
+                </div>
+              </Header>
+            </Menu.Item>
             {this.state.openPlayground && (
               <section>
-                <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => this.props.resetChat()}>
-                  <Header className='dashboard-header'>
-                    <div>
-                      <div>
-                        <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
-                          <Popup.Header>Need Help?</Popup.Header>
-                          <Popup.Content>
-                            <p>Send us an email: <a href="mailto:support@jeeves.dev">support@trynovo.com</a></p>
-                            {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
-                          </Popup.Content>
-                        </Popup>
-                        <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
-                      </div>
-                      <div style={{ marginTop: '0.5em' }}>
-                        <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
-                          <Popup.Content>disconnected</Popup.Content>
-                        </Popup>
-                        <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
-                          <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
-                        </Popup>
-                      </div>
-                    </div>
-                  </Header>
-                </Menu.Item>
                 <ConversationsList {...this.props} />
               </section>
             )}
-            {!this.state.openPlayground && (
+            {this.state.openLibrary && (
               <section className='fade-in'>
-                <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em' }} onClick={() => this.props.resetChat()}>
-                  <Header className='dashboard-header'>
-                    <div>
-                      <div>
-                        <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
-                          <Popup.Header>Need Help?</Popup.Header>
-                          <Popup.Content>
-                            <p>Send us an email: <a href="mailto:support@jeeves.dev">support@trynovo.com</a></p>
-                            {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
-                          </Popup.Content>
-                        </Popup>
-                        <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '55%', verticalAlign: 'top' }} />
-                      </div>
-                      <div style={{ marginTop: '0.5em' }}>
-                        <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
-                          <Popup.Content>disconnected</Popup.Content>
-                        </Popup>
-                        <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
-                          <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
-                        </Popup>
-                      </div>
-                    </div>
-                  </Header>
-                </Menu.Item>
                 {/* <Menu.Item>
               <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
                 <div className="ui icon fluid input">
