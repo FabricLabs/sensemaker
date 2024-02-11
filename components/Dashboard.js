@@ -189,7 +189,25 @@ class Dashboard extends React.Component {
 
     // Update the state based on the menu item clicked
     switch (menu) {
+      case 'home':
+        if (this.state.openPlayground && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openPlayground = true;
+          this.setState({ openSectionBar: false });
+          this.props.resetChat();
+        }
+        break;
       case 'playground':
+        if (this.state.openPlayground && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openPlayground = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        break;
+      case 'conversations':
         if (this.state.openPlayground && this.state.openSectionBar) {
           this.setState({ openSectionBar: false });
         } else {
@@ -261,21 +279,28 @@ class Dashboard extends React.Component {
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
               </Menu.Item>
-              <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('playground')}>
-                <Icon name='comment outline' size='large' />
-                <p className='icon-label'>Playground</p>
+              <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('home')}>
+                <Icon name='home' size='large' />
+                <p className='icon-label'>Home</p>
+              </Menu.Item>
+              <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
+                <Icon name='comment alternate outline' size='large' />
+                <p className='icon-label'>Conversations</p>
               </Menu.Item>
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('matters')}>
-                <Icon.Group size='large'>
-                  <Icon name='clipboard list' />
-                  <Icon name='bell' corner color='green' />
-                </Icon.Group>
+                <Icon name='bell' size='large' />
                 <p className='icon-label'>Matters</p>
               </Menu.Item>
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>
+              {USER_IS_ADMIN && (
+                <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+                <Icon name='lab' size='large' />
+                <p className='icon-label'>Lab</p>
+              </Menu.Item>
+              )}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             {!this.state.openSectionBar && (
