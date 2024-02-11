@@ -141,8 +141,8 @@ h1, h2, h3 {
 jeeves-dashboard #main-sidebar{
   overflow: hidden;
   height: 100vh;
-  min-width: 80px;
-  max-width: 80px;
+  min-width: 90px;
+  max-width: 90px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -152,11 +152,10 @@ jeeves-dashboard #main-sidebar{
   z-index: 1000;
 }
 
-
-@media (max-width: 1440px) {
+@media (max-width: 1440px) and (max-height: 800px){
   jeeves-dashboard #main-sidebar{
-    min-width: 100px;
-    max-width: 100px;
+    min-width: 120px;
+    max-width: 120px;
   }
 }
 .col-center{
@@ -187,6 +186,12 @@ jeeves-dashboard #main-sidebar{
   z-index: 1000;
   display: flex;
   align-items: center;
+}
+
+@media (max-width: 1440px) and (max-height: 800px){
+  .expand-sidebar-arrow{
+    left: 87%
+  }
 }
 
 .expand-sidebar-arrow #expand-sidebar-icon {
