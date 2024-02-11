@@ -56,6 +56,7 @@ const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
 const MattersHome = require('./MattersHome');
 const MattersNew = require('./MattersNew');
+const MattersList = require('./MattersList');
 const MatterChat = require('./MatterChat');
 const MatterNewChat = require('./MatterNewChat');
 const MatterView = require('./MatterView');
@@ -217,6 +218,8 @@ class Dashboard extends React.Component {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
+      overflowY: 'auto',
+      scrollbarGutter: 'stable both-edges',
     };
 
     const containerStyle = {
@@ -231,7 +234,7 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge'>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
             <div>
               <Menu.Item as='a' style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
@@ -268,12 +271,8 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Admin</p>
                 </Menu.Item>) : null}
               <Menu.Item as={Link} onClick={this.handleLogout}>
-                <Icon name='log out' size='large'  />
+                <Icon name='log out' size='large' />
                 <p className='icon-label'>Log Out</p>
-              </Menu.Item>
-
-              <Menu.Item as='a'>
-
               </Menu.Item>
             </div>
           </Sidebar>
@@ -295,7 +294,7 @@ class Dashboard extends React.Component {
                     <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
                   </div>
                   <div style={{ marginTop: '0.5em' }}>
-                    <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
+                    <Popup trigger={<Icon name='circle' color='green' size='tiny' />}>
                       <Popup.Content>disconnected</Popup.Content>
                     </Popup>
                     <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
@@ -306,7 +305,7 @@ class Dashboard extends React.Component {
               </Header>
             </Menu.Item>
             {this.state.openPlayground && (
-              <section>
+              <section className='fade-in'>
                 <ConversationsList {...this.props} />
               </section>
             )}
@@ -410,6 +409,11 @@ class Dashboard extends React.Component {
                 {/* <Menu.Item onClick={this.handleLogout} loading={this.state.isLoggingOut}>
                   <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
                 </Menu.Item> */}
+              </section>
+            )}
+            {this.state.openMatters && (
+              <section className='fade-in'>
+                <MattersList {...this.props} />
               </section>
             )}
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}

@@ -62,7 +62,16 @@ class MatterView extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { matters, jurisdictions, courts } = this.props;
+
+    if (this.props.id !== prevProps.id) {
+      this.props.fetchMatter(this.props.id);
+      this.props.fetchMatterConversations(this.props.id);
+      this.props.fetchJurisdictions();
+      this.props.fetchCourts();
+    }
+
     if (prevProps.matters.current !== matters.current) {
+      this.props.fetchMatterConversations(this.props.id);
       if (matters.current.file) {
         this.setState({ filename: matters.current.file })
       }
@@ -192,29 +201,29 @@ class MatterView extends React.Component {
     return (
       <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversationsLoading} style={{ marginRight: '1em' }}>
         <section className='matter-header'>
-        {this.state.isEditMode ? (
-          <Grid columns={2}>
-            <GridRow>
-              <GridColumn width={10} textAlign='center'>
-                <Input
-                  name='title'
-                  onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
-                  value={this.state.title}
-                  fluid
-                />
-              </GridColumn>
-              <GridColumn width={6} style={{display: 'flex'}}>
-                <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
-                <Button primary content='Save' size='medium' onClick={this.saveChanges} />
-              </GridColumn>
-            </GridRow>
-          </Grid>
-        ) : (
-          <div style={{ display: 'flex', alignItems:'center' }}>
-            <Header as='h1' style={{marginTop:'0', marginBottom:'0'}}>{current.title}</Header>
-            <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode}  style={{marginLeft:'1em', cursor: 'pointer'}}/>
-          </div>
-        )}
+          {this.state.isEditMode ? (
+            <Grid columns={2}>
+              <GridRow>
+                <GridColumn width={10} textAlign='center'>
+                  <Input
+                    name='title'
+                    onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
+                    value={this.state.title}
+                    fluid
+                  />
+                </GridColumn>
+                <GridColumn width={6} style={{ display: 'flex' }}>
+                  <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
+                  <Button primary content='Save' size='medium' onClick={this.saveChanges} />
+                </GridColumn>
+              </GridRow>
+            </Grid>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
+              <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
+            </div>
+          )}
         </section>
         <section className='matter-details'>
           <Grid columns={2}>
@@ -454,7 +463,7 @@ class MatterView extends React.Component {
             note={this.state.note}
           />
         </section>
-        <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header>
+        {/* <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header> */}
       </Segment>
     );
   }

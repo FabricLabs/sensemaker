@@ -7,15 +7,10 @@ const ReactDOMServer = require('react-dom/server');
 // Semantic UI
 const { Link } = require('react-router-dom');
 const {
-  Label,
-  Segment,
-  Pagination,
   Divider,
-  Button,
   Icon,
   Form,
   Menu,
-
 } = require('semantic-ui-react');
 
 // Components
@@ -110,7 +105,7 @@ class ConversationsList extends React.Component {
   };
 
   // Helper method to get the difference in days between two dates
-  getDaysAgo(date) {
+  getDaysAgo = (date) => {
     const today = new Date();
     const createdAt = new Date(date);
     const differenceInTime = today.getTime() - createdAt.getTime();
@@ -118,7 +113,7 @@ class ConversationsList extends React.Component {
   }
 
   // Method to group conversations by when they were created
-  groupConversationsByDate() {
+  groupConversationsByDate = () => {
     const groupedConversations = {
       today: [],
       yesterday: [],
@@ -146,7 +141,8 @@ class ConversationsList extends React.Component {
     return groupedConversations;
   }
 
-  renderConversationsSection(title, conversations) {
+  renderConversationsSection = (title, conversations) => {
+
     const linkStyle = {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -154,14 +150,15 @@ class ConversationsList extends React.Component {
       display: 'block',
       maxWidth: '92%',
       color: '#e4dfda',
+      textAlign: 'left',
     }
 
     return (
       <div>
         {(title !== 'Older') ? (
-          <h3 style={{ color: 'grey', marginBottom:'0', marginTop:'0.5em' }}>{title}</h3>
+          <h3 style={{ color: 'grey', marginBottom: '0', marginTop: '0', textTransform: 'none' }}>{title}</h3>
         ) : (
-          <h3 style={{ color: 'grey', cursor: 'pointer', marginBottom:'0', marginTop:'0.5em' }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
+          <h3 style={{ color: 'grey', cursor: 'pointer', marginBottom: '0', marginTop: '0', textTransform: 'none'  }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
         )}
         {((title !== 'Older') || (this.state.showOlder)) && (
           conversations.map(conversation => (
