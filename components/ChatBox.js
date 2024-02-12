@@ -566,7 +566,7 @@ class ChatBox extends React.Component {
             id='editTitleIcon'
             className='editTitleIcon'
             onClick={() => this.handleEditClick(title)}
-            title='Edit'
+            title='Edit Title'
             size='large'
             style={{ marginLeft:'1em', cursor: 'pointer', color: 'grey' }}
           />

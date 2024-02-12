@@ -201,6 +201,37 @@ jeeves-dashboard #main-sidebar{
 .expand-sidebar-arrow:hover #expand-sidebar-icon{
   display: block;
 }
+.settings-menu-container{
+  transition: transform 0.5s; /* Optional: if you want to smooth out any other effects */
+  overflow: hidden;
+}
+
+#settingsItem{
+  transform: translateY(20px);
+  transition: transform 0.5s;
+}
+
+#logoutItem{
+  opacity: 0;
+  visibility: hidden; /* Hides the item but allows for transition */
+  transform: translateY(20px); /* Start slightly below its final position */
+  max-height: 0; /* Prevents the item from taking up space */
+  transition: opacity 0.5s, visibility 0s 0.5s, transform 0.5s, max-height 0.5s;
+}
+
+.settings-menu-container:hover #logoutItem{
+  display: block; /* 'display: block' is still needed for structural reasons */
+  opacity: 1;
+  visibility: visible; /* Makes the item fully visible */
+  transform: translateY(0); /* Moves the item to its final position */
+  max-height: 77px; /* Adjust this value based on the actual height of your item */
+  transition-delay: 0s; /* Apply transition effects without delay */
+}
+
+.settings-menu-container:hover #settingsItem{
+  transform: translateY(0);
+}
+
 
 .pusher {
   /* margin: 1em 0;

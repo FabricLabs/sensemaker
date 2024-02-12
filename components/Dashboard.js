@@ -307,19 +307,21 @@ class Dashboard extends React.Component {
               </div>
             )}
             <div>
-              <Menu.Item as={Link} to="/settings">
-                <Icon name='user circle' size='large' />
-                <p className='icon-label'>Settings</p>
-              </Menu.Item>
               {(this.props.auth.isAdmin) ? (
-                <Menu.Item as={Link} to="/settings/admin">
-                  <Icon name='cog' size='large' />
+                <Menu.Item as={Link} to="/settings/admin" id='adminItem'>
+                  <Icon name='key' size='large' />
                   <p className='icon-label'>Admin</p>
                 </Menu.Item>) : null}
-              <Menu.Item as={Link} onClick={this.handleLogout}>
-                <Icon name='log out' size='large' />
-                <p className='icon-label'>Log Out</p>
-              </Menu.Item>
+              <div className='settings-menu-container'>
+                <Menu.Item as={Link} to="/settings" id='settingsItem'>
+                  <Icon name='cog' size='large' />
+                  <p className='icon-label'>Settings</p>
+                </Menu.Item>
+                <Menu.Item as={Link} onClick={this.handleLogout} id='logoutItem'>
+                  <Icon name='log out' size='large' />
+                  <p className='icon-label'>Log Out</p>
+                </Menu.Item>
+              </div>
             </div>
           </Sidebar>
           <Sidebar as={Menu} animation='overlay' icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
@@ -496,7 +498,7 @@ class Dashboard extends React.Component {
                 <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit= {this.props.conversationTitleEdit}/>} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew {...this.props} />} />
