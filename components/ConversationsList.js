@@ -200,16 +200,16 @@ class ConversationsList extends React.Component {
                   <div>
                     <Menu.Item as={Link} to={'/conversations/' + conversation.id} >
                       <div style={{ display: 'flex' }}>
-
                         <Link to={'/conversations/' + conversation.id} style={linkStyle}>
                           {conversation.title}
                         </Link>
                         <Icon
                           name='edit'
-                          id='editIcon'
-                          className='editIcon'
+                          // id='editIcon'
+                          // className='editIcon'
                           onClick={() => this.handleEditClick(conversation.id, conversation.title)}
                           title='Edit'
+                          style={{display:'none'}}
                         />
                       </div>
                     </Menu.Item>

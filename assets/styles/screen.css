@@ -618,6 +618,12 @@ fabric-motd {
 .conversationItem:hover div #editIcon {
   display: inline-block !important;
 }
+.link-back-matter div #editTitleIcon{
+  display: none !important;
+}
+.link-back-matter:hover div #editTitleIcon{
+  display: inline-block !important;
+}
 .conversation-line{
   display: flex;
   flex-direction: row;
