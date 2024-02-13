@@ -86,7 +86,6 @@ class Splash extends React.Component {
           </Routes>
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
-          {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
         <script src="/scripts/countdown.js"></script>
