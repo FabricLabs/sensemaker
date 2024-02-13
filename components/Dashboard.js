@@ -308,12 +308,12 @@ class Dashboard extends React.Component {
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>
-              {USER_IS_ADMIN && (
+              {/* USER_IS_ADMIN && (
                 <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='lab' size='large' />
                 <p className='icon-label'>Lab</p>
               </Menu.Item>
-              )}
+              ) */}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             {!this.state.openSectionBar && (

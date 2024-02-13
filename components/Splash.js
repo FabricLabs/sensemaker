@@ -7,15 +7,22 @@ const {
   ENABLE_REGISTRATION
 } = require('../constants');
 
+// Strings
+// TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
+const { PITCH_CTA_TEXT } = require('../locales/en');
+
 // Dependencies
 const React = require('react');
 const { Link, Route, Routes, Switch } = require('react-router-dom');
 
 // Semantic UI
 const {
+  Button,
   Card,
   Header,
   Image,
+  Label,
+  Menu,
   Segment
 } = require('semantic-ui-react');
 
@@ -33,15 +40,26 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-        <Image src="/images/novo-logo.svg" size='large' centered style={{ margin: '0 1em 2em 1em', maxWidth: '80%' }} />
+        <Menu>
+          <Image src="/images/novo-logo.svg" size='large' style={{ margin: '0 1em 2em 1em', maxHeight: '2em', float: 'right' }} />
+          <Button.Group floated='right'>
+            <Button as={Link} to='/sessions'>Sign In</Button>
+            <Button as={Link} primary>Try Now</Button>
+          </Button.Group>
+        </Menu>
         <section>
+          <Image src="/images/favicon.svg" size='large' style={{ float: 'left' }} />
+          <Header as='h1' style={{ fontSize: '2.5em', marginBottom: '0.5em' }}>{BRAND_NAME} <small><Label>beta</Label></small></Header>
+          <p style={{ fontSize: '1.5em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
+          <novo-splash-cta>
+            <Button>Try Now</Button>
+          </novo-splash-cta>
           <div id="countdown" className='center-elements-row'></div>
-          <p style={{ fontSize: '1.2em', marginTop: '2em', maxWidth: '28em' }}>{BRAND_NAME} is a purpose-built <strong>Artificial Intelligence (AI)</strong> trained on <strong>real-world case law</strong> under <strong>supervision by licensed attorneys</strong>.</p>
         </section>
         <fabric-component class="ui primary action container">
           <Routes>
-            <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
-            <Route path="/sessions/new" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+            {/* <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} /> */}
+            <Route path="/sessions" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
           </Routes>
@@ -81,7 +99,7 @@ class Splash extends React.Component {
           </Routes>
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
-          {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions/new">Log In &raquo;</Link></p>) : null}
+          {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
         <script src="/scripts/countdown.js"></script>
