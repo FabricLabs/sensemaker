@@ -2,6 +2,7 @@
 
 const {
   BRAND_NAME,
+  BRAND_TAGLINE,
   ENABLE_LOGIN
 } = require('../constants');
 
@@ -17,9 +18,15 @@ const {
   Button,
   Icon,
   Header,
+  Image,
   Input,
+  Label,
   Message
 } = require('semantic-ui-react');
+
+// Strings
+// TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
+const { PITCH_CTA_TEXT } = require('../locales/en');
 
 class Waitlist extends React.Component {
   constructor(props) {
@@ -101,42 +108,28 @@ class Waitlist extends React.Component {
     $('#login-form').slideDown();
   }
 
-  render() {
+  render () {
     const { email, error, joined } = this.state;
 
     return (
-      <Card fluid style={{ textAlign: 'left' }}>
-        <Card.Content>
-          {joined ? (
-            <div className="fade-in">
-              <Header as="h3">You're on the list!</Header>
-              <p>Thanks for your interest!  We'll notify you as soon as {BRAND_NAME} is available.</p>
-              <Button fluid onClick={this.resetForm} className='left labeled icon'><Icon name='left chevron' /> Back</Button>
-              {/* Google Analytics - Conversion Event */}
-              <script>
-                gtag('event', 'manual_event_SUBMIT_LEAD_FORM', {
-                  // <event_parameters>
-                });
-              </script>
-            </div>
-          ) : (
-            <div className="fade-in">
-              <Header>Join the Waitlist!</Header>
-              <Form onSubmit={this.handleSubmit}>
-                <Form.Field>
-                  <p style={{ marginBottom: '2em' }}>Be among the first to try {BRAND_NAME} by joining the waitlist.  Enter your email to be notified when we launch!</p>
-                  <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
-                </Form.Field>
-                <div>
-                  <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Join the Waitlist <Icon name='right chevron' /></Button>
-                  {error && <Message error visible content={error} className="fade-in" />}
-                  {/* <Button fluid color='blue' onClick={this.revealLoginForm}>I already have a login</Button> */}
-                </div>
-              </Form>
-            </div>
-          )}
-        </Card.Content>
-      </Card>
+      <div>
+        <div>
+          <Link to='/'><Image src="/images/novo-logo.svg" size='large' style={{ margin: '0 1em 2em 1em', maxHeight: '2em' }} /></Link>
+          <Button.Group floated='right'>
+            <Button as={Link} to='/sessions'>Sign In</Button>
+            <Button as={Link} to='/inquiries' primary>Try Now</Button>
+          </Button.Group>
+        </div>
+        <section>
+          <Image src="/images/favicon.svg" size='large' style={{ float: 'right', maxHeight: '20em' }} />
+          <Header as='h1' style={{ fontSize: '15em', marginBottom: '0.5em' }}>{BRAND_NAME} <small><Label>beta</Label></small></Header>
+          <p>{BRAND_TAGLINE}</p>
+          <p style={{ fontSize: '1.5em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
+          <novo-splash-cta>
+            <Button>Try Now</Button>
+          </novo-splash-cta>
+        </section>
+      </div>
     );
   }
 }
