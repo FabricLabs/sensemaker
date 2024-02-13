@@ -5,15 +5,7 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
-  Card,
-  Segment,
-  Header,
-  Label,
-  List,
-  Loader,
-  Button,
   Divider,
-  Icon,
   Menu
 } = require('semantic-ui-react');
 
@@ -54,7 +46,7 @@ class MattersList extends React.Component {
     }
 
     return (
-      <div>
+      <div >
         <h4 style={{ marginBottom: '0' }}>
           <div>
             <Menu.Item as={Link} to="/matters/new">
@@ -64,52 +56,25 @@ class MattersList extends React.Component {
                   + New Matter
                 </p>
               </div>
-              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
               <Divider style={{ marginTop: '1em', marginBottom: '0' }} />
-
-
             </Menu.Item>
           </div>
         </h4>
-
         {matters && matters.matters && matters.matters
           .map(instance => {
             return (<>
               <Menu.Item as={Link} to={"/matter/" + instance.id} >
                 <Link to={"/matter/" + instance.id} style={linkStyle}>
-                  {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
                   {instance.title}
                 </Link>
               </Menu.Item>
             </>
             )
           })}
-
-        {/* <Link to={"/matters/new"}>
-          <Button primary content='+ New Matter' />
-        </Link> */}
       </div>
     );
   }
 
-  //   <div>
-  //   <Menu.Item as={Link} to={'/conversations/' + conversation.id} >
-  //     <div style={{ display: 'flex' }}>
-
-  //       <Link to={'/conversations/' + conversation.id} style={linkStyle}>
-  //         {/* {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "} */}
-  //         {conversation.title}
-  //       </Link>
-  //       <Icon
-  //         name='edit'
-  //         id='editIcon'
-  //         className='editIcon'
-  //         onClick={() => this.handleEditClick(conversation.id, conversation.title)}
-  //         title='Edit'
-  //       />
-  //     </div>
-  //   </Menu.Item>
-  // </div>
 
   _toHTML() {
     return ReactDOMServer.renderToString(this.render());

@@ -102,6 +102,7 @@ const {
   fetchConversations,
   fetchConversation,
   fetchMatterConversations,
+  conversationTitleEdit,
 } = require('../actions/conversationActions');
 
 // ## Person Actions
@@ -215,6 +216,7 @@ async function main (input = {}) {
     signContract: signContract,
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
+    conversationTitleEdit: conversationTitleEdit,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
     fetchJurisdictions: fetchJurisdictions,
