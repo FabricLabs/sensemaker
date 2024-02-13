@@ -9,6 +9,7 @@ const {
   Card
 } = require('semantic-ui-react');
 
+const HeaderBar = require('./HeaderBar');
 const LoginForm = require('./LoginForm');
 
 class LoginPage extends React.Component {
@@ -17,6 +18,7 @@ class LoginPage extends React.Component {
 
     return (
       <jeeves-login-page class="fade-in">
+        <HeaderBar />
         <Card fluid>
           <Card.Content>
             <Card.Header as='h2'>Log In</Card.Header>

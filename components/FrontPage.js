@@ -22,6 +22,8 @@ const {
   Message
 } = require('semantic-ui-react');
 
+const HeaderBar = require('./HeaderBar');
+
 // Strings
 // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 const {
@@ -30,7 +32,7 @@ const {
   PITCH_CTA_TEXT
 } = require('../locales/en');
 
-class Waitlist extends React.Component {
+class FrontPage extends React.Component {
   constructor(props) {
     super(props);
 
@@ -115,24 +117,17 @@ class Waitlist extends React.Component {
 
     return (
       <div style={{ width: '500px' }}>
-        <div>
-          <Link to='/' style={{ float: 'left' }}><Image src="/images/novo-logo.svg" style={{ margin: '0 1em 2em 1em', height: '2em' }} /></Link>
-          <Button.Group floated='right'>
-            <Button as={Link} to='/sessions'>Sign In</Button>
-            <Button as={Link} to='/inquiries' primary>Try Now</Button>
-          </Button.Group>
-          <br style={{ clear: 'both' }} />
-        </div>
+        <HeaderBar />
         <section>
           <Image src="/images/favicon.svg" style={{ float: 'right', height: '10em' }} />
           <Header as='h1' style={{ fontSize: '7em', marginBottom: '0.5em' }}>{BRAND_NAME} <Label circular size='big' color='blue' style={{ position: 'relative', left: '-30px', verticalAlign: 'baseline' }}>beta</Label></Header>
           <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
           <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <Button primary size='huge' labelPosition='right'>Try Now <Icon name='right chevron' /></Button>
+          <Button primary size='huge' labelPosition='right' icon>Try Now <Icon name='right chevron' /></Button>
         </section>
       </div>
     );
   }
 }
 
-module.exports = Waitlist;
+module.exports = FrontPage;
