@@ -253,6 +253,7 @@ class Dashboard extends React.Component {
       margin: '1em 1em 0 1em',
       marginLeft: openSectionBar ? '1em' : 'calc(-300px + 1em)',
       transition: 'margin-left 0.5s ease-in-out',
+      maxHeight: '97vh',
     };
 
     return (
@@ -260,7 +261,7 @@ class Dashboard extends React.Component {
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
-        <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
+        <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
             <div>
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>

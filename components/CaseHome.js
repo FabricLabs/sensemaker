@@ -71,7 +71,7 @@ class CaseHome extends React.Component {
     const totalJurisdictions = 0;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <h1>Cases</h1>
         <p>{BRAND_NAME} is tracking <strong>{totalCases}</strong> cases in <strong>{totalJurisdictions}</strong> jurisictions.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
