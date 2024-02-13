@@ -82,13 +82,13 @@
   }
 }
 
-.splash{
+/* .splash {
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-}
+} */
 
 .signup-form{
   max-width: 500px;
@@ -145,7 +145,7 @@ jeeves-dashboard #main-sidebar{
   max-width: 90px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
   position: relative;
   border-right: 1px solid grey;
@@ -207,7 +207,7 @@ jeeves-dashboard #main-sidebar{
 }
 
 #settingsItem{
-  transform: translateY(20px);
+  /* transform: translateY(20px); */
   transition: transform 0.5s;
 }
 

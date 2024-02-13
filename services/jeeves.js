@@ -2049,7 +2049,7 @@ class Jeeves extends Hub {
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
-      return res.send(this.http.app.render());
+      return res.redirect('/sessions');
     });
 
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
