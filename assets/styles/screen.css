@@ -148,7 +148,7 @@ jeeves-dashboard #main-sidebar{
   justify-content: space-between;
   align-items: center;
   position: relative;
-  border-right: 1px solid grey;
+  /* border-right: 1px solid grey; */
   z-index: 1000;
 }
 
