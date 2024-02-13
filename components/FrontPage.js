@@ -1,8 +1,6 @@
 'use strict';
 
 const {
-  BRAND_NAME,
-  BRAND_TAGLINE,
   ENABLE_LOGIN
 } = require('../constants');
 
@@ -26,7 +24,11 @@ const {
 
 // Strings
 // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
-const { PITCH_CTA_TEXT } = require('../locales/en');
+const {
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  PITCH_CTA_TEXT
+} = require('../locales/en');
 
 class Waitlist extends React.Component {
   constructor(props) {
@@ -112,22 +114,21 @@ class Waitlist extends React.Component {
     const { email, error, joined } = this.state;
 
     return (
-      <div>
+      <div style={{ width: '500px' }}>
         <div>
-          <Link to='/'><Image src="/images/novo-logo.svg" size='large' style={{ margin: '0 1em 2em 1em', maxHeight: '2em' }} /></Link>
+          <Link to='/' style={{ float: 'left' }}><Image src="/images/novo-logo.svg" style={{ margin: '0 1em 2em 1em', height: '2em' }} /></Link>
           <Button.Group floated='right'>
             <Button as={Link} to='/sessions'>Sign In</Button>
             <Button as={Link} to='/inquiries' primary>Try Now</Button>
           </Button.Group>
+          <br style={{ clear: 'both' }} />
         </div>
         <section>
-          <Image src="/images/favicon.svg" size='large' style={{ float: 'right', maxHeight: '20em' }} />
-          <Header as='h1' style={{ fontSize: '15em', marginBottom: '0.5em' }}>{BRAND_NAME} <small><Label>beta</Label></small></Header>
-          <p>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.5em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <novo-splash-cta>
-            <Button>Try Now</Button>
-          </novo-splash-cta>
+          <Image src="/images/favicon.svg" style={{ float: 'right', height: '10em' }} />
+          <Header as='h1' style={{ fontSize: '7em', marginBottom: '0.5em' }}>{BRAND_NAME} <Label circular size='big' color='blue' style={{ position: 'relative', left: '-30px', verticalAlign: 'baseline' }}>beta</Label></Header>
+          <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
+          <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
+          <Button primary size='huge' labelPosition='right'>Try Now <Icon name='right chevron' /></Button>
         </section>
       </div>
     );
