@@ -373,6 +373,9 @@ class Dashboard extends React.Component {
                     </jeeves-search>
                   </Menu.Item>
                 )}
+                <Menu.Item as={Link} to='/conversations'>
+                  <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
+                </Menu.Item>
                 {ENABLE_STATUTE_SEARCH && (
                   <Menu.Item as={Link} to='/statues'>
                     <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
@@ -432,6 +435,7 @@ class Dashboard extends React.Component {
                     <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
                   </Menu.Item>
                 )}
+                <ConversationsList {...this.props} />
               </section>
             )}
             {this.state.openMatters && (

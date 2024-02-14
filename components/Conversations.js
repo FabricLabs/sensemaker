@@ -141,13 +141,11 @@ class Conversations extends React.Component {
 
     return (
       <Segment className='fade-in' fluid style={{ minHeight: '34em' }}>
+        <Button style={{ float: 'right' }} icon>New Conversation <Icon name='right chevron' /></Button>
         <h2>Conversations</h2>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
-          <div
-            key={conversation.id}
-            className="conversationItem"
-          >
+          <div key={conversation.id} className="conversationItem">
             <h4 style={{ marginBottom: '0.5em' }}>
               {this.state.editingID === conversation.id ? (
                 <Form>
