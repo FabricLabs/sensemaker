@@ -234,12 +234,12 @@ class Dashboard extends React.Component {
   };
 
   render() {
-    // const USER_IS_ADMIN = this.props.auth.isAdmin || false;
-    // const USER_IS_ALPHA = this.props.auth.isAlpha || false;
-    // const USER_IS_BETA = this.props.auth.isBeta || false;
-    const USER_IS_ADMIN = true;
-    const USER_IS_ALPHA = true;
-    const USER_IS_BETA = true;
+    const USER_IS_ADMIN = this.props.auth.isAdmin || false;
+    const USER_IS_ALPHA = this.props.auth.isAlpha || false;
+    const USER_IS_BETA = this.props.auth.isBeta || false;
+    // const USER_IS_ADMIN = true;
+    // const USER_IS_ALPHA = true;
+    // const USER_IS_BETA = true;
     const { openSectionBar } = this.state;
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
     const sidebarStyle = {
