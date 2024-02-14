@@ -151,7 +151,7 @@ class ConversationsList extends React.Component {
       maxWidth: '92%',
       color: '#e4dfda',
       textAlign: 'left',
-    }
+    };
 
     return (
       <div>
