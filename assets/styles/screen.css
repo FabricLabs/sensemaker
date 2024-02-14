@@ -89,9 +89,23 @@
   justify-content: center;
   align-items: center;
 } */
+.decline-invitation-form{  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.reset-password-form{
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .signup-form{
   max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .signup-form-group{

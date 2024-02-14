@@ -44,11 +44,10 @@ class Splash extends React.Component {
       <jeeves-splash class="fade-in splash">
         <fabric-component class="ui primary action fluid container">
           <Routes>
-            <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
-            <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
+            <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+            <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
             <Route path="/sessions" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
-            <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
           </Routes>
           {/* ENABLE_REGISTRATION ? (
             <Card>
@@ -61,8 +60,9 @@ class Splash extends React.Component {
         </fabric-component>
         {/* This is not good, to take this route apart, but fabric component up there won't let me handle my SignUpForm width like i want,
         right now i made this route apart, probably splash component needs a rebuild later */}
-        <section>
+        <section style={{ display: 'flex', justifyContent: 'center' }}>
           <Routes>
+            <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
             <Route path="/signup/:invitationToken"
               element={
                 <SignUpForm
