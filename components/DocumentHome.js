@@ -69,7 +69,7 @@ class DocumentHome extends React.Component {
 
     return (
       <fabric-document-home>
-        <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+        <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight:'100%' }}>
           <h1>Documents</h1>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>

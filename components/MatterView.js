@@ -200,7 +200,9 @@ class MatterView extends React.Component {
       pointing: 'above',
     };
     return (
-      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading} style={{ marginRight: '1em' }}>
+      <Segment
+        loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
+        style={{ marginRight: '1em', maxHeight: '100%' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
             <Grid columns={2}>

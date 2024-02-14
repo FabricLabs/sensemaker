@@ -63,7 +63,7 @@ class OpinionHome extends React.Component {
     const { filteredOpinions, searchQuery, searching } = this.state;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
         <h1>Opinions</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
