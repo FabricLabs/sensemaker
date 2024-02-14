@@ -123,6 +123,10 @@ h1, h2, h3 {
   text-transform: uppercase;
 }
 
+.ui.grid {
+  margin-top: 0;
+}
+
 .center-elements-row{
   display: flex;
   flex-direction: row;
@@ -268,7 +272,7 @@ jeeves-dashboard #main-sidebar{
   margin-right: auto;
   margin-top: 2em;
   max-height: 36em;
-  max-width: 30em;
+  max-width: 52em;
   padding-top: 2em;
 }
 
