@@ -3556,15 +3556,26 @@ class Jeeves extends Hub {
   }
 
   async _handleInquiryListRequest (req, res, next) {
-    try {
-      const inquiries = await this.db('inquiries')
-        .select('*')
-        .orderBy('created_at', 'desc');
-      res.send(inquiries);
-    } catch (error) {
-      console.error('Error fetching inquiries:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
+    res.format({
+      json: async () => {
+        if (!req.user || !req.user.is_admin) return res.status(401).json({ message: 'Unauthorized.' });
+
+        try {
+          const inquiries = await this.db('inquiries')
+            .select('*')
+            .orderBy('created_at', 'desc');
+          res.send(inquiries);
+        } catch (error) {
+          console.error('Error fetching inquiries:', error);
+          res.status(500).json({ message: 'Internal server error.' });
+        }
+      },
+      html: () => {
+        const page = new CaseHome({}); // TODO: use CaseView
+        const html = page.toHTML();
+        return res.send(this.http.app._renderWith(html));
+      }
+    });
   }
 
   async _handleInquiryCreateRequest (req, res, next) {
