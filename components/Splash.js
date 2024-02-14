@@ -3,6 +3,7 @@
 // Constants
 const {
   BRAND_NAME,
+  BRAND_TAGLINE,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION
 } = require('../constants');
@@ -27,6 +28,7 @@ const {
 } = require('semantic-ui-react');
 
 // Components
+const FrontPage = require('./FrontPage');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
@@ -40,25 +42,10 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-        <Menu>
-          <Image src="/images/novo-logo.svg" size='large' style={{ margin: '0 1em 2em 1em', maxHeight: '2em', float: 'right' }} />
-          <Button.Group floated='right'>
-            <Button as={Link} to='/sessions'>Sign In</Button>
-            <Button as={Link} primary>Try Now</Button>
-          </Button.Group>
-        </Menu>
-        <section>
-          <Image src="/images/favicon.svg" size='large' style={{ float: 'left' }} />
-          <Header as='h1' style={{ fontSize: '2.5em', marginBottom: '0.5em' }}>{BRAND_NAME} <small><Label>beta</Label></small></Header>
-          <p style={{ fontSize: '1.5em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <novo-splash-cta>
-            <Button>Try Now</Button>
-          </novo-splash-cta>
-          <div id="countdown" className='center-elements-row'></div>
-        </section>
         <fabric-component class="ui primary action container">
           <Routes>
-            {/* <Route path="/" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} /> */}
+            <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
+            <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
             <Route path="/sessions" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
             <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
@@ -99,7 +86,6 @@ class Splash extends React.Component {
           </Routes>
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
-          {ENABLE_LOGIN ? (<p style={{ marginTop: '2em' }}>Already have an account?  <Link to="/sessions">Log In &raquo;</Link></p>) : null}
           <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
         <script src="/scripts/countdown.js"></script>
