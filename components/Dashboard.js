@@ -26,6 +26,7 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
@@ -285,10 +286,12 @@ class Dashboard extends React.Component {
                   </Popup.Content>
                 </Popup>
               )}
-              <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
-                <Icon name='comment alternate outline' size='large' />
-                <p className='icon-label'>Conversations</p>
-              </Menu.Item>
+              {ENABLE_CONVERSATION_SIDEBAR && (
+                <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
+                  <Icon name='comment alternate outline' size='large' />
+                  <p className='icon-label'>Conversations</p>
+                </Menu.Item>
+              )}
               <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>

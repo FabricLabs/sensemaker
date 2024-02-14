@@ -42,7 +42,7 @@ class Splash extends React.Component {
 
     return (
       <jeeves-splash class="fade-in splash">
-        <fabric-component class="ui primary action container">
+        <fabric-component class="ui primary action fluid container">
           <Routes>
             <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
             <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries}/>} />
@@ -86,7 +86,7 @@ class Splash extends React.Component {
           </Routes>
         </section>
         <section className='fade-in' style={{ clear: 'both', textAlign: 'center' }}>
-          <p style={{ clear: 'both', marginTop: '4em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
+          <p style={{ clear: 'both', marginTop: '6em', fontSize: '0.8em' }}>&copy; 2024 Legal Tools &amp; Technology, Inc.</p>
         </section>
         <script src="/scripts/countdown.js"></script>
       </jeeves-splash>
