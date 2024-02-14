@@ -339,7 +339,9 @@ class Jeeves extends Hub {
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: '127.0.0.1:11434', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', prompt: this.settings.prompt });
     this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
+    this.usa = new Agent({ name: 'USA', host: '5.161.216.231', prompt: this.settings.prompt });
 
     // Pipeline Datasources
     this.datasources = {
@@ -710,7 +712,8 @@ class Jeeves extends Hub {
         this.gemini.query({ query, messages }),
         this.lennon.query({ query, messages }),
         this.llama.query({ query, messages }),
-        // this.mistral.query({ query, messages })
+        // this.mistral.query({ query, messages }),
+        this.mixtral.query({ query, messages })
       ]);
 
       // TODO: execute RAG query for additional metadata
@@ -2040,7 +2043,6 @@ class Jeeves extends Hub {
       } catch (error) {
         res.status(500).json({ message: 'Internal server error.', error });
       }
-
     });
 
     this.http._addRoute('GET', '/sessions', async (req, res, next) => {
@@ -2049,7 +2051,7 @@ class Jeeves extends Hub {
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
-      return res.send(this.http.app.render());
+      return res.redirect('/sessions');
     });
 
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
@@ -3554,15 +3556,26 @@ class Jeeves extends Hub {
   }
 
   async _handleInquiryListRequest (req, res, next) {
-    try {
-      const inquiries = await this.db('inquiries')
-        .select('*')
-        .orderBy('created_at', 'desc');
-      res.send(inquiries);
-    } catch (error) {
-      console.error('Error fetching inquiries:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
+    res.format({
+      json: async () => {
+        if (!req.user || !req.user.state || !req.user.state.roles.includes('admin')) return res.status(401).json({ message: 'Unauthorized.' });
+
+        try {
+          const inquiries = await this.db('inquiries')
+            .select('*')
+            .orderBy('created_at', 'desc');
+          res.send(inquiries);
+        } catch (error) {
+          console.error('Error fetching inquiries:', error);
+          res.status(500).json({ message: 'Internal server error.' });
+        }
+      },
+      html: () => {
+        const page = new CaseHome({}); // TODO: use CaseView
+        const html = page.toHTML();
+        return res.send(this.http.app._renderWith(html));
+      }
+    });
   }
 
   async _handleInquiryCreateRequest (req, res, next) {

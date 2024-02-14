@@ -13,8 +13,7 @@ const MattersHome = require('../../components/MattersHome');
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-      // TODO: pagination
-      const matters = await this.db('matters').where('creator', req.user.id).paginate({
+      const matters = await this.db('matters').where('creator', req.user.id).orderBy('updated_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: 1
       });
