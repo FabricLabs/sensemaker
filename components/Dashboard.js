@@ -380,22 +380,22 @@ class Dashboard extends React.Component {
                 )}
                 {(USER_IS_ALPHA || USER_IS_ADMIN) && ENABLE_DOCUMENT_SEARCH && (
                   <Menu.Item as={Link} to='/documents'>
-                    <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
                   </Menu.Item>
                 )}
                 {USER_IS_ADMIN && ENABLE_JURISDICTION_SEARCH && (
                   <Menu.Item as={Link} to='/jurisdictions'>
-                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
                   </Menu.Item>
                 )}
                 {USER_IS_ADMIN && ENABLE_COURT_SEARCH && (
                   <Menu.Item as={Link} to='/courts'>
-                    <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
                   </Menu.Item>
                 )}
                 {USER_IS_BETA && ENABLE_CASE_SEARCH && (
                   <Menu.Item as={Link} to='/cases'>
-                    <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
+                    <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
                   </Menu.Item>
                 )}
                 {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
@@ -413,7 +413,7 @@ class Dashboard extends React.Component {
                     <div>
                       <Icon name='book' />
                       {!this.state.sidebarCollapsed && 'Library'}
-                      &nbsp;<Label size='mini' color='orange'>disabled</Label>
+                      &nbsp;<div style={{ float: 'right' }}><Label size='mini' color='orange'>disabled</Label></div>
                     </div>
                   </Menu.Item>
                 )}

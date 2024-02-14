@@ -156,6 +156,10 @@ jeeves-dashboard #main-sidebar{
   z-index: 1000;
 }
 
+.left.sidebar.menu .label {
+  vertical-align: text-top;
+}
+
 @media (max-width: 1440px) and (max-height: 800px){
   jeeves-dashboard #main-sidebar{
     min-width: 120px;
