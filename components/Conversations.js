@@ -32,6 +32,7 @@ class Conversations extends React.Component {
     this.state = {
       currentPage: 1,
       windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
       editingID: null, // ID of the conversation being edited
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
@@ -51,7 +52,7 @@ class Conversations extends React.Component {
   }
 
   handleResize = () => {
-    this.setState({ windowWidth: window.innerWidth });
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
   }
 
   //handle when you click edit on a conversation title
@@ -108,7 +109,7 @@ class Conversations extends React.Component {
 
   render() {
     const { loading, error, conversations } = this.props;
-    const { currentPage, windowWidth, editLoading } = this.state;
+    const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
 
     if (loading) {
       return <div>Loading...</div>;
@@ -117,9 +118,8 @@ class Conversations extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
-
     // Calculate conversations for current page
-    const itemsPerPage = windowWidth < 480 ? 8 : windowWidth < 768 ? 13 : 18;
+    const itemsPerPage = windowHeight < 600 ? 11 : windowHeight < 769 ? 14 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
