@@ -24,7 +24,7 @@ const ChatBox = require('./ChatBox');
  * @param {Object} props Properties for the component.
  **/
 class Conversations extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.messagesEndRef = React.createRef();
@@ -38,11 +38,11 @@ class Conversations extends React.Component {
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount () {
+  componentWillUnmount() {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -97,7 +97,7 @@ class Conversations extends React.Component {
       } else {
         console.error('Title update Error:', error.message);
       }
-      this.setState({ editingID: null, editedTitle: '', editLoading: false});
+      this.setState({ editingID: null, editedTitle: '', editLoading: false });
     }
   };
 
@@ -106,7 +106,7 @@ class Conversations extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
-  render () {
+  render() {
     const { loading, error, conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
 
@@ -119,7 +119,7 @@ class Conversations extends React.Component {
     }
 
     // Calculate conversations for current page
-    const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
+    const itemsPerPage = windowWidth < 480 ? 8 : windowWidth < 768 ? 13 : 18;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
@@ -140,9 +140,11 @@ class Conversations extends React.Component {
     const conversationCount = conversations.length;
 
     return (
-      <Segment className='fade-in' fluid style={{ minHeight: '34em' }}>
-        <Button style={{ float: 'right' }} icon>New Conversation <Icon name='right chevron' /></Button>
-        <h2>Conversations</h2>
+      <Segment className='fade-in' fluid style={{ minHeight: '100%', maxHeight: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
+          <h2 style={{ marginTop: '0' }}>Conversations</h2>
+          <Button icon>New Conversation <Icon name='right chevron' /></Button>
+        </div>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div key={conversation.id} className="conversationItem">
