@@ -89,9 +89,23 @@
   justify-content: center;
   align-items: center;
 } */
+.decline-invitation-form{  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.reset-password-form{
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .signup-form{
   max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .signup-form-group{
@@ -154,6 +168,10 @@ jeeves-dashboard #main-sidebar{
   position: relative;
   /* border-right: 1px solid grey; */
   z-index: 1000;
+}
+
+.left.sidebar.menu .label {
+  vertical-align: text-top;
 }
 
 @media (max-width: 1440px) and (max-height: 800px){

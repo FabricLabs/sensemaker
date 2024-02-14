@@ -14,7 +14,8 @@ const {
   Message,
   Header,
   Segment,
-  Label
+  Label,
+  Image
 } = require('semantic-ui-react');
 
 class SignUpForm extends React.Component {
@@ -216,8 +217,9 @@ class SignUpForm extends React.Component {
 
     return (
       <div className='fade-in signup-form'>
+        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
         <Segment>
-          <Form  loading={loading} centered>
+          <Form loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
                 <Header as='h3' textAlign="center">Sign Up</Header>

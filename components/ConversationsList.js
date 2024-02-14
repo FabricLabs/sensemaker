@@ -156,7 +156,7 @@ class ConversationsList extends React.Component {
     return (
       <div>
         {(title !== 'Older') ? (
-          <h3 style={{ color: 'grey', marginBottom: '0', marginTop: '0', textTransform: 'none' }}>{title}</h3>
+          <h3 style={{ color: 'grey', marginBottom: '0.25em', marginTop: '0', textTransform: 'none' }}>{title}</h3>
         ) : (
           <h3 style={{ color: 'grey', cursor: 'pointer', marginBottom: '0', marginTop: '0', textTransform: 'none' }} onClick={() => this.setState({ showOlder: !this.state.showOlder })}>{title}</h3>
         )}
@@ -198,7 +198,7 @@ class ConversationsList extends React.Component {
                   </Form>
                 ) : (
                   <div>
-                    <Menu.Item as={Link} to={'/conversations/' + conversation.id} >
+                    <Menu.Item as={Link} to={'/conversations/' + conversation.id}>
                       <div style={{ display: 'flex' }}>
                         <Link to={'/conversations/' + conversation.id} style={linkStyle}>
                           {conversation.title}
@@ -259,20 +259,15 @@ class ConversationsList extends React.Component {
         <h4 style={{ marginBottom: '0' }}>
           <div>
             <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
-              <Divider style={{ marginTop: '0', marginBottom: '1em' }} />
               <div style={{ display: 'flex' }}>
                 <p style={linkStyle}>
-                  + New Conversation
+                  <Icon name='add' /> New Conversation
                 </p>
               </div>
               {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
-              <Divider style={{ marginTop: '1em', marginBottom: '0' }} />
-
-
             </Menu.Item>
           </div>
         </h4>
-
         <div>
           {groupedConversations.today.length > 0 && this.renderConversationsSection("Today", groupedConversations.today)}
           {groupedConversations.yesterday.length > 0 && this.renderConversationsSection("Yesterday", groupedConversations.yesterday)}
@@ -280,8 +275,6 @@ class ConversationsList extends React.Component {
           {groupedConversations.last30Days.length > 0 && this.renderConversationsSection("Last 30 Days", groupedConversations.last30Days)}
           {groupedConversations.older.length > 0 && this.renderConversationsSection("Older", groupedConversations.older)}
         </div>
-
-
       </div>
     );
   }

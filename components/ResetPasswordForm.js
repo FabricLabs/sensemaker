@@ -12,6 +12,7 @@ const {
   Form,
   Button,
   Message,
+  Image
 } = require('semantic-ui-react');
 
 const AskPasswordResetModal = require('./LoginFormAskResetModal');//this is the modal that lets you put your email to request a reset token
@@ -106,7 +107,7 @@ class ResetPasswordForm extends React.Component {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ newPassword,resetToken }),
+      body: JSON.stringify({ newPassword, resetToken }),
     });
 
     const timeoutPromise = new Promise((_, reject) => {
@@ -181,61 +182,64 @@ class ResetPasswordForm extends React.Component {
     };
 
     return (
-      <Form onSubmit={this.handleSubmit}>
-        {(!updatedPassword && !tokenError) && (
-          <section>
-            <p>Please choose a new Password for your account. It must have at least 8 characters, a capital letter and a number.</p>
-            <Form.Input
-              size='mini'
-              label='New Password'
-              type='password'
-              name='newPassword'
-              error={passwordErrorMessage}
-              onChange={this.handleInputChange}
-              autoComplete="new-password"
-              vale={newPassword}
-              required
-            />
-            <Form.Input
-              size='mini'
-              label='Confirm New Password'
-              type='password'
-              name='confirmedNewPassword'
-              error={passwordNotMatchError}
-              onChange={this.handleInputChange}
-              autoComplete="new-password"
-              value={confirmedNewPassword}
-              required
-            />
-            <Button
-              content='Submit'
-              icon='checkmark'
-              loading={loading}
-              type='submit'
-              fluid
-              primary
-              disabled={passwordError || !passwordMatch}
-            />
-          </section>
-        )}
-        {(updateError || tokenError) && (
-          <Message negative>
-            <p>{errorContent}</p>
-            {/* if the token has a problem/expired it lets you open the modal to ask for a password reset email */}
-            {tokenError && (
-              <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a>
-            )}
-          </Message>
-        )}
-        {updatedPassword && (
-          <Message positive>
-            <Message.Header>Password updated</Message.Header>
-            <p>Your new password has been changed successfully. Use your new password to log in.</p>
-            <a href="/sessions/new">Log In &raquo;</a>
-          </Message>
-        )}
-        <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal} />
-      </Form>
+      <div className='fade-in reset-password-form'>
+        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '2em' }} />
+        <Form onSubmit={this.handleSubmit}>
+          {(!updatedPassword && !tokenError) && (
+            <section>
+              <p>Please choose a new Password for your account. It must have at least 8 characters, a capital letter and a number.</p>
+              <Form.Input
+                size='mini'
+                label='New Password'
+                type='password'
+                name='newPassword'
+                error={passwordErrorMessage}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                vale={newPassword}
+                required
+              />
+              <Form.Input
+                size='mini'
+                label='Confirm New Password'
+                type='password'
+                name='confirmedNewPassword'
+                error={passwordNotMatchError}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                value={confirmedNewPassword}
+                required
+              />
+              <Button
+                content='Submit'
+                icon='checkmark'
+                loading={loading}
+                type='submit'
+                fluid
+                primary
+                disabled={passwordError || !passwordMatch}
+              />
+            </section>
+          )}
+          {(updateError || tokenError) && (
+            <Message negative>
+              <p>{errorContent}</p>
+              {/* if the token has a problem/expired it lets you open the modal to ask for a password reset email */}
+              {tokenError && (
+                <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a>
+              )}
+            </Message>
+          )}
+          {updatedPassword && (
+            <Message positive>
+              <Message.Header>Password updated</Message.Header>
+              <p>Your new password has been changed successfully. Use your new password to log in.</p>
+              <a href="/sessions/new">Log In &raquo;</a>
+            </Message>
+          )}
+          <AskPasswordResetModal open={pwdModalOpen} togglePasswordModal={this.togglePasswordModal} />
+        </Form>
+      </div>
     );
   }
 }
