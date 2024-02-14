@@ -1,9 +1,9 @@
 'use strict';
 
 // Constants
-const RELEASE_NAME = 'beta-1.0.0-RC1';
+const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 240000;
+const MAX_RESPONSE_TIME_MS = 240000; // 4 minutes
 
 // Fabric
 const GENESIS_HASH = '';
@@ -21,22 +21,25 @@ const ENABLE_REGISTRATION = true;
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_BILLING = false;
+const ENABLE_CONVERSATION_SIDEBAR = false;
+const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_MATTERS = true;
 const ENABLE_CASE_SEARCH = true;
-const ENABLE_COURT_SEARCH = false;
+const ENABLE_COURT_SEARCH = true;
 const ENABLE_JUDGE_SEARCH = false;
 const ENABLE_OPINION_SEARCH = false;
-const ENABLE_DOCUMENT_SEARCH = false;
+const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
-const ENABLE_JURISDICTION_SEARCH = false;
+const ENABLE_JURISDICTION_SEARCH = true;
 const ENABLE_REPORTER_SEARCH = false;
 const ENABLE_STATUTE_SEARCH = false;
 const ENABLE_VOLUME_SEARCH = false;
-const ENABLE_LIBRARY = false;
+const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
+const USER_MENU_HOVER_TIME_MS = 1000;
+const USER_HINT_TIME_MS = 3000;
 const INTEGRITY_CHECK = false;
 
 // Browser
@@ -61,6 +64,7 @@ module.exports = {
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_BILLING,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
@@ -85,5 +89,7 @@ module.exports = {
   BRAND_NAME,
   CHATGPT_MAX_TOKENS,
   AGENT_TEMPERATURE,
-  USER_QUERY_TIMEOUT_MS
+  USER_QUERY_TIMEOUT_MS,
+  USER_HINT_TIME_MS,
+  USER_MENU_HOVER_TIME_MS
 };

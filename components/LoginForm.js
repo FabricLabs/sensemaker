@@ -81,7 +81,7 @@ class LoginForm extends React.Component {
           </Form.Field>
           <Button.Group vertical fluid>
             <Button fluid primary icon labelPosition='right' loading={loading} type="submit" size={this.props.size}>Log In <Icon name='right chevron' /></Button>
-            <Button as={Link} to='/' fluid icon labelPosition='left' size='small'><Icon name='left chevron' />Back to the Waitlist</Button>
+            {/* <Button as={Link} to='/' fluid icon labelPosition='left' size='small'><Icon name='left chevron' />Back to the Waitlist</Button> */}
           </Button.Group>
           <p style={{ marginTop: '2em' }}>Forgot your password?  <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}

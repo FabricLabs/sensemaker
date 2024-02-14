@@ -41,7 +41,6 @@ const createInquiryRequest = () => ({ type: CREATE_INQUIRY_REQUEST });
 const createInquirySuccess = (data) => ({ type: CREATE_INQUIRY_SUCCESS, payload: data });
 const createInquiryFailure = (error) => ({ type: CREATE_INQUIRY_FAILURE, payload: error })
 
-
 // Thunk action creator
 const fetchInquiries = () => {
   return async (dispatch, getState) => {

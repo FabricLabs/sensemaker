@@ -26,6 +26,7 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
@@ -37,7 +38,9 @@ const {
   ENABLE_REPORTER_SEARCH,
   ENABLE_STATUTE_SEARCH,
   ENABLE_VOLUME_SEARCH,
-  ENABLE_LIBRARY
+  ENABLE_LIBRARY,
+  USER_HINT_TIME_MS,
+  USER_MENU_HOVER_TIME_MS
 } = require('../constants');
 
 // Components
@@ -47,14 +50,17 @@ const CaseView = require('./CaseView');
 const CourtHome = require('./CourtHome');
 const CourtView = require('./CourtView');
 const JudgeHome = require('./JudgeHome');
+const JurisdictionHome = require('./JurisdictionHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
 const PeopleHome = require('./PeopleHome');
 const VolumeHome = require('./VolumeHome');
 const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
+const ConversationsList = require('./ConversationsList');
 const MattersHome = require('./MattersHome');
 const MattersNew = require('./MattersNew');
+const MattersList = require('./MattersList');
 const MatterChat = require('./MatterChat');
 const MatterNewChat = require('./MatterNewChat');
 const MatterView = require('./MatterView');
@@ -67,7 +73,7 @@ const TermsOfUse = require('./TermsOfUse');
 const Bridge = require('./Bridge');
 
 class Dashboard extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.settings = Object.assign({
@@ -81,6 +87,11 @@ class Dashboard extends React.Component {
         progress: 0,
         isLoading: true,
         isLoggingOut: false,
+        openMatters: false,
+        openLibrary: false,
+        openConversations: false,
+        openSectionBar: false,
+
         steps: [
           {
             target: '.my-first-step',
@@ -105,7 +116,7 @@ class Dashboard extends React.Component {
     return (<Navigate to='/settings' />);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -173,17 +184,155 @@ class Dashboard extends React.Component {
     $('.ui.sidebar').sidebar('toggle');
   }
 
-  render () {
-    const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto' } : {};
+  handleMenuItemClick = (menu) => {
+    const newState = {
+      openMatters: false,
+      openLibrary: false,
+      openConversations: false,
+    };
+
+    // Update the state based on the menu item clicked
+    switch (menu) {
+      case 'home':
+        this.setState({ openSectionBar: false });
+        this.props.resetChat();
+        break;
+      case 'matters':
+        if (this.state.openMatters && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openMatters = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        break;
+      case 'conversations':
+        if (this.state.openConversations && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openConversations = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        break;
+      case 'library':
+        if (this.state.openLibrary && this.state.openSectionBar) {
+          this.setState({ openSectionBar: false });
+        } else {
+          newState.openLibrary = true;
+          this.setState({ openSectionBar: true });
+          this.props.resetChat();
+        }
+        break;
+      default:
+        console.error('Unknown menu item');
+        return;
+    }
+
+    // Set the new state
+    this.setState(newState);
+  };
+
+  render() {
+    const USER_IS_ADMIN = this.props.auth.isAdmin || false;
+    const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
+    const { openSectionBar } = this.state;
+    // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
+    const sidebarStyle = {
+      minWidth: '300px',
+      maxWidth: '300px',
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      overflowY: 'auto',
+      scrollbarGutter: 'stable both-edges',
+    };
+
+    const containerStyle = {
+      margin: '1em 1em 0 1em',
+      marginLeft: openSectionBar ? '1em' : 'calc(-300px + 1em)',
+      transition: 'margin-left 0.5s ease-in-out',
+    };
 
     return (
       <jeeves-dashboard style={{ height: '100%' }} className='fade-in'>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
-        <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}>
-          <Sidebar as={Menu} icon='labeled' inverted vertical visible={true} style={sidebarStyle} width='wide' size='huge'>
-            <Menu.Item as={Link} to="/" style={{paddingBottom: '0em'}} onClick={()=> this.props.resetChat()}>
+        {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
+        <div attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
+            <div>
+              <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
+                <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
+              </Menu.Item>
+              <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('home')}>
+                <Icon name='home' size='large' />
+                <p className='icon-label'>Home</p>
+              </Menu.Item>
+              {(USER_IS_BETA || USER_IS_ALPHA || USER_IS_ADMIN) && (
+                <Popup
+                  mouseEnterDelay={USER_HINT_TIME_MS}
+                  position='right center'
+                  trigger={(
+                    <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
+                      <Icon name='gavel' size='large' />
+                      <p className='icon-label'>Matters</p>
+                    </Menu.Item>
+                  )}>
+                  <Popup.Content>
+                    <p>Upload notes, files, and more to give context to a matter</p>
+                  </Popup.Content>
+                </Popup>
+              )}
+              {ENABLE_CONVERSATION_SIDEBAR && (
+                <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
+                  <Icon name='comment alternate outline' size='large' />
+                  <p className='icon-label'>Conversations</p>
+                </Menu.Item>
+              )}
+              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+                <Icon name='book' size='large' />
+                <p className='icon-label'>Library</p>
+              </Menu.Item>
+              {/* USER_IS_ADMIN && (
+                <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+                <Icon name='lab' size='large' />
+                <p className='icon-label'>Lab</p>
+              </Menu.Item>
+              ) */}
+            </div>
+            <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
+            {!this.state.openSectionBar && (
+              <div className='expand-sidebar-arrow'>
+                <Icon id='expand-sidebar-icon' name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
+              </div>
+            )}
+            <div>
+              {(this.props.auth.isAdmin) ? (
+                <Menu.Item as={Link} to="/settings/admin" id='adminItem'>
+                  <Icon name='key' size='large' />
+                  <p className='icon-label'>Admin</p>
+                </Menu.Item>) : null}
+              <div className='settings-menu-container'>
+                <Menu.Item as={Link} to="/settings" id='settingsItem'>
+                  <Icon name='cog' size='large' />
+                  <p className='icon-label'>Settings</p>
+                </Menu.Item>
+                <Menu.Item as={Link} onClick={this.handleLogout} id='logoutItem'>
+                  <Icon name='log out' size='large' />
+                  <p className='icon-label'>Log Out</p>
+                </Menu.Item>
+              </div>
+            </div>
+          </Sidebar>
+          <Sidebar as={Menu} animation='overlay' icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
+            <div className='collapse-sidebar-arrow'>
+              <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
+            </div>
+            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }}
+              onClick={() => { this.setState({ openSectionBar: false }); this.props.resetChat() }}>
               <Header className='dashboard-header'>
                 <div>
                   <div>
@@ -194,126 +343,119 @@ class Dashboard extends React.Component {
                         {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                       </Popup.Content>
                     </Popup>
-                    <Image src="/images/novo-logo-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
+                    <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
                   </div>
                   <div style={{ marginTop: '0.5em' }}>
-                    <Popup trigger={<Icon name='circle' color='red' size='tiny' />}>
+                    <Popup trigger={<Icon name='circle' color='green' size='tiny' />}>
                       <Popup.Content>disconnected</Popup.Content>
                     </Popup>
-                    <Popup trigger={<Label color='black' style={{borderColor:'transparent', backgroundColor: 'transparent'}}>{RELEASE_NAME}</Label>}>
+                    <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
                       <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
                     </Popup>
                   </div>
                 </div>
               </Header>
             </Menu.Item>
-            {/* <Menu.Item>
-              <jeeves-search fluid disabled placeholder='Find...' className="ui disabled search" title='Search is disabled.'>
-                <div className="ui icon fluid input">
-                  <input disabled autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
-                  <i aria-hidden="true" className="search icon"></i>
-                </div>
-              </jeeves-search>
-            </Menu.Item> */}
-            <Menu.Item as={Link} to="/" onClick={()=> this.props.resetChat()}>
-              <div><Icon name='home' /> {!this.state.sidebarCollapsed && 'Home'}</div>
-            </Menu.Item>
-            {ENABLE_STATUTE_SEARCH && (
-              <Menu.Item as={Link} to='/statues'>
-                <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
+            {this.state.openConversations && (
+              <section className='fade-in'>
+                <ConversationsList {...this.props} />
+              </section>
             )}
-            <Menu.Item as={Link} to="/conversations">
-              <div><Icon name='quote left' /> {!this.state.sidebarCollapsed && 'Conversations'} {this.state.conversationAlert ? <Label size='mini' color='red'>!</Label>: null}</div>
-            </Menu.Item>
-            {USER_IS_BETA && ENABLE_MATTERS && (
-              <Menu.Item as={Link} to='/matters'>
-                <div><Icon name='file' /> {!this.state.sidebarCollapsed && 'Matters'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
+            {this.state.openLibrary && (
+              <section className='fade-in'>
+                {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+                  <Menu.Item>
+                    <jeeves-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
+                      <div className="ui icon fluid input">
+                        <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
+                        <i aria-hidden="true" className="search icon"></i>
+                      </div>
+                    </jeeves-search>
+                  </Menu.Item>
+                )}
+                <Menu.Item as={Link} to='/conversations'>
+                  <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
+                </Menu.Item>
+                {ENABLE_STATUTE_SEARCH && (
+                  <Menu.Item as={Link} to='/statues'>
+                    <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                {(USER_IS_ALPHA || USER_IS_ADMIN) && ENABLE_DOCUMENT_SEARCH && (
+                  <Menu.Item as={Link} to='/documents'>
+                    <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_ADMIN && ENABLE_JURISDICTION_SEARCH && (
+                  <Menu.Item as={Link} to='/jurisdictions'>
+                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_ADMIN && ENABLE_COURT_SEARCH && (
+                  <Menu.Item as={Link} to='/courts'>
+                    <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_CASE_SEARCH && (
+                  <Menu.Item as={Link} to='/cases'>
+                    <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
+                  <Menu.Item as={Link} to='/judges'>
+                    <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_OPINION_SEARCH && (
+                  <Menu.Item as={Link} to='/opinions'>
+                    <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_LIBRARY && (
+                  <Menu.Item disabled>
+                    <div>
+                      <Icon name='book' />
+                      {!this.state.sidebarCollapsed && 'Library'}
+                      &nbsp;<div style={{ float: 'right' }}><Label size='mini' color='orange'>disabled</Label></div>
+                    </div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_PERSON_SEARCH && (
+                  <Menu.Item as={Link} to='/people'>
+                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_REPORTER_SEARCH && (
+                  <Menu.Item as={Link} to='/reporters'>
+                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                {USER_IS_BETA && ENABLE_VOLUME_SEARCH && (
+                  <Menu.Item as={Link} to='/volumes'>
+                    <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
+                  </Menu.Item>
+                )}
+                <ConversationsList {...this.props} />
+              </section>
             )}
-            {USER_IS_BETA && ENABLE_CASE_SEARCH && (
-              <Menu.Item as={Link} to='/cases'>
-                <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
+            {this.state.openMatters && (
+              <section className='fade-in'>
+                <MattersList {...this.props} />
+              </section>
             )}
-            {USER_IS_BETA && ENABLE_COURT_SEARCH && (
-              <Menu.Item as={Link} to='/courts'>
-                <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <Label size='mini' color='green'>New!</Label></div>
+            <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
+            <section>
+              <Menu.Item style={{ borderBottom: 0 }}>
+                <Bridge />
+                {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
+                <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
+                {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
-            )}
-            {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
-              <Menu.Item as={Link} to='/judges'>
-                <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {USER_IS_BETA && ENABLE_OPINION_SEARCH && (
-              <Menu.Item as={Link} to='/opinions'>
-                <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
-              <Menu.Item as={Link} to='/documents'>
-                <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {ENABLE_LIBRARY && (
-              <Menu.Item disabled>
-                <div>
-                  <Icon name='book' />
-                  {!this.state.sidebarCollapsed && 'Library'}
-                  &nbsp;<Label size='mini' color='orange'>disabled</Label>
-                </div>
-              </Menu.Item>
-            )}
-            {ENABLE_PERSON_SEARCH && (
-              <Menu.Item as={Link} to='/people'>
-                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {ENABLE_REPORTER_SEARCH && (
-              <Menu.Item as={Link} to='/reporters'>
-                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {ENABLE_JURISDICTION_SEARCH && (
-              <Menu.Item as={Link} to='/jurisdictions'>
-                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {ENABLE_VOLUME_SEARCH && (
-              <Menu.Item as={Link} to='/volumes'>
-                <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
-              </Menu.Item>
-            )}
-            {/* <Menu.Item disabled>
-              <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Resolutions'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item> */}
-            {/* <Menu.Item disabled as={Link} to="/workspaces">
-              <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Workspaces'} <Label size='mini' color='blue'>coming soon</Label></div>
-            </Menu.Item> */}
-            {/* <Menu.Item as={Link} to="/" onClick={this.handleSidebarToggle}>
-              <div><Icon name={this.state.sidebarCollapsed ? 'arrow right' : 'arrow left'} /> {this.state.sidebarCollapsed ? '' : 'Collapse'}</div>
-            </Menu.Item> */}
-            <Menu.Item as={Link} to="/settings">
-              <div><Icon name='cog' /> {!this.state.sidebarCollapsed && 'Settings'}</div>
-            </Menu.Item>
-            {(this.props.auth.isAdmin) ? (<Menu.Item as={Link} to="/settings/admin">
-              <div><Icon name='hammer' /> {!this.state.sidebarCollapsed && 'Admin'}</div>
-            </Menu.Item>) : null}
-            {/* <Menu.Item as={Link} to="/" onClick={this.handleLogout} loading={this.state.isLoggingOut}> */}
-            <Menu.Item  onClick={this.handleLogout} loading={this.state.isLoggingOut}>
-              <div><Icon name="sign-out" /> {!this.state.sidebarCollapsed && 'Logout'}</div>
-            </Menu.Item>
-            <Menu.Item style={{ borderBottom: 0 }}>
-              <Bridge />
-              {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
-              <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
-              {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
-            </Menu.Item>
+            </section>
           </Sidebar>
-        </div>
-        <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}>
-          <Container fluid style={{ margin: '1em 1em 0 1em' }}>
+
+          {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
+          <Container fluid style={containerStyle} onClick={() => this.setState({ openSectionBar: false })}>
             {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
               <div>
@@ -341,10 +483,10 @@ class Dashboard extends React.Component {
                   />
                 } />
                 <Route path="/workspaces" element={<Workspaces />} />
-                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation}/>}/>
-                <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation}/> } />
-                <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
-                <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat}/>} />
+                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
+                <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
                 {/**
                  * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
                  * - [ ] Judges
@@ -356,20 +498,20 @@ class Dashboard extends React.Component {
                  * - [ ] Volumes
                  * - [ ] Resolutions
                  */}
-                <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat}/>} />
-                <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat}/>} />
-                <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
-                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/jurisdictions" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat}/>} />
-                <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat}/>} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess}  chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation}/>} />
-                <Route path="/matters/new" element={<MattersNew {...this.props}/>} />
-                <Route path="/matter/:id" element={<MatterView {...this.props}/>} />
-                <Route path="/matter/conversation/:id" element={<MatterChat {...this.props}/>} />
-                <Route path="matters/conversation/new/:matterID" element={<MatterNewChat {...this.props}/>} />
+                <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
+                <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
+                <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />
+                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/reporters" element={<PeopleHome peoples={this.props.peoples} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
+                <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} />} />
+                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
+                <Route path="/matters/new" element={<MattersNew {...this.props} />} />
+                <Route path="/matter/:id" element={<MatterView {...this.props} />} />
+                <Route path="/matter/conversation/:id" element={<MatterChat {...this.props} />} />
+                <Route path="matters/conversation/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
@@ -377,6 +519,7 @@ class Dashboard extends React.Component {
               </Routes>
             )}
           </Container>
+          {/* </div> */}
         </div>
       </jeeves-dashboard>
     );

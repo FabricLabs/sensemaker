@@ -346,7 +346,7 @@ class SignUpForm extends React.Component {
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
                 <p>Please log in to access your account and start utilizing our services.</p>
                 <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
-                  <Button primary href="/sessions/new" >Log In</Button>
+                  <Button primary href="/sessions">Log In</Button>
                 </div>
               </Message>
             )}

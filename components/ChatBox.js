@@ -18,7 +18,6 @@ const InformationSidebar = require('./InformationSidebar');
 
 const { Link, useParams } = require('react-router-dom');
 
-
 // Semantic UI
 const {
   Button,
@@ -40,7 +39,7 @@ const {
 const TextareaAutosize = require('react-textarea-autosize').default;
 
 class ChatBox extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.settings = Object.assign({}, props);
@@ -63,19 +62,22 @@ class ChatBox extends React.Component {
       thumbsUpClicked: false,
       thumbsDownClicked: false,
       isTextareaFocused: false, //this is needed to work on the microphone icon color
+      editedTitle: '',
+      editLoading: false,
+      editingTitle: false,
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     $('#primary-query').focus();
     this.props.resetChat();
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     const { messages } = this.props.chat;
 
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
@@ -105,9 +107,13 @@ class ChatBox extends React.Component {
       }
       this.scrollToBottom();
     }
+
+    if (this.state.editLoading && !this.props.conversations.loading) {
+      this.setState({ editLoading: false });
+    }
   }
 
-  componentWillUnmount () {
+  componentWillUnmount() {
     this.props.resetChat();
     clearInterval(this.watcher); //ends de sync in case you switch to other component
 
@@ -512,7 +518,78 @@ class ChatBox extends React.Component {
     }
   }
 
-  render () {
+  conversationTitle = (title) => {
+    if (this.state.editingTitle) {
+      return (
+        <Form style={{ width: '90%', maxWidth:'600px' }}>
+          <div className='conversation-line' >
+            <div className='conversation-line-input'>
+              <Form.Input
+                type="text"
+                maxLength={255}
+                value={this.state.editedTitle}
+                onChange={(e) => this.setState({ editedTitle: e.target.value })}
+                autoFocus
+                fluid
+                loading={this.state.editLoading}
+                secondary
+              />
+            </div>
+            <Icon
+              name='check'
+              className='saveIcon'
+              style={{ cursor: 'pointer', color: 'grey' }}
+              onClick={() => this.handleSaveEditing()}
+              title='Save'
+            />
+            <Icon
+              name='cancel'
+              className='cancelIcon'
+              style={{ cursor: 'pointer', color: 'grey' }}
+              onClick={this.handleCancelEditing}
+              title='Cancel'
+            />
+          </div>
+        </Form>
+      )
+    }
+    else {
+      return (
+        <div style={{ display: 'flex' }}>
+          {this.state.editedTitle ? (
+            <Header as="h2">{this.state.editedTitle}</Header>
+          ) : (
+            <Header as="h2">{title}</Header>
+          )}
+          <Icon
+            name='edit'
+            id='editTitleIcon'
+            className='editTitleIcon'
+            onClick={() => this.handleEditClick(title)}
+            title='Edit Title'
+            size='large'
+            style={{ marginLeft:'1em', cursor: 'pointer', color: 'grey' }}
+          />
+        </div>
+      )
+    }
+  }
+
+
+  handleEditClick = (currentTitle) => {
+    this.setState({ editingTitle: true, editedTitle: currentTitle });
+  };
+
+  handleSaveEditing = async () => {
+    await this.props.conversationTitleEdit(this.props.conversationID, this.state.editedTitle);
+    this.setState({ editingTitle: false, editLoading: true });
+  };
+  handleCancelEditing = () => {
+    // Reset editing state without saving
+    this.setState({ editingTitle: false, editedTitle: '' });
+  };
+
+  render() {
     const { messages } = this.props.chat;
     const {
       loading,
@@ -595,7 +672,7 @@ class ChatBox extends React.Component {
           />
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (
-            <Message info style={announcementStyle}>
+            <Message info style={announcementStyle} className='slide-in'>
               <Message.Header>
                 <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle), }} />
               </Message.Header>
@@ -637,9 +714,10 @@ class ChatBox extends React.Component {
           )}
           {(conversationID && actualConversation) && (
             <div className='link-back-matter' >
-              <Header as="h2">{actualConversation.title}</Header>
+              {/* <Header as="h2">{actualConversation.title}</Header> */}
+              {this.conversationTitle(this.state.editedTitle? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}>Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
             </div>
           )}
@@ -647,7 +725,7 @@ class ChatBox extends React.Component {
           {matterID && (
             <div className='link-back-matter'>
               <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}>Back to Matter</Link></Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
           {/* The chat messages start rendering here */}
