@@ -1571,6 +1571,9 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Health
+    this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
+
     // Files
     this.http.express.post('/files', this.uploader.single('file'), ROUTES.files.create.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
@@ -3703,6 +3706,12 @@ class Jeeves extends Hub {
         content: exception
       });
     }
+  }
+
+  async _handleHealthRequest (req, res, next) {
+    res.send({
+      status: 'healthy'
+    });
   }
 
   async _handlePeopleSearchRequest (req, res, next) {
