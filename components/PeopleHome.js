@@ -62,7 +62,7 @@ class PeopleHome extends React.Component {
     const { filteredPeople, searchQuery, searching } = this.state;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
         <h1>People</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>

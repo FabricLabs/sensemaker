@@ -62,7 +62,7 @@ class VolumeHome extends React.Component {
     const { filteredVolumes, searchQuery, searching } = this.state;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
         <h1>Volumes</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
