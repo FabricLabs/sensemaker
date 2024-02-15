@@ -44,7 +44,7 @@ class AskPasswordResetModal extends React.Component {
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
                 reject(new Error("Email could not be sent. Please check your internet connection."));
-            }, 15000);
+            }, 60000);
         });
 
         try {
