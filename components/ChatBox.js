@@ -29,7 +29,7 @@ const {
   GridColumn,
   Header,
   Icon,
-  Image,
+  Input,
   Message,
   Popup,
   Progress,
@@ -106,10 +106,6 @@ class ChatBox extends React.Component {
         }
       }
       this.scrollToBottom();
-    }
-
-    if (this.state.editLoading && !this.props.conversations.loading) {
-      this.setState({ editLoading: false });
     }
   }
 
@@ -521,10 +517,10 @@ class ChatBox extends React.Component {
   conversationTitle = (title) => {
     if (this.state.editingTitle) {
       return (
-        <Form style={{ width: '90%', maxWidth:'600px' }}>
+        <Form style={{ width: '90%', maxWidth: '600px' }}>
           <div className='conversation-line' >
             <div className='conversation-line-input'>
-              <Form.Input
+              <Input
                 type="text"
                 maxLength={255}
                 value={this.state.editedTitle}
@@ -568,7 +564,7 @@ class ChatBox extends React.Component {
             onClick={() => this.handleEditClick(title)}
             title='Edit Title'
             size='large'
-            style={{ marginLeft:'1em', cursor: 'pointer', color: 'grey' }}
+            style={{ marginLeft: '1em', cursor: 'pointer', color: 'grey' }}
           />
         </div>
       )
@@ -581,8 +577,11 @@ class ChatBox extends React.Component {
   };
 
   handleSaveEditing = async () => {
+    this.setState({ editLoading: true });
+    //forced delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     await this.props.conversationTitleEdit(this.props.conversationID, this.state.editedTitle);
-    this.setState({ editingTitle: false, editLoading: true });
+    this.setState({ editingTitle: false, editLoading: false });
   };
   handleCancelEditing = () => {
     // Reset editing state without saving
@@ -715,7 +714,7 @@ class ChatBox extends React.Component {
           {(conversationID && actualConversation) && (
             <div className='link-back-matter' >
               {/* <Header as="h2">{actualConversation.title}</Header> */}
-              {this.conversationTitle(this.state.editedTitle? this.state.editedTitle : actualConversation.title)}
+              {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
@@ -725,7 +724,7 @@ class ChatBox extends React.Component {
           {matterID && (
             <div className='link-back-matter'>
               <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}><Icon name='left chevron' /> Back to Matter</Link></Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
           {/* The chat messages start rendering here */}
