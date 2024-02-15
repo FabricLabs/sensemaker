@@ -108,13 +108,7 @@ const conversationTitleEdit = (id, title) => {
         }, 15000);
       });
       const response = await Promise.race([timeoutPromise, fetchPromise]);
-      if (response.ok) {
-        //forced delay
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        dispatch(conversationTitleEditSuccess());
-      } else {
-        error('API request failed with status:', response.status);
-      }
+      dispatch(conversationTitleEditSuccess());    
     } catch (error) {
       dispatch(conversationTitleEditFailure(error));
     }

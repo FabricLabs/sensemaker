@@ -224,16 +224,9 @@ class ConversationsList extends React.Component {
   }
 
   render() {
-    const { loading, error, conversations } = this.props;
+    const { conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
 
-    if (loading) {
-      return <div>Loading...</div>;
-    }
-
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
 
     // Calculate conversations for current page
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;

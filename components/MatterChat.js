@@ -24,12 +24,9 @@ class MatterChat extends React.Component {
 
   componentDidMount () {
     const { id } = this.props;
-    const { message } = this.props.chat;
 
     const actual = this.props.conversations.find(conversation => conversation.id == id);
     this.setState({actualConversation: actual});
-
-    console.log("actual conver",actual);
 
     // this.props.fetchConversation(id);
     this.props.getMessages({ conversation_id: id });
@@ -60,7 +57,7 @@ class MatterChat extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-    console.log("actual conversation", this.state.actualConversation);
+    
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
            <ChatBox
