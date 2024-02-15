@@ -179,6 +179,9 @@ module.exports = {
     username: 'dbuser_jeeves_dev',
     password: ''
   },
+  ollama: {
+    host: 'ollama.jeeves.dev'
+  },
   pacer: {
     enable: true
   },
