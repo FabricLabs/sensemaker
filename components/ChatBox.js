@@ -537,6 +537,7 @@ class ChatBox extends React.Component {
               style={{ cursor: 'pointer', color: 'grey' }}
               onClick={() => this.handleSaveEditing()}
               title='Save'
+              disabled={this.state.editLoading}
             />
             <Icon
               name='cancel'
@@ -544,6 +545,7 @@ class ChatBox extends React.Component {
               style={{ cursor: 'pointer', color: 'grey' }}
               onClick={this.handleCancelEditing}
               title='Cancel'
+              disabled={this.state.editLoading}
             />
           </div>
         </Form>
