@@ -94,7 +94,6 @@ class AdminSettings extends React.Component {
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
 
-    console.log(this.props.users);
 
     // Admin Tabs
     // TODO: add users to admin settings
@@ -352,33 +351,7 @@ class AdminSettings extends React.Component {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
           <Header as='h3'>Create User</Header>
           <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
-          <AdminUsers {...this.props}/>
-          {/* <Table celled striped>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>ID</Table.HeaderCell>
-                <Table.HeaderCell>Username</Table.HeaderCell>
-                <Table.HeaderCell>Created</Table.HeaderCell>
-                <Table.HeaderCell>Modified</Table.HeaderCell>
-                <Table.HeaderCell></Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {this.props.users && this.props.users.users && this.props.users.users.length > 0 ? (
-                this.props.users.users.map((instance) => (
-                  <Table.Row key={instance.id}>
-                    <Table.Cell>{instance.id}</Table.Cell>
-                    <Table.Cell>{instance.username}</Table.Cell>
-                    <Table.Cell>{instance.created_at}</Table.Cell>
-                    <Table.Cell>{instance.modified_at}</Table.Cell>
-                    <Table.Cell>
-                      <Button>Reactivate</Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))
-              ) : (<Loader active inline="centered" />)}
-            </Table.Body>
-          </Table> */}
+          <AdminUsers {...this.props} />
         </Tab.Pane>
       },
       {
