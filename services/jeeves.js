@@ -602,12 +602,14 @@ class Jeeves extends Hub {
       const created = now.toISOString();
 
       // Add Request to Database
+      // TODO: assign `then` to allow async processing
       const inserted = await this.db('requests').insert({
         created_at: toMySQLDatetime(now),
         content: JSON.stringify(request)
       });
 
       // Store user request
+      // TODO: assign `then` to allow async processing
       const responseMessage = await this.db('messages').insert({
         conversation_id: request.conversation_id,
         user_id: 1,
@@ -615,7 +617,7 @@ class Jeeves extends Hub {
         content: `${this.settings.name} is researching your question...`
       });
 
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Response Message:', responseMessage);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Created response placeholder message:', responseMessage);
 
       // Create Request Message
       const message = Message.fromVector(['TimedRequest', JSON.stringify({
@@ -628,10 +630,10 @@ class Jeeves extends Hub {
       this.emit('request', { id: inserted [0] });
 
       // TODO: prepare maximum token length
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
       // Compute most relevant tokens
-      const caseCount = await this.db('cases').count('id as count').first();
+      // const caseCount = await this.db('cases').count('id as count').first();
       // const hypotheticals = await this.lennon.query({ query: request.query });
       const words = this.importantWords(request.query);
       const phrases = this.importantPhrases(request.query);
@@ -645,18 +647,18 @@ class Jeeves extends Hub {
       */
 
       // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
 
       // Format Metadata
       const meta = `metadata:\n` +
         `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
         `  cases:\n` +
         cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
-        `\n` +
-        `  counts:\n` +
-        `    cases: ` + caseCount.count + `\n` +
-        ``;
+        // `\n` +
+        // `  counts:\n` +
+        // `    cases: ` + caseCount.count +
+        `\n`;
 
       // Format Query Text
       const query = `---\n` +
@@ -3167,6 +3169,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
+      if (!this.courtlistener) return res.send({ message: 'CourtListener is not available.' });
       const request = req.body;
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
 
