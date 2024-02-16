@@ -4,8 +4,6 @@ module.exports = async function (req, res) {
   console.debug('[NOVO]', 'Adding context to matter...');
   try {
     const { title, description, plaintiff, defendant, representing, jurisdiction_id, court_id } = req.body;
-    console.log("toda la data");
-    console.log(title, description, plaintiff, defendant, representing, jurisdiction_id, court_id );
     const update = await this.db('matters')
       .where({ id: req.params.id })
       .update({

@@ -658,7 +658,20 @@ fabric-motd {
       align-items: center !important;
   }
 }
-
+/* Admin - users settings */
+.account-creator{
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.users-section{
+  margin-top: 2em;
+}
+.users-section-head{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 /* Conversations CSS */
 .conversationItem div .editIcon{
   display: none !important;

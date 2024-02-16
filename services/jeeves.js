@@ -124,6 +124,9 @@ const ROUTES = {
   },
   courts: {
     view: require('../routes/courts/court_view'),
+  },
+  users: {
+    list: require('../routes/users/list_users'),
   }
 };
 
@@ -1602,6 +1605,9 @@ class Jeeves extends Hub {
 
     // Jurisdictions
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
+
+    // Users
+    this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));

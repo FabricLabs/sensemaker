@@ -145,6 +145,12 @@ const {
   editMatter,
 } = require('../actions/mattersActions');
 
+// ## Users Actions
+const {
+  fetchUsers,
+  fetchUser
+} = require('../actions/usersActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -205,7 +211,8 @@ async function main (input = {}) {
       token: state.auth.token,
       stats: state.stats,
       matters: state.matters,
-      jurisdictions: state.jurisdictions
+      jurisdictions: state.jurisdictions,
+      users: state.users,
     }
   };
 
@@ -265,6 +272,8 @@ async function main (input = {}) {
     removeFile: removeFile,
     fetchMatterConversations: fetchMatterConversations,
     editMatter: editMatter,
+    fetchUsers: fetchUsers,
+    fetchUser: fetchUser,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

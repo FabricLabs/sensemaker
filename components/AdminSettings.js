@@ -28,6 +28,7 @@ const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminInquiries = require('./AdminSettingsInquiries');
 const AdminInvitations = require('./AdminSettingsInvitations');
+const AdminUsers = require('./AdminSettingsUsers');
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -92,6 +93,8 @@ class AdminSettings extends React.Component {
     const inquiriesTotal = stats?.inquiries?.total ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
+
+    console.log(this.props.users);
 
     // Admin Tabs
     // TODO: add users to admin settings
@@ -349,7 +352,8 @@ class AdminSettings extends React.Component {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
           <Header as='h3'>Create User</Header>
           <AccountCreator register={register} error={error} onRegisterSuccess={onRegisterSuccess} />
-          <Table celled striped>
+          <AdminUsers {...this.props}/>
+          {/* <Table celled striped>
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell>ID</Table.HeaderCell>
@@ -374,7 +378,7 @@ class AdminSettings extends React.Component {
                 ))
               ) : (<Loader active inline="centered" />)}
             </Table.Body>
-          </Table>
+          </Table> */}
         </Tab.Pane>
       },
       {
@@ -472,7 +476,7 @@ class AdminSettings extends React.Component {
 
     return (
       <jeeves-admin-settings class='fade-in'>
-        <Segment fluid style={{ marginRight: '1em' }}>
+        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
           <Header as='h2'>Admin</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
 
