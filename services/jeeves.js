@@ -1069,6 +1069,7 @@ class Jeeves extends Hub {
    */
   async start () {
     const self = this;
+    const applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -1087,7 +1088,7 @@ class Jeeves extends Hub {
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
-    this.products = await this.stripe.enumerateProducts();
+    // this.products = await this.stripe.enumerateProducts();
 
     if (this.settings.statutes.enable) {
       this.statutes.start().then((output) => {
@@ -2464,9 +2465,9 @@ class Jeeves extends Hub {
           // TODO: provide state
           // const page = new CaseView({});
           // TODO: fix this hack
-          const page = new CaseHome({}); // TODO: use CaseView
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          // const page = new CaseHome({}); // TODO: use CaseView
+          // const html = page.toHTML();
+          return res.send(applicationString);
         }
       });
     });
@@ -2498,10 +2499,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: provide state
-          // const page = new Conversations({});
-          const page = new CaseHome({}); // TODO: use Conversations
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          return res.send(applicationString);
         }
       });
     });
@@ -2519,7 +2517,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2533,7 +2531,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2570,7 +2568,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2596,7 +2594,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2632,7 +2630,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2645,7 +2643,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2659,7 +2657,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2672,7 +2670,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2685,7 +2683,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2698,7 +2696,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2711,7 +2709,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2736,13 +2734,21 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
       const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations').where({ id: req.params.id }).first();
-      const messages = await knex('messages')
+      const messages = await this.db('messages')
         .whereIn('id', conversation.log)
         .select('id', 'content', 'created_at');
 
       conversation.messages = messages;
 
-      res.send(conversation);
+      res.format({
+        json: () => {
+          res.send(conversation);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(applicationString);
+        }
+      });
     });
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
@@ -2824,7 +2830,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2838,7 +2844,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -3574,9 +3580,7 @@ class Jeeves extends Hub {
         }
       },
       html: () => {
-        const page = new CaseHome({}); // TODO: use CaseView
-        const html = page.toHTML();
-        return res.send(this.http.app._renderWith(html));
+        return res.send(applicationString);
       }
     });
   }
