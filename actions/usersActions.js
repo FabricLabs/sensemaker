@@ -11,6 +11,7 @@ async function fetchUsersFromAPI(token) {
 const FETCH_USERS_REQUEST = 'FETCH_USERS_REQUEST';
 const FETCH_USERS_SUCCESS = 'FETCH_USERS_SUCCESS';
 const FETCH_USERS_FAILURE = 'FETCH_USERS_FAILURE';
+
 const FETCH_USER_REQUEST = 'FETCH_USER_REQUEST';
 const FETCH_USER_SUCCESS = 'FETCH_USER_SUCCESS';
 const FETCH_USER_FAILURE = 'FETCH_USER_FAILURE';
@@ -19,6 +20,7 @@ const FETCH_USER_FAILURE = 'FETCH_USER_FAILURE';
 const fetchUsersRequest = () => ({ type: FETCH_USERS_REQUEST, loading: true });
 const fetchUsersSuccess = (users) => ({ type: FETCH_USERS_SUCCESS, payload: users, loading: false });
 const fetchUsersFailure = (error) => ({ type: FETCH_USERS_FAILURE, payload: error, loading: false });
+
 const fetchUserRequest = () => ({ type: FETCH_USER_REQUEST, loading: true });
 const fetchUserSuccess = (instance) => ({ type: FETCH_USER_SUCCESS, payload: instance, loading: false });
 const fetchUserFailure = (error) => ({ type: FETCH_USER_FAILURE, payload: error, loading: false });
@@ -50,13 +52,16 @@ const fetchUser = (id) => {
   };
 };
 
+
 module.exports = {
   fetchUser,
   fetchUsers,
+  editUsername,
   FETCH_USER_REQUEST,
   FETCH_USER_SUCCESS,
   FETCH_USER_FAILURE,
   FETCH_USERS_REQUEST,
   FETCH_USERS_SUCCESS,
-  FETCH_USERS_FAILURE
+  FETCH_USERS_FAILURE,
+
 };

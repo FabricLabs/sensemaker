@@ -127,6 +127,8 @@ const ROUTES = {
   },
   users: {
     list: require('../routes/users/list_users'),
+    editUsername: require('../routes/users/edit_username'),
+    editEmail: require('../routes/users/edit_email'),
   }
 };
 
@@ -1608,6 +1610,9 @@ class Jeeves extends Hub {
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
+    this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
+    this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
+
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
