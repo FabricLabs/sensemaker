@@ -17,6 +17,11 @@
 - Services: provided an HTTP API
   - PyTorch
 
+## Python Environment
+`source .env/bin/activate`
+
+See also `requirements.txt`
+
 ## Tips
 - You can use `scripts/node.js` to quickly run the service without building: `node scripts/node.js`
 - Use `nodemon` to monitor for changes: `nodemon scripts/node.js`
