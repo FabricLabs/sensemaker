@@ -304,9 +304,9 @@ class Agent extends Service {
 
         // Wait for all responses to resolve or reject.
         await Promise.allSettled(Object.values(responses));
-        console.debug('[AGENT]', 'Prompt:', this.prompt);
-        console.debug('[AGENT]', 'Query:', request.query);
-        console.debug('[AGENT]', 'Responses:', responses);
+        console.debug('[AGENT]', '[FALLBACK]', 'Prompt:', this.prompt);
+        console.debug('[AGENT]', '[FALLBACK]', 'Query:', request.query);
+        console.debug('[AGENT]', '[FALLBACK]', 'Responses:', responses);
 
         let response = '';
 
