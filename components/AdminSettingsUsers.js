@@ -54,6 +54,18 @@ class AdminUsers extends React.Component {
     await this.props.fetchUsers();
   }
 
+  // Toggle the modal
+  toggleUsernameModal = () => {
+    this.setState(prevState => ({
+      usernameEditModal: !prevState.usernameEditModal
+    }));
+  };
+
+  changeUsername = (oldUsername, id) => {
+    this.setState({ usernameEditing: oldUsername, userIdEditing: id, usernameEditModal: true });
+    // this.toggleUsernameModal;
+  }
+
 
   render() {
     // const { sent, sendingInvitationID, errorSending } = this.state;
@@ -90,8 +102,8 @@ class AdminUsers extends React.Component {
                 <Table.HeaderCell textAlign="center" width={1}>Is Admin</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={2}>Email</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={3}>Created</Table.HeaderCell>
-                <Table.HeaderCell textAlign="center" width={4}>Modified</Table.HeaderCell>
-                <Table.HeaderCell textAlign="center" width={3}>Actions</Table.HeaderCell>
+                <Table.HeaderCell textAlign="center" width={3}>Modified</Table.HeaderCell>
+                <Table.HeaderCell textAlign="center" width={4}>Actions</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -116,6 +128,7 @@ class AdminUsers extends React.Component {
                             <Button
                               icon='user'
                               disabled={false}
+                              onClick={() => this.changeUsername(instance.username, instance.id)}
                             />
                           }
                         />
@@ -144,7 +157,7 @@ class AdminUsers extends React.Component {
             </Table.Body>
           </Table>
         </Segment>
-        <UsernameEditModal open={this.state.usernameEditModal} id={this.state.userIdEditing} oldUsername={this.state.usernameEditing}/>
+        <UsernameEditModal {...this.props} open={this.state.usernameEditModal} id={this.state.userIdEditing} oldUsername={this.state.usernameEditing} toggleUsernameModal={this.toggleUsernameModal} />
       </section>
     );
   };

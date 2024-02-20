@@ -142,7 +142,7 @@ const createInvitation = (invitation) => {
 
 const editUsername = (id, newUsername) => {
   return async (dispatch, getState) => {
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     dispatch(editUsernameRequest());
     try {
       const fetchPromise = fetch('/users/username', {

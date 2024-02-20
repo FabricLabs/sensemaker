@@ -3,7 +3,7 @@
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-      const { id , newUsername } = req.body;
+      const { id, newUsername } = req.body;
 
       try {
         const userAdmin = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
@@ -24,9 +24,8 @@ module.exports = function (req, res, next) {
           username: newUsername,
           updated_at: new Date(),
         });
-
-        return res.json({
-          message: 'Username updated successfully.',
+        res.send({
+          message: 'Username updated successfully'
         });
       } catch (error) {
         return res.status(500).json({ message: 'Internal server error.' });

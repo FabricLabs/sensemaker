@@ -27,29 +27,31 @@ class UsernameEditModal extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.invitation !== this.props.invitation) {
 
-      if (prevProps.auth !== this.props.auth) {
-        const { auth } = this.props;
-        if (auth.usernameAvailable && this.state.username) {
-          this.setState({ isNewUserValid: true, usernameError: '' });
-        } else {
-          this.setState({ isNewUserValid: false, usernameError: 'Username already exists. Please choose a different one.' });
-        }
+    if (prevProps.auth !== this.props.auth) {
+      const { auth } = this.props;
+
+      if (auth.usernameAvailable && this.state.newUsername) {
+
+        this.setState({ isNewUserValid: true, usernameError: '' });
+      } else {
+        this.setState({ isNewUserValid: false, usernameError: 'Username already exists. Please choose a different one.' });
       }
-    };
-    if(userModalLoading && prevProps.stats !== this.props.stats){
-      if(this.props.stats.userEditSuccess){
-        this.setState({userModalLoading: false, userUpdated: true})
-      }else{
-        this.setState({userUpdateError: this.props.stats.error, userUpdated: true})
+    }
+
+    if (this.state.userModalLoading && prevProps.stats !== this.props.stats) {
+      if (this.props.stats.userEditSuccess) {
+        this.setState({ userModalLoading: false, userUpdated: true });
+        this.props.fetchUsers();
+      } else {
+        this.setState({ userUpdateError: this.props.stats.error, userUpdated: true });
       }
     }
   }
 
   userModalOpen = () => {
     this.setState({
-      newUsername: '',
+      newUsername: this.props.oldUsername,
       isNewUserValid: false,
       userUpdated: false,
       userUpdateError: '',
@@ -58,7 +60,7 @@ class UsernameEditModal extends React.Component {
     });
   }
   userModalClose = () => {
-    this.props.toggleUserModal();
+    this.props.toggleUsernameModal();
     this.setState({
       newUsername: '',
       isNewUserValid: false,
@@ -72,32 +74,35 @@ class UsernameEditModal extends React.Component {
 
   // Handle input change
   handleInputChange = (e, { name, value }) => {
-    this.setState({ [name]: value });
-    if (name === 'newUsername') {
-      // Check for special characters and whitespace
-      if ((/[^a-zA-Z0-9]/.test(value))) {
-        this.setState({
-          isNewUserValid: false,
-          usernameError: 'Username must not contain special characters or spaces.',
-        });
-      } else {
-        if (value.length < 3) {
+    this.setState({ [name]: value }, () => {
+      if (name === 'newUsername') {
+        ;
+        // Check for special characters and whitespace
+        if ((/[^a-zA-Z0-9]/.test(value))) {
           this.setState({
             isNewUserValid: false,
-            usernameError: 'Username must have at least 3 characters.',
+            usernameError: 'Username must not contain special characters or spaces.',
           });
         } else {
-          if (value === this.props.oldUsername) {
+          if (value.length < 3) {
             this.setState({
               isNewUserValid: false,
-              usernameError: 'The new username must be different to the actual one',
+              usernameError: 'Username must have at least 3 characters.',
             });
           } else {
-            this.props.checkUsernameAvailable(value);
+            if (value === this.props.oldUsername) {
+              this.setState({
+                isNewUserValid: false,
+                usernameError: 'The new username must be different to the actual one',
+              });
+            } else {
+              this.setState({ usernameError: '' });
+              this.props.checkUsernameAvailable(value);
+            }
           }
         }
       }
-    }
+    });
   };
 
   // Handle form submission
@@ -111,7 +116,7 @@ class UsernameEditModal extends React.Component {
           userUpdated: false,
           userUpdateError: '',
         });
-        this.props.editUsername(this.props.id,this.state.newUsername);
+        this.props.editUsername(this.props.id, this.state.newUsername);
       } catch (error) {
         this.setState({ userUpdateError: error.message, userModalLoading: false });
       }
@@ -132,7 +137,7 @@ class UsernameEditModal extends React.Component {
     const { open, oldUsername } = this.props;
 
     // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
-    const userError = (isNewUserValid || !newUsername) ? null : {
+    const userError = (isNewUserValid || !newUsername || !usernameError) ? null : {
       content: usernameError,
       pointing: 'above',
     };
@@ -147,7 +152,7 @@ class UsernameEditModal extends React.Component {
         <Modal.Header>Change Username</Modal.Header>
         <Modal.Content>
           <Header as='h4'> Actual Username: <Label>{oldUsername}</Label></Header>
-          <Form onSubmit={this.handleUserSubmit}>
+          <Form autoComplete="off" onSubmit={this.handleUserSubmit}>
             <Form.Input
               label='New Username'
               name='newUsername'
@@ -155,7 +160,8 @@ class UsernameEditModal extends React.Component {
               error={userError}
               onChange={this.handleInputChange}
               required
-              autocomplete="off"
+              autoComplete="off"
+              type='search'
             />
             <Modal.Actions>
               {userUpdated && (
@@ -182,7 +188,7 @@ class UsernameEditModal extends React.Component {
                 loading={userModalLoading}
                 type='submit' size='small'
                 primary
-                disabled={!isNewUserValid} />
+                disabled={!isNewUserValid || newUsername === oldUsername} />
             </Modal.Actions>
           </Form>
         </Modal.Content>
