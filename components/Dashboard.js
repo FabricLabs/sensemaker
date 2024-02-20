@@ -286,10 +286,12 @@ class Dashboard extends React.Component {
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>
-              <Menu.Item as={Link} to='/updates'>
-                <Icon name='announcement' size='large' />
-                <p className='icon-label'>Updates</p>
-              </Menu.Item>
+              {ENABLE_CHANGELOG && (
+                <Menu.Item as={Link} to='/updates'>
+                  <Icon name='announcement' size='large' />
+                  <p className='icon-label'>Updates</p>
+                </Menu.Item>
+              )}
               {/* USER_IS_ADMIN && (
                 <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='lab' size='large' />

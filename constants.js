@@ -21,7 +21,7 @@ const ENABLE_REGISTRATION = true;
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_CHANGELOG = true;
+const ENABLE_CHANGELOG = false;
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_MATTERS = true;
