@@ -21,6 +21,7 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS
@@ -48,6 +49,7 @@ const MattersList = require('./MattersList');
 const MatterChat = require('./MatterChat');
 const MatterNewChat = require('./MatterNewChat');
 const MatterView = require('./MatterView');
+const Changelog = require('./Changelog');
 const Room = require('./Room');
 const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
@@ -284,6 +286,12 @@ class Dashboard extends React.Component {
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>
+              {ENABLE_CHANGELOG && (
+                <Menu.Item as={Link} to='/updates'>
+                  <Icon name='announcement' size='large' />
+                  <p className='icon-label'>Updates</p>
+                </Menu.Item>
+              )}
               {/* USER_IS_ADMIN && (
                 <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='lab' size='large' />
@@ -411,6 +419,7 @@ class Dashboard extends React.Component {
                     getMessageInformation={this.props.getMessageInformation}
                   />
                 } />
+                <Route path="/updates" element={<Changelog />} />
                 <Route path="/workspaces" element={<Workspaces />} />
                 <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation} />} />
@@ -444,7 +453,6 @@ class Dashboard extends React.Component {
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
-
               </Routes>
             )}
           </Container>
