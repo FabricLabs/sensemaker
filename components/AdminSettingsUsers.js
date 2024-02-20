@@ -9,16 +9,22 @@ const {
   Header,
   Segment,
   Input,
-  Modal
+  Modal,
+  Popup
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
+
+const UsernameEditModal = require('./AdminSettingsUsernameModal');
 
 class AdminUsers extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      searchQuery: ''
+      searchQuery: '',
+      usernameEditModal: false, //to open de username edit modal
+      userIdEditing: null,
+      usernameEditing: '',
     };
   }
 
@@ -46,6 +52,18 @@ class AdminUsers extends React.Component {
 
   reloadUsers = async () => {
     await this.props.fetchUsers();
+  }
+
+  // Toggle the modal
+  toggleUsernameModal = () => {
+    this.setState(prevState => ({
+      usernameEditModal: !prevState.usernameEditModal
+    }));
+  };
+
+  changeUsername = (oldUsername, id) => {
+    this.setState({ usernameEditing: oldUsername, userIdEditing: id, usernameEditModal: true });
+    // this.toggleUsernameModal;
   }
 
 
@@ -84,8 +102,8 @@ class AdminUsers extends React.Component {
                 <Table.HeaderCell textAlign="center" width={1}>Is Admin</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={2}>Email</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={3}>Created</Table.HeaderCell>
-                <Table.HeaderCell textAlign="center" width={4}>Modified</Table.HeaderCell>
-                <Table.HeaderCell textAlign="center" width={3}>Actions</Table.HeaderCell>
+                <Table.HeaderCell textAlign="center" width={3}>Modified</Table.HeaderCell>
+                <Table.HeaderCell textAlign="center" width={4}>Actions</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -104,26 +122,42 @@ class AdminUsers extends React.Component {
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.updated_at)}</Table.Cell>
                       <Table.Cell textAlign="center">
-                        <Button
-                          icon='at'
-                          disabled={false}
+                        <Popup
+                          content="Change Username"
+                          trigger={
+                            <Button
+                              icon='user'
+                              disabled={false}
+                              onClick={() => this.changeUsername(instance.username, instance.id)}
+                            />
+                          }
                         />
-                        <Button
-                          icon='trash alternate'
-                          disabled={false}
+                        <Popup
+                          content="Add/Change Email"
+                          trigger={
+                            <Button
+                              icon='at'
+                              disabled={false}
+                            />
+                          }
                         />
-                        <Button
-                          icon='trash alternate'
-                          disabled={false}
+                        <Popup
+                          content="Disable User"
+                          trigger={
+                            <Button
+                              icon='ban'
+                              disabled={false}
+                            />
+                          }
                         />
                       </Table.Cell>
                     </Table.Row>
                   )
-
                 })}
             </Table.Body>
           </Table>
         </Segment>
+        <UsernameEditModal {...this.props} open={this.state.usernameEditModal} id={this.state.userIdEditing} oldUsername={this.state.usernameEditing} toggleUsernameModal={this.toggleUsernameModal} />
       </section>
     );
   };

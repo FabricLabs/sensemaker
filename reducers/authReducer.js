@@ -13,6 +13,9 @@ const {
   FULL_REGISTER_REQUEST,
   FULL_REGISTER_SUCCESS,
   FULL_REGISTER_FAILURE,
+  REGISTER_REQUEST,
+  REGISTER_SUCCESS,
+  REGISTER_FAILURE,
 
 } = require('../actions/authActions');
 
@@ -31,9 +34,11 @@ const initialState = {
   registerSuccess: false,
   loading: false,
   checking: false,
+  shortRegisterError: null,
+  shortRegisterSuccess: false,
 };
 
-function authReducer (state = initialState, action) {
+function authReducer(state = initialState, action) {
   switch (action.type) {
     case LOGIN_REQUEST:
       return { ...state, isAuthenticated: false, token: null, error: null, loading: true }; // reset state
@@ -50,7 +55,7 @@ function authReducer (state = initialState, action) {
     case CHECK_USERNAME_AVAILABLE_REQUEST:
       return { ...state, checking: true };
     case CHECK_USERNAME_AVAILABLE_SUCCESS:
-      return { ...state, usernameAvailable: true, checking: false };
+      return { ...state, usernameAvailable: true, checking: false, error: null };
     case CHECK_USERNAME_AVAILABLE_FAILURE:
       return { ...state, error: action.payload, usernameAvailable: false, checking: false };
 
@@ -62,11 +67,18 @@ function authReducer (state = initialState, action) {
     case CHECK_EMAIL_AVAILABLE_FAILURE:
       return { ...state, error: action.payload, emailAvailable: false, checking: false };
 
+    //for short registration with account creator
+    case REGISTER_REQUEST:
+      return { ...state, loading: true };
+    case REGISTER_SUCCESS:
+      return { ...state, shortRegisterError: null, shortRegisterSuccess: true, loading: false };
+    case REGISTER_FAILURE:
+      return { ...state, shortRegisterError: action.payload, shortRegisterSuccess: false, loading: false };
+
     //actions for registering an user
     case FULL_REGISTER_REQUEST:
       return { ...state, registering: true };
     case FULL_REGISTER_SUCCESS:
-      console.log("entro por el reducer success");
       return { ...state, registerSuccess: true, registering: false };
     case FULL_REGISTER_FAILURE:
       return { ...state, error: action.payload, registerSuccess: false, registering: false };

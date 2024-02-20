@@ -110,7 +110,6 @@ class SignUpForm extends React.Component {
       });
       if (event.target.name === 'username') {
         this.validateUsername(event.target.value);
-
       }
       if (event.target.name === 'email') {
         this.props.checkEmailAvailable(event.target.value);

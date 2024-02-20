@@ -127,6 +127,8 @@ const ROUTES = {
   },
   users: {
     list: require('../routes/users/list_users'),
+    editUsername: require('../routes/users/edit_username'),
+    editEmail: require('../routes/users/edit_email'),
   }
 };
 
@@ -1608,6 +1610,9 @@ class Jeeves extends Hub {
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
+    this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
+    this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
+
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
@@ -1743,8 +1748,8 @@ class Jeeves extends Hub {
         };
 
         const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
+        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
@@ -2224,25 +2229,14 @@ class Jeeves extends Hub {
         //We have to change the resetLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
+        const resetLink = `${this.authority}/passwordreset/${resetToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        // const htmlContent = `
-        //                         <html>
-        //                           <body>
-        //                             <p>Hello,</p>
-        //                             <p>Please click on the link below to reset your password:</p>
-        //                             <p><a href="${resetLink}">Reset Password</a></p>
-        //                             <p>If you did not request a password reset, please ignore this email.</p>
-        //                             <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-        //                           </body>
-        //                         </html>
-        //                       `;
+
         const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {
           await this.email.send({
-           // from: 'agent@jeeves.dev',
-            from: this.settings.email.username,
+            from: 'agent@jeeves.dev',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -3033,7 +3027,7 @@ class Jeeves extends Hub {
           }); */
 
           // TODO: restore titling
-        /*  
+        /*
         }); */
 
         if (!conversation.log) conversation.log = [];
