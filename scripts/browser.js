@@ -150,6 +150,7 @@ const {
 const {
   fetchUsers,
   fetchUser,
+  askPasswordReset,
 } = require('../actions/usersActions');
 
 // ## Main Process
@@ -275,7 +276,8 @@ async function main (input = {}) {
     fetchMatterConversations: fetchMatterConversations,
     editMatter: editMatter,
     fetchUsers: fetchUsers,
-    fetchUser: fetchUser,    
+    fetchUser: fetchUser,
+    askPasswordReset: askPasswordReset,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

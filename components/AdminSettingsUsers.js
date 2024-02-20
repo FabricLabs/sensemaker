@@ -10,7 +10,8 @@ const {
   Segment,
   Input,
   Modal,
-  Popup
+  Popup,
+  Confirm
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -25,6 +26,8 @@ class AdminUsers extends React.Component {
       usernameEditModal: false, //to open de username edit modal
       userIdEditing: null,
       usernameEditing: '',
+      confirmResetOpen: false,
+      emailReseting: null,
     };
   }
 
@@ -66,6 +69,9 @@ class AdminUsers extends React.Component {
     // this.toggleUsernameModal;
   }
 
+  confirmResetPassword = (email) => {
+    this.setState({ emailReseting: email, confirmResetOpen: true });
+  }
 
   render() {
     // const { sent, sendingInvitationID, errorSending } = this.state;
@@ -142,6 +148,16 @@ class AdminUsers extends React.Component {
                           }
                         />
                         <Popup
+                          content="Send password reset"
+                          trigger={
+                            <Button
+                              icon='key'
+                              disabled={false}
+                              onClick={() => this.confirmResetPassword(instance.email)}
+                            />
+                          }
+                        />
+                        <Popup
                           content="Disable User"
                           trigger={
                             <Button
@@ -157,6 +173,12 @@ class AdminUsers extends React.Component {
             </Table.Body>
           </Table>
         </Segment>
+        <Confirm
+          open={this.state.confirmResetOpen}
+          content={'Do you want to send a reset link to: ' + this.state.emailReseting + ' ?'}
+          onConfirm={this.props.askPasswordReset(this.state.emailReseting)}
+          size='tiny'
+        />
         <UsernameEditModal {...this.props} open={this.state.usernameEditModal} id={this.state.userIdEditing} oldUsername={this.state.usernameEditing} toggleUsernameModal={this.toggleUsernameModal} />
       </section>
     );
