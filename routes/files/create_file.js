@@ -1,5 +1,43 @@
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
 module.exports = function (req, res, next) {
-  console.log(req.body);
-  console.log(req.files);
-  res.json({ message: "Successfully uploaded file" });
-}
+  if (!req.file) {
+    res.status(400);
+    res.send({ status: 'error', message: 'No file uploaded!' });
+    return;
+  }
+
+  const safeFilename = path.basename(req.file.originalname);
+  const destination = path.join(this.settings.files.userstore, req.user.id, safeFilename);
+
+  fs.rename(req.file.path, destination, (err) => {
+    if (err) {
+      res.status(500);
+      res.send({ status: 'error', message: 'Failed to move file to destination.' });
+      return;
+    }
+
+    fs.readFile(destination, (err, data) => {
+      if (err) {
+        res.status(500);
+        res.send({ status: 'error', message: 'Failed to read file.' });
+        return;
+      }
+
+      const hash = crypto.createHash('sha256').update(data);
+
+      this.db('documents').insert({
+        content: data.toString('utf8'),
+        encoding: 'utf8',
+        filename: req.file.originalname,
+        sha256: hash.digest('hex'),
+      });
+
+      res.send({ status: 'success', message: 'Successfully uploaded file!' });
+    });
+  });
+};
