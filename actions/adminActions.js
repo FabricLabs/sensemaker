@@ -60,6 +60,10 @@ const EDIT_USERNAME_REQUEST = 'EDIT_USERNAME_REQUEST';
 const EDIT_USERNAME_SUCCESS = 'EDIT_USERNAME_SUCCESS';
 const EDIT_USERNAME_FAILURE = 'EDIT_USERNAME_FAILURE';
 
+const EDIT_EMAIL_REQUEST = 'EDIT_EMAIL_REQUEST';
+const EDIT_EMAIL_SUCCESS = 'EDIT_EMAIL_SUCCESS';
+const EDIT_EMAIL_FAILURE = 'EDIT_EMAIL_FAILURE';
+
 // Action creators
 const fetchAdminStatsRequest = () => ({ type: FETCH_ADMIN_STATS_REQUEST });
 const fetchAdminStatsSuccess = (stats) => ({ type: FETCH_ADMIN_STATS_SUCCESS, payload: stats });
@@ -79,6 +83,10 @@ const createInvitationFailure = (error) => ({ type: CREATE_INVITATION_FAILURE, p
 const editUsernameRequest = () => ({ type: EDIT_USERNAME_REQUEST, loading: true });
 const editUsernameSuccess = () => ({ type: EDIT_USERNAME_SUCCESS, loading: false });
 const editUsernameFailure = (error) => ({ type: EDIT_USERNAME_FAILURE, payload: error, loading: false });
+
+const editEmailRequest = () => ({ type: EDIT_EMAIL_REQUEST, loading: true });
+const editEmailSuccess = () => ({ type: EDIT_EMAIL_SUCCESS, loading: false });
+const editEmailFailure = (error) => ({ type: EDIT_EMAIL_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchAdminStats = () => {
@@ -167,16 +175,48 @@ const editUsername = (id, newUsername) => {
   }
 }
 
+const editEmail = (id, newEmail) => {
+  return async (dispatch, getState) => {
+    const { token } = getState().auth;
+    dispatch(editEmailRequest());
+    try {
+      const fetchPromise = fetch('/users/email', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, newEmail }),
+      });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 15000);
+      });
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      dispatch(editEmailSuccess());
+    } catch (error) {
+      dispatch(editEmailFailure(error));
+    }
+  }
+}
+
+
 module.exports = {
   fetchAdminStats,
   fetchAllConversationsFromAPI,
   fetchSyncStats,
   createInvitation,
   editUsername,
+  editEmail,
   FETCH_ADMIN_STATS_REQUEST,
   FETCH_ADMIN_STATS_SUCCESS,
   FETCH_ADMIN_STATS_FAILURE,
   EDIT_USERNAME_REQUEST,
   EDIT_USERNAME_SUCCESS,
-  EDIT_USERNAME_FAILURE
+  EDIT_USERNAME_FAILURE,
+  EDIT_EMAIL_REQUEST,
+  EDIT_EMAIL_SUCCESS,
+  EDIT_EMAIL_FAILURE,
 };

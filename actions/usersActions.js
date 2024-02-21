@@ -29,7 +29,7 @@ const fetchUserRequest = () => ({ type: FETCH_USER_REQUEST, loading: true });
 const fetchUserSuccess = (instance) => ({ type: FETCH_USER_SUCCESS, payload: instance, loading: false });
 const fetchUserFailure = (error) => ({ type: FETCH_USER_FAILURE, payload: error, loading: false });
 
-const askPasswordResetRequest = () => ({ type: PASSWORD_RESET_REQUEST });
+const askPasswordResetRequest = (email) => ({ type: PASSWORD_RESET_REQUEST, payload: email });
 const askPasswordResetSuccess = () => ({ type: PASSWORD_RESET_SUCCESS });
 const askPasswordResetFailure = (error) => ({ type: PASSWORD_RESET_FAILURE, payload: error });
 
@@ -62,7 +62,7 @@ const fetchUser = (id) => {
 
 const askPasswordReset = (email) => {
   return async (dispatch, getState) => {
-    dispatch(askPasswordResetRequest());
+    dispatch(askPasswordResetRequest(email));
     const { token } = getState().auth;
     try {
       // call for the fetch that generates the token for password reset
@@ -85,8 +85,6 @@ const askPasswordReset = (email) => {
         const error = await response.json();
         throw new Error(error.message);
       }
-      //forced delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
       //email with reset token sent
       dispatch(askPasswordResetSuccess());
     } catch (error) {
@@ -106,5 +104,7 @@ module.exports = {
   FETCH_USERS_REQUEST,
   FETCH_USERS_SUCCESS,
   FETCH_USERS_FAILURE,
-
+  PASSWORD_RESET_REQUEST,
+  PASSWORD_RESET_SUCCESS,
+  PASSWORD_RESET_FAILURE,
 };

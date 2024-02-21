@@ -16,6 +16,7 @@ const initialState = {
   loading: false,
   error: null,
   passwordReseted: false,
+  currentEmail: null,
 };
 
 function usersReducer(state = initialState, action) {
@@ -33,7 +34,7 @@ function usersReducer(state = initialState, action) {
     case FETCH_USERS_FAILURE:
       return { ...state, loading: false, error: action.payload };
     case PASSWORD_RESET_REQUEST:
-      return { ...state, reseting: true, error: null, passwordReseted: false, };
+      return { ...state, reseting: true, error: null, passwordReseted: false, currentEmail: action.payload };
     case PASSWORD_RESET_SUCCESS:
       return { ...state, reseting: false, error: null, passwordReseted: true, };
     case PASSWORD_RESET_FAILURE:

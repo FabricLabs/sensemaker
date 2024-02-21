@@ -1,0 +1,172 @@
+'use strict';
+
+const React = require('react');
+
+const {
+  Button,
+  Header,
+  Form,
+  Modal,
+  Message,
+  Label
+} = require('semantic-ui-react');
+
+class EmailEditModal extends React.Component {
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      newEmail: '',
+      isEmailValid: false,
+      emailUpdated: false,
+      emailUpdateError: '',
+      emailModalLoading: false,
+      emailError: ''
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+
+    if (prevProps.auth !== this.props.auth) {
+      const { auth } = this.props;
+
+      if (this.state.emailModalLoading && prevProps.stats !== this.props.stats) {
+        if (this.props.stats.emailEditSuccess) {
+          this.setState({ emailModalLoading: false, emailUpdated: true });
+          this.props.fetchUsers();
+        } else {
+          this.setState({ emailUpdateError: this.props.stats.error, emailUpdated: true });
+        }
+      }
+      if (auth.emailAvailable && this.state.email) {
+        this.setState({ isEmailValid: true, emailError: '' });
+      } else {
+        this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose a differnt one.' });
+      }
+    }
+  }
+
+  emailModalOpen = () => {
+    this.setState({
+      newEmail: this.props.oldEmail,
+      emailUpdated: false,
+      emailUpdateError: '',
+      emailModalLoading: false,
+      emailError: ''
+    });
+  }
+  emailModalClose = () => {
+    this.props.toggleEmailModal();
+    this.setState({
+      newEmail: '',
+      emailUpdated: false,
+      emailUpdateError: '',
+      emailModalLoading: false,
+      emailError: ''
+    });
+  }
+
+
+  // Handle input change
+  handleInputChange = (e, { name, value }) => {
+    this.setState({ [name]: value }, () => {
+      if (name === 'newEmail') {
+        if (e.target.name === 'email') {
+          this.props.checkEmailAvailable(e.target.value);
+        }
+      }
+    });
+  };
+
+  // Handle form submission
+  handleEmailSubmit = async () => {
+      try {
+        //these are the different states to show different messages according to the update username api answers
+        this.setState({
+          emailModalLoading: true,
+          emailUpdated: false,
+          emailUpdateError: '',
+        });
+        this.props.editEmail(this.props.id, this.state.newEmail);
+      } catch (error) {
+        this.setState({ emailUpdateError: error.message, emailModalLoading: false });
+      }
+  };
+
+  render() {
+
+    const {
+      newEmail,
+      emailUpdated,
+      emailUpdateError,
+      emailModalLoading,
+      emailError,
+      isEmailValid
+    } = this.state;
+
+    const { open, oldEmail } = this.props;
+
+    // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
+    const emailMessageError = (isEmailValid || !newEmail || !emailError) ? null : {
+      content: emailError,
+      pointing: 'above',
+    };
+
+    return (
+      <Modal
+        open={open}
+        onOpen={this.emailModalOpen}
+        onClose={this.emailModalClose}
+        size='tiny'
+      >
+        <Modal.Header>Add or Change Email</Modal.Header>
+        <Modal.Content>
+          <Header as='h4'> Actual Username: <Label>{oldEmail}</Label></Header>
+          <Form autoComplete="off" onSubmit={this.handleEmailSubmit}>
+            <Form.Input
+              label='New Email'
+              name='newEmail'
+              value={newEmail}
+              error={emailMessageError}
+              onChange={this.handleInputChange}
+              required
+              autoComplete="off"
+              type='email'
+            />
+            <Modal.Actions>
+              {emailUpdated && (
+                <Message positive>
+                  <Message.Header>Email updated</Message.Header>
+                  <p>This username has been changed successfully.</p>
+                </Message>
+              )}
+              {emailUpdateError && (
+                <Message negative>
+                  <Message.Header>Internal server error</Message.Header>
+                  <p>Please try again later.</p>
+                </Message>
+              )}
+              <Button
+                content='Close'
+                icon='close'
+                size='small'
+                secondary
+                onClick={this.emailModalClose} />
+              <Button
+                content='Submit'
+                icon='checkmark'
+                loading={emailModalLoading}
+                type='submit' size='small'
+                primary
+                disabled={!isEmailValid || !newEmail || newEmail === oldEmail} />
+            </Modal.Actions>
+          </Form>
+        </Modal.Content>
+      </Modal>
+    );
+  };
+}
+
+
+module.exports = EmailEditModal;

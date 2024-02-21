@@ -127,8 +127,10 @@ const ROUTES = {
   },
   users: {
     list: require('../routes/users/list_users'),
+    listFiles: require('../routes/users/list_user_files'),
     editUsername: require('../routes/users/edit_username'),
     editEmail: require('../routes/users/edit_email'),
+    view: require('../routes/users/view_user'),
   }
 };
 
@@ -516,7 +518,7 @@ class Jeeves extends Hub {
       try {
         // Alert Tech
         await this.email.send({
-            from: 'agent@jeeves.dev',
+            from: 'agent@trynovo.com',
             to: 'tech@jeeves.dev',
             subject: `[ALERT] [JEEVES] Jeeves Alert`,
             html: message
@@ -1077,6 +1079,7 @@ class Jeeves extends Hub {
   async start () {
     const self = this;
     const applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
+    this.applicationString = applicationString;
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -1610,6 +1613,8 @@ class Jeeves extends Hub {
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
+    this.http._addRoute('GET', '/users/:username', ROUTES.users.view.bind(this));
+    // TODO: switch to PATCH `/users/:username`
     this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
     this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
 
@@ -1692,7 +1697,7 @@ class Jeeves extends Hub {
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
 
         await this.email.send({
-          from: 'agent@jeeves.dev',
+          from: 'agent@trynovo.com',
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1754,7 +1759,7 @@ class Jeeves extends Hub {
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
-          from: 'agent@jeeves.dev',
+          from: 'agent@trynovo.com',
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -2236,7 +2241,7 @@ class Jeeves extends Hub {
 
         try {
           await this.email.send({
-            from: 'agent@jeeves.dev',
+            from: 'agent@trynovo.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
