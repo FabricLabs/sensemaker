@@ -18,9 +18,9 @@ const REGISTER_REQUEST = 'REGISTER_REQUEST';
 const REGISTER_SUCCESS = 'REGISTER_SUCCESS';
 const REGISTER_FAILURE = 'REGISTER_FAILURE';
 
-const FULL_REGISTER_REQUEST = 'REGISTER_REQUEST';
-const FULL_REGISTER_SUCCESS = 'REGISTER_SUCCESS';
-const FULL_REGISTER_FAILURE = 'REGISTER_FAILURE';
+const FULL_REGISTER_REQUEST = 'FULL_REGISTER_REQUEST';
+const FULL_REGISTER_SUCCESS = 'FULL_REGISTER_SUCCESS';
+const FULL_REGISTER_FAILURE = 'FULL_REGISTER_FAILURE';
 
 const CHECK_USERNAME_AVAILABLE_REQUEST = 'CHECK_USERNAME_AVAILABLE_REQUEST';
 const CHECK_USERNAME_AVAILABLE_SUCCESS = 'CHECK_USERNAME_AVAILABLE_SUCCESS';
@@ -165,10 +165,10 @@ const register = (username, password) => {
   };
 };
 
-const fullRegister = (username, password, email,  firstName, lastName, firmName, firmSize) => {
-  return async dispatch => {
+const fullRegister = (username, password, email, firstName, lastName, firmName, firmSize) => {
+  return async (dispatch) => {
     dispatch(fullRegisterRequest());
-    try{
+    try {
 
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
@@ -181,7 +181,7 @@ const fullRegister = (username, password, email,  firstName, lastName, firmName,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password, email,  firstName, lastName, firmName, firmSize }),
+        body: JSON.stringify({ username, password, email, firstName, lastName, firmName, firmSize }),
       });
 
       const response = await Promise.race([timeoutPromise, fetchPromise]);
@@ -191,7 +191,7 @@ const fullRegister = (username, password, email,  firstName, lastName, firmName,
       }
 
       dispatch(fullRegisterSuccess(response));
-    }catch(error){
+    } catch (error) {
       dispatch(fullRegisterFailure(error.message));
     }
 

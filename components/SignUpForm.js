@@ -42,7 +42,6 @@ class SignUpForm extends React.Component {
       usernameError: '',
       isEmailValid: false,
       emailError: '',
-
     };
   }
 
@@ -65,7 +64,8 @@ class SignUpForm extends React.Component {
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '', email: this.props.invitation.invitation.target });
+        this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
+        this.props.checkEmailAvailable(this.props.invitation.invitation.target);
       } else {
         this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
       }
@@ -208,11 +208,10 @@ class SignUpForm extends React.Component {
       pointing: 'above',
     };
 
-    const emailErrorMsg = (isEmailValid || !email) ? null : {
+    const emailErrorMsg = (isEmailValid || !email || emailError === null) ? null : {
       content: emailError,
       pointing: 'above',
     };
-
 
     return (
       <div className='fade-in signup-form'>
@@ -282,7 +281,7 @@ class SignUpForm extends React.Component {
                     label='Email'
                     type='email'
                     name='email'
-                    error={emailErrorMsg}
+                    error={emailError ? emailErrorMsg : null}
                     onChange={this.handleInputChange}
                     autoComplete="off"
                     value={email}
