@@ -49,7 +49,7 @@ module.exports = {
   },
   db: {
     type: 'mysql',
-    host: 'localhost',
+    host: process.env.JEEVES_DB_HOST || '127.0.0.1',
     port: 3306,
     user: 'db_user_jeeves',
     password: 'chahcieYishi1wuu',
@@ -69,7 +69,8 @@ module.exports = {
     password: 'generate app-specific password'
   },
   files: {
-    path: '/media/storage/node/files'
+    path: '/media/storage/node/files',
+    userstore: '/media/storage/uploads/users'
   },
   gemini: {
     model: 'gemini-pro',
