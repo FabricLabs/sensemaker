@@ -207,7 +207,7 @@ class AdminUsers extends React.Component {
                             />
                           }
                         />
-                        <Popup
+                        {/* <Popup
                           content="Disable User - Comming soon"
                           trigger={
                             <Button
@@ -215,7 +215,7 @@ class AdminUsers extends React.Component {
                               disabled={false}
                             />
                           }
-                        />
+                        /> */}
                       </Table.Cell>
                     </Table.Row>
                   )
