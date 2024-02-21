@@ -5,6 +5,12 @@ const path = require('path');
 const crypto = require('crypto');
 
 module.exports = function (req, res, next) {
+  if (!req.user || !req.user.id) {
+    res.status(401);
+    res.send({ status: 'error', message: 'Not authorized!' });
+    return;
+  }
+
   if (!req.file) {
     res.status(400);
     res.send({ status: 'error', message: 'No file uploaded!' });

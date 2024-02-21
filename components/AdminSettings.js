@@ -349,9 +349,9 @@ class AdminSettings extends React.Component {
       },
       {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
+          <AdminUsers {...this.props} />
           <Header as='h3'>Create User</Header>
           <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/>
-          <AdminUsers {...this.props} />
         </Tab.Pane>
       },
       {
