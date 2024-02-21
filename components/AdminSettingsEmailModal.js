@@ -27,22 +27,23 @@ class EmailEditModal extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
+    const { auth, stats } = this.props;
 
     if (prevProps.auth !== this.props.auth) {
-      const { auth } = this.props;
 
-      if (this.state.emailModalLoading && prevProps.stats !== this.props.stats) {
-        if (this.props.stats.emailEditSuccess) {
-          this.setState({ emailModalLoading: false, emailUpdated: true });
-          this.props.fetchUsers();
-        } else {
-          this.setState({ emailUpdateError: this.props.stats.error, emailUpdated: true });
-        }
-      }
-      if (auth.emailAvailable && this.state.email) {
+      if (auth.emailAvailable && this.state.newEmail) {
         this.setState({ isEmailValid: true, emailError: '' });
       } else {
         this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose a differnt one.' });
+      }
+    }
+
+    if (this.state.emailModalLoading && prevProps.stats !== this.props.stats) {
+      if (stats.emailEditSuccess) {
+        this.setState({ emailModalLoading: false, emailUpdated: true });
+        this.props.fetchUsers();
+      } else {
+        this.setState({ emailUpdateError: stats.error, emailUpdated: true });
       }
     }
   }
@@ -72,26 +73,25 @@ class EmailEditModal extends React.Component {
   handleInputChange = (e, { name, value }) => {
     this.setState({ [name]: value }, () => {
       if (name === 'newEmail') {
-        if (e.target.name === 'email') {
-          this.props.checkEmailAvailable(e.target.value);
-        }
+        this.props.checkEmailAvailable(e.target.value);
       }
     });
   };
 
   // Handle form submission
   handleEmailSubmit = async () => {
-      try {
-        //these are the different states to show different messages according to the update username api answers
-        this.setState({
-          emailModalLoading: true,
-          emailUpdated: false,
-          emailUpdateError: '',
-        });
-        this.props.editEmail(this.props.id, this.state.newEmail);
-      } catch (error) {
-        this.setState({ emailUpdateError: error.message, emailModalLoading: false });
-      }
+    try {
+      this.setState({
+        emailModalLoading: true,
+        emailUpdated: false,
+        emailUpdateError: '',
+      });
+      //forced delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      this.props.editEmail(this.props.id, this.state.newEmail);
+    } catch (error) {
+      this.setState({ emailUpdateError: error.message, emailModalLoading: false });
+    }
   };
 
   render() {
@@ -107,7 +107,6 @@ class EmailEditModal extends React.Component {
 
     const { open, oldEmail } = this.props;
 
-    // const passwordInputStyle = isNewPasswordValid ? { borderColor: 'green' } : { borderColor: 'red' };
     const emailMessageError = (isEmailValid || !newEmail || !emailError) ? null : {
       content: emailError,
       pointing: 'above',
@@ -122,7 +121,7 @@ class EmailEditModal extends React.Component {
       >
         <Modal.Header>Add or Change Email</Modal.Header>
         <Modal.Content>
-          <Header as='h4'> Actual Username: <Label>{oldEmail}</Label></Header>
+          <Header as='h4'> Actual Username: <Label>{emailUpdated ? newEmail : oldEmail}</Label></Header>
           <Form autoComplete="off" onSubmit={this.handleEmailSubmit}>
             <Form.Input
               label='New Email'
@@ -143,8 +142,8 @@ class EmailEditModal extends React.Component {
               )}
               {emailUpdateError && (
                 <Message negative>
-                  <Message.Header>Internal server error</Message.Header>
-                  <p>Please try again later.</p>
+                  <Message.Header>Error updating mail</Message.Header>
+                  <p>{emailUpdateError}</p>
                 </Message>
               )}
               <Button
@@ -159,7 +158,8 @@ class EmailEditModal extends React.Component {
                 loading={emailModalLoading}
                 type='submit' size='small'
                 primary
-                disabled={!isEmailValid || !newEmail || newEmail === oldEmail} />
+                disabled={!isEmailValid || !newEmail || newEmail === oldEmail}
+              />
             </Modal.Actions>
           </Form>
         </Modal.Content>

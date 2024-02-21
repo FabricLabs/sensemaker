@@ -49,7 +49,7 @@ const MattersList = require('./MattersList');
 const MatterChat = require('./MatterChat');
 const MatterNewChat = require('./MatterNewChat');
 const MatterView = require('./MatterView');
-const UserView = require('./UserView');
+// const UserView = require('./UserView');
 const Changelog = require('./Changelog');
 const Room = require('./Room');
 const Settings = require('./Settings');
@@ -451,7 +451,7 @@ class Dashboard extends React.Component {
                 <Route path="/matter/:id" element={<MatterView fetchCourts={this.props.fetchCourts} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} editMatter={this.props.editMatter} conversations={this.props.conversations}/>} />
                 <Route path="/matter/conversation/:id" element={<MatterChat {...this.props} />} /> {/*This route and the next, have ...this.props because they end up calling chatbox that actually uses a million properties*/}
                 <Route path="/matters/conversation/new/:matterID" element={<MatterNewChat {...this.props} />} />
-                <Route path="/users/:username" element={<UserView {...this.props} />} />
+                {/* <Route path="/users/:username" element={<UserView {...this.props} />} /> */}
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />

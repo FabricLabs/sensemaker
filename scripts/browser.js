@@ -43,6 +43,7 @@ const {
   fetchAllConversationsFromAPI,
   createInvitation,
   editUsername,
+  editEmail,
 } = require('../actions/adminActions');
 
 // ## Invitation Actions
@@ -263,6 +264,7 @@ async function main (input = {}) {
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,
     editUsername: editUsername,
+    editEmail: editEmail,
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,

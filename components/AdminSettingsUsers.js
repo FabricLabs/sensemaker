@@ -17,7 +17,7 @@ const store = require('../stores/redux');
 
 const UsernameEditModal = require('./AdminSettingsUsernameModal');
 const EmailEditModal = require('./AdminSettingsEmailModal');
-const { email } = require('../settings/local');
+//const { email } = require('../settings/local');
 
 class AdminUsers extends React.Component {
 
@@ -178,16 +178,6 @@ class AdminUsers extends React.Component {
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.updated_at)}</Table.Cell>
                       <Table.Cell textAlign="center">
                         <Popup
-                          content="Change Username"
-                          trigger={
-                            <Button
-                              icon='user'
-                              disabled={false}
-                              onClick={() => this.changeUsername(instance.username, instance.id)}
-                            />
-                          }
-                        />
-                        <Popup
                           content="Add/Change Email"
                           trigger={
                             <Button
@@ -208,7 +198,17 @@ class AdminUsers extends React.Component {
                           }
                         />
                         <Popup
-                          content="Disable User"
+                          content="Change Username"
+                          trigger={
+                            <Button
+                              icon='user'
+                              disabled={false}
+                              onClick={() => this.changeUsername(instance.username, instance.id)}
+                            />
+                          }
+                        />
+                        <Popup
+                          content="Disable User - Comming soon"
                           trigger={
                             <Button
                               icon='ban'
