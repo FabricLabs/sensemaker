@@ -748,7 +748,7 @@ class ChatBox extends React.Component {
                     {/* Actual content of message */}
                     <Feed.Summary className='info-assistant-header'>
                       <Feed.User>
-                        {message.author || message.user_id}{" "}
+                        <a href={'/users/' + message.author}>{message.author || message.user_id}</a>{" "}
                       </Feed.User>
                       <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
                       {message.role === "assistant" && (

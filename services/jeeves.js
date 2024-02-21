@@ -1079,6 +1079,7 @@ class Jeeves extends Hub {
   async start () {
     const self = this;
     const applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
+    this.applicationString = applicationString;
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
