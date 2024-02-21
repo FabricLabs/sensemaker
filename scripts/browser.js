@@ -43,6 +43,7 @@ const {
   fetchAllConversationsFromAPI,
   createInvitation,
   editUsername,
+  editEmail,
 } = require('../actions/adminActions');
 
 // ## Invitation Actions
@@ -150,6 +151,7 @@ const {
 const {
   fetchUsers,
   fetchUser,
+  askPasswordReset,
 } = require('../actions/usersActions');
 
 // ## Main Process
@@ -262,6 +264,7 @@ async function main (input = {}) {
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,
     editUsername: editUsername,
+    editEmail: editEmail,
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,
@@ -275,7 +278,8 @@ async function main (input = {}) {
     fetchMatterConversations: fetchMatterConversations,
     editMatter: editMatter,
     fetchUsers: fetchUsers,
-    fetchUser: fetchUser,    
+    fetchUser: fetchUser,
+    askPasswordReset: askPasswordReset,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

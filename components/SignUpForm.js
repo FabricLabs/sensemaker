@@ -65,7 +65,7 @@ class SignUpForm extends React.Component {
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '' });
+        this.setState({ loading: false, tokenError: false, errorContent: '', email: this.props.invitation.invitation.target });
       } else {
         this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
       }

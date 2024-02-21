@@ -10,11 +10,14 @@ const {
   Segment,
   Input,
   Modal,
-  Popup
+  Popup,
+
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
 const UsernameEditModal = require('./AdminSettingsUsernameModal');
+const EmailEditModal = require('./AdminSettingsEmailModal');
+//const { email } = require('../settings/local');
 
 class AdminUsers extends React.Component {
 
@@ -25,6 +28,11 @@ class AdminUsers extends React.Component {
       usernameEditModal: false, //to open de username edit modal
       userIdEditing: null,
       usernameEditing: '',
+      confirmResetOpen: false,
+      emailReseting: null,
+      reseting: false,
+      emailEditing: null,
+      editEmailOpen: false,
     };
   }
 
@@ -34,8 +42,9 @@ class AdminUsers extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.users !== this.props.users) {
-      const { users } = this.props;
-
+      if (this.state.reseting && !this.props.users.loading && (this.props.users.error || this.props.users.passwordReseted)) {
+        this.setState({ reseting: false });
+      }
     }
   };
 
@@ -54,10 +63,16 @@ class AdminUsers extends React.Component {
     await this.props.fetchUsers();
   }
 
-  // Toggle the modal
+  // Toggle username modal
   toggleUsernameModal = () => {
     this.setState(prevState => ({
       usernameEditModal: !prevState.usernameEditModal
+    }));
+  };
+  // Toggle email the modal
+  toggleEmailModal = () => {
+    this.setState(prevState => ({
+      editEmailOpen: !prevState.editEmailOpen
     }));
   };
 
@@ -66,10 +81,50 @@ class AdminUsers extends React.Component {
     // this.toggleUsernameModal;
   }
 
+  changeEmail = (oldEmail, id) => {
+    this.setState({ emailEditing: oldEmail, userIdEditing: id, editEmailOpen: true });
+  }
+  confirmResetPassword = (email) => {
+    this.setState({ emailReseting: email, confirmResetOpen: true });
+  }
+
+  renderConfirmResetModal = () => {
+    const { users } = this.props;
+    const { confirmResetOpen, emailReseting } = this.state;
+    return (
+      <Modal
+        open={confirmResetOpen}
+        size='tiny'
+        onClose={() => this.setState({ confirmResetOpen: false, emailReseting: null })}
+      >
+        <Modal.Content>
+          <p>Do you want to send a reset link to: <strong>{emailReseting}</strong> ?</p>
+        </Modal.Content>
+        <Modal.Actions>
+          {(users.passwordReseted && users.currentEmail === emailReseting) &&
+            <Message positive content='Password reset link sent' />
+          }
+          {(users.error && users.currentEmail === emailReseting) &&
+            <Message negative content={users.error} />
+          }
+          <Button secondary onClick={() => this.setState({ confirmResetOpen: false })}>Close</Button>
+          <Button primary onClick={() => { this.props.askPasswordReset(emailReseting); this.setState({ reseting: true }) }} loading={this.state.reseting}>Send</Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  }
 
   render() {
-    // const { sent, sendingInvitationID, errorSending } = this.state;
     const { users } = this.props;
+    const {
+      searchQuery,
+      userIdEditing,
+      usernameEditing,
+      editEmailOpen,
+      emailEditing,
+      usernameEditModal
+    } = this.state;
+
 
     return (
       <section className='fade-in users-section'>
@@ -109,8 +164,8 @@ class AdminUsers extends React.Component {
             <Table.Body>
               {users && users.users && users.users
                 .filter(instance =>
-                  (instance.email ? (instance.email.toLowerCase().includes(this.state.searchQuery.toLowerCase())) : (this.state.searchQuery ? false : true)) ||
-                  (instance.username.toLowerCase().includes(this.state.searchQuery.toLowerCase()))
+                  (instance.email ? (instance.email.toLowerCase().includes(searchQuery.toLowerCase())) : (searchQuery ? false : true)) ||
+                  (instance.username.toLowerCase().includes(searchQuery.toLowerCase()))
                 )
                 .map(instance => {
                   return (
@@ -123,6 +178,26 @@ class AdminUsers extends React.Component {
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.updated_at)}</Table.Cell>
                       <Table.Cell textAlign="center">
                         <Popup
+                          content="Add/Change Email"
+                          trigger={
+                            <Button
+                              icon='at'
+                              disabled={false}
+                              onClick={() => this.changeEmail(instance.email, instance.id)}
+                            />
+                          }
+                        />
+                        <Popup
+                          content="Send password reset"
+                          trigger={
+                            <Button
+                              icon='key'
+                              disabled={false}
+                              onClick={() => this.confirmResetPassword(instance.email)}
+                            />
+                          }
+                        />
+                        <Popup
                           content="Change Username"
                           trigger={
                             <Button
@@ -132,24 +207,15 @@ class AdminUsers extends React.Component {
                             />
                           }
                         />
-                        <Popup
-                          content="Add/Change Email"
-                          trigger={
-                            <Button
-                              icon='at'
-                              disabled={false}
-                            />
-                          }
-                        />
-                        <Popup
-                          content="Disable User"
+                        {/* <Popup
+                          content="Disable User - Comming soon"
                           trigger={
                             <Button
                               icon='ban'
                               disabled={false}
                             />
                           }
-                        />
+                        /> */}
                       </Table.Cell>
                     </Table.Row>
                   )
@@ -157,7 +223,21 @@ class AdminUsers extends React.Component {
             </Table.Body>
           </Table>
         </Segment>
-        <UsernameEditModal {...this.props} open={this.state.usernameEditModal} id={this.state.userIdEditing} oldUsername={this.state.usernameEditing} toggleUsernameModal={this.toggleUsernameModal} />
+        {this.renderConfirmResetModal()}
+        <EmailEditModal
+          {...this.props}
+          open={editEmailOpen}
+          oldEmail={emailEditing}
+          id={userIdEditing}
+          toggleEmailModal={this.toggleEmailModal}
+        />
+        <UsernameEditModal
+          {...this.props}
+          open={usernameEditModal}
+          id={userIdEditing}
+          oldUsername={usernameEditing}
+          toggleUsernameModal={this.toggleUsernameModal}
+        />
       </section>
     );
   };
