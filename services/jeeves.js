@@ -852,6 +852,7 @@ class Jeeves extends Hub {
   }
 
   async _getState () {
+    // WARNING: this loads the int32 for every entity in the database
     const cases = await this.db('cases').select('id').from('cases');
     const courts = await this.db('courts').select('id').from('courts');
     const conversations = await this.db('conversations').select('id').from('conversations');
@@ -2767,6 +2768,8 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/statistics/admin', async (req, res, next) => {
       const current = await this._getState();
+      const waiting = await this.db('invitations').count('id as count').where({ status: 'waiting' }).first();
+      current.inquiries.waiting = waiting.count;
       res.send(current);
     });
 

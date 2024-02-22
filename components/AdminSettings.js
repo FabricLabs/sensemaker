@@ -91,6 +91,7 @@ class AdminSettings extends React.Component {
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
 
     const inquiriesTotal = stats?.inquiries?.total ?? 0;
+    const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
 
@@ -123,7 +124,7 @@ class AdminSettings extends React.Component {
             <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
           </Statistic>
           <Statistic>
-            <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+            <Statistic.Value>{inquiriesWaiting}</Statistic.Value>
             <Statistic.Label>Waiting</Statistic.Label>
           </Statistic>
           <Statistic>
