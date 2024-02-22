@@ -27,9 +27,9 @@ const getMessagesRequest = () => ({ type: GET_MESSAGES_REQUEST, isSending: true 
 const getMessagesSuccess = (messages) => ({ type: GET_MESSAGES_SUCCESS, payload: { messages }, isSending: false });
 const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: error, error: error, isSending: false });
 
-const getMessageInformationRequest = () => ({ type: GET_INFORMATION_REQUEST});
+const getMessageInformationRequest = () => ({ type: GET_INFORMATION_REQUEST });
 const getMessageInformationSuccess = (info) => ({ type: GET_INFORMATION_SUCCESS, payload: info });
-const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error});
+const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error });
 
 const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
 
@@ -47,7 +47,6 @@ const submitMessage = (message, matter_id) => {
     const token = getState().auth.token;
 
     try {
-      console.log("en el actions",matter_id);
       const requestBody = matter_id !== null ? { ...message, matter_id } : message;
 
       const response = await fetch('/messages', {
@@ -143,16 +142,15 @@ const getMessageInformation = (request) => {
     try {
       const state = getState();
       const token = state.auth.token;
-     // 'SEARCH', '/services/courtlistener/dockets'
+      // 'SEARCH', '/services/courtlistener/dockets'
       const response = await fetch('/services/courtlistener/dockets', {
         method: 'SEARCH',
         headers: {
-  //        'Authorization': `Bearer ${token}`,
+          //        'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
       });
-      console.log("la respuesta",response);
 
       if (!response.ok) {
         const error = await response.json();

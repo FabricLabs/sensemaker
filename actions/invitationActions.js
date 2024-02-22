@@ -49,7 +49,7 @@ const sendInvitationSuccess = (response) => ({ type: SEND_INVITATION_SUCCESS, pa
 const sendInvitationFailure = (error) => ({ type: SEND_INVITATION_FAILURE, payload: error });
 
 const checkInvitationTokenRequest = () => ({ type: CHECK_INVITATION_TOKEN_REQUEST });
-const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKEN_SUCCESS, payload: response });
+const checkInvitationTokenSuccess = (response) => ({ type: CHECK_INVITATION_TOKEN_SUCCESS, payload: response.invitation });
 const checkInvitationTokenFailure = (error) => ({ type: CHECK_INVITATION_TOKEN_FAILURE, payload: error });
 
 const acceptInvitationRequest = () => ({ type: ACCEPT_INVITATION_REQUEST });

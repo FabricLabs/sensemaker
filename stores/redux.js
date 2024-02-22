@@ -22,6 +22,7 @@ const opinionReducer = require('../reducers/opinionReducer');
 const judgeReducer = require('../reducers/judgeReducer');
 const volumeReducer = require('../reducers/volumeReducer');
 const mattersReducer = require('../reducers/mattersReducer');
+const usersReducer = require('../reducers/usersReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   invitation: invitationReducer,
   matters: mattersReducer,
   jurisdictions: jurisdictionsReducer,
+  users: usersReducer,
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));

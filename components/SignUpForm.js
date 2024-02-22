@@ -14,7 +14,8 @@ const {
   Message,
   Header,
   Segment,
-  Label
+  Label,
+  Image
 } = require('semantic-ui-react');
 
 class SignUpForm extends React.Component {
@@ -41,7 +42,6 @@ class SignUpForm extends React.Component {
       usernameError: '',
       isEmailValid: false,
       emailError: '',
-
     };
   }
 
@@ -64,7 +64,8 @@ class SignUpForm extends React.Component {
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '' });
+        this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
+        this.props.checkEmailAvailable(this.props.invitation.invitation.target);
       } else {
         this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
       }
@@ -109,7 +110,6 @@ class SignUpForm extends React.Component {
       });
       if (event.target.name === 'username') {
         this.validateUsername(event.target.value);
-
       }
       if (event.target.name === 'email') {
         this.props.checkEmailAvailable(event.target.value);
@@ -208,16 +208,16 @@ class SignUpForm extends React.Component {
       pointing: 'above',
     };
 
-    const emailErrorMsg = (isEmailValid || !email) ? null : {
+    const emailErrorMsg = (isEmailValid || !email || emailError === null) ? null : {
       content: emailError,
       pointing: 'above',
     };
 
-
     return (
       <div className='fade-in signup-form'>
+        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
         <Segment>
-          <Form  loading={loading} centered>
+          <Form loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
                 <Header as='h3' textAlign="center">Sign Up</Header>
@@ -281,7 +281,7 @@ class SignUpForm extends React.Component {
                     label='Email'
                     type='email'
                     name='email'
-                    error={emailErrorMsg}
+                    error={emailError ? emailErrorMsg : null}
                     onChange={this.handleInputChange}
                     autoComplete="off"
                     value={email}
@@ -346,7 +346,7 @@ class SignUpForm extends React.Component {
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
                 <p>Please log in to access your account and start utilizing our services.</p>
                 <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
-                  <Button primary href="/sessions/new" >Log In</Button>
+                  <Button primary href="/sessions">Log In</Button>
                 </div>
               </Message>
             )}

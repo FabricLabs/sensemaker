@@ -78,7 +78,7 @@ class OpenAIService extends Service {
   }
 
   async _streamConversationRequest (request) {
-    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request);
+    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request.query, Object.keys(request));
     return new Promise(async (resolve, reject) => {
       const entropy = request.entropy || 0.0;
       const seed = new Actor({ name: `entropies/${entropy + ''}` });
@@ -139,7 +139,7 @@ class OpenAIService extends Service {
                         try {
                           const args = JSON.parse(toolcall.function.arguments);
                           console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Arguments:', args);
-                          const whitelist = ['127.0.0.1:3045'/* , 'trynovo.com', 'gamma.trynovo.com', 'jeeves.dev', 'beta.jeeves.dev', 'alpha.jeeves.dev' */];
+                          const whitelist = ['127.0.0.1:3045', 'trynovo.com', 'jeeves.dev', 'beta.jeeves.dev'/*, 'alpha.jeeves.dev' */];
                           if (!whitelist.includes(args.host)) {
                             console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Host not in whitelist:', args.host);
                           } else {

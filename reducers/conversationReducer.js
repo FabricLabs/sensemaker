@@ -8,6 +8,9 @@ const {
   FETCH_MATTER_CONVERSATIONS_REQUEST,
   FETCH_MATTER_CONVERSATIONS_SUCCESS,
   FETCH_MATTER_CONVERSATIONS_FAILURE,
+  EDIT_TITLE_REQUEST,
+  EDIT_TITLE_SUCCESS,
+  EDIT_TITLE_FAILURE,
 
 } = require('../actions/conversationActions');
 
@@ -16,7 +19,9 @@ const initialState = {
   conversations: [],
   matterConversations: [],
   loading: false,
-  error: null
+  editing: false,
+  error: null,
+  titleEditSuccess: false,
 };
 
 function conversationReducer(state = initialState, action) {
@@ -39,6 +44,12 @@ function conversationReducer(state = initialState, action) {
       return { ...state, loading: false, matterConversations: action.payload };
     case FETCH_MATTER_CONVERSATIONS_FAILURE:
       return { ...state, loading: false, error: action.payload, matterConversations: [], };
+    case EDIT_TITLE_REQUEST:
+      return { ...state, editing: true, error: null };
+    case EDIT_TITLE_SUCCESS:
+      return { ...state, editing: false, titleEditSuccess: true,};
+    case EDIT_TITLE_FAILURE:
+      return { ...state, editing: false, error: action.payload, titleEditSuccess: false };
     default:
       // console.warn('Unhandled action in conversation reducer:', action);
       return state;

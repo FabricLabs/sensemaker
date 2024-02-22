@@ -6,7 +6,6 @@ module.exports = function (req, res, next) {
       // TODO: pagination
       try {
         const conversations = await this.db.select('*').from('conversations').where({matter_id: req.params.matterID, creator_id: req.user.id});
-        console.log("nahuel conversations", conversations);
         res.send(conversations);
       } catch (exception) {
         res.status(503);

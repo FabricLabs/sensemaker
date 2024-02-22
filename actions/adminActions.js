@@ -44,27 +44,49 @@ async function createInvitationThroughAPI (invitation, token) {
 const FETCH_ADMIN_STATS_REQUEST = 'FETCH_ADMIN_STATS_REQUEST';
 const FETCH_ADMIN_STATS_SUCCESS = 'FETCH_ADMIN_STATS_SUCCESS';
 const FETCH_ADMIN_STATS_FAILURE = 'FETCH_ADMIN_STATS_FAILURE';
+
 const FETCH_SYNC_STATS_REQUEST = 'FETCH_SYNC_STATS_REQUEST';
 const FETCH_SYNC_STATS_SUCCESS = 'FETCH_SYNC_STATS_SUCCESS';
 const FETCH_SYNC_STATS_FAILURE = 'FETCH_SYNC_STATS_FAILURE';
+
 const FETCH_ALL_CONVERSATIONS_SUCCESS = 'FETCH_ALL_CONVERSATIONS_SUCCESS';
 const FETCH_ALL_CONVERSATIONS_FAILURE = 'FETCH_ALL_CONVERSATIONS_FAILURE';
+
 const CREATE_INVITATION_REQUEST = 'CREATE_INVITATION_REQUEST';
 const CREATE_INVITATION_SUCCESS = 'CREATE_INVITATION_SUCCESS';
 const CREATE_INVITATION_FAILURE = 'CREATE_INVITATION_FAILURE';
 
+const EDIT_USERNAME_REQUEST = 'EDIT_USERNAME_REQUEST';
+const EDIT_USERNAME_SUCCESS = 'EDIT_USERNAME_SUCCESS';
+const EDIT_USERNAME_FAILURE = 'EDIT_USERNAME_FAILURE';
+
+const EDIT_EMAIL_REQUEST = 'EDIT_EMAIL_REQUEST';
+const EDIT_EMAIL_SUCCESS = 'EDIT_EMAIL_SUCCESS';
+const EDIT_EMAIL_FAILURE = 'EDIT_EMAIL_FAILURE';
+
 // Action creators
 const fetchAdminStatsRequest = () => ({ type: FETCH_ADMIN_STATS_REQUEST });
 const fetchAdminStatsSuccess = (stats) => ({ type: FETCH_ADMIN_STATS_SUCCESS, payload: stats });
+const fetchAdminStatsFailure = (error) => ({ type: FETCH_SYNC_STATS_FAILURE, payload: error });
+
 const fetchSyncStatsFailure = (error) => ({ type: FETCH_ADMIN_STATS_FAILURE, payload: error });
 const fetchSyncStatsRequest = () => ({ type: FETCH_SYNC_STATS_REQUEST });
 const fetchSyncStatsSuccess = (stats) => ({ type: FETCH_SYNC_STATS_SUCCESS, payload: stats });
-const fetchAdminStatsFailure = (error) => ({ type: FETCH_SYNC_STATS_FAILURE, payload: error });
+
 const fetchAllConversationsSuccess = (conversations) => ({ type: FETCH_ALL_CONVERSATIONS_SUCCESS, payload: conversations });
 const fetchAllConversationsFailure = (error) => ({ type: FETCH_ALL_CONVERSATIONS_FAILURE, payload: error });
+
 const createInvitationRequest = () => ({ type: CREATE_INVITATION_REQUEST });
 const createInvitationSuccess = (instance) => ({ type: CREATE_INVITATION_SUCCESS, payload: instance });
 const createInvitationFailure = (error) => ({ type: CREATE_INVITATION_FAILURE, payload: error });
+
+const editUsernameRequest = () => ({ type: EDIT_USERNAME_REQUEST, loading: true });
+const editUsernameSuccess = () => ({ type: EDIT_USERNAME_SUCCESS, loading: false });
+const editUsernameFailure = (error) => ({ type: EDIT_USERNAME_FAILURE, payload: error, loading: false });
+
+const editEmailRequest = () => ({ type: EDIT_EMAIL_REQUEST, loading: true });
+const editEmailSuccess = () => ({ type: EDIT_EMAIL_SUCCESS, loading: false });
+const editEmailFailure = (error) => ({ type: EDIT_EMAIL_FAILURE, payload: error, loading: false });
 
 // Thunk action creator
 const fetchAdminStats = () => {
@@ -126,12 +148,75 @@ const createInvitation = (invitation) => {
   };
 }
 
+const editUsername = (id, newUsername) => {
+  return async (dispatch, getState) => {
+    const { token } = getState().auth;
+    dispatch(editUsernameRequest());
+    try {
+      const fetchPromise = fetch('/users/username', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, newUsername }),
+      });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 15000);
+      });
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      dispatch(editUsernameSuccess());
+    } catch (error) {
+      dispatch(editUsernameFailure(error));
+    }
+  }
+}
+
+const editEmail = (id, newEmail) => {
+  return async (dispatch, getState) => {
+    const { token } = getState().auth;
+    dispatch(editEmailRequest());
+    try {
+      const fetchPromise = fetch('/users/email', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, newEmail }),
+      });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Fetch timed out"));
+        }, 15000);
+      });
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+      dispatch(editEmailSuccess());
+    } catch (error) {
+      dispatch(editEmailFailure(error));
+    }
+  }
+}
+
+
 module.exports = {
   fetchAdminStats,
   fetchAllConversationsFromAPI,
   fetchSyncStats,
   createInvitation,
+  editUsername,
+  editEmail,
   FETCH_ADMIN_STATS_REQUEST,
   FETCH_ADMIN_STATS_SUCCESS,
-  FETCH_ADMIN_STATS_FAILURE
+  FETCH_ADMIN_STATS_FAILURE,
+  EDIT_USERNAME_REQUEST,
+  EDIT_USERNAME_SUCCESS,
+  EDIT_USERNAME_FAILURE,
+  EDIT_EMAIL_REQUEST,
+  EDIT_EMAIL_SUCCESS,
+  EDIT_EMAIL_FAILURE,
 };

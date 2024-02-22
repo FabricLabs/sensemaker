@@ -124,6 +124,13 @@ const ROUTES = {
   },
   courts: {
     view: require('../routes/courts/court_view'),
+  },
+  users: {
+    list: require('../routes/users/list_users'),
+    listFiles: require('../routes/users/list_user_files'),
+    editUsername: require('../routes/users/edit_username'),
+    editEmail: require('../routes/users/edit_email'),
+    view: require('../routes/users/view_user'),
   }
 };
 
@@ -337,9 +344,11 @@ class Jeeves extends Hub {
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
-    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: '127.0.0.1:11434', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', prompt: this.settings.prompt });
     this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
+    this.usa = new Agent({ name: 'USA', host: '5.161.216.231', prompt: this.settings.prompt });
 
     // Pipeline Datasources
     this.datasources = {
@@ -509,7 +518,7 @@ class Jeeves extends Hub {
       try {
         // Alert Tech
         await this.email.send({
-            from: 'agent@jeeves.dev',
+            from: 'agent@trynovo.com',
             to: 'tech@jeeves.dev',
             subject: `[ALERT] [JEEVES] Jeeves Alert`,
             html: message
@@ -600,12 +609,14 @@ class Jeeves extends Hub {
       const created = now.toISOString();
 
       // Add Request to Database
+      // TODO: assign `then` to allow async processing
       const inserted = await this.db('requests').insert({
         created_at: toMySQLDatetime(now),
         content: JSON.stringify(request)
       });
 
       // Store user request
+      // TODO: assign `then` to allow async processing
       const responseMessage = await this.db('messages').insert({
         conversation_id: request.conversation_id,
         user_id: 1,
@@ -613,7 +624,7 @@ class Jeeves extends Hub {
         content: `${this.settings.name} is researching your question...`
       });
 
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Response Message:', responseMessage);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Created response placeholder message:', responseMessage);
 
       // Create Request Message
       const message = Message.fromVector(['TimedRequest', JSON.stringify({
@@ -626,10 +637,10 @@ class Jeeves extends Hub {
       this.emit('request', { id: inserted [0] });
 
       // TODO: prepare maximum token length
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
       // Compute most relevant tokens
-      const caseCount = await this.db('cases').count('id as count').first();
+      // const caseCount = await this.db('cases').count('id as count').first();
       // const hypotheticals = await this.lennon.query({ query: request.query });
       const words = this.importantWords(request.query);
       const phrases = this.importantPhrases(request.query);
@@ -643,18 +654,18 @@ class Jeeves extends Hub {
       */
 
       // console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Hypotheticals:', hypotheticals);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Phrases:', phrases);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Real Cases:', cases);
 
       // Format Metadata
       const meta = `metadata:\n` +
         `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
         `  cases:\n` +
         cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
-        `\n` +
-        `  counts:\n` +
-        `    cases: ` + caseCount.count + `\n` +
-        ``;
+        // `\n` +
+        // `  counts:\n` +
+        // `    cases: ` + caseCount.count +
+        `\n`;
 
       // Format Query Text
       const query = `---\n` +
@@ -710,7 +721,8 @@ class Jeeves extends Hub {
         this.gemini.query({ query, messages }),
         this.lennon.query({ query, messages }),
         this.llama.query({ query, messages }),
-        // this.mistral.query({ query, messages })
+        // this.mistral.query({ query, messages }),
+        this.mixtral.query({ query, messages })
       ]);
 
       // TODO: execute RAG query for additional metadata
@@ -1066,6 +1078,8 @@ class Jeeves extends Hub {
    */
   async start () {
     const self = this;
+    const applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
+    this.applicationString = applicationString;
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -1084,7 +1098,7 @@ class Jeeves extends Hub {
     // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
-    this.products = await this.stripe.enumerateProducts();
+    // this.products = await this.stripe.enumerateProducts();
 
     if (this.settings.statutes.enable) {
       this.statutes.start().then((output) => {
@@ -1568,6 +1582,9 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
+    // Health
+    this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
+
     // Files
     this.http.express.post('/files', this.uploader.single('file'), ROUTES.files.create.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
@@ -1593,6 +1610,14 @@ class Jeeves extends Hub {
 
     // Jurisdictions
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
+
+    // Users
+    this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
+    this.http._addRoute('GET', '/users/:username', ROUTES.users.view.bind(this));
+    // TODO: switch to PATCH `/users/:username`
+    this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
+    this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
+
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
@@ -1672,7 +1697,7 @@ class Jeeves extends Hub {
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
 
         await this.email.send({
-          from: 'agent@jeeves.dev',
+          from: 'agent@trynovo.com',
           to: email,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -1728,13 +1753,13 @@ class Jeeves extends Hub {
         };
 
         const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/${invitationToken}`;
-        const declineInvitationLink = `http://${this.http.hostname}:${this.http.port}/signup/decline/${invitationToken}`;
+        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
 
         const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
-          from: 'agent@jeeves.dev',
+          from: 'agent@trynovo.com',
           to: invitation.target,
           subject: 'Invitation to join Novo',
           html: htmlContent
@@ -2040,7 +2065,6 @@ class Jeeves extends Hub {
       } catch (error) {
         res.status(500).json({ message: 'Internal server error.', error });
       }
-
     });
 
     this.http._addRoute('GET', '/sessions', async (req, res, next) => {
@@ -2049,7 +2073,7 @@ class Jeeves extends Hub {
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
-      return res.send(this.http.app.render());
+      return res.redirect('/sessions');
     });
 
     this.http._addRoute('GET', '/passwordreset/:token', async (req, res, next) => {
@@ -2210,25 +2234,14 @@ class Jeeves extends Hub {
         //We have to change the resetLink when it goes to the server so it redirects to the right hostname
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
-        const resetLink = `http://${this.http.hostname}:${this.http.port}/passwordreset/${resetToken}`;
+        const resetLink = `${this.authority}/passwordreset/${resetToken}`;
         const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        // const htmlContent = `
-        //                         <html>
-        //                           <body>
-        //                             <p>Hello,</p>
-        //                             <p>Please click on the link below to reset your password:</p>
-        //                             <p><a href="${resetLink}">Reset Password</a></p>
-        //                             <p>If you did not request a password reset, please ignore this email.</p>
-        //                             <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-        //                           </body>
-        //                         </html>
-        //                       `;
+
         const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {
           await this.email.send({
-           // from: 'agent@jeeves.dev',
-            from: this.settings.email.username,
+            from: 'agent@trynovo.com',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -2459,9 +2472,9 @@ class Jeeves extends Hub {
           // TODO: provide state
           // const page = new CaseView({});
           // TODO: fix this hack
-          const page = new CaseHome({}); // TODO: use CaseView
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          // const page = new CaseHome({}); // TODO: use CaseView
+          // const html = page.toHTML();
+          return res.send(applicationString);
         }
       });
     });
@@ -2493,10 +2506,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: provide state
-          // const page = new Conversations({});
-          const page = new CaseHome({}); // TODO: use Conversations
-          const html = page.toHTML();
-          return res.send(this.http.app._renderWith(html));
+          return res.send(applicationString);
         }
       });
     });
@@ -2514,7 +2524,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2528,7 +2538,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2565,7 +2575,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2591,7 +2601,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2627,7 +2637,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2640,7 +2650,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2654,7 +2664,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2667,7 +2677,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2680,7 +2690,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2693,7 +2703,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2706,7 +2716,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       });
     });
@@ -2731,13 +2741,21 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
       const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations').where({ id: req.params.id }).first();
-      const messages = await knex('messages')
+      const messages = await this.db('messages')
         .whereIn('id', conversation.log)
         .select('id', 'content', 'created_at');
 
       conversation.messages = messages;
 
-      res.send(conversation);
+      res.format({
+        json: () => {
+          res.send(conversation);
+        },
+        html: () => {
+          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+          return res.send(applicationString);
+        }
+      });
     });
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
@@ -2819,7 +2837,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -2833,7 +2851,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(this.http.app._renderWith(''));
+          return res.send(applicationString);
         }
       })
     });
@@ -3014,7 +3032,7 @@ class Jeeves extends Hub {
           }); */
 
           // TODO: restore titling
-        /*  
+        /*
         }); */
 
         if (!conversation.log) conversation.log = [];
@@ -3156,6 +3174,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
+      if (!this.courtlistener) return res.send({ message: 'CourtListener is not available.' });
       const request = req.body;
       console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
 
@@ -3554,15 +3573,24 @@ class Jeeves extends Hub {
   }
 
   async _handleInquiryListRequest (req, res, next) {
-    try {
-      const inquiries = await this.db('inquiries')
-        .select('*')
-        .orderBy('created_at', 'desc');
-      res.send(inquiries);
-    } catch (error) {
-      console.error('Error fetching inquiries:', error);
-      res.status(500).json({ message: 'Internal server error.' });
-    }
+    res.format({
+      json: async () => {
+        if (!req.user || !req.user.state || !req.user.state.roles.includes('admin')) return res.status(401).json({ message: 'Unauthorized.' });
+
+        try {
+          const inquiries = await this.db('inquiries')
+            .select('*')
+            .orderBy('created_at', 'desc');
+          res.send(inquiries);
+        } catch (error) {
+          console.error('Error fetching inquiries:', error);
+          res.status(500).json({ message: 'Internal server error.' });
+        }
+      },
+      html: () => {
+        return res.send(applicationString);
+      }
+    });
   }
 
   async _handleInquiryCreateRequest (req, res, next) {
@@ -3690,6 +3718,12 @@ class Jeeves extends Hub {
         content: exception
       });
     }
+  }
+
+  async _handleHealthRequest (req, res, next) {
+    res.send({
+      status: 'healthy'
+    });
   }
 
   async _handlePeopleSearchRequest (req, res, next) {

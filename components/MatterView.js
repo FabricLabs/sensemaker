@@ -62,7 +62,18 @@ class MatterView extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { matters, jurisdictions, courts } = this.props;
+
+    if (this.props.id !== prevProps.id) {
+      this.props.fetchMatter(this.props.id);
+      this.props.fetchMatterConversations(this.props.id);
+      this.props.fetchJurisdictions();
+      this.props.fetchCourts();
+    }
+    if (prevProps.matterConversations !== this.props.matterConversations) {
+      this.forceUpdate();
+    }
     if (prevProps.matters.current !== matters.current) {
+      this.props.fetchMatterConversations(this.props.id);
       if (matters.current.file) {
         this.setState({ filename: matters.current.file })
       }
@@ -181,40 +192,41 @@ class MatterView extends React.Component {
   }
 
   render() {
-    const { matters, jurisdictions, courts, matterConversations, conversationsLoading } = this.props;
+    const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
 
     const jurisdictionErrorMessage = (!this.state.jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
-
     return (
-      <Segment loading={matters.loading || jurisdictions.loading || courts.loading || conversationsLoading} style={{ marginRight: '1em' }}>
+      <Segment
+        loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
+        style={{ marginRight: '1em', maxHeight: '100%' }}>
         <section className='matter-header'>
-        {this.state.isEditMode ? (
-          <Grid columns={2}>
-            <GridRow>
-              <GridColumn width={10} textAlign='center'>
-                <Input
-                  name='title'
-                  onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
-                  value={this.state.title}
-                  fluid
-                />
-              </GridColumn>
-              <GridColumn width={6} style={{display: 'flex'}}>
-                <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
-                <Button primary content='Save' size='medium' onClick={this.saveChanges} />
-              </GridColumn>
-            </GridRow>
-          </Grid>
-        ) : (
-          <div style={{ display: 'flex', alignItems:'center' }}>
-            <Header as='h1' style={{marginTop:'0', marginBottom:'0'}}>{current.title}</Header>
-            <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode}  style={{marginLeft:'1em', cursor: 'pointer'}}/>
-          </div>
-        )}
+          {this.state.isEditMode ? (
+            <Grid columns={2}>
+              <GridRow>
+                <GridColumn width={10} textAlign='center'>
+                  <Input
+                    name='title'
+                    onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
+                    value={this.state.title}
+                    fluid
+                  />
+                </GridColumn>
+                <GridColumn width={6} style={{ display: 'flex' }}>
+                  <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
+                  <Button primary content='Save' size='medium' onClick={this.saveChanges} />
+                </GridColumn>
+              </GridRow>
+            </Grid>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
+              <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
+            </div>
+          )}
         </section>
         <section className='matter-details'>
           <Grid columns={2}>
@@ -407,32 +419,30 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
-            {this.state.filename &&
-              <GridRow>
-                <GridColumn width={3} />
-                <GridColumn width={13}>
-                  <div>
-                    <List>
-                      {(matterConversations && matterConversations.length > 0) && matterConversations
-                        .map(instance => {
-                          return (
-                            <div>
-                              <List.Item style={{ marginTop: '0.5em' }}>
-                                {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
-                                <Link to={'/matter/conversation/' + instance.id}>
-                                  {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
-                                  {instance.title}
-                                </Link>
+            <GridRow>
+              <GridColumn width={3} />
+              <GridColumn width={13}>
+                <div>
+                  <List>
+                    {(matterConversations && matterConversations.length > 0) && matterConversations
+                      .map(instance => {
+                        return (
+                          <div>
+                            <List.Item style={{ marginTop: '0.5em' }}>
+                              {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
+                              <Link to={'/matter/conversation/' + instance.id}>
+                                {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
+                                {instance.title}
+                              </Link>
 
-                              </List.Item>
-                              {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
-                            </div>)
-                        })}
-                    </List>
-                  </div>
-                </GridColumn>
-              </GridRow>
-            }
+                            </List.Item>
+                            {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
+                          </div>)
+                      })}
+                  </List>
+                </div>
+              </GridColumn>
+            </GridRow>
             <GridRow>
               <GridColumn width={13} textAlign='center'>
                 <Link to={'/matters/conversation/new/' + this.props.id} >
@@ -454,7 +464,7 @@ class MatterView extends React.Component {
             note={this.state.note}
           />
         </section>
-        <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header>
+        {/* <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header> */}
       </Segment>
     );
   }

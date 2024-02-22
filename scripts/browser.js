@@ -41,7 +41,9 @@ const {
 const {
   fetchAdminStats,
   fetchAllConversationsFromAPI,
-  createInvitation
+  createInvitation,
+  editUsername,
+  editEmail,
 } = require('../actions/adminActions');
 
 // ## Invitation Actions
@@ -102,6 +104,7 @@ const {
   fetchConversations,
   fetchConversation,
   fetchMatterConversations,
+  conversationTitleEdit,
 } = require('../actions/conversationActions');
 
 // ## Person Actions
@@ -143,6 +146,13 @@ const {
   removeFile,
   editMatter,
 } = require('../actions/mattersActions');
+
+// ## Users Actions
+const {
+  fetchUsers,
+  fetchUser,
+  askPasswordReset,
+} = require('../actions/usersActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -204,7 +214,8 @@ async function main (input = {}) {
       token: state.auth.token,
       stats: state.stats,
       matters: state.matters,
-      jurisdictions: state.jurisdictions
+      jurisdictions: state.jurisdictions,
+      users: state.users,
     }
   };
 
@@ -215,6 +226,7 @@ async function main (input = {}) {
     signContract: signContract,
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
+    conversationTitleEdit: conversationTitleEdit,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
     fetchJurisdictions: fetchJurisdictions,
@@ -251,6 +263,8 @@ async function main (input = {}) {
     checkUsernameAvailable: checkUsernameAvailable,
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,
+    editUsername: editUsername,
+    editEmail: editEmail,
     resetChat: resetChat,
     submitMessage: submitMessage,
     regenAnswer: regenAnswer,
@@ -263,6 +277,9 @@ async function main (input = {}) {
     removeFile: removeFile,
     fetchMatterConversations: fetchMatterConversations,
     editMatter: editMatter,
+    fetchUsers: fetchUsers,
+    fetchUser: fetchUser,
+    askPasswordReset: askPasswordReset,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');
