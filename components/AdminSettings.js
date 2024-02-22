@@ -764,7 +764,6 @@ class AdminSettings extends React.Component {
                   <button class="ui inverted blue basic button">Basic Colored</button>
                 </div>
               </div>
-              <br className='clearfix' />
             </div>
             <br className="clearfix" />
             <Header as='h4'>Table</Header>
