@@ -218,6 +218,32 @@ const removeFile = (id) => {
   }
 }
 
+const fetchMatterFiles = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchMatterFilesRequest());
+    const { token } = getState().auth;
+    try {
+      const files = await fetchFromAPI(`/matter/files/${id}`, null, token);
+      dispatch(fetchMatterFilesSuccess(files));
+    } catch (error) {
+      dispatch(fetchMatterFilesFailure(error.message));
+    }
+  };
+};
+
+const fetchMatterNotes = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchMatterFilesRequest());
+    const { token } = getState().auth;
+    try {
+      const notes = await fetchFromAPI(`/matter/files/${id}`, null, token);
+      dispatch(fetchMatterFilesSuccess(notes));
+    } catch (error) {
+      dispatch(fetchMatterFilesFailure(error.message));
+    }
+  };
+};
+
 module.exports = {
   fetchMatters,
   fetchMatter,
@@ -225,6 +251,8 @@ module.exports = {
   addContext,
   removeFile,
   editMatter,
+  fetchMatterFiles,
+  fetchMatterNotes,
   FETCH_MATTERS_REQUEST,
   FETCH_MATTERS_SUCCESS,
   FETCH_MATTERS_FAILURE,

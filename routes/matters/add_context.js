@@ -11,7 +11,18 @@ module.exports = async function (req, res) {
         file: filename,
         updated_at: new Date(),
       });
-
+    if(note){
+      const insertNote = await this.db('matters_notes').insert({
+        content: note,
+        matter_id: req.params.id ,
+      });
+    }
+    if(filename){
+      const insertFile = await this.db('matters_files').insert({
+        filename: filename,
+        matter_id: req.params.id ,
+      });
+    }
     res.send({
       message: 'Context added successfully!'
     });

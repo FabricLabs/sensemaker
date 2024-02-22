@@ -202,7 +202,7 @@ class MatterView extends React.Component {
     return (
       <Segment
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
-        style={{ marginRight: '1em', maxHeight: '100%' }}>
+        style={{ maxHeight: '100%' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
             <Grid columns={2}>
@@ -459,9 +459,9 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
-            filename={this.state.filename}
-            deleteFile={this.deleteFile}
-            note={this.state.note}
+            // filename={this.state.filename}
+            // deleteFile={this.deleteFile}
+            // note={this.state.note}
           />
         </section>
         {/* <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header> */}
