@@ -20,7 +20,8 @@ const {
   Dropdown,
   TextArea,
   Form,
-  Divider
+  Divider,
+  Confirm
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
@@ -30,9 +31,11 @@ class MatterView extends React.Component {
     super(settings);
     this.state = {
       loading: false,
-      attachModalOpen: false,
+      attachModalOpen: false, //flag to open the attach file or note modal
       addingContext: false,
       isEditMode: false,
+
+      // these are the field for the case that can be edited
       representingOption: '',
       jurisdictionsOptions: null,
       courtsOptions: null,
@@ -43,10 +46,14 @@ class MatterView extends React.Component {
       court_id: null,
       jurisdiction_id: null,
       jurisdictionError: false,
-      creating: false,
-      resetFlag: false,
-      errorCreating: '',
-      expandedNoteId: null,
+
+      expandedNoteId: null, //id of the note to expand height
+      fileDeleting: null, //id of the file about to delete
+      noteDeleting: null, //id of the note about to delete
+
+      //these are the flags to ask to confirm before deleting
+      confirmFileDelete: false,
+      confirmNoteDelete: false,
     };
   }
 
@@ -91,15 +98,11 @@ class MatterView extends React.Component {
       }
     }
     if (prevProps.matters !== matters && !matters.addingContext) {
-      if (this.state.addingContext) {
+      if (this.state.addingContext && matters.error) {
         //TO DO, HANDLING SITUATIONS
-        if (matters.contextSuccess) {
-          console.log("matter context added");
-        } else {
-          console.log("error adding context");
-        }
-        this.setState({ addingContext: false });
+        console.log("error adding context", matters.error);
       }
+      this.setState({ addingContext: false });
     }
     if (prevProps.jurisdictions !== jurisdictions) {
       if (jurisdictions.jurisdictions.length > 0) {
@@ -175,11 +178,13 @@ class MatterView extends React.Component {
 
   deleteFile = async (id) => {
     await this.props.removeFile(id);
+    this.setState({ confirmFileDelete: false });
     this.props.fetchMatterFiles(this.props.id);
   }
 
   deleteNote = async (id) => {
     await this.props.removeNote(id);
+    this.setState({ confirmNoteDelete: false });
     this.props.fetchMatterNotes(this.props.id);
   }
 
@@ -239,7 +244,9 @@ class MatterView extends React.Component {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
-              <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
+              <Popup content="Edit Matter's information" trigger={
+                <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
+              } />
             </div>
           )}
         </section>
@@ -409,7 +416,12 @@ class MatterView extends React.Component {
                           <div key={instance.id} className='matter-file'>
                             <List.Item style={{ marginTop: '0.5em', display: 'Flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <Label>{instance.filename}</Label>
-                              <Icon name='trash alternate' className='matter-delete-file-icon' onClick={() => this.deleteFile(instance.id)} />
+                              <Icon
+                                name='trash alternate'
+                                className='matter-delete-file-icon'
+                                onClick={() => this.setState({ confirmFileDelete: true, fileDeleting: instance.id })}
+                                style={{ marginLeft: '0.5em' }}
+                              />
                             </List.Item>
                           </div>
                         )
@@ -436,12 +448,16 @@ class MatterView extends React.Component {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <List.Item
                               className="expandable-note"
-                              style={{ marginTop: '0.5em', maxHeight: isExpanded ? '300px' : '1.25em', overflow: isExpanded ? 'auto' : 'hidden' }}
+                              style={{ marginTop: '0.5em', marginRight: '0.5em', maxHeight: isExpanded ? '300px' : '2.5em', overflow: isExpanded ? 'auto' : 'hidden' }}
                               onClick={() => this.toggleNoteExpansion(instance.id)}
                             >
                               <Header as='h5'>{instance.content}</Header>
                             </List.Item>
-                            <Icon name='trash alternate' className='matter-delete-note-icon' onClick={() => this.deleteNote(instance.id)} />
+                            <Icon
+                              name='trash alternate'
+                              className='matter-delete-note-icon'
+                              onClick={() => this.setState({ confirmNoteDelete: true, noteDeleting: instance.id })}
+                            />
                           </div>
                           <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
                         </div>
@@ -506,6 +522,20 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
+          />
+          <Confirm
+            content='Delete this file from the Matter?'
+            open={this.state.confirmFileDelete}
+            onCancel={() => this.setState({ confirmFileDelete: false })}
+            onConfirm={() => this.deleteFile(this.state.fileDeleting)}
+            style={{ maxWidth: '200px' }}
+          />
+          <Confirm
+            content='Delete this note from the Matter?'
+            open={this.state.confirmNoteDelete}
+            onCancel={() => this.setState({ confirmNoteDelete: false })}
+            onConfirm={() => this.deleteNote(this.state.noteDeleting)}
+            style={{ maxWidth: '200px' }}
           />
         </section>
       </Segment>

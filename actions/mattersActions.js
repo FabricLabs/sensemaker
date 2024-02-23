@@ -141,11 +141,7 @@ const editMatter = (id, title, description, plaintiff, defendant, representing, 
     dispatch(editMatterRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
+      const timeoutPromise = createTimeoutPromise(15000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
       const fetchPromise = fetch(`/matter/edit/${id}`, {
         method: 'PATCH',
@@ -179,11 +175,7 @@ const addContext = (note, filename, id) => {
     dispatch(addContextRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
+      const timeoutPromise = createTimeoutPromise(15000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matter/context/${id}`, {
@@ -210,7 +202,7 @@ const removeFile = (id) => {
     try {
       const { token } = getState().auth;
       const timeoutPromise = createTimeoutPromise(15000, 'File deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
-      
+
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matters/removefile/${id}`, {
         method: 'PATCH',
@@ -236,7 +228,7 @@ const removeNote = (id) => {
     try {
       const { token } = getState().auth;
       const timeoutPromise = createTimeoutPromise(15000, 'Note deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
-      
+
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matters/removenote/${id}`, {
         method: 'PATCH',
