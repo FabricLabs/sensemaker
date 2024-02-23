@@ -19,7 +19,8 @@ const {
   Input,
   Dropdown,
   TextArea,
-  Form
+  Form,
+  Divider
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
@@ -48,8 +49,7 @@ class MatterView extends React.Component {
       creating: false,
       resetFlag: false,
       errorCreating: '',
-
-
+      expandedNoteId: null,
     };
   }
 
@@ -58,10 +58,16 @@ class MatterView extends React.Component {
     this.props.fetchMatterConversations(this.props.id);
     this.props.fetchJurisdictions();
     this.props.fetchCourts();
+    this.props.fetchMatterFiles(this.props.id);
+    this.props.fetchMatterNotes(this.props.id);
   }
 
   componentDidUpdate(prevProps) {
     const { matters, jurisdictions, courts } = this.props;
+
+    if (prevProps.matters !== matters) {
+      console.log(matters);
+    }
 
     if (this.props.id !== prevProps.id) {
       this.props.fetchMatter(this.props.id);
@@ -74,12 +80,12 @@ class MatterView extends React.Component {
     }
     if (prevProps.matters.current !== matters.current) {
       this.props.fetchMatterConversations(this.props.id);
-      if (matters.current.file) {
-        this.setState({ filename: matters.current.file })
-      }
-      if (matters.current.note) {
-        this.setState({ note: matters.current.note })
-      }
+      // if (matters.current.file) {
+      //   this.setState({ filename: matters.current.file })
+      // }
+      // if (matters.current.note) {
+      //   this.setState({ note: matters.current.note })
+      // }
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
       }
@@ -190,6 +196,12 @@ class MatterView extends React.Component {
     await this.props.fetchMatter(this.props.id);
     this.toggleEditMode();
   }
+
+  toggleNoteExpansion = (id) => {
+    this.setState(prevState => ({
+      expandedNoteId: prevState.expandedNoteId === id ? null : id // Toggle expansion
+    }));
+  };
 
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
@@ -381,23 +393,50 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
-            {this.state.filename &&
+            {matters && matters.matterFiles &&
               <GridRow>
-                <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
-                  <Header as='h3'>File</Header>
+                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
+                  <Header as='h3'>Files</Header>
                 </GridColumn>
                 <GridColumn width={12}>
-                  <Label>{this.state.filename}</Label>
+                  <List>
+                    {matters.matterFiles
+                      .map(instance => {
+                        return (
+                          <div key={instance.id}>
+                            <List.Item style={{ marginTop: '0.5em' }}><Label>{instance.filename}</Label></List.Item>
+                          </div>
+                        )
+                      })}
+                  </List>
                 </GridColumn>
               </GridRow>
             }
-            {this.state.note &&
+            {matters && matters.matterNotes &&
               <GridRow>
-                <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
-                  <Header as='h3'>Aditional Note</Header>
+                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
+                  <Header as='h3'>Aditional Notes</Header>
                 </GridColumn>
                 <GridColumn width={12}>
-                  <Header as='h5'>{this.state.note}</Header>
+                  <List>
+                    {matters.matterNotes.map(instance => {
+                      const isExpanded = this.state.expandedNoteId === instance.id;
+                      return (
+                        <div key={instance.id}
+                          onClick={() => this.toggleNoteExpansion(instance.id)}
+                          style={{ cursor: 'pointer' }}>
+                            {/* TO DO fix this much better */}
+                          <div style={{display:'flex', alignItems:'center'}}>
+                            <List.Item style={{ marginTop: '0.5em', maxHeight: isExpanded ? 'none' : '1.4em', overflow: 'hidden' }}>
+                              <Header as='h5'>{instance.content}</Header>
+                            </List.Item>
+                            <Icon name={isExpanded ? 'angle up' : 'angle down'} />
+                          </div>
+                          <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
+                        </div>
+                      )
+                    })}
+                  </List>
                 </GridColumn>
               </GridRow>
             }
@@ -459,9 +498,9 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
-            // filename={this.state.filename}
-            // deleteFile={this.deleteFile}
-            // note={this.state.note}
+          // filename={this.state.filename}
+          // deleteFile={this.deleteFile}
+          // note={this.state.note}
           />
         </section>
         {/* <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header> */}

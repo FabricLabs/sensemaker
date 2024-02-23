@@ -1,6 +1,9 @@
 'use strict';
 
 const { fetchFromAPI } = require('./apiActions');
+const createTimeoutPromise = require('../functions/createTimeoutPromise');
+
+
 
 async function fetchMattersFromAPI(token) {
   return fetchFromAPI('/matters', null, token);
@@ -31,6 +34,14 @@ const REMOVE_FILE_REQUEST = 'REMOVE_FILE_REQUEST';
 const REMOVE_FILE_SUCCESS = 'REMOVE_FILE_SUCCESS';
 const REMOVE_FILE_FAILURE = 'REMOVE_FILE_FAILURE';
 
+const FETCH_MATTER_FILES_REQUEST = 'FETCH_MATTER_FILES_REQUEST';
+const FETCH_MATTER_FILES_SUCCESS = 'FETCH_MATTER_FILES_SUCCESS';
+const FETCH_MATTER_FILES_FAILURE = 'FETCH_MATTER_FILES_FAILURE';
+
+const FETCH_MATTER_NOTES_REQUEST = 'FETCH_MATTER_NOTES_REQUEST';
+const FETCH_MATTER_NOTES_SUCCESS = 'FETCH_MATTER_NOTES_SUCCESS';
+const FETCH_MATTER_NOTES_FAILURE = 'FETCH_MATTER_NOTES_FAILURE';
+
 // Action creators
 const fetchMattersRequest = () => ({ type: FETCH_MATTERS_REQUEST });
 const fetchMattersSuccess = (matters) => ({ type: FETCH_MATTERS_SUCCESS, payload: matters });
@@ -55,6 +66,14 @@ const addContextFailure = (error) => ({ type: ADD_CONTEXT_FAILURE, payload: erro
 const removeFileRequest = () => ({ type: REMOVE_FILE_REQUEST, loading: true });
 const removeFileSuccess = (response) => ({ type: REMOVE_FILE_SUCCESS, payload: response });
 const removeFileFailure = (error) => ({ type: REMOVE_FILE_FAILURE, payload: error });
+
+const fetchMatterFilesRequest = () => ({ type: FETCH_MATTER_FILES_REQUEST });
+const fetchMatterFilesSuccess = (files) => ({ type: FETCH_MATTER_FILES_SUCCESS, payload: files });
+const fetchMatterFilesFailure = (error) => ({ type: FETCH_MATTER_FILES_FAILURE, payload: error });
+
+const fetchMatterNotesRequest = () => ({ type: FETCH_MATTER_NOTES_REQUEST });
+const fetchMatterNotesSuccess = (notes) => ({ type: FETCH_MATTER_NOTES_SUCCESS, payload: notes });
+const fetchMatterNotesFailure = (error) => ({ type: FETCH_MATTER_NOTES_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchMatters = () => {
@@ -88,11 +107,8 @@ const createMatter = (title, description, plaintiff, defendant, representing, ju
     dispatch(createMatterRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Matter creation could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
+
+      const timeoutPromise = createTimeoutPromise(15000, 'Matter creation could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.')
 
       const fetchPromise = fetch('/matters', {
         method: 'POST',
@@ -169,7 +185,7 @@ const addContext = (note, filename, id) => {
         }, 15000);
       });
 
-      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull      
+      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matter/context/${id}`, {
         method: 'PATCH',
         headers: {
@@ -223,7 +239,7 @@ const fetchMatterFiles = (id) => {
     dispatch(fetchMatterFilesRequest());
     const { token } = getState().auth;
     try {
-      const files = await fetchFromAPI(`/matter/files/${id}`, null, token);
+      const files = await fetchFromAPI(`/matters/files/${id}`, null, token);
       dispatch(fetchMatterFilesSuccess(files));
     } catch (error) {
       dispatch(fetchMatterFilesFailure(error.message));
@@ -233,13 +249,13 @@ const fetchMatterFiles = (id) => {
 
 const fetchMatterNotes = (id) => {
   return async (dispatch, getState) => {
-    dispatch(fetchMatterFilesRequest());
+    dispatch(fetchMatterNotesRequest());
     const { token } = getState().auth;
     try {
-      const notes = await fetchFromAPI(`/matter/files/${id}`, null, token);
-      dispatch(fetchMatterFilesSuccess(notes));
+      const notes = await fetchFromAPI(`/matters/notes/${id}`, null, token);
+      dispatch(fetchMatterNotesSuccess(notes));
     } catch (error) {
-      dispatch(fetchMatterFilesFailure(error.message));
+      dispatch(fetchMatterNotesFailure(error.message));
     }
   };
 };
@@ -271,4 +287,10 @@ module.exports = {
   REMOVE_FILE_REQUEST,
   REMOVE_FILE_SUCCESS,
   REMOVE_FILE_FAILURE,
+  FETCH_MATTER_FILES_REQUEST,
+  FETCH_MATTER_FILES_SUCCESS,
+  FETCH_MATTER_FILES_FAILURE,
+  FETCH_MATTER_NOTES_REQUEST,
+  FETCH_MATTER_NOTES_SUCCESS,
+  FETCH_MATTER_NOTES_FAILURE,
 };

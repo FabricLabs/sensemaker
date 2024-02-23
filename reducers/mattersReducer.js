@@ -17,6 +17,12 @@ const {
   REMOVE_FILE_REQUEST,
   REMOVE_FILE_SUCCESS,
   REMOVE_FILE_FAILURE,
+  FETCH_MATTER_FILES_REQUEST,
+  FETCH_MATTER_FILES_SUCCESS,
+  FETCH_MATTER_FILES_FAILURE,
+  FETCH_MATTER_NOTES_REQUEST,
+  FETCH_MATTER_NOTES_SUCCESS,
+  FETCH_MATTER_NOTES_FAILURE,
 } = require('../actions/mattersActions');
 
 
@@ -31,6 +37,8 @@ const initialState = {
   contextSuccess: false,
   editingSuccess: true,
   fileDeletion: false,
+  matterFiles: null,
+  matterNotes: null,
 };
 
 function mattersReducer(state = initialState, action) {
@@ -77,6 +85,20 @@ function mattersReducer(state = initialState, action) {
     case REMOVE_FILE_FAILURE:
       console.debug('Delete file from matter failure:', state, action);
       return { ...state, error: action.payload, fileDeletion: false, loading: false };
+    case FETCH_MATTER_FILES_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_MATTER_FILES_SUCCESS:
+      return { ...state, matterFiles: action.payload, error: null, loading: false };
+    case FETCH_MATTER_FILES_FAILURE:
+      console.debug('fetch files from matter failure:', state, action);
+      return { ...state, error: action.payload, matterFiles: null, loading: false };
+    case FETCH_MATTER_NOTES_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_MATTER_NOTES_SUCCESS:
+      return { ...state, matterNotes: action.payload, error: null, loading: false };
+    case FETCH_MATTER_NOTES_FAILURE:
+      console.debug('fetch notes from matter failure:', state, action);
+      return { ...state, error: action.payload, matterNotes: null, loading: false };
     default:
       return state;
   }
