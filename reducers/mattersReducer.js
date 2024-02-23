@@ -72,7 +72,7 @@ function mattersReducer(state = initialState, action) {
       console.debug('edit matter failure:', state, action);
       return { ...state, error: action.payload, editingSuccess: false, idCreated: null };
     case ADD_CONTEXT_REQUEST:
-      return { ...state, loading: true };
+      return { ...state, contextSuccess: false, loading: true };
     case ADD_CONTEXT_SUCCESS:
       return { ...state, contextSuccess: true, error: null, loading: false };
     case ADD_CONTEXT_FAILURE:

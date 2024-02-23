@@ -116,8 +116,8 @@ const ROUTES = {
     newConversation: require('../routes/matters/matter_new_chat'),
     getConversations: require('../routes/matters/get_conversations'),
     edit: require('../routes/matters/edit_matter'),
-    viewFiles: require('../routes/matters/list_matter_files'),
-    viewNotes: require('../routes/matters/list_matter_notes'),
+    listFiles: require('../routes/matters/list_matter_files'),
+    listNotes: require('../routes/matters/list_matter_notes'),
   },
   products: {
     list: require('../routes/products/list_products'),
@@ -1600,8 +1600,8 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this)); // TODO: switch to /matters/:id
     this.http._addRoute('GET', '/matters/conversation/new/:matterID', ROUTES.matters.newConversation.bind(this));
     this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this)); // TODO: switch to /conversations/:id
-    this.http._addRoute('GET', '/matters/files/:id', ROUTES.matters.viewFiles.bind(this));
-    this.http._addRoute('GET', '/matters/notes/:id', ROUTES.matters.viewNotes.bind(this));
+    this.http._addRoute('GET', '/matters/files/:id', ROUTES.matters.listFiles.bind(this));
+    this.http._addRoute('GET', '/matters/notes/:id', ROUTES.matters.listNotes.bind(this));
     this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this)); // TODO: switch to /matters/:id/conversations
     this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this)); // TODO: switch to /matters...
     this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this)); // TODO: switch to /matters/:id

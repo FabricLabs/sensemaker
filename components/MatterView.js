@@ -31,11 +31,8 @@ class MatterView extends React.Component {
     this.state = {
       loading: false,
       attachModalOpen: false,
-      note: null,
-      filename: null,
       addingContext: false,
       isEditMode: false,
-
       representingOption: '',
       jurisdictionsOptions: null,
       courtsOptions: null,
@@ -82,12 +79,7 @@ class MatterView extends React.Component {
     }
     if (prevProps.matters.current !== matters.current) {
       this.props.fetchMatterConversations(this.props.id);
-      // if (matters.current.file) {
-      //   this.setState({ filename: matters.current.file })
-      // }
-      // if (matters.current.note) {
-      //   this.setState({ note: matters.current.note })
-      // }
+
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
       }
@@ -98,7 +90,7 @@ class MatterView extends React.Component {
         this.setState({ representingOption: matters.current.representing });
       }
     }
-    if (prevProps.matters !== matters && !matters.loading) {
+    if (prevProps.matters !== matters && !matters.addingContext) {
       if (this.state.addingContext) {
         //TO DO, HANDLING SITUATIONS
         if (matters.contextSuccess) {
@@ -160,7 +152,7 @@ class MatterView extends React.Component {
 
   };
 
-  handleModalSubmit = (note, filename, file) => {
+  handleModalSubmit = async (note, filename, file) => {
     console.log("Note:", note, "Files:", file);
     const id = this.props.id;
 
@@ -175,20 +167,19 @@ class MatterView extends React.Component {
     };
 
     this.setState({ attachModalOpen: false, addingContext: true });
-    this.props.addContext(note, filename, id);
-    this.props.fetchMatterFiles(this.props.id);
-    this.props.fetchMatterNotes(this.props.id);
+    await this.props.addContext(note, filename, id);
+    await this.props.fetchMatterFiles(this.props.id);
+    await this.props.fetchMatterNotes(this.props.id);
 
   };
 
-  deleteFile = (id) => {
-    this.setState({ filename: null });
-    this.props.removeFile(id);
+  deleteFile = async (id) => {
+    await this.props.removeFile(id);
     this.props.fetchMatterFiles(this.props.id);
   }
 
-  deleteNote = (id) => {
-    this.props.removeNote(id);
+  deleteNote = async (id) => {
+    await this.props.removeNote(id);
     this.props.fetchMatterNotes(this.props.id);
   }
 
@@ -411,12 +402,12 @@ class MatterView extends React.Component {
                   <Header as='h3'>Files</Header>
                 </GridColumn>
                 <GridColumn width={12}>
-                  <List>
+                  <List loading={matters.loading}>
                     {matters.matterFiles.length > 0 && matters.matterFiles
                       .map(instance => {
                         return (
                           <div key={instance.id} className='matter-file'>
-                            <List.Item style={{ marginTop: '0.5em', display: 'Flex', alignItems: 'center' }}>
+                            <List.Item style={{ marginTop: '0.5em', display: 'Flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <Label>{instance.filename}</Label>
                               <Icon name='trash alternate' className='matter-delete-file-icon' onClick={() => this.deleteFile(instance.id)} />
                             </List.Item>
@@ -433,7 +424,7 @@ class MatterView extends React.Component {
                   <Header as='h3'>Aditional Notes</Header>
                 </GridColumn>
                 <GridColumn width={12}>
-                  <List>
+                  <List loading={matters.loading}>
                     {matters.matterNotes.map(instance => {
                       const isExpanded = this.state.expandedNoteId === instance.id;
                       // const displayArrow= isExpanded? {display: 'block'} : null;
