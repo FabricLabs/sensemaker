@@ -37,8 +37,8 @@ const initialState = {
   contextSuccess: false,
   editingSuccess: true,
   fileDeletion: false,
-  matterFiles: null,
-  matterNotes: null,
+  matterFiles: [],
+  matterNotes: [],
 };
 
 function mattersReducer(state = initialState, action) {
@@ -91,14 +91,14 @@ function mattersReducer(state = initialState, action) {
       return { ...state, matterFiles: action.payload, error: null, loading: false };
     case FETCH_MATTER_FILES_FAILURE:
       console.debug('fetch files from matter failure:', state, action);
-      return { ...state, error: action.payload, matterFiles: null, loading: false };
+      return { ...state, error: action.payload, matterFiles: [], loading: false };
     case FETCH_MATTER_NOTES_REQUEST:
       return { ...state, loading: true };
     case FETCH_MATTER_NOTES_SUCCESS:
       return { ...state, matterNotes: action.payload, error: null, loading: false };
     case FETCH_MATTER_NOTES_FAILURE:
       console.debug('fetch notes from matter failure:', state, action);
-      return { ...state, error: action.payload, matterNotes: null, loading: false };
+      return { ...state, error: action.payload, matterNotes: [], loading: false };
     default:
       return state;
   }

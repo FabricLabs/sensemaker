@@ -74,6 +74,8 @@ class MatterView extends React.Component {
       this.props.fetchMatterConversations(this.props.id);
       this.props.fetchJurisdictions();
       this.props.fetchCourts();
+      this.props.fetchMatterFiles(this.props.id);
+      this.props.fetchMatterNotes(this.props.id);
     }
     if (prevProps.matterConversations !== this.props.matterConversations) {
       this.forceUpdate();
@@ -167,19 +169,29 @@ class MatterView extends React.Component {
 
     if (filename) {
       this.setState({ filename: filename });
-    }
+    };
     if (note) {
       this.setState({ note: note });
-    }
+    };
 
     this.setState({ attachModalOpen: false, addingContext: true });
     this.props.addContext(note, filename, id);
+    this.props.fetchMatterFiles(this.props.id);
+    this.props.fetchMatterNotes(this.props.id);
+
   };
 
-  deleteFile = () => {
+  deleteFile = (id) => {
     this.setState({ filename: null });
-    this.props.removeFile(this.props.id);
+    this.props.removeFile(id);
+    this.props.fetchMatterFiles(this.props.id);
   }
+
+  deleteNote = (id) => {
+    this.props.removeNote(id);
+    this.props.fetchMatterNotes(this.props.id);
+  }
+
 
   saveChanges = async () => {
 
@@ -393,18 +405,21 @@ class MatterView extends React.Component {
               </GridColumn>
               <GridColumn width={3} />
             </GridRow>
-            {matters && matters.matterFiles &&
+            {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
               <GridRow>
                 <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
                   <Header as='h3'>Files</Header>
                 </GridColumn>
                 <GridColumn width={12}>
                   <List>
-                    {matters.matterFiles
+                    {matters.matterFiles.length > 0 && matters.matterFiles
                       .map(instance => {
                         return (
-                          <div key={instance.id}>
-                            <List.Item style={{ marginTop: '0.5em' }}><Label>{instance.filename}</Label></List.Item>
+                          <div key={instance.id} className='matter-file'>
+                            <List.Item style={{ marginTop: '0.5em', display: 'Flex', alignItems: 'center' }}>
+                              <Label>{instance.filename}</Label>
+                              <Icon name='trash alternate' className='matter-delete-file-icon' onClick={() => this.deleteFile(instance.id)} />
+                            </List.Item>
                           </div>
                         )
                       })}
@@ -412,7 +427,7 @@ class MatterView extends React.Component {
                 </GridColumn>
               </GridRow>
             }
-            {matters && matters.matterNotes &&
+            {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
                 <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
                   <Header as='h3'>Aditional Notes</Header>
@@ -421,16 +436,21 @@ class MatterView extends React.Component {
                   <List>
                     {matters.matterNotes.map(instance => {
                       const isExpanded = this.state.expandedNoteId === instance.id;
+                      // const displayArrow= isExpanded? {display: 'block'} : null;
                       return (
+
                         <div key={instance.id}
-                          onClick={() => this.toggleNoteExpansion(instance.id)}
-                          style={{ cursor: 'pointer' }}>
-                            {/* TO DO fix this much better */}
-                          <div style={{display:'flex', alignItems:'center'}}>
-                            <List.Item style={{ marginTop: '0.5em', maxHeight: isExpanded ? 'none' : '1.4em', overflow: 'hidden' }}>
+                          className='matter-note'
+                          title='Click to expand'>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <List.Item
+                              className="expandable-note"
+                              style={{ marginTop: '0.5em', maxHeight: isExpanded ? '300px' : '1.25em', overflow: isExpanded ? 'auto' : 'hidden' }}
+                              onClick={() => this.toggleNoteExpansion(instance.id)}
+                            >
                               <Header as='h5'>{instance.content}</Header>
                             </List.Item>
-                            <Icon name={isExpanded ? 'angle up' : 'angle down'} />
+                            <Icon name='trash alternate' className='matter-delete-note-icon' onClick={() => this.deleteNote(instance.id)} />
                           </div>
                           <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
                         </div>
@@ -468,14 +488,11 @@ class MatterView extends React.Component {
                         return (
                           <div>
                             <List.Item style={{ marginTop: '0.5em' }}>
-                              {/* <Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header> */}
                               <Link to={'/matter/conversation/' + instance.id}>
                                 {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                                 {instance.title}
                               </Link>
-
                             </List.Item>
-                            {/* <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} /> */}
                           </div>)
                       })}
                   </List>
@@ -498,12 +515,8 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
-          // filename={this.state.filename}
-          // deleteFile={this.deleteFile}
-          // note={this.state.note}
           />
         </section>
-        {/* <Header as='h3' style={{ marginTop: '2em' }}><Link to={"/matters/"} >Back to Matters</Link></Header> */}
       </Segment>
     );
   }

@@ -209,14 +209,10 @@ const removeFile = (id) => {
     dispatch(removeFileRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('File deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
-
+      const timeoutPromise = createTimeoutPromise(15000, 'File deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+      
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
-      const fetchPromise = fetch(`/matter/removefile/${id}`, {
+      const fetchPromise = fetch(`/matters/removefile/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -233,6 +229,33 @@ const removeFile = (id) => {
 
   }
 }
+
+const removeNote = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(removeFileRequest());
+    try {
+      const { token } = getState().auth;
+      const timeoutPromise = createTimeoutPromise(15000, 'Note deletion could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+      
+      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
+      const fetchPromise = fetch(`/matters/removenote/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const response = await Promise.race([timeoutPromise, fetchPromise]);
+
+      dispatch(removeFileSuccess(response));
+    } catch (error) {
+      dispatch(removeFileFailure(error.message));
+    }
+
+  }
+}
+
 
 const fetchMatterFiles = (id) => {
   return async (dispatch, getState) => {
@@ -266,6 +289,7 @@ module.exports = {
   createMatter,
   addContext,
   removeFile,
+  removeNote,
   editMatter,
   fetchMatterFiles,
   fetchMatterNotes,

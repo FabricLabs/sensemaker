@@ -13,12 +13,13 @@ const MattersHome = require('../../components/MattersHome');
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-      console.log("el id",req.params.id);
-      const files = await this.db('matters_files').where('matter_id', req.params.id).orderBy('created_at', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: 1
-      });
-
+      const files = await this.db('matters_files')
+        .where('matter_id', req.params.id)
+        .where('deleted', 0)
+        .orderBy('created_at', 'desc').paginate({
+          perPage: PER_PAGE_LIMIT,
+          currentPage: 1
+        });
       res.send(files.data);
     },
     html: () => {
