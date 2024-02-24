@@ -69,9 +69,9 @@ class MatterView extends React.Component {
   componentDidUpdate(prevProps) {
     const { matters, jurisdictions, courts } = this.props;
 
-    if (prevProps.matters !== matters) {
-      console.log(matters);
-    }
+    // if (prevProps.matters !== matters) {
+    //   console.log(matters);
+    // }
 
     if (this.props.id !== prevProps.id) {
       this.props.fetchMatter(this.props.id);
@@ -170,7 +170,7 @@ class MatterView extends React.Component {
     };
 
     this.setState({ attachModalOpen: false, addingContext: true });
-    await this.props.addContext(note, filename, id);
+    await this.props.addContext(note, filename, id, file);
     await this.props.fetchMatterFiles(this.props.id);
     await this.props.fetchMatterNotes(this.props.id);
 
@@ -528,14 +528,18 @@ class MatterView extends React.Component {
             open={this.state.confirmFileDelete}
             onCancel={() => this.setState({ confirmFileDelete: false })}
             onConfirm={() => this.deleteFile(this.state.fileDeleting)}
-            style={{ maxWidth: '200px' }}
+            cancelButton='Cancel'
+            confirmButton="Confirm"
+            style={{ maxWidth: '400px' }}
           />
           <Confirm
             content='Delete this note from the Matter?'
             open={this.state.confirmNoteDelete}
             onCancel={() => this.setState({ confirmNoteDelete: false })}
             onConfirm={() => this.deleteNote(this.state.noteDeleting)}
-            style={{ maxWidth: '200px' }}
+            cancelButton='Cancel'
+            confirmButton="Confirm"
+            style={{ maxWidth: '400px' }}
           />
         </section>
       </Segment>

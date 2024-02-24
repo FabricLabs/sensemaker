@@ -169,13 +169,29 @@ const editMatter = (id, title, description, plaintiff, defendant, representing, 
 }
 
 
-const addContext = (note, filename, id) => {
+const addContext = (note, filename, id, file) => {
   console.log(note, filename, id);
   return async (dispatch, getState) => {
     dispatch(addContextRequest());
     try {
       const { token } = getState().auth;
       const timeoutPromise = createTimeoutPromise(15000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+
+      // const promiseCreateFile = fetch(`/files`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //   },
+      //   body: (() => {
+      //     const formData = new FormData();
+      //     formData.append('file', file); // Assuming 'file' is the File object you want to upload.
+      //     console.log(formData);
+      //     return formData;
+      //   })(),
+      // });
+
+      // const creatingFile = await Promise.race([timeoutPromise, promiseCreateFile]);
+
 
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matter/context/${id}`, {
@@ -188,6 +204,8 @@ const addContext = (note, filename, id) => {
       });
 
       const response = await Promise.race([timeoutPromise, fetchPromise]);
+
+
       dispatch(addContextSuccess(response));
     } catch (error) {
       dispatch(addContextFailure(error.message));

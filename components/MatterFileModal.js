@@ -72,7 +72,7 @@ class MatterFileModal extends React.Component {
   handleSubmit = () => {
     // TO DO: HANDLE FILE FORMATS, SECURITY, ERRORS
     this.props.onSubmit(this.state.note, this.state.filename, this.state.file);
-    console.log('Submitting:', this.state.note, this.state.filename); // Debugging log
+   // console.log('Submitting:', this.state.note, this.state.filename); // Debugging log
     this.setState({
       note: '',
       filename: null,
