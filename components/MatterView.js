@@ -225,7 +225,7 @@ class MatterView extends React.Component {
         style={{ maxHeight: '100%' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
-            <Grid columns={2}>
+            <Grid columns={2} style={{marginTop:'-1em'}}>
               <GridRow>
                 <GridColumn width={10} textAlign='center'>
                   <Input

@@ -558,9 +558,9 @@ class ChatBox extends React.Component {
       return (
         <div style={{ display: 'flex' }}>
           {this.state.editedTitle ? (
-            <Header as="h2">{this.state.editedTitle}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.state.editedTitle}</Header>
           ) : (
-            <Header as="h2">{title}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{title}</Header>
           )}
           <Icon
             name='edit'
