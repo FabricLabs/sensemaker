@@ -218,10 +218,13 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation.matter_id;
+
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      matterID
+      effectiveMatterID
     ).then((output) => {
 
       // dispatch getMessages
@@ -718,7 +721,7 @@ class ChatBox extends React.Component {
               {/* <Header as="h2">{actualConversation.title}</Header> */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
             </div>
           )}
@@ -726,7 +729,7 @@ class ChatBox extends React.Component {
           {matterID && (
             <div className='link-back-matter'>
               <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
           {/* The chat messages start rendering here */}

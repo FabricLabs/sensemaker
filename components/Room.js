@@ -17,7 +17,7 @@ const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
 
 class Conversation extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = {
       actualConversation: null,
@@ -73,7 +73,7 @@ class Conversation extends React.Component {
     this.forceUpdate();
   };
 
-  render () {
+  render() {
     const { id, chat, messages } = this.props;
 
     const componentStyle = {
@@ -91,23 +91,23 @@ class Conversation extends React.Component {
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-           <ChatBox
-            {...this.props}
-            chat={chat} messages={messages}
-            messagesEndRef={this.messagesEndRef}
-            includeFeed={true}
-            placeholder={'Ask me anything...'}
-            previousChat={true}
-            conversationID={id}
-            actualConversation={this.state.actualConversation}
-          />
-       </fabric-component>
+        <ChatBox
+          {...this.props}
+          chat={chat} messages={messages}
+          messagesEndRef={this.messagesEndRef}
+          includeFeed={true}
+          placeholder={'Ask me anything...'}
+          previousChat={true}
+          conversationID={id}
+          actualConversation={this.state.actualConversation}
+        />
+      </fabric-component>
 
     );
   }
 }
 
-function Chat (props) {
+function Chat(props) {
   const { id } = useParams();
   return <Conversation id={id} {...props} />;
 }

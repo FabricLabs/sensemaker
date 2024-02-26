@@ -448,7 +448,7 @@ class AdminSettings extends React.Component {
 
     return (
       <jeeves-admin-settings class='fade-in'>
-        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%', overflowX: 'hidden'}}>
           <Header as='h2'>Admin</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Tab panes={panes} />
