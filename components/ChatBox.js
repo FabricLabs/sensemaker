@@ -714,10 +714,12 @@ class ChatBox extends React.Component {
             </Feed.Extra>
           )}
           {(conversationID && !actualConversation) && (
-            <Header as="h2" style={{ marginTop: '0.5rem' }}>Conversation #{conversationID}</Header>
+            <div className='conversation-title-container' >
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
+            </div>
           )}
           {(conversationID && actualConversation) && (
-            <div className='link-back-matter' >
+            <div className='conversation-title-container' >
               {/* <Header as="h2">{actualConversation.title}</Header> */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
@@ -727,8 +729,8 @@ class ChatBox extends React.Component {
           )}
           {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
           {matterID && (
-            <div className='link-back-matter'>
-              <Header as="h2">{matterTitle}</Header>
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
               <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
