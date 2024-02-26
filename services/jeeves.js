@@ -125,6 +125,9 @@ const ROUTES = {
   courts: {
     view: require('../routes/courts/court_view'),
   },
+  sessions: {
+    create: require('../routes/sessions/create_session')
+  },
   users: {
     list: require('../routes/users/list_users'),
     listFiles: require('../routes/users/list_user_files'),
@@ -1079,8 +1082,7 @@ class Jeeves extends Hub {
    */
   async start () {
     const self = this;
-    const applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
-    this.applicationString = applicationString;
+    this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -2081,49 +2083,7 @@ class Jeeves extends Hub {
       return res.send(this.http.app.render());
     });
 
-    this.http._addRoute('POST', '/sessions', async (req, res, next) => {
-      const { username, password } = req.body;
-      // console.debug('handling incoming login:', username, `${password ? '(' + password.length + ' char password)' : '(no password'} ...`);
-
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        const user = await this.db('users').where('username', username).first();
-        if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
-
-        // Set Roles
-        const roles = ['user'];
-
-        // Special Roles
-        if (user.is_admin) roles.unshift('admin');
-        if (user.is_beta) roles.unshift('beta');
-
-        // Create Token
-        const token = new Token({
-          capability: 'OP_IDENTITY',
-          issuer: null,
-          subject: user.id + '', // String value of integer ID
-          state: {
-            roles: roles
-          }
-        });
-
-        return res.json({
-          message: 'Authentication successful.',
-          token: token.toString(),
-          username: user.username,
-          email: user.email,
-          isAdmin: user.is_admin,
-          isBeta: user.is_beta,
-          isCompliant: user.is_compliant
-        });
-      } catch (error) {
-        console.error('Error authenticating user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/sessions', ROUTES.sessions.create.bind(this));
 
     // TODO: change this route from `/sessionRestore` to use authMiddleware?
     this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
@@ -2408,29 +2368,27 @@ class Jeeves extends Hub {
       // Data Updates
       if (instance.courtlistener_id) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
-        console.debug('docket record:', record);
+        console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
-      } else {
-        console.debug('NO COURT LISTENER ID FOR CASE:', req.params.id);
       }
 
       if (instance.pacer_case_id) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
-        console.debug('PACER record:', record);
+        console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
       }
 
       if (instance.harvard_case_law_id) {
-        console.debug('Harvard record:', instance.harvard_case_law_id);
+        console.debug('[NOVO]', '[CASE:VIEW]', '[HARVARD]', 'Harvard record:', instance.harvard_case_law_id);
         fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
           // TODO: additional params (auth?)
         }).catch((exception) => {
-          console.error('FETCH FULL CASE ERROR:', exception);
+          console.error('[NOVO]', '[CASE:VIEW]', 'FETCH FULL CASE ERROR:', exception);
         }).then(async (output) => {
           const target = await output.json();
-          console.debug('[NOVO]', '[HARVARD]', '[FULLCASE]', 'Got output:', target);
+          console.debug('[NOVO]', '[CASE:VIEW]', '[HARVARD]', '[FULLCASE]', 'Got output:', target);
           const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
           this.http.broadcast(message);
         });
@@ -2456,13 +2414,13 @@ class Jeeves extends Hub {
 
       if (!instance.summary) {
         const merged = Object.assign({}, instance, updates);
-        const summary = await this._summarizeCaseToLength(merged);
-        if (summary) updates.summary = summary;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        console.debug('UPDATING CASE:', updates, instance);
-        await this.db('cases').update(updates).where('id', instance.id);
+        this._summarizeCaseToLength(merged).then(async (summary) => {
+          if (summary) updates.summary = summary;
+          if (Object.keys(updates).length > 0) {
+            console.debug('[NOVO]', '[CASE:VIEW]', 'UPDATING CASE:', updates, instance);
+            this.db('cases').update(updates).where('id', instance.id);
+          }
+        });
       }
 
       res.format({
@@ -2475,7 +2433,7 @@ class Jeeves extends Hub {
           // TODO: fix this hack
           // const page = new CaseHome({}); // TODO: use CaseView
           // const html = page.toHTML();
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2507,7 +2465,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: provide state
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2525,7 +2483,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       })
     });
@@ -2539,7 +2497,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2576,7 +2534,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       })
     });
@@ -2602,7 +2560,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2638,7 +2596,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2651,7 +2609,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2665,7 +2623,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       })
     });
@@ -2678,7 +2636,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2691,7 +2649,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2704,7 +2662,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2717,7 +2675,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2754,7 +2712,7 @@ class Jeeves extends Hub {
         },
         html: () => {
           // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       });
     });
@@ -2840,7 +2798,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       })
     });
@@ -2854,7 +2812,7 @@ class Jeeves extends Hub {
           });
         },
         html: () => {
-          return res.send(applicationString);
+          return res.send(this.applicationString);
         }
       })
     });
@@ -3591,7 +3549,7 @@ class Jeeves extends Hub {
         }
       },
       html: () => {
-        return res.send(applicationString);
+        return res.send(this.applicationString);
       }
     });
   }

@@ -44,7 +44,7 @@ module.exports = {
       { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
-    search: false,
+    search: true,
     sync: false
   },
   db: {
