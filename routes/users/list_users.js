@@ -1,7 +1,10 @@
 'use strict';
+const {
+  PER_PAGE_LIMIT
+} = require('../../constants');
 
 module.exports = function (req, res, next) {
-  const perPage = 10;
+  const perPage = PER_PAGE_LIMIT;
   const page = req.query.page || 1;
 
   res.format({

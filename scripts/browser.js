@@ -144,7 +144,10 @@ const {
   createMatter,
   addContext,
   removeFile,
+  removeNote,
   editMatter,
+  fetchMatterFiles,
+  fetchMatterNotes,
 } = require('../actions/mattersActions');
 
 // ## Users Actions
@@ -275,7 +278,10 @@ async function main (input = {}) {
     createMatter: createMatter,
     addContext: addContext,
     removeFile: removeFile,
+    removeNote: removeNote,
     fetchMatterConversations: fetchMatterConversations,
+    fetchMatterFiles: fetchMatterFiles,
+    fetchMatterNotes: fetchMatterNotes,
     editMatter: editMatter,
     fetchUsers: fetchUsers,
     fetchUser: fetchUser,

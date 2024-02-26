@@ -277,7 +277,7 @@ class MattersNew extends React.Component {
                   <Table.Row>
                     <Table.Cell />
                     <Table.Cell>
-                      <Message negative>
+                      <Message negative style={{maxWidth:'500px'}}>
                         <Message.Header content='Error Creating this Matter' />
                         <Message.Content content={errorCreating} />
                       </Message>
