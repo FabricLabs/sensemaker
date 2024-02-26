@@ -87,9 +87,10 @@ class CourtListener extends Service {
   }
 
   async enumerateCourts () {
-    this.emit('debug', 'Enumerating courts...');
-    const courts = await this.db('search_court').select();
-    return courts;
+    return new Promise((resolve, reject) => {
+      this.emit('debug', 'Enumerating courts...');
+      this.db('search_court').select().catch(reject).then(resolve);
+    });
   }
 
   async enumerateDockets () {

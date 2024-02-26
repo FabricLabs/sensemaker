@@ -51,8 +51,10 @@ class Trainer extends Service {
     return this;
   }
 
-  async ingestDocument (document) {
+  async ingestDocument (document, type = 'text') {
     return new Promise((resolve, reject) => {
+      if (!document.metadata) document.metadata = {};
+      document.metadata.type = type;
       const element = new Document({ pageContent: document.content, metadata: document.metadata });
       this.embeddings.addDocuments([element]).catch(reject).then(() => {
         resolve({ type: 'IngestedDocument', content: element });

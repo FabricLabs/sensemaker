@@ -148,8 +148,23 @@ class OpenAIService extends Service {
                             /*, 'alpha.jeeves.dev' */
                           ];
 
-                          if (!whitelist.includes(args.host)) {
+                          const resourcePaths = [
+                            '/cases',
+                            '/documents',
+                            '/people',
+                            '/courts',
+                            '/judges',
+                            '/opinions',
+                            '/jurisdictions',
+                            '/reporters',
+                            '/statutes',
+                            '/volumes'
+                          ];
+
+                          if (!whitelist.includes(args.host?.toLowerCase())) {
                             console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Host not in whitelist:', args.host);
+                          } else if (!resourcePaths.includes(args.path?.toLowerCase())) {
+                            console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Path not in whitelist:', args.path);
                           } else {
                             // Execute Network Request
                             fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only

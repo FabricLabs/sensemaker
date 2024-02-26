@@ -349,6 +349,7 @@ class Jeeves extends Hub {
     });
 
     // Sensemaker
+    this.sensemaker = new Agent({ name: 'SENSEMAKER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, prompt: this.settings.prompt });
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
@@ -356,7 +357,7 @@ class Jeeves extends Hub {
     // this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', prompt: this.settings.prompt });
-    this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.' });
     this.usa = new Agent({ name: 'USA', host: '5.161.216.231', prompt: this.settings.prompt });
 
     // Pipeline Datasources
@@ -490,7 +491,7 @@ class Jeeves extends Hub {
     return uniques;
   }
 
-  importantWords (input) {
+  importantWords (input, limit = 5) {
     const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
     const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
     const nouns = this.properNouns(input);
@@ -503,7 +504,7 @@ class Jeeves extends Hub {
       return nouns.includes(b) - nouns.includes(a);
     });
 
-    return uniques;
+    return uniques.slice(0, limit);
   }
 
   properNouns (input) {
@@ -617,6 +618,10 @@ class Jeeves extends Hub {
       const now = new Date();
       const created = now.toISOString();
 
+      console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
+      console.debug('[NOVO]', '[PIPELINE]', 'Initial query:', request.query);
+      console.trace('[NOVO]', '[PIPELINE]', 'Initial messages:', request.messages);
+      console.debug('[NOVO]', '[PIPELINE]', 'Initial timeout:', request.timeout);
       if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
 
       // Add Request to Database
@@ -655,11 +660,31 @@ class Jeeves extends Hub {
       // const hypotheticals = await this.lennon.query({ query: request.query });
       const words = this.importantWords(request.query);
       const phrases = this.importantPhrases(request.query);
-      const cases = await this._vectorSearchCases(words.slice(0, 10));
+      const searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
+      if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
+      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
-      /* const searchterm = await this.searcher.query({ query: request.query, tools: null });
-      console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term:', searchterm);
+      // Remove whitespace
+      searchterm.content = searchterm.content.trim();
 
+      // Remove wrapping quotes
+      searchterm.content = searchterm.content.replace(/^"/, '').replace(/"$/, ''); // exact double quotes
+      searchterm.content = searchterm.content.replace(/^'/, '').replace(/'$/, ''); // exact single quotes
+      searchterm.content = searchterm.content.replace(/^“/, '').replace(/”$/, ''); // fancy double quotes
+      searchterm.content = searchterm.content.replace(/^‘/, '').replace(/’$/, ''); // fancy single quotes
+
+      // Still too long!
+      // TODO: convert limit here to constant
+      if (searchterm.content.length > 50) {
+        searchterm.content = searchterm.content.substr(0, 50);
+      }
+
+      console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
+
+      // Search for cases
+      const cases = await this._vectorSearchCases(searchterm.content);
+
+      /*
       const realCases = await this.harvard.search({ query: searchterm.content });
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'REAL CASES:', realCases);
       */
@@ -670,9 +695,12 @@ class Jeeves extends Hub {
 
       // Format Metadata
       const meta = `metadata:\n` +
-        `  notes: Cases may be unrelated, search term used: ${words.slice(0, 10)}\n` +
+        `  notes: Cases may be unrelated, search term used: ${searchterm.content || ''}\n` +
+        `  topics: ${searchterm.content || ''}\n` +
+        `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
+        `  documents: null\n` +
         `  cases:\n` +
-        cases.map((x) => `    - [novo/cases/${x.id}] "${x.title}"`).join('\n') +
+        cases.map((x) => `    - [novo/cases/${x.id}] ${x.citation} "${x.title}"`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
@@ -680,7 +708,7 @@ class Jeeves extends Hub {
 
       // Format Query Text
       const query = `---\n` +
-        // meta +
+        meta +
         `---\n` +
         `${request.query}`;
 
@@ -728,12 +756,12 @@ class Jeeves extends Hub {
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Messages to evaluate:', messages);
 
       const agentResults = Promise.allSettled([
-        this.alpha.query({ query, messages }),
-        this.gemini.query({ query, messages }),
-        this.lennon.query({ query, messages }),
-        this.llama.query({ query, messages, requery: true }),
-        this.mistral.query({ query, messages }),
-        this.mixtral.query({ query, messages })
+        this.alpha.query({ query, messages }), // ChatGPT
+        this.gemini.query({ query, messages }), // requires USA-based egress
+        // this.lennon.query({ query, messages }), // Adversarial RAG
+        this.llama.query({ query, messages, requery: true }), // Ollama
+        // this.mistral.query({ query, messages }), // Ollama
+        // this.mixtral.query({ query, messages }), // Ollama
       ]);
 
       // TODO: execute RAG query for additional metadata
@@ -1558,21 +1586,20 @@ class Jeeves extends Hub {
           ]
         }); */
       }, this.settings.crawlDelay);
-
-      this._slowcrawler = setInterval(async () => {
-        /* this.worker.addJob({
-          type: 'DownloadMissingRECAPDocument',
-          params: []
-        }); */
-
-        this.courtlistener.syncSamples();
-
-        this._syncEmbeddings().then((output) => {
-          console.debug('[JEEVES]', 'Embedding sync complete:', output);
-        });
-
-      }, 60000);
     }
+
+    this._slowcrawler = setInterval(async () => {
+      /* this.worker.addJob({
+        type: 'DownloadMissingRECAPDocument',
+        params: []
+      }); */
+
+      this.courtlistener.syncSamples();
+
+      this._syncEmbeddings().then((output) => {
+        console.debug('[JEEVES]', 'Embedding sync complete:', output);
+      });
+    }, 600000); // 10 minutes
 
     // Internal APIs
     // Counts
@@ -2947,6 +2974,11 @@ class Jeeves extends Hub {
           console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
           // TODO: emit message
 
+          if (!request || !request.content) {
+            console.debug('[JEEVES]', '[HTTP]', 'No request content:', request);
+            return;
+          }
+
           // Card Extraction
           this.extractor.query({
             query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
@@ -3278,6 +3310,11 @@ class Jeeves extends Hub {
 
     // DEBUG
     this.alert(`Jeeves started.  Agent ID: ${this.id}`);
+
+    // Benchmarking
+    if (this.settings.benchmark) {
+      return this.stop();
+    }
 
     // return the instance!
     return this;
@@ -4587,17 +4624,18 @@ class Jeeves extends Hub {
     });
   }
 
-  async _vectorSearchCases (words) {
+  async _vectorSearchCases (query = '') {
+    const words = await this.wordTokens(query);
     const uniques = [...new Set(words)];
 
+    console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', query);
     console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
-    console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', uniques)
 
-    const redisResults = await this.trainer.search({ query: uniques.join(' ') });
+    const redisResults = await this.trainer.search({ query: query, resources: ['cases', 'documents'] });
+    console.debug('[NOVO]', '[VECTOR]', 'Redis Results:', redisResults);
 
-    // TODO: Vector Search (ChatGPT Embeddings)
     const results = await Promise.all(uniques.map((word) => {
-      return this.db('cases').select('id', 'title').where('title', 'like', `%${word}%`).limit(10);
+      return this.db('cases').select('id', 'title').where('title', 'like', `%${query}%`).limit(10);
     }));
 
     let cases = [];
@@ -4607,6 +4645,13 @@ class Jeeves extends Hub {
     }
 
     if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+
+    const mapped = await Promise.all(redisResults.content.map((result) => {
+      console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
+      return this.db('cases').select('id', 'title').where('id', result.id).first();
+    }));
+
+    console.debug('[JEEVES]', '[VECTOR]', 'Mapped Results:', mapped);
 
     return cases;
   }

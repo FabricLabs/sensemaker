@@ -26,6 +26,7 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  */
 module.exports = {
   alias: NAME,
+  benchmark: false,
   domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
