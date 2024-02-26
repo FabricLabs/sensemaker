@@ -83,6 +83,7 @@ const Stripe = require('./stripe');
 const Agent = require('../types/agent');
 // const Brain = require('../types/brain');
 const Learner = require('../types/learner');
+const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
 
 // Components
@@ -254,6 +255,7 @@ class Jeeves extends Hub {
     this.queue = new Queue(this.settings);
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
+    this.trainer = new Trainer(this.settings);
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
@@ -348,7 +350,8 @@ class Jeeves extends Hub {
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
     this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    // this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', prompt: this.settings.prompt });
     this.searcher = new Agent({ name: 'SEARCHER', prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc.', openai: this.settings.openai });
     this.usa = new Agent({ name: 'USA', host: '5.161.216.231', prompt: this.settings.prompt });
@@ -611,6 +614,8 @@ class Jeeves extends Hub {
       const now = new Date();
       const created = now.toISOString();
 
+      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
+
       // Add Request to Database
       // TODO: assign `then` to allow async processing
       const inserted = await this.db('requests').insert({
@@ -723,8 +728,8 @@ class Jeeves extends Hub {
         this.alpha.query({ query, messages }),
         this.gemini.query({ query, messages }),
         this.lennon.query({ query, messages }),
-        this.llama.query({ query, messages }),
-        // this.mistral.query({ query, messages }),
+        this.llama.query({ query, messages, requery: true }),
+        this.mistral.query({ query, messages }),
         this.mixtral.query({ query, messages })
       ]);
 
@@ -987,6 +992,7 @@ class Jeeves extends Hub {
   }
 
   async search (request) {
+    const redisResults = await this.trainer.search(request.query);
     const cases = await this._searchCases(request);
     // const courts = await this._searchCourts(request);
     // const documents = await this._searchDocuments(request);
@@ -1083,6 +1089,9 @@ class Jeeves extends Hub {
   async start () {
     const self = this;
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
+
+    // Redis
+    await this.trainer.start();
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -1554,6 +1563,11 @@ class Jeeves extends Hub {
         }); */
 
         this.courtlistener.syncSamples();
+
+        this._syncEmbeddings().then((output) => {
+          console.debug('[JEEVES]', 'Embedding sync complete:', output);
+        });
+
       }, 60000);
     }
 
@@ -3435,6 +3449,7 @@ class Jeeves extends Hub {
 
     // Stop the Worker
     if (this.worker) await this.worker.stop();
+    if (this.trainer) await this.trainer.stop();
 
     /* console.debug('workers:', this.workers);
 
@@ -4209,15 +4224,8 @@ class Jeeves extends Hub {
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
-      const request = {
-        query: query,
-        messages: messages
-      };
-
-      this.alpha.query(request).then((output) => {
-        console.debug('got summarized title:', output);
-        resolve(output);
-      });
+      const request = { query: query, messages: messages };
+      this.alpha.query(request).catch(reject).then(resolve);
     });
   }
 
@@ -4269,6 +4277,11 @@ class Jeeves extends Hub {
   }
 
   async _searchCases (request) {
+    const redisResults = await this.trainer.search(request);
+    const mappedQueries = redisResults.map((result) => {
+      return this.db('cases').where({ id: result.id }).first();
+    });
+
     // TODO: multiple case search sources
     // Retrieve Harvard's suggestions
     const result = await fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
@@ -4550,14 +4563,32 @@ class Jeeves extends Hub {
     console.debug('RAG FIXTURE:', RAG_FIXTURE);
   }
 
+  async _syncEmbeddings (limit = 100) {
+    return new Promise((resolve, reject) => {
+      Promise.all([
+        this.db('cases').select('id', 'title').orderByRaw('RAND()').limit(limit).then(async (cases) => {
+          for (let i = 0; i < cases.length; i++) {
+            const element = cases[i];
+            const actor = { name: `novo/cases/${element.id}` };
+            const document = { name: `novo/cases/${element.id}/title`, content: element.title };
+            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document });
+          }
+        }),
+        this.db('documents').select(['id', 'description']).then((documents) => {
+        })
+      ]).catch(reject).then(resolve);
+    });
+  }
+
   async _vectorSearchCases (words) {
     const uniques = [...new Set(words)];
 
     console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
     console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', uniques)
 
-    // TODO: Redis
-    // TODO: Vector Search
+    const redisResults = await this.trainer.search({ query: uniques.join(' ') });
+
     // TODO: Vector Search (ChatGPT Embeddings)
     const results = await Promise.all(uniques.map((word) => {
       return this.db('cases').select('id', 'title').where('title', 'like', `%${word}%`).limit(10);
