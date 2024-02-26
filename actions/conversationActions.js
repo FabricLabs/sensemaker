@@ -38,7 +38,7 @@ const fetchMatterConversationsSuccess = (conversations) => ({ type: FETCH_MATTER
 const fetchMatterConversationsFailure = (error) => ({ type: FETCH_MATTER_CONVERSATIONS_FAILURE, payload: error });
 
 const conversationTitlEditRequest = () => ({ type: EDIT_TITLE_REQUEST });
-const conversationTitleEditSuccess = () => ({ type: EDIT_TITLE_SUCCESS});
+const conversationTitleEditSuccess = () => ({ type: EDIT_TITLE_SUCCESS });
 const conversationTitleEditFailure = (error) => ({ type: EDIT_TITLE_FAILURE, payload: error });
 
 // Thunk action creator
@@ -73,7 +73,7 @@ const fetchMatterConversations = (matterID) => {
     dispatch(fetchMatterConversationsRequest());
     const { token } = getState().auth;
     try {
-      const conversations = await fetch(`/matter/conversations/${matterID}`, {
+      const conversations = await fetch(`/matters/${matterID}/conversations`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -108,7 +108,7 @@ const conversationTitleEdit = (id, title) => {
         }, 15000);
       });
       const response = await Promise.race([timeoutPromise, fetchPromise]);
-      dispatch(conversationTitleEditSuccess());    
+      dispatch(conversationTitleEditSuccess());
     } catch (error) {
       dispatch(conversationTitleEditFailure(error));
     }

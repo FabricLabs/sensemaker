@@ -94,7 +94,7 @@ const fetchMatter = (id) => {
     dispatch(fetchMatterRequest());
     const { token } = getState().auth;
     try {
-      const matter = await fetchFromAPI(`/matter/${id}`, null, token);
+      const matter = await fetchFromAPI(`/matters/${id}`, null, token);
       dispatch(fetchMatterSuccess(matter));
     } catch (error) {
       dispatch(fetchMatterFailure(error.message));
@@ -143,7 +143,7 @@ const editMatter = (id, title, description, plaintiff, defendant, representing, 
       const { token } = getState().auth;
       const timeoutPromise = createTimeoutPromise(15000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
-      const fetchPromise = fetch(`/matter/edit/${id}`, {
+      const fetchPromise = fetch(`/matters/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -194,7 +194,7 @@ const addContext = (note, filename, id, file) => {
 
 
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
-      const fetchPromise = fetch(`/matter/context/${id}`, {
+      const fetchPromise = fetch(`/matters/context/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

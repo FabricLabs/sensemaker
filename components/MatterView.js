@@ -225,7 +225,7 @@ class MatterView extends React.Component {
         style={{ maxHeight: '100%' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
-            <Grid columns={2}>
+            <Grid columns={2} style={{marginTop:'-1em'}}>
               <GridRow>
                 <GridColumn width={10} textAlign='center'>
                   <Input
@@ -495,7 +495,8 @@ class MatterView extends React.Component {
                         return (
                           <div>
                             <List.Item style={{ marginTop: '0.5em' }}>
-                              <Link to={'/matter/conversation/' + instance.id}>
+                              {/* <Link to={'/matters/'+instance.id+'/conversations/' }> */}
+                              <Link to={'/conversations/' + instance.id}>
                                 {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                                 {instance.title}
                               </Link>
@@ -508,7 +509,7 @@ class MatterView extends React.Component {
             </GridRow>
             <GridRow>
               <GridColumn width={13} textAlign='center'>
-                <Link to={'/matters/conversation/new/' + this.props.id} >
+                <Link to={'/matters/conversations/new/' + this.props.id} >
                   <Button
                     primary
                     content="Start a new conversation"

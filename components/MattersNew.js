@@ -151,7 +151,7 @@ class MattersNew extends React.Component {
             <Message.Header>Matter successfully created!</Message.Header>
             <Message.Content className='center-elements-column'>
               <p>Your Matter was created, you can add files and notes to it, you can visit your Matter page by clicking here:</p>
-              <Link to={`/matter/${matters.idCreated}`} onClick={this.resetForm}><h3>{title}</h3></Link>
+              <Link to={`/matters/${matters.idCreated}`} onClick={this.resetForm}><h3>{title}</h3></Link>
             </Message.Content>
           </Message>
         ) : (
@@ -277,7 +277,7 @@ class MattersNew extends React.Component {
                   <Table.Row>
                     <Table.Cell />
                     <Table.Cell>
-                      <Message negative style={{maxWidth:'500px'}}>
+                      <Message negative style={{ maxWidth: '500px' }}>
                         <Message.Header content='Error Creating this Matter' />
                         <Message.Content content={errorCreating} />
                       </Message>
