@@ -5,11 +5,6 @@ const {
   PER_PAGE_LIMIT
 } = require('../../constants');
 
-// Components
-const JeevesUI = require('../../components/JeevesUI');
-const CaseHome = require('../../components/CaseHome');
-const MattersHome = require('../../components/MattersHome');
-
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
@@ -24,10 +19,7 @@ module.exports = function (req, res, next) {
       res.send(notes.data);
     },
     html: () => {
-      // TODO: import auth token, load data
-      const page = new MattersHome({});
-      const output = page.toHTML();
-      return res.send(this.http.app._renderWith(output));
+      res.send(this.applicationString);
     }
   });
 };
