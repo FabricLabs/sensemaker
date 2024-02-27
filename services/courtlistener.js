@@ -390,7 +390,7 @@ class CourtListener extends Service {
       this.syncDocketSamples(),
       this.syncPeopleSamples(),
       this.syncRecapDocuments(),
-      this.syncOpinionSamples()
+      // this.syncOpinionSamples()
     ]);
   }
 

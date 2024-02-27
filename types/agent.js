@@ -296,7 +296,8 @@ class Agent extends Service {
             sample.push({ role: 'assistant', content: base.choices[0].message.content });
             console.debug('[AGENT]', '[REQUERY]', 'Messages:', sample);
             console.debug('[AGENT]', '[REQUERY]', 'Prompt:', this.prompt);
-            return this.query({ query: `Are you sure about that?`, messages: sample });
+            // Re-execute query with John Cena
+            return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
           }
 
           this.emit('completion', base);

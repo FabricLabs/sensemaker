@@ -698,7 +698,7 @@ class Jeeves extends Hub {
         `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         `  documents: null\n` +
         `  cases:\n` +
-        cases.map((x) => `    - [novo/cases/${x.id}] ${x.citation} "${x.title}"`).join('\n') +
+        cases.map((x) => `    - [novo/cases/${x.id}] "${x.citation || 'undefined citation'}" "${x.title || 'undefined title'}"`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
@@ -710,13 +710,16 @@ class Jeeves extends Hub {
         `---\n` +
         `${request.query}`;
 
+      // Estimate Cost
       const metaTokenCount = this.estimateTokens(meta);
       const requestTokenCount = this.estimateTokens(request.query);
+      const estimatedCost = requestTokenCount * 0.0001;
 
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
+      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
 
       let messages = [];
 
@@ -1021,7 +1024,10 @@ class Jeeves extends Hub {
   }
 
   async search (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
     const redisResults = await this.trainer.search(request.query);
+    console.debug('[JEEVES]', '[SEARCH]', 'Redis Results:', redisResults);
+
     const cases = await this._searchCases(request);
     // const courts = await this._searchCourts(request);
     // const documents = await this._searchDocuments(request);
@@ -4317,10 +4323,15 @@ class Jeeves extends Hub {
   }
 
   async _searchCases (request) {
+    console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Received search request:', request);
     const redisResults = await this.trainer.search(request);
+    console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
+
     const mappedQueries = redisResults.map((result) => {
+      console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
       return this.db('cases').where({ id: result.id }).first();
     });
+    // const mappedResults = await Promise.all()
 
     // TODO: multiple case search sources
     // Retrieve Harvard's suggestions
@@ -4347,6 +4358,8 @@ class Jeeves extends Hub {
 
     // TODO: queue crawl jobs for missing cases
     const cases = [].concat(harvardCases);
+
+    console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Final cases:', cases);
 
     return cases;
   }
@@ -4604,6 +4617,7 @@ class Jeeves extends Hub {
   }
 
   async _syncEmbeddings (limit = 100) {
+    console.debug('[JEEVES]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
         this.db('cases').select('id', 'title').orderByRaw('RAND()').limit(limit).then(async (cases) => {
@@ -4613,9 +4627,11 @@ class Jeeves extends Hub {
             const document = { name: `novo/cases/${element.id}/title`, content: element.title };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document });
+            console.debug('[JEEVES]', '[VECTOR]', 'Ingested:', reference, embedding);
           }
         }),
         this.db('documents').select(['id', 'description']).then((documents) => {
+          console.debug('got documents:', documents);
         })
       ]).catch(reject).then(resolve);
     });
@@ -4645,7 +4661,24 @@ class Jeeves extends Hub {
 
     const mapped = await Promise.all(redisResults.content.map((result) => {
       console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
-      return this.db('cases').select('id', 'title').where('id', result.id).first();
+      if (!result || !result.metadata || !result.metadata.name) {
+        console.debug('[JEEVES]', '[VECTOR]', 'Invalid result (no "name" metadata):', result);
+        return null;
+      }
+
+      const parts = result.metadata.name.split('/');
+      if (parts.length < 3) {
+        console.debug('[JEEVES]', '[VECTOR]', 'Invalid parts:', parts);
+        return null;
+      }
+
+      switch (parts[1]) {
+        default:
+          console.debug('[NOVO]', '[VECTOR]', 'Unknown type:', parts[1]);
+          break;
+        case 'cases':
+          return this.db('cases').select('id', 'title').where('id', parts[2]).first();
+      }
     }));
 
     console.debug('[JEEVES]', '[VECTOR]', 'Mapped Results:', mapped);
