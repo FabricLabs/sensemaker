@@ -719,6 +719,10 @@ fabric-motd {
   min-width: 650px;
 }
 
+.matter-label{
+  font-size: 1em !important;
+}
+
 @media (max-width: 500px) {
   .new-matter-form{
     min-width: 0;

@@ -87,6 +87,12 @@ class MattersNew extends React.Component {
   handleInputChange = (event) => {
     this.setState({
       [event.target.name]: event.target.value
+    }, () => {
+      this.setState({
+        nameError: !this.state.title,
+        plaintiffError: !this.state.plaintiff,
+        defendantError: !this.state.defendant,
+      })
     });
   };
 
@@ -108,24 +114,19 @@ class MattersNew extends React.Component {
   }
 
   handleSubmit = async (event) => {
-    const {
-      representingOption,
-      title,
-      description,
-      defendant,
-      plaintiff,
-      court_id,
-      jurisdiction_id
-    } = this.state;
     event.preventDefault();
-    if (jurisdiction_id === null) {
-      this.setState({ jurisdictionError: true });
-    } else {
+    const { representingOption, title, description, defendant, plaintiff, court_id, jurisdiction_id } = this.state;
+
+    this.setState({jurisdictionError: jurisdiction_id === null,});
+
+    // Check all conditions are met before proceeding
+    if (title && plaintiff && defendant && jurisdiction_id !== null) {
       this.setState({ creating: true });
-      const representing = (representingOption === 'Plaintiff' ? 'P' : 'D');
+      const representing = representingOption === 'Plaintiff' ? 'P' : 'D';
       this.props.createMatter(title, description, plaintiff, defendant, representing, jurisdiction_id, court_id);
     }
-  }
+  };
+
 
   render() {
     const { jurisdictions, courts, matters } = this.props;
@@ -138,6 +139,7 @@ class MattersNew extends React.Component {
       title,
       errorCreating
     } = this.state;
+
 
     const jurisdictionErrorMessage = (!jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
@@ -164,8 +166,8 @@ class MattersNew extends React.Component {
             <Table basic='very' stripped>
               <Table.Body>
                 <Table.Row >
-                  <Table.Cell width={3}>
-                    <Header as='h4'>Matter Name</Header>
+                  <Table.Cell width={3} className='required field'>
+                    <label className='matter-label'>Matter Name</label>
                   </Table.Cell>
                   <Table.Cell width={12}>
                     <Form.Input name='title' required onChange={this.handleInputChange} />
@@ -173,8 +175,8 @@ class MattersNew extends React.Component {
                   <Table.Cell width={1} />
                 </Table.Row>
                 <Table.Row>
-                  <Table.Cell width={3}>
-                    <Header as='h4'  >Plaintiff</Header>
+                  <Table.Cell width={3} className='required field'>
+                    <label className='matter-label'>Plaintiff</label>
                   </Table.Cell>
                   <Table.Cell width={12}>
                     <Form.Input name='plaintiff' required onChange={this.handleInputChange} />
@@ -188,8 +190,8 @@ class MattersNew extends React.Component {
                   </Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                  <Table.Cell width={3}>
-                    <Header as='h4'>Defendant</Header>
+                  <Table.Cell width={3} className='required field'>
+                    <label className='matter-label'>Defendant</label>
                   </Table.Cell>
                   <Table.Cell width={12}>
                     <Form.Input name='defendant' required onChange={this.handleInputChange} />
@@ -203,8 +205,8 @@ class MattersNew extends React.Component {
                   </Table.Cell>
                 </Table.Row>
                 <Table.Row>
-                  <Table.Cell width={3}>
-                    <Header as='h4'>Who are you representing?</Header>
+                  <Table.Cell width={3} className='required field'>
+                    <label className='matter-label'>Who are you representing?</label>
                   </Table.Cell>
                   <Table.Cell width={12}>
                     <FormField>
@@ -239,7 +241,7 @@ class MattersNew extends React.Component {
                       fluid
                       search
                       selection
-                      required={true}
+                      required
                       options={jurisdictionsOptions}
                       onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
                       error={jurisdictionErrorMessage}
