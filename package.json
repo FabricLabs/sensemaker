@@ -97,6 +97,7 @@
     "nodemailer": "6.9.7",
     "openai": "4.20.1",
     "path-browserify": "1.0.1",
+    "pdf-parse": "1.1.1",
     "pg": "8.11.3",
     "playwright": "1.41.2",
     "playwright-extra": "4.3.6",
