@@ -1,10 +1,5 @@
 'use strict';
 
-// // Constansts
-// const {
-//   PER_PAGE_LIMIT
-// } = require('../../constants');
-
 // Components
 const MatterView = require('../../components/MatterView');
 
