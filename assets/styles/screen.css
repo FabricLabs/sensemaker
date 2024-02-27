@@ -181,8 +181,8 @@ jeeves-dashboard #main-sidebar{
 
 @media (max-width: 1440px) and (max-height: 800px){
   jeeves-dashboard #main-sidebar{
-    min-width: 120px;
-    max-width: 120px;
+    min-width: 100px;
+    max-width: 100px;
   }
 }
 .col-center{
@@ -191,7 +191,7 @@ jeeves-dashboard #main-sidebar{
   align-items: center;
 }
 .icon-label{
-  font-size: 0.7em;
+  font-size: 0.9em;
   margin-top: 0.3em;
 }
 
