@@ -1598,7 +1598,7 @@ class Jeeves extends Hub {
         params: []
       }); */
 
-      this.courtlistener.syncSamples();
+      if (this.courtlistener) this.courtlistener.syncSamples();
 
       this._syncEmbeddings().then((output) => {
         console.debug('[JEEVES]', 'Embedding sync complete:', output);

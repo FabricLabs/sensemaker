@@ -1,0 +1,110 @@
+digraph SensemakerNetwork {
+  rankdir=LR;
+  node [shape=box];
+
+  label = "Sensemaker Network Topology"
+
+  "hub.fabric.pub"
+  "alpha.jeeves.dev"
+  "beta.jeeves.dev"
+  "beta.trynovo.com"
+  "trynovo.com"
+
+  subgraph cluster_users {
+    label = "User Types"
+    "Admin"
+    "User"
+    "Agent"
+  }
+
+  subgraph cluster_hosts {
+    label = "Hosts"
+    "hub.fabric.pub"
+    "ollama.jeeves.dev",
+    "alpha.jeeves.dev"
+    "beta.jeeves.dev"
+    "beta.trynovo.com"
+    "gamma.trynovo.com"
+    "trynovo.com"
+  }
+
+  subgraph cluster_pm2 {
+    label = "Hetzner Baremetal (beta)"
+    "beta.jeeves.dev"
+    "ollama.jeeves.dev"
+  }
+
+  subgraph cluster_kubernetes {
+    label = "Kubernetes"
+
+    "trynovo.com"
+    "beta.trynovo.com"
+    "gamma.trynovo.com"
+
+    "ingest00"
+    "ingest01"
+
+    "app00"
+    "app01"
+    "app02"
+
+    "mysql00"
+    "mysql01"
+
+    "ndb00"
+    "ndb01"
+    "ndb02"
+
+    "redis00"
+    "redis01"
+    "redis02"
+
+    "ollama00"
+  }
+
+  subgraph cluster_outstanding {
+    label = "Outstanding"
+
+    "redis00"
+    "redis01"
+    "redis02"
+
+    "Sessions"
+  }
+
+  # Admin path
+  "Admin" -> "ingest00" -> "trynovo.com"
+  "ingest00" -> "gamma.trynovo.com" -> "app02"
+
+  # User path
+  "User" -> "ingest01" -> "trynovo.com"
+  # "User" -> "hub.fabric.pub"
+  "User" -> "beta.jeeves.dev"
+
+  # Internal path
+  "trynovo.com" -> {
+    "app00"
+    "app01"
+    "app02"
+  } -> {
+    "mysql00"
+    "mysql01"
+  } -> {
+    "ndb00"
+    "ndb01"
+    "ndb02"
+  }
+
+  # Redis path
+  "trynovo.com" -> "redis00"
+
+  # Fabric path
+  "trynovo.com" -> "hub.fabric.pub" // Import high quality reference
+  "trynovo.com" -> "beta.jeeves.dev" // Import high quality reference
+  "Agent" -> "beta.jeeves.dev"
+  "hub.fabric.pub" -> "Fabric Network"
+
+  # Ollama
+  "beta.jeeves.dev" -> "ollama.jeeves.dev"
+  "app00" -> "ollama"
+}
