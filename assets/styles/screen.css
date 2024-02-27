@@ -573,14 +573,19 @@ fabric-motd {
   margin-top: 2px;
 }
 
-.link-back-matter{
+.conversation-title-container{
   display: flex;
   justify-content: space-between;
   padding-right: 1em;
   flex-wrap: wrap;
-  padding-bottom: 1.5em;
-  margin-top: 0.5em;
+  /* padding-bottom: 1.5em; */
+  background-color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 2000;
+  box-shadow: 0 8px 6px -4px #fff;
 }
+
 /* FeedbackSidebar CSS */
 .info-sidebar{
   background-color: rgb(27, 28, 29);
@@ -689,10 +694,10 @@ fabric-motd {
 .conversationItem:hover div #editIcon {
   display: inline-block !important;
 }
-.link-back-matter div #editTitleIcon{
+.conversation-title-container div #editTitleIcon{
   display: none !important;
 }
-.link-back-matter:hover div #editTitleIcon{
+.conversation-title-container:hover div #editTitleIcon{
   display: inline-block !important;
 }
 .conversation-line{
@@ -712,6 +717,10 @@ fabric-motd {
 
 .new-matter-form{
   min-width: 650px;
+}
+
+.matter-label{
+  font-size: 1em !important;
 }
 
 @media (max-width: 500px) {

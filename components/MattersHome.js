@@ -50,10 +50,9 @@ class MattersHome extends React.Component {
             .map(instance => {
               return (
                 <div>
-                  <List.Item style={{ marginTop: '0.5em' }}><Header as='h3'><Link to={"/matter/" + instance.id}>{instance.title}</Link></Header></List.Item>
+                  <List.Item style={{ marginTop: '0.5em' }}><Header as='h3'><Link to={"/matters/" + instance.id}>{instance.title}</Link></Header></List.Item>
                   <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
                 </div>
-
               )
             })}
         </List>

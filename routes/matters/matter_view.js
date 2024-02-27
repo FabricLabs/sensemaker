@@ -24,10 +24,7 @@ module.exports = function (req, res, next) {
       }
     },
     html: () => {
-      // TODO: import auth token, load data
-      const page = new MatterView({});
-      const output = page.toHTML();
-      return res.send(this.http.app._renderWith(output));
+      res.send(this.applicationString);
     }
   });
 };
