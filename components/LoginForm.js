@@ -72,7 +72,7 @@ class LoginForm extends React.Component {
       <fabric-react-component class="ui primary action fluid text container" style={{paddingTop:'0'}}>
         <Form onSubmit={this.handleSubmit} size={this.props.size} method="POST">
           <Form.Field>
-            <label>Username</label>
+            <label>Username or Email</label>
             <input placeholder="Username" name="username" autoComplete="username" value={username} onChange={this.handleUsernameChange} />
           </Form.Field>
           <Form.Field>

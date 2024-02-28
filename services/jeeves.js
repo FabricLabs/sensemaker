@@ -2092,8 +2092,18 @@ class Jeeves extends Hub {
       }
 
       try {
-        const user = await this.db('users').where('username', username).first();
-        if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
+        //now we are letting users to log in with email, so here it checks if its an email or username
+
+        const isEmail = username.includes('@');
+        let user;
+        
+        if (isEmail) {
+          user = await this.db('users').where('email', username).first();
+          if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid email or password.' });
+        } else {
+          user = await this.db('users').where('username', username).first();
+          if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
+        }
 
         // Set Roles
         const roles = ['user'];

@@ -56,7 +56,7 @@ const checkEmailAvailableFailure = (error) => ({ type: CHECK_EMAIL_AVAILABLE_FAI
 const login = (username, password) => {
   return async dispatch => {
     dispatch(loginRequest());
-
+    //  IMPORTANT: NOW USERNAME CAN BE THE USER'S EMAIL
     try {
       const response = await fetch('/sessions', {
         method: 'POST',
