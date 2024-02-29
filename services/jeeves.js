@@ -768,7 +768,7 @@ class Jeeves extends Hub {
       // Consensus Agents
       const agentResults = Promise.allSettled([
         this.alpha.query({ query, messages }), // ChatGPT
-        this.gemini.query({ query, messages }), // requires USA-based egress
+        // this.gemini.query({ query, messages }), // requires USA-based egress
         // this.lennon.query({ query, messages }), // Adversarial RAG
         this.llama.query({ query, messages, requery: true }), // Ollama
         this.gemma.query({ query, messages, requery: true }), // Ollama
@@ -4707,7 +4707,7 @@ class Jeeves extends Hub {
             const whole = { name: `novo/cases/${element.id}`, content: element };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
-            const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole });
+            const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole }, 'case');
             console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
           }
         }),
