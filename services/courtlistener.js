@@ -134,7 +134,7 @@ class CourtListener extends Service {
   async sampleRecapDocuments (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling RECAP documents...');
     const now = Date.now();
-    const documents = await this.db('search_recapdocument').select().orderByRaw('RANDOM()').limit(limit);
+    const documents = await this.db('search_recapdocument').select().where('is_free_on_pacer', true).orderByRaw('RANDOM()').limit(limit);
     const end = Date.now();
     this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
     return documents;
@@ -280,6 +280,14 @@ class CourtListener extends Service {
     return courts;
   }
 
+  async syncDocketByID (id) {
+    console.debug('[COURTLISTENER]', 'Syncing docket by ID:', id);
+    const docket = await this.db('search_docket').where('id', id).first();
+    console.debug('[COURTLISTENER]', 'Syncing docket:', docket);
+    this.emit('docket', docket);
+    return docket;
+  }
+
   async syncDockets () {
     // TODO: this should be a stream
     const dockets = await this.sampleDockets();
@@ -298,7 +306,8 @@ class CourtListener extends Service {
 
     for (let i = 0; i < dockets.length; i++) {
       const docket = dockets[i];
-      this.emit('docket', docket);
+      const synced = await this.syncDocketByID(docket.id);
+      this.emit('docket', synced);
     }
 
     return dockets;

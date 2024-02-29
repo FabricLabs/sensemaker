@@ -1,5 +1,6 @@
 import { blue, green, red, sleep, yellow } from "../utils";
-import { DownloadableFile, StateScrapper, StateScrapperInterface, StorableData } from "./StateScrapper";
+import { DownloadableFile, StorableData } from "./BaseScrapper";
+import { StateScrapper, StateScrapperInterface } from "./StateScrapper";
 
 export class NewJersey extends StateScrapper implements StateScrapperInterface {
 

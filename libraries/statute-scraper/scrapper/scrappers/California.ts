@@ -2,7 +2,6 @@ import { StateScrapper, StateScrapperInterface } from "./StateScrapper";
 import { cyan, magenta, sleep } from "../utils";
 import { Download } from "playwright";
 import { Mutex } from 'async-mutex';
-import { Request } from "crawlee";
 
 export class California extends StateScrapper implements StateScrapperInterface {
 
