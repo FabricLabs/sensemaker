@@ -4699,24 +4699,25 @@ class Jeeves extends Hub {
             console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
           }
         }),
-        this.db('cases').select('id', 'title').orderByRaw('RAND()').limit(limit).then(async (cases) => {
+        this.db('cases').select('id', 'title', 'summary', 'decision_date', 'date_filed', 'date_argued', 'date_reargued', 'date_reargument_denied', 'date_blocked', 'date_last_filing', 'date_terminated', 'cause', 'nature_of_suit', 'jury_demand').orderByRaw('RAND()').limit(limit).then(async (cases) => {
           for (let i = 0; i < cases.length; i++) {
             const element = cases[i];
             const actor = { name: `novo/cases/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/cases/${element.id}/title`, content: element.title };
+            const whole = { name: `novo/cases/${element.id}`, content: element };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
-            console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', embedding);
+            const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole });
+            console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
           }
         }),
         this.db('documents').select(['id', 'description', 'content']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
-          console.debug('got documents:', documents);
           for (let i = 0; i < documents.length; i++) {
             const element = documents[i];
             const actor = { name: `novo/documents/${element.id}` };
             // TODO: consider additional metadata fields
             const document = { name: `novo/documents/${element.id}`, content: element };
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document });
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document }, 'document');
             console.debug('[JEEVES]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
           }
         })
