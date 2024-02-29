@@ -154,7 +154,7 @@ class AdminInquiries extends React.Component {
           </div>
         </div>
         <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }}>
-          <Table celled striped size='small'>
+          <Table celled striped>
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>

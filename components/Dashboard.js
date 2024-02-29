@@ -74,7 +74,7 @@ class Dashboard extends React.Component {
         isLoading: true,
         isLoggingOut: false,
         openMatters: false,
-        openLibrary: false,
+        openLibrary: true,
         openConversations: false,
         openSectionBar: false,
 
@@ -207,7 +207,7 @@ class Dashboard extends React.Component {
         } else {
           newState.openLibrary = true;
           this.setState({ openSectionBar: true });
-          this.props.resetChat();
+          // this.props.resetChat();
         }
         break;
       default:

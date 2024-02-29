@@ -219,7 +219,8 @@ class ChatBox extends React.Component {
       }
     }
 
-    const effectiveMatterID = matterID || this.props.actualConversation.matter_id;
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+
 
     // dispatch submitMessage
     this.props.submitMessage(
