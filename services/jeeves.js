@@ -4673,7 +4673,7 @@ class Jeeves extends Hub {
           for (let i = 0; i < jurisdictions.length; i++) {
             const element = jurisdictions[i];
             const actor = { name: `novo/jurisdictions/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/jurisdictions/${element.name}/name`, content: element.title };
+            const title = { name: `novo/jurisdictions/${element.id}/name`, content: element.title };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
             console.debug('[JEEVES]', '[VECTOR]', '[JURISDICTIONS]', 'Ingested:', embedding);
@@ -4683,7 +4683,7 @@ class Jeeves extends Hub {
           for (let i = 0; i < courts.length; i++) {
             const element = courts[i];
             const actor = { name: `novo/courts/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/courts/${element.name}/name`, content: element.title };
+            const title = { name: `novo/courts/${element.id}/name`, content: element.name };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
             console.debug('[JEEVES]', '[VECTOR]', '[COURTS]', 'Ingested:', embedding);
@@ -4693,7 +4693,7 @@ class Jeeves extends Hub {
           for (let i = 0; i < reporters.length; i++) {
             const element = reporters[i];
             const actor = { name: `novo/reporters/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/reporters/${element.name}/name`, content: element.title };
+            const title = { name: `novo/reporters/${element.id}/name`, content: element.title };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
             console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
