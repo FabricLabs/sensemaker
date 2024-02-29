@@ -12,7 +12,7 @@ environment.start();
 // Output should be deterministic, HTML-encoded applications.
 
 const NAME = 'NOVO';
-const VERSION = '0.3.0';
+const VERSION = '1.0.0-RC1';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
@@ -44,7 +44,7 @@ module.exports = {
       { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
-    search: false,
+    search: true,
     sync: false
   },
   db: {
