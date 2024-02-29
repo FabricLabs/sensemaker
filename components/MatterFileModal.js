@@ -22,7 +22,7 @@ class MatterFileModal extends React.Component {
     this.fileInputRef = React.createRef();
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     if (this.props.filename !== prevProps.filename) {
       this.setState({ filename: this.props.filename });
     }
@@ -72,8 +72,20 @@ class MatterFileModal extends React.Component {
   handleSubmit = () => {
     // TO DO: HANDLE FILE FORMATS, SECURITY, ERRORS
     this.props.onSubmit(this.state.note, this.state.filename, this.state.file);
-    console.log('Submitting:', this.state.note, this.state.filename); // Debugging log
+   // console.log('Submitting:', this.state.note, this.state.filename); // Debugging log
+    this.setState({
+      note: '',
+      filename: null,
+      file: null
+    });
   };
+  handleOpen = () => {
+    this.setState({
+      note: '',
+      filename: null,
+      file: null
+    });
+  }
 
   handleClose = () => {
     if (!this.props.filename) {
@@ -82,18 +94,23 @@ class MatterFileModal extends React.Component {
     if (!this.props.note) {
       this.setState({ note: null, });
     }
+    this.setState({
+      note: '',
+      filename: null,
+      file: null
+    });
     this.props.onClose();
   }
 
   removeFile = () => {
     this.setState({ filename: null, file: null });
-    this.props.deleteFile();
+    //this.props.deleteFile();
   };
 
   render() {
     const { open } = this.props;
     return (
-      <Modal open={open} onClose={this.handleClose} size="tiny">
+      <Modal open={open} onOpen={this.handleOpen} onClose={this.handleClose} size="tiny">
         <Modal.Header>Add File or Note</Modal.Header>
         <Modal.Content>
           {(this.state.filename) && (

@@ -218,10 +218,13 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation.matter_id;
+
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      matterID
+      effectiveMatterID
     ).then((output) => {
 
       // dispatch getMessages
@@ -555,9 +558,9 @@ class ChatBox extends React.Component {
       return (
         <div style={{ display: 'flex' }}>
           {this.state.editedTitle ? (
-            <Header as="h2">{this.state.editedTitle}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.state.editedTitle}</Header>
           ) : (
-            <Header as="h2">{title}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{title}</Header>
           )}
           <Icon
             name='edit'
@@ -711,22 +714,24 @@ class ChatBox extends React.Component {
             </Feed.Extra>
           )}
           {(conversationID && !actualConversation) && (
-            <Header as="h2" style={{ marginTop: '0.5rem' }}>Conversation #{conversationID}</Header>
+            <div className='conversation-title-container' >
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
+            </div>
           )}
           {(conversationID && actualConversation) && (
-            <div className='link-back-matter' >
+            <div className='conversation-title-container' >
               {/* <Header as="h2">{actualConversation.title}</Header> */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
             </div>
           )}
           {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
           {matterID && (
-            <div className='link-back-matter'>
-              <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
           {/* The chat messages start rendering here */}

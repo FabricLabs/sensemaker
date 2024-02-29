@@ -91,6 +91,7 @@ class AdminSettings extends React.Component {
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
 
     const inquiriesTotal = stats?.inquiries?.total ?? 0;
+    const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
 
@@ -123,7 +124,7 @@ class AdminSettings extends React.Component {
             <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
           </Statistic>
           <Statistic>
-            <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+            <Statistic.Value>{inquiriesWaiting}</Statistic.Value>
             <Statistic.Label>Waiting</Statistic.Label>
           </Statistic>
           <Statistic>
@@ -448,7 +449,7 @@ class AdminSettings extends React.Component {
 
     return (
       <jeeves-admin-settings class='fade-in'>
-        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%', overflowX: 'hidden'}}>
           <Header as='h2'>Admin</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Tab panes={panes} />

@@ -78,7 +78,8 @@ class OpenAIService extends Service {
   }
 
   async _streamConversationRequest (request) {
-    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request.query, Object.keys(request));
+    if (this.settings.debug) console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request.query, Object.keys(request));
+    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', Object.keys(request));
     return new Promise(async (resolve, reject) => {
       const entropy = request.entropy || 0.0;
       const seed = new Actor({ name: `entropies/${entropy + ''}` });
@@ -108,7 +109,7 @@ class OpenAIService extends Service {
         });
 
         stream.on('finalChatCompletion', (completion) => {
-          console.debug('FINAL CHAT COMPLETION:', completion);
+          if (this.settings.debug) console.debug('[AGENT]', '[OPENAI]', 'FINAL CHAT COMPLETION:', completion);
           const choice = completion.choices[0];
           if (!choice) reject(new Error('No choices given.'));
 
@@ -139,9 +140,31 @@ class OpenAIService extends Service {
                         try {
                           const args = JSON.parse(toolcall.function.arguments);
                           console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Arguments:', args);
-                          const whitelist = ['127.0.0.1:3045', 'trynovo.com', 'jeeves.dev', 'beta.jeeves.dev'/*, 'alpha.jeeves.dev' */];
-                          if (!whitelist.includes(args.host)) {
+                          const whitelist = [
+                            '127.0.0.1:3045',
+                            'trynovo.com',
+                            'jeeves.dev',
+                            'beta.jeeves.dev'
+                            /*, 'alpha.jeeves.dev' */
+                          ];
+
+                          const resourcePaths = [
+                            '/cases',
+                            '/documents',
+                            '/people',
+                            '/courts',
+                            '/judges',
+                            '/opinions',
+                            '/jurisdictions',
+                            '/reporters',
+                            '/statutes',
+                            '/volumes'
+                          ];
+
+                          if (!whitelist.includes(args.host?.toLowerCase())) {
                             console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Host not in whitelist:', args.host);
+                          } else if (!resourcePaths.includes(args.path?.toLowerCase())) {
+                            console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Path not in whitelist:', args.path);
                           } else {
                             // Execute Network Request
                             fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only
@@ -152,7 +175,7 @@ class OpenAIService extends Service {
                               },
                               body: JSON.stringify(args)
                             }).then(async (response) => {
-                              console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Response:', response);
+                              if (this.settings.debug) console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Response:', response);
                               // const obj = await response.json();
                               // console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Object:', obj);
 

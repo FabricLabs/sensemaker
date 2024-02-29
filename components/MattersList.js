@@ -63,8 +63,8 @@ class MattersList extends React.Component {
         {matters && matters.matters && matters.matters
           .map(instance => {
             return (<>
-              <Menu.Item as={Link} to={"/matter/" + instance.id} >
-                <Link to={"/matter/" + instance.id} style={linkStyle}>
+              <Menu.Item as={Link} to={"/matters/" + instance.id} >
+                <Link to={"/matters/" + instance.id} style={linkStyle}>
                   {instance.title}
                 </Link>
               </Menu.Item>
