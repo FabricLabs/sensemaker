@@ -1,6 +1,7 @@
 import { Page } from "playwright";
-import { DownloadableFile, StateScrapper, StateScrapperInterface } from "./StateScrapper";
+import { StateScrapper, StateScrapperInterface } from "./StateScrapper";
 import { sleep } from "crawlee";
+import { DownloadableFile } from "./BaseScrapper";
 
 export class Texas extends StateScrapper implements StateScrapperInterface {
 

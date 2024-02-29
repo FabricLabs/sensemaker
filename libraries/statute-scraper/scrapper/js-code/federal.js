@@ -3,52 +3,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const Arkansas_1 = require("./scrappers/Arkansas");
-const California_1 = require("./scrappers/California");
-const Colorado_1 = require("./scrappers/Colorado");
-const Florida_1 = require("./scrappers/Florida");
-const Georgia_1 = require("./scrappers/Georgia");
-const NewJersey_1 = require("./scrappers/NewJersey");
-const NewYork_1 = require("./scrappers/NewYork");
-const Ohio_1 = require("./scrappers/Ohio");
-const Pennsylvania_1 = require("./scrappers/Pennsylvania");
-const Tennessee_1 = require("./scrappers/Tennessee");
-const Texas_1 = require("./scrappers/Texas");
+const Federal_1 = require("./scrappers/Federal");
 const utils_1 = require("./utils");
 const dotenv_1 = __importDefault(require("dotenv"));
-const Illinois_1 = require("./scrappers/Illinois");
 dotenv_1.default.config();
 const states_parsers = {
-    'Arkansas': () => new Arkansas_1.Arkansas,
-    'California': () => new California_1.California,
-    'Colorado': () => new Colorado_1.Colorado,
-    'Florida': () => new Florida_1.Florida,
-    'Georgia': () => new Georgia_1.Georgia,
-    'Illinois': () => new Illinois_1.Illinois,
-    'NewJersey': () => new NewJersey_1.NewJersey,
-    'NewYork': () => new NewYork_1.NewYork,
-    'Ohio': () => new Ohio_1.Ohio,
-    'Pennsylvania': () => new Pennsylvania_1.Pennsylvania,
-    'Tennessee': () => new Tennessee_1.Tennessee,
-    'Texas': () => new Texas_1.Texas,
+    'Federal': () => new Federal_1.Federal
 };
-const allowed_states = Object.keys(states_parsers);
 const allowed_pages = [
-    'statutes',
+    'codeOfFederalRegulations',
+    'federalRulesOfAppellateProcedure',
+    'federalRulesOfCivilProcedure',
+    'federalRulesOfCriminalProcedure',
+    'unitedStatesCode',
     'constitution',
-    'rulesOfCourt',
-    'court',
-    'rules',
-    'administrativeCodes',
-    'administrative',
-    'codes',
+    'bankruptcyRules',
+    'federalRulesOfEvidence',
+    'rulesOfGoverning',
+    'rulesOfTheForeignIntelligenceSurveillanceCourt',
+    'formsAccompanyingTheFederalRulesOfProcedure',
 ];
 function checkRejectedParams(argv) {
-    const allowed_states_i = allowed_states.map(state => state.toLowerCase());
     const allowed_pages_i = allowed_pages.map(page => page.toLowerCase());
     const rejected = argv.filter((param) => {
         const param_i = param.toLocaleLowerCase();
-        return !allowed_states_i.includes(param_i) && !allowed_pages_i.includes(param_i);
+        return !allowed_pages_i.includes(param_i);
     });
     if (rejected.length == 0) {
         return;
@@ -56,7 +35,6 @@ function checkRejectedParams(argv) {
     const errors = [];
     errors.push(`${(0, utils_1.red)('Error')}: There are invalid params "${rejected.map(e => (0, utils_1.red)(e)).join('", "')}"`);
     errors.push('======================================================');
-    errors.push(`${(0, utils_1.green)('Valid States')}: ${allowed_states.join(', ')}`);
     errors.push(`${(0, utils_1.green)('Valid Resources')}: ${allowed_pages.join(', ')}`);
     errors.push(``);
     errors.forEach((e) => console.error(e));
@@ -66,16 +44,9 @@ function processParams() {
     const argv = process.argv.slice(2);
     checkRejectedParams(argv);
     const params = {
-        states: [],
+        states: ['Federal'],
         pages: []
     };
-    const states_map = (0, utils_1.array_combine)(allowed_states.map(state => state.toLowerCase()), allowed_states);
-    params.states = argv.map(param => {
-        const param_i = param.toLowerCase();
-        return !!states_map[param_i] ? states_map[param_i] : null;
-    }).filter(param => {
-        return allowed_states.includes(param);
-    });
     const pages_map = (0, utils_1.array_combine)(allowed_pages.map(state => state.toLowerCase()), allowed_pages);
     params.pages = argv.map(param => {
         const param_i = param.toLowerCase();
@@ -83,7 +54,6 @@ function processParams() {
     }).filter(param => {
         return allowed_pages.includes(param);
     });
-    params.states = params.states.length == 0 ? allowed_states : params.states;
     params.pages = params.pages.length == 0 ? allowed_pages : params.pages;
     params.states = params.states.reduce((acumulador, param) => {
         if (!acumulador.includes(param)) {
@@ -124,17 +94,38 @@ function processParams() {
             console.log(`================================`);
             let scrapper = states_parsers[state]();
             switch (page) {
-                case 'statutes':
-                    await scrapper.statutes();
+                case 'codeOfFederalRegulations':
+                    await scrapper.codeOfFederalRegulations();
                     break;
-                case 'rulesOfCourt':
-                    await scrapper.rulesOfCourt();
+                case 'federalRulesOfAppellateProcedure':
+                    await scrapper.federalRulesOfAppellateProcedure();
+                    break;
+                case 'federalRulesOfCivilProcedure':
+                    await scrapper.federalRulesOfCivilProcedure();
+                    break;
+                case 'federalRulesOfCriminalProcedure':
+                    await scrapper.federalRulesOfCriminalProcedure();
+                    break;
+                case 'unitedStatesCode':
+                    await scrapper.unitedStatesCode();
                     break;
                 case 'constitution':
                     await scrapper.constitution();
                     break;
-                case 'administrativeCodes':
-                    await scrapper.administrativeCodes();
+                case 'bankruptcyRules':
+                    await scrapper.bankruptcyRules();
+                    break;
+                case 'federalRulesOfEvidence':
+                    await scrapper.federalRulesOfEvidence();
+                    break;
+                case 'rulesOfGoverning':
+                    await scrapper.rulesOfGoverning();
+                    break;
+                case 'rulesOfTheForeignIntelligenceSurveillanceCourt':
+                    await scrapper.rulesOfTheForeignIntelligenceSurveillanceCourt();
+                    break;
+                case 'formsAccompanyingTheFederalRulesOfProcedure':
+                    await scrapper.formsAccompanyingTheFederalRulesOfProcedure();
                     break;
             }
         }

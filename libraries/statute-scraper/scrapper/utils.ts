@@ -12,6 +12,9 @@ export const downloadFile = async (url: string, filename: string) => {
   return null;
 }
 
+export const clearForFilesystemDirOrFileName = (path: string) => {
+  return clearForFilesystem(path).replace(/[\/]/g, '');
+}
 export const clearForFilesystem = (path: string) => {
   return path.replace(/[^a-zA-Z0-9_\/. \(\),:-]/g, '');
 }
@@ -47,7 +50,7 @@ export const sleep = (time: number) => new Promise((resolve, reject) => {
 
 export const fixPath = (path: string[]): string[] => {
   return path.map(part => {
-    return clearForFilesystem(part).substring(0, 200);
+    return clearForFilesystemDirOrFileName(part).substring(0, 200);
   })
 }
 
