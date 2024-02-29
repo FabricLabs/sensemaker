@@ -204,10 +204,13 @@ class Dashboard extends React.Component {
       case 'library':
         if (this.state.openLibrary && this.state.openSectionBar) {
           this.setState({ openSectionBar: false });
+          newState.openLibrary = true;
         } else {
           newState.openLibrary = true;
           this.setState({ openSectionBar: true });
-          // this.props.resetChat();
+          if(!this.state.openLibrary){
+            this.props.resetChat();
+          }
         }
         break;
       default:
@@ -223,6 +226,7 @@ class Dashboard extends React.Component {
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
+
     // const USER_IS_ADMIN = true;
     // const USER_IS_ALPHA = true;
     // const USER_IS_BETA = true;
@@ -323,7 +327,7 @@ class Dashboard extends React.Component {
               </div>
             </div>
           </Sidebar>
-          <Sidebar as={Menu} animation='overlay' icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -444,6 +448,7 @@ class Dashboard extends React.Component {
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} />} />
+                {/* <Route path="/conversations/:id" element={<Room {...this.props} />} /> */}
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
