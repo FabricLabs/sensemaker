@@ -73,7 +73,10 @@ class ChatBox extends React.Component {
 
   componentDidMount() {
     $('#primary-query').focus();
-    this.props.resetChat();
+    //this.props.resetChat();
+    if(this.props.conversationID){
+      this.startPolling(this.props.conversationID);
+    }
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -82,6 +85,11 @@ class ChatBox extends React.Component {
 
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
+    if (this.props.conversationID)
+      if (this.props.conversationID !== prevProps.conversationID) {
+        this.stopPolling();
+        this.startPolling(this.props.conversationID);
+      }
 
     // we go this way if we have more messages than before or if the content of the last message
     // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
@@ -109,9 +117,12 @@ class ChatBox extends React.Component {
     }
   }
 
+  
+
   componentWillUnmount() {
-    this.props.resetChat();
-    clearInterval(this.watcher); //ends de sync in case you switch to other component
+    //this.props.resetChat();
+    //clearInterval(this.watcher); //ends de sync in case you switch to other component
+    this.stopPolling();
 
     this.setState({
       chat: {
@@ -125,6 +136,24 @@ class ChatBox extends React.Component {
 
     window.removeEventListener('resize', this.handleResize);
   }
+
+  stopPolling = () => {
+    if (this.watcher) {
+      clearInterval(this.watcher);
+      this.watcher = null;
+    }
+  };
+
+  startPolling = (id) => {
+    // Ensure any existing polling is stopped before starting a new one
+    this.stopPolling();
+
+    // Start polling for messages in the current conversation
+    this.watcher = setInterval(() => {
+      this.props.getMessages({ conversation_id: id });
+    }, 5000);
+  };
+
 
   //these 2 works for the microphone icon color, they are necessary
   handleTextareaFocus = () => {
@@ -181,7 +210,7 @@ class ChatBox extends React.Component {
 
   handleClick = (e) => {
     console.debug('clicked reset button', e);
-    this.props.resetChat();
+   // this.props.resetChat();
     this.setState({ message: null, chat: { message: null } });
   }
 
@@ -192,6 +221,8 @@ class ChatBox extends React.Component {
     const { caseTitle, caseID, matterID } = this.props;
     let dataToSubmit;
 
+    this.stopPolling();
+    
     this.setState({ loading: true, previousFlag: true });
 
     this.props.getMessageInformation(query);
@@ -323,6 +354,8 @@ class ChatBox extends React.Component {
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
     const { caseTitle, caseID } = this.props;
+
+    this.stopPolling();
 
     let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
