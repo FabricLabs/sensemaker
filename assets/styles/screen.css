@@ -175,6 +175,10 @@ jeeves-dashboard #main-sidebar{
   z-index: 1000;
 }
 
+jeeves-dashboard #collapse-sidebar{
+  z-index: 500;
+}
+
 .left.sidebar.menu .label {
   vertical-align: text-top;
 }
@@ -582,7 +586,7 @@ fabric-motd {
   background-color: #fff;
   position: sticky;
   top: 0;
-  z-index: 2000;
+  z-index: 10;
   box-shadow: 0 8px 6px -4px #fff;
 }
 
