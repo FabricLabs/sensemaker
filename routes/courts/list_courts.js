@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  PER_PAGE_LIMIT
+} = require('../../constants');
+
 module.exports = async function (req, res, next) {
   const currentPage = req.query.page || 1;
   const courts = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'jurisdiction_id', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date', 'url').from('courts').orderBy('founded_date', 'desc').paginate({
