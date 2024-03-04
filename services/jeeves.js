@@ -3779,7 +3779,8 @@ class Jeeves extends Hub {
       console.debug('got health:', health);
       const response = {
         status: (health.results.filter((x) => x.status !== 'fulfilled').length) ? 'unhealthy' : 'healthy',
-        content: health.results.map((x) => x.value)
+        services: health.results.map((x) => x.value),
+        content: health
       };
 
       res.send(response);
