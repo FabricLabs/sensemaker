@@ -18,12 +18,18 @@ module.exports = function (req, res, next) {
   }
 
   const safeFilename = path.basename(req.file.originalname);
-  const destination = path.join(this.settings.files.userstore, req.user.id, safeFilename);
+  const userDir = path.join(this.settings.files.userstore, req.user.id);
+  const destination = path.join(userDir, safeFilename);
+
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
 
   fs.rename(req.file.path, destination, (err) => {
     if (err) {
       res.status(500);
-      res.send({ status: 'error', message: 'Failed to move file to destination.' });
+      res.send({ status: 'error', message: 'Failed to move file to destination.', content: err });
+      // TODO: report file for cleanup / investigation
       return;
     }
 
@@ -41,6 +47,7 @@ module.exports = function (req, res, next) {
         encoding: 'utf8',
         filename: req.file.originalname,
         sha256: hash.digest('hex'),
+        owner: req.user.id
       });
 
       res.send({ status: 'success', message: 'Successfully uploaded file!' });

@@ -69,15 +69,17 @@ class MatterFileModal extends React.Component {
       // data.append('type', file.type);
       // data.append('file', file);
 
-      const blob = new Blob([file], { type: file.type });
+      // const blob = new Blob([file], { type: file.type });
 
-      data.append('file', blob);
+      data.append('name', file.name);
+      data.append('file', file);
 
-      postAPI('/files', data, this.props.auth.token);
+      // postAPI('/files', data, this.props.auth.token);
 
       fetch('/files', {
         headers: {
-          'Authorization': `Bearer ${this.props.auth.token}`
+          'Authorization': `Bearer ${this.props.auth.token}`,
+          // 'Content-Type': 'multipart/form-data',
         },
         method: 'POST',
         body: data

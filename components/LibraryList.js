@@ -126,12 +126,8 @@ class LibraryList extends React.Component {
           </Menu.Item>
         )}
         {USER_IS_BETA && ENABLE_LIBRARY && (
-          <Menu.Item disabled>
-            <div>
-              <Icon name='book' />
-              {!this.state.sidebarCollapsed && 'Library'}
-              &nbsp;<div style={{ float: 'right' }}><Label size='mini' color='orange'>disabled</Label></div>
-            </div>
+          <Menu.Item as={Link} to='/settings/library'>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList

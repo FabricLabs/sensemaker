@@ -29,6 +29,7 @@ const {
 
 // Components
 const Home = require('./Home');
+const Library = require('./Library');
 const CaseHome = require('./CaseHome');
 const CaseView = require('./CaseView');
 const CourtHome = require('./CourtHome');
@@ -424,6 +425,7 @@ class Dashboard extends React.Component {
                     getMessageInformation={this.props.getMessageInformation}
                   />
                 } />
+                <Route path='/settings/library' element={<Library />} />
                 <Route path="/updates" element={<Changelog />} />
                 <Route path="/workspaces" element={<Workspaces />} />
                 <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
