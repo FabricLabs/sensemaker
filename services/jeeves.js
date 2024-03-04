@@ -3672,7 +3672,7 @@ class Jeeves extends Hub {
   }
 
   async _handleCourtListenerDocument (actor) {
-    console.debug('[DOCUMENT]', 'Received document:', actor);
+    if (this.settings.debug) console.debug('[NOVO]', '[COURTLISTENER]', '[DOCUMENT]', 'Received document:', actor);
     const document = actor.content;
     // TODO: store sample.id as fabric_id
     const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
@@ -3680,6 +3680,9 @@ class Jeeves extends Hub {
 
     if (!target) {
       if (this.settings.debug) console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
+      // TODO: retrieve docket_entry_id etc.
+      // populate all subsequent data
+
       await this.db('documents').insert({
         sha1: document.sha1,
         description: document.description,
@@ -3934,7 +3937,7 @@ class Jeeves extends Hub {
 
     if (!target) {
       try {
-        await this.db('cases').insert(instance);
+        // await this.db('cases').insert(instance);
       } catch (exception) {
         console.error('[JEEVES]', '[COURTLISTENER]', 'Failed to insert case:', exception);
         console.error('[JEEVES]', '[COURTLISTENER]', 'Target was:', target);
