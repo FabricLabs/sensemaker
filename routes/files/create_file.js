@@ -18,12 +18,17 @@ module.exports = function (req, res, next) {
   }
 
   const safeFilename = path.basename(req.file.originalname);
-  const destination = path.join(this.settings.files.userstore, req.user.id, safeFilename);
+  const userDir = path.join(this.settings.files.userstore, req.user.id);
+  const destination = path.join(userDir, safeFilename);
+
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
 
   fs.rename(req.file.path, destination, (err) => {
     if (err) {
       res.status(500);
-      res.send({ status: 'error', message: 'Failed to move file to destination.' });
+      res.send({ status: 'error', message: 'Failed to move file to destination.', content: err });
       return;
     }
 
