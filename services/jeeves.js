@@ -1093,7 +1093,8 @@ class Jeeves extends Hub {
       courts: [], // TODO: implement
       documents: [], // TODO: implement
       people: [], // TODO: implement
-      results: [],
+      results: elements,
+      content: elements,
       pagination: {
         total: elements.length,
         per_page: PER_PAGE_DEFAULT,
