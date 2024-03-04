@@ -77,17 +77,17 @@ class LibraryList extends React.Component {
         </Menu.Item>
         {USER_IS_ALPHA && ENABLE_DOCUMENT_SEARCH && (
           <Menu.Item as={Link} to='/documents'>
-            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA && ENABLE_JURISDICTION_SEARCH && (
           <Menu.Item as={Link} to='/jurisdictions'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='globe' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA &&ENABLE_STATUTE_SEARCH && (
           <Menu.Item as={Link} to='/statues'>
-            <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Statutes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA && ENABLE_COURT_SEARCH && (
@@ -97,12 +97,12 @@ class LibraryList extends React.Component {
         )}
         {USER_IS_ALPHA && ENABLE_REPORTER_SEARCH && (
           <Menu.Item as={Link} to='/reporters'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='newspaper outline' /> {!this.state.sidebarCollapsed && 'Reporters'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA && ENABLE_VOLUME_SEARCH && (
           <Menu.Item as={Link} to='/volumes'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Volumes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_BETA && ENABLE_CASE_SEARCH && (
@@ -122,7 +122,7 @@ class LibraryList extends React.Component {
         )}
         {USER_IS_ALPHA && ENABLE_PERSON_SEARCH && (
           <Menu.Item as={Link} to='/people'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='address book' /> {!this.state.sidebarCollapsed && 'People'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_BETA && ENABLE_LIBRARY && (

@@ -1,7 +1,9 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 
+// Components
 const {
   Button,
   Form,
@@ -10,6 +12,11 @@ const {
   Divider,
   Header
 } = require('semantic-ui-react');
+
+// Actions
+const {
+  postAPI
+} = require('../actions/apiActions');
 
 class MatterFileModal extends React.Component {
   constructor(props) {
@@ -57,8 +64,21 @@ class MatterFileModal extends React.Component {
       console.debug('File:', file.name, file.size, file.type); // Debugging log
       this.setState({ filename: file.name, file: file });
 
-      data.append('file', file);
+      // data.append('filename', file.name);
+      // data.append('size', file.size);
+      // data.append('type', file.type);
+      // data.append('file', file);
+
+      const blob = new Blob([file], { type: file.type });
+
+      data.append('file', blob);
+
+      postAPI('/files', data, this.props.auth.token);
+
       fetch('/files', {
+        headers: {
+          'Authorization': `Bearer ${this.props.auth.token}`
+        },
         method: 'POST',
         body: data
       });

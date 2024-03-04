@@ -306,11 +306,42 @@ class CourtListener extends Service {
   }
 
   async syncDocketByID (id) {
-    console.debug('[COURTLISTENER]', 'Syncing docket by ID:', id);
+    // console.debug('[COURTLISTENER]', 'Syncing docket by ID:', id);
     const docket = await this.db('search_docket').where('id', id).first();
-    console.debug('[COURTLISTENER]', 'Syncing docket:', docket);
+    // console.debug('[COURTLISTENER]', 'Syncing docket:', docket);
     this.emit('docket', docket);
+
+    const entries = await this.syncDocketEntriesByDocketID(docket.id);
+    console.debug('[COURTLISTENER]', 'Synced', entries.length, 'docket entries.');
+    console.debug('[COURTLISTENER]', 'Docket entries:', entries);
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      // this.emit('docketentry', entry);
+      const documents = await this.syncRecapDocumentsByEntryID(entry.id);
+      console.debug('[COURTLISTENER]', 'Synced', documents.length, 'documents for docket entry:', entry.id);
+      console.debug('[COURTLISTENER]', 'Documents:', documents);
+    }
+
     return docket;
+  }
+
+  async syncDocketEntriesByDocketID (id) {
+    const entries = await this.db('search_docketentry').where('docket_id', id);
+    // this.emit('docketentries', entries);
+    return entries;
+  }
+
+  async syncRecapDocumentsByEntryID (id) {
+    const documents = await this.db('search_recapdocument').where('docket_entry_id', id);
+    for (let i = 0; i < documents.length; i++) {
+      const document = documents[i];
+      this.emit('document', {
+        type: 'Document',
+        content: document
+      });
+    }
+    return documents;
   }
 
   async syncDockets () {

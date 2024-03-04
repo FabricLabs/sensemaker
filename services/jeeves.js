@@ -339,6 +339,7 @@ class Jeeves extends Hub {
     this.apollo = null;
 
     // Internals
+    this.healths = {};
     this.services = {};
     this.sources = {};
     this.workers = [];
@@ -612,6 +613,20 @@ class Jeeves extends Hub {
     });
 
     return beat;
+  }
+
+  async checkHealth () {
+    return new Promise(async (resolve, reject) => {
+      const now = (new Date()).toISOString();
+      const results = await Promise.allSettled([
+        this.alpha.query({ query: 'Health check!  Tell me some status values.' })
+      ]);
+
+      resolve({
+        created: now,
+        results: results
+      });
+    });
   }
 
   /**
@@ -1582,11 +1597,11 @@ class Jeeves extends Hub {
     }
 
     this._slowcrawler = setInterval(async () => {
-      /* this.worker.addJob({
-        type: 'DownloadMissingRECAPDocument',
-        params: []
-      }); */
+      // Sync Health First
+      const health = await this.checkHealth();
+      console.debug('[JEEVES]', 'Health:', health);
 
+      /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
 
       this._syncEmbeddings(1000).then((output) => {
@@ -1626,7 +1641,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
     // Files
-    this.http.express.post('/files', this.uploader.single('file'), ROUTES.files.create.bind(this));
+    this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
 
@@ -3672,14 +3687,14 @@ class Jeeves extends Hub {
   }
 
   async _handleCourtListenerDocument (actor) {
-    if (this.settings.debug) console.debug('[NOVO]', '[COURTLISTENER]', '[DOCUMENT]', 'Received document:', actor);
+    if (1 || this.settings.debug) console.debug('[NOVO]', '[COURTLISTENER]', '[DOCUMENT]', 'Received document:', actor);
     const document = actor.content;
     // TODO: store sample.id as fabric_id
     const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
     const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
 
     if (!target) {
-      if (this.settings.debug) console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
+      if (1 || this.settings.debug) console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
       // TODO: retrieve docket_entry_id etc.
       // populate all subsequent data
 
@@ -3905,9 +3920,9 @@ class Jeeves extends Hub {
       date_terminated: docket.date_terminated
     };
 
-    console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
+    // console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
     const target = await this.db('cases').where({ fabric_id: actor.id }).first();
-    console.debug('[NOVO]', '[COURTLISTENER]', 'Docket Target Case:', target);
+    // console.debug('[NOVO]', '[COURTLISTENER]', 'Docket Target Case:', target);
 
     if (docket.pacer_case_id) {
       if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
@@ -3916,7 +3931,7 @@ class Jeeves extends Hub {
         if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
 
         if (instance.court_id) {
-          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
+          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
           const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
           console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
           if (!court) {
@@ -4664,7 +4679,7 @@ class Jeeves extends Hub {
             const title = { name: `novo/jurisdictions/${element.id}/name`, content: element.name };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
-            console.debug('[JEEVES]', '[VECTOR]', '[JURISDICTIONS]', 'Ingested:', embedding);
+            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[JURISDICTIONS]', 'Ingested:', embedding);
           }
         }),
         this.db('courts').select('id', 'name').then(async (courts) => {
@@ -4674,7 +4689,7 @@ class Jeeves extends Hub {
             const title = { name: `novo/courts/${element.id}/name`, content: element.name };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
-            console.debug('[JEEVES]', '[VECTOR]', '[COURTS]', 'Ingested:', embedding);
+            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[COURTS]', 'Ingested:', embedding);
           }
         }),
         this.db('reporters').select('id', 'name').then(async (reporters) => {
@@ -4684,7 +4699,7 @@ class Jeeves extends Hub {
             const title = { name: `novo/reporters/${element.id}/name`, content: element.name };
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
-            console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
+            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
           }
         }),
         this.db('cases').select('id', 'title', 'summary', 'decision_date', 'date_filed', 'date_argued', 'date_reargued', 'date_reargument_denied', 'date_blocked', 'date_last_filing', 'date_terminated', 'cause', 'nature_of_suit', 'jury_demand').orderByRaw('RAND()').limit(limit).then(async (cases) => {
@@ -4696,7 +4711,7 @@ class Jeeves extends Hub {
             const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
             const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole }, 'case');
-            console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
+            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
           }
         }),
         this.db('documents').select(['id', 'description', 'content']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
@@ -4706,7 +4721,7 @@ class Jeeves extends Hub {
             // TODO: consider additional metadata fields
             const document = { name: `novo/documents/${element.id}`, content: element };
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document }, 'document');
-            console.debug('[JEEVES]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
+            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
           }
         })
       ]).catch(reject).then(resolve);
@@ -4811,6 +4826,7 @@ class Jeeves extends Hub {
 
           try {
             const obj = JSON.parse(inner);
+            if (this.settings.debug) console.debug('[AUTH]', 'Bearer Token:', obj);
             req.user.id = obj.sub;
             req.user.role = obj.role || 'asserted';
             req.user.state = obj.state || {};
