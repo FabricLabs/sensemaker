@@ -125,6 +125,7 @@ const ROUTES = {
     view: require('../routes/jurisdictions/jurisdiction_view'),
   },
   courts: {
+    list: require('../routes/courts/list_courts'),
     view: require('../routes/courts/court_view'),
   },
   sessions: {
@@ -893,8 +894,9 @@ class Jeeves extends Hub {
     const result = await Promise.race([
       new Promise(async (resolve, reject) => {
         try {
-          const instance = await this.courtlistener.db('search_court').select('*').where('name', name);
+          const instance = await this.courtlistener.db('search_court').select('*').where('name', name).first();
           console.debug('[NOVO]', '[COURT]', 'Found court by name:', instance);
+          resolve(instance);
         } catch (exception) {
           console.error('[NOVO]', '[COURT]', 'Error searching court:', exception);
           reject(exception);
@@ -2507,24 +2509,7 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/courts', async (req, res, next) => {
-      const currentPage = req.query.page || 1;
-      const courts = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date', 'url').from('courts').orderBy('founded_date', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: currentPage
-      });
-
-      res.format({
-        json: () => {
-          res.send(courts.data);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      })
-    });
-
+    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
     this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
       const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
       res.format({
@@ -3694,7 +3679,7 @@ class Jeeves extends Hub {
     const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
 
     if (!target) {
-      console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
+      if (this.settings.debug) console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
       await this.db('documents').insert({
         sha1: document.sha1,
         description: document.description,
@@ -4015,7 +4000,7 @@ class Jeeves extends Hub {
   }
 
   async _handleHarvardJurisdiction (jurisdiction) {
-    console.debug('[JEEVES]', '[HARVARD]', 'jurisdiction:', jurisdiction);
+    if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'jurisdiction:', jurisdiction);
     const actor = new Actor({ name: `harvard/jurisdictions/${jurisdiction.id}` });
     const target = await this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
 
@@ -4030,7 +4015,7 @@ class Jeeves extends Hub {
   }
 
   async _handleHarvardReporter (reporter) {
-    console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
+    if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
     const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
     const target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
 
