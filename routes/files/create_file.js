@@ -40,17 +40,29 @@ module.exports = function (req, res, next) {
         return;
       }
 
+      console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
       const hash = crypto.createHash('sha256').update(data);
+      const digest = hash.digest('hex');
 
       this.db('documents').insert({
         content: data.toString('utf8'),
-        encoding: 'utf8',
-        filename: req.file.originalname,
-        sha256: hash.digest('hex'),
-        owner: req.user.id
+        metadata: {
+          encoding: 'utf8',
+          filename: req.file.originalname,
+          sha256: digest,
+          owner: req.user.id
+        }
+      }).then((insertedDocument) => {
+        this.trainer.ingestDocument({
+          content: data.toString('utf8'),
+          encoding: 'utf8',
+          filename: req.file.originalname,
+          sha256: digest,
+          owner: req.user.id
+        }).then((ingestedDocument) => {
+          res.send({ status: 'success', message: 'Successfully uploaded file!' });
+        });
       });
-
-      res.send({ status: 'success', message: 'Successfully uploaded file!' });
     });
   });
 };
