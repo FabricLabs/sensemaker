@@ -175,14 +175,18 @@ jeeves-dashboard #main-sidebar{
   z-index: 1000;
 }
 
+jeeves-dashboard #collapse-sidebar{
+  z-index: 500;
+}
+
 .left.sidebar.menu .label {
   vertical-align: text-top;
 }
 
 @media (max-width: 1440px) and (max-height: 800px){
   jeeves-dashboard #main-sidebar{
-    min-width: 120px;
-    max-width: 120px;
+    min-width: 100px;
+    max-width: 100px;
   }
 }
 .col-center{
@@ -191,7 +195,7 @@ jeeves-dashboard #main-sidebar{
   align-items: center;
 }
 .icon-label{
-  font-size: 0.7em;
+  font-size: 0.9em;
   margin-top: 0.3em;
 }
 
@@ -582,7 +586,7 @@ fabric-motd {
   background-color: #fff;
   position: sticky;
   top: 0;
-  z-index: 2000;
+  z-index: 10;
   box-shadow: 0 8px 6px -4px #fff;
 }
 

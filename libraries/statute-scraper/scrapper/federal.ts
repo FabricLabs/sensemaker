@@ -1,46 +1,25 @@
-import { Arkansas } from "./scrappers/Arkansas";
-import { California } from "./scrappers/California";
-import { Colorado } from "./scrappers/Colorado";
-import { Florida } from "./scrappers/Florida";
-import { Georgia } from "./scrappers/Georgia";
-import { NewJersey } from "./scrappers/NewJersey";
-import { NewYork } from "./scrappers/NewYork";
-import { Ohio } from "./scrappers/Ohio";
-import { Pennsylvania } from "./scrappers/Pennsylvania";
-import { Tennessee } from "./scrappers/Tennessee";
-import { Texas } from "./scrappers/Texas";
+import { Federal } from "./scrappers/Federal";
 
-import { StateScrapperInterface } from "./scrappers/StateScrapper";
 import { array_combine, green, red } from "./utils";
 import dotenv from 'dotenv'; 
-import { Illinois } from "./scrappers/Illinois";
 
 dotenv.config();
 
-const states_parsers:{ [key: string]: () => StateScrapperInterface } = {
-  'Arkansas': () => new Arkansas,
-  'California': () => new California,
-  'Colorado': () => new Colorado,
-  'Florida': () => new Florida,
-  'Georgia': () => new Georgia,
-  'Illinois': () => new Illinois,
-  'NewJersey': () => new NewJersey,
-  'NewYork': () => new NewYork,
-  'Ohio': () => new Ohio,
-  'Pennsylvania': () => new Pennsylvania,
-  'Tennessee': () => new Tennessee,
-  'Texas': () => new Texas,
+const states_parsers:{ [key: string]: () => Federal } = {
+  'Federal': () => new Federal
 };
-const allowed_states:string[] = Object.keys(states_parsers);
 const allowed_pages:string[] = [
-  'statutes',
+  'codeOfFederalRegulations',
+  'federalRulesOfAppellateProcedure',
+  'federalRulesOfCivilProcedure',
+  'federalRulesOfCriminalProcedure',
+  'unitedStatesCode',
   'constitution',
-  'rulesOfCourt',
-  'court',
-  'rules',
-  'administrativeCodes',
-  'administrative',
-  'codes',
+  'bankruptcyRules',
+  'federalRulesOfEvidence',
+  'rulesOfGoverning',
+  'rulesOfTheForeignIntelligenceSurveillanceCourt',
+  'formsAccompanyingTheFederalRulesOfProcedure',
 ];
 
 interface Params {
@@ -49,11 +28,10 @@ interface Params {
 }
 
 function checkRejectedParams(argv: string[]): void {
-  const allowed_states_i = allowed_states.map(state => state.toLowerCase());
   const allowed_pages_i = allowed_pages.map(page => page.toLowerCase());
   const rejected = argv.filter((param) => {
     const param_i = param.toLocaleLowerCase();
-    return !allowed_states_i.includes(param_i) && !allowed_pages_i.includes(param_i)
+    return !allowed_pages_i.includes(param_i)
   });
   if(rejected.length == 0) {
     return;
@@ -62,7 +40,6 @@ function checkRejectedParams(argv: string[]): void {
 
   errors.push(`${red('Error')}: There are invalid params "${rejected.map(e => red(e)).join('", "')}"`)
   errors.push('======================================================')
-  errors.push(`${green('Valid States')}: ${allowed_states.join(', ')}`)
   errors.push(`${green('Valid Resources')}: ${allowed_pages.join(', ')}`)
   errors.push(``)
 
@@ -77,16 +54,9 @@ function processParams(): Params {
   checkRejectedParams(argv);
 
   const params: Params = {
-    states: [],
+    states: ['Federal'],
     pages: []
   }
-  const states_map = array_combine(allowed_states.map(state => state.toLowerCase()), allowed_states);
-  params.states = argv.map(param => {
-    const param_i = param.toLowerCase();
-    return !!states_map[param_i] ? states_map[param_i] : null;
-  }).filter(param => {
-    return allowed_states.includes(param)
-  });
   
   const pages_map = array_combine(allowed_pages.map(state => state.toLowerCase()), allowed_pages);
   params.pages = argv.map(param => {
@@ -96,7 +66,6 @@ function processParams(): Params {
     return allowed_pages.includes(param)
   });
 
-  params.states = params.states.length == 0 ? allowed_states : params.states;
   params.pages = params.pages.length == 0 ? allowed_pages : params.pages;
 
   params.states = params.states.reduce((acumulador, param) => {
@@ -138,19 +107,40 @@ function processParams(): Params {
       console.log(`================================`)
       console.log(`Running ${state}.${page}`)
       console.log(`================================`)
-      let scrapper:StateScrapperInterface = states_parsers[state]();
+      let scrapper:Federal = states_parsers[state]();
       switch(page) {
-        case 'statutes':
-          await scrapper.statutes();
+        case 'codeOfFederalRegulations':
+          await scrapper.codeOfFederalRegulations();
           break;
-        case 'rulesOfCourt':
-          await scrapper.rulesOfCourt();
+        case 'federalRulesOfAppellateProcedure':
+          await scrapper.federalRulesOfAppellateProcedure();
+          break;
+        case 'federalRulesOfCivilProcedure':
+          await scrapper.federalRulesOfCivilProcedure();
+          break;
+        case 'federalRulesOfCriminalProcedure':
+          await scrapper.federalRulesOfCriminalProcedure();
+          break;
+        case 'unitedStatesCode':
+          await scrapper.unitedStatesCode();
           break;
         case 'constitution':
           await scrapper.constitution();
           break;
-        case 'administrativeCodes':
-          await scrapper.administrativeCodes();
+        case 'bankruptcyRules':
+          await scrapper.bankruptcyRules();
+          break;
+        case 'federalRulesOfEvidence':
+          await scrapper.federalRulesOfEvidence();
+          break;
+        case 'rulesOfGoverning':
+          await scrapper.rulesOfGoverning();
+          break;
+        case 'rulesOfTheForeignIntelligenceSurveillanceCourt':
+          await scrapper.rulesOfTheForeignIntelligenceSurveillanceCourt();
+          break;
+        case 'formsAccompanyingTheFederalRulesOfProcedure':
+          await scrapper.formsAccompanyingTheFederalRulesOfProcedure();
           break;
       }
     }

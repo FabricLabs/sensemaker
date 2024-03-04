@@ -100,7 +100,7 @@ class StatuteProvider extends Service {
     this._state.history.sort((a, b) => a.timestamp - b.timestamp);
     switch (event.type) {
       default:
-        console.error('[STATUTE]', 'Unknown event type:', event.type);
+        console.error('[STATUTES]', 'Unknown event type:', event.type);
         break;
       case 'enactment':
         this._state.content.collections.statutes[event.statute.id] = event.statute;
@@ -167,7 +167,7 @@ class StatuteProvider extends Service {
   }
 
   async syncAdminCode () {
-    console.debug('[STATUTE] Syncing Administrative Code...');
+    console.debug('[STATUTES] Syncing Administrative Code...');
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
       await scrapper.administrativeCodes();
@@ -178,7 +178,7 @@ class StatuteProvider extends Service {
   }
 
   async syncConstitutions () {
-    console.debug('[STATUTE] Syncing Constitutions...');
+    console.debug('[STATUTES] Syncing Constitutions...');
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
       await scrapper.constitution();
@@ -189,7 +189,7 @@ class StatuteProvider extends Service {
   }
 
   async syncCourtRules () {
-    console.debug('[STATUTE] Syncing Court Rules...');
+    console.debug('[STATUTES] Syncing Court Rules...');
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
       await scrapper.rulesOfCourt();
@@ -217,10 +217,10 @@ class StatuteProvider extends Service {
 
     try {
       const jurisdictions = await result.json();
-      console.debug('[STATUTE] Got remote jurisdictions:', jurisdictions);
+      console.debug('[STATUTES] Got remote jurisdictions:', jurisdictions);
       for (let i = 0; i < jurisdictions.length; i++) {
         const candidate = jurisdictions[i];
-        console.debug('[STATUTE] Got remote jurisdiction:', candidate.name);
+        console.debug('[STATUTES] Got remote jurisdiction:', candidate.name);
         const jurisdiction = this.createJurisdiction(candidate);
         this._state.content.collections.jurisdictions[candidate.id] = jurisdiction;
         this.commit();
@@ -229,18 +229,18 @@ class StatuteProvider extends Service {
 
       return jurisdictions;
     } catch (exception) {
-      console.error('[STATUTE] Could not fetch jurisdictions:', exception);
+      console.error('[STATUTES] Could not fetch jurisdictions:', exception);
       return null;
     }
   }
 
   async syncStatutes () {
-    console.debug('[STATUTE] Syncing Statutes...');
-    console.debug('[STATUTE] Scrappers:', this.scrappers)
+    console.debug('[STATUTES] Syncing Statutes...');
+    console.debug('[STATUTES] Scrappers:', this.scrappers)
     for (let jurisdiction of this.settings.jurisdictions) {
       const scrapper = this.scrappers[jurisdiction];
       const statutes = await scrapper.statutes();
-      console.debug('[STATUTE] Got statutes:', statutes);
+      console.debug('[STATUTES] Got statutes:', statutes);
       // this._state.content.collections.documents[statutes.id] = statutes;
       this.commit();
       // this.emit('document', statutes);

@@ -26,6 +26,7 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  */
 module.exports = {
   alias: NAME,
+  benchmark: false,
   domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
@@ -54,6 +55,12 @@ module.exports = {
     user: 'db_user_jeeves',
     password: 'chahcieYishi1wuu',
     database: 'db_jeeves'
+  },
+  redis: {
+    host: 'localhost',
+    password: null,
+    port: 6379,
+    url: 'redis://redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
   },
   http: {
     listen: true,

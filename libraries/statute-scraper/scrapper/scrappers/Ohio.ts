@@ -16,7 +16,7 @@ export class Ohio extends StateScrapper implements StateScrapperInterface {
   }
 
   public statutes = async () => {
-    const limiter = this.getLimiter();
+    const limiter = this.getLimiter();  
 
     await this.runCheerio(async ({ $, request, enqueueLinks, crawler }) => {
       console.log(`${request.label} ${request.url}`);

@@ -5,6 +5,7 @@
   "main": "scrapper.ts",
   "scripts": {
     "scrap": "xvfb-run ts-node scrapper.ts",
+    "federal": "xvfb-run ts-node federal.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Lucas Moretti",

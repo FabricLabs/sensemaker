@@ -149,7 +149,7 @@ class AdminUsers extends React.Component {
           </div>
         </div>
         <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }} loading={this.props.users.loading}>
-          <Table celled striped size='small'>
+          <Table celled striped>
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>

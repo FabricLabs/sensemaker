@@ -1,4 +1,5 @@
-import { DownloadableFile, StateScrapper, StateScrapperInterface, StorableData } from "./StateScrapper";
+import { DownloadableFile } from "./BaseScrapper";
+import { StateScrapper, StateScrapperInterface } from "./StateScrapper";
 
 export class Florida extends StateScrapper implements StateScrapperInterface {
 

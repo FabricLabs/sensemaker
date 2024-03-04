@@ -5,8 +5,31 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Avant Garde Book BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDN_2.woff') format('woff');
+  }
+
+  @font-face {
+  font-family: 'Avant Garde Demi BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDD_2.woff') format('woff');
+  }
+
+
+  @font-face {
+  font-family: 'Avant Garde Demi Oblique BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDDO_2.woff') format('woff');
+  }
+
 body {
-  font-family: 'AvGardd', Arial, sans-serif;
+  /* font-family: 'AvGardd', Arial, sans-serif; */
+  font-family: 'Avant Garde Book BT', Arial, sans-serif;
 }
 
 #countdown {

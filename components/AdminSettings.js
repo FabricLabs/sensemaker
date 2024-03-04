@@ -172,7 +172,7 @@ class AdminSettings extends React.Component {
           />
         </Tab.Pane>
       },
-      {
+      { /*
         menuItem: 'Training', render: () => <Tab.Pane loading={this.state.loading}>
           <Header as='h4'>Sources</Header>
           <Table celled striped>
@@ -186,7 +186,6 @@ class AdminSettings extends React.Component {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {/* Example Row */}
               <Table.Row>
                 <Table.Cell>@sensemaker/core</Table.Cell>
                 <Table.Cell><Label>Internal</Label></Table.Cell>
@@ -196,7 +195,6 @@ class AdminSettings extends React.Component {
                   <Progress percent={100} />
                 </Table.Cell>
               </Table.Row>
-              {/* Estimates */}
               <Table.Row>
                 <Table.Cell>Caselaw Access Project</Table.Cell>
                 <Table.Cell><Label>External</Label></Table.Cell>
@@ -262,8 +260,8 @@ class AdminSettings extends React.Component {
             </Table.Body>
           </Table>
         </Tab.Pane>
-      },
-      {
+      */ },
+      { /*
         menuItem: 'Agents', render: () => <Tab.Pane loading={this.state.loading}>
 
           <Table celled striped>
@@ -318,7 +316,7 @@ class AdminSettings extends React.Component {
             </Table.Body>
           </Table>
         </Tab.Pane>
-      },
+      */ },
       {
         menuItem: 'Conversations',
         render: () => <Tab.Pane loading={this.state.loading}>
@@ -369,56 +367,39 @@ class AdminSettings extends React.Component {
             <Table.Body>
               <Table.Row>
                 <Table.Cell>@fabric/core</Table.Cell>
-                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell><Label>started (implicit)</Label></Table.Cell>
+                <Table.Cell></Table.Cell>
+                <Table.Cell></Table.Cell>
+              </Table.Row>
+              <Table.Row>
+                <Table.Cell>@sensemaker/core</Table.Cell>
+                <Table.Cell><Label>started (implicit)</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
               </Table.Row>
               <Table.Row>
                 <Table.Cell>@jeeves/core</Table.Cell>
-                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell><Label>started (implicit)</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell>JeevesAI</Table.Cell>
-                <Table.Cell><Label>started</Label></Table.Cell>
+                <Table.Cell>Redis</Table.Cell>
+                <Table.Cell><Label>unknown</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell>JeevesAI JSON Case Names</Table.Cell>
-                <Table.Cell><Label>stopped</Label></Table.Cell>
+                <Table.Cell>MySQL</Table.Cell>
+                <Table.Cell><Label>unknown</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
               </Table.Row>
               <Table.Row>
-                <Table.Cell>JeevesAI JSON Case Validator</Table.Cell>
-                <Table.Cell><Label>stopped</Label></Table.Cell>
+                <Table.Cell>Ollama</Table.Cell>
+                <Table.Cell><Label>unknown</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell>PACER</Table.Cell>
-                <Table.Cell><Label>stopped</Label></Table.Cell>
-                <Table.Cell></Table.Cell>
-                <Table.Cell></Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell>CaselawAccessProject</Table.Cell>
-                <Table.Cell><Label>stopped</Label></Table.Cell>
-                <Table.Cell></Table.Cell>
-                <Table.Cell></Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell>CourtListener</Table.Cell>
-                <Table.Cell><Label>started</Label></Table.Cell>
-                <Table.Cell></Table.Cell>
-                <Table.Cell>
-                  <Button.Group>
-                    <Button>restart</Button>
-                    <Button>stop</Button>
-                  </Button.Group>
-                </Table.Cell>
               </Table.Row>
             </Table.Body>
           </Table>

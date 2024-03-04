@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.array_combine = exports.completeUrl = exports.fixPath = exports.sleep = exports.white = exports.cyan = exports.magenta = exports.blue = exports.yellow = exports.green = exports.red = exports.black = exports.clearForFilesystem = exports.downloadFile = void 0;
+exports.array_combine = exports.completeUrl = exports.fixPath = exports.sleep = exports.white = exports.cyan = exports.magenta = exports.blue = exports.yellow = exports.green = exports.red = exports.black = exports.clearForFilesystem = exports.clearForFilesystemDirOrFileName = exports.downloadFile = void 0;
 const fs_1 = require("fs");
 const axios_1 = __importDefault(require("axios"));
 const downloadFile = async (url, filename) => {
@@ -18,6 +18,10 @@ const downloadFile = async (url, filename) => {
     return null;
 };
 exports.downloadFile = downloadFile;
+const clearForFilesystemDirOrFileName = (path) => {
+    return (0, exports.clearForFilesystem)(path).replace(/[\/]/g, '');
+};
+exports.clearForFilesystemDirOrFileName = clearForFilesystemDirOrFileName;
 const clearForFilesystem = (path) => {
     return path.replace(/[^a-zA-Z0-9_\/. \(\),:-]/g, '');
 };
@@ -58,7 +62,7 @@ const sleep = (time) => new Promise((resolve, reject) => {
 exports.sleep = sleep;
 const fixPath = (path) => {
     return path.map(part => {
-        return (0, exports.clearForFilesystem)(part).substring(0, 200);
+        return (0, exports.clearForFilesystemDirOrFileName)(part).substring(0, 200);
     });
 };
 exports.fixPath = fixPath;
