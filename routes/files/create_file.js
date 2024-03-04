@@ -29,6 +29,7 @@ module.exports = function (req, res, next) {
     if (err) {
       res.status(500);
       res.send({ status: 'error', message: 'Failed to move file to destination.', content: err });
+      // TODO: report file for cleanup / investigation
       return;
     }
 
@@ -46,6 +47,7 @@ module.exports = function (req, res, next) {
         encoding: 'utf8',
         filename: req.file.originalname,
         sha256: hash.digest('hex'),
+        owner: req.user.id
       });
 
       res.send({ status: 'success', message: 'Successfully uploaded file!' });
