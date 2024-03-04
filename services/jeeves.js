@@ -18,6 +18,7 @@ const {
 const fs = require('fs');
 const crypto = require('crypto');
 const fetch = require('cross-fetch');
+const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
@@ -616,15 +617,24 @@ class Jeeves extends Hub {
   }
 
   async checkHealth () {
+    const CHAT_QUERY = 'Health check!  Tell me some status values.';
+
     return new Promise(async (resolve, reject) => {
-      const now = (new Date()).toISOString();
+      const now = new Date();
       const results = await Promise.allSettled([
-        this.alpha.query({ query: 'Health check!  Tell me some status values.' })
+        this.alpha.query({ query: CHAT_QUERY }),
+        this.llama.query({ query: CHAT_QUERY }),
+        this.gemma.query({ query: CHAT_QUERY }),
+      ]);
+
+      const summaries = await Promise.allSettled([
+        this.summarizer.query({ query: `Initial input: ${CHAT_QUERY}\nNetwork responses: ${JSON.stringify(results)}`, prompt: this.settings.prompt }),
       ]);
 
       resolve({
-        created: now,
-        results: results
+        created: now.toISOString(),
+        duration: (new Date()) - now,
+        results: results.concat(summaries)
       });
     });
   }
@@ -3764,9 +3774,22 @@ class Jeeves extends Hub {
   }
 
   async _handleHealthRequest (req, res, next) {
-    res.send({
-      status: 'healthy'
-    });
+    try {
+      const health = await this.checkHealth();
+      console.debug('got health:', health);
+      const response = {
+        status: (health.results.filter((x) => x.status !== 'fulfilled').length) ? 'unhealthy' : 'healthy',
+        content: health.results.map((x) => x.value)
+      };
+
+      res.send(response);
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        status: 'unhealthy',
+        content: exception
+      });
+    }
   }
 
   async _handlePeopleSearchRequest (req, res, next) {
