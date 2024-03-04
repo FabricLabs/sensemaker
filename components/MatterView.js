@@ -523,6 +523,8 @@ class MatterView extends React.Component {
             open={this.state.attachModalOpen}
             onClose={() => this.setState({ attachModalOpen: false })}
             onSubmit={this.handleModalSubmit}
+            auth={this.props.auth}
+            token={this.props.token}
           />
           <Confirm
             content='Delete this file from the Matter?'

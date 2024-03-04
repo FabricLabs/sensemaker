@@ -87,10 +87,14 @@ class CourtListener extends Service {
   }
 
   async enumerateCourts () {
-    return new Promise((resolve, reject) => {
-      this.emit('debug', 'Enumerating courts...');
-      this.db('search_court').select().catch(reject).then(resolve);
-    });
+    this.emit('debug', 'Enumerating courts...');
+    try {
+      const courts = await this.db('search_court').select();
+      return courts;
+    } catch (exception) {
+      console.error('[COURTLISTENER]', 'Exception:', exception);
+      return [];
+    }
   }
 
   async enumerateDockets () {
@@ -107,7 +111,13 @@ class CourtListener extends Service {
 
   async enumeratePeople () {
     this.emit('debug', 'Enumerating people...');
-    return this.db('people_db_person').select('id');
+    try {
+      const people = await this.db('people_db_person').select();
+      return people;
+    } catch (exception) {
+      console.error('[COURTLISTENER]', 'Exception:', exception);
+      return [];
+    }
   }
 
   async sampleOpinionClusters () {
@@ -125,28 +135,43 @@ class CourtListener extends Service {
   async samplePeople (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling people...');
     const now = Date.now();
-    const people = await this.db('people_db_person').select().orderByRaw('RANDOM()').limit(limit);
-    const end = Date.now();
-    this.emit('debug', 'Sampled', people.length, 'people in', end - now, 'ms.');
-    return people;
+    try {
+      const people = await this.db('people_db_person').select().orderByRaw('RANDOM()').limit(limit);
+      const end = Date.now();
+      this.emit('debug', 'Sampled', people.length, 'people in', end - now, 'ms.');
+      return people;
+    } catch (exception) {
+      console.error('[COURTLISTENER]', 'Exception:', exception);
+      return [];
+    }
   }
 
   async sampleRecapDocuments (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling RECAP documents...');
     const now = Date.now();
-    const documents = await this.db('search_recapdocument').select().where('is_free_on_pacer', true).orderByRaw('RANDOM()').limit(limit);
-    const end = Date.now();
-    this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
-    return documents;
+    try {
+      const documents = await this.db('search_recapdocument').select().where('is_free_on_pacer', true).orderByRaw('RANDOM()').limit(limit);
+      const end = Date.now();
+      this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
+      return documents;
+    } catch (exception) {
+      console.error('[COURTLISTENER]', 'Exception:', exception);
+      return [];
+    }
   }
 
   async sampleDockets (limit = PER_PAGE_LIMIT) {
     this.emit('debug', 'Sampling dockets...');
     const now = Date.now();
-    const documents = await this.db('search_docket').select().orderByRaw('RANDOM()').limit(limit);
-    const end = Date.now();
-    this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
-    return documents;
+    try {
+      const documents = await this.db('search_docket').select().orderByRaw('RANDOM()').limit(limit);
+      const end = Date.now();
+      this.emit('debug', 'Sampled', documents.length, 'documents in', end - now, 'ms.');
+      return documents;
+    } catch (exception) {
+      console.error('[COURTLISTENER]', 'Exception:', exception);
+      return [];
+    }
   }
 
   async paginateDockets (page = 0, limit = PER_PAGE_LIMIT) {
@@ -281,11 +306,42 @@ class CourtListener extends Service {
   }
 
   async syncDocketByID (id) {
-    console.debug('[COURTLISTENER]', 'Syncing docket by ID:', id);
+    // console.debug('[COURTLISTENER]', 'Syncing docket by ID:', id);
     const docket = await this.db('search_docket').where('id', id).first();
-    console.debug('[COURTLISTENER]', 'Syncing docket:', docket);
+    // console.debug('[COURTLISTENER]', 'Syncing docket:', docket);
     this.emit('docket', docket);
+
+    const entries = await this.syncDocketEntriesByDocketID(docket.id);
+    console.debug('[COURTLISTENER]', 'Synced', entries.length, 'docket entries.');
+    console.debug('[COURTLISTENER]', 'Docket entries:', entries);
+
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      // this.emit('docketentry', entry);
+      const documents = await this.syncRecapDocumentsByEntryID(entry.id);
+      console.debug('[COURTLISTENER]', 'Synced', documents.length, 'documents for docket entry:', entry.id);
+      console.debug('[COURTLISTENER]', 'Documents:', documents);
+    }
+
     return docket;
+  }
+
+  async syncDocketEntriesByDocketID (id) {
+    const entries = await this.db('search_docketentry').where('docket_id', id);
+    // this.emit('docketentries', entries);
+    return entries;
+  }
+
+  async syncRecapDocumentsByEntryID (id) {
+    const documents = await this.db('search_recapdocument').where('docket_entry_id', id);
+    for (let i = 0; i < documents.length; i++) {
+      const document = documents[i];
+      this.emit('document', {
+        type: 'Document',
+        content: document
+      });
+    }
+    return documents;
   }
 
   async syncDockets () {

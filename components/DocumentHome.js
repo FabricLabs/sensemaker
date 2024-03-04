@@ -16,6 +16,7 @@ const {
   List,
   Loader,
   Icon,
+  Input,
   Form,
   TextArea
 } = require('semantic-ui-react');
@@ -70,7 +71,14 @@ class DocumentHome extends React.Component {
     return (
       <fabric-document-home>
         <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight:'100%' }}>
+          <Button>Create Document &raquo;</Button>
           <h1>Documents</h1>
+          <Form>
+            <Form.Field>
+              <Input type='file' name='file' />
+              <Button icon='upload'>Upload</Button>
+            </Form.Field>
+          </Form>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
