@@ -777,7 +777,14 @@ class Jeeves extends Hub {
       if (request.matter_id) {
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
         const matter = await this.db('matters').where({ id: request.matter_id }).first();
+        const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
+        const files = await this.db('files').whereIn('id', matterFiles.map((x) => x.file_id));
+
+        matter.files = files;
+
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Files:', files);
+
         messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
       }
 
