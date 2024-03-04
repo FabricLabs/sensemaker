@@ -12,7 +12,7 @@ const {
   Label
 } = require('semantic-ui-react');
 const ConversationsList = require('./ConversationsList');
-
+const LibrarySearch = require('./LibrarySearch');
 
 const {
   BRAND_NAME,
@@ -75,6 +75,9 @@ class LibraryList extends React.Component {
             </jeeves-search>
           </Menu.Item>
         )}
+        <Menu.Item>
+          <LibrarySearch auth={this.props.auth}/>
+        </Menu.Item>
         <Menu.Item as={Link} to='/conversations'>
           <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
         </Menu.Item>
