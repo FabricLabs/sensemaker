@@ -12,12 +12,6 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
-  Card,
-  Segment,
-  Label,
-  List,
-  Loader,
-  Icon,
   Search
 } = require('semantic-ui-react');
 
@@ -40,6 +34,7 @@ class LibrarySearch extends React.Component {
   handleSearchChange = debounce(async (query) => {
     this.setState({ searching: true });
 
+    //THIS IS MOVING TO AN API ACTIONS FILE
     const fetchPromise = fetch(`/`, {
       method: 'SEARCH',
       headers: {
@@ -70,31 +65,51 @@ class LibrarySearch extends React.Component {
     }
   }, 1000);
 
+  // renderResults() {
+  //   const { filteredResults } = this.state;
+  //   console.log(filteredResults);
+  //   if (Object.keys(filteredResults).length > 0) {
+  //     const categories = Object.keys(filteredResults).map(category => ({
+  //       name: category,
+  //       results: Array.isArray(filteredResults[category]) ? filteredResults[category].map(item => ({
+  //         title: item.title,
+  //         description: item.description,
+  //       })) : [],
+  //     }));
+  //     console.log("categorias", categories);
+  //     return categories;
+  //   } else return [];
+  // }
+
   renderResults() {
     const { filteredResults } = this.state;
-    console.log(filteredResults);
-    if (Object.keys(filteredResults).length > 0) {
-      const categories = Object.keys(filteredResults).map(category => ({
-        name: category,
-        results: Array.isArray(filteredResults[category]) ? filteredResults[category].map(item => ({
-          title: item.title,
-          description: item.description,
-        })) : [],
-      }));
-      console.log("categorias", categories);
-      return categories;
+    // Check if there are any results and specifically if there are any 'cases'
+    if (Object.keys(filteredResults).length > 0 && filteredResults['cases'] && filteredResults['cases'].length >0) {
+        // Directly work with 'cases' category
+        const casesCategory = [{
+            name: 'cases',
+            results: Array.isArray(filteredResults['cases']) ? filteredResults['cases'].map(item => ({
+                title: <Link to={"/cases/" + item.id} style={{fontSize: '0.8em', margin: '0'}}>{item.short_name}</Link>,
+                description: <p style={{fontSize:'0.7em'}}>{item.title}</p>,
+            })) : [],
+        }];
+        console.log("categories", casesCategory);
+        return casesCategory;
     } else return [];
-  }
+}
 
   render() {
-    const { searchQuery } = this.state;
+    const { searching } = this.state;
     return (
       <Search
+        id='global-search'
         name='query'
         autoComplete='off'
         placeholder='Find...'
         category
-        //value={searchQuery}
+        // size='tiny'
+        loading={searching}
+        value={this.state.searchQuery}
         results={this.renderResults()}
         onSearchChange={(e) => {
           const query = e.target.value;

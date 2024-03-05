@@ -65,7 +65,7 @@ class LibraryList extends React.Component {
 
     return (
       <div>
-        {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+        {/* {(USER_IS_ALPHA || USER_IS_ADMIN) && (
           <Menu.Item>
             <jeeves-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
               <div className="ui icon fluid input">
@@ -74,10 +74,12 @@ class LibraryList extends React.Component {
               </div>
             </jeeves-search>
           </Menu.Item>
+        )} */}
+        {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+          <Menu.Item className='col-center'>
+            <LibrarySearch auth={this.props.auth} />
+          </Menu.Item>
         )}
-        <Menu.Item>
-          <LibrarySearch auth={this.props.auth}/>
-        </Menu.Item>
         <Menu.Item as={Link} to='/conversations'>
           <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
         </Menu.Item>

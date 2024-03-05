@@ -262,7 +262,15 @@ jeeves-dashboard #collapse-sidebar{
 .settings-menu-container:hover #settingsItem{
   transform: translateY(0);
 }
+.ui.search#global-search{
+  font-family: 'Avant Garde Book BT' !important;
+}
 
+
+.ui.search .results.transition.visible{
+  max-width: 250px !important;
+  font-size: 1em !important;
+ }
 
 .pusher {
   /* margin: 1em 0;
