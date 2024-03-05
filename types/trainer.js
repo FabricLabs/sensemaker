@@ -95,6 +95,31 @@ class Trainer extends Service {
     return this;
   }
 
+  async ingestDirectory (directory) {
+    return new Promise((resolve, reject) => {
+      const loader = new DirectoryLoader(directory, {
+        '.*': (x) => new TextLoader(x), // default to text
+        // '.json': (x) => new JSONLoader(x, '/json'),
+        // '.json': (x) => new TextLoader(x),
+        // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
+        '.txt': (x) => new TextLoader(x),
+        '.csv': (x) => new CSVLoader(x),
+        // '.md': (x) => new MarkdownLoader(x),
+        // '.pdf': (x) => new PDFLoader(x),
+        '.pdf': (x) => new TextLoader(x),
+      });
+
+      loader.load().then((docs) => {
+        this.embeddings.addDocuments(docs).then(() => {
+          resolve({ type: 'IngestedDirectory', content: docs });
+        });
+      }).catch((exception) => {
+        console.error('[TRAINER]', 'Error ingesting directory:', exception);
+        reject(exception);
+      });
+    });
+  }
+
   async ingestDocument (document, type = 'text') {
     return new Promise((resolve, reject) => {
       if (!document.metadata) document.metadata = {};
