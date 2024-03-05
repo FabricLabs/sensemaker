@@ -81,7 +81,7 @@ class LibrarySearch extends React.Component {
   //   } else return [];
   // }
 
-  renderResults() {
+  renderResults = () => {
     const { filteredResults } = this.state;
     // Check if there are any results and specifically if there are any 'cases'
     if (Object.keys(filteredResults).length > 0 && filteredResults['cases'] && filteredResults['cases'].length >0) {

@@ -268,7 +268,7 @@ jeeves-dashboard #collapse-sidebar{
 
 
 .ui.search .results.transition.visible{
-  max-width: 250px !important;
+  max-width: 100% !important;
   font-size: 1em !important;
  }
 
@@ -494,7 +494,6 @@ fabric-motd {
 }
 
 .case-info {
-  margin-right: 1em !important;
   max-height: 40vh;
   min-height: 40vh;
 }
