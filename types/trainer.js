@@ -65,8 +65,10 @@ class Trainer extends Service {
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
-    this.loader = new DirectoryLoader(this.settings.store.path, {
-      '.*': (x) => new TextLoader(x), // default to text
+    this.loaders = {
+      '.*': (x) => new TextLoader(x), // default to text (?)
+      '.pdf': (x) => new TextLoader(x),
+      '.html': (x) => new TextLoader(x),
       // '.json': (x) => new JSONLoader(x, '/json'),
       // '.json': (x) => new TextLoader(x),
       // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
@@ -74,8 +76,9 @@ class Trainer extends Service {
       '.csv': (x) => new CSVLoader(x),
       // '.md': (x) => new MarkdownLoader(x),
       // '.pdf': (x) => new PDFLoader(x),
-      '.pdf': (x) => new TextLoader(x),
-    });
+    };
+
+    this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     this.redis = createClient({
       password: this.settings.redis.password,
@@ -93,6 +96,24 @@ class Trainer extends Service {
     this.ui = new CheerioWebBaseLoader(REFERENCE_URL);
 
     return this;
+  }
+
+  async ingestDirectory (directory) {
+    return new Promise((resolve, reject) => {
+      const loader = new DirectoryLoader(directory, this.loaders);
+
+      loader.load().then((docs) => {
+        this.embeddings.addDocuments(docs).then(() => {
+          resolve({ type: 'IngestedDirectory', content: docs });
+        }).catch((exception) => {
+          console.error('[TRAINER]', 'Error ingesting directory:', exception);
+          reject(exception);
+        });
+      }).catch((exception) => {
+        console.error('[TRAINER]', 'Error ingesting directory:', exception);
+        reject(exception);
+      });
+    });
   }
 
   async ingestDocument (document, type = 'text') {
