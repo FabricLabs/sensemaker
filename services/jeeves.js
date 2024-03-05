@@ -1076,7 +1076,7 @@ class Jeeves extends Hub {
 
   async search (request) {
     console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request.query);
+    const redisResults = await this.trainer.search(request);
     console.debug('[JEEVES]', '[SEARCH]', 'Redis Results:', redisResults);
 
     const cases = await this._searchCases(request);
@@ -4411,7 +4411,7 @@ class Jeeves extends Hub {
     const redisResults = await this.trainer.search(request);
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
-    const mappedQueries = redisResults.map((result) => {
+    const mappedQueries = redisResults.content.map((result) => {
       console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
       return this.db('cases').where({ id: result.id }).first();
     });
