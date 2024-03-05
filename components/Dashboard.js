@@ -29,6 +29,8 @@ const {
 
 // Components
 const Home = require('./Home');
+const ContractHome = require('./ContractHome');
+const Library = require('./Library');
 const CaseHome = require('./CaseHome');
 const CaseView = require('./CaseView');
 const CourtHome = require('./CourtHome');
@@ -424,6 +426,7 @@ class Dashboard extends React.Component {
                     getMessageInformation={this.props.getMessageInformation}
                   />
                 } />
+                <Route path='/settings/library' element={<Library />} />
                 <Route path="/updates" element={<Changelog />} />
                 <Route path="/workspaces" element={<Workspaces />} />
                 <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} />} />
@@ -458,6 +461,7 @@ class Dashboard extends React.Component {
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
+                <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
             )}

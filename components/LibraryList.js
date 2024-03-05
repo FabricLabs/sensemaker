@@ -19,6 +19,7 @@ const {
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
   ENABLE_CONVERSATION_SIDEBAR,
+  ENABLE_CONTRACTS,
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
@@ -125,13 +126,14 @@ class LibraryList extends React.Component {
             <div><Icon name='address book' /> {!this.state.sidebarCollapsed && 'People'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_LIBRARY && (
-          <Menu.Item disabled>
-            <div>
-              <Icon name='book' />
-              {!this.state.sidebarCollapsed && 'Library'}
-              &nbsp;<div style={{ float: 'right' }}><Label size='mini' color='orange'>disabled</Label></div>
-            </div>
+        {USER_IS_ALPHA && ENABLE_LIBRARY && (
+          <Menu.Item as={Link} to='/settings/library'>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_CONTRACTS && (
+          <Menu.Item as={Link} to='/contracts'>
+            <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Contracts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList

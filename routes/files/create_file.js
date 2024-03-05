@@ -18,12 +18,18 @@ module.exports = function (req, res, next) {
   }
 
   const safeFilename = path.basename(req.file.originalname);
-  const destination = path.join(this.settings.files.userstore, req.user.id, safeFilename);
+  const userDir = path.join(this.settings.files.userstore, req.user.id);
+  const destination = path.join(userDir, safeFilename);
+
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
 
   fs.rename(req.file.path, destination, (err) => {
     if (err) {
       res.status(500);
-      res.send({ status: 'error', message: 'Failed to move file to destination.' });
+      res.send({ status: 'error', message: 'Failed to move file to destination.', content: err });
+      // TODO: report file for cleanup / investigation
       return;
     }
 
@@ -34,16 +40,29 @@ module.exports = function (req, res, next) {
         return;
       }
 
+      console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
       const hash = crypto.createHash('sha256').update(data);
+      const digest = hash.digest('hex');
 
       this.db('documents').insert({
         content: data.toString('utf8'),
-        encoding: 'utf8',
-        filename: req.file.originalname,
-        sha256: hash.digest('hex'),
+        metadata: {
+          encoding: 'utf8',
+          filename: req.file.originalname,
+          sha256: digest,
+          owner: req.user.id
+        }
+      }).then((insertedDocument) => {
+        this.trainer.ingestDocument({
+          content: data.toString('utf8'),
+          encoding: 'utf8',
+          filename: req.file.originalname,
+          sha256: digest,
+          owner: req.user.id
+        }).then((ingestedDocument) => {
+          res.send({ status: 'success', message: 'Successfully uploaded file!' });
+        });
       });
-
-      res.send({ status: 'success', message: 'Successfully uploaded file!' });
     });
   });
 };

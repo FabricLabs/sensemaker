@@ -95,6 +95,7 @@ const {
 
 // ## Conversation Actions
 const {
+  fetchContracts,
   fetchContract,
   signContract
 } = require('../actions/contractActions');

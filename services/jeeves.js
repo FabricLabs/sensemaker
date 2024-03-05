@@ -18,6 +18,7 @@ const {
 const fs = require('fs');
 const crypto = require('crypto');
 const fetch = require('cross-fetch');
+const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
@@ -616,15 +617,24 @@ class Jeeves extends Hub {
   }
 
   async checkHealth () {
+    const CHAT_QUERY = 'Health check!  Tell me some status values.';
+
     return new Promise(async (resolve, reject) => {
-      const now = (new Date()).toISOString();
+      const now = new Date();
       const results = await Promise.allSettled([
-        this.alpha.query({ query: 'Health check!  Tell me some status values.' })
+        this.alpha.query({ query: CHAT_QUERY }),
+        this.llama.query({ query: CHAT_QUERY }),
+        this.gemma.query({ query: CHAT_QUERY }),
+      ]);
+
+      const summaries = await Promise.allSettled([
+        this.summarizer.query({ query: `Initial input: ${CHAT_QUERY}\nNetwork responses: ${JSON.stringify(results)}`, prompt: this.settings.prompt }),
       ]);
 
       resolve({
-        created: now,
-        results: results
+        created: now.toISOString(),
+        duration: (new Date()) - now,
+        results: results.concat(summaries)
       });
     });
   }
@@ -767,7 +777,14 @@ class Jeeves extends Hub {
       if (request.matter_id) {
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
         const matter = await this.db('matters').where({ id: request.matter_id }).first();
+        const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
+        const files = await this.db('files').whereIn('id', matterFiles.map((x) => x.file_id));
+
+        matter.files = files;
+
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Files:', files);
+
         messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
       }
 
@@ -1083,7 +1100,8 @@ class Jeeves extends Hub {
       courts: [], // TODO: implement
       documents: [], // TODO: implement
       people: [], // TODO: implement
-      results: [],
+      results: elements,
+      content: elements,
       pagination: {
         total: elements.length,
         per_page: PER_PAGE_DEFAULT,
@@ -3764,9 +3782,23 @@ class Jeeves extends Hub {
   }
 
   async _handleHealthRequest (req, res, next) {
-    res.send({
-      status: 'healthy'
-    });
+    try {
+      const health = await this.checkHealth();
+      console.debug('got health:', health);
+      const response = {
+        status: (health.results.filter((x) => x.status !== 'fulfilled').length) ? 'unhealthy' : 'healthy',
+        services: health.results.map((x) => x.value),
+        content: health
+      };
+
+      res.send(response);
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        status: 'unhealthy',
+        content: exception
+      });
+    }
   }
 
   async _handlePeopleSearchRequest (req, res, next) {
@@ -4672,6 +4704,15 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
+        new Promise((resolve, reject) => {
+          fs.readdir(this.settings.files.corpus, async (err, files) => {
+            if (err) return reject(err);
+            console.debug('[SENSEMAKER]', '[VECTOR]', 'Corpus files:', files);
+            const reference = await this.trainer.ingestDirectory(this.settings.files.corpus);
+            console.debug('[SENSEMAKER]', '[VECTOR]', '[CORPUS]', 'Ingested:', reference);
+            resolve(files);
+          });
+        }),
         this.db('jurisdictions').select('id', 'name').then(async (jurisdictions) => {
           for (let i = 0; i < jurisdictions.length; i++) {
             const element = jurisdictions[i];
