@@ -4704,7 +4704,7 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
-        new Promise((resolve, reject) => {
+        /* new Promise((resolve, reject) => {
           fs.readdir(this.settings.files.corpus, async (err, files) => {
             if (err) return reject(err);
             console.debug('[SENSEMAKER]', '[VECTOR]', 'Corpus files:', files);
@@ -4712,7 +4712,7 @@ class Jeeves extends Hub {
             console.debug('[SENSEMAKER]', '[VECTOR]', '[CORPUS]', 'Ingested:', reference);
             resolve(files);
           });
-        }),
+        }), */
         this.db('jurisdictions').select('id', 'name').then(async (jurisdictions) => {
           for (let i = 0; i < jurisdictions.length; i++) {
             const element = jurisdictions[i];
