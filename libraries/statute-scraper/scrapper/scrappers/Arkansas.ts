@@ -1,5 +1,5 @@
 import { Solver } from "2captcha";
-import { blue, red } from "../utils";
+import { red } from "../utils";
 import { StateScrapperInterface } from "./StateScrapper";
 import { LexisScrapper } from "./lexis/LexisScrapper";
 

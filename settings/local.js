@@ -12,7 +12,7 @@ environment.start();
 // Output should be deterministic, HTML-encoded applications.
 
 const NAME = 'NOVO';
-const VERSION = '0.3.0';
+const VERSION = '1.0.0-RC1';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
@@ -26,6 +26,7 @@ const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
  */
 module.exports = {
   alias: NAME,
+  benchmark: false,
   domain: 'trynovo.com',
   moniker: NAME,
   release: 'beta',
@@ -44,7 +45,7 @@ module.exports = {
       { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
-    search: false,
+    search: true,
     sync: false
   },
   db: {
@@ -54,6 +55,12 @@ module.exports = {
     user: 'db_user_jeeves',
     password: 'chahcieYishi1wuu',
     database: 'db_jeeves'
+  },
+  redis: {
+    host: 'localhost',
+    password: null,
+    port: 6379,
+    url: 'redis://redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
   },
   http: {
     listen: true,

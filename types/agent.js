@@ -241,22 +241,42 @@ class Agent extends Service {
    */
   async query (request) {
     return new Promise(async (resolve, reject) => {
+      console.debug('[AGENT]', 'Querying:', request);
+      console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
       if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
 
-      // TODO: consider not concatenating the prompt
-      // If we don't concatenate the prompt, we can use the prompt as a "seed" for the conversation.
-      // Further, the prompt is sometimes duplicated with some upstream use...
-      const messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+      // Prepare messages
+      let messages = null;
+
+      // Ensure system message is first
+      if (!request.messages[0] || request.messages[0].role !== 'system') {
+        messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+      } else {
+        messages = [].concat(request.messages);
+      }
 
       // Check for local agent
       if (this.settings.host) {
         // Happy Path
         if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+
+        // Clean up extraneous appearance of "agent" role
+        messages = messages.map((x) => {
+          if (x.role === 'agent') x.role = 'assistant';
+          return x;
+        });
+
         let response = null;
         let base = null;
 
         try {
+          const sample = messages.concat([
+            { role: 'user', content: request.query }
+          ]);
+
+          console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
+
           response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
@@ -265,12 +285,22 @@ class Agent extends Service {
             body: JSON.stringify({
               model: this.settings.model,
               prompt: this.prompt,
-              messages: messages
+              messages: sample
             })
           });
 
           base = await response.json();
           if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
+
+          if (request.requery) {
+            sample.push({ role: 'assistant', content: base.choices[0].message.content });
+            console.debug('[AGENT]', '[REQUERY]', 'Messages:', sample);
+            console.debug('[AGENT]', '[REQUERY]', 'Prompt:', this.prompt);
+            // Re-execute query with John Cena
+            return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
+          }
+
+          this.emit('completion', base);
 
           return resolve({
             type: 'AgentResponse',

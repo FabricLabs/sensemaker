@@ -1,6 +1,7 @@
-import { DownloadableFile, StateScrapperInterface } from "./StateScrapper";
+import { StateScrapperInterface } from "./StateScrapper";
 import { LexisScrapper } from "./lexis/LexisScrapper";
 import { magenta } from "../utils";
+import { DownloadableFile } from "./BaseScrapper";
 
 export class Colorado extends LexisScrapper implements StateScrapperInterface {
 

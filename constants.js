@@ -24,6 +24,7 @@ const BRAND_NAME = 'Novo';
 const ENABLE_CHANGELOG = false;
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
+const ENABLE_CONTRACTS = true;
 const ENABLE_MATTERS = true;
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
@@ -32,9 +33,9 @@ const ENABLE_OPINION_SEARCH = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_JURISDICTION_SEARCH = true;
-const ENABLE_REPORTER_SEARCH = false;
-const ENABLE_STATUTE_SEARCH = false;
-const ENABLE_VOLUME_SEARCH = false;
+const ENABLE_REPORTER_SEARCH = true;
+const ENABLE_STATUTE_SEARCH = true;
+const ENABLE_VOLUME_SEARCH = true;
 const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
@@ -65,6 +66,7 @@ module.exports = {
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  ENABLE_CONTRACTS,
   ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_BILLING,

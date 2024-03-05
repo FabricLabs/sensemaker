@@ -287,6 +287,14 @@ class Harvard extends Service {
     return cases;
   }
 
+  async syncCourtBySlug (slug) {
+    const response = await fetch(`https://api.case.law/v1/courts/${slug}/`);
+    const object = await response.json();
+    this._state.content.collections.courts[object.id] = object;
+    this.emit('court', object);
+    return object;
+  }
+
   async syncCourts () {
     // TODO: this should be a stream
     const courts = await this.enumerateCourts();

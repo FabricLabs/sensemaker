@@ -19,6 +19,9 @@
 <dt><a href="#SPA">SPA</a></dt>
 <dd><p>Fully-managed HTML application.</p>
 </dd>
+<dt><a href="#Trainer">Trainer</a></dt>
+<dd><p>Implements document ingestion.</p>
+</dd>
 <dt><a href="#CourtListener">CourtListener</a> ⇐ <code>Service</code></dt>
 <dd><p>CourtListener is a service for interacting with the CourtListener database.</p>
 </dd>
@@ -45,6 +48,8 @@ The Agent service is responsible for managing an AI agent.  AI agents are self-c
 <a name="new_Agent_new"></a>
 
 ### new Agent([settings])
+Create an instance of an [Agent](#Agent).
+
 **Returns**: [<code>Agent</code>](#Agent) - Instance of the Agent.  
 
 | Param | Type | Description |
@@ -166,6 +171,12 @@ Creates an instance of the [Site](#Site), which provides general statistics cove
 Fully-managed HTML application.
 
 **Kind**: global class  
+<a name="Trainer"></a>
+
+## Trainer
+Implements document ingestion.
+
+**Kind**: global class  
 <a name="CourtListener"></a>
 
 ## CourtListener ⇐ <code>Service</code>
@@ -232,7 +243,7 @@ Execute the default pipeline for an inbound request.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | request | <code>Object</code> |  | Request object. |
-| [timeout] | <code>Number</code> | <code>60000</code> | How long to wait for a response. |
+| [timeout] | <code>Number</code> |  | How long to wait for a response. |
 | [depth] | <code>Number</code> | <code>0</code> | How many times to recurse. |
 
 <a name="Jeeves+start"></a>
