@@ -157,6 +157,11 @@ const {
   askPasswordReset,
 } = require('../actions/usersActions');
 
+// ## Search Actions
+const {
+  searchGlobal,
+} = require('../actions/searchActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -219,6 +224,7 @@ async function main (input = {}) {
       matters: state.matters,
       jurisdictions: state.jurisdictions,
       users: state.users,
+      search: state.search,
     }
   };
 
@@ -286,6 +292,7 @@ async function main (input = {}) {
     fetchUsers: fetchUsers,
     fetchUser: fetchUser,
     askPasswordReset: askPasswordReset,
+    searchGlobal: searchGlobal,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

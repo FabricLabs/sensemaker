@@ -373,6 +373,8 @@ class Dashboard extends React.Component {
                   fetchConversations={this.props.fetchConversations}
                   auth={this.props.auth}
                   conversations={this.props.conversations}
+                  searchGlobal={this.props.searchGlobal}
+                  search={this.props.search}
                 />
               </section>
             )}

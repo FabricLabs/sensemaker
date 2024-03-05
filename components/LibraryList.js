@@ -77,7 +77,7 @@ class LibraryList extends React.Component {
         )} */}
         {(USER_IS_ALPHA || USER_IS_ADMIN) && (
           <Menu.Item style={{display:'flex', alignItems: 'center', paddingRight: '0', paddingLeft:'0'}}>
-            <LibrarySearch auth={this.props.auth} />
+            <LibrarySearch auth={this.props.auth} searchGlobal={this.props.searchGlobal} search={this.props.search}/>
           </Menu.Item>
         )}
         <Menu.Item as={Link} to='/conversations'>
