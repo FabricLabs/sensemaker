@@ -18,6 +18,7 @@ const {
   Popup,
   Input,
   Dropdown,
+  Table,
   TextArea,
   Form,
   Divider,
@@ -409,6 +410,34 @@ class MatterView extends React.Component {
                   <Header as='h3'>Files</Header>
                 </GridColumn>
                 <GridColumn width={12}>
+                  <Table simple>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.HeaderCell>File Name</Table.HeaderCell>
+                        <Table.HeaderCell>Uploaded</Table.HeaderCell>
+                        <Table.HeaderCell>Modified</Table.HeaderCell>
+                        <Table.HeaderCell>Actions</Table.HeaderCell>
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {matters.matterFiles.map(instance => {
+                        return (
+                          <Table.Row key={instance.id}>
+                            <Table.Cell>{instance.filename}</Table.Cell>
+                            <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
+                            <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
+                            <Table.Cell>
+                              <Icon
+                                name='trash alternate'
+                                className='matter-delete-file-icon'
+                                onClick={() => this.setState({ confirmFileDelete: true, fileDeleting: instance.id })}
+                              />
+                            </Table.Cell>
+                          </Table.Row>
+                        )
+                      })}
+                    </Table.Body>
+                  </Table>
                   <List loading={matters.loading}>
                     {matters.matterFiles.length > 0 && matters.matterFiles
                       .map(instance => {

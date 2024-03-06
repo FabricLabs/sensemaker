@@ -92,7 +92,7 @@ class LibraryList extends React.Component {
           </Menu.Item>
         )}
         {USER_IS_ALPHA &&ENABLE_STATUTE_SEARCH && (
-          <Menu.Item as={Link} to='/statues'>
+          <Menu.Item as={Link} to='/statutes'>
             <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Statutes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
@@ -131,14 +131,14 @@ class LibraryList extends React.Component {
             <div><Icon name='address book' /> {!this.state.sidebarCollapsed && 'People'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_ALPHA && ENABLE_LIBRARY && (
-          <Menu.Item as={Link} to='/settings/library'>
-            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-          </Menu.Item>
-        )}
         {USER_IS_ALPHA && ENABLE_CONTRACTS && (
           <Menu.Item as={Link} to='/contracts'>
             <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Contracts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_LIBRARY && (
+          <Menu.Item as={Link} to='/settings/library'>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList

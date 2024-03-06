@@ -74,7 +74,6 @@ class LibrarySearch extends React.Component {
                 description: <p style={{fontSize:'0.7em'}}>{item.title}</p>,
             })) : [],
         }];
-        console.log("categories", casesCategory);
         return casesCategory;
     } else return [];
 }

@@ -46,12 +46,12 @@ module.exports = function (req, res, next) {
 
       this.db('documents').insert({
         content: data.toString('utf8'),
-        metadata: {
+        // metadata: {
           encoding: 'utf8',
           filename: req.file.originalname,
           sha256: digest,
           owner: req.user.id
-        }
+   //     }
       }).then((insertedDocument) => {
         this.trainer.ingestDocument({
           content: data.toString('utf8'),
@@ -60,7 +60,7 @@ module.exports = function (req, res, next) {
           sha256: digest,
           owner: req.user.id
         }).then((ingestedDocument) => {
-          res.send({ status: 'success', message: 'Successfully uploaded file!' });
+          res.send({ status: 'success', message: 'Successfully uploaded file!', insertedDocument });
         });
       });
     });

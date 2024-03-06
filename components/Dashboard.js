@@ -37,6 +37,7 @@ const CourtHome = require('./CourtHome');
 const CourtView = require('./CourtView');
 const JudgeHome = require('./JudgeHome');
 const JurisdictionHome = require('./JurisdictionHome');
+const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
 const ReporterHome = require('./ReporterHome');
@@ -446,6 +447,7 @@ class Dashboard extends React.Component {
                  * - [ ] Volumes
                  * - [ ] Resolutions
                  */}
+                <Route path="/statutes" element={<StatuteHome statutes={this.props.statutes} fetchStatutes={this.props.fetchStatutes} chat={this.props.chat} />} />
                 <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />

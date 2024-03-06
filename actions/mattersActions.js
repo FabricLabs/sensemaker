@@ -184,7 +184,7 @@ const addContext = (note, filename, id, file) => {
       //   },
       //   body: (() => {
       //     const formData = new FormData();
-      //     formData.append('file', file); // Assuming 'file' is the File object you want to upload.
+      //     formData.append('file', file);
       //     console.log(formData);
       //     return formData;
       //   })(),
@@ -192,7 +192,12 @@ const addContext = (note, filename, id, file) => {
 
       // const creatingFile = await Promise.race([timeoutPromise, promiseCreateFile]);
 
+      // if (!response.ok) {
+      //   throw new Error('File upload failed');
+      // }
+      // const uploadResult = await creatingFile.json();
 
+      // console.log("respuesta a la subida del archivo", uploadResult);
       //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
       const fetchPromise = fetch(`/matters/context/${id}`, {
         method: 'PATCH',
