@@ -100,6 +100,12 @@ const {
   signContract
 } = require('../actions/contractActions');
 
+// ## Statute Actions
+const {
+  fetchStatutes,
+  fetchStatute
+} = require('../actions/statuteActions');
+
 // ## Court Actions
 const {
   fetchConversations,
@@ -238,6 +244,8 @@ async function main (input = {}) {
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
     conversationTitleEdit: conversationTitleEdit,
+    fetchStatutes: fetchStatutes,
+    fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
     fetchJurisdictions: fetchJurisdictions,

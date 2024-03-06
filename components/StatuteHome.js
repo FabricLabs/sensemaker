@@ -22,24 +22,24 @@ const {
 
 const formatDate = require('../contracts/formatDate');
 
-class JurisdictionHome extends React.Component {
+class StatuteHome extends React.Component {
   constructor (settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
-      filteredJurisdictions: [], // Initialize filtered jurisdictions state
+      filteredStatutes: [], // Initialize filtered statutes state
       searching: false // Boolean to show a spinner icon while fetching
     };
   }
 
   componentDidMount () {
-    this.props.fetchJurisdictions();
+    this.props.fetchStatutes();
   }
 
   handleSearchChange = debounce((query) => {
     this.setState({ searching: true });
 
-    fetch('/jurisdictions', {
+    fetch('/statutes', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ class JurisdictionHome extends React.Component {
       console.debug('fetch result: ', obj);
 
       this.setState({
-        filteredJurisdictions: obj.content,
+        filteredStatutes: obj.content,
         searchQuery: query,
       });
     })
@@ -65,14 +65,14 @@ class JurisdictionHome extends React.Component {
 
   render () {
     const { loading, error } = this.props;
-    const { filteredJurisdictions, searchQuery, searching } = this.state;
+    const { filteredStatutes, searchQuery, searching } = this.state;
 
-    const totalJurisdictions = 0;
+    const totalStatutes = 0;
 
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
-        <h1>Jurisdictions</h1>
-        <p>{BRAND_NAME} is tracking <strong>{totalJurisdictions}</strong> jurisdictions.</p>
+        <h1>Statutes</h1>
+        <p>{BRAND_NAME} is tracking <strong>{totalStatutes}</strong> statutes.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input
@@ -95,26 +95,21 @@ class JurisdictionHome extends React.Component {
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em' }}>
           {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
-          ) : searchQuery ? (filteredJurisdictions && filteredJurisdictions.jurisdictions && filteredJurisdictions.jurisdictions.length > 0 ? (
-              filteredJurisdictions.jurisdictions.map((instance) => (
+          ) : searchQuery ? (filteredStatutes && filteredStatutes.statutes && filteredStatutes.statutes.length > 0 ? (
+              filteredStatutes.statutes.map((instance) => (
                 <List.Item as={Card} key={instance.id} loading={loading}>
                   <Card.Content>
-                    <h3><Link to={"/jurisdictions/" + instance.id}>{instance.name}</Link></h3>
+                    <h3><Link to={"/statutes/" + instance.id}>{instance.name}</Link></h3>
                     <p>{instance.description}</p>
                   </Card.Content>
                 </List.Item>
               )
             )
-          ) : (<p>No results found</p>)) : this.props.jurisdictions && this.props.jurisdictions.jurisdictions && this.props.jurisdictions.jurisdictions.length > 0 ? (
-              this.props.jurisdictions.jurisdictions.map((instance) => (
+          ) : (<p>No results found</p>)) : this.props.statutes && this.props.statutes.statutes && this.props.statutes.statutes.length > 0 ? (
+              this.props.statutes.statutes.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/jurisdictions/" + instance.id}> {instance.name} </Link> </h3>
-                    <Label.Group>
-                      <Label>
-                        {instance.courts?.length} {instance.courts?.length === 1 ? 'court' : 'courts'}
-                      </Label>
-                    </Label.Group>
+                    <h3><Link to={"/statutes/" + instance.id}> {instance.name} </Link> </h3>
                     <p>{instance.description}</p>
                   </Card.Content>
                 </List.Item>
@@ -135,4 +130,4 @@ class JurisdictionHome extends React.Component {
   }
 }
 
-module.exports = JurisdictionHome;
+module.exports = StatuteHome;
