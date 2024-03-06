@@ -31,6 +31,8 @@ const multer = require('multer');
 const { attachPaginate } = require('knex-paginate'); // pagination
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
+
+// Fabric
 const Hub = require('@fabric/hub'); // decentralized messaging
 
 // HTTP Bridge
