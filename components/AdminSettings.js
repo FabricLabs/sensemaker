@@ -141,6 +141,34 @@ class AdminSettings extends React.Component {
         </Tab.Pane>
       },
       {
+        menuItem: 'Settings', render: () => <Tab.Pane loading={this.state.loading}>
+          <Header as='h4'>Settings</Header>
+          <Table celled striped>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>Name</Table.HeaderCell>
+                <Table.HeaderCell>Value</Table.HeaderCell>
+                <Table.HeaderCell>Modified</Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              <Table.Row>
+                <Table.Cell>alias</Table.Cell>
+                <Table.Cell>{this.state.alias}</Table.Cell>
+                <Table.Cell><abbr title=""></abbr></Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
+        </Tab.Pane>
+      },
+      {
+        menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
+          <AdminUsers {...this.props} />
+          <Header as='h3'>Create User</Header>
+          <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/>
+        </Tab.Pane>
+      },
+      {
         menuItem: 'Growth', render: () => <Tab.Pane loading={inquiries.loading || invitation.loading}>
           <Header as='h4'>Metrics</Header>
           <Statistic>
@@ -346,13 +374,6 @@ class AdminSettings extends React.Component {
         </Tab.Pane>,
       },
       {
-        menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
-          <AdminUsers {...this.props} />
-          <Header as='h3'>Create User</Header>
-          <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/>
-        </Tab.Pane>
-      },
-      {
         menuItem: 'Services', render: () => <Tab.Pane loading={this.state.loading}>
           <Header as='h4'>Services</Header>
           <Table celled striped>
@@ -406,35 +427,7 @@ class AdminSettings extends React.Component {
         </Tab.Pane>
       },
       {
-        menuItem: 'Settings', render: () => <Tab.Pane loading={this.state.loading}>
-          <Header as='h4'>Settings</Header>
-          <Table celled striped>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Name</Table.HeaderCell>
-                <Table.HeaderCell>Value</Table.HeaderCell>
-                <Table.HeaderCell>Modified</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              <Table.Row>
-                <Table.Cell>alias</Table.Cell>
-                <Table.Cell>{this.state.alias}</Table.Cell>
-                <Table.Cell><abbr title=""></abbr></Table.Cell>
-              </Table.Row>
-            </Table.Body>
-          </Table>
-        </Tab.Pane>
-      }
-    ];
-
-    return (
-      <jeeves-admin-settings class='fade-in'>
-        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%', overflowX: 'hidden'}}>
-          <Header as='h2'>Admin</Header>
-          <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
-          <Tab panes={panes} />
-          <AnnouncementCreator></AnnouncementCreator>
+        menuItem: 'Design', render: () => <Tab.Pane loading={this.state.loading}>
           <Header as='h3'>Style Guide</Header>
           <Header as='h4'>Site</Header>
           <div class="ui three column stackable grid">
@@ -1515,6 +1508,17 @@ class AdminSettings extends React.Component {
             </div>
             <div style="clear: both; display: block;"></div> */}
           </div>
+        </Tab.Pane>
+      }
+    ];
+
+    return (
+      <jeeves-admin-settings class='fade-in'>
+        <Segment fluid style={{ marginRight: '1em', maxHeight: '100%', overflowX: 'hidden'}}>
+          <Header as='h2'>Admin</Header>
+          <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
+          <Tab panes={panes} />
+          <AnnouncementCreator></AnnouncementCreator>
         </Segment>
       </jeeves-admin-settings>
     );

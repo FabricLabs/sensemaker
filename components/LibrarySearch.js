@@ -63,7 +63,7 @@ class LibrarySearch extends React.Component {
         console.error('Title update Error:', error.message);
       }
     }
-  }, 1000);
+  }, 250);
 
   // renderResults() {
   //   const { filteredResults } = this.state;
