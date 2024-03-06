@@ -54,7 +54,7 @@ class MatterFileModal extends React.Component {
     }
   };
 
-  handleFileChange = (e) => {
+  handleFileChange = async (e) => {
     const files = e.target.files;
 
     if (files.length > 0) {
@@ -76,7 +76,7 @@ class MatterFileModal extends React.Component {
 
       // postAPI('/files', data, this.props.auth.token);
 
-      fetch('/files', {
+     const reponse = await fetch('/files', {
         headers: {
           'Authorization': `Bearer ${this.props.auth.token}`,
           // 'Content-Type': 'multipart/form-data',
@@ -84,6 +84,8 @@ class MatterFileModal extends React.Component {
         method: 'POST',
         body: data
       });
+      const respuesta = await reponse.json();
+      console.log(respuesta);
     }
   };
 
