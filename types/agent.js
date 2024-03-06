@@ -58,8 +58,8 @@ class Agent extends Service {
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
-      host: null,
-      secure: false,
+      host: 'ollama.trynovo.com',
+      secure: true,
       database: {
         type: 'memory'
       },
