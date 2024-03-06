@@ -59,6 +59,7 @@ class Agent extends Service {
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
       host: null,
+      secure: false,
       database: {
         type: 'memory'
       },
@@ -278,7 +279,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
