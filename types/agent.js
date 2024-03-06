@@ -68,7 +68,7 @@ class Agent extends Service {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
-      model: 'gpt-4-1106-preview', // TODO: default to llama2
+      model: 'llama2',
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
