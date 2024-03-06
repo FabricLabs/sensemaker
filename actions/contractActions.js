@@ -95,7 +95,10 @@ const getContracts = (params = {}) => {
   };
 };
 
+const fetchContracts = getContracts;
+
 module.exports = {
+  fetchContracts,
   fetchContract,
   signContract,
   getContracts,

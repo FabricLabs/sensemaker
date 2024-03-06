@@ -95,9 +95,16 @@ const {
 
 // ## Conversation Actions
 const {
+  fetchContracts,
   fetchContract,
   signContract
 } = require('../actions/contractActions');
+
+// ## Statute Actions
+const {
+  fetchStatutes,
+  fetchStatute
+} = require('../actions/statuteActions');
 
 // ## Court Actions
 const {
@@ -112,6 +119,12 @@ const {
   fetchPeople,
   fetchPerson
 } = require('../actions/personActions');
+
+// ## Reporter Actions
+const {
+  fetchReporters,
+  fetchReporter
+} = require('../actions/reporterActions');
 
 // ## Judge Actions
 const {
@@ -211,6 +224,7 @@ async function main (input = {}) {
       documents: state.documents,
       judges: state.judges,
       people: state.people,
+      reporters: state.reporters,
       opinions: state.opinions,
       error: state.auth.error,
       inquiries: state.inquiries,
@@ -236,6 +250,8 @@ async function main (input = {}) {
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
     conversationTitleEdit: conversationTitleEdit,
+    fetchStatutes: fetchStatutes,
+    fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
     fetchJurisdictions: fetchJurisdictions,
@@ -260,6 +276,8 @@ async function main (input = {}) {
     fetchPerson: fetchPerson,
     fetchOpinions: fetchOpinions,
     fetchOpinion: fetchOpinion,
+    fetchReporters: fetchReporters,
+    fetchReporter: fetchReporter,
     fetchVolumes: fetchVolumes,
     fetchVolume: fetchVolume,
     fetchAdminStats: fetchAdminStats,

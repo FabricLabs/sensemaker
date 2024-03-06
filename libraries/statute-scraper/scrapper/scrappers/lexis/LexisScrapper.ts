@@ -1,6 +1,6 @@
 import { sleep } from "crawlee";
 import { blue, cyan, green, red } from "../../utils";
-import { DownloadableFile, StateScrapper } from "../StateScrapper";
+import { StateScrapper } from "../StateScrapper";
 import { Solver } from "2captcha";
 import { ElementHandle, Page } from "playwright";
 const playwright = require('playwright')

@@ -30,7 +30,6 @@ const CHECK_EMAIL_AVAILABLE_REQUEST = 'CHECK_EMAIL_AVAILABLE_REQUEST';
 const CHECK_EMAIL_AVAILABLE_SUCCESS = 'CHECK_EMAIL_AVAILABLE_SUCCESS';
 const CHECK_EMAIL_AVAILABLE_FAILURE = 'CHECK_EMAIL_AVAILABLE_FAILURE';
 
-
 // Sync Action Creators
 const loginRequest = () => ({ type: LOGIN_REQUEST });
 const loginSuccess = (session) => ({ type: LOGIN_SUCCESS, payload: session });
@@ -51,7 +50,6 @@ const checkUsernameAvailableFailure = (error) => ({ type: CHECK_USERNAME_AVAILAB
 const checkEmailAvailableRequest = () => ({ type: CHECK_EMAIL_AVAILABLE_REQUEST });
 const checkEmailAvailableSuccess = () => ({ type: CHECK_EMAIL_AVAILABLE_SUCCESS });
 const checkEmailAvailableFailure = (error) => ({ type: CHECK_EMAIL_AVAILABLE_FAILURE, payload: error });
-
 
 const login = (username, password) => {
   return async dispatch => {
