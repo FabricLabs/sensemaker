@@ -289,6 +289,8 @@ class Agent extends Service {
             })
           });
 
+          console.debug('[AGENT]', '[QUERY]', 'Response:', response);
+
           base = await response.json();
           if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
 

@@ -46,12 +46,10 @@ module.exports = function (req, res, next) {
 
       this.db('documents').insert({
         content: data.toString('utf8'),
-        metadata: {
-          encoding: 'utf8',
-          filename: req.file.originalname,
-          sha256: digest,
-          owner: req.user.id
-        }
+        encoding: 'utf8',
+        filename: req.file.originalname,
+        sha256: digest,
+        owner: req.user.id
       }).then((insertedDocument) => {
         this.trainer.ingestDocument({
           content: data.toString('utf8'),

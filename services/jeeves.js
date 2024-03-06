@@ -134,6 +134,10 @@ const ROUTES = {
   sessions: {
     create: require('../routes/sessions/create_session')
   },
+  statutes: {
+    list: require('../routes/statutes/list_statutes'),
+    // view: require('../routes/statutes/view_statute'), // TODO: create this
+  },
   users: {
     list: require('../routes/users/list_users'),
     listFiles: require('../routes/users/list_user_files'),
@@ -1650,6 +1654,7 @@ class Jeeves extends Hub {
     });
 
     // Search
+    // TODO: test each search endpoint
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
@@ -1688,13 +1693,15 @@ class Jeeves extends Hub {
     // Jurisdictions
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
+    // Statutes
+    this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
+
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
     this.http._addRoute('GET', '/users/:username', ROUTES.users.view.bind(this));
     // TODO: switch to PATCH `/users/:username`
     this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
     this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
-
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
