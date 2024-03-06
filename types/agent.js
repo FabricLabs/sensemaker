@@ -277,7 +277,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+          response = await fetch(`http://${this.settings.ollama.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
