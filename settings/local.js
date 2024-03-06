@@ -188,7 +188,8 @@ module.exports = {
     password: ''
   },
   ollama: {
-    host: 'ollama.jeeves.dev'
+    host: 'ollama.trynovo.com',
+    secure: true
   },
   pacer: {
     enable: true
