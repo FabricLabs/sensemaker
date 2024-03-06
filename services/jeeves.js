@@ -1184,7 +1184,12 @@ class Jeeves extends Hub {
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
     // Redis
-    await this.trainer.start();
+    try {
+      await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
+      process.exit();
+    }
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
