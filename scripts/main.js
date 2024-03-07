@@ -18,11 +18,11 @@ function createInstance () {
   });
 
   sensemaker.on('debug', (message) => {
-    console.debug('[DESKTOP]', '[SENSEMAKER]', 'Debug:', message);
+    // console.debug('[DESKTOP]', '[SENSEMAKER]', 'Debug:', message);
   });
 
   sensemaker.on('log', (message) => {
-    console.log('[DESKTOP]', '[SENSEMAKER]', message);
+    // console.log('[DESKTOP]', '[SENSEMAKER]', message);
   });
 
   sensemaker.on('ready', () => {
@@ -39,23 +39,10 @@ function createInstance () {
   };
 }
 
-app.whenReady().then(() => {
+app.on('ready', () => {
   protocol.interceptFileProtocol('file', (request, callback) => {
     const url = request.url.substr(7);
-    console.debug('url:', url);
-    if (url.startsWith('bundles') ||
-        url.startsWith('styles') ||
-        url.startsWith('scripts') ||
-        url.startsWith('images') ||
-        url.startsWith('fonts') ||
-        url.startsWith('semantic')
-     ) {
-      const norm = path.normalize(`https://trynovo.com/${url}`);
-      console.debug('norm:', norm);
-      callback({ path: norm });
-    } else {
-      callback({ path: `${url}` });
-    }
+    callback({ path: path.normalize(`./${url}`)})
   });
 
   createInstance();
