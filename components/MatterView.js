@@ -58,7 +58,7 @@ class MatterView extends React.Component {
       confirmNoteDelete: false,
 
       informationSidebarOpen: false,
-      documentUrl: null,
+      documentId: null,
     };
   }
 
@@ -161,7 +161,7 @@ class MatterView extends React.Component {
   };
 
   handleModalSubmit = async (note, filename, file) => {
-    console.log("Note:", note, "Files:", file);
+    // console.log("Note:", note, "Files:", file);
     const id = this.props.id;
 
     //TO DO: STORE THE FILE SOMEWHERE
@@ -222,8 +222,8 @@ class MatterView extends React.Component {
     }));
   };
 
-  openDocument = (path) => {
-    this.setState({ documentUrl: path });
+  openDocument = (file_id) => {
+    this.setState({ documentId: file_id });
     this.toggleInformationSidebar();
   }
   render() {
@@ -449,7 +449,7 @@ class MatterView extends React.Component {
                         {matters.matterFiles.map(instance => {
                           return (
                             <Table.Row key={instance.id}>
-                              <Table.Cell><Link onClick={() => this.openDocument(instance.path)}>{instance.filename}</Link></Table.Cell>
+                              <Table.Cell><Link onClick={() => this.openDocument(instance.file_id)}>{instance.filename}</Link></Table.Cell>
                               <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell textAlign="center">
@@ -600,7 +600,7 @@ class MatterView extends React.Component {
         <InformationSidebar
           visible={this.state.informationSidebarOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
-          documentUrl={this.state.documentUrl}
+          documentId={this.state.documentId}
         />
       </Segment>
     );

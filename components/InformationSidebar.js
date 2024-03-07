@@ -140,7 +140,10 @@ class InformationSidebar extends React.Component {
       sending,
       connectionProblem,
     } = this.state;
-    const { visible, documentUrl } = this.props;
+    const { visible, documentId } = this.props;
+    // if(documentId){
+    //   const documentSrc = `http://localhost:3045/files/serve/${documentId}`;
+    // }
 
     return (
       <Sidebar
@@ -149,15 +152,16 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        style={documentUrl ? { width: '600px' } : null}
+        style={documentId ? { width: '600px' } : null}
       >
-        {documentUrl ?
+        {documentId ?
           (
             <section className='info-sidebar center-elements-column'>
               <Icon name='close' size='large' onClick={() => this.handleClose()} className='feedback-close' />
-              {/* this is just a random document, we need to add documentUrl to the src */}
+              {/* this is just a random document, we need to add documentId to the src */}
               <iframe
-                src='https://www.cartercenter.org/resources/pdfs/health/ephti/library/lecture_notes/health_officers/ln_internal_med_final.pdf'
+                // src='https://www.cartercenter.org/resources/pdfs/health/ephti/library/lecture_notes/health_officers/ln_internal_med_final.pdf'
+                src={`http://localhost:3045/files/serve/${documentId}`}
                 className='document-frame'
               ></iframe>
             </section>

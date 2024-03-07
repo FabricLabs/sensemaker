@@ -105,7 +105,8 @@ const ROUTES = {
   files: {
     create: require('../routes/files/create_file'),
     list: require('../routes/files/list_files'),
-    view: require('../routes/files/view_file')
+    view: require('../routes/files/view_file'),
+    serve: require('../routes/files/serve_file.js'),
   },
   matters: {
     create: require('../routes/matters/create_matter'),
@@ -1672,6 +1673,9 @@ class Jeeves extends Hub {
 
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
+    // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
+    this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
+
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
 
