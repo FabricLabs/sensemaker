@@ -293,7 +293,13 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Response:', response);
 
-          base = await response.json();
+          try {
+            base = await response.json();
+          } catch (exception) {
+            console.error('[AGENT]', 'Could not parse response:', exception);
+            return reject(exception);
+          }
+
           if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
 
           if (request.requery) {
@@ -305,6 +311,7 @@ class Agent extends Service {
           }
 
           this.emit('completion', base);
+          console.debug('[AGENT]', '[QUERY]', 'Emitted completion:', base);
 
           return resolve({
             type: 'AgentResponse',
