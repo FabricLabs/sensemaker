@@ -1,7 +1,9 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 
+// Components
 const {
   Button,
   Form,
@@ -10,6 +12,11 @@ const {
   Divider,
   Header
 } = require('semantic-ui-react');
+
+// Actions
+const {
+  postAPI
+} = require('../actions/apiActions');
 
 class MatterFileModal extends React.Component {
   constructor(props) {
@@ -47,21 +54,39 @@ class MatterFileModal extends React.Component {
     }
   };
 
-  handleFileChange = (e) => {
+  handleFileChange = async (e) => {
     const files = e.target.files;
 
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
-      const data = new FormData();
-
       console.debug('File:', file.name, file.size, file.type); // Debugging log
       this.setState({ filename: file.name, file: file });
 
-      data.append('file', file);
-      fetch('/files', {
-        method: 'POST',
-        body: data
-      });
+    //   const data = new FormData();
+
+
+    //   // data.append('filename', file.name);
+    //   // data.append('size', file.size);
+    //   // data.append('type', file.type);
+    //   // data.append('file', file);
+
+    //   // const blob = new Blob([file], { type: file.type });
+
+    //   data.append('name', file.name);
+    //   data.append('file', file);
+
+    //   // postAPI('/files', data, this.props.auth.token);
+
+    //  const reponse = await fetch('/files', {
+    //     headers: {
+    //       'Authorization': `Bearer ${this.props.auth.token}`,
+    //       // 'Content-Type': 'multipart/form-data',
+    //     },
+    //     method: 'POST',
+    //     body: data
+    //   });
+    //   const respuesta = await reponse.json();
+    //   console.log(respuesta.path);
     }
   };
 

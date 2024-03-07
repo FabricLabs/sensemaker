@@ -6,6 +6,7 @@ module.exports = async function (req, res) {
     const update = await this.db('matters_files')
       .where({ id: req.params.idFile })
       .update({
+        updated_at: new Date(),
         deleted: 1,
       });
     res.send({

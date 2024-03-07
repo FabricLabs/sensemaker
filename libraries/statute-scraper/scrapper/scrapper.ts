@@ -13,6 +13,7 @@ import { Texas } from "./scrappers/Texas";
 import { StateScrapperInterface } from "./scrappers/StateScrapper";
 import { array_combine, green, red } from "./utils";
 import dotenv from 'dotenv'; 
+import { Illinois } from "./scrappers/Illinois";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ const states_parsers:{ [key: string]: () => StateScrapperInterface } = {
   'Colorado': () => new Colorado,
   'Florida': () => new Florida,
   'Georgia': () => new Georgia,
+  'Illinois': () => new Illinois,
   'NewJersey': () => new NewJersey,
   'NewYork': () => new NewYork,
   'Ohio': () => new Ohio,

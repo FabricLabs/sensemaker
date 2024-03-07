@@ -58,6 +58,8 @@ class Agent extends Service {
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
+      host: 'ollama.trynovo.com',
+      secure: true,
       database: {
         type: 'memory'
       },
@@ -68,7 +70,7 @@ class Agent extends Service {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
-      model: 'gpt-4-1106-preview', // TODO: default to llama2
+      model: 'llama2',
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
@@ -277,7 +279,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -289,7 +291,15 @@ class Agent extends Service {
             })
           });
 
-          base = await response.json();
+          console.debug('[AGENT]', '[QUERY]', 'Response:', response);
+
+          try {
+            base = await response.json();
+          } catch (exception) {
+            console.error('[AGENT]', 'Could not parse response:', exception);
+            return reject(exception);
+          }
+
           if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
 
           if (request.requery) {
@@ -301,6 +311,7 @@ class Agent extends Service {
           }
 
           this.emit('completion', base);
+          console.debug('[AGENT]', '[QUERY]', 'Emitted completion:', base);
 
           return resolve({
             type: 'AgentResponse',

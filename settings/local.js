@@ -56,6 +56,12 @@ module.exports = {
     password: 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
+  redis: {
+    host: 'localhost',
+    password: null,
+    port: 6379,
+    url: 'redis://redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
+  },
   http: {
     listen: true,
     hostname: 'localhost',
@@ -182,7 +188,8 @@ module.exports = {
     password: ''
   },
   ollama: {
-    host: 'ollama.jeeves.dev'
+    host: 'ollama.trynovo.com',
+    secure: true
   },
   pacer: {
     enable: true

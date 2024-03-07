@@ -14,16 +14,25 @@ module.exports = async function (req, res, next) {
   }
 
   try {
-    const user = await this.db('users').where('username', username).first();
-    if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
+    //now we are letting users to log in with email, so here it checks if its an email or username
+
+    const isEmail = username.includes('@');
+    let user;
+    
+    if (isEmail) {
+      user = await this.db('users').where('email', username).first();
+      if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid email or password.' });
+    } else {
+      user = await this.db('users').where('username', username).first();
+      if (!user || !compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid username or password.' });
+    }
 
     // Set Roles
     const roles = ['user'];
 
     // Special Roles
     if (user.is_admin) roles.unshift('admin');
-    if (user.is_alpha || user.is_admin) roles.unshift('alpha');
-    if (user.is_beta || user.is_alpha || user.is_admin) roles.unshift('beta');
+    if (user.is_beta) roles.unshift('beta');
 
     // Create Token
     const token = new Token({

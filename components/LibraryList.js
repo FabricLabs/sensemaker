@@ -12,13 +12,14 @@ const {
   Label
 } = require('semantic-ui-react');
 const ConversationsList = require('./ConversationsList');
-
+const LibrarySearch = require('./LibrarySearch');
 
 const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
   ENABLE_CONVERSATION_SIDEBAR,
+  ENABLE_CONTRACTS,
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
@@ -55,14 +56,14 @@ class LibraryList extends React.Component {
 
   }
 
-  render() {
+  render () {
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
-    const USER_IS_ALPHA = this.props.auth.isAlpha || false;
-    const USER_IS_BETA = this.props.auth.isBeta || false;
+    const USER_IS_ALPHA = this.props.auth.isAlpha || this.props.auth.isAdmin || false;
+    const USER_IS_BETA = this.props.auth.isBeta || this.props.auth.isAlpha || this.props.auth.isAdmin || false;
 
     return (
       <div>
-        {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+        {/* {(USER_IS_ALPHA || USER_IS_ADMIN) && (
           <Menu.Item>
             <jeeves-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
               <div className="ui icon fluid input">
@@ -71,28 +72,43 @@ class LibraryList extends React.Component {
               </div>
             </jeeves-search>
           </Menu.Item>
+        )} */}
+        {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+          <Menu.Item style={{display:'flex', alignItems: 'center', paddingRight: '0', paddingLeft:'0'}}>
+            <LibrarySearch auth={this.props.auth} searchGlobal={this.props.searchGlobal} search={this.props.search}/>
+          </Menu.Item>
         )}
         <Menu.Item as={Link} to='/conversations'>
           <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
         </Menu.Item>
-        {ENABLE_STATUTE_SEARCH && (
-          <Menu.Item as={Link} to='/statues'>
-            <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Statutes'} <Label size='mini' color='green'>New!</Label></div>
-          </Menu.Item>
-        )}
-        {(USER_IS_ALPHA || USER_IS_ADMIN) && ENABLE_DOCUMENT_SEARCH && (
+        {USER_IS_ALPHA && ENABLE_DOCUMENT_SEARCH && (
           <Menu.Item as={Link} to='/documents'>
-            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_ADMIN && ENABLE_JURISDICTION_SEARCH && (
+        {USER_IS_ALPHA && ENABLE_JURISDICTION_SEARCH && (
           <Menu.Item as={Link} to='/jurisdictions'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='globe' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_ADMIN && ENABLE_COURT_SEARCH && (
+        {USER_IS_ALPHA &&ENABLE_STATUTE_SEARCH && (
+          <Menu.Item as={Link} to='/statutes'>
+            <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Statutes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_COURT_SEARCH && (
           <Menu.Item as={Link} to='/courts'>
             <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_REPORTER_SEARCH && (
+          <Menu.Item as={Link} to='/reporters'>
+            <div><Icon name='newspaper outline' /> {!this.state.sidebarCollapsed && 'Reporters'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_VOLUME_SEARCH && (
+          <Menu.Item as={Link} to='/volumes'>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Volumes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_BETA && ENABLE_CASE_SEARCH && (
@@ -100,38 +116,29 @@ class LibraryList extends React.Component {
             <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_JUDGE_SEARCH && (
+        {USER_IS_ALPHA && ENABLE_JUDGE_SEARCH && (
           <Menu.Item as={Link} to='/judges'>
-            <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <Label size='mini' color='green'>New!</Label></div>
+            <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_OPINION_SEARCH && (
+        {USER_IS_ALPHA && ENABLE_OPINION_SEARCH && (
           <Menu.Item as={Link} to='/opinions'>
-            <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <Label size='mini' color='green'>New!</Label></div>
+            <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_LIBRARY && (
-          <Menu.Item disabled>
-            <div>
-              <Icon name='book' />
-              {!this.state.sidebarCollapsed && 'Library'}
-              &nbsp;<div style={{ float: 'right' }}><Label size='mini' color='orange'>disabled</Label></div>
-            </div>
-          </Menu.Item>
-        )}
-        {USER_IS_BETA && ENABLE_PERSON_SEARCH && (
+        {USER_IS_ALPHA && ENABLE_PERSON_SEARCH && (
           <Menu.Item as={Link} to='/people'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'People'} <Label size='mini' color='green'>New!</Label></div>
+            <div><Icon name='address book' /> {!this.state.sidebarCollapsed && 'People'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_REPORTER_SEARCH && (
-          <Menu.Item as={Link} to='/reporters'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Reporters'} <Label size='mini' color='green'>New!</Label></div>
+        {USER_IS_ALPHA && ENABLE_CONTRACTS && (
+          <Menu.Item as={Link} to='/contracts'>
+            <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Contracts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_BETA && ENABLE_VOLUME_SEARCH && (
-          <Menu.Item as={Link} to='/volumes'>
-            <div><Icon name='users' /> {!this.state.sidebarCollapsed && 'Volumes'} <Label size='mini' color='green'>New!</Label></div>
+        {USER_IS_ALPHA && ENABLE_LIBRARY && (
+          <Menu.Item as={Link} to='/settings/library'>
+            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList

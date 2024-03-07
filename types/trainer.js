@@ -6,9 +6,26 @@ const QUERY_FIXTURE = `You are Novo, the AI agent behind TryNovo.com (formerly J
 
 // Dependencies
 require('@tensorflow/tfjs-node');
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
 const { createClient } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
+
+// Text Splitter
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
+
+// Loaders
+const { DirectoryLoader } = require('langchain/document_loaders/fs/directory');
+const { JSONLoader, JSONLinesLoader } = require('langchain/document_loaders/fs/json');
+const { TextLoader } = require('langchain/document_loaders/fs/text');
+const { CSVLoader } = require('langchain/document_loaders/fs/csv');
+// const { MarkdownLoader } = require('langchain/document_loaders/fs/markdown');
+const { PDFLoader } = require('langchain/document_loaders/fs/pdf');
+
+// Langchains
 const { RetrievalQAChain } = require('langchain/chains');
 const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { RedisVectorStore } = require('@langchain/redis');
@@ -19,7 +36,7 @@ const { Document } = require('@langchain/core/documents');
 // Fabric Types
 const Service = require('@fabric/core/types/service');
 
-// Types
+// Sensemaker Types
 const Agent = require('./agent');
 
 /**
@@ -30,10 +47,20 @@ class Trainer extends Service {
     super(settings);
 
     this.settings = Object.assign({
+      debug: true,
       model: 'llama2',
-      ollama: {},
+      ollama: {
+        host: 'ollama.trynovo.com',
+        secure: true
+      },
       redis: {
+        host: 'localhost',
+        password: null,
+        port: 6379,
         url: 'redis://localhost:6379'
+      },
+      store: {
+        path: '/media/storage/node/stores'
       }
     }, settings);
 
@@ -41,14 +68,55 @@ class Trainer extends Service {
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
-    this.redis = createClient({ url: this.settings.redis.url || 'redis://localhost:6379' });
+    this.loaders = {
+      '.*': (x) => new TextLoader(x), // default to text (?)
+      '.pdf': (x) => new TextLoader(x),
+      '.html': (x) => new TextLoader(x),
+      // '.json': (x) => new JSONLoader(x, '/json'),
+      // '.json': (x) => new TextLoader(x),
+      // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
+      '.txt': (x) => new TextLoader(x),
+      '.csv': (x) => new CSVLoader(x),
+      // '.md': (x) => new MarkdownLoader(x),
+      // '.pdf': (x) => new PDFLoader(x),
+    };
+
+    this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
+
+    this.redis = createClient({
+      password: this.settings.redis.password,
+      socket: {
+        host: this.settings.redis.host,
+        port: this.settings.redis.port
+      }
+    });
 
     this.splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 20
      });
 
+    this.ui = new CheerioWebBaseLoader(REFERENCE_URL);
+
     return this;
+  }
+
+  async ingestDirectory (directory) {
+    return new Promise((resolve, reject) => {
+      const loader = new DirectoryLoader(directory, this.loaders);
+
+      loader.load().then((docs) => {
+        this.embeddings.addDocuments(docs).then(() => {
+          resolve({ type: 'IngestedDirectory', content: docs });
+        }).catch((exception) => {
+          console.error('[TRAINER]', 'Error ingesting directory:', exception);
+          reject(exception);
+        });
+      }).catch((exception) => {
+        console.error('[TRAINER]', 'Error ingesting directory:', exception);
+        reject(exception);
+      });
+    });
   }
 
   async ingestDocument (document, type = 'text') {
@@ -101,23 +169,51 @@ class Trainer extends Service {
   }
 
   async start () {
-    await this.redis.connect();
+    this._state.content.status = this._state.status = 'STARTING';
 
-    const reference = new CheerioWebBaseLoader(REFERENCE_URL);
-    const spa = await reference.load();
+    // Start Services
+    // Redis
+    try {
+      await this.redis.connect();
+    } catch (exception) {
+      console.error('[TRAINER]', 'Error starting Redis:', exception);
+      process.exit(); // TODO: look at exit codes
+    }
+
+    const terms = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
+    const spa = await this.ui.load();
+
+    // Store Documents
+    const contract = new Document({ pageContent: terms, metadata: { type: 'text/markdown' } });
+    const contractChunks = await this.splitter.splitDocuments([contract]);
     const chunks = await this.splitter.splitDocuments(spa);
+    const allDocs = [contract].concat(spa, contractChunks, chunks);
 
-    this.embeddings = await RedisVectorStore.fromDocuments(chunks, new TensorFlowEmbeddings(), {
+    // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
+    if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
+
+    this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
       redisClient: this.redis,
       indexName: 'documents'
     });
 
+    try {
+      const docs = await this.loader.load();
+      if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
+    } catch (exception) {
+      if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
+    }
+
     this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
 
-    this.commit();
+    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
 
-    const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+    // this._state.content.checkstate = check.text;
+    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+    this._state.content.status = this._state.status = 'STARTED';
+
+    this.commit();
 
     return this;
   }

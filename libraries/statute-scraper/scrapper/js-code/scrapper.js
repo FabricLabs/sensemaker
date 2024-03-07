@@ -16,6 +16,7 @@ const Tennessee_1 = require("./scrappers/Tennessee");
 const Texas_1 = require("./scrappers/Texas");
 const utils_1 = require("./utils");
 const dotenv_1 = __importDefault(require("dotenv"));
+const Illinois_1 = require("./scrappers/Illinois");
 dotenv_1.default.config();
 const states_parsers = {
     'Arkansas': () => new Arkansas_1.Arkansas,
@@ -23,6 +24,7 @@ const states_parsers = {
     'Colorado': () => new Colorado_1.Colorado,
     'Florida': () => new Florida_1.Florida,
     'Georgia': () => new Georgia_1.Georgia,
+    'Illinois': () => new Illinois_1.Illinois,
     'NewJersey': () => new NewJersey_1.NewJersey,
     'NewYork': () => new NewYork_1.NewYork,
     'Ohio': () => new Ohio_1.Ohio,

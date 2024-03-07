@@ -87,12 +87,6 @@ class MattersNew extends React.Component {
   handleInputChange = (event) => {
     this.setState({
       [event.target.name]: event.target.value
-    }, () => {
-      this.setState({
-        nameError: !this.state.title,
-        plaintiffError: !this.state.plaintiff,
-        defendantError: !this.state.defendant,
-      })
     });
   };
 
@@ -117,7 +111,7 @@ class MattersNew extends React.Component {
     event.preventDefault();
     const { representingOption, title, description, defendant, plaintiff, court_id, jurisdiction_id } = this.state;
 
-    this.setState({jurisdictionError: jurisdiction_id === null,});
+    this.setState({ jurisdictionError: jurisdiction_id === null, });
 
     // Check all conditions are met before proceeding
     if (title && plaintiff && defendant && jurisdiction_id !== null) {

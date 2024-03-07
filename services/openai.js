@@ -192,7 +192,7 @@ class OpenAIService extends Service {
                               return this._streamConversationRequest({
                                 query: request.query,
                                 messages: messages
-                              }).then(resolve);
+                              }).then(resolve).catch(reject);
                             }).catch((exception) => {
                               console.error('[AGENT]', '[RAG]', '[SEARCH]', 'Exception in tool execution:', exception);
                             });
