@@ -21,7 +21,7 @@ class LibrarySearch extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
-      searchQuery: '', 
+      searchQuery: '',
       filteredResults: {}, // Should be an object
       loading: false,
       results: null,
@@ -32,7 +32,7 @@ class LibrarySearch extends React.Component {
   }
 
   componentDidUpdate = (prevProps) => {
-    
+
     const {search} = this.props;
     if(prevProps.search != search){
       if(!search.searching && !search.error && this.state.loading){
@@ -43,7 +43,7 @@ class LibrarySearch extends React.Component {
 
   handleSearchChange = debounce(async (query) => {
     this.setState({ loading: true });
-    this.props.searchGlobal(query);  
+    this.props.searchGlobal(query);
   }, 1000);
 
   // renderResults() {
@@ -80,7 +80,7 @@ class LibrarySearch extends React.Component {
 
   render() {
     const { loading } = this.state;
-    
+
     return (
       <Search
         id='global-search'

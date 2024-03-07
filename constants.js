@@ -3,7 +3,7 @@
 // Constants
 const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 240000; // 4 minutes
+const MAX_RESPONSE_TIME_MS = 600000;
 
 // Fabric
 const GENESIS_HASH = '';

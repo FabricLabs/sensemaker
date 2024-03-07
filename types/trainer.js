@@ -49,7 +49,10 @@ class Trainer extends Service {
     this.settings = Object.assign({
       debug: true,
       model: 'llama2',
-      ollama: {},
+      ollama: {
+        host: 'ollama.trynovo.com',
+        secure: true
+      },
       redis: {
         host: 'localhost',
         password: null,
@@ -203,11 +206,11 @@ class Trainer extends Service {
 
     this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
 
-    const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
 
-    this._state.content.checkstate = check.text;
-    this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+    // this._state.content.checkstate = check.text;
+    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
     this._state.content.status = this._state.status = 'STARTED';
 
     this.commit();

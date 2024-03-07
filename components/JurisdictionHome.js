@@ -66,7 +66,6 @@ class JurisdictionHome extends React.Component {
   render () {
     const { loading, error } = this.props;
     const { filteredJurisdictions, searchQuery, searching } = this.state;
-
     const totalJurisdictions = 0;
 
     return (

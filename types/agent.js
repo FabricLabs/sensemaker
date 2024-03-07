@@ -58,6 +58,8 @@ class Agent extends Service {
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
+      host: 'ollama.trynovo.com',
+      secure: true,
       database: {
         type: 'memory'
       },
@@ -277,7 +279,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -288,6 +290,8 @@ class Agent extends Service {
               messages: sample
             })
           });
+
+          console.debug('[AGENT]', '[QUERY]', 'Response:', response);
 
           base = await response.json();
           if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
