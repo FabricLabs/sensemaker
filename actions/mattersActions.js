@@ -176,40 +176,39 @@ const addContext = (note, filename, id, file) => {
     try {
       const { token } = getState().auth;
       const timeoutPromise = createTimeoutPromise(15000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+      let path = null;
+      if (filename) {
+        const data = new FormData();
 
-      // const promiseCreateFile = fetch(`/files`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //   },
-      //   body: (() => {
-      //     const formData = new FormData();
-      //     formData.append('file', file);
-      //     console.log(formData);
-      //     return formData;
-      //   })(),
-      // });
+        data.append('name', file.name);
+        data.append('file', file);
 
-      // const creatingFile = await Promise.race([timeoutPromise, promiseCreateFile]);
+        const fileCreation = await fetch('/files', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          method: 'POST',
+          body: data
+        });
 
-      // if (!response.ok) {
-      //   throw new Error('File upload failed');
-      // }
-      // const uploadResult = await creatingFile.json();
+        if (!fileCreation.ok) {
+          const errorData = await fileCreation.json();
+          throw new Error(errorData.message || 'Server error');
+        }
 
-      // console.log("respuesta a la subida del archivo", uploadResult);
-      //right now im just storing the file name in this endpoint, we can save the path, or anything that could be usefull
+        const fileAnswer = await fileCreation.json();
+        path = fileAnswer.path;
+      }
       const fetchPromise = fetch(`/matters/context/${id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ note, filename, id }),
+        body: JSON.stringify({ note, filename, path }),
       });
 
       const response = await Promise.race([timeoutPromise, fetchPromise]);
-
 
       dispatch(addContextSuccess(response));
     } catch (error) {
