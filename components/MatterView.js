@@ -26,6 +26,7 @@ const {
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
+const InformationSidebar = require('./InformationSidebar');
 
 class MatterView extends React.Component {
   constructor(settings = {}) {
@@ -55,6 +56,9 @@ class MatterView extends React.Component {
       //these are the flags to ask to confirm before deleting
       confirmFileDelete: false,
       confirmNoteDelete: false,
+
+      informationSidebarOpen: false,
+      documentUrl: null,
     };
   }
 
@@ -212,6 +216,16 @@ class MatterView extends React.Component {
     }));
   };
 
+  toggleInformationSidebar = () => {
+    this.setState(prevState => ({
+      informationSidebarOpen: !prevState.informationSidebarOpen
+    }));
+  };
+
+  openDocument = (path) => {
+    this.setState({ documentUrl: path });
+    this.toggleInformationSidebar();
+  }
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
@@ -222,6 +236,7 @@ class MatterView extends React.Component {
     };
     return (
       <Segment
+        // onClick={() => this.setState({ informationSidebarOpen: false })}
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
         style={{ maxHeight: '100%' }}>
         <section className='matter-header'>
@@ -416,12 +431,12 @@ class MatterView extends React.Component {
             </GridRow>
             {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
               <GridRow>
-                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
+                <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
                   <Header as='h3'>Files</Header>
                 </GridColumn>
-                <GridColumn width={12}>
+                <GridColumn width={13}>
                   <Segment style={{ maxHeight: '40vh', padding: '0' }} loading={matters.addingContext}>
-                    <Table simple >
+                    <Table simple size='small'>
                       <Table.Header>
                         <Table.Row>
                           <Table.HeaderCell>File Name</Table.HeaderCell>
@@ -434,7 +449,7 @@ class MatterView extends React.Component {
                         {matters.matterFiles.map(instance => {
                           return (
                             <Table.Row key={instance.id}>
-                              <Table.Cell>{instance.filename}</Table.Cell>
+                              <Table.Cell><Link onClick={() => this.openDocument(instance.path)}>{instance.filename}</Link></Table.Cell>
                               <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell textAlign="center">
@@ -477,12 +492,12 @@ class MatterView extends React.Component {
             }
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
-                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
+                <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
                   <Header as='h3'>Aditional Notes</Header>
                 </GridColumn>
-                <GridColumn width={12}>
-                  <Segment style={{ maxHeight: '40vh', padding: '0' }} loading={matters.addingContext}>
-                    <List loading={matters.loading}>
+                <GridColumn width={13}>
+                  <Segment style={{ maxHeight: '40vh' }} loading={matters.addingContext}>
+                    <List loading={matters.loading} size='small'>
                       {matters.matterNotes.map(instance => {
                         const isExpanded = this.state.expandedNoteId === instance.id;
                         return (
@@ -582,6 +597,11 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
+        <InformationSidebar
+          visible={this.state.informationSidebarOpen}
+          toggleInformationSidebar={this.toggleInformationSidebar}
+          documentUrl={this.state.documentUrl}
+        />
       </Segment>
     );
   }
