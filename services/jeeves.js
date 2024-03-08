@@ -667,6 +667,7 @@ class Jeeves extends Hub {
       // Add Request to Database
       // TODO: assign `then` to allow async processing
       const inserted = await this.db('requests').insert({
+        // TODO: add `user_id` to request, assign to `creator`
         created_at: toMySQLDatetime(now),
         content: JSON.stringify(request)
       });
@@ -695,12 +696,19 @@ class Jeeves extends Hub {
       // TODO: prepare maximum token length
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
+      // Get Matter, if relevant
+      if (request.matter_id) {
+        request.matter = await this.db('matters').where({ id: request.matter_id }).first();
+        const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
+        request.matter.files = await this.db('files').whereIn('id', matterFiles.map((x) => x.file_id));
+      }
+
       // Compute most relevant tokens
       // const caseCount = await this.db('cases').count('id as count').first();
       // const hypotheticals = await this.lennon.query({ query: request.query });
       const words = this.importantWords(request.query);
       const phrases = this.importantPhrases(request.query);
-      const searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
+      const searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
       if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
@@ -736,6 +744,7 @@ class Jeeves extends Hub {
       // Format Metadata
       const meta = `metadata:\n` +
         `  notes: Cases may be unrelated, search term used: ${searchterm.content || ''}\n` +
+        `  matter: ${JSON.stringify(request.matter || null)}\n` +
         `  topics: ${searchterm.content || ''}\n` +
         `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         `  documents: null\n` +
@@ -817,7 +826,7 @@ class Jeeves extends Hub {
       ]);
 
       // TODO: execute RAG query for additional metadata
-      const ragger = new Agent({ host: this.settings.ollama.host, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
+      const ragger = new Agent({ host: this.settings.ollama.host, secure: this.settings.ollama.secure, messages: messages, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
 
       Promise.race([
         new Promise((resolve, reject) => {
@@ -1522,8 +1531,8 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.summarizer = new Agent({ name: this.settings.name, host: this.settings.ollama.host, secure: this.settings.ollama.secure, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
 
@@ -3034,7 +3043,7 @@ class Jeeves extends Hub {
               return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
             })).then(async (output) => {
               console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
-              const title = output?.content;
+              let title = output?.content || 'broken content title';
               if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
               if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
 
