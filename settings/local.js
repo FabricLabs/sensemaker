@@ -19,7 +19,11 @@ const {
 
 const path = require('path');
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
-const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
+const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
 
 /**
  * Provides the user's local settings.
@@ -72,10 +76,11 @@ module.exports = {
     key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
-    username: 'agent@jeeves.dev',
+    username: 'agent@trynovo.com',
     password: 'generate app-specific password'
   },
   files: {
+    corpus: '/Users/eric/jeeves.dev/stores/sensemaker',
     path: '/media/storage/node/files',
     userstore: '/media/storage/uploads/users'
   },
@@ -94,7 +99,7 @@ module.exports = {
   peers: [
     'localhost:7777'
   ],
-  prompt: prompt.toString('utf8'),
+  prompt: betaPrompt.toString('utf8'),
   sandbox: {
     browser: {
       headless: true
@@ -147,7 +152,7 @@ module.exports = {
   courtlistener: {
     enable: false,
     type: 'postgresql',
-    host: 'lavendar.courtlistener.com',
+    host: 'localhost',
     database: 'courtlistener',
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
@@ -166,6 +171,11 @@ module.exports = {
   },
   lightning: {
     authority: 'unix:/SOME_PATH/lightning.sock'
+  },
+  linkedin: {
+    enable: false,
+    id: 'get from linkedin',
+    secret: 'get from linkedin'
   },
   matrix: {
     enable: false,
