@@ -600,6 +600,7 @@ class MatterView extends React.Component {
         <InformationSidebar
           visible={this.state.informationSidebarOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
+          documentSection={true}
           documentId={this.state.documentId}
         />
       </Segment>

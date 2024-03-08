@@ -140,7 +140,7 @@ class InformationSidebar extends React.Component {
       sending,
       connectionProblem,
     } = this.state;
-    const { visible, documentId } = this.props;
+    const { visible, documentSection, documentId } = this.props;
     // if(documentId){
     //   const documentSrc = `http://localhost:3045/files/serve/${documentId}`;
     // }
@@ -154,8 +154,8 @@ class InformationSidebar extends React.Component {
         width='wide'
         style={documentId ? { width: '600px' } : null}
       >
-        {documentId ?
-          (
+        {documentSection ?
+          (documentId ? (
             <section className='info-sidebar center-elements-column'>
               <Icon name='close' size='large' onClick={() => this.handleClose()} className='feedback-close' />
               {/* this is just a random document, we need to add documentId to the src */}
@@ -165,6 +165,11 @@ class InformationSidebar extends React.Component {
                 className='document-frame'
               ></iframe>
             </section>
+          ) : (
+            <section className='info-sidebar center-elements-column'>
+              <h3>File not found</h3>
+            </section>
+          )
           )
           : (
             (this.props.thumbsUpClicked || this.props.thumbsDownClicked) ?
