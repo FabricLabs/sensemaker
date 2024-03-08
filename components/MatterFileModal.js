@@ -27,6 +27,7 @@ class MatterFileModal extends React.Component {
       filename: null,
       file: null,
       fileExists: false,
+      formatError: false,
     };
     this.fileInputRef = React.createRef();
   }
@@ -51,7 +52,15 @@ class MatterFileModal extends React.Component {
       const files = e.dataTransfer.files;
       if (files.length > 0) {
         const file = files[0]; // Take only the first file
-        this.setState({ filename: file.name, file: file });
+        if (this.isValidFileType(file.type)) {
+          this.setState({ filename: file.name, file: file, formatError: false });
+          if (this.props.matterFiles && this.props.matterFiles.length > 0) {
+            const existingFile = this.props.matterFiles.some(instance => instance.filename === file.name);
+            this.setState({ fileExists: existingFile });
+          }
+        } else {
+          this.setState({ formatError: true });
+        }
       }
     }
   };
@@ -61,14 +70,31 @@ class MatterFileModal extends React.Component {
 
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
-      console.debug('File:', file.name, file.size, file.type); // Debugging log
-      this.setState({ filename: file.name, file: file });
-      if(this.props.matterFiles && this.props.matterFiles.length > 0){
-        const existingFile = this.props.matterFiles.some(instance => instance.filename === file.name);
-        this.setState({fileExists: existingFile});
+      if (this.isValidFileType(file.type)) {
+        console.debug('File:', file.name, file.size, file.type); // Debugging log
+        this.setState({ filename: file.name, file: file, formatError: false });
+        if (this.props.matterFiles && this.props.matterFiles.length > 0) {
+          const existingFile = this.props.matterFiles.some(instance => instance.filename === file.name);
+          this.setState({ fileExists: existingFile, errorMsg: 'This file is already exists in this matter' });
+        }
+      } else {
+        this.setState({ formatError: true });
       }
     }
   };
+
+  isValidFileType(fileType) {
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/tiff',
+      'image/bmp',
+      'application/pdf',
+    ];
+
+    return allowedTypes.includes(fileType);
+  }
+
 
   handleChange = (e, { value }) => {
     this.setState({ note: value });
@@ -89,7 +115,8 @@ class MatterFileModal extends React.Component {
       note: '',
       filename: null,
       file: null,
-      fileExists: false
+      fileExists: false,
+      formatError: false,
     });
   }
 
@@ -104,13 +131,14 @@ class MatterFileModal extends React.Component {
       note: '',
       filename: null,
       file: null,
-      fileExists: false
+      fileExists: false,
+      formatError: false,
     });
     this.props.onClose();
   }
 
   removeFile = () => {
-    this.setState({ filename: null, file: null, fileExists: false });
+    this.setState({ filename: null, file: null, fileExists: false, formatError: false });
     //this.props.deleteFile();
   };
 
@@ -164,7 +192,10 @@ class MatterFileModal extends React.Component {
         </Modal.Content>
         <Modal.Actions>
           {this.state.fileExists &&
-            <Message negative content="This file is already exists in this matter" />
+            <Message negative content='This file is already exists in this matter' />
+          }
+          {this.state.formatError &&
+            <Message negative content='File format not allowed. Please upload PNG, JPG, TIFF, BMP, PDF' />
           }
           <Button onClick={this.handleClose}>Cancel</Button>
           <Button primary onClick={this.handleSubmit} disabled={this.state.fileExists}>Add</Button>
