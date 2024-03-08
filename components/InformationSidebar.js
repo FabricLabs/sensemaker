@@ -9,7 +9,11 @@ const {
   Message,
   Sidebar,
   Popup,
-  Icon
+  Icon,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
 } = require('semantic-ui-react');
 
 const { Rating } = require('react-simple-star-rating');
@@ -127,10 +131,11 @@ class InformationSidebar extends React.Component {
     }
   }
 
-  /**
-   * Render to HTML DOM
-   * @returns the feedback sidebar, as a React Component
-   */
+  formatDateTime = (dateTimeStr) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return new Date(dateTimeStr).toLocaleString('en-US', options);
+  }
+
   render() {
     const {
       // modalOpen,
@@ -140,10 +145,7 @@ class InformationSidebar extends React.Component {
       sending,
       connectionProblem,
     } = this.state;
-    const { visible, documentSection, documentId } = this.props;
-    // if(documentId){
-    //   const documentSrc = `http://localhost:3045/files/serve/${documentId}`;
-    // }
+    const { visible, documentSection, documentInfo } = this.props;
 
     return (
       <Sidebar
@@ -152,16 +154,32 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        style={documentId ? { width: '600px' } : null}
+        style={documentSection ? { width: '600px' } : null}
       >
+        <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
         {documentSection ?
-          (documentId ? (
+          ((documentInfo && documentInfo.file_id) ? (
             <section className='info-sidebar center-elements-column'>
-              <Icon name='close' size='large' onClick={() => this.handleClose()} className='feedback-close' />
               {/* this is just a random document, we need to add documentId to the src */}
+              <Card fluid className='info-file-card' style={{ paddingBottom: '1.5em' }}>
+                <CardContent header={documentInfo.filename}>
+                  {/* <CardHeader>{documentInfo.filename}</CardHeader> */}
+                </CardContent>
+                <CardContent style={{ paddingTop: '0.2em' }}>
+                  <CardDescription>
+                    <strong>Matter:</strong> {this.props.matterTitle}
+                  </CardDescription>
+                  <CardDescription>
+                    <strong>Created:</strong> {this.formatDateTime(documentInfo.created_at)}
+                  </CardDescription>
+                  <CardDescription>
+                    <strong>Modified:</strong> {this.formatDateTime(documentInfo.updated_at)}
+                  </CardDescription>
+                </CardContent>
+              </Card>
               <iframe
                 // src='https://www.cartercenter.org/resources/pdfs/health/ephti/library/lecture_notes/health_officers/ln_internal_med_final.pdf'
-                src={`http://localhost:3045/files/serve/${documentId}`}
+                src={`http://localhost:3045/files/serve/${documentInfo.file_id}`}
                 className='document-frame'
               ></iframe>
             </section>
@@ -169,14 +187,13 @@ class InformationSidebar extends React.Component {
             <section className='info-sidebar center-elements-column'>
               <h3>File not found</h3>
             </section>
-          )
-          )
+          ))
           : (
             (this.props.thumbsUpClicked || this.props.thumbsDownClicked) ?
               (<div className='info-sidebar center-elements-column'>
 
                 <Header as='h2' style={{ color: '#fff', marginBottom: '2rem' }} >Feedback</Header>
-                <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
+                {/* <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' /> */}
                 <Button.Group size='medium'>
                   {(this.props.thumbsDownClicked) ? (
                     <Popup
@@ -267,7 +284,6 @@ class InformationSidebar extends React.Component {
                 </Form.Field>
               </div>) : (
                 <div className='info-sidebar'>
-                  <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' />
                   <p>{this.props.checkingMessageID}</p>
                   <Header>Cases Sourced</Header>
                   {
@@ -282,7 +298,8 @@ class InformationSidebar extends React.Component {
                   </fabric-search-results>
                 </div>
               )
-          )}
+          )
+        }
       </Sidebar>
     )
   };

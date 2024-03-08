@@ -59,6 +59,7 @@ class MatterView extends React.Component {
 
       informationSidebarOpen: false,
       documentId: null,
+      documentInfo: null,
     };
   }
 
@@ -222,8 +223,8 @@ class MatterView extends React.Component {
     }));
   };
 
-  openDocument = (file_id) => {
-    this.setState({ documentId: file_id });
+  openDocument = (file) => {
+    this.setState({ documentInfo: file });
     this.toggleInformationSidebar();
   }
   render() {
@@ -449,7 +450,7 @@ class MatterView extends React.Component {
                         {matters.matterFiles.map(instance => {
                           return (
                             <Table.Row key={instance.id}>
-                              <Table.Cell><Link onClick={() => this.openDocument(instance.file_id)}>{instance.filename}</Link></Table.Cell>
+                              <Table.Cell><Link onClick={() => this.openDocument(instance)}>{instance.filename}</Link></Table.Cell>
                               <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                               <Table.Cell textAlign="center">
@@ -577,6 +578,7 @@ class MatterView extends React.Component {
             onSubmit={this.handleModalSubmit}
             auth={this.props.auth}
             token={this.props.token}
+            matterFiles={this.props.matters.matterFiles}
           />
           <Confirm
             content='Delete this file from the Matter?'
@@ -601,7 +603,8 @@ class MatterView extends React.Component {
           visible={this.state.informationSidebarOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
           documentSection={true}
-          documentId={this.state.documentId}
+          documentInfo={this.state.documentInfo}
+          matterTitle={this.props.matters.current.title}
         />
       </Segment>
     );
