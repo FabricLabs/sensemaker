@@ -758,11 +758,11 @@ fabric-motd {
 }
 
 .matter-details{
-  max-width: 650px;
+  max-width: 80vw;
   margin-top: 2em;
 }
 .matter-header{
-  max-width: 650px;
+  width: 80vw;
 }
 
 .attach-file-area{
