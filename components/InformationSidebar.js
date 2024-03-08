@@ -162,10 +162,10 @@ class InformationSidebar extends React.Component {
             <section className='info-sidebar center-elements-column'>
               {/* this is just a random document, we need to add documentId to the src */}
               <Card fluid className='info-file-card' style={{ paddingBottom: '1.5em' }}>
-                <CardContent header={documentInfo.filename}>
+                <CardContent header={documentInfo.filename} style={{ paddingBottom: '0' }}>
                   {/* <CardHeader>{documentInfo.filename}</CardHeader> */}
                 </CardContent>
-                <CardContent style={{ paddingTop: '0.2em' }}>
+                <CardContent style={{ paddingTop: '0.5em', marginBottom:'1.5em' }}>
                   <CardDescription>
                     <strong>Matter:</strong> {this.props.matterTitle}
                   </CardDescription>

@@ -224,8 +224,7 @@ class MatterView extends React.Component {
   };
 
   openDocument = (file) => {
-    this.setState({ documentInfo: file });
-    this.toggleInformationSidebar();
+    this.setState({ documentInfo: file, informationSidebarOpen: true });
   }
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
