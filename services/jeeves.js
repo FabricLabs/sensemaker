@@ -146,6 +146,9 @@ const ROUTES = {
     editUsername: require('../routes/users/edit_username'),
     editEmail: require('../routes/users/edit_email'),
     view: require('../routes/users/view_user'),
+  },
+  feedback: {
+    create: require('../routes/feedback/create_feedback.js')
   }
 };
 
@@ -1723,6 +1726,9 @@ class Jeeves extends Hub {
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+
+    // Feedback
+    this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

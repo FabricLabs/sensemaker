@@ -61,6 +61,7 @@ const TermsOfUse = require('./TermsOfUse');
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
+const FeedbackBox = require('./FeedbackBox');
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -81,6 +82,7 @@ class Dashboard extends React.Component {
         openLibrary: true,
         openConversations: false,
         openSectionBar: false,
+        feedbackBoxOpen: false,
 
         steps: [
           {
@@ -212,7 +214,7 @@ class Dashboard extends React.Component {
         } else {
           newState.openLibrary = true;
           this.setState({ openSectionBar: true });
-          if(!this.state.openLibrary){
+          if (!this.state.openLibrary) {
             this.props.resetChat();
           }
         }
@@ -224,6 +226,12 @@ class Dashboard extends React.Component {
 
     // Set the new state
     this.setState(newState);
+  };
+
+  toggleInformationSidebar = () => {
+    this.setState(prevState => ({
+      feedbackBoxOpen: !prevState.feedbackBoxOpen
+    }));
   };
 
   render() {
@@ -472,6 +480,14 @@ class Dashboard extends React.Component {
           </Container>
           {/* </div> */}
         </div>
+        <Icon name='question circle outline' size='big' id='feedback-button' className='grey' onClick={() => this.setState({feedbackBoxOpen: true})}/>
+        <FeedbackBox
+          open={this.state.feedbackBoxOpen}
+          toggleInformationSidebar={this.toggleInformationSidebar}
+          feedbackSection={true}
+          sendFeedback={this.props.sendFeedback}
+          feedback={this.props.feedback}
+        />
       </jeeves-dashboard>
     );
   }
