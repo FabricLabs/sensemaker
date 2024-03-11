@@ -11,7 +11,8 @@ const {
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,
-  USER_QUERY_TIMEOUT_MS
+  USER_QUERY_TIMEOUT_MS,
+  SYNC_EMBEDDINGS_COUNT
 } = require('../constants');
 
 // Dependencies
@@ -1643,7 +1644,7 @@ class Jeeves extends Hub {
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
 
-      this._syncEmbeddings(1000).then((output) => {
+      this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
         console.debug('[JEEVES]', 'Embedding sync complete:', output);
       });
     }, 600000); // 10 minutes
