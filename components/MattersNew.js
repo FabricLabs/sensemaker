@@ -140,7 +140,7 @@ class MattersNew extends React.Component {
       pointing: 'above',
     };
     return (
-      <Segment style={{ marginRight: '1em', height: '97vh', overflow: 'visible' }} className='center-elements-column'>
+      <Segment style={{ height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
         {(matters && matters.creationSuccess && resetFlag && !errorCreating) ? (
           <Message positive style={{ maxWidth: '350px' }}>

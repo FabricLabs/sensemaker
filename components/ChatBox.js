@@ -117,7 +117,7 @@ class ChatBox extends React.Component {
     }
   }
 
-  
+
 
   componentWillUnmount() {
     //this.props.resetChat();
@@ -222,7 +222,7 @@ class ChatBox extends React.Component {
     let dataToSubmit;
 
     this.stopPolling();
-    
+
     this.setState({ loading: true, previousFlag: true });
 
     this.props.getMessageInformation(query);
@@ -696,7 +696,7 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
       // maxWidth: 'none'
     };
-
+    console.log(messages);
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
@@ -938,7 +938,7 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "99%" }} >
+          style={{ width: "96%" }} >
           <Form.Input>
             <TextareaAutosize
               id="primary-query"

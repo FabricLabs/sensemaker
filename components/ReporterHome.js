@@ -60,9 +60,9 @@ class ReporterHome extends React.Component {
   render () {
     const { loading, error, } = this.props;
     const { filteredReporters, searchQuery, searching } = this.state;
-
+    console.log(filteredReporters);
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <h1>Reporters</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>

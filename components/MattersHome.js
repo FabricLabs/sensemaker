@@ -43,7 +43,7 @@ class MattersHome extends React.Component {
     const { loading } = this.state;
 
     return (
-      <Segment loading={matters.loading} style={{ marginRight: '1em' }}>
+      <Segment loading={matters.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <Header as='h1'>My Matters</Header>
         <List>
           {matters && matters.matters && matters.matters
