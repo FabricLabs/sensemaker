@@ -175,6 +175,11 @@ const {
   searchGlobal,
 } = require('../actions/searchActions');
 
+// ## Feedback Actions
+const {
+  sendFeedback,
+} = require('../actions/feedbackActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -239,6 +244,7 @@ async function main (input = {}) {
       jurisdictions: state.jurisdictions,
       users: state.users,
       search: state.search,
+      feedback: state.feedback,
     }
   };
 
@@ -311,6 +317,7 @@ async function main (input = {}) {
     fetchUser: fetchUser,
     askPasswordReset: askPasswordReset,
     searchGlobal: searchGlobal,
+    sendFeedback: sendFeedback,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

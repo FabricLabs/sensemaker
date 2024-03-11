@@ -129,6 +129,13 @@
   right: 15px;
 }
 
+#feedback-button{
+  position: fixed;
+  bottom: 30px;
+  right: 15px;
+  cursor: pointer;
+}
+
 body {
   background: #fff;
 }
