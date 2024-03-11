@@ -107,8 +107,10 @@ class AdminUsers extends React.Component {
           {(users.error && users.currentEmail === emailReseting) &&
             <Message negative content={users.error} />
           }
-          <Button secondary onClick={() => this.setState({ confirmResetOpen: false })}>Close</Button>
-          <Button primary onClick={() => { this.props.askPasswordReset(emailReseting); this.setState({ reseting: true }) }} loading={this.state.reseting}>Send</Button>
+          <Button.Group>
+            <Button secondary onClick={() => this.setState({ confirmResetOpen: false })}>Close</Button>
+            <Button primary onClick={() => { this.props.askPasswordReset(emailReseting); this.setState({ reseting: true }) }} loading={this.state.reseting}>Send</Button>
+          </Button.Group>
         </Modal.Actions>
       </Modal>
     )
