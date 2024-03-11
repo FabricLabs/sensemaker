@@ -938,7 +938,7 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "96%" }} >
+          style={{ width: "95%" }} >
           <Form.Input>
             <TextareaAutosize
               id="primary-query"
