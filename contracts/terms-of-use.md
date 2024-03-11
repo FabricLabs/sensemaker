@@ -1,6 +1,6 @@
 # Terms of Use
 ## 1. Overview of the Terms of Use  
-  **a.** Legal Tools & Technologies, Inc (dba Novo) provides this proprietary AI platform to you, subject to these terms of use ("Terms"). The Terms constitute a legal agreement between you and Novo and govern all use of this Novo’s proprietary AI platform. By using Novo’s proprietary AI platform, you acknowledge that you have read, understood, and agree to be bound by these Terms.  
+  **a.** Legal Tools & Technology, Inc (dba Novo) provides this proprietary AI platform to you, subject to these terms of use ("Terms"). The Terms constitute a legal agreement between you and Novo and govern all use of this Novo’s proprietary AI platform. By using Novo’s proprietary AI platform, you acknowledge that you have read, understood, and agree to be bound by these Terms.  
   **b.** If you do not agree with any provision of these Terms, you should not access or use Novo.
 
 ## 2. License and Access  
