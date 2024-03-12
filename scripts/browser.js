@@ -123,8 +123,9 @@ const {
 // ## Reporter Actions
 const {
   fetchReporters,
-  fetchReporter
-} = require('../actions/reporterActions');
+  fetchReporter,
+  searchReporter,
+} = require('../actions/reportersActions');
 
 // ## Judge Actions
 const {
@@ -284,6 +285,7 @@ async function main (input = {}) {
     fetchOpinion: fetchOpinion,
     fetchReporters: fetchReporters,
     fetchReporter: fetchReporter,
+    searchReporter: searchReporter,
     fetchVolumes: fetchVolumes,
     fetchVolume: fetchVolume,
     fetchAdminStats: fetchAdminStats,
