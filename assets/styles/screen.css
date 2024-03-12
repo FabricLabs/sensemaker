@@ -131,9 +131,16 @@
 
 #feedback-button{
   position: fixed;
-  bottom: 30px;
-  right: 15px;
+  bottom: 50px;
+  right: 25px;
   cursor: pointer;
+  background-color: #fff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
 }
 
 body {
