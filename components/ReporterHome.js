@@ -76,7 +76,7 @@ class ReporterHome extends React.Component {
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
-        <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
+        <List as={Card.Group} centered doubling loading={loading} style={{ marginTop: "1em" }}>
           {(searching || this.props.reporters.loading) ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
