@@ -19,50 +19,43 @@ const {
 const formatDate = require('../contracts/formatDate');
 
 class ReporterHome extends React.Component {
-  constructor (settings = {}) {
+  constructor(settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
-      filteredReporters: [], // Initialize filtered reporters state
+      filteredReporters:[], // Initialize filtered reporters state
       searching: false // Boolean to show a spinner icon while fetching
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchReporters();
   }
 
+  componentDidUpdate(prevProps) {
+    const {reporters } = this.props;
+    if(prevProps.reporters != reporters){
+      if(!reporters.loading && this.state.searching){
+        this.setState({filteredReporters: reporters.results, searching: false});
+      }
+    }
+  }
+
   handleSearchChange = debounce((query) => {
-    this.setState({ searching: true });
-
-    fetch('/reporters', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'SEARCH',
-      body: JSON.stringify({ query })
-    }).then(async (result) => {
-      const obj = await result.json();
-      console.log('fetch result: ', obj);
-
-      this.setState({
-        filteredReporters: obj.content,
-        searchQuery: query,
-      });
-    }).catch((error) => {
-      console.error('Error fetching data:', error);
-    }).finally(() => {
-      this.setState({ searching: false }); // Set searching to false after fetch is complete
-    });
+    if (query) {
+      this.setState({ searching: true });
+      this.props.searchReporter(query);
+    }
   }, 1000);
 
-  render () {
+  render() {
     const { loading, error, } = this.props;
     const { filteredReporters, searchQuery, searching } = this.state;
 
+    const displayReporters = searchQuery ? filteredReporters : this.props.reporters.reporters;
+
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <h1>Reporters</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
@@ -84,43 +77,30 @@ class ReporterHome extends React.Component {
           </div>
         </jeeves-search>
         <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
-        {searching ? (
+          {(searching || this.props.reporters.loading) ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
-          searchQuery ? // if searching, goes this way
-            (filteredReporters && filteredReporters.reporters && filteredReporters.reporters.length > 0 ? (
-              filteredReporters.reporters.map((instance) => (
+            (displayReporters && displayReporters.length > 0 ? (
+              displayReporters.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/reporters/" + instance.id}> {instance.full_name} </Link> </h3>
+                    <h3><Link to={"/reporters/" + instance.id}> {instance.name} </Link> </h3>
                     <Label.Group basic>
                       <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
-                      <Label title='City/State of birth '><Icon name='building'/> {instance.birth_city}, {instance.birth_state}</Label>
+                      <Label title='City/State of birth '><Icon name='building' /> {instance.birth_city}, {instance.birth_state}</Label>
                     </Label.Group>
                   </Card.Content>
                 </List.Item>
               ))
-              ) : (<p>No results found</p>)
-            ) : this.props.reporters && this.props.reporters.reporters && this.props.reporters.reporters.length > 0 ? (
-              this.props.reporters.reporters.map((instance) => (
-                <List.Item as={Card} key={instance.id}>
-                  <Card.Content>
-                    <h3><Link to={"/reporters/" + instance.id}> {instance.full_name} </Link> </h3>
-                    <Label.Group basic>
-                      <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
-                      <Label title='City/State of birth '><Icon name='building'/> {instance.birth_city}, {instance.birth_state}</Label>
-                    </Label.Group>
-                  </Card.Content>
-                </List.Item>
-              ))
-            ) : (<p>No reporters available</p>)
+            ) : (<p>No results found</p>)
+            )
           }
         </List>
       </Segment>
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }

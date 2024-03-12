@@ -1680,6 +1680,7 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/reporters', this._handleReportersSearchRequest.bind(this));
 
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
@@ -2743,7 +2744,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/reporters', async (req, res, next) => {
-      const reporters = await this.db.select('id').from('reporters').orderBy('id', 'desc');
+      const reporters = await this.db.select('*').from('reporters').orderBy('id', 'desc');
       res.format({
         json: () => {
           res.send(reporters);
@@ -3834,6 +3835,28 @@ class Jeeves extends Hub {
     }
   }
 
+  async _handleReportersSearchRequest (req, res, next) {
+    try {
+      const request = req.body;
+      const reporters = await this._searchReporters(request);
+      const result = {
+        reporters: reporters || []
+      };
+
+      return res.send({
+        type: 'SearchReportersResult',
+        content: result,
+        results: reporters
+      });
+    } catch (exception) {
+      res.status(503);
+      return res.send({
+        type: 'SearchReportersError',
+        content: exception
+      });
+    }
+  }
+
   async _handlePeopleSearchRequest (req, res, next) {
     try {
       const request = req.body;
@@ -4527,14 +4550,30 @@ class Jeeves extends Hub {
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
-    const response = [];
+    let response = [];
 
     try {
-      await this.db('jurisdictions').select('*').where('name', 'like', `%${request.query}%`);
+      response = await this.db('jurisdictions').select('*').where('name', 'like', `%${request.query}%`);
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search jurisdictions:', exception);
     }
 
+    return response;
+  }
+
+  async _searchReporters (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching reporters:', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    let response = [];
+
+    try {
+     response = await this.db('reporters').select('*').where('name', 'like', `%${request.query}%`);
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
+    }
+    console.log(response);
     return response;
   }
 

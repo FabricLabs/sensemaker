@@ -460,7 +460,7 @@ class Dashboard extends React.Component {
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
-                <Route path="/reporters" element={<ReporterHome reporters={this.props.reporters} fetchReporters={this.props.fetchReporters} chat={this.props.chat} />} />
+                <Route path="/reporters" element={<ReporterHome reporters={this.props.reporters} fetchReporters={this.props.fetchReporters} searchReporter={this.props.searchReporter} chat={this.props.chat} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} />} />
@@ -480,7 +480,7 @@ class Dashboard extends React.Component {
           </Container>
           {/* </div> */}
         </div>
-        <Icon name='question circle outline' size='big' id='feedback-button' className='grey' onClick={() => this.setState({feedbackBoxOpen: true})}/>
+        <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({feedbackBoxOpen: true})}/>
         <FeedbackBox
           open={this.state.feedbackBoxOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
