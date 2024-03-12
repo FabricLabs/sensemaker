@@ -282,6 +282,7 @@ class Agent extends Service {
           response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}/v1/chat/completions`, {
             method: 'POST',
             headers: {
+              'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
