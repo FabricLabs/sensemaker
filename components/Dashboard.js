@@ -480,7 +480,12 @@ class Dashboard extends React.Component {
           </Container>
           {/* </div> */}
         </div>
-        <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({feedbackBoxOpen: true})}/>
+        <Popup
+          content="Give us feedback!"
+          trigger={
+            <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({ feedbackBoxOpen: true })} />
+          }
+        />
         <FeedbackBox
           open={this.state.feedbackBoxOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
