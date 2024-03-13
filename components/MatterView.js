@@ -217,14 +217,15 @@ class MatterView extends React.Component {
     }));
   };
 
-  toggleInformationSidebar = () => {
-    this.setState(prevState => ({
-      informationSidebarOpen: !prevState.informationSidebarOpen
-    }));
-  };
+  // toggleInformationSidebar = () => {
+  //   this.setState(prevState => ({
+  //     informationSidebarOpen: !prevState.informationSidebarOpen
+  //   }));
+  // };
 
-  openDocument = (file) => {
-    this.setState({ documentInfo: file, informationSidebarOpen: true });
+  openDocument = (documentInfo) => {
+    // this.setState({ documentInfo: file, informationSidebarOpen: true });
+    this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
   }
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
@@ -596,13 +597,13 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
-        <InformationSidebar
+        {/* <InformationSidebar
           visible={this.state.informationSidebarOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
           documentSection={true}
           documentInfo={this.state.documentInfo}
           matterTitle={this.props.matters.current.title}
-        />
+        /> */}
       </Segment>
     );
   }

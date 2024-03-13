@@ -57,8 +57,8 @@ class ChatBox extends React.Component {
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
       checkingMessageID: 0,//id from the message rating
-      informationSidebarOpen: false,
-      resetInformationSidebar: false,
+      // informationSidebarOpen: false,
+      // resetInformationSidebar: false,
       thumbsUpClicked: false,
       thumbsDownClicked: false,
       isTextareaFocused: false, //this is needed to work on the microphone icon color
@@ -297,56 +297,59 @@ class ChatBox extends React.Component {
     }
 
     this.setState(newState);
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+    // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+    this.props.resetInformationSidebar();
 
   };
 
 
-  // thumbs up handler
-  thumbsUp = (ID) => {
-    this.setState({ thumbsDownClicked: false });
+  // // thumbs up handler
+  // thumbsUp = (ID) => {
+  //   this.setState({ thumbsDownClicked: false });
 
-    // if thumbsUp was clicked for this message already, close sidebar
-    if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: true,
-        thumbsDownClicked: false,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  //   // if thumbsUp was clicked for this message already, close sidebar
+  //   if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
+  //     this.setState({
+  //       informationSidebarOpen: false,
+  //       thumbsUpClicked: false,
+  //       thumbsDownClicked: false
+  //     });
+  //   } else {
+  //     //else, open (or keep open) sidebar, and fix states
+  //     this.setState({
+  //       thumbsUpClicked: true,
+  //       thumbsDownClicked: false,
+  //       checkingMessageID: ID,
+  //       informationSidebarOpen: true
+  //     });
+  //   }
+  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  //   this.props.resetInformationSidebar();
 
-  };
+  // };
 
-  // thumbs down handler
-  thumbsDown = (ID) => {
-    this.setState({ thumbsUpClicked: false });
-    // if thumbsDown was clicked for this message already, close sidebar
-    if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: false,
-        thumbsDownClicked: true,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  };
+  // // thumbs down handler
+  // thumbsDown = (ID) => {
+  //   this.setState({ thumbsUpClicked: false });
+  //   // if thumbsDown was clicked for this message already, close sidebar
+  //   if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
+  //     this.setState({
+  //       informationSidebarOpen: false,
+  //       thumbsUpClicked: false,
+  //       thumbsDownClicked: false
+  //     });
+  //   } else {
+  //     //else, open (or keep open) sidebar, and fix states
+  //     this.setState({
+  //       thumbsUpClicked: false,
+  //       thumbsDownClicked: true,
+  //       checkingMessageID: ID,
+  //       informationSidebarOpen: true
+  //     });
+  //   }
+  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  //   this.props.resetInformationSidebar();
+  // };
 
   regenerateAnswer = (event) => {
     event.preventDefault();
@@ -696,18 +699,18 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
       // maxWidth: 'none'
     };
-    console.log(messages);
+    // console.log(messages);
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
-          <InformationSidebar
+          {/* <InformationSidebar
             checkingMessageID={checkingMessageID}
             visible={informationSidebarOpen}
             toggleInformationSidebar={this.toggleInformationSidebar}
             resetInformationSidebar={this.state.resetInformationSidebar}
             thumbsUpClicked={this.state.thumbsUpClicked}
             thumbsDownClicked={this.state.thumbsDownClicked}
-          />
+          /> */}
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (
             <Message info style={announcementStyle} className='slide-down'>
@@ -796,7 +799,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="More information"
                               trigger={
-                                <Button icon onClick={() => this.messageInfo(message.id)}>
+                                <Button icon onClick={() => this.props.chatBoxInfoSidebar(message.id)}>
                                   <Icon
                                     name="info"
                                     color="blue"
@@ -845,7 +848,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.thumbsDown(message.id)}>
+                                <Button icon onClick={() => this.props.thumbsDown(message.id)}>
                                   <Icon
                                     name="thumbs down outline"
                                     color="grey"
@@ -857,7 +860,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.thumbsUp(message.id)}>
+                                <Button icon onClick={() => this.props.thumbsUp(message.id)}>
                                   <Icon
                                     name="thumbs up outline"
                                     color="grey"

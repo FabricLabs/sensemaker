@@ -114,6 +114,10 @@ class Chat extends React.Component {
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
             {...this.props}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
             announTitle={announTitle}
             announBody={announBody}
             placeholder={this.props.placeholder}

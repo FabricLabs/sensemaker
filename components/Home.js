@@ -39,6 +39,10 @@ class Home extends React.Component {
           placeholder="Ask me anything..."
           includeFeed={true}
           getMessageInformation={this.props.getMessageInformation}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
         />
         {/* <Header as='h4'>You can try&hellip;</Header>
         <Card.Group>

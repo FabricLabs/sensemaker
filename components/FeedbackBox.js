@@ -45,7 +45,7 @@ class FeedbackBox extends React.Component {
 
   handleClose = () => {
     this.resetState();
-    this.props.toggleInformationSidebar();
+    this.props.toggleFeedbackBox();
   }
 
   resetState = () => {
