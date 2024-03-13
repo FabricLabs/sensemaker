@@ -126,6 +126,9 @@ const ROUTES = {
   products: {
     list: require('../routes/products/list_products'),
   },
+  reporters: {
+    search: require('../routes/reporters/search_reporters'),
+  },
   jurisdictions: {
     view: require('../routes/jurisdictions/jurisdiction_view'),
   },
@@ -1688,7 +1691,7 @@ class Jeeves extends Hub {
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
-    this.http._addRoute('SEARCH', '/reporters', this._handleReportersSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/reporters', ROUTES.reporters.search.bind(this));
 
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
@@ -3843,28 +3846,6 @@ class Jeeves extends Hub {
     }
   }
 
-  async _handleReportersSearchRequest (req, res, next) {
-    try {
-      const request = req.body;
-      const reporters = await this._searchReporters(request);
-      const result = {
-        reporters: reporters || []
-      };
-
-      return res.send({
-        type: 'SearchReportersResult',
-        content: result,
-        results: reporters
-      });
-    } catch (exception) {
-      res.status(503);
-      return res.send({
-        type: 'SearchReportersError',
-        content: exception
-      });
-    }
-  }
-
   async _handlePeopleSearchRequest (req, res, next) {
     try {
       const request = req.body;
@@ -4581,7 +4562,7 @@ class Jeeves extends Hub {
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
     }
-    console.log(response);
+
     return response;
   }
 

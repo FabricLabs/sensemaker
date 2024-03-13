@@ -272,6 +272,7 @@ class Agent extends Service {
         });
 
         let response = null;
+        let text = null;
         let base = null;
 
         try {
@@ -297,7 +298,14 @@ class Agent extends Service {
           console.debug('[AGENT]', '[QUERY]', 'Response:', response);
 
           try {
-            base = await response.json();
+            text = await response.text();
+          } catch (exception) {
+            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
+            return reject(exception);
+          }
+
+          try {
+            base = JSON.parse(text);
           } catch (exception) {
             console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response:', exception);
             return reject(exception);
