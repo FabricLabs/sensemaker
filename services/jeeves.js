@@ -103,6 +103,11 @@ const ROUTES = {
   cases: {
     list: require('../routes/cases/get_cases'),
   },
+  documents: {
+    // list: require('../routes/documents/list_documents'),
+    // view: require('../routes/documents/view_document'),
+    search: require('../routes/documents/search_documents'),
+  },
   files: {
     create: require('../routes/files/create_file'),
     list: require('../routes/files/list_files'),
@@ -1686,6 +1691,7 @@ class Jeeves extends Hub {
     // Search
     // TODO: test each search endpoint
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
+    this.http._addRoute('SEARCH', '/documents', ROUTES.documents.search.bind(this));
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
@@ -4525,6 +4531,22 @@ class Jeeves extends Hub {
     return this._searchCourts({ query: term });
   }
 
+  async _searchDocuments (request) {
+    console.debug('[JEEVES]', '[SEARCH]', 'Searching documents :', request);
+    if (!request) throw new Error('No request provided.');
+    if (!request.query) throw new Error('No query provided.');
+
+    let response = [];
+
+    try {
+      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`);
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
+    }
+
+    return response;
+  }
+
   async _searchHarvardCourts (request) {
     return new Promise((resolve, reject) => {
       fetch(`https://api.case.law/v1/courts/?search=${request.query}`).then((response) => {
@@ -4558,7 +4580,7 @@ class Jeeves extends Hub {
     let response = [];
 
     try {
-     response = await this.db('reporters').select('*').where('name', 'like', `%${request.query}%`);
+      response = await this.db('reporters').select('*').where('name', 'like', `%${request.query}%`);
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
     }
