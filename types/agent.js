@@ -243,6 +243,8 @@ class Agent extends Service {
    */
   async query (request) {
     return new Promise(async (resolve, reject) => {
+      console.debug('[AGENT]', 'Name:', this.settings.name);
+      console.debug('[AGENT]', 'Prompt:', this.prompt);
       console.debug('[AGENT]', 'Querying:', request);
       console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
       if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
@@ -297,7 +299,7 @@ class Agent extends Service {
           try {
             base = await response.json();
           } catch (exception) {
-            console.error('[AGENT]', 'Could not parse response:', exception);
+            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response:', exception);
             return reject(exception);
           }
 
