@@ -40,7 +40,7 @@ class Home extends React.Component {
           includeFeed={true}
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
-          chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+          messageInfo={this.props.messageInfo}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
         />

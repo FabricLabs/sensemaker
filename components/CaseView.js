@@ -113,7 +113,7 @@ class CaseView extends React.Component {
           caseID={id}
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
-          chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+          messageInfo={this.props.messageInfo}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
         />

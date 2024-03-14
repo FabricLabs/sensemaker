@@ -799,7 +799,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="More information"
                               trigger={
-                                <Button icon onClick={() => this.props.chatBoxInfoSidebar(message.id)}>
+                                <Button icon onClick={() => this.props.messageInfo(message.id)}>
                                   <Icon
                                     name="info"
                                     color="blue"

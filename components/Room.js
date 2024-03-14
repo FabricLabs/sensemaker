@@ -81,7 +81,7 @@ class Conversation extends React.Component {
         <ChatBox
           {...this.props}
           resetInformationSidebar={this.props.resetInformationSidebar}
-          chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+          messageInfo={this.props.messageInfo}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
           chat={chat} messages={messages}

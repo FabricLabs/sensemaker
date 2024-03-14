@@ -76,7 +76,7 @@ class CaseChat extends React.Component {
             placeholder={'Ask me anything about this case...'}
             messagesEndRef={this.messagesEndRef}
             resetInformationSidebar={this.props.resetInformationSidebar}
-            chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+            messageInfo={this.props.messageInfo}
             thumbsUp={this.props.thumbsUp}
             thumbsDown={this.props.thumbsDown}
             />

@@ -29,7 +29,7 @@ class Chat extends React.Component {
     this.messagesEndRef = React.createRef();
     this.fetchAnnouncement = this.fetchAnnouncement.bind(this);
   }
- 
+
   componentDidMount() {
     $('#primary-query').focus();
     this.props.resetChat();
@@ -65,7 +65,7 @@ class Chat extends React.Component {
       }
 
       const announcement = await response.json();
-   
+
       const today = new Date();
       const expirationDate = announcement.expiration_date ? new Date(announcement.expiration_date) : null;
       const createdAt = new Date(announcement.created_at);
@@ -109,13 +109,13 @@ class Chat extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-   
-    return ( 
+
+    return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
             {...this.props}
             resetInformationSidebar={this.props.resetInformationSidebar}
-            chatBoxInfoSidebar={this.props.chatBoxInfoSidebar}
+            messageInfo={this.props.messageInfo}
             thumbsUp={this.props.thumbsUp}
             thumbsDown={this.props.thumbsDown}
             announTitle={announTitle}

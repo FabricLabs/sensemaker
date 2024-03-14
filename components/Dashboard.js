@@ -176,7 +176,7 @@ class Dashboard extends React.Component {
     this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
   }
 
-  chatBoxInfoSidebar = (ID) => {
+  messageInfo = (ID) => {
     // this.setState({
     //   informationSidebarOpen: true,
     //   checkingMessageID: checkingMessageID,
@@ -186,7 +186,7 @@ class Dashboard extends React.Component {
     //   documentInfo: null,
     //   matterTitle: '',
     // });
-
+    console.log('info button');
     let newState = {
       thumbsUpClicked: false,
       thumbsDownClicked: false,
@@ -211,6 +211,7 @@ class Dashboard extends React.Component {
 
   // thumbs up handler
   thumbsUp = (ID) => {
+    console.log('up button');
     this.setState({ thumbsDownClicked: false });
 
     // if thumbsUp was clicked for this message already, close sidebar
@@ -236,6 +237,7 @@ class Dashboard extends React.Component {
 
   // thumbs down handler
   thumbsDown = (ID) => {
+    console.log('down button');
     this.setState({ thumbsUpClicked: false });
     // if thumbsDown was clicked for this message already, close sidebar
     if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
@@ -258,6 +260,7 @@ class Dashboard extends React.Component {
   };
 
   documentInfoSidebar = (documentInfo, matterTitle) => {
+    console.log('matter document button');
     this.setState({
       informationSidebarOpen: true,
       checkingMessageID: null,
@@ -357,10 +360,11 @@ class Dashboard extends React.Component {
   };
 
   closeSidebars = () => {
-    this.setState(prevState => ({
-      openSectionBar: false,
-      informationSidebarOpen: prevState.informationSidebarOpen ? false : prevState.informationSidebarOpen
-    }));
+    console.log('close sidebars');
+    this.setState({ openSectionBar: false });
+    if (this.state.informationSidebarOpen) {
+      this.toggleInformationSidebar;
+    }
   }
 
   render() {
@@ -576,7 +580,7 @@ class Dashboard extends React.Component {
                     chat={this.props.chat}
                     getMessageInformation={this.props.getMessageInformation}
                     resetInformationSidebar={this.resetInformationSidebar}
-                    chatBoxInfoSidebar={this.chatBoxInfoSidebar}
+                    messageInfo={this.messageInfo}
                     thumbsUp={this.thumbsUp}
                     thumbsDown={this.thumbsDown}
                   />
@@ -584,7 +588,7 @@ class Dashboard extends React.Component {
                 <Route path='/settings/library' element={<Library />} />
                 <Route path="/updates" element={<Changelog />} />
                 <Route path="/workspaces" element={<Workspaces />} />
-                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} chatBoxInfoSidebar={this.chatBoxInfoSidebar} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path="/cases/:id" element={<CaseView fetchCase={this.props.fetchCase} cases={this.props.cases} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchConversations={this.props.fetchConversations} onMessageSuccess={this.props.onMessageSuccess} resetChat={this.props.resetChat} chat={this.props.chat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/cases" element={<CaseHome cases={this.props.cases} fetchCases={this.props.fetchCases} chat={this.props.chat} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/courts" element={<CourtHome courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
                 <Route path="/courts/:slug" element={<CourtView courts={this.props.courts} fetchCourts={this.props.fetchCourts} chat={this.props.chat} />} />
@@ -607,9 +611,8 @@ class Dashboard extends React.Component {
                 <Route path="/reporters" element={<ReporterHome reporters={this.props.reporters} fetchReporters={this.props.fetchReporters} searchReporter={this.props.searchReporter} chat={this.props.chat} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} chatBoxInfoSidebar={this.chatBoxInfoSidebar} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
-                {/* <Route path="/conversations/:id" element={<Room {...this.props} />} /> */}
-                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} chatBoxInfoSidebar={this.chatBoxInfoSidebar} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
                 <Route path="/matters/:id" element={<MatterView fetchCourts={this.props.fetchCourts} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} />} />
