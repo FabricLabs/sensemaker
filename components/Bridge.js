@@ -62,10 +62,8 @@ class Bridge extends React.Component {
 
     this.ws.onopen = () => {
       this.attempts = 1;
-
       const now = Date.now();
       const message = Message.fromVector(['Ping', now.toString()]);
-
       this.ws.send(message.toBuffer());
     };
 
@@ -204,12 +202,12 @@ class Bridge extends React.Component {
   }
 
   subscribe (channel) {
-    const message = Message.fromVector(['Subscribe', channel]);
+    const message = Message.fromVector(['SUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }
 
   unsubscribe (channel) {
-    const message = Message.fromVector(['Unsubscribe', channel]);
+    const message = Message.fromVector(['UNSUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }
 }
