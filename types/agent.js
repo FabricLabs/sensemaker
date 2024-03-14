@@ -245,8 +245,8 @@ class Agent extends Service {
   async query (request) {
     return new Promise(async (resolve, reject) => {
       console.debug('[AGENT]', 'Name:', this.settings.name);
-      console.debug('[AGENT]', 'Prompt:', this.prompt);
-      console.debug('[AGENT]', 'Querying:', request);
+      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
+      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
       console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
       if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
@@ -264,7 +264,7 @@ class Agent extends Service {
       // Check for local agent
       if (this.settings.host) {
         // Happy Path
-        if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
 
         // Clean up extraneous appearance of "agent" role
         messages = messages.map((x) => {
@@ -281,7 +281,7 @@ class Agent extends Service {
             { role: 'user', content: request.query }
           ]);
 
-          console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
+          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
           response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`, {
             method: 'POST',
@@ -291,12 +291,16 @@ class Agent extends Service {
             },
             body: JSON.stringify({
               model: this.settings.model,
+              keep_alive: -1,
               prompt: this.prompt,
+              options: {
+                num_ctx: 4096 // TODO: make this configurable
+              },
               messages: sample
             })
           });
 
-          console.debug('[AGENT]', '[QUERY]', 'Response:', response);
+          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
 
           try {
             text = await response.text();
@@ -312,18 +316,18 @@ class Agent extends Service {
             return reject(exception);
           }
 
-          if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
+          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
 
           if (request.requery) {
             sample.push({ role: 'assistant', content: base.choices[0].message.content });
-            console.debug('[AGENT]', '[REQUERY]', 'Messages:', sample);
-            console.debug('[AGENT]', '[REQUERY]', 'Prompt:', this.prompt);
+            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
+            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
             // Re-execute query with John Cena
             return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
           }
 
           this.emit('completion', base);
-          console.debug('[AGENT]', '[QUERY]', 'Emitted completion:', base);
+          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
 
           return resolve({
             type: 'AgentResponse',
