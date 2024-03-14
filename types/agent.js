@@ -59,6 +59,7 @@ class Agent extends Service {
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
       host: 'ollama.trynovo.com',
+      port: 443,
       secure: true,
       database: {
         type: 'memory'
@@ -282,7 +283,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}/v1/chat/completions`, {
+          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -334,7 +335,7 @@ class Agent extends Service {
             messages: messages
           });
         } catch (exception) {
-          console.error('[AGENT]', 'Could not fetch completions:', exception);
+          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not fetch completions:', exception);
           return reject(exception);
         }
       } else {
