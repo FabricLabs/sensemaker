@@ -111,7 +111,11 @@ class CaseView extends React.Component {
           isSending={loading}
           caseTitle={cases.current.title}
           caseID={id}
-          getMessageInformation={this.props.getMessageInformation}          
+          getMessageInformation={this.props.getMessageInformation}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
         />
       </Segment>
     );

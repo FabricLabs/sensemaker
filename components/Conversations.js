@@ -206,6 +206,10 @@ class Conversations extends React.Component {
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}
             placeholder={'Ask me anything...'}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
           />
 
         </div>}
