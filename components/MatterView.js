@@ -461,7 +461,7 @@ class MatterView extends React.Component {
                           {matters.matterFiles.map(instance => {
                             return (
                               <Table.Row key={instance.id}>
-                                <Table.Cell><Link onClick={() => this.openDocument(instance)}>{instance.filename}</Link></Table.Cell>
+                                <Table.Cell><Link onClick={(e) => {e.stopPropagation(); this.openDocument(instance);}}>{instance.filename}</Link></Table.Cell>
                                 <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell textAlign="center">

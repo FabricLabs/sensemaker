@@ -74,7 +74,7 @@ class ChatBox extends React.Component {
   componentDidMount() {
     $('#primary-query').focus();
     //this.props.resetChat();
-    if(this.props.conversationID){
+    if (this.props.conversationID) {
       this.startPolling(this.props.conversationID);
     }
     window.addEventListener('resize', this.handleResize);
@@ -210,7 +210,7 @@ class ChatBox extends React.Component {
 
   handleClick = (e) => {
     console.debug('clicked reset button', e);
-   // this.props.resetChat();
+    // this.props.resetChat();
     this.setState({ message: null, chat: { message: null } });
   }
 
@@ -799,7 +799,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="More information"
                               trigger={
-                                <Button icon onClick={() => this.props.messageInfo(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.messageInfo(message.id); }}>
                                   <Icon
                                     name="info"
                                     color="blue"
@@ -832,12 +832,13 @@ class ChatBox extends React.Component {
                                 trigger={
                                   <Popup content='Copy to clipboard' trigger={
                                     <Button
-                                      onClick={() =>
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         this.copyToClipboard(
                                           message.id,
                                           marked.parse(message.content)
-                                        )
-                                      }
+                                        );
+                                      }}
                                       icon>
                                       <Icon name="clipboard outline" />
                                     </Button>
@@ -848,7 +849,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.props.thumbsDown(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsDown(message.id); }}>
                                   <Icon
                                     name="thumbs down outline"
                                     color="grey"
@@ -860,7 +861,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.props.thumbsUp(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsUp(message.id); }}>
                                   <Icon
                                     name="thumbs up outline"
                                     color="grey"

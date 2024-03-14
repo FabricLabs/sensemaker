@@ -95,7 +95,6 @@ class Dashboard extends React.Component {
         thumbsUpClicked: false,
         thumbsDownClicked: false,
 
-
         steps: [
           {
             target: '.my-first-step',
@@ -153,125 +152,6 @@ class Dashboard extends React.Component {
 
   }
 
-  // handleSidebarToggle = () => {
-  //   this.setState((prevState) => ({
-  //     sidebarCollapsed: !prevState.sidebarCollapsed
-  //   }));
-  // };
-
-  toggleInformationSidebar = () => {
-    this.setState({
-      informationSidebarOpen: false,
-      checkingMessageID: null,
-      documentSection: false,
-      documentInfo: null,
-      matterTitle: '',
-      resetInformationSidebar: false,
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-    });
-  };
-
-  resetInformationSidebar = () => {
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  }
-
-  messageInfo = (ID) => {
-    // this.setState({
-    //   informationSidebarOpen: true,
-    //   checkingMessageID: checkingMessageID,
-    //   thumbsUpClicked: thumbsUpClicked,
-    //   thumbsDownClicked: thumbsDownClicked,
-    //   documentSection: false,
-    //   documentInfo: null,
-    //   matterTitle: '',
-    // });
-    console.log('info button');
-    let newState = {
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      checkingMessageID: ID,
-      informationSidebarOpen: true,
-      documentSection: false,
-      documentInfo: null,
-      matterTitle: '',
-    };
-
-    // if sidebar is open and checkingMessageID === actual clicked message,
-    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
-    // icon twice for the same message)
-    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
-      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
-      newState.informationSidebarOpen = false;
-    }
-
-    this.setState(newState);
-    this.resetInformationSidebar();
-  }
-
-  // thumbs up handler
-  thumbsUp = (ID) => {
-    console.log('up button');
-    this.setState({ thumbsDownClicked: false });
-
-    // if thumbsUp was clicked for this message already, close sidebar
-    if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: true,
-        thumbsDownClicked: false,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-    this.resetInformationSidebar();
-
-  };
-
-  // thumbs down handler
-  thumbsDown = (ID) => {
-    console.log('down button');
-    this.setState({ thumbsUpClicked: false });
-    // if thumbsDown was clicked for this message already, close sidebar
-    if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: false,
-        thumbsDownClicked: true,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-    this.resetInformationSidebar();
-  };
-
-  documentInfoSidebar = (documentInfo, matterTitle) => {
-    console.log('matter document button');
-    this.setState({
-      informationSidebarOpen: true,
-      checkingMessageID: null,
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      documentSection: true,
-      documentInfo: documentInfo,
-      matterTitle: matterTitle,
-    });
-  }
-
   startProgress = () => {
     this.intervalId = setInterval(() => {
       this.setState(prevState => ({
@@ -297,9 +177,137 @@ class Dashboard extends React.Component {
     this.setState({ search: e.target.value });
   };
 
-  toggleSidebar = (e) => {
-    $('.ui.sidebar').sidebar('toggle');
+  toggleFeedbackBox = () => {
+    this.setState(prevState => ({
+      feedbackBoxOpen: !prevState.feedbackBoxOpen
+    }));
+  };
+
+  //========= Sidebar Functions ==========//
+
+  //closes the right panel, informationSidebar and resets its states
+  toggleInformationSidebar = () => {
+    this.setState({
+      informationSidebarOpen: false,
+      checkingMessageID: null,
+      documentSection: false,
+      documentInfo: null,
+      matterTitle: '',
+      resetInformationSidebar: false,
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,
+    });
+  };
+
+  //closes left and right sidebars
+  closeSidebars = () => {
+    this.setState({ openSectionBar: false });
+    if (this.state.informationSidebarOpen) {
+      this.toggleInformationSidebar();
+    }
   }
+
+  //to handle the flag that resets the information in the informationSidebar
+  resetInformationSidebar = () => {
+    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  }
+
+  //this one triggers when the "i" icon in a chat message is clicked
+  messageInfo = (ID) => {
+
+    let newState = {
+      thumbsUpClicked: false,
+      thumbsDownClicked: false,
+      checkingMessageID: ID,
+      informationSidebarOpen: true,
+      documentSection: false,
+      documentInfo: null,
+      matterTitle: '',
+      openSectionBar: false,
+    };
+
+    // if sidebar is open and checkingMessageID === actual clicked message,
+    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
+    // icon twice for the same message)
+    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
+      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
+      newState.informationSidebarOpen = false;
+    }
+
+    this.setState(newState);
+    this.resetInformationSidebar();
+  }
+
+  // thumbs up handler from a chat message
+  thumbsUp = (ID) => {
+
+    this.setState({ thumbsDownClicked: false, openSectionBar: false, });
+
+    // if thumbsUp was clicked for this message already, close sidebar
+    if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
+      this.setState({
+        informationSidebarOpen: false,
+        thumbsUpClicked: false,
+        thumbsDownClicked: false
+      });
+    } else {
+      //else, open (or keep open) sidebar, and fix states
+      this.setState({
+        thumbsUpClicked: true,
+        thumbsDownClicked: false,
+        checkingMessageID: ID,
+        informationSidebarOpen: true
+      });
+    }
+    this.resetInformationSidebar();
+
+  };
+
+  // thumbs down handler from a chat message
+  thumbsDown = (ID) => {
+
+    this.setState({ thumbsUpClicked: false, openSectionBar: false, });
+    // if thumbsDown was clicked for this message already, close sidebar
+    if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
+      this.setState({
+        informationSidebarOpen: false,
+        thumbsUpClicked: false,
+        thumbsDownClicked: false
+      });
+    } else {
+      //else, open (or keep open) sidebar, and fix states
+      this.setState({
+        thumbsUpClicked: false,
+        thumbsDownClicked: true,
+        checkingMessageID: ID,
+        informationSidebarOpen: true
+      });
+    }
+    this.resetInformationSidebar();
+  };
+
+  // triggers when a document from a matter is clicked to display
+  documentInfoSidebar = (documentInfo, matterTitle) => {
+    this.setState({ openSectionBar: false });
+    if (this.state.documentInfo !== documentInfo) {
+      this.setState({
+        informationSidebarOpen: true,
+        checkingMessageID: null,
+        thumbsUpClicked: false,
+        thumbsDownClicked: false,
+        documentSection: true,
+        documentInfo: documentInfo,
+        matterTitle: matterTitle,
+      });
+    } else {
+      this.toggleInformationSidebar();
+    }
+  }
+
+
+  // toggleSidebar = (e) => {
+  //   $('.ui.sidebar').sidebar('toggle');
+  // }
 
   handleMenuItemClick = (menu) => {
     const newState = {
@@ -353,19 +361,7 @@ class Dashboard extends React.Component {
     this.setState(newState);
   };
 
-  toggleFeedbackBox = () => {
-    this.setState(prevState => ({
-      feedbackBoxOpen: !prevState.feedbackBoxOpen
-    }));
-  };
-
-  closeSidebars = () => {
-    console.log('close sidebars');
-    this.setState({ openSectionBar: false });
-    if (this.state.informationSidebarOpen) {
-      this.toggleInformationSidebar;
-    }
-  }
+  //====================================================//
 
   render() {
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
@@ -412,7 +408,7 @@ class Dashboard extends React.Component {
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => this.toggleInformationSidebar()}>
             <div>
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
@@ -483,7 +479,7 @@ class Dashboard extends React.Component {
               </div>
             </div>
           </Sidebar>
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge'>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => this.toggleInformationSidebar()}>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -651,6 +647,7 @@ class Dashboard extends React.Component {
           documentSection={documentSection}
           documentInfo={documentInfo}
           matterTitle={matterTitle}
+          onClick={() => this.setState({ openSectionBar: false })}
         />
 
       </jeeves-dashboard>
