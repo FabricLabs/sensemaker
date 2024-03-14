@@ -378,24 +378,24 @@ class Jeeves extends Hub {
     });
 
     // Agent Collection
-    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
+    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are LennonAI, designed to come up with a list of relevant citations of cases and statutes.  Use analytical reasoning to determine the best historical cases to cite, including text from the arguments and closing opinions.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.beta = new Agent({ name: 'BETA', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.gamma = new Agent({ name: 'GAMMA', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.beta = new Agent({ name: 'BETA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.gamma = new Agent({ name: 'GAMMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.delta = new Agent({ name: 'DELTA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
 
     // External Agents
-    this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
+    // this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
 
     // Well-known Models
     this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
-    // this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', port: 443, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
     this.searcher = new Agent({ name: 'SEARCHER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.' });
-    this.usa = new Agent({ name: 'USA', host: '5.161.216.231', port: this.settings.ollama.port, prompt: this.settings.prompt });
+    this.usa = new Agent({ name: 'USA', model: 'llama2', prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
 
     // Pipeline Datasources
     this.datasources = {
@@ -1551,7 +1551,7 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
     this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
@@ -1662,10 +1662,11 @@ class Jeeves extends Hub {
 
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
-
-      this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
-        console.debug('[JEEVES]', 'Embedding sync complete:', output);
-      });
+      if (this.settings.embeddings.enable) {
+        this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
+          console.debug('[JEEVES]', 'Embedding sync complete:', output);
+        });
+      }
     }, 600000); // 10 minutes
 
     // Internal APIs
