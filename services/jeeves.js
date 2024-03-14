@@ -837,12 +837,13 @@ class Jeeves extends Hub {
       // Consensus Agents
       const agentResults = Promise.allSettled([
         this.alpha.query({ query, messages }), // ChatGPT
+        this.beta.query({ query, messages }), // Ollama
         // this.gemini.query({ query, messages }), // requires USA-based egress
         // this.lennon.query({ query, messages }), // Adversarial RAG
         this.llama.query({ query, messages, requery: true }), // Ollama
-        this.gemma.query({ query, messages, requery: true }), // Ollama
-        this.mistral.query({ query, messages }), // Ollama
-        this.mixtral.query({ query, messages }), // Ollama
+        // this.gemma.query({ query, messages, requery: true }), // Ollama
+        // this.mistral.query({ query, messages }), // Ollama
+        // this.mixtral.query({ query, messages }), // Ollama
       ]);
 
       // TODO: execute RAG query for additional metadata
@@ -1576,6 +1577,17 @@ class Jeeves extends Hub {
     this.rag.on('warning', (...warning) => console.warn('[RAG]', ...warning));
     this.rag.on('error', (...error) => console.error('[RAG]', ...error));
     this.rag.on('query', this._handleRAGQuery.bind(this));
+
+    // Load models
+    await this.searcher.start()
+    await this.alpha.start();
+    await this.beta.start();
+    await this.llama.start();
+    await this.augmentor.start();
+    await this.summarizer.start();
+    await this.extractor.start();
+    await this.validator.start();
+    await this.rag.start();
 
     // Start the logging service
     await this.audits.start();
