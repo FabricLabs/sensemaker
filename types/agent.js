@@ -237,7 +237,9 @@ class Agent extends Service {
   }
 
   async prime () {
+    if (!this.settings.host) return { done: true };
     return new Promise((resolve, reject) => {
+      console.debug('[AGENT]', `[${this.settings.name}]`, 'Priming:', this.settings.model);
       fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/generate`, {
         method: 'POST',
         headers: {
@@ -248,9 +250,8 @@ class Agent extends Service {
       }).then(async (response) => {
         return response.json();
       }).then((json) => {
-        console.debug('[AGENT]', 'Prime:', json);
-        this.prompt = json.choices[0].message.content;
-        resolve(this.prompt);
+        console.debug('[AGENT]', `[${this.settings.name}]`, 'Primed:', json);
+        resolve(json);
       }).catch(reject);
     });
   }
@@ -464,8 +465,8 @@ class Agent extends Service {
         // Prime the model.
         try {
           await this.prime();
-        } catch {
-          console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model.');
+        } catch (exception) {
+          console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
         }
 
         // Assert that Agent is ready.

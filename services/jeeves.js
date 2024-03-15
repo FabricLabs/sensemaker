@@ -751,6 +751,7 @@ class Jeeves extends Hub {
 
       // Search for cases
       const cases = await this._vectorSearchCases(searchterm.content);
+      const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
 
       /*
       const realCases = await this.harvard.search({ query: searchterm.content });
@@ -763,13 +764,14 @@ class Jeeves extends Hub {
 
       // Format Metadata
       const meta = `metadata:\n` +
+        `  created: ${created}\n` +
         `  notes: Cases may be unrelated, search term used: ${searchterm.content || ''}\n` +
         `  matter: ${JSON.stringify(request.matter || null)}\n` +
         `  topics: ${searchterm.content || ''}\n` +
         `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         `  documents: null\n` +
         `  cases:\n` +
-        cases.map((x) => `    - [novo/cases/${x.id}] "${x.citation || 'undefined citation'}" "${x.title || 'undefined title'}"`).join('\n') +
+        cases.concat(recently).map((x) => `    - [novo/cases/${x.id}] "${x.citation || 'undefined citation'}" "${x.title || 'undefined title'}"`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
