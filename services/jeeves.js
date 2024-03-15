@@ -107,6 +107,7 @@ const ROUTES = {
     // list: require('../routes/documents/list_documents'),
     // view: require('../routes/documents/view_document'),
     search: require('../routes/documents/search_documents'),
+    view: require('../routes/documents/view_documents'),
   },
   files: {
     create: require('../routes/files/create_file'),
@@ -133,6 +134,7 @@ const ROUTES = {
   },
   reporters: {
     search: require('../routes/reporters/search_reporters'),
+    view: require('../routes/reporters/view_reporters'),
   },
   jurisdictions: {
     view: require('../routes/jurisdictions/jurisdiction_view'),
@@ -1744,11 +1746,17 @@ class Jeeves extends Hub {
     // Jurisdictions
     this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
 
-    // Jurisdictions
+    // Courts
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
+
+    // Reporters
+    this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
+
+    // Reporters
+    this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
