@@ -408,6 +408,7 @@ class Jeeves extends Hub {
 
     // Streaming
     this.completions = {};
+    this.primes = {};
 
     // State
     this._state = {
@@ -1113,6 +1114,23 @@ class Jeeves extends Hub {
     await this.queue._addJob('ingest', [data]);
   }
 
+  async prime () {
+    console.debug('[NOVO]', '[PRIME]', 'Priming...');
+    for (let i = 0; i < this.settings.ollama.models.length; i++) {
+      console.debug('[NOVO]', '[PRIME]', 'Priming:', this.settings.ollama.models[i]);
+      const prime = await fetch(`http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model: this.settings.ollama.models[i] })
+      });
+
+      console.debug('[NOVO]', '[PRIME]', 'Primed:', prime);
+    }
+  }
+
   async search (request) {
     console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
     const redisResults = await this.trainer.search(request);
@@ -1590,6 +1608,12 @@ class Jeeves extends Hub {
     await this.extractor.start();
     await this.validator.start();
     await this.rag.start();
+
+    try {
+      await this.prime();
+    } catch (exception) {
+      console.error('[NOVO]', 'Error priming:', exception);
+    }
 
     // Start the logging service
     await this.audits.start();
@@ -4080,7 +4104,7 @@ class Jeeves extends Hub {
   }
 
   async _handleHarvardCourt (court) {
-    console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
+    // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
     const actor = new Actor({ name: `harvard/courts/${court.id}` });
     const target = await this.db('courts').where({ harvard_id: court.id }).first();
 
