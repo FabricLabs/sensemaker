@@ -64,6 +64,7 @@ module.exports = {
     enable: false
   },
   redis: {
+    username: 'default',
     host: 'localhost',
     password: null,
     port: 6379,
@@ -201,7 +202,8 @@ module.exports = {
   },
   ollama: {
     host: 'ollama.trynovo.com',
-    secure: true
+    secure: true,
+    models: ['llama2', 'mistral', 'mixtral', 'gemma']
   },
   pacer: {
     enable: true

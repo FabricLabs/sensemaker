@@ -10,6 +10,7 @@ require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const merge = require('lodash.merge');
 
 const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
@@ -46,7 +47,7 @@ class Trainer extends Service {
   constructor (settings = {}) {
     super(settings);
 
-    this.settings = Object.assign({
+    this.settings = merge({
       debug: true,
       model: 'llama2',
       ollama: {
@@ -84,6 +85,7 @@ class Trainer extends Service {
     this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     this.redis = createClient({
+      username: this.settings.redis.username,
       password: this.settings.redis.password,
       socket: {
         host: this.settings.redis.host,

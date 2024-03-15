@@ -464,7 +464,7 @@ class Agent extends Service {
 
         // Prime the model.
         try {
-          await this.prime();
+          // await this.prime();
         } catch (exception) {
           console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
         }
