@@ -10,8 +10,9 @@ require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const merge = require('lodash.merge');
 
-const { createClient } = require('redis');
+const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
 
 // Text Splitter
@@ -46,15 +47,18 @@ class Trainer extends Service {
   constructor (settings = {}) {
     super(settings);
 
-    this.settings = Object.assign({
+    this.settings = merge({
       debug: true,
       model: 'llama2',
-      ollama: {},
+      ollama: {
+        host: 'ollama.trynovo.com',
+        secure: true
+      },
       redis: {
         host: 'localhost',
-        password: null,
-        port: 6379,
-        url: 'redis://localhost:6379'
+        username: undefined,
+        password: undefined,
+        port: 6379
       },
       store: {
         path: '/media/storage/node/stores'
@@ -65,8 +69,10 @@ class Trainer extends Service {
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
-    this.loader = new DirectoryLoader(this.settings.store.path, {
-      '.*': (x) => new TextLoader(x), // default to text
+    this.loaders = {
+      '.*': (x) => new TextLoader(x), // default to text (?)
+      '.pdf': (x) => new TextLoader(x),
+      '.html': (x) => new TextLoader(x),
       // '.json': (x) => new JSONLoader(x, '/json'),
       // '.json': (x) => new TextLoader(x),
       // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
@@ -74,16 +80,34 @@ class Trainer extends Service {
       '.csv': (x) => new CSVLoader(x),
       // '.md': (x) => new MarkdownLoader(x),
       // '.pdf': (x) => new PDFLoader(x),
-      '.pdf': (x) => new TextLoader(x),
-    });
+    };
+
+    this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     this.redis = createClient({
+      username: this.settings.redis.username,
       password: this.settings.redis.password,
       socket: {
         host: this.settings.redis.host,
-        port: this.settings.redis.port
+        port: this.settings.redis.port,
+        // reconnectStrategy: retries => Math.min(retries * 50, 1000)
       }
     });
+
+    // Cluster
+    /* this.redis = createCluster({
+      rootNodes: [
+        {
+          host: this.settings.redis.host,
+          port: this.settings.redis.port
+        }
+      ],
+      defaults: {
+        password: this.settings.redis.password
+      }
+    }); */
+
+    this.redis.on('error', (err) => console.log('Redis Client Error', err));
 
     this.splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
@@ -97,21 +121,14 @@ class Trainer extends Service {
 
   async ingestDirectory (directory) {
     return new Promise((resolve, reject) => {
-      const loader = new DirectoryLoader(directory, {
-        '.*': (x) => new TextLoader(x), // default to text
-        // '.json': (x) => new JSONLoader(x, '/json'),
-        // '.json': (x) => new TextLoader(x),
-        // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
-        '.txt': (x) => new TextLoader(x),
-        '.csv': (x) => new CSVLoader(x),
-        // '.md': (x) => new MarkdownLoader(x),
-        // '.pdf': (x) => new PDFLoader(x),
-        '.pdf': (x) => new TextLoader(x),
-      });
+      const loader = new DirectoryLoader(directory, this.loaders);
 
       loader.load().then((docs) => {
         this.embeddings.addDocuments(docs).then(() => {
           resolve({ type: 'IngestedDirectory', content: docs });
+        }).catch((exception) => {
+          console.error('[TRAINER]', 'Error ingesting directory:', exception);
+          reject(exception);
         });
       }).catch((exception) => {
         console.error('[TRAINER]', 'Error ingesting directory:', exception);
@@ -207,11 +224,11 @@ class Trainer extends Service {
 
     this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
 
-    const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
 
-    this._state.content.checkstate = check.text;
-    this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+    // this._state.content.checkstate = check.text;
+    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
     this._state.content.status = this._state.status = 'STARTED';
 
     this.commit();

@@ -3,7 +3,7 @@
 // Constants
 const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 240000; // 4 minutes
+const MAX_RESPONSE_TIME_MS = 600000;
 
 // Fabric
 const GENESIS_HASH = '';
@@ -42,6 +42,7 @@ const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
 const USER_MENU_HOVER_TIME_MS = 1000;
 const USER_HINT_TIME_MS = 3000;
+const SYNC_EMBEDDINGS_COUNT = 100;
 const INTEGRITY_CHECK = false;
 
 // Browser
@@ -95,5 +96,6 @@ module.exports = {
   AGENT_TEMPERATURE,
   USER_QUERY_TIMEOUT_MS,
   USER_HINT_TIME_MS,
-  USER_MENU_HOVER_TIME_MS
+  USER_MENU_HOVER_TIME_MS,
+  SYNC_EMBEDDINGS_COUNT
 };

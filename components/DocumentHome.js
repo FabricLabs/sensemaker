@@ -70,7 +70,7 @@ class DocumentHome extends React.Component {
 
     return (
       <fabric-document-home>
-        <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight:'100%' }}>
+        <Segment className="fade-in" fluid style={{ maxHeight:'100%' }}>
           <Button>Create Document &raquo;</Button>
           <h1>Documents</h1>
           <Form>
@@ -98,7 +98,7 @@ class DocumentHome extends React.Component {
               <i aria-hidden="true" className="search icon"></i>
             </div>
           </jeeves-search>
-          <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
+          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
             {searching ? (
               <Loader active inline="centered" /> // Display loading icon if searching is true
             ) :
@@ -131,8 +131,7 @@ class DocumentHome extends React.Component {
                 ) : (<p>No documents available</p>)
             }
           </List>
-        </Segment>
-        <Segment>
+          <Segment>
           <Form>
             <Form.Field>
               <Header as='h3'>Draft Documents</Header>
@@ -142,6 +141,8 @@ class DocumentHome extends React.Component {
             </Form.Field>
           </Form>
         </Segment>
+        </Segment>
+
       </fabric-document-home>
     );
   }

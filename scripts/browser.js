@@ -100,6 +100,12 @@ const {
   signContract
 } = require('../actions/contractActions');
 
+// ## Statute Actions
+const {
+  fetchStatutes,
+  fetchStatute
+} = require('../actions/statuteActions');
+
 // ## Court Actions
 const {
   fetchConversations,
@@ -117,8 +123,9 @@ const {
 // ## Reporter Actions
 const {
   fetchReporters,
-  fetchReporter
-} = require('../actions/reporterActions');
+  fetchReporter,
+  searchReporter,
+} = require('../actions/reportersActions');
 
 // ## Judge Actions
 const {
@@ -163,6 +170,16 @@ const {
   fetchUser,
   askPasswordReset,
 } = require('../actions/usersActions');
+
+// ## Search Actions
+const {
+  searchGlobal,
+} = require('../actions/searchActions');
+
+// ## Feedback Actions
+const {
+  sendFeedback,
+} = require('../actions/feedbackActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -227,6 +244,8 @@ async function main (input = {}) {
       matters: state.matters,
       jurisdictions: state.jurisdictions,
       users: state.users,
+      search: state.search,
+      feedback: state.feedback,
     }
   };
 
@@ -238,6 +257,8 @@ async function main (input = {}) {
     fetchConversation: fetchConversation,
     fetchConversations: fetchConversations,
     conversationTitleEdit: conversationTitleEdit,
+    fetchStatutes: fetchStatutes,
+    fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
     fetchJurisdictions: fetchJurisdictions,
@@ -264,6 +285,7 @@ async function main (input = {}) {
     fetchOpinion: fetchOpinion,
     fetchReporters: fetchReporters,
     fetchReporter: fetchReporter,
+    searchReporter: searchReporter,
     fetchVolumes: fetchVolumes,
     fetchVolume: fetchVolume,
     fetchAdminStats: fetchAdminStats,
@@ -296,6 +318,8 @@ async function main (input = {}) {
     fetchUsers: fetchUsers,
     fetchUser: fetchUser,
     askPasswordReset: askPasswordReset,
+    searchGlobal: searchGlobal,
+    sendFeedback: sendFeedback,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

@@ -66,11 +66,10 @@ class JurisdictionHome extends React.Component {
   render () {
     const { loading, error } = this.props;
     const { filteredJurisdictions, searchQuery, searching } = this.state;
-
     const totalJurisdictions = 0;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <h1>Jurisdictions</h1>
         <p>{BRAND_NAME} is tracking <strong>{totalJurisdictions}</strong> jurisdictions.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
@@ -99,12 +98,8 @@ class JurisdictionHome extends React.Component {
               filteredJurisdictions.jurisdictions.map((instance) => (
                 <List.Item as={Card} key={instance.id} loading={loading}>
                   <Card.Content>
-                    <h3><Link to={"/jurisdictions/" + instance.id}>{instance.short_name}</Link></h3>
-                    <Label.Group basic>
-                      <Label><Icon name="calendar"/>{formatDate(instance.decision_date)}</Label>
-                      <Label><Icon name="law"/>{instance.court_name}</Label>
-                    </Label.Group>
-                    <p>{instance.content}</p>
+                    <h3><Link to={"/jurisdictions/" + instance.id}>{instance.name}</Link></h3>
+                    <p>{instance.description}</p>
                   </Card.Content>
                 </List.Item>
               )
@@ -113,12 +108,13 @@ class JurisdictionHome extends React.Component {
               this.props.jurisdictions.jurisdictions.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/jurisdictions/" + instance.id}> {instance.short_name} </Link> </h3>
-                    <Label.Group basic>
-                      <Label><Icon name="calendar"/>{formatDate(instance.decision_date)}</Label>
-                      <Label><Icon name="law"/>{instance.court_name}</Label>
+                    <h3><Link to={"/jurisdictions/" + instance.id}> {instance.name} </Link> </h3>
+                    <Label.Group>
+                      <Label>
+                        {instance.courts?.length} {instance.courts?.length === 1 ? 'court' : 'courts'}
+                      </Label>
                     </Label.Group>
-                    <p>{instance.content}</p>
+                    <p>{instance.description}</p>
                   </Card.Content>
                 </List.Item>
               ))

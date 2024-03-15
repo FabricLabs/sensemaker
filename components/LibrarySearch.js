@@ -21,49 +21,30 @@ class LibrarySearch extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
-      searchQuery: '', // Initialize search query state
+      searchQuery: '',
       filteredResults: {}, // Should be an object
-      searching: false, // Boolean to show a spinner icon while fetching
+      loading: false,
       results: null,
     };
   }
 
-  componentDidMount() {
+  componentDidMount = () => {
+  }
+
+  componentDidUpdate = (prevProps) => {
+
+    const {search} = this.props;
+    if(prevProps.search != search){
+      if(!search.searching && !search.error && this.state.loading){
+        this.setState({filteredResults: search.result.results, loading: false});
+      }
+    }
   }
 
   handleSearchChange = debounce(async (query) => {
-    this.setState({ searching: true });
-
-    //THIS IS MOVING TO AN API ACTIONS FILE
-    const fetchPromise = fetch(`/`, {
-      method: 'SEARCH',
-      headers: {
-        Authorization: `Bearer ${this.props.auth.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: query }),
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error('Fetch timed out'));
-      }, 15000);
-    });
-
-    try {
-      const response = await Promise.race([timeoutPromise, fetchPromise]);
-      const respuesta = await response.json();
-      console.log(respuesta.results);
-      this.setState({ filteredResults: respuesta.results, searching: false });
-
-    } catch (error) {
-      if (error.message === 'Fetch timed out') {
-        console.log("check your internet connection");
-      } else {
-        console.error('Title update Error:', error.message);
-      }
-    }
-  }, 1000);
+    this.setState({ loading: true });
+    this.props.searchGlobal(query);
+  }, 250);
 
   // renderResults() {
   //   const { filteredResults } = this.state;
@@ -81,7 +62,7 @@ class LibrarySearch extends React.Component {
   //   } else return [];
   // }
 
-  renderResults() {
+  renderResults = () => {
     const { filteredResults } = this.state;
     // Check if there are any results and specifically if there are any 'cases'
     if (Object.keys(filteredResults).length > 0 && filteredResults['cases'] && filteredResults['cases'].length >0) {
@@ -93,13 +74,13 @@ class LibrarySearch extends React.Component {
                 description: <p style={{fontSize:'0.7em'}}>{item.title}</p>,
             })) : [],
         }];
-        console.log("categories", casesCategory);
         return casesCategory;
     } else return [];
 }
 
   render() {
-    const { searching } = this.state;
+    const { loading } = this.state;
+
     return (
       <Search
         id='global-search'
@@ -108,7 +89,7 @@ class LibrarySearch extends React.Component {
         placeholder='Find...'
         category
         // size='tiny'
-        loading={searching}
+        loading={loading}
         value={this.state.searchQuery}
         results={this.renderResults()}
         onSearchChange={(e) => {

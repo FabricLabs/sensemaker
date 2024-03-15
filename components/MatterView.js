@@ -18,6 +18,7 @@ const {
   Popup,
   Input,
   Dropdown,
+  Table,
   TextArea,
   Form,
   Divider,
@@ -25,6 +26,7 @@ const {
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
+const InformationSidebar = require('./InformationSidebar');
 
 class MatterView extends React.Component {
   constructor(settings = {}) {
@@ -54,6 +56,10 @@ class MatterView extends React.Component {
       //these are the flags to ask to confirm before deleting
       confirmFileDelete: false,
       confirmNoteDelete: false,
+
+      informationSidebarOpen: false,
+      documentId: null,
+      documentInfo: null,
     };
   }
 
@@ -156,7 +162,7 @@ class MatterView extends React.Component {
   };
 
   handleModalSubmit = async (note, filename, file) => {
-    console.log("Note:", note, "Files:", file);
+    // console.log("Note:", note, "Files:", file);
     const id = this.props.id;
 
     //TO DO: STORE THE FILE SOMEWHERE
@@ -211,6 +217,16 @@ class MatterView extends React.Component {
     }));
   };
 
+  // toggleInformationSidebar = () => {
+  //   this.setState(prevState => ({
+  //     informationSidebarOpen: !prevState.informationSidebarOpen
+  //   }));
+  // };
+
+  openDocument = (documentInfo) => {
+    // this.setState({ documentInfo: file, informationSidebarOpen: true });
+    this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
+  }
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
@@ -221,18 +237,20 @@ class MatterView extends React.Component {
     };
     return (
       <Segment
+        // onClick={() => this.setState({ informationSidebarOpen: false })}
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
-        style={{ maxHeight: '100%' }}>
+        style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
-            <Grid columns={2} style={{marginTop:'-1em'}}>
+            <Grid columns={2} style={{ marginTop: '-1em' }}>
               <GridRow>
-                <GridColumn width={10} textAlign='center'>
+                <GridColumn width={2} />
+                <GridColumn width={8} textAlign='center'>
                   <Input
                     name='title'
                     onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
                     value={this.state.title}
-                    fluid
+                    style={{ width: '100%' }}
                   />
                 </GridColumn>
                 <GridColumn width={6} style={{ display: 'flex' }}>
@@ -242,18 +260,25 @@ class MatterView extends React.Component {
               </GridRow>
             </Grid>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
-              <Popup content="Edit Matter's information" trigger={
-                <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
-              } />
-            </div>
+            <Grid columns={2} style={{ marginTop: '-1em' }}>
+              <GridRow>
+                <GridColumn width={5} />
+                <GridColumn width={8} textAlign='center'>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
+                    <Popup content="Edit Matter's information" trigger={
+                      <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
+                    } />
+                  </div>
+                </GridColumn>
+              </GridRow>
+            </Grid>
           )}
         </section>
         <section className='matter-details'>
           <Grid columns={2}>
             <GridRow>
-              <GridColumn width={13} textAlign='center'>
+              <GridColumn width={7} textAlign='center'>
                 <Header as='h2'>Details</Header>
               </GridColumn>
               <GridColumn width={3}>
@@ -263,10 +288,10 @@ class MatterView extends React.Component {
           </Grid>
           <Grid columns={3}>
             <GridRow>
-              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Plaintiff</Header>
               </GridColumn>
-              <GridColumn width={10}>
+              <GridColumn width={6}>
                 {this.state.isEditMode ? (
                   <Input
                     name='plaintiff'
@@ -291,10 +316,10 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Defendant</Header>
               </GridColumn>
-              <GridColumn width={10}>
+              <GridColumn width={6}>
                 {this.state.isEditMode ? (
                   <Input
                     name='defendant'
@@ -319,7 +344,7 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Jurisdiction</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -343,7 +368,7 @@ class MatterView extends React.Component {
               <GridColumn width={2} />
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Court</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -366,7 +391,7 @@ class MatterView extends React.Component {
               <GridColumn width={2} />
             </GridRow>
             <GridRow>
-              <GridColumn width={4} style={{ display: 'flex', alignItems: 'center' }}>
+              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
                 <Header as='h3'>Description</Header>
               </GridColumn>
               <GridColumn width={10}>
@@ -390,7 +415,8 @@ class MatterView extends React.Component {
         <section className='matter-details'>
           <Grid columns={2}>
             <GridRow>
-              <GridColumn width={13} textAlign='center'>
+              <GridColumn width={2} />
+              <GridColumn width={10} textAlign='center'>
                 <Header as='h2'>Context
                   <Popup trigger={<Icon name='info circle' size='small' style={{ margin: '0 0  0.2em 0.5em', color: '#336699' }} />}>
                     <Popup.Content>
@@ -401,93 +427,118 @@ class MatterView extends React.Component {
                   </Popup>
                 </Header>
               </GridColumn>
-              <GridColumn width={3} />
             </GridRow>
-            {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
-              <GridRow>
-                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Files</Header>
-                </GridColumn>
-                <GridColumn width={12}>
-                  <List loading={matters.loading}>
-                    {matters.matterFiles.length > 0 && matters.matterFiles
-                      .map(instance => {
-                        return (
-                          <div key={instance.id} className='matter-file'>
-                            <List.Item style={{ marginTop: '0.5em', display: 'Flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <Label>{instance.filename}</Label>
-                              <Icon
-                                name='trash alternate'
-                                className='matter-delete-file-icon'
-                                onClick={() => this.setState({ confirmFileDelete: true, fileDeleting: instance.id })}
-                                style={{ marginLeft: '0.5em' }}
-                              />
-                            </List.Item>
-                          </div>
-                        )
-                      })}
-                  </List>
-                </GridColumn>
-              </GridRow>
-            }
-            {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
-              <GridRow>
-                <GridColumn width={4} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Aditional Notes</Header>
-                </GridColumn>
-                <GridColumn width={12}>
-                  <List loading={matters.loading}>
-                    {matters.matterNotes.map(instance => {
-                      const isExpanded = this.state.expandedNoteId === instance.id;
-                      // const displayArrow= isExpanded? {display: 'block'} : null;
-                      return (
-
-                        <div key={instance.id}
-                          className='matter-note'
-                          title='Click to expand'>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <List.Item
-                              className="expandable-note"
-                              style={{ marginTop: '0.5em', marginRight: '0.5em', maxHeight: isExpanded ? '300px' : '2.5em', overflow: isExpanded ? 'auto' : 'hidden' }}
-                              onClick={() => this.toggleNoteExpansion(instance.id)}
-                            >
-                              <Header as='h5'>{instance.content}</Header>
-                            </List.Item>
-                            <Icon
-                              name='trash alternate'
-                              className='matter-delete-note-icon'
-                              onClick={() => this.setState({ confirmNoteDelete: true, noteDeleting: instance.id })}
-                            />
-                          </div>
-                          <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
-                        </div>
-                      )
-                    })}
-                  </List>
-                </GridColumn>
-              </GridRow>
-            }
             <GridRow>
-              <GridColumn width={13} textAlign='center'>
+              <GridColumn width={2} />
+              <GridColumn width={10} textAlign='center'>
                 <Button
                   primary
                   content="+ Add File or Note"
                   onClick={() => this.setState({ attachModalOpen: true })}
                 />
               </GridColumn>
-              <GridColumn width={3} />
             </GridRow>
+            {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
+              <GridRow>
+                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
+                  <Header as='h3'>Files</Header>
+                </GridColumn> */}
+                <GridColumn width={2} />
+                <GridColumn width={10}>
+                  <div className='col-center'>
+                    <Header as='h2'>Files</Header>
+                    <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
+                      <Table simple >
+                        <Table.Header>
+                          <Table.Row>
+                            <Table.HeaderCell>File Name</Table.HeaderCell>
+                            <Table.HeaderCell>Uploaded</Table.HeaderCell>
+                            <Table.HeaderCell>Modified</Table.HeaderCell>
+                            <Table.HeaderCell>Actions</Table.HeaderCell>
+                          </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                          {matters.matterFiles.map(instance => {
+                            return (
+                              <Table.Row key={instance.id}>
+                                <Table.Cell><Link onClick={(e) => {e.stopPropagation(); this.openDocument(instance);}}>{instance.filename}</Link></Table.Cell>
+                                <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
+                                <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
+                                <Table.Cell textAlign="center">
+                                  <Popup
+                                    content="Delete file"
+                                    trigger={
+                                      <Button
+                                        icon='trash alternate'
+                                        onClick={() => this.setState({ confirmFileDelete: true, fileDeleting: instance.id })}
+                                      />
+                                    }
+                                  />
+                                </Table.Cell>
+                              </Table.Row>
+                            )
+                          })}
+                        </Table.Body>
+                      </Table>
+                    </Segment>
+                  </div>
+                </GridColumn>
+              </GridRow>
+            }
+            {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
+              <GridRow>
+                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
+                  <Header as='h3'>Aditional Notes</Header>
+                </GridColumn> */}
+                <GridColumn width={2} />
+                <GridColumn width={10}>
+                  <div className='col-center'>
+                    <Header as='h2'>Aditional Notes</Header>
+                    <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
+                      <List loading={matters.loading} size='small'>
+                        {matters.matterNotes.map(instance => {
+                          const isExpanded = this.state.expandedNoteId === instance.id;
+                          return (
+                            <div key={instance.id}
+                              className='matter-note'
+                              title='Click to expand'>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <List.Item
+                                  className="expandable-note"
+                                  style={{ marginTop: '0.5em', marginRight: '0.5em', maxHeight: isExpanded ? '300px' : '2.5em', overflow: isExpanded ? 'auto' : 'hidden' }}
+                                  onClick={() => this.toggleNoteExpansion(instance.id)}
+                                >
+                                  <Header as='h5'>{instance.content}</Header>
+                                </List.Item>
+                                <Icon
+                                  name='trash alternate'
+                                  size='small'
+                                  className='matter-delete-note-icon'
+                                  onClick={() => this.setState({ confirmNoteDelete: true, noteDeleting: instance.id })}
+                                />
+                              </div>
+                              <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />
+                            </div>
+                          )
+                        })}
+                      </List>
+                    </Segment>
+                  </div>
+                </GridColumn>
+              </GridRow>
+            }
+
           </Grid>
           <Grid columns={2}>
             <GridRow>
-              <GridColumn width={13} textAlign='center'>
+              <GridColumn width={3} />
+              <GridColumn width={8} textAlign='center'>
                 <Header as='h2'>Matter Conversations</Header>
               </GridColumn>
-              <GridColumn width={3} />
             </GridRow>
             <GridRow>
-              <GridColumn width={3} />
-              <GridColumn width={13}>
+              <GridColumn width={4} />
+              <GridColumn width={8}>
                 <div>
                   <List>
                     {(matterConversations && matterConversations.length > 0) && matterConversations
@@ -508,7 +559,8 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={13} textAlign='center'>
+              <GridColumn width={2} />
+              <GridColumn width={10} textAlign='center'>
                 <Link to={'/matters/conversations/new/' + this.props.id} >
                   <Button
                     primary
@@ -516,7 +568,6 @@ class MatterView extends React.Component {
                   />
                 </Link>
               </GridColumn>
-              <GridColumn width={3} />
             </GridRow>
           </Grid>
           <MatterFileModal
@@ -525,6 +576,7 @@ class MatterView extends React.Component {
             onSubmit={this.handleModalSubmit}
             auth={this.props.auth}
             token={this.props.token}
+            matterFiles={this.props.matters.matterFiles}
           />
           <Confirm
             content='Delete this file from the Matter?'
@@ -545,6 +597,13 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
+        {/* <InformationSidebar
+          visible={this.state.informationSidebarOpen}
+          toggleInformationSidebar={this.toggleInformationSidebar}
+          documentSection={true}
+          documentInfo={this.state.documentInfo}
+          matterTitle={this.props.matters.current.title}
+        /> */}
       </Segment>
     );
   }

@@ -37,7 +37,7 @@ class Conversation extends React.Component {
     if (this.props.id !== prevProps.id) {
       this.setState({ recoveryFlag: true, recovering: false });
       this.fetchData(this.props.id);
-    } 
+    }
   }
 
   componentWillUnmount() {
@@ -54,7 +54,7 @@ class Conversation extends React.Component {
     // Fetch new conversation details and messages
     await this.props.getMessages({ conversation_id: id });
   }
-  
+
   handleResize = () => {
     // Force a re-render when the window resizes
     this.forceUpdate();
@@ -80,6 +80,10 @@ class Conversation extends React.Component {
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
           {...this.props}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
           chat={chat} messages={messages}
           messagesEndRef={this.messagesEndRef}
           includeFeed={true}
