@@ -236,6 +236,26 @@ class Agent extends Service {
     }
   }
 
+  async prime () {
+    if (!this.settings.host) return { done: true };
+    return new Promise((resolve, reject) => {
+      console.debug('[AGENT]', `[${this.settings.name}]`, 'Priming:', this.settings.model);
+      fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model: this.settings.model })
+      }).then(async (response) => {
+        return response.json();
+      }).then((json) => {
+        console.debug('[AGENT]', `[${this.settings.name}]`, 'Primed:', json);
+        resolve(json);
+      }).catch(reject);
+    });
+  }
+
   /**
    * Query the agent with some text.
    * @param {Object} request Request object.
@@ -413,11 +433,11 @@ class Agent extends Service {
 
   start () {
     return new Promise((resolve, reject) => {
-      this.fabric.start().then((node) => {
+      this.fabric.start().then(async (node) => {
         this.emit('debug', '[FABRIC]', 'Node:', node.id);
 
         // Load default prompt.
-        this.loadDefaultPrompt();
+        if (!this.prompt) this.loadDefaultPrompt();
 
         // Attach event handlers.
         this.services.mistral.on('debug', (...msg) => {
@@ -441,6 +461,13 @@ class Agent extends Service {
 
         // Start OpenAI.
         this.services.openai.start();
+
+        // Prime the model.
+        try {
+          await this.prime();
+        } catch (exception) {
+          console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
+        }
 
         // Assert that Agent is ready.
         this.emit('ready');
