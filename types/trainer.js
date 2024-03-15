@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const { createClient } = require('redis');
+const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
 
 // Text Splitter
@@ -55,9 +55,9 @@ class Trainer extends Service {
       },
       redis: {
         host: 'localhost',
-        password: null,
-        port: 6379,
-        url: 'redis://localhost:6379'
+        username: undefined,
+        password: undefined,
+        port: 6379
       },
       store: {
         path: '/media/storage/node/stores'
@@ -87,9 +87,25 @@ class Trainer extends Service {
       password: this.settings.redis.password,
       socket: {
         host: this.settings.redis.host,
-        port: this.settings.redis.port
+        port: this.settings.redis.port,
+        // reconnectStrategy: retries => Math.min(retries * 50, 1000)
       }
     });
+
+    // Cluster
+    /* this.redis = createCluster({
+      rootNodes: [
+        {
+          host: this.settings.redis.host,
+          port: this.settings.redis.port
+        }
+      ],
+      defaults: {
+        password: this.settings.redis.password
+      }
+    }); */
+
+    this.redis.on('error', (err) => console.log('Redis Client Error', err));
 
     this.splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,

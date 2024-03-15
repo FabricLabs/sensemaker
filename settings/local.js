@@ -60,6 +60,9 @@ module.exports = {
     password: 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
+  embeddings: {
+    enable: false
+  },
   redis: {
     host: 'localhost',
     password: null,
