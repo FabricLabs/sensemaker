@@ -40,6 +40,36 @@ module.exports = {
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   workers: 8,
+  agents: {
+    alpha: {
+      prompt: alphaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'jeeves.dev',
+      port: 11434,
+      secure: false
+    },
+    beta: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'ollama.jeeves.dev',
+      port: 11434,
+      secure: false
+    },
+    gamma: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'gamma.trynovo.com',
+      port: 443,
+      secure: true
+    },
+    delta: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'delta.trynovo.com',
+      port: 443,
+      secure: true
+    }
+  },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
@@ -68,6 +98,9 @@ module.exports = {
     host: 'localhost',
     password: null,
     port: 6379,
+    hosts: [
+      'redis://default:2C8WdRfdktdE5MLLPkWAJptoxo9vBBYL@redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
+    ]
   },
   http: {
     listen: true,
