@@ -304,7 +304,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(endpoint, {
+          fetch(endpoint, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -319,53 +319,64 @@ class Agent extends Service {
               },
               messages: sample
             })
-          });
-
-          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
-
-          try {
-            text = await response.text();
-          } catch (exception) {
-            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
+          }).catch((exception) => {
+            console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
             return reject(exception);
-          }
+          }).then(async (response) => {
+            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
+            if (!response) return reject(new Error('No response from agent.'));
 
-          try {
-            base = JSON.parse(text);
-          } catch (exception) {
-            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
+            try {
+              text = await response.text();
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
+              return reject(exception);
+            }
+
+            try {
+              base = JSON.parse(text);
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
+              // console.debug('[AGENT]', 'Response body:', await response.text());
+              // console.debug('[AGENT]', 'Response body:', response.body.text());
+              // return reject(exception);
+              return resolve({
+                type: 'AgentResponse',
+                name: this.settings.name,
+                status: 'error',
+                query: request.query,
+                response: { content: text },
+                content: text,
+                messages: messages
+              }); // TODO: remove this...
+            }
+
+            // console.debug('messages:', messages);
+            console.debug('base:', base);
+            console.debug('choices:', base.choices);
+
+            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
+
+            if (request.requery) {
+              sample.push({ role: 'assistant', content: base.choices[0].message.content });
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
+              // Re-execute query with John Cena
+              return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
+            }
+
+            this.emit('completion', base);
+            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
+
             return resolve({
               type: 'AgentResponse',
               name: this.settings.name,
-              status: 'error',
+              status: 'success',
               query: request.query,
-              response: { content: text },
-              content: text,
+              response: base,
+              content: base.choices[0].message.content,
               messages: messages
-            }); // TODO: remove this...
-          }
-
-          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
-
-          if (request.requery) {
-            sample.push({ role: 'assistant', content: base.choices[0].message.content });
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
-            // Re-execute query with John Cena
-            return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
-          }
-
-          this.emit('completion', base);
-          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
-
-          return resolve({
-            type: 'AgentResponse',
-            name: this.settings.name,
-            status: 'success',
-            query: request.query,
-            response: base,
-            content: base.choices[0].message.content,
-            messages: messages
+            });
           });
         } catch (exception) {
           console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
@@ -379,6 +390,8 @@ class Agent extends Service {
           });
         }
       } else {
+        console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
+
         // Failure Path
         const responses = {
           alpha: null,
@@ -395,11 +408,13 @@ class Agent extends Service {
           sensemaker: null
         };
 
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
+
         // Wait for all responses to resolve or reject.
         await Promise.allSettled(Object.values(responses));
-        console.debug('[AGENT]', '[FALLBACK]', 'Prompt:', this.prompt);
-        console.debug('[AGENT]', '[FALLBACK]', 'Query:', request.query);
-        console.debug('[AGENT]', '[FALLBACK]', 'Responses:', responses);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Prompt:', this.prompt);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Query:', request.query);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
 
         let response = '';
 

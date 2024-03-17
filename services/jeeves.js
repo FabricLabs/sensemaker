@@ -257,6 +257,7 @@ class Jeeves extends Hub {
 
     // Fabric
     this.fabric = new Fabric(this.settings.fabric);
+    this.cluster = new Trainer(this.settings);
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -321,7 +322,7 @@ class Jeeves extends Hub {
 
     // Agent Collection
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are LennonAI, designed to come up with a list of relevant citations of cases and statutes.  Use analytical reasoning to determine the best historical cases to cite, including text from the arguments and closing opinions.`, openai: this.settings.openai });
-    this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.alpha = new Agent({ name: 'ALPHA', host: null, prompt: this.settings.prompt, openai: this.settings.openai });
     this.beta = new Agent({ name: 'BETA', model: 'llama2', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
     this.gamma = new Agent({ name: 'GAMMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.delta = new Agent({ name: 'DELTA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
@@ -332,7 +333,7 @@ class Jeeves extends Hub {
     // Well-known Models
     this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
-    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', port: 443, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
+    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
@@ -675,6 +676,8 @@ class Jeeves extends Hub {
       if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
+      if (!searchterm.content) searchterm.content = '';
+
       // Remove whitespace
       searchterm.content = searchterm.content.trim();
 
@@ -781,28 +784,28 @@ class Jeeves extends Hub {
 
       // Consensus Agents
       const agentResults = Promise.allSettled([
-        this.alpha.query({ query, messages }), // ChatGPT
-        this.beta.query({ query, messages }), // Ollama
+        this.chatgpt.query({ query, messages }), // ChatGPT
+        // this.alpha.query({ query, messages }), // ChatGPT
+        // this.beta.query({ query, messages }), // Ollama
         // this.gemini.query({ query, messages }), // requires USA-based egress
         // this.lennon.query({ query, messages }), // Adversarial RAG
-        this.llama.query({ query, messages, requery: true }), // Ollama
+        this.llama.query({ query, messages /* , requery: true */}), // Ollama
         // this.gemma.query({ query, messages, requery: true }), // Ollama
         // this.mistral.query({ query, messages }), // Ollama
         // this.mixtral.query({ query, messages }), // Ollama
       ]);
 
       // TODO: execute RAG query for additional metadata
-      const ragger = new Agent({ host: this.settings.ollama.host, secure: this.settings.ollama.secure, messages: messages, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
+      const ragger = new Agent({ host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, messages: messages, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
 
+      // Either all agents resolved, or timeout
       Promise.race([
-        new Promise((resolve, reject) => {
-          setTimeout(reject, timeout, new Error('Timeout!'));
-        }),
-        agentResults
+        agentResults,
+        new Promise((resolve, reject) => setTimeout(reject, timeout, new Error('Timeout!')))
       ]).then(async (results) => {
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Results:', results);
+        if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Results:', results);
         const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Answers:', answers);
+        if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Answers:', answers);
 
         /* for (let i = 0; i < answers.length; i++) {
           const answer = answers[i];
@@ -816,82 +819,87 @@ class Jeeves extends Hub {
         if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
         // TODO: loop over all agents
         // TODO: compress to 4096 tokens
-        const summarized = await this.summarizer.query({
+        this.summarizer.query({
           messages: messages,
           query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
-        });
+        }).catch((exception) => {
+          console.error('[NOVO]', '[TIMEDREQUEST]', 'Exception summarizing:', exception);
+          reject(exception);
+        }).then(async (summarized) => {
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+          if (!summarized) summarized = { content: 'I am unable to answer your query at this time.' };
+          const actor = new Actor({ content: summarized.content });
+          const bundle = {
+            type: 'TimedResponse',
+            content: summarized.content
+          };
 
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
-        const actor = new Actor({ content: summarized.content });
-        const bundle = {
-          type: 'TimedResponse',
-          content: summarized.content
-        };
+          /* const extracted = await this.extractor.query({
+            query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+          });
+          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
-        /* const extracted = await this.extractor.query({
-          query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
-        });
-        console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+          if (extracted && extracted.content) {
+            console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+            try {
+              const caseCards = JSON.parse(extracted.content).map((x) => {
+                const actor = new Actor({ name: x });
+                return {
+                  type: 'CaseCard',
+                  content: {
+                    id: actor.id,
+                    title: x
+                  }
+                };
+              });
 
-        if (extracted && extracted.content) {
-          console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+              // Find each case in the database and reject if not found
+              /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                cards: JSON.stringify(caseCards.map((x) => x.content.id))
+              }); */
+            /* } catch (exception) {
+              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+            }
+          } */
+
           try {
-            const caseCards = JSON.parse(extracted.content).map((x) => {
-              const actor = new Actor({ name: x });
-              return {
-                type: 'CaseCard',
-                content: {
-                  id: actor.id,
-                  title: x
-                }
-              };
+            const documentIDs = await this.db('documents').insert({
+              fabric_id: actor.id,
+              content: summarized.content
             });
 
-            console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+            const responseIDs = await this.db('responses').insert({
+              actor: this.summarizer.id,
+              content: `/documents/${documentIDs[0]}`
+            });
 
-            // Find each case in the database and reject if not found
-            /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-              cards: JSON.stringify(caseCards.map((x) => x.content.id))
-            }); */
-          /* } catch (exception) {
-            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+            // Update database with completed response
+            const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+              status: 'ready',
+              content: summarized.content,
+              updated_at: this.db.fn.now()
+            });
+
+            console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
+            this.emit('response', {
+              id: responseIDs[0],
+              content: summarized.content
+            });
+          } catch (exception) {
+            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
           }
-        } */
 
-        try {
-          const documentIDs = await this.db('documents').insert({
-            fabric_id: actor.id,
-            content: summarized.content
-          });
+          const end = new Date();
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
 
-          const responseIDs = await this.db('responses').insert({
-            actor: this.summarizer.id,
-            content: `/documents/${documentIDs[0]}`
-          });
-
-          // Update database with completed response
-          const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
-            status: 'ready',
-            content: summarized.content,
-            updated_at: this.db.fn.now()
-          });
-
-          console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
-
-          this.emit('response', {
-            id: responseIDs[0],
-            content: summarized.content
-          });
-        } catch (exception) {
-          console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
-        }
-
-        const end = new Date();
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
-
-        resolve(summarized);
+          resolve(summarized);
+        });
       }).catch((exception) => {
-        console.error('[JEEVES]', '[TIMEDREQUEST]', 'Exception:', exception);
+        console.error('[NOVO]', '[TIMEDREQUEST]', 'Exception:', exception);
+        process.exit();
         reject(exception);
       });
     });
@@ -1179,6 +1187,14 @@ class Jeeves extends Hub {
     // Create all worker agents
     for (const [name, agent] of Object.entries(this.agents)) {
       this.agents[name] = this.createAgent(agent);
+    }
+
+    // Redis
+    try {
+      await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
+      process.exit();
     }
 
     /* this.db.on('error', (...error) => {
@@ -1512,10 +1528,14 @@ class Jeeves extends Hub {
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
+    this.summarizer = new Agent({ name: this.settings.name, listen: false, host: null, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: null, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: false, host: null, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
 
+    // ChatGPT
+    this.chatgpt = new Agent({ name: 'GPT4', host: null, model: this.settings.openai.model, prompt: this.prompt, rules: this.settings.rules, openai: this.settings.openai });
+
+    // RAG, Augmentor
     const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
     const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
 
@@ -1666,8 +1686,18 @@ class Jeeves extends Hub {
       res.send();
     });
 
+    // API
+    this.http._addRoute('POST', '/v1/chat/completions', this._handleChatCompletionRequest.bind(this));
+
     // Search
     // TODO: test each search endpoint
+    // - [ ] /
+    // - [ ] /documents
+    // - [ ] /cases
+    // - [ ] /conversations
+    // - [ ] /courts
+    // - [ ] /jurisdictions
+    // - [ ] /people
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/documents', ROUTES.documents.search.bind(this));
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
@@ -3020,7 +3050,7 @@ class Jeeves extends Hub {
           this.extractor.query({
             query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
           }).then(async (extracted) => {
-            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted.content);
+            console.debug('[NOVO]', '[HTTP]', 'Got extractor output:', extracted.content);
             if (extracted && extracted.content) {
               try {
                 const caseCards = JSON.parse(extracted.content).map((x) => {
@@ -3305,14 +3335,6 @@ class Jeeves extends Hub {
       }
     });
 
-    // Redis
-    try {
-      await this.trainer.start();
-    } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
-      process.exit();
-    }
-
     // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
@@ -3589,6 +3611,26 @@ class Jeeves extends Hub {
       const worker = new Worker();
       this.workers.push(worker);
     }
+  }
+
+  async _handleChatCompletionRequest (req, res, next) {
+    const request = req.body;
+    console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion request:', request);
+    Promise.race([
+      Object.keys(this.agents).map((agent) => {
+        console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+        return new Promise((resolve, reject) => {
+          console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+          this.agents[agent].query(request).then((response) => {
+            console.debug('[NOVO]', '[API]', '[CHAT]', 'Got response from agent:', agent, response);
+            resolve(response);
+          });
+        });
+      })
+    ]).then((results) => {
+      console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
+      res.json(results);
+    });
   }
 
   async _handleFeedbackRequest (req, res, next) {

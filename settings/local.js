@@ -45,7 +45,14 @@ module.exports = {
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   workers: 8,
   agents: {
-    alpha: {
+    local: {
+      prompt: alphaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'localhost',
+      port: 3045,
+      secure: false
+    },
+    /* alpha: {
       prompt: alphaPrompt.toString('utf8'),
       model: 'llama2',
       host: 'jeeves.dev',
@@ -72,15 +79,22 @@ module.exports = {
       host: 'delta.trynovo.com',
       port: 443,
       secure: true
-    }
+    },
+    mistral: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'mistral',
+      host: '192.168.127.175',
+      port: 11434,
+      secure: false
+    } */
   },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
-      { host: 'hub.fabric.pub', port: 443, secure: true },
+      // { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
     search: true,
@@ -233,8 +247,9 @@ module.exports = {
   },
   ollama: {
     host: 'ollama.trynovo.com',
+    port: 11434,
     secure: true,
-    models: ['llama2']
+    models: ['llama2', 'mistral']
   },
   pacer: {
     enable: true
