@@ -18,36 +18,36 @@ const {
 // Dependencies
 const fs = require('fs');
 const crypto = require('crypto');
+
+// External Dependencies
 const fetch = require('cross-fetch');
 const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
+// TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
 const multer = require('multer');
-
-// External Dependencies
 // const { ApolloServer, gql } = require('apollo-server-express');
 // TODO: use bcryptjs instead of bcrypt?
-// TODO: use levelgraph instead of level?
 const { attachPaginate } = require('knex-paginate'); // pagination
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
 
 // Fabric
-const Hub = require('@fabric/hub'); // decentralized messaging
+const Hub = require('@fabric/hub'); // messaging hub
 
 // HTTP Bridge
-const HTTPServer = require('@fabric/http/types/server');
-// const Sandbox = require('@fabric/http/types/sandbox');
+const HTTPServer = require('@fabric/http/types/server'); // fabric edge server
+// const Sandbox = require('@fabric/http/types/sandbox'); // browser sandbox
 
 // Fabric Types
 // TODO: reduce to whole library import?
 // const App = require('@fabric/core/types/app');
-const Key = require('@fabric/core/types/key');
-const Peer = require('@fabric/core/types/peer');
-const Token = require('@fabric/core/types/token');
-const Actor = require('@fabric/core/types/actor');
-const Chain = require('@fabric/core/types/chain');
+const Key = require('@fabric/core/types/key'); // fabric keys
+const Peer = require('@fabric/core/types/peer'); // fabric peers
+const Token = require('@fabric/core/types/token'); // fabric tokens
+const Actor = require('@fabric/core/types/actor'); // fabric actors
+const Chain = require('@fabric/core/types/chain'); // fabric chains
 const Queue = require('@fabric/core/types/queue');
 const Logger = require('@fabric/core/types/logger');
 // const Worker = require('@fabric/core/types/worker');
@@ -99,66 +99,7 @@ const Conversations = require('../components/Conversations');
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
 
 // Routes (Request Handlers)
-const ROUTES = {
-  cases: {
-    list: require('../routes/cases/get_cases'),
-  },
-  documents: {
-    // list: require('../routes/documents/list_documents'),
-    // view: require('../routes/documents/view_document'),
-    search: require('../routes/documents/search_documents'),
-  },
-  files: {
-    create: require('../routes/files/create_file'),
-    list: require('../routes/files/list_files'),
-    view: require('../routes/files/view_file'),
-    serve: require('../routes/files/serve_file.js'),
-  },
-  matters: {
-    create: require('../routes/matters/create_matter'),
-    new: require('../routes/matters/new_matter'),
-    view: require('../routes/matters/matter_view'),
-    list: require('../routes/matters/list_matters'),
-    addContext: require('../routes/matters/add_context'),
-    removeFile: require('../routes/matters/remove_file'),
-    removeNote: require('../routes/matters/remove_note'),
-    newConversation: require('../routes/matters/matter_new_chat'),
-    getConversations: require('../routes/matters/get_conversations'),
-    edit: require('../routes/matters/edit_matter'),
-    listFiles: require('../routes/matters/list_matter_files'),
-    listNotes: require('../routes/matters/list_matter_notes'),
-  },
-  products: {
-    list: require('../routes/products/list_products'),
-  },
-  reporters: {
-    search: require('../routes/reporters/search_reporters'),
-  },
-  jurisdictions: {
-    view: require('../routes/jurisdictions/jurisdiction_view'),
-  },
-  courts: {
-    list: require('../routes/courts/list_courts'),
-    view: require('../routes/courts/court_view'),
-  },
-  sessions: {
-    create: require('../routes/sessions/create_session')
-  },
-  statutes: {
-    list: require('../routes/statutes/list_statutes'),
-    // view: require('../routes/statutes/view_statute'), // TODO: create this
-  },
-  users: {
-    list: require('../routes/users/list_users'),
-    listFiles: require('../routes/users/list_user_files'),
-    editUsername: require('../routes/users/edit_username'),
-    editEmail: require('../routes/users/edit_email'),
-    view: require('../routes/users/view_user'),
-  },
-  feedback: {
-    create: require('../routes/feedback/create_feedback.js')
-  }
-};
+const ROUTES = require('../routes');
 
 /**
  * Jeeves is a Fabric-powered application, capable of running autonomously
@@ -359,6 +300,7 @@ class Jeeves extends Hub {
     this.apollo = null;
 
     // Internals
+    this.agents = {};
     this.healths = {};
     this.services = {};
     this.sources = {};
@@ -380,7 +322,7 @@ class Jeeves extends Hub {
     // Agent Collection
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are LennonAI, designed to come up with a list of relevant citations of cases and statutes.  Use analytical reasoning to determine the best historical cases to cite, including text from the arguments and closing opinions.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.beta = new Agent({ name: 'BETA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.beta = new Agent({ name: 'BETA', model: 'llama2', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
     this.gamma = new Agent({ name: 'GAMMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.delta = new Agent({ name: 'DELTA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
 
@@ -505,7 +447,7 @@ class Jeeves extends Hub {
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
-    this._state.agents[agent.id] = agent;
+    if (!this._state.agents[agent.id]) this._state.agents[agent.id] = agent;
     this._state.content.agents[agent.id] = configuration;
     this.commit();
     this.emit('agent', agent);
@@ -652,7 +594,7 @@ class Jeeves extends Hub {
       const results = await Promise.allSettled([
         this.alpha.query({ query: CHAT_QUERY }),
         this.llama.query({ query: CHAT_QUERY }),
-        this.gemma.query({ query: CHAT_QUERY }),
+        // this.gemma.query({ query: CHAT_QUERY }),
       ]);
 
       const summaries = await Promise.allSettled([
@@ -879,7 +821,7 @@ class Jeeves extends Hub {
           query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
         });
 
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
         const actor = new Actor({ content: summarized.content });
         const bundle = {
           type: 'TimedResponse',
@@ -1234,12 +1176,9 @@ class Jeeves extends Hub {
     const self = this;
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
-    // Redis
-    try {
-      await this.trainer.start();
-    } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
-      process.exit();
+    // Create all worker agents
+    for (const [name, agent] of Object.entries(this.agents)) {
+      this.agents[name] = this.createAgent(agent);
     }
 
     /* this.db.on('error', (...error) => {
@@ -3366,6 +3305,14 @@ class Jeeves extends Hub {
       }
     });
 
+    // Redis
+    try {
+      await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
+      process.exit();
+    }
+
     // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
@@ -4346,19 +4293,6 @@ class Jeeves extends Hub {
     // Fact-checks and summarizes outputs into a single coherent result.
     const moderator = new Actor({ name: '@jeeves/moderator' });
     const agents = {};
-
-    const agentCount = 8;
-
-    for (let i = 0; i < agentCount; i++) {
-      const agent = new Actor({ name: `agent/${i}` });
-
-      agent._handleConversationRequest = (request) => {
-
-      };
-
-      agents[agent.id] = agent;
-    }
-
     // moderator.summarize();
 
     // Generate unique ID from state

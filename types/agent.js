@@ -285,6 +285,7 @@ class Agent extends Service {
       if (this.settings.host) {
         // Happy Path
         if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
 
         // Clean up extraneous appearance of "agent" role
         messages = messages.map((x) => {
@@ -303,7 +304,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`, {
+          response = await fetch(endpoint, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -332,8 +333,16 @@ class Agent extends Service {
           try {
             base = JSON.parse(text);
           } catch (exception) {
-            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response:', exception);
-            return reject(exception);
+            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
+            return resolve({
+              type: 'AgentResponse',
+              name: this.settings.name,
+              status: 'error',
+              query: request.query,
+              response: { content: text },
+              content: text,
+              messages: messages
+            }); // TODO: remove this...
           }
 
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
@@ -359,8 +368,15 @@ class Agent extends Service {
             messages: messages
           });
         } catch (exception) {
-          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not fetch completions:', exception);
-          return reject(exception);
+          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
+          return resolve({
+            type: 'AgentResponse',
+            name: this.settings.name,
+            status: 'error',
+            query: request.query,
+            response: null,
+            content: text,
+          });
         }
       } else {
         // Failure Path
