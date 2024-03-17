@@ -675,6 +675,8 @@ class Jeeves extends Hub {
       if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
       console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
+      if (!searchterm.content) searchterm.content = '';
+
       // Remove whitespace
       searchterm.content = searchterm.content.trim();
 
