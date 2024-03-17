@@ -1,23 +1,27 @@
 'use strict';
 
+// Dependencies
 const fs = require('fs');
+const path = require('path');
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
+// Start Fabric environment
 environment.start();
 
 // TODO: @chrisinajar
-// PROJECT: @fabric/core
+// PROJECT: @fabric/http
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
+// Constants
 const NAME = 'NOVO';
 const VERSION = '1.0.0-RC1';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
-const path = require('path');
+// Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
 const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
@@ -99,7 +103,7 @@ module.exports = {
     password: null,
     port: 6379,
     hosts: [
-      'redis://default:2C8WdRfdktdE5MLLPkWAJptoxo9vBBYL@redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
+      'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
     ]
   },
   http: {
@@ -227,16 +231,10 @@ module.exports = {
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
-  mysql: {
-    host: 'localhost',
-    port: 3306,
-    username: 'dbuser_jeeves_dev',
-    password: ''
-  },
   ollama: {
     host: 'ollama.trynovo.com',
     secure: true,
-    models: ['llama2', 'mistral', 'mixtral', 'gemma']
+    models: ['llama2']
   },
   pacer: {
     enable: true
