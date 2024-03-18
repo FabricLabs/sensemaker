@@ -208,6 +208,7 @@ class Agent extends Service {
   }
 
   get tools () {
+    if (!this.settings.tools) return [];
     return Object.values(this.settings.documentation.methods).filter((x) => {
       return (x.type == 'function');
     });
@@ -352,8 +353,7 @@ class Agent extends Service {
             }
 
             // console.debug('messages:', messages);
-            console.debug('base:', base);
-            console.debug('choices:', base.choices);
+            console.debug('[!!!]', 'base:', base);
 
             if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
 
@@ -366,7 +366,7 @@ class Agent extends Service {
             }
 
             this.emit('completion', base);
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
+            console.trace('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
 
             return resolve({
               type: 'AgentResponse',
@@ -402,7 +402,7 @@ class Agent extends Service {
             messages:  messages.concat([
               { role: 'user', content: request.query }
             ]),
-            tools: this.tools
+            tools: (this.settings.tools) ? this.tools : undefined
           }) : null,
           rag: null,
           sensemaker: null

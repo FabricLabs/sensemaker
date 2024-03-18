@@ -27,6 +27,9 @@ module.exports = {
     listFiles: require('./matters/list_matter_files'),
     listNotes: require('./matters/list_matter_notes'),
   },
+  messages: {
+    create: require('./messages/create_message'),
+  },
   products: {
     list: require('./products/list_products'),
   },
