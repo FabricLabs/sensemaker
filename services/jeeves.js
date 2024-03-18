@@ -731,7 +731,7 @@ class Jeeves extends Hub {
         // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         // `  documents: null\n` +
         `  cases:\n` +
-        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${instance.harvard_case_law_court_name} ${JSON.stringify(instance.summary || '')}`).join('\n') +
+        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
@@ -1260,7 +1260,7 @@ class Jeeves extends Hub {
     console.debug('[NOVO]', 'Creating network:', Object.keys(this.settings.agents));
     for (const [name, agent] of Object.entries(this.settings.agents)) {
       const configuration = merge({}, agent, { name: name });
-      console.debug('[NOVO]', 'Creating network agent:', name, configuration);
+      console.debug('[NOVO]', 'Creating network agent:', name, configuration.host, configuration.port, configuration.secure);
       this.agents[name] = this.createAgent(configuration);
     }
 

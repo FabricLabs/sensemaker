@@ -541,6 +541,10 @@ fabric-motd {
   margin-left: 0.5em;
 }
 
+.chat-feed .event .content {
+  font-size: 1.2em;
+}
+
 .ui.feed > .event:last-child {
   margin-bottom: 2em;
 }
