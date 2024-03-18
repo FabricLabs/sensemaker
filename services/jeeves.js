@@ -685,6 +685,8 @@ class Jeeves extends Hub {
       let topical = [];
       let searchterm = null;
 
+      // Expander
+      // BEGIN EXPANDER
       if (this.settings.expander) {
         // Compute most relevant tokens
         // const caseCount = await this.db('cases').count('id as count').first();
@@ -717,6 +719,7 @@ class Jeeves extends Hub {
         // Search for cases
         topical = await this._vectorSearchCases(searchterm.content);
       }
+      // END EXPANDER
 
       // Format Metadata
       const meta = `metadata:\n` +
@@ -728,7 +731,7 @@ class Jeeves extends Hub {
         // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         // `  documents: null\n` +
         `  cases:\n` +
-        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" `).join('\n') +
+        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${instance.harvard_case_law_court_name} ${JSON.stringify(instance.summary || '')}`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
@@ -4376,7 +4379,7 @@ class Jeeves extends Hub {
       const request = { query };
 
       this.createTimedRequest(request).then((output) => {
-        console.debug('got summarized case:', output);
+        // console.debug('got summarized case:', output);
         resolve(output.content);
       });
     });
