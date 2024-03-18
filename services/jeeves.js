@@ -4095,9 +4095,9 @@ class Jeeves extends Hub {
   async _handleHarvardCourt (court) {
     // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
     const actor = new Actor({ name: `harvard/courts/${court.id}` });
-    const target = await this.db('courts').where({ harvard_id: court.id }).first();
 
-    // Attach to Jurisdiction
+    // Look for target court, jurisdiction
+    let target = await this.db('courts').where({ harvard_id: court.id }).first();
     let jurisdiction = await this.db('jurisdictions').where({ name_short: court.jurisdiction }).first();
     // const remote = await this.harvard.syncCourtBySlug(court.slug);
     if (!jurisdiction) {
@@ -4116,6 +4116,8 @@ class Jeeves extends Hub {
         jurisdiction_id: jurisdiction.id || null,
         slug: court.slug
       });
+
+      target = await this.db('courts').where({ harvard_id: court.id });
     }
 
     if (target.jurisdiction_id !== jurisdiction.id) {
@@ -4146,7 +4148,7 @@ class Jeeves extends Hub {
   async _handleHarvardReporter (reporter) {
     if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
     const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
-    const target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
+    let target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
 
     if (!target) {
       await this.db('reporters').insert({
@@ -4159,6 +4161,8 @@ class Jeeves extends Hub {
         // jurisdiction: reporter.jurisdiction,
         // slug: reporter.slug
       });
+
+      target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
     }
 
     const jurisdictions = await Promise.all(reporter.jurisdictions.map((jurisdiction) => {
