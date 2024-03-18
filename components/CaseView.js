@@ -29,13 +29,14 @@ class CaseView extends React.Component {
   componentDidMount() {
     const { id } = this.props;
     const { message } = this.props.cases;
-
+    this.props.resetChat();
     this.props.fetchCase(id);
 
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.id !== this.props.id) {
+      this.props.resetChat();
       this.props.fetchCase(this.props.id);
     }
 
@@ -49,8 +50,8 @@ class CaseView extends React.Component {
     }
 
     return (
-      <fabric-container>
-        <Segment fluid loading={loading} className='case-info'>
+      <Segment className='col-center' style={{maxHeight: '97vh'}}>
+        <Segment fluid loading={this.props.cases.loading} className='case-info'>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>
@@ -81,7 +82,8 @@ class CaseView extends React.Component {
             </code>
           </div>
         </Segment>
-        <Grid columns='equal' style={{ marginRight: '0' }}>
+        <div style={{width: '100%'}}>
+        <Grid columns='equal'>
           <Grid.Row stretched>
             <Grid.Column>
               <Segment>
@@ -96,6 +98,7 @@ class CaseView extends React.Component {
             </Grid.Column>
           </Grid.Row>
         </Grid>
+        </div>
         <CaseChat
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
@@ -108,9 +111,9 @@ class CaseView extends React.Component {
           isSending={loading}
           caseTitle={cases.current.title}
           caseID={id}
-          getMessageInformation={this.props.getMessageInformation}
+          getMessageInformation={this.props.getMessageInformation}          
         />
-      </fabric-container>
+      </Segment>
     );
   }
 

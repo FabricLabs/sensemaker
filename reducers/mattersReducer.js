@@ -39,6 +39,7 @@ const initialState = {
   fileDeletion: false,
   matterFiles: [],
   matterNotes: [],
+  addingContext: false,
 };
 
 function mattersReducer(state = initialState, action) {
@@ -72,12 +73,12 @@ function mattersReducer(state = initialState, action) {
       console.debug('edit matter failure:', state, action);
       return { ...state, error: action.payload, editingSuccess: false, idCreated: null };
     case ADD_CONTEXT_REQUEST:
-      return { ...state, contextSuccess: false, loading: true };
+      return { ...state, contextSuccess: false, addingContext: true };
     case ADD_CONTEXT_SUCCESS:
-      return { ...state, contextSuccess: true, error: null, loading: false };
+      return { ...state, contextSuccess: true, error: null, addingContext: false };
     case ADD_CONTEXT_FAILURE:
       console.debug('create matter failure:', state, action);
-      return { ...state, error: action.payload, contextSuccess: false, loading: false };
+      return { ...state, error: action.payload, contextSuccess: false, addingContext: false };
     case REMOVE_FILE_REQUEST:
       return { ...state, loading: true };
     case REMOVE_FILE_SUCCESS:

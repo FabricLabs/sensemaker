@@ -49,7 +49,10 @@ class Trainer extends Service {
     this.settings = Object.assign({
       debug: true,
       model: 'llama2',
-      ollama: {},
+      ollama: {
+        host: 'ollama.trynovo.com',
+        secure: true
+      },
       redis: {
         host: 'localhost',
         password: null,
@@ -65,8 +68,10 @@ class Trainer extends Service {
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
-    this.loader = new DirectoryLoader(this.settings.store.path, {
-      '.*': (x) => new TextLoader(x), // default to text
+    this.loaders = {
+      '.*': (x) => new TextLoader(x), // default to text (?)
+      '.pdf': (x) => new TextLoader(x),
+      '.html': (x) => new TextLoader(x),
       // '.json': (x) => new JSONLoader(x, '/json'),
       // '.json': (x) => new TextLoader(x),
       // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
@@ -74,8 +79,9 @@ class Trainer extends Service {
       '.csv': (x) => new CSVLoader(x),
       // '.md': (x) => new MarkdownLoader(x),
       // '.pdf': (x) => new PDFLoader(x),
-      '.pdf': (x) => new TextLoader(x),
-    });
+    };
+
+    this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     this.redis = createClient({
       password: this.settings.redis.password,
@@ -97,21 +103,14 @@ class Trainer extends Service {
 
   async ingestDirectory (directory) {
     return new Promise((resolve, reject) => {
-      const loader = new DirectoryLoader(directory, {
-        '.*': (x) => new TextLoader(x), // default to text
-        // '.json': (x) => new JSONLoader(x, '/json'),
-        // '.json': (x) => new TextLoader(x),
-        // '.jsonl': (x) => new JSONLinesLoader(x, '/jsonl'),
-        '.txt': (x) => new TextLoader(x),
-        '.csv': (x) => new CSVLoader(x),
-        // '.md': (x) => new MarkdownLoader(x),
-        // '.pdf': (x) => new PDFLoader(x),
-        '.pdf': (x) => new TextLoader(x),
-      });
+      const loader = new DirectoryLoader(directory, this.loaders);
 
       loader.load().then((docs) => {
         this.embeddings.addDocuments(docs).then(() => {
           resolve({ type: 'IngestedDirectory', content: docs });
+        }).catch((exception) => {
+          console.error('[TRAINER]', 'Error ingesting directory:', exception);
+          reject(exception);
         });
       }).catch((exception) => {
         console.error('[TRAINER]', 'Error ingesting directory:', exception);
@@ -207,11 +206,11 @@ class Trainer extends Service {
 
     this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
 
-    const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
 
-    this._state.content.checkstate = check.text;
-    this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+    // this._state.content.checkstate = check.text;
+    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
     this._state.content.status = this._state.status = 'STARTED';
 
     this.commit();

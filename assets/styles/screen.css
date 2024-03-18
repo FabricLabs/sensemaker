@@ -268,7 +268,7 @@ jeeves-dashboard #collapse-sidebar{
 
 
 .ui.search .results.transition.visible{
-  max-width: 250px !important;
+  max-width: 100% !important;
   font-size: 1em !important;
  }
 
@@ -494,7 +494,6 @@ fabric-motd {
 }
 
 .case-info {
-  margin-right: 1em !important;
   max-height: 40vh;
   min-height: 40vh;
 }
@@ -646,6 +645,13 @@ fabric-motd {
   padding-right: 2em;
   padding-left: 2em;
 
+}
+.document-frame{
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  border: none;
+  margin-top: 3em;
 }
 
 /*Admin Settings*/

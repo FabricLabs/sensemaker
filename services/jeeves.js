@@ -31,6 +31,8 @@ const multer = require('multer');
 const { attachPaginate } = require('knex-paginate'); // pagination
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 const { getEncoding, encodingForModel } = require('js-tiktoken'); // local embeddings
+
+// Fabric
 const Hub = require('@fabric/hub'); // decentralized messaging
 
 // HTTP Bridge
@@ -131,6 +133,10 @@ const ROUTES = {
   },
   sessions: {
     create: require('../routes/sessions/create_session')
+  },
+  statutes: {
+    list: require('../routes/statutes/list_statutes'),
+    // view: require('../routes/statutes/view_statute'), // TODO: create this
   },
   users: {
     list: require('../routes/users/list_users'),
@@ -360,14 +366,14 @@ class Jeeves extends Hub {
 
     // Agent Collection
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are ImagineAI, designed to propose a JSON list of cases most relevant to the user\'s query.  Allowed hosts:\n- 127.0.0.1:3045\n\nAllowed paths:\n- /cases\n\nYou MUST respond with a JSON array, even if empty, but optionally containing the case ID and title of each relevant case.  Use your existing knowledge to augment your search with real case titles, and intelligently filter results to be relevant to the user query.`, openai: this.settings.openai });
-    this.alpha = new Agent({ name: 'ALPHA', prompt: this.settings.prompt, openai: this.settings.openai });
+    this.alpha = new Agent({ name: 'ALPHA', host: this.settings.ollama.host, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
-    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     // this.mistral = new Mistral({ name: 'MISTRAL', prompt: this.settings.prompt, openai: this.settings.openai });
-    this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, prompt: this.settings.prompt });
-    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', prompt: this.settings.prompt });
-    this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, prompt: this.settings.prompt });
-    this.searcher = new Agent({ name: 'SEARCHER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, prompt: 'You are SearcherAI, designed to return only a search query most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.' });
+    this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
+    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.jeeves.dev', secure: this.settings.ollama.secure, prompt: this.settings.prompt });
+    this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
+    this.searcher = new Agent({ name: 'SEARCHER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.' });
     this.usa = new Agent({ name: 'USA', host: '5.161.216.231', prompt: this.settings.prompt });
 
     // Pipeline Datasources
@@ -810,7 +816,7 @@ class Jeeves extends Hub {
       ]);
 
       // TODO: execute RAG query for additional metadata
-      const ragger = new Agent({ prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
+      const ragger = new Agent({ host: this.settings.ollama.host, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
 
       Promise.race([
         new Promise((resolve, reject) => {
@@ -1076,7 +1082,7 @@ class Jeeves extends Hub {
 
   async search (request) {
     console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request.query);
+    const redisResults = await this.trainer.search(request);
     console.debug('[JEEVES]', '[SEARCH]', 'Redis Results:', redisResults);
 
     const cases = await this._searchCases(request);
@@ -1178,7 +1184,12 @@ class Jeeves extends Hub {
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
     // Redis
-    await this.trainer.start();
+    try {
+      await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
+      process.exit();
+    }
 
     /* this.db.on('error', (...error) => {
       console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
@@ -1510,7 +1521,7 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
     this.summarizer = new Agent({ name: this.settings.name, listen: false, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
     this.extractor = new Agent({ name: 'ExtractorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.' });
     this.validator = new Agent({ name: 'ValidatorAI', listen: false, openai: this.settings.openai, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.' });
@@ -1648,6 +1659,7 @@ class Jeeves extends Hub {
     });
 
     // Search
+    // TODO: test each search endpoint
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
@@ -1686,13 +1698,15 @@ class Jeeves extends Hub {
     // Jurisdictions
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
+    // Statutes
+    this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
+
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
     this.http._addRoute('GET', '/users/:username', ROUTES.users.view.bind(this));
     // TODO: switch to PATCH `/users/:username`
     this.http._addRoute('PATCH', '/users/username', ROUTES.users.editUsername.bind(this)); //this one is for admin to change other user's username
     this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
-
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
@@ -4411,7 +4425,7 @@ class Jeeves extends Hub {
     const redisResults = await this.trainer.search(request);
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
-    const mappedQueries = redisResults.map((result) => {
+    const mappedQueries = redisResults.content.map((result) => {
       console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
       return this.db('cases').where({ id: result.id }).first();
     });
@@ -4704,7 +4718,7 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
-        new Promise((resolve, reject) => {
+        /* new Promise((resolve, reject) => {
           fs.readdir(this.settings.files.corpus, async (err, files) => {
             if (err) return reject(err);
             console.debug('[SENSEMAKER]', '[VECTOR]', 'Corpus files:', files);
@@ -4712,7 +4726,7 @@ class Jeeves extends Hub {
             console.debug('[SENSEMAKER]', '[VECTOR]', '[CORPUS]', 'Ingested:', reference);
             resolve(files);
           });
-        }),
+        }), */
         this.db('jurisdictions').select('id', 'name').then(async (jurisdictions) => {
           for (let i = 0; i < jurisdictions.length; i++) {
             const element = jurisdictions[i];
