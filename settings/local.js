@@ -3,10 +3,13 @@
 // Dependencies
 const fs = require('fs');
 const path = require('path');
+
+// Fabric Types
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
 // Start Fabric environment
+// TODO: is this necessary if we aren't loading the wallet?
 environment.start();
 
 // TODO: @chrisinajar
@@ -46,10 +49,25 @@ module.exports = {
   workers: 8,
   agents: {
     local: {
-      prompt: alphaPrompt.toString('utf8'),
+      prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
-      host: 'localhost',
-      port: 3045,
+      host: '127.0.0.1',
+      port: 11434,
+      secure: false,
+      temperature: 0
+    },
+    socrates: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'socrates',
+      port: 11434,
+      secure: false
+    },
+    cinco: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'cinco',
+      port: 11434,
       secure: false
     },
     /* alpha: {
@@ -58,23 +76,29 @@ module.exports = {
       host: 'jeeves.dev',
       port: 11434,
       secure: false
-    },
-    beta: {
-      prompt: betaPrompt.toString('utf8'),
+    }, */
+    /* beta: {
+      prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: 'ollama.jeeves.dev',
       port: 11434,
       secure: false
-    },
+    }, */
     gamma: {
-      prompt: betaPrompt.toString('utf8'),
+      prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
-      host: 'gamma.trynovo.com',
+      host: 'ollama.trynovo.com',
       port: 443,
       secure: true
     },
+    // Untested so far
+    /*
+    chatgpt: {
+      prompt: novoPrompt.toString('utf8'),
+      host: null
+    },
     delta: {
-      prompt: betaPrompt.toString('utf8'),
+      prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: 'delta.trynovo.com',
       port: 443,
@@ -86,7 +110,18 @@ module.exports = {
       host: '192.168.127.175',
       port: 11434,
       secure: false
-    } */
+    }, */
+    /* gemma: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: 'localhost',
+      port: 11434,
+      secure: false
+    }, */
+  },
+  pipeline: {
+    enable: false,
+    consensus: ['socrates']
   },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
@@ -111,6 +146,18 @@ module.exports = {
   embeddings: {
     enable: false
   },
+  goals: {
+    'primary': {
+      'name': 'Primary Goal',
+      'description': 'The primary goal of the system is to provide a safe, secure, and reliable environment for the user to interact with the system.',
+      'status': 'active'
+    },
+    'secondary': {
+      'name': 'Secondary Goal',
+      'description': 'The secondary goal is to only deliver accurate information to the user.',
+      'status': 'active'
+    }
+  },
   redis: {
     username: 'default',
     host: 'localhost',
@@ -134,7 +181,7 @@ module.exports = {
     password: 'generate app-specific password'
   },
   files: {
-    corpus: '/Users/eric/jeeves.dev/stores/sensemaker',
+    corpus: '/media/storage/stores/sensemaker',
     path: '/media/storage/node/files',
     userstore: '/media/storage/uploads/users'
   },
@@ -148,7 +195,7 @@ module.exports = {
       private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
     }
   },
-  interval: 1000, // 1 Hz
+  interval: 600000, // 10 minutes (formerly 1 Hz)
   persistent: false,
   peers: [
     'localhost:7777'
