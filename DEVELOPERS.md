@@ -47,6 +47,11 @@ Ollama
 ./scripts/install-models.sh
 ```
 
+Run dependencies with docker-compose (optional)
+```
+docker-compose up -d
+```
+
 ## Principles
 1. Pull Requests should be the smallest possible set of changes implementing the desired feature.
 
