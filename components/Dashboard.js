@@ -441,7 +441,7 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Conversations</p>
                 </Menu.Item>
               )}
-              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+              <Menu.Item onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>

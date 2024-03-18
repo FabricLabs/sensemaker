@@ -107,7 +107,8 @@ class DocumentHome extends React.Component {
                   filteredDocuments.documents.map((instance) => (
                     <List.Item as={Card} key={instance.id}>
                       <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}>{instance.short_name} (doc #{instance.id}) </Link></h3>
+                        {/* <h3><Link to={"/documents/" + instance.id}>{instance.short_name} (doc #{instance.id}) </Link></h3> */}
+                        <h3><Link to={"/"}>{instance.short_name} (doc #{instance.id}) </Link></h3>
                         <Label.Group basic>
                           <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
                           <p>{instance.description}</p>
@@ -120,7 +121,8 @@ class DocumentHome extends React.Component {
                   this.props.documents.documents.map((instance) => (
                     <List.Item as={Card} key={instance.id}>
                       <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}> (doc #{instance.id})</Link> </h3>
+                        <h3><Link to={"/"}> (doc #{instance.id})</Link> </h3>
+                        {/* <h3><Link to={"/documents/" + instance.id}> (doc #{instance.id})</Link> </h3> */}
                         <Label.Group basic>
                           <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created}</Label>
                           <p>{instance.description}</p>
