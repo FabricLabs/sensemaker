@@ -177,6 +177,49 @@ Fully-managed HTML application.
 Implements document ingestion.
 
 **Kind**: global class  
+
+* [Trainer](#Trainer)
+    * [.ingestDirectory(directory)](#Trainer+ingestDirectory) ⇒ <code>Promise</code>
+    * [.ingestDocument(document, type)](#Trainer+ingestDocument) ⇒ <code>Promise</code>
+    * [.search(request)](#Trainer+search) ⇒ <code>Promise</code>
+
+<a name="Trainer+ingestDirectory"></a>
+
+### trainer.ingestDirectory(directory) ⇒ <code>Promise</code>
+Ingest a directory of files.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| directory | <code>String</code> | Path to ingest. |
+
+<a name="Trainer+ingestDocument"></a>
+
+### trainer.ingestDocument(document, type) ⇒ <code>Promise</code>
+Ingest a well-formed document.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| document | <code>Object</code> |  | Well-formed document object. |
+| type | <code>String</code> | <code>text</code> | Name of the document type. |
+
+<a name="Trainer+search"></a>
+
+### trainer.search(request) ⇒ <code>Promise</code>
+Search the document store.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Search object. |
+
 <a name="CourtListener"></a>
 
 ## CourtListener ⇐ <code>Service</code>

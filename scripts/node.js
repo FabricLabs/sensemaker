@@ -22,7 +22,7 @@ async function main (input = {}) {
   jeeves.on('log', handleJeevesLog);
   jeeves.on('warning', handleJeevesWarning);
   jeeves.on('debug', (...debug) => {
-    console.debug(`[${(new Date() - start)}]`, '[JEEVES]', '[DEBUG]', ...debug);
+    console.debug(`[${((new Date() - start) / 1000)}s]`, '[JEEVES]', '[DEBUG]', ...debug);
   });
 
   // Start Node
