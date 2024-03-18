@@ -1,23 +1,27 @@
 'use strict';
 
+// Dependencies
 const fs = require('fs');
+const path = require('path');
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
+// Start Fabric environment
 environment.start();
 
 // TODO: @chrisinajar
-// PROJECT: @fabric/core
+// PROJECT: @fabric/http
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
+// Constants
 const NAME = 'NOVO';
 const VERSION = '1.0.0-RC1';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
-const path = require('path');
+// Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
 const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
 const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
@@ -40,13 +44,57 @@ module.exports = {
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   workers: 8,
+  agents: {
+    local: {
+      prompt: alphaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'localhost',
+      port: 3045,
+      secure: false
+    },
+    /* alpha: {
+      prompt: alphaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'jeeves.dev',
+      port: 11434,
+      secure: false
+    },
+    beta: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'ollama.jeeves.dev',
+      port: 11434,
+      secure: false
+    },
+    gamma: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'gamma.trynovo.com',
+      port: 443,
+      secure: true
+    },
+    delta: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'delta.trynovo.com',
+      port: 443,
+      secure: true
+    },
+    mistral: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'mistral',
+      host: '192.168.127.175',
+      port: 11434,
+      secure: false
+    } */
+  },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
-      { host: 'hub.fabric.pub', port: 443, secure: true },
+      // { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
     search: true,
@@ -64,9 +112,13 @@ module.exports = {
     enable: false
   },
   redis: {
+    username: 'default',
     host: 'localhost',
     password: null,
     port: 6379,
+    hosts: [
+      'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
+    ]
   },
   http: {
     listen: true,
@@ -193,15 +245,11 @@ module.exports = {
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
-  mysql: {
-    host: 'localhost',
-    port: 3306,
-    username: 'dbuser_jeeves_dev',
-    password: ''
-  },
   ollama: {
     host: 'ollama.trynovo.com',
-    secure: true
+    port: 11434,
+    secure: true,
+    models: ['llama2', 'mistral']
   },
   pacer: {
     enable: true
