@@ -13,8 +13,6 @@ const {
   Menu,
 } = require('semantic-ui-react');
 
-// Components
-const ChatBox = require('./ChatBox');
 
 /**
  * The Jeeves UI.

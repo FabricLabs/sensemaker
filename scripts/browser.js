@@ -123,8 +123,9 @@ const {
 // ## Reporter Actions
 const {
   fetchReporters,
-  fetchReporter
-} = require('../actions/reporterActions');
+  fetchReporter,
+  searchReporter,
+} = require('../actions/reportersActions');
 
 // ## Judge Actions
 const {
@@ -174,6 +175,11 @@ const {
 const {
   searchGlobal,
 } = require('../actions/searchActions');
+
+// ## Feedback Actions
+const {
+  sendFeedback,
+} = require('../actions/feedbackActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -239,6 +245,7 @@ async function main (input = {}) {
       jurisdictions: state.jurisdictions,
       users: state.users,
       search: state.search,
+      feedback: state.feedback,
     }
   };
 
@@ -278,6 +285,7 @@ async function main (input = {}) {
     fetchOpinion: fetchOpinion,
     fetchReporters: fetchReporters,
     fetchReporter: fetchReporter,
+    searchReporter: searchReporter,
     fetchVolumes: fetchVolumes,
     fetchVolume: fetchVolume,
     fetchAdminStats: fetchAdminStats,
@@ -311,6 +319,7 @@ async function main (input = {}) {
     fetchUser: fetchUser,
     askPasswordReset: askPasswordReset,
     searchGlobal: searchGlobal,
+    sendFeedback: sendFeedback,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

@@ -110,6 +110,7 @@
     "react-simple-star-rating": "5.1.7",
     "react-textarea-autosize": "8.5.3",
     "react-top-loading-bar": "2.3.1",
+    "redis": "4.6.13",
     "redux": "4.2.1",
     "redux-thunk": "2.4.2",
     "smtp-client": "0.4.0",

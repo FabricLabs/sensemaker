@@ -176,19 +176,21 @@ class UsernameEditModal extends React.Component {
                   <p>Please try again later.</p>
                 </Message>
               )}
-              <Button
-                content='Close'
-                icon='close'
-                size='small'
-                secondary
-                onClick={this.userModalClose} />
-              <Button
-                content='Submit'
-                icon='checkmark'
-                loading={userModalLoading}
-                type='submit' size='small'
-                primary
-                disabled={!isNewUserValid || newUsername === oldUsername} />
+              <Button.Group>
+                <Button
+                  content='Close'
+                  icon='close'
+                  size='small'
+                  secondary
+                  onClick={this.userModalClose} />
+                <Button
+                  content='Submit'
+                  icon='checkmark'
+                  loading={userModalLoading}
+                  type='submit' size='small'
+                  primary
+                  disabled={!isNewUserValid || newUsername === oldUsername} />
+              </Button.Group>
             </Modal.Actions>
           </Form>
         </Modal.Content>

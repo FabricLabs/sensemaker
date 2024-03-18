@@ -70,7 +70,7 @@ class StatuteHome extends React.Component {
     const totalStatutes = 0;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <h1>Statutes</h1>
         <p>{BRAND_NAME} is tracking <strong>{totalStatutes}</strong> statutes.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
