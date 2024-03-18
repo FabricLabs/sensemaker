@@ -685,6 +685,8 @@ class Jeeves extends Hub {
       let topical = [];
       let searchterm = null;
 
+      // Expander
+      // BEGIN EXPANDER
       if (this.settings.expander) {
         // Compute most relevant tokens
         // const caseCount = await this.db('cases').count('id as count').first();
@@ -717,6 +719,7 @@ class Jeeves extends Hub {
         // Search for cases
         topical = await this._vectorSearchCases(searchterm.content);
       }
+      // END EXPANDER
 
       // Format Metadata
       const meta = `metadata:\n` +
@@ -728,7 +731,7 @@ class Jeeves extends Hub {
         // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         // `  documents: null\n` +
         `  cases:\n` +
-        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" `).join('\n') +
+        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${instance.harvard_case_law_court_name} ${JSON.stringify(instance.summary || '')}`).join('\n') +
         // `\n` +
         // `  counts:\n` +
         // `    cases: ` + caseCount.count +
@@ -762,7 +765,7 @@ class Jeeves extends Hub {
         });
       } else {
         // New conversation
-        messages = messages.concat([{ role: 'user', content: request.query }]);
+        // messages = messages.concat([{ role: 'user', content: request.query }]);
       }
 
       if (request.subject) {
@@ -795,6 +798,9 @@ class Jeeves extends Hub {
       if (this.settings.debug) this.emit('debug', `[NOVO] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
       if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
 
+      // TODO: Compressor
+      // Use a reliable high-context agent to compress the query
+
       // Initiate Network Query
       const networkPromises = Object.keys(this.agents).map((name) => {
         console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
@@ -819,6 +825,9 @@ class Jeeves extends Hub {
       const networkResults = Promise.allSettled(networkPromises).then((results) => {
         console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
         const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+
+        // TODO: restore validator here
+        // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
 
         /* for (let i = 0; i < options.length; i++) {
           console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', options[i]);
@@ -4016,9 +4025,9 @@ class Jeeves extends Hub {
   async _handleHarvardCourt (court) {
     // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
     const actor = new Actor({ name: `harvard/courts/${court.id}` });
-    const target = await this.db('courts').where({ harvard_id: court.id }).first();
 
-    // Attach to Jurisdiction
+    // Look for target court, jurisdiction
+    let target = await this.db('courts').where({ harvard_id: court.id }).first();
     let jurisdiction = await this.db('jurisdictions').where({ name_short: court.jurisdiction }).first();
     // const remote = await this.harvard.syncCourtBySlug(court.slug);
     if (!jurisdiction) {
@@ -4037,6 +4046,8 @@ class Jeeves extends Hub {
         jurisdiction_id: jurisdiction.id || null,
         slug: court.slug
       });
+
+      target = await this.db('courts').where({ harvard_id: court.id });
     }
 
     if (target.jurisdiction_id !== jurisdiction.id) {
@@ -4067,7 +4078,7 @@ class Jeeves extends Hub {
   async _handleHarvardReporter (reporter) {
     if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
     const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
-    const target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
+    let target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
 
     if (!target) {
       await this.db('reporters').insert({
@@ -4080,6 +4091,8 @@ class Jeeves extends Hub {
         // jurisdiction: reporter.jurisdiction,
         // slug: reporter.slug
       });
+
+      target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
     }
 
     const jurisdictions = await Promise.all(reporter.jurisdictions.map((jurisdiction) => {
@@ -4366,7 +4379,7 @@ class Jeeves extends Hub {
       const request = { query };
 
       this.createTimedRequest(request).then((output) => {
-        console.debug('got summarized case:', output);
+        // console.debug('got summarized case:', output);
         resolve(output.content);
       });
     });

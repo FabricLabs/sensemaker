@@ -63,10 +63,13 @@ module.exports = {
       port: 11434,
       secure: false
     },
-    /* chatgpt: {
+    cinco: {
       prompt: novoPrompt.toString('utf8'),
-      host: null
-    }, */
+      model: 'llama2',
+      host: 'cinco',
+      port: 11434,
+      secure: false
+    },
     /* alpha: {
       prompt: alphaPrompt.toString('utf8'),
       model: 'llama2',
@@ -81,14 +84,18 @@ module.exports = {
       port: 11434,
       secure: false
     }, */
-    /*
-    // Untested so far
     gamma: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
-      host: 'gamma.trynovo.com',
+      host: 'ollama.trynovo.com',
       port: 443,
       secure: true
+    },
+    // Untested so far
+    /*
+    chatgpt: {
+      prompt: novoPrompt.toString('utf8'),
+      host: null
     },
     delta: {
       prompt: novoPrompt.toString('utf8'),
