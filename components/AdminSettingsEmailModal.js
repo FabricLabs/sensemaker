@@ -146,20 +146,22 @@ class EmailEditModal extends React.Component {
                   <p>{emailUpdateError}</p>
                 </Message>
               )}
-              <Button
-                content='Close'
-                icon='close'
-                size='small'
-                secondary
-                onClick={this.emailModalClose} />
-              <Button
-                content='Submit'
-                icon='checkmark'
-                loading={emailModalLoading}
-                type='submit' size='small'
-                primary
-                disabled={!isEmailValid || !newEmail || newEmail === oldEmail}
-              />
+              <Button.Group>
+                <Button
+                  content='Close'
+                  icon='close'
+                  size='small'
+                  secondary
+                  onClick={this.emailModalClose} />
+                <Button
+                  content='Submit'
+                  icon='checkmark'
+                  loading={emailModalLoading}
+                  type='submit' size='small'
+                  primary
+                  disabled={!isEmailValid || !newEmail || newEmail === oldEmail}
+                />
+              </Button.Group>
             </Modal.Actions>
           </Form>
         </Modal.Content>

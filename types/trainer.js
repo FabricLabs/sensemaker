@@ -10,8 +10,9 @@ require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const merge = require('lodash.merge');
 
-const { createClient } = require('redis');
+const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
 
 // Text Splitter
@@ -46,7 +47,7 @@ class Trainer extends Service {
   constructor (settings = {}) {
     super(settings);
 
-    this.settings = Object.assign({
+    this.settings = merge({
       debug: true,
       model: 'llama2',
       ollama: {
@@ -55,9 +56,9 @@ class Trainer extends Service {
       },
       redis: {
         host: 'localhost',
-        password: null,
-        port: 6379,
-        url: 'redis://localhost:6379'
+        username: undefined,
+        password: undefined,
+        port: 6379
       },
       store: {
         path: '/media/storage/node/stores'
@@ -83,24 +84,74 @@ class Trainer extends Service {
 
     this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
+    // Redis Client
     this.redis = createClient({
+      username: this.settings.redis.username,
       password: this.settings.redis.password,
       socket: {
         host: this.settings.redis.host,
-        port: this.settings.redis.port
+        port: this.settings.redis.port,
+        enable_offline_queue: false,
+        timeout: 5000, // Add this line to set a timeout of 5000 ms
+        retry_strategy: function(options) { // And this function to control the retry strategy
+          if (options.error && options.error.code === 'ECONNREFUSED') {
+            // End reconnecting on a specific error and flush all commands with
+            // a individual error
+            return new Error('The server refused the connection');
+          }
+          if (options.total_retry_time > 1000 * 60 * 60) {
+            // End reconnecting after a specific timeout and flush all commands
+            // with a individual error
+            return new Error('Retry time exhausted');
+          }
+          if (options.attempt > 10) {
+            // End reconnecting with built in error
+            return undefined;
+          }
+          // reconnect after
+          return Math.min(options.attempt * 100, 3000);
+        }
       }
     });
 
+    // Cluster
+    /* this.redis = createCluster({
+      rootNodes: [
+        {
+          host: this.settings.redis.host,
+          port: this.settings.redis.port
+        }
+      ],
+      defaults: {
+        password: this.settings.redis.password
+      }
+    }); */
+
+    // Events
+    /*
+     * In Node Redis, if you handle add the on('error') stuff it will queue up your commands and then in the background try to reconnect. When it does reconnect, it will then run the queued commands. [7:30 PM] It actually follows a retry_strategy to attempt to reconnect. You can read all about it on the old README at https://www.npmjs.com/package/redis/v/3.1.2
+     * You need to set the enable_offline_queue option to false to turn off this queueing and get an error.
+     */
+    // this.redis.on('error', (err) => console.error('Redis Client Error', err));
+
+    // Splitter for large documents
     this.splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 20
      });
 
+    // Web Loader
     this.ui = new CheerioWebBaseLoader(REFERENCE_URL);
 
+    // Chainable
     return this;
   }
 
+  /**
+   * Ingest a directory of files.
+   * @param {String} directory Path to ingest.
+   * @returns {Promise} Resolves with the result of the operation.
+   */
   async ingestDirectory (directory) {
     return new Promise((resolve, reject) => {
       const loader = new DirectoryLoader(directory, this.loaders);
@@ -119,6 +170,12 @@ class Trainer extends Service {
     });
   }
 
+  /**
+   * Ingest a well-formed document.
+   * @param {Object} document Well-formed document object.
+   * @param {String} type Name of the document type.
+   * @returns {Promise} Resolves with the result of the operation.
+   */
   async ingestDocument (document, type = 'text') {
     return new Promise((resolve, reject) => {
       if (!document.metadata) document.metadata = {};
@@ -154,6 +211,11 @@ class Trainer extends Service {
     });
   }
 
+  /**
+   * Search the document store.
+   * @param {Object} request Search object.
+   * @returns {Promise} Resolves with the result of the operation.
+   */
   async search (request) {
     return new Promise((resolve, reject) => {
       console.debug('[TRAINER]', 'searching:', request.query);
@@ -168,41 +230,72 @@ class Trainer extends Service {
     });
   }
 
+  async ingestReferences () {
+    return new Promise((resolve, reject) => {
+      fs.readFile('./contracts/terms-of-use.md', async (error, terms) => {
+        if (error) {
+          console.error('[TRAINER]', 'Error reading terms:', error);
+          return;
+        }
+
+        console.debug('[TRAINER]', 'Terms of Use:', terms.toString('utf8'));
+
+        // Store Documents
+        // NOVO Web Application
+        // const spa = await this.ui.load();
+        // console.debug('[TRAINER]', 'SPA:', spa);
+
+        // Terms of Use
+        const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
+        const contractChunks = await this.splitter.splitDocuments([contract]);
+        // const chunks = await this.splitter.splitDocuments(spa);
+        // const allDocs = [contract].concat(spa, contractChunks, chunks);
+        // const allDocs = contractChunks.concat(chunks);
+        const allDocs = contractChunks;
+
+        // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
+        if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
+
+        // Return the documents
+        resolve(allDocs);
+      });
+    });
+  }
+
   async start () {
     this._state.content.status = this._state.status = 'STARTING';
 
     // Start Services
     // Redis
+    console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
+    console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
+
+    this.redis.on('connect', async () => {
+      console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
+      await this.ingestReferences();
+      console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+    });
+
     try {
       await this.redis.connect();
     } catch (exception) {
       console.error('[TRAINER]', 'Error starting Redis:', exception);
-      process.exit(); // TODO: look at exit codes
+      // process.exit(); // TODO: look at exit codes
     }
 
-    const terms = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
-    const spa = await this.ui.load();
-
-    // Store Documents
-    const contract = new Document({ pageContent: terms, metadata: { type: 'text/markdown' } });
-    const contractChunks = await this.splitter.splitDocuments([contract]);
-    const chunks = await this.splitter.splitDocuments(spa);
-    const allDocs = [contract].concat(spa, contractChunks, chunks);
-
-    // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
-    if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
+    const allDocs = await this.ingestReferences();
 
     this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
       redisClient: this.redis,
-      indexName: 'documents'
+      indexName: this.settings.redis.indexName || 'novo-embeddings'
     });
 
-    try {
+    /* try {
       const docs = await this.loader.load();
       if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
     } catch (exception) {
       if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
-    }
+    } */
 
     this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
 

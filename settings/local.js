@@ -1,25 +1,36 @@
 'use strict';
 
+// Dependencies
 const fs = require('fs');
+const path = require('path');
+
+// Fabric Types
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
+// Start Fabric environment
+// TODO: is this necessary if we aren't loading the wallet?
 environment.start();
 
 // TODO: @chrisinajar
-// PROJECT: @fabric/core
+// PROJECT: @fabric/http
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
+// Constants
 const NAME = 'NOVO';
 const VERSION = '1.0.0-RC1';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
-const path = require('path');
+// Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
-const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
+const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
 
 /**
  * Provides the user's local settings.
@@ -36,13 +47,89 @@ module.exports = {
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   workers: 8,
+  agents: {
+    local: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: '127.0.0.1',
+      port: 11434,
+      secure: false,
+      temperature: 0
+    },
+    socrates: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'socrates',
+      port: 11434,
+      secure: false
+    },
+    cinco: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'cinco',
+      port: 11434,
+      secure: false
+    },
+    /* alpha: {
+      prompt: alphaPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'jeeves.dev',
+      port: 11434,
+      secure: false
+    }, */
+    /* beta: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'ollama.jeeves.dev',
+      port: 11434,
+      secure: false
+    }, */
+    gamma: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'ollama.trynovo.com',
+      port: 443,
+      secure: true
+    },
+    // Untested so far
+    /*
+    chatgpt: {
+      prompt: novoPrompt.toString('utf8'),
+      host: null
+    },
+    delta: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: 'delta.trynovo.com',
+      port: 443,
+      secure: true
+    },
+    mistral: {
+      prompt: betaPrompt.toString('utf8'),
+      model: 'mistral',
+      host: '192.168.127.175',
+      port: 11434,
+      secure: false
+    }, */
+    /* gemma: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: 'localhost',
+      port: 11434,
+      secure: false
+    }, */
+  },
+  pipeline: {
+    enable: false,
+    consensus: ['socrates']
+  },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
-      { host: 'hub.fabric.pub', port: 443, secure: true },
+      // { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
     search: true,
@@ -56,11 +143,29 @@ module.exports = {
     password: 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
+  embeddings: {
+    enable: false
+  },
+  goals: {
+    'primary': {
+      'name': 'Primary Goal',
+      'description': 'The primary goal of the system is to provide a safe, secure, and reliable environment for the user to interact with the system.',
+      'status': 'active'
+    },
+    'secondary': {
+      'name': 'Secondary Goal',
+      'description': 'The secondary goal is to only deliver accurate information to the user.',
+      'status': 'active'
+    }
+  },
   redis: {
+    username: 'default',
     host: 'localhost',
     password: null,
     port: 6379,
-    url: 'redis://redis-14310.c311.eu-central-1-1.ec2.cloud.redislabs.com:14310'
+    hosts: [
+      'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
+    ]
   },
   http: {
     listen: true,
@@ -72,10 +177,11 @@ module.exports = {
     key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
-    username: 'agent@jeeves.dev',
+    username: 'agent@trynovo.com',
     password: 'generate app-specific password'
   },
   files: {
+    corpus: '/media/storage/stores/sensemaker',
     path: '/media/storage/node/files',
     userstore: '/media/storage/uploads/users'
   },
@@ -89,12 +195,12 @@ module.exports = {
       private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
     }
   },
-  interval: 1000, // 1 Hz
+  interval: 600000, // 10 minutes (formerly 1 Hz)
   persistent: false,
   peers: [
     'localhost:7777'
   ],
-  prompt: prompt.toString('utf8'),
+  prompt: betaPrompt.toString('utf8'),
   sandbox: {
     browser: {
       headless: true
@@ -131,7 +237,7 @@ module.exports = {
     token: null
   },
   statutes: {
-    enable: false,
+    // enable: true,
     jurisdictions: [
       'Arkansas',
       'California',
@@ -147,7 +253,7 @@ module.exports = {
   courtlistener: {
     enable: false,
     type: 'postgresql',
-    host: 'lavendar.courtlistener.com',
+    host: 'localhost',
     database: 'courtlistener',
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
@@ -167,6 +273,11 @@ module.exports = {
   lightning: {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
+  linkedin: {
+    enable: false,
+    id: 'get from linkedin',
+    secret: 'get from linkedin'
+  },
   matrix: {
     enable: false,
     name: '@jeeves/core',
@@ -181,15 +292,11 @@ module.exports = {
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
-  mysql: {
-    host: 'localhost',
-    port: 3306,
-    username: 'dbuser_jeeves_dev',
-    password: ''
-  },
   ollama: {
     host: 'ollama.trynovo.com',
-    secure: true
+    port: 11434,
+    secure: true,
+    models: ['llama2', 'mistral']
   },
   pacer: {
     enable: true
