@@ -40,7 +40,9 @@ const JurisdictionHome = require('./JurisdictionHome');
 const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
+const DocumentView = require('./DocumentView');
 const ReporterHome = require('./ReporterHome');
+const ReporterView = require('./ReporterView');
 const PeopleHome = require('./PeopleHome');
 const VolumeHome = require('./VolumeHome');
 const Workspaces = require('./Workspaces');
@@ -59,6 +61,7 @@ const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
 const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
+
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
@@ -438,7 +441,7 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Conversations</p>
                 </Menu.Item>
               )}
-              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+              <Menu.Item onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>

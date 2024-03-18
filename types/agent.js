@@ -208,6 +208,7 @@ class Agent extends Service {
   }
 
   get tools () {
+    if (!this.settings.tools) return [];
     return Object.values(this.settings.documentation.methods).filter((x) => {
       return (x.type == 'function');
     });
@@ -285,6 +286,7 @@ class Agent extends Service {
       if (this.settings.host) {
         // Happy Path
         if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
 
         // Clean up extraneous appearance of "agent" role
         messages = messages.map((x) => {
@@ -303,7 +305,7 @@ class Agent extends Service {
 
           console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
-          response = await fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`, {
+          fetch(endpoint, {
             method: 'POST',
             headers: {
               'Accept': 'application/json',
@@ -318,51 +320,78 @@ class Agent extends Service {
               },
               messages: sample
             })
+          }).catch((exception) => {
+            console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
+            return reject(exception);
+          }).then(async (response) => {
+            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
+            if (!response) return reject(new Error('No response from agent.'));
+
+            try {
+              text = await response.text();
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
+              return reject(exception);
+            }
+
+            try {
+              base = JSON.parse(text);
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
+              // console.debug('[AGENT]', 'Response body:', await response.text());
+              // console.debug('[AGENT]', 'Response body:', response.body.text());
+              // return reject(exception);
+              return resolve({
+                type: 'AgentResponse',
+                name: this.settings.name,
+                status: 'error',
+                query: request.query,
+                response: { content: text },
+                content: text,
+                messages: messages
+              }); // TODO: remove this...
+            }
+
+            // console.debug('messages:', messages);
+            console.debug('[!!!]', 'base:', base);
+
+            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
+
+            if (request.requery) {
+              sample.push({ role: 'assistant', content: base.choices[0].message.content });
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
+              // Re-execute query with John Cena
+              return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
+            }
+
+            this.emit('completion', base);
+            console.trace('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
+
+            return resolve({
+              type: 'AgentResponse',
+              name: this.settings.name,
+              status: 'success',
+              query: request.query,
+              response: base,
+              content: base.choices[0].message.content,
+              messages: messages
+            });
           });
-
-          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
-
-          try {
-            text = await response.text();
-          } catch (exception) {
-            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
-            return reject(exception);
-          }
-
-          try {
-            base = JSON.parse(text);
-          } catch (exception) {
-            console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response:', exception);
-            return reject(exception);
-          }
-
-          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
-
-          if (request.requery) {
-            sample.push({ role: 'assistant', content: base.choices[0].message.content });
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
-            // Re-execute query with John Cena
-            return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
-          }
-
-          this.emit('completion', base);
-          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
-
+        } catch (exception) {
+          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
           return resolve({
             type: 'AgentResponse',
             name: this.settings.name,
-            status: 'success',
+            status: 'error',
             query: request.query,
-            response: base,
-            content: base.choices[0].message.content,
-            messages: messages
+            response: null,
+            content: text,
           });
-        } catch (exception) {
-          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not fetch completions:', exception);
-          return reject(exception);
         }
       } else {
+        console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
+
         // Failure Path
         const responses = {
           alpha: null,
@@ -373,17 +402,19 @@ class Agent extends Service {
             messages:  messages.concat([
               { role: 'user', content: request.query }
             ]),
-            tools: this.tools
+            tools: (this.settings.tools) ? this.tools : undefined
           }) : null,
           rag: null,
           sensemaker: null
         };
 
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
+
         // Wait for all responses to resolve or reject.
         await Promise.allSettled(Object.values(responses));
-        console.debug('[AGENT]', '[FALLBACK]', 'Prompt:', this.prompt);
-        console.debug('[AGENT]', '[FALLBACK]', 'Query:', request.query);
-        console.debug('[AGENT]', '[FALLBACK]', 'Responses:', responses);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Prompt:', this.prompt);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Query:', request.query);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
 
         let response = '';
 
@@ -464,7 +495,7 @@ class Agent extends Service {
 
         // Prime the model.
         try {
-          await this.prime();
+          // await this.prime();
         } catch (exception) {
           console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
         }

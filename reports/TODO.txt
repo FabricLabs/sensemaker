@@ -1,28 +1,31 @@
+./constants.js: const ENABLE_BILLING = false; // TODO: enable billing
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
+./settings/local.js: // TODO: is this necessary if we aren't loading the wallet?
 ./settings/local.js: // TODO: @chrisinajar
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
 ./types/compiler.js: // TODO: load from:
+./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
+./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
-./libraries/statute-scraper/scrapper/js-code/scrappers/Arkansas.js: //#TODO
-./libraries/statute-scraper/tests/jeeves.unit.js: const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex'); // TODO: load sample data from Fabric hub
-./libraries/statute-scraper/scripts/node.js: // TODO: emit statute from provider
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO: request index export
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO: discuss history storage
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO: filter by jurisdiction
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO iterate and search each jurisdiction
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO: add completed states to constants
-./libraries/statute-scraper/services/StatuteProvider.js: // TODO: lookup jurisdiction by name on beta.jeeves.dev
+./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
+./types/agent.js: num_ctx: 4096 // TODO: make this configurable
+./types/agent.js: }); // TODO: remove this...
+./Dockerfile: # TODO: mount SSHFS / similar here
+./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/Bridge.js: // TODO: re-evaluate multiple connections
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
 ./components/Bridge.js: // TODO: refactor @fabric/core/types/message to support arbitrary message types
 ./components/Jeeves.js: // TODO: inherit from @fabric/http/types/component
 ./components/AdminSettings.js: // TODO: add users to admin settings
 ./components/AdminSettings.js: // TODO: add pagination to users
+./components/Splash.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/InformationSidebar.js: // TODO: implement message->case API
+./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
+./components/ContractHome.js: // TODO: implement this.applicationString
 ./components/Dashboard.js: * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
 ./components/Collection.js: // TODO: assign endpoint to search
 ./components/Collection.js: // TODO: generalize collection contents into cards
@@ -30,34 +33,41 @@
 ./scripts/browser.js: // TODO: consider localforage
 ./scripts/browser.js: // TODO: consider schema from Knex / MySQL
 ./scripts/browser.js: // TODO: consider GraphQL to pass schema
+./actions/usersActions.js: // TODO: pagination
 ./actions/bridgeActions.js: // TODO: get bridge instance
 ./actions/caseActions.js: // TODO: pagination
+./routes/messages/create_message.js: // TODO: document why array only for Postgres
+./routes/messages/create_message.js: // TODO: emit message
+./routes/messages/create_message.js: // room: roomID // TODO: replace with a generic property (not specific to Matrix)
+./routes/messages/create_message.js: // TODO: restore response tracking
+./routes/messages/create_message.js: // TODO: store request ID
+./routes/messages/create_message.js: // TODO: restore titling
 ./routes/products/list_products.js: // TODO: import auth token, load data
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
 ./routes/cases/get_cases.js: // TODO: import auth token, load data
+./routes/index.js: // view: require('./statutes/view_statute'), // TODO: create this
+./routes/users/list_users.js: // TODO: pagination
+./routes/files/create_file.js: // TODO: report file for cleanup / investigation
 ./routes/courts/court_view.js: // TODO: pagination
+./routes/courts/list_courts.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/matters/view_matter.js: // TODO: pagination
-./routes/matters/view_matter.js: // TODO: import auth token, load data
-./routes/matters/matter_new_chat.js: //   // TODO: pagination
-./routes/matters/matter_new_chat.js: // TODO: import auth token, load data
 ./routes/matters/get_conversations.js: // TODO: pagination
-./routes/matters/matter_chat.js: //   // TODO: pagination
-./routes/matters/matter_chat.js: // TODO: import auth token, load data
 ./routes/matters/matter_view.js: // TODO: pagination
-./routes/matters/matter_view.js: // TODO: import auth token, load data
-./routes/matters/new_matter.js: //     // TODO: pagination
-./routes/matters/new_matter.js: // TODO: import auth token, load data
-./routes/matters/list_matters.js: // TODO: pagination
-./routes/matters/list_matters.js: // TODO: import auth token, load data
 ./services/gemini.js: // TODO: import from prompts/sensemaker.txt
-./services/jeeves.js: // TODO: use bcryptjs instead of bcrypt?
 ./services/jeeves.js: // TODO: use levelgraph instead of level?
+./services/jeeves.js: // TODO: use bcryptjs instead of bcrypt?
 ./services/jeeves.js: // TODO: reduce to whole library import?
 ./services/jeeves.js: // TODO: use path
 ./services/jeeves.js: // TODO: enable recursive Filesystem (directories)
 ./services/jeeves.js: // TODO: safe shutdown
 ./services/jeeves.js: // TODO: remove async, use local state instead
+./services/jeeves.js: // TODO: assign `then` to allow async processing
+./services/jeeves.js: // TODO: add `user_id` to request, assign to `creator`
+./services/jeeves.js: // TODO: assign `then` to allow async processing
 ./services/jeeves.js: // TODO: prepare maximum token length
+./services/jeeves.js: // TODO: convert limit here to constant
+./services/jeeves.js: // TODO: Compressor
+./services/jeeves.js: // TODO: restore validator here
 ./services/jeeves.js: // TODO: execute RAG query for additional metadata
 ./services/jeeves.js: // TODO: loop over all agents
 ./services/jeeves.js: // TODO: compress to 4096 tokens
@@ -65,27 +75,23 @@
 ./services/jeeves.js: courts: [], // TODO: implement
 ./services/jeeves.js: documents: [], // TODO: implement
 ./services/jeeves.js: people: [], // TODO: implement
-./services/jeeves.js: // TODO: store sample.id as fabric_id
+./services/jeeves.js: // TODO: allow configurable whitelist
 ./services/jeeves.js: // TODO: remove
-./services/jeeves.js: this.http._addRoute('GET', '/matter/:id', ROUTES.matters.view.bind(this)); // TODO: switch to /matters/:id
-./services/jeeves.js: this.http._addRoute('GET', '/matter/conversation/:id', ROUTES.matters.conversation.bind(this)); // TODO: switch to /conversations/:id
-./services/jeeves.js: this.http._addRoute('GET', '/matter/conversations/:matterID', ROUTES.matters.getConversations.bind(this)); // TODO: switch to /matters/:id/conversations
-./services/jeeves.js: this.http._addRoute('PATCH', '/matter/context/:id', ROUTES.matters.addContext.bind(this)); // TODO: switch to /matters...
-./services/jeeves.js: this.http._addRoute('PATCH', '/matter/edit/:id', ROUTES.matters.edit.bind(this)); // TODO: switch to /matters/:id
-./services/jeeves.js: this.http._addRoute('PATCH', '/matter/removefile/:id', ROUTES.matters.removeFile.bind(this)); // TODO: switch to DELETE /matters/:id/files/:fileID
+./services/jeeves.js: // TODO: test each search endpoint
+./services/jeeves.js: // TODO: switch to PATCH `/users/:username`
 ./services/jeeves.js: // TODO: move all handlers to class methods
 ./services/jeeves.js: // TODO: serve from assets (@nplayer89)
 ./services/jeeves.js: // TODO: render page for accepting invitation
+./services/jeeves.js: // TODO: change to /sessions
 ./services/jeeves.js: // TODO: change this route from `/sessionRestore` to use authMiddleware?
 ./services/jeeves.js: // TODO: additional params (auth?)
 ./services/jeeves.js: // TODO: provide state
 ./services/jeeves.js: // TODO: fix this hack
-./services/jeeves.js: const page = new CaseHome({}); // TODO: use CaseView
+./services/jeeves.js: // const page = new CaseHome({}); // TODO: use CaseView
 ./services/jeeves.js: // TODO: re-evaluate security of `is_admin` check
 ./services/jeeves.js: // TODO: update the conversation upon change (new user message, new agent message)
 ./services/jeeves.js: // TODO: sort conversations by updated_at (below line)
 ./services/jeeves.js: // TODO: provide state
-./services/jeeves.js: const page = new CaseHome({}); // TODO: use Conversations
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
@@ -98,17 +104,13 @@
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: check token
-./services/jeeves.js: // TODO: document why array only for Postgres
-./services/jeeves.js: // TODO: emit message
-./services/jeeves.js: // room: roomID // TODO: replace with a generic property (not specific to Matrix)
-./services/jeeves.js: // TODO: restore response tracking
-./services/jeeves.js: // TODO: store request ID
-./services/jeeves.js: // TODO: restore titling
 ./services/jeeves.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
 ./services/jeeves.js: // TODO: update message graph; consider requests, responses
 ./services/jeeves.js: //             user_id: 1 // TODO: real user ID
 ./services/jeeves.js: // TODO: troubleshoot why this is necessary (use `why()` above)
 ./services/jeeves.js: // TODO: check token
+./services/jeeves.js: // TODO: store sample.id as fabric_id
+./services/jeeves.js: // TODO: retrieve docket_entry_id etc.
 ./services/jeeves.js: room: roomID // TODO: replace with a generic property (not specific to Matrix)
 ./services/jeeves.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/jeeves.js: // TODO: fix @fabric/core/types/message to allow custom message types
@@ -118,15 +120,14 @@
 ./services/jeeves.js: // TODO: Harvard search
 ./services/jeeves.js: // TODO: CourtListener search
 ./services/jeeves.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
-./services/jeeves.js: // TODO: Redis
-./services/jeeves.js: // TODO: Vector Search
-./services/jeeves.js: // TODO: Vector Search (ChatGPT Embeddings)
+./services/jeeves.js: // TODO: consider additional metadata fields
 ./services/jeeves.js: // TODO: direct store to graph database
 ./services/fabric.js: // TODO: validate documents
 ./services/fabric.js: // TODO: decide inner Fabric state vs. standard document content
 ./services/openai.js: const messages = request.messages; // TODO: pull higher in logic?
 ./services/openai.js: fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only
 ./services/courtlistener.js: // TODO: these should be async streams
+./services/courtlistener.js: // TODO: this should be a stream
 ./services/courtlistener.js: // TODO: this should be a stream
 ./services/courtlistener.js: // TODO: this should be a stream
 ./services/courtlistener.js: // TODO: this should be a stream

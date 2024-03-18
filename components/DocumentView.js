@@ -29,15 +29,12 @@ class DocumentView extends React.Component {
   
   componentDidMount() {
     const { id } = this.props;
-    const { message } = this.props.cases;
-    this.props.resetChat();
     this.props.fetchDocument(id);
 
   }
 
   componentDidUpdate(prevProps) {
     if (prevProps.id !== this.props.id) {
-      this.props.resetChat();
       this.props.fetchDocument(this.props.id);
     }
 
@@ -52,7 +49,7 @@ class DocumentView extends React.Component {
 
     return (
       <Segment className='col-center' style={{maxHeight: '97vh'}}>
-        <Segment fluid loading={this.props.cases.loading} className='case-info'>
+        {/* <Segment fluid loading={this.props.cases.loading} className='case-info'>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>
@@ -117,7 +114,7 @@ class DocumentView extends React.Component {
           messageInfo={this.props.messageInfo}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
-        />
+        /> */}
       </Segment>
     );
   }
