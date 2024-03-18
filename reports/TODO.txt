@@ -2,12 +2,13 @@
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
+./settings/local.js: // TODO: is this necessary if we aren't loading the wallet?
 ./settings/local.js: // TODO: @chrisinajar
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
 ./types/compiler.js: // TODO: load from:
-./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
+./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
 ./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
@@ -35,6 +36,12 @@
 ./actions/usersActions.js: // TODO: pagination
 ./actions/bridgeActions.js: // TODO: get bridge instance
 ./actions/caseActions.js: // TODO: pagination
+./routes/messages/create_message.js: // TODO: document why array only for Postgres
+./routes/messages/create_message.js: // TODO: emit message
+./routes/messages/create_message.js: // room: roomID // TODO: replace with a generic property (not specific to Matrix)
+./routes/messages/create_message.js: // TODO: restore response tracking
+./routes/messages/create_message.js: // TODO: store request ID
+./routes/messages/create_message.js: // TODO: restore titling
 ./routes/products/list_products.js: // TODO: import auth token, load data
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
 ./routes/cases/get_cases.js: // TODO: import auth token, load data
@@ -59,6 +66,8 @@
 ./services/jeeves.js: // TODO: assign `then` to allow async processing
 ./services/jeeves.js: // TODO: prepare maximum token length
 ./services/jeeves.js: // TODO: convert limit here to constant
+./services/jeeves.js: // TODO: Compressor
+./services/jeeves.js: // TODO: restore validator here
 ./services/jeeves.js: // TODO: execute RAG query for additional metadata
 ./services/jeeves.js: // TODO: loop over all agents
 ./services/jeeves.js: // TODO: compress to 4096 tokens
@@ -66,6 +75,7 @@
 ./services/jeeves.js: courts: [], // TODO: implement
 ./services/jeeves.js: documents: [], // TODO: implement
 ./services/jeeves.js: people: [], // TODO: implement
+./services/jeeves.js: // TODO: allow configurable whitelist
 ./services/jeeves.js: // TODO: remove
 ./services/jeeves.js: // TODO: test each search endpoint
 ./services/jeeves.js: // TODO: switch to PATCH `/users/:username`
@@ -94,12 +104,6 @@
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: check token
-./services/jeeves.js: // TODO: document why array only for Postgres
-./services/jeeves.js: // TODO: emit message
-./services/jeeves.js: // room: roomID // TODO: replace with a generic property (not specific to Matrix)
-./services/jeeves.js: // TODO: restore response tracking
-./services/jeeves.js: // TODO: store request ID
-./services/jeeves.js: // TODO: restore titling
 ./services/jeeves.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
 ./services/jeeves.js: // TODO: update message graph; consider requests, responses
 ./services/jeeves.js: //             user_id: 1 // TODO: real user ID
