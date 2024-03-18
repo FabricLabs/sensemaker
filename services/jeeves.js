@@ -762,7 +762,7 @@ class Jeeves extends Hub {
         });
       } else {
         // New conversation
-        messages = messages.concat([{ role: 'user', content: request.query }]);
+        // messages = messages.concat([{ role: 'user', content: request.query }]);
       }
 
       if (request.subject) {
@@ -795,6 +795,9 @@ class Jeeves extends Hub {
       if (this.settings.debug) this.emit('debug', `[NOVO] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
       if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
 
+      // TODO: Compressor
+      // Use a reliable high-context agent to compress the query
+
       // Initiate Network Query
       const networkPromises = Object.keys(this.agents).map((name) => {
         console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
@@ -819,6 +822,9 @@ class Jeeves extends Hub {
       const networkResults = Promise.allSettled(networkPromises).then((results) => {
         console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
         const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+
+        // TODO: restore validator here
+        // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
 
         /* for (let i = 0; i < options.length; i++) {
           console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', options[i]);
