@@ -10,7 +10,6 @@ const {
   const initialState = {
     document: {},
     documents: [],
-    current: {},
     loading: false,
     error: null
   };

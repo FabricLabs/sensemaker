@@ -6,7 +6,7 @@ module.exports = {
     // list: require('./documents/list_documents'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
-    view: require('./documents/view_documents'),
+    view: require('./documents/view_document'),
   },
   files: {
     create: require('./files/create_file'),
@@ -36,7 +36,7 @@ module.exports = {
   },
   reporters: {
     search: require('./reporters/search_reporters'),
-    view: require('./reporters/view_reporters'),
+    view: require('./reporters/view_reporter'),
 
   },
   jurisdictions: {

@@ -1,13 +1,12 @@
 'use strict';
 
-// Components
 
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       // TODO: pagination
-      const reporter = await this.db('reporters').where('id', req.param.id).first();
-      res.send(reporter);
+      const document = await this.db('documents').where('fabric_id', req.params.id).orderBy('created_at','desc').first();
+      res.send(document);
     },
     html: () => {
       res.send(this.applicationString);

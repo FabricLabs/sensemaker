@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const mimeTypes = require('mime-types');
-
+const Actor = require('@fabric/core/types/actor');
 
 module.exports = async function (req, res, next) {
 
@@ -57,20 +57,24 @@ module.exports = async function (req, res, next) {
         const hash = crypto.createHash('sha256').update(data);
         const digest = hash.digest('hex');
 
+        const actor = new Actor({ content: data.toString('utf8') });
 
         this.db('documents').insert({
+          title:req.file.originalname,
           content: data.toString('utf8'),
+          fabric_id: actor.id,
           encoding: 'utf8',
           filename: req.file.originalname,
           sha256: digest,
-          owner: req.user.id
+          owner: req.user.id,
+          courtlistener_filepath_local: destination,
         }).then((insertedDocument) => {
           this.trainer.ingestDocument({
             content: data.toString('utf8'),
             encoding: 'utf8',
             filename: req.file.originalname,
             sha256: digest,
-            owner: req.user.id
+            owner: req.user.id,
           }).then((ingestedDocument) => {
             res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0] });
           });

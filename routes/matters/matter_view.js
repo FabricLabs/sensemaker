@@ -1,8 +1,5 @@
 'use strict';
 
-// Components
-const MatterView = require('../../components/MatterView');
-
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {

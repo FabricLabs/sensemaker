@@ -6,8 +6,8 @@ module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       // TODO: pagination
-      const matter = await this.db('matters').where('id', req.param.id).first();
-      res.send(matter);
+      const reporter = await this.db('reporters').where('id', req.params.id).first();
+      res.send(reporter);
     },
     html: () => {
       res.send(this.applicationString);

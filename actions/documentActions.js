@@ -15,9 +15,9 @@ const FETCH_DOCUMENT_SUCCESS = 'FETCH_DOCUMENT_SUCCESS';
 const FETCH_DOCUMENT_FAILURE = 'FETCH_DOCUMENT_FAILURE';
 
 // Action creators
-const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST, loading: true });
-const fetchDocumentsSuccess = (documents) => ({ type: FETCH_DOCUMENTS_SUCCESS, payload: documents, loading: false });
-const fetchDocumentsFailure = (error) => ({ type: FETCH_DOCUMENTS_FAILURE, payload: error, loading: false  });
+const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
+const fetchDocumentsSuccess = (documents) => ({ type: FETCH_DOCUMENTS_SUCCESS, payload: documents });
+const fetchDocumentsFailure = (error) => ({ type: FETCH_DOCUMENTS_FAILURE, payload: error });
 const fetchDocumentRequest = () => ({ type: FETCH_DOCUMENT_REQUEST, loading: true });
 const fetchDocumentSuccess = (instance) => ({ type: FETCH_DOCUMENT_SUCCESS, payload: instance, loading: false });
 const fetchDocumentFailure = (error) => ({ type: FETCH_DOCUMENT_FAILURE, payload: error, loading: false });

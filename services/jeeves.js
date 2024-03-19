@@ -1838,7 +1838,7 @@ class Jeeves extends Hub {
     // Reporters
     this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
 
-    // Reporters
+    // Documents
     this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
 
     // Users
@@ -4494,7 +4494,7 @@ class Jeeves extends Hub {
     let response = [];
 
     try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`);
+      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`);
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
     }
