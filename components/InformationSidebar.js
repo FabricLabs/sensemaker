@@ -179,8 +179,7 @@ class InformationSidebar extends React.Component {
                   </CardContent>
                 </Card>
                 <iframe
-                  // src='https://www.cartercenter.org/resources/pdfs/health/ephti/library/lecture_notes/health_officers/ln_internal_med_final.pdf'
-                  src={`http://localhost:3045/files/serve/${documentInfo.file_id}`}
+                  src={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/files/serve/${documentInfo.file_id}`}
                   className='document-frame'
                 ></iframe>
               </section>
