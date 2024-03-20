@@ -78,7 +78,7 @@ class LibraryList extends React.Component {
             <LibrarySearch auth={this.props.auth} searchGlobal={this.props.searchGlobal} search={this.props.search}/>
           </Menu.Item>
         )}
-        <Menu.Item as={Link} to='/conversations'>
+        <Menu.Item as={Link} to='/conversations' onClick={() => this.props.resetChat()}>
           <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
         </Menu.Item>
         {USER_IS_ALPHA && ENABLE_DOCUMENT_SEARCH && (

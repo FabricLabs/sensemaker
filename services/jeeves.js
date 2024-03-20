@@ -1829,11 +1829,17 @@ class Jeeves extends Hub {
     // Jurisdictions
     this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
 
-    // Jurisdictions
+    // Courts
     this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
+
+    // Reporters
+    this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
+
+    // Documents
+    this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
@@ -2773,7 +2779,7 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -2784,11 +2790,13 @@ class Jeeves extends Hub {
           const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
               id: doc.fabric_id,
-              created: doc.created_at,
+              created_at: doc.created_at,
               description: doc.description,
               sha1: doc.sha1,
               sha256: doc.sha256,
-              size: doc.file_size
+              size: doc.file_size,
+              title: doc.title,
+              file_id: doc.file_id,
             };
           }) : [];
 
@@ -4488,7 +4496,7 @@ class Jeeves extends Hub {
     let response = [];
 
     try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`);
+      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`);
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
     }

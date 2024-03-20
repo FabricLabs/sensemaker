@@ -70,13 +70,15 @@ class DocumentHome extends React.Component {
 
     return (
       <fabric-document-home>
-        <Segment className="fade-in" fluid style={{ maxHeight:'100%' }}>
+        <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <Form>
+          <Form className='documents-upload-form'>
             <Form.Field>
-              <Input type='file' name='file' />
-              <Button icon='upload'>Upload</Button>
+              <div style={{maxWidth: '500px', gap: '0.5em', display: 'flex'}}>
+                <Input type='file' name='file' />
+                <Button icon='upload'>Upload</Button>
+              </div>
             </Form.Field>
           </Form>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
@@ -107,7 +109,12 @@ class DocumentHome extends React.Component {
                   filteredDocuments.documents.map((instance) => (
                     <List.Item as={Card} key={instance.id}>
                       <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}>{instance.short_name} (doc #{instance.id}) </Link></h3>
+                        {(instance.title !== 'Untitled Document') ? (
+                          <h3><Link to={"/documents/" + instance.fabric_id}>{instance.title} (doc #{instance.fabric_id}) </Link></h3>
+                        ) : (
+                          <h3><Link to={"/documents/" + instance.fabric_id}>(doc #{instance.fabric_id}) </Link></h3>
+                        )}
+                        {/* <h3><Link to={"/"}>{instance.short_name} (doc #{instance.id}) </Link></h3> */}
                         <Label.Group basic>
                           <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
                           <p>{instance.description}</p>
@@ -120,9 +127,14 @@ class DocumentHome extends React.Component {
                   this.props.documents.documents.map((instance) => (
                     <List.Item as={Card} key={instance.id}>
                       <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}> (doc #{instance.id})</Link> </h3>
+                        {/* <h3><Link to={"/"}> (doc #{instance.id})</Link> </h3> */}
+                        {(instance.title !== 'Untitled Document') ? (
+                          <h3><Link to={"/documents/" + instance.id}>{instance.title} (doc #{instance.id}) </Link></h3>
+                        ) : (
+                          <h3><Link to={"/documents/" + instance.id}>(doc #{instance.id}) </Link></h3>
+                        )}
                         <Label.Group basic>
-                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created}</Label>
+                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
                           <p>{instance.description}</p>
                         </Label.Group>
                       </Card.Content>
@@ -132,15 +144,15 @@ class DocumentHome extends React.Component {
             }
           </List>
           <Segment>
-          <Form>
-            <Form.Field>
-              <Header as='h3'>Draft Documents</Header>
-              <p>Start drafting a new document by telling me the details of your case.</p>
-              <Form.TextArea />
-              <Button icon='file'>Draft</Button>
-            </Form.Field>
-          </Form>
-        </Segment>
+            <Form>
+              <Form.Field>
+                <Header as='h3'>Draft Documents</Header>
+                <p>Start drafting a new document by telling me the details of your case.</p>
+                <Form.TextArea />
+                <Button icon='file'>Draft</Button>
+              </Form.Field>
+            </Form>
+          </Segment>
         </Segment>
 
       </fabric-document-home>

@@ -85,6 +85,7 @@ class ReporterHome extends React.Component {
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
                     <h3><Link to={"/reporters/" + instance.id}> {instance.name} </Link> </h3>
+                    {/* <h3><Link to={"/"}> {instance.name} </Link> </h3> */}
                     <Label.Group basic>
                       <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
                       <Label title='City/State of birth '><Icon name='building' /> {instance.birth_city}, {instance.birth_state}</Label>

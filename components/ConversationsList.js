@@ -196,7 +196,7 @@ class ConversationsList extends React.Component {
                   </Form>
                 ) : (
                   <div>
-                    <Menu.Item as={Link} to={'/conversations/' + conversation.id}>
+                    <Menu.Item as={Link} to={'/conversations/' + conversation.id} onClick={() => this.props.resetChat()}>
                       <div style={{ display: 'flex' }}>
                         <Link to={'/conversations/' + conversation.id} style={linkStyle}>
                           {conversation.title}

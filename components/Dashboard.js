@@ -40,7 +40,9 @@ const JurisdictionHome = require('./JurisdictionHome');
 const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
+const DocumentView = require('./DocumentView');
 const ReporterHome = require('./ReporterHome');
+const ReporterView = require('./ReporterView');
 const PeopleHome = require('./PeopleHome');
 const VolumeHome = require('./VolumeHome');
 const Workspaces = require('./Workspaces');
@@ -59,6 +61,7 @@ const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
 const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
+
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
@@ -438,7 +441,7 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Conversations</p>
                 </Menu.Item>
               )}
-              <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
+              <Menu.Item onClick={() => this.handleMenuItemClick('library')}>
                 <Icon name='book' size='large' />
                 <p className='icon-label'>Library</p>
               </Menu.Item>
@@ -603,8 +606,10 @@ class Dashboard extends React.Component {
                 <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat} />} />
+                <Route path="/documents/:id" element={<DocumentView {...this.props} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/reporters" element={<ReporterHome reporters={this.props.reporters} fetchReporters={this.props.fetchReporters} searchReporter={this.props.searchReporter} chat={this.props.chat} />} />
+                <Route path="/reporters/:id" element={<ReporterView {...this.props} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />

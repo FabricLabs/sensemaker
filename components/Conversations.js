@@ -183,7 +183,7 @@ class Conversations extends React.Component {
                 </Form>
               ) : (
                 <div>
-                  <Link to={'/conversations/' + conversation.id}>
+                  <Link to={'/conversations/' + conversation.id} onClick={() => this.props.resetChat()}>
                     {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                     {conversation.title}
                   </Link>
