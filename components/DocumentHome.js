@@ -73,10 +73,12 @@ class DocumentHome extends React.Component {
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <Form>
+          <Form className='documents-upload-form'>
             <Form.Field>
-              <Input type='file' name='file' />
-              <Button icon='upload'>Upload</Button>
+              <div style={{maxWidth: '500px', gap: '0.5em', display: 'flex'}}>
+                <Input type='file' name='file' />
+                <Button icon='upload'>Upload</Button>
+              </div>
             </Form.Field>
           </Form>
           <jeeves-search fluid placeholder='Find...' className='ui search'>

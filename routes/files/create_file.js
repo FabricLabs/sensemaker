@@ -68,6 +68,8 @@ module.exports = async function (req, res, next) {
           sha256: digest,
           owner: req.user.id,
           courtlistener_filepath_local: destination,
+          file_id: savedFile[0],
+
         }).then((insertedDocument) => {
           this.trainer.ingestDocument({
             content: data.toString('utf8'),

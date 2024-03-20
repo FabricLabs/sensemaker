@@ -820,3 +820,17 @@ fabric-motd {
 .matter-file:hover .matter-delete-file-icon{
   visibility: visible !important;
 }
+
+
+/* Documents Home and View */
+.documents-upload-form{
+  margin-bottom: 1em;
+}
+
+.document-file-header{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2em;
+}

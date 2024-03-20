@@ -11,7 +11,11 @@ const {
 const {
   Header,
   Label,
-  Segment
+  Segment,
+  CardDescription,
+  CardContent,
+  Card,
+  Icon,
 } = require('semantic-ui-react');
 
 // const QueryForm = require('./QueryForm');
@@ -37,18 +41,34 @@ class DocumentView extends React.Component {
   render() {
     const { documents } = this.props;
 
-    console.log(documents);
-
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
-        <Segment fluid className='case-info' style={{ width: '100%' }}>
-          <Header as='h2'>{documents.document.title}</Header>
-          <Label.Group>
-            <Label icon='calendar'>Created at: {formatDate(documents.document.created_at)}</Label>
-            <Label icon='calendar'>Modified at: {formatDate(documents.document.created_at)}</Label>
-          </Label.Group>
-          <div dangerouslySetInnerHTML={{ __html: marked.parse(documents.document.description || '') }} />
+        <Segment fluid style={{ width: '100%', paddingBottom: '1.5em' }}>
+          {documents.document.file_id ? (<section>
+            <div className='document-file-header'>
+              <Header as='h3' style={{ margin: 0 }}>{documents.document.title}</Header>
+              <Header as="h3" style={{ margin: 0 }}><Link to={"/documents"}><Icon name='left chevron' /> Back to documents</Link></Header>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em' }}>
+              <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
+              <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
+            </div>
+          </section>
+          ) : (
+            <div className='document-file-header'>
+              <Header as='h3' style={{ margin: 0 }}>Document Not Found</Header>
+              <Header as="h3" style={{ margin: 0 }}><Link to={"/documents"}><Icon name='left chevron' /> Back to documents</Link></Header>
+            </div>
+          )}
         </Segment>
+        {documents.document.file_id && (
+          <Segment style={{ width: '100%', height: '100%' }}>
+            <iframe
+              src={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/files/serve/${documents.document.file_id}`}
+              className='document-frame'
+            ></iframe>
+          </Segment>
+        )}
       </Segment>
     );
   }
