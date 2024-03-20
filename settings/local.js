@@ -43,6 +43,7 @@ module.exports = {
   release: 'beta',
   name: 'Novo',
   mode: 'production',
+  expander: true,
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
