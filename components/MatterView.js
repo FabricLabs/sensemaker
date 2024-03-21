@@ -561,7 +561,7 @@ class MatterView extends React.Component {
             <GridRow>
               <GridColumn width={2} />
               <GridColumn width={10} textAlign='center'>
-                <Link to={'/matters/conversations/new/' + this.props.id} >
+                <Link to={'/conversations/new/' + this.props.id} >
                   <Button
                     primary
                     content="Start a new conversation"
@@ -597,13 +597,6 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
-        {/* <InformationSidebar
-          visible={this.state.informationSidebarOpen}
-          toggleInformationSidebar={this.toggleInformationSidebar}
-          documentSection={true}
-          documentInfo={this.state.documentInfo}
-          matterTitle={this.props.matters.current.title}
-        /> */}
       </Segment>
     );
   }

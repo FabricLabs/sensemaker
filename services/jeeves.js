@@ -1814,7 +1814,7 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
-    this.http._addRoute('GET', '/matters/conversations/new/:matterID', ROUTES.matters.newConversation.bind(this));
+    this.http._addRoute('GET', '/conversations/new/:matterID', ROUTES.matters.newConversation.bind(this));
     this.http._addRoute('GET', '/matters/files/:id', ROUTES.matters.listFiles.bind(this));
     this.http._addRoute('GET', '/matters/notes/:id', ROUTES.matters.listNotes.bind(this));
     this.http._addRoute('GET', '/matters/:matterID/conversations', ROUTES.matters.getConversations.bind(this)); //this one gets the list of a specific Matter's conversations
