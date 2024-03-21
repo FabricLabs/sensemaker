@@ -82,7 +82,7 @@ class DocumentHome extends React.Component {
               </div>
             </Form.Field>
           </Form> */}
-          <DocumentUploader/>
+          <DocumentUploader uploadDocument={this.props.uploadDocument}/>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
