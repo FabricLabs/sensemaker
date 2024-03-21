@@ -597,8 +597,6 @@ class Dashboard extends React.Component {
                  * - [ ] Opinions
                  * - [ ] Documents
                  * - [ ] People
-                 * - [ ] Reporters
-                 * - [ ] Jurisdictions
                  * - [ ] Volumes
                  * - [ ] Resolutions
                  */}

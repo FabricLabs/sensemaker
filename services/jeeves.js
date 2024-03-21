@@ -2779,7 +2779,7 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -4496,7 +4496,7 @@ class Jeeves extends Hub {
     let response = [];
 
     try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`);
+      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
     } catch (exception) {
       console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
     }
