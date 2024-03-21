@@ -20,6 +20,7 @@ const {
   Form,
   TextArea
 } = require('semantic-ui-react');
+const DocumentUploader = require('./DocumentUploader');
 
 const formatDate = require('../contracts/formatDate');
 
@@ -73,14 +74,15 @@ class DocumentHome extends React.Component {
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <Form className='documents-upload-form'>
+          {/* <Form className='documents-upload-form'>
             <Form.Field>
               <div style={{maxWidth: '500px', gap: '0.5em', display: 'flex'}}>
                 <Input type='file' name='file' />
                 <Button icon='upload'>Upload</Button>
               </div>
             </Form.Field>
-          </Form>
+          </Form> */}
+          <DocumentUploader uploadDocument={this.props.uploadDocument}/>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input

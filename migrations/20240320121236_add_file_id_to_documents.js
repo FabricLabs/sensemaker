@@ -3,7 +3,7 @@
 exports.up = function(knex) {
   return knex.schema.alterTable('documents', function(table) {
     table.integer('file_id').unsigned();
-    table.foreign('file_id').references('id').inTable('files');
+    table.foreign('file_id').references('id').inTable('files'); //this is the ID asigned to the file when adding it to table 'files'
   });
 };
 
