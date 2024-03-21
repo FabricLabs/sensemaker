@@ -1,5 +1,7 @@
 'use strict';
 
+const YMIR = '';
+
 // Dependencies
 const fs = require('fs');
 const path = require('path');
