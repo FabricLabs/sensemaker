@@ -402,7 +402,8 @@ class Agent extends Service {
             messages:  messages.concat([
               { role: 'user', content: request.query }
             ]),
-            tools: (this.settings.tools) ? this.tools : undefined
+            tools: (this.settings.tools) ? this.tools : undefined,
+            json: request.json
           }) : null,
           rag: null,
           sensemaker: null

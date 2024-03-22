@@ -21,7 +21,7 @@ environment.start();
 
 // Constants
 const NAME = 'NOVO';
-const VERSION = '1.0.0-RC1';
+const VERSION = '1.0.0-RC2';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
@@ -49,6 +49,7 @@ module.exports = {
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
+  temperature: 0,
   workers: 8,
   agents: {
     local: {

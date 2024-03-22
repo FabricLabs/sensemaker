@@ -221,7 +221,7 @@ class Trainer extends Service {
       console.debug('[TRAINER]', 'searching:', request.query);
       if (!request.query) return reject(new Error('No query provided.'));
       this.embeddings.similaritySearch(request.query).then((results) => {
-        console.debug('results:', results);
+        console.debug('[TRAINER]', 'results:', results);
         resolve({
           type: 'TrainerSearchResponse',
           content: results
