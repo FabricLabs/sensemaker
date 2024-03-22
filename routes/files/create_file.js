@@ -33,6 +33,7 @@ module.exports = async function (req, res, next) {
       type: mimeType,
     });
 
+    const insertedFile = await this.db('files').where({ id: savedFile[0] }).first(); //getting the inserted row in files
 
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -60,7 +61,7 @@ module.exports = async function (req, res, next) {
         const actor = new Actor({ content: data.toString('utf8') });
 
         this.db('documents').insert({
-          title:req.file.originalname,
+          title: req.file.originalname,
           content: data.toString('utf8'),
           fabric_id: actor.id,
           encoding: 'utf8',
@@ -78,7 +79,7 @@ module.exports = async function (req, res, next) {
             sha256: digest,
             owner: req.user.id,
           }).then((ingestedDocument) => {
-            res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0] });
+            res.send({ status: 'success', message: 'Successfully uploaded file!', dbFile: insertedFile });
           });
         });
       });

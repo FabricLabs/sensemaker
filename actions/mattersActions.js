@@ -197,7 +197,7 @@ const addContext = (note, filename, id, file) => {
         }
 
         const fileAnswer = await fileCreation.json();
-        file_id = fileAnswer.file_id;
+        file_id = fileAnswer.dbFile.id;//this is passed to add the id of the table 'files' in 'matters_files' to relate with the actual file
 
       }
       const fetchPromise = fetch(`/matters/context/${id}`, {

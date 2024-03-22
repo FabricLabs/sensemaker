@@ -17,11 +17,25 @@ class DocumentUploader extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
-      filename: null,
       file: null,
       fileExists: false,
+      file_id: null,
       formatError: false,
+      uploading: false,
+      errorMsg: '',
+      uploadSuccess: false,
     };
+  }
+
+  componentDidUpdate(prevProps) {
+    const { documents } = this.props;
+    if (documents !== prevProps.documents && this.state.uploading && !documents.loading) {
+      if (documents.fileUploaded) {
+        this.setState({ uploadSuccess: true, file_id: documents.fileId });
+      } else {
+        this.setState({ errorMsg: documents.error });
+      }
+    }
   }
 
   handleFileChange = async (e) => {
@@ -40,8 +54,18 @@ class DocumentUploader extends React.Component {
   };
 
   handleUpload = async () => {
+    this.setState({
+      uploading: true,
+      file: null,
+      fileExists: false,
+      file_id: null,
+      formatError: false,
+      errorMsg: '',
+      uploadSuccess: false,
+    });
     await this.props.uploadDocument(this.state.file);
   }
+
   isValidFileType(fileType) {
     const allowedTypes = [
       'image/png',
@@ -65,7 +89,7 @@ class DocumentUploader extends React.Component {
               icon='upload'
               disabled={!this.state.file}
               onClick={() => this.handleUpload()}
-              loading={this.props.documents.loading}
+              loading={documents.loading}
             >
               Upload
             </Button>
@@ -74,6 +98,16 @@ class DocumentUploader extends React.Component {
         {this.state.formatError &&
           <Form.Field>
             <Message negative content='File format not allowed. Please upload PNG, JPG, TIFF, BMP, PDF' />
+          </Form.Field>
+        }
+        {this.state.errorMsg &&
+          <Form.Field>
+            <Message negative content={this.state.errorMsg} />
+          </Form.Field>
+        }
+        {this.state.uploadSuccess &&
+          <Form.Field>
+            <Message positive content='Document uploaded successfully!' />
           </Form.Field>
         }
       </Form>

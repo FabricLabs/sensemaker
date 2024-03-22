@@ -487,9 +487,6 @@ class MatterView extends React.Component {
             }
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
-                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Aditional Notes</Header>
-                </GridColumn> */}
                 <GridColumn width={2} />
                 <GridColumn width={10}>
                   <div className='col-center'>
