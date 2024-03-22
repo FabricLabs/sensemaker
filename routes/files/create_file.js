@@ -79,7 +79,7 @@ module.exports = async function (req, res, next) {
             sha256: digest,
             owner: req.user.id,
           }).then((ingestedDocument) => {
-            res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0] });
+            res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id:actor.id });
           });
         });
       });

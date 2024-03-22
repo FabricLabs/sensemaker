@@ -16,7 +16,7 @@ const initialState = {
   loading: false,
   error: null,
   fileUploaded: false,
-  file_id: null //this is the id inserted in table 'files' in the db after creating the file
+  fabric_id: null //this is the id inserted in table 'files' in the db after creating the file
 };
 
 function documentReducer(state = initialState, action) {
@@ -34,11 +34,11 @@ function documentReducer(state = initialState, action) {
     case FETCH_DOCUMENTS_FAILURE:
       return { ...state, loading: false, error: action.payload };
     case UPLOAD_DOCUMENT_REQUEST:
-      return { ...state, loading: true, error: null, fileUploaded: false, file_id: null, error: null };
+      return { ...state, loading: true, error: null, fileUploaded: false, fabric_id: null, error: null };
     case UPLOAD_DOCUMENT_SUCCESS:
-      return { ...state, loading: false, fileUploaded: true, file_id: action.payload, error: null };
+      return { ...state, loading: false, fileUploaded: true, fabric_id: action.payload, error: null };
     case UPLOAD_DOCUMENT_FAILURE:
-      return { ...state, loading: false, error: action.payload, fileUploaded: false, file_id: null };
+      return { ...state, loading: false, error: action.payload, fileUploaded: false, fabric_id: null };
     default:
       // console.warn('Unhandled action in documents reducer:', action);
       return state;

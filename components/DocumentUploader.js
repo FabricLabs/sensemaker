@@ -111,7 +111,7 @@ class DocumentUploader extends React.Component {
               <Message.Content>
                 Document uploaded successfully! Now you can start a new conversation about this document.
               </Message.Content>
-              <Link to={'/conversations/documents/' + documents.file_id}>
+              <Link to={'/conversations/documents/' + documents.fabric_id}>
                 <Button
                   primary
                   content='Start Conversation'
