@@ -339,7 +339,7 @@ class Jeeves extends Hub {
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
-    this.searcher = new Agent({ name: 'SEARCHER', model: 'llama2', rules: this.settings.rules, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.' });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, host: null, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
     this.usa = new Agent({ name: 'USA', model: 'llama2', prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
 
     // Pipeline Datasources
@@ -689,11 +689,11 @@ class Jeeves extends Hub {
       // BEGIN EXPANDER
       if (this.settings.expander) {
         // Compute most relevant tokens
-        // const caseCount = await this.db('cases').count('id as count').first();
         // const hypotheticals = await this.lennon.query({ query: request.query });
         const words = this.importantWords(request.query);
         const phrases = this.importantPhrases(request.query);
-        const searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
+
+        searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
         if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
         console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
@@ -722,6 +722,7 @@ class Jeeves extends Hub {
       // END EXPANDER
 
       // Format Metadata
+      const caseCount = await this.db('cases').count('id as count').first();
       const meta = `metadata:\n` +
         `  created: ${created}\n` +
         `  clock: ${this.clock}\n` +
@@ -731,10 +732,9 @@ class Jeeves extends Hub {
         // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
         // `  documents: null\n` +
         `  cases:\n` +
-        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`).join('\n') +
-        // `\n` +
-        // `  counts:\n` +
-        // `    cases: ` + caseCount.count +
+        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`).join('\n') + `\n` +
+        `  counts:\n` +
+        `    cases: ` + caseCount.count +
         `\n`;
 
       // Format Query Text
@@ -805,7 +805,7 @@ class Jeeves extends Hub {
       const networkPromises = Object.keys(this.agents).map((name) => {
         console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
         // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
-        return this.agents[name].query({ query, messages });
+        return this.agents[name].query({ query, messages, requery: true });
       }).concat([
         this.chatgpt.query({ query, messages })
       ]);
