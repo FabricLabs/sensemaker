@@ -107,7 +107,18 @@ class DocumentUploader extends React.Component {
         }
         {this.state.uploadSuccess &&
           <Form.Field>
-            <Message positive content='Document uploaded successfully!' />
+            <Message positive>
+              <Message.Content>
+                Document uploaded successfully! Now you can start a new conversation about this document.
+              </Message.Content>
+              <Link to={'/conversations/documents/' + documents.file_id}>
+                <Button
+                  primary
+                  content='Start Conversation'
+                  style={{ marginTop: '1em' }}
+                />
+              </Link>
+            </Message>
           </Form.Field>
         }
       </Form>
