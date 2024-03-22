@@ -440,9 +440,6 @@ class MatterView extends React.Component {
             </GridRow>
             {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
               <GridRow>
-                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Files</Header>
-                </GridColumn> */}
                 <GridColumn width={2} />
                 <GridColumn width={10}>
                   <div className='col-center'>
@@ -461,7 +458,7 @@ class MatterView extends React.Component {
                           {matters.matterFiles.map(instance => {
                             return (
                               <Table.Row key={instance.id}>
-                                <Table.Cell><Link onClick={(e) => {e.stopPropagation(); this.openDocument(instance);}}>{instance.filename}</Link></Table.Cell>
+                                <Table.Cell><Link onClick={(e) => { e.stopPropagation(); this.openDocument(instance); }}>{instance.filename}</Link></Table.Cell>
                                 <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell textAlign="center">
@@ -487,9 +484,6 @@ class MatterView extends React.Component {
             }
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
-                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Aditional Notes</Header>
-                </GridColumn> */}
                 <GridColumn width={2} />
                 <GridColumn width={10}>
                   <div className='col-center'>
@@ -561,7 +555,7 @@ class MatterView extends React.Component {
             <GridRow>
               <GridColumn width={2} />
               <GridColumn width={10} textAlign='center'>
-                <Link to={'/matters/conversations/new/' + this.props.id} >
+                <Link to={'/conversations/new/' + this.props.id} >
                   <Button
                     primary
                     content="Start a new conversation"
@@ -597,13 +591,6 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
-        {/* <InformationSidebar
-          visible={this.state.informationSidebarOpen}
-          toggleInformationSidebar={this.toggleInformationSidebar}
-          documentSection={true}
-          documentInfo={this.state.documentInfo}
-          matterTitle={this.props.matters.current.title}
-        /> */}
       </Segment>
     );
   }
