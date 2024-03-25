@@ -167,9 +167,11 @@ class InformationSidebar extends React.Component {
                     {/* <CardHeader>{documentInfo.filename}</CardHeader> */}
                   </CardContent>
                   <CardContent style={{ paddingTop: '0.5em', marginBottom: '1.5em' }}>
-                    <CardDescription>
-                      <strong>Matter:</strong> {this.props.matterTitle}
-                    </CardDescription>
+                    {this.props.matterTitle && (
+                      <CardDescription>
+                        <strong>Matter:</strong> {this.props.matterTitle}
+                      </CardDescription>
+                    )}
                     <CardDescription>
                       <strong>Created:</strong> {this.formatDateTime(documentInfo.created_at)}
                     </CardDescription>
@@ -299,8 +301,8 @@ class InformationSidebar extends React.Component {
                   </div>
                 )
             )
-        ): (
-          <div className='info-sidebar center-elements-column'/>
+        ) : (
+          <div className='info-sidebar center-elements-column' />
         )}
       </Sidebar>
     )

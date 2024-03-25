@@ -274,11 +274,11 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  toggleInformationSidebar = () => {
-    this.setState(prevState => ({
-      informationSidebarOpen: !prevState.informationSidebarOpen
-    }));
-  };
+  // toggleInformationSidebar = () => {
+  //   this.setState(prevState => ({
+  //     informationSidebarOpen: !prevState.informationSidebarOpen
+  //   }));
+  // };
 
   messageInfo = (ID) => {
     let newState = {
@@ -654,6 +654,7 @@ class ChatBox extends React.Component {
       matterID,
       matterTitle,
       actualConversation,
+      documentChat
     } = this.props;
 
     //this is the style of the chat container with no messages on the chat
@@ -769,6 +770,14 @@ class ChatBox extends React.Component {
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
               <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
+            </div>
+          )}
+          {documentChat && (
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.props.documentInfo.filename}
+                <Link onClick={() => this.props.documentInfoSidebar(this.props.documentInfo, null)} />
+              </Header>
+              {/* <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header> */}
             </div>
           )}
           {/* The chat messages start rendering here */}
