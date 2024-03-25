@@ -36,7 +36,7 @@ class DocumentNewChat extends React.Component {
   };
 
   render() {
-    const { chat, messages, matterID, matters } = this.props;
+    const { chat, messages, documents } = this.props;
 
     const componentStyle = {
       display: 'absolute',
@@ -64,6 +64,8 @@ class DocumentNewChat extends React.Component {
           includeFeed={true}
           placeholder={'Ask me anything about this document...'}
           documentChat={true}
+          documentInfo={documents.document}
+          documentInfoSidebar={this.props.documentInfoSidebar}
         />
       </fabric-component>
     );

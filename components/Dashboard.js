@@ -41,6 +41,7 @@ const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
+const DocumentNewChat = require('./DocumentNewChat');
 const ReporterHome = require('./ReporterHome');
 const ReporterView = require('./ReporterView');
 const PeopleHome = require('./PeopleHome');
@@ -605,7 +606,7 @@ class Dashboard extends React.Component {
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} chat={this.props.chat}/>} />
                 <Route path="/documents/:id" element={<DocumentView {...this.props} />} />
-                {/* <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props}/>} /> */}
+                <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown}/>} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/reporters" element={<ReporterHome reporters={this.props.reporters} fetchReporters={this.props.fetchReporters} searchReporter={this.props.searchReporter} chat={this.props.chat} />} />
                 <Route path="/reporters/:id" element={<ReporterView {...this.props} />} />
