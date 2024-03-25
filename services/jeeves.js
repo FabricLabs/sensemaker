@@ -1583,8 +1583,9 @@ class Jeeves extends Hub {
     this.rag = new Agent({
       name: 'AugmentorRAG',
       listen: this.settings.fabric.listen,
+      host: null,
       openai: this.settings.openai,
-      prompt: 'You are AugmentorRAG, designed to return an SQL query that returns any cases that match the provided titles.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.\n\n' +
+      prompt: 'You are AugmentorRAG, designed to create SQL queries which will return the most relevant results to the user\'s query.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.  You can use JOIN to create a unified data view, but be sure that the user query and conversation history are considered carefully to generate the most relevant results.\n\n' +
         'Supported tables:\n' +
         '  - cases\n' +
         '    ```\n' +
@@ -1598,7 +1599,7 @@ class Jeeves extends Hub {
         '  - /\n' +
         '  - /cases\n' +
         '  - /documents\n' +
-        ''
+        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));

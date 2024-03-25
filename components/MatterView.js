@@ -487,7 +487,7 @@ class MatterView extends React.Component {
                 <GridColumn width={2} />
                 <GridColumn width={10}>
                   <div className='col-center'>
-                    <Header as='h2'>Aditional Notes</Header>
+                    <Header as='h2'>Additional Notes</Header>
                     <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
                       <List loading={matters.loading} size='small'>
                         {matters.matterNotes.map(instance => {
