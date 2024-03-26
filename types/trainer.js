@@ -246,12 +246,14 @@ class Trainer extends Service {
         // console.debug('[TRAINER]', 'SPA:', spa);
 
         // Terms of Use
-        const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
-        const contractChunks = await this.splitter.splitDocuments([contract]);
+        // const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
+        // const contractChunks = await this.splitter.splitDocuments([contract]);
         // const chunks = await this.splitter.splitDocuments(spa);
         // const allDocs = [contract].concat(spa, contractChunks, chunks);
         // const allDocs = contractChunks.concat(chunks);
-        const allDocs = contractChunks;
+
+        const stub = new Document({ pageContent: 'Hello, world!', metadata: { type: 'text/plain' } });
+        const allDocs = [ stub ];
 
         // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
         if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
@@ -284,8 +286,9 @@ class Trainer extends Service {
     }
 
     const allDocs = await this.ingestReferences();
+    console.debug('[TRAINER]', 'Ingested references:', allDocs);
 
-    this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
+    this.embeddings = await RedisVectorStore.fromDocuments(allDocs || [], new TensorFlowEmbeddings(), {
       redisClient: this.redis,
       indexName: this.settings.redis.indexName || 'novo-embeddings'
     });

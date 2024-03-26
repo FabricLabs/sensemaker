@@ -1588,18 +1588,17 @@ class Jeeves extends Hub {
       prompt: 'You are AugmentorRAG, designed to create SQL queries which will return the most relevant results to the user\'s query.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.  You can use JOIN to create a unified data view, but be sure that the user query and conversation history are considered carefully to generate the most relevant results.\n\n' +
         'Supported tables:\n' +
         '  - cases\n' +
-        '    ```\n' +
+        // '  - documents\n' +
+        'Schema definitions:' +
+        '```\n' +
         caseDef[0][0]['Create Table'] + '\n' +
-        '    ```\n' +
-        '  - documents\n' +
-        '    ```\n' +
-        documentDef[0][0]['Create Table'] + '\n' +
-        '    ```\n' +
+        // documentDef[0][0]['Create Table'] + '\n' +
+        '```\n' +
         'Supported paths:\n' +
-        '  - /\n' +
-        '  - /cases\n' +
-        '  - /documents\n' +
-        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.'
+        '  - / (index, all object types)\n' +
+        '  - /cases (case database)\n' +
+        // '  - /documents (document database)\n' +
+        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.  Remember, your response will be executed directly by a SQL client, so ensure it is a valid query given the schema.'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
