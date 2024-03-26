@@ -814,7 +814,8 @@ class Jeeves extends Hub {
         // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
         return this.agents[name].query({ query, messages, requery: true });
       }).concat([
-        this.chatgpt.query({ query, messages, requery: true })
+        this.chatgpt.query({ query, messages, requery: true }),
+        this.trainer.query({ query, messages }),
       ]);
 
       // Either all settle, or timeout
