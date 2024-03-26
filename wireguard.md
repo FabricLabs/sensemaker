@@ -45,7 +45,7 @@ PrivateKey = <wg0node.key>
 DNS = 9.9.9.9
 
 [Peer]
-PublicKey = <wg0node.pub>
+PublicKey = 4+R5JV5drm3sNDk507T+fNxk4P/vvjDfmVZhmOvmZhg=
 EndPoint = 65.109.159.101:51820
 AllowedIPs = 10.8.0.0/24
 PersistentKeepalive = 25
