@@ -35,6 +35,7 @@ sudo cat ~/wg0node.key | wg pubkey | sudo tee ~/wg0node.pub
 
 create the file `/etc/wireguard/wg0.conf`
 <br>
+<br>
 copy the following into the file:
 ```
 [Interface]
@@ -55,7 +56,7 @@ Using the CLI:
 `sudo wg-quick up wg0`
 <br>
 <br>
-using the mac GUI:
+Using the mac GUI:
 <br>
 `File -> Import Tunnel(s) From File... -> select wg0.conf`
 
