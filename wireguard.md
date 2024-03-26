@@ -56,6 +56,7 @@ Using the CLI:
 <br>
 <br>
 using the mac GUI:
+<br>
 `File -> Import Tunnel(s) From File... -> select wg0.conf`
 
 
