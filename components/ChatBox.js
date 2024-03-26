@@ -251,12 +251,16 @@ class ChatBox extends React.Component {
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
-
+    let fileID = null;
+    if(documentChat){
+      fileID = this.props.documentInfo.file_id;
+    }
 
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      effectiveMatterID
+      effectiveMatterID,
+      fileID
     ).then((output) => {
 
       // dispatch getMessages
@@ -356,7 +360,7 @@ class ChatBox extends React.Component {
 
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID } = this.props;
 
     this.stopPolling();
 
@@ -393,8 +397,15 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+    let fileID = null;
+    if(documentChat){
+      fileID = this.props.documentInfo.file_id;
+    }
+
     // dispatch submitMessage
-    this.props.regenAnswer(dataToSubmit).then((output) => {
+    this.props.regenAnswer(dataToSubmit, effectiveMatterID, fileID).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -774,8 +785,8 @@ class ChatBox extends React.Component {
           )}
           {documentChat && (
             <div className='conversation-title-container'>
-              <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.props.documentInfo.filename}
-                <Link onClick={() => this.props.documentInfoSidebar(this.props.documentInfo, null)} />
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>
+                <Link onClick={() => this.props.documentInfoSidebar(this.props.documentInfo, null)}>{this.props.documentInfo.filename}</Link>
               </Header>
               {/* <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header> */}
             </div>
