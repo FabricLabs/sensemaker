@@ -288,10 +288,12 @@ class Trainer extends Service {
     const allDocs = await this.ingestReferences();
     console.debug('[TRAINER]', 'Ingested references:', allDocs);
 
-    this.embeddings = await RedisVectorStore.fromDocuments(allDocs || [], new TensorFlowEmbeddings(), {
+    this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
       redisClient: this.redis,
       indexName: this.settings.redis.indexName || 'novo-embeddings'
     });
+
+    console.debug('[TRAINER]', 'Embeddings:', this.embeddings);
 
     /* try {
       const docs = await this.loader.load();
