@@ -265,55 +265,54 @@ class Trainer extends Service {
   }
 
   async start () {
-    this._state.content.status = this._state.status = 'STARTING';
+    return new Promise(async (resolve, reject) => {
+      this._state.content.status = this._state.status = 'STARTING';
 
-    // Start Services
-    // Redis
-    console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
-    console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
+      // Start Services
+      // Redis
+      console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
+      console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
 
-    this.redis.on('connect', async () => {
-      console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
-      await this.ingestReferences();
-      console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+      this.redis.on('connect', async () => {
+        console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
+        const allDocs = await this.ingestReferences();
+        console.debug('[NOVO]', '[TRAINER]', 'Ingested references:', allDocs);
+
+        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
+          redisClient: this.redis,
+          indexName: this.settings.redis.name || 'novo-embeddings'
+        });
+
+        console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+
+        /* try {
+          const docs = await this.loader.load();
+          if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
+        } catch (exception) {
+          if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
+        } */
+
+        // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+        // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+
+        this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
+        // this._state.content.checkstate = check.text;
+        // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+        this._state.content.status = this._state.status = 'STARTED';
+
+        this.commit();
+
+        resolve(this);
+      });
+
+      try {
+        await this.redis.connect();
+      } catch (exception) {
+        console.error('[TRAINER]', 'Error starting Redis:', exception);
+        // process.exit(); // TODO: look at exit codes
+      }
     });
-
-    try {
-      await this.redis.connect();
-    } catch (exception) {
-      console.error('[TRAINER]', 'Error starting Redis:', exception);
-      // process.exit(); // TODO: look at exit codes
-    }
-
-    const allDocs = await this.ingestReferences();
-    console.debug('[TRAINER]', 'Ingested references:', allDocs);
-
-    this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
-      redisClient: this.redis,
-      indexName: this.settings.redis.indexName || 'novo-embeddings'
-    });
-
-    console.debug('[TRAINER]', 'Embeddings:', this.embeddings);
-
-    /* try {
-      const docs = await this.loader.load();
-      if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
-    } catch (exception) {
-      if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
-    } */
-
-    this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
-
-    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
-
-    // this._state.content.checkstate = check.text;
-    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
-    this._state.content.status = this._state.status = 'STARTED';
-
-    this.commit();
-
-    return this;
   }
 
   async stop () {
