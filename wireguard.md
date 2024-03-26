@@ -50,8 +50,10 @@ AllowedIPs = 10.8.0.0/24
 PersistentKeepalive = 25
 ```
 ### Start Wireguard VPN
-
+Using the CLI:
+<br>
 `sudo wg-quick up wg0`
+<br>
 <br>
 using the mac GUI:
 `File -> Import Tunnel(s) From File... -> select wg0.conf`
