@@ -40,14 +40,23 @@ const resetChat = (message) => {
   };
 }
 
-const submitMessage = (message, matter_id) => {
+const submitMessage = (message, matter_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
 
     const token = getState().auth.token;
 
     try {
-      const requestBody = matter_id !== null ? { ...message, matter_id } : message;
+      
+      let requestBody = { ...message };
+
+      if (matter_id !== null) {
+        requestBody.matter_id = matter_id;
+      }
+
+      if (file_fabric_id !== null) {
+        requestBody.file_id = file_fabric_id;
+      }
 
       const response = await fetch('/messages', {
         method: 'POST',
@@ -71,7 +80,7 @@ const submitMessage = (message, matter_id) => {
   };
 };
 
-const regenAnswer = (message) => {
+const regenAnswer = (message, matter_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
 
@@ -79,6 +88,19 @@ const regenAnswer = (message) => {
 
     message.temperature = 'extreme';
     message.regenerate = true;
+
+    // Start with the original message
+    let requestBody = { ...message };
+
+    // If matter_id is not null, add it to the requestBody
+    if (matter_id !== null) {
+      requestBody.matter_id = matter_id;
+    }
+
+    // If file_id is not null, add it to the requestBody
+    if (file_id !== null) {
+      requestBody.file_fabric_id = file_fabric_id;
+    }
 
     try {
       const response = await fetch(`/messages/${message.id}`, {
@@ -88,7 +110,7 @@ const regenAnswer = (message) => {
           'Content-Type': 'application/json',
           'X-Temperature': message.temperature
         },
-        body: JSON.stringify(message)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
