@@ -251,10 +251,6 @@ class ChatBox extends React.Component {
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
-    // let fileID = null;
-    // if(documentChat){
-    //   fileID = this.props.documentInfo.file_id;
-    // }
     const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
     // dispatch submitMessage
     this.props.submitMessage(
@@ -277,12 +273,6 @@ class ChatBox extends React.Component {
     // Clear the input after sending the message
     this.setState({ query: '' });
   }
-
-  // toggleInformationSidebar = () => {
-  //   this.setState(prevState => ({
-  //     informationSidebarOpen: !prevState.informationSidebarOpen
-  //   }));
-  // };
 
   messageInfo = (ID) => {
     let newState = {
@@ -351,10 +341,6 @@ class ChatBox extends React.Component {
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
-    // let fileID = null;
-    // if(documentChat){
-    //   fileID = this.props.documentInfo.file_id;
-    // }
     const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
 
     // dispatch submitMessage
@@ -727,6 +713,21 @@ class ChatBox extends React.Component {
               {actualConversation.matter_id && (
                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
+              {(this.props.documentInfo && !documentChat) && (
+                <Popup
+                  content="View related Document"
+                  trigger={
+                    <Icon
+                      name='file alternate'
+                      size='big'
+                      className='primary'
+                      primary
+                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}
+                      style={{ cursor: "pointer" }}
+                    />
+                  }
+                />
+              )}
             </div>
           )}
           {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
@@ -739,7 +740,7 @@ class ChatBox extends React.Component {
           {documentChat && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>
-                <Link onClick={() => this.props.documentInfoSidebar(this.props.documentInfo, null)}>{this.props.documentInfo.filename}</Link>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename}</Link>
               </Header>
               {/* <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header> */}
             </div>
