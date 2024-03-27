@@ -72,7 +72,8 @@ module.exports = async function (req, res, next) {
           file_id: savedFile[0],
 
         }).then((insertedDocument) => {
-          this.trainer.ingestDocument({
+          res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });
+          /* this.trainer.ingestDocument({
             content: data.toString('utf8'),
             encoding: 'utf8',
             filename: req.file.originalname,
@@ -80,7 +81,7 @@ module.exports = async function (req, res, next) {
             owner: req.user.id,
           }).then((ingestedDocument) => {
             res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id:actor.id });
-          });
+          }); */
         });
       });
     });
