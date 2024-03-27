@@ -47,15 +47,13 @@ const submitMessage = (message, matter_id = null, file_fabric_id = null) => {
     const token = getState().auth.token;
 
     try {
-      
-      let requestBody = { ...message };
 
+      let requestBody = { ...message };
       if (matter_id !== null) {
         requestBody.matter_id = matter_id;
       }
-
       if (file_fabric_id !== null) {
-        requestBody.file_id = file_fabric_id;
+        requestBody.file_fabric_id = file_fabric_id;
       }
 
       const response = await fetch('/messages', {

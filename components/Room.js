@@ -23,7 +23,7 @@ class Conversation extends React.Component {
       actualConversation: null,
       recoveryFlag: false,
       recovering: false,
-      fileID: null,
+      file_fabric_id: null,
       documentInfo: null,
     };
 
@@ -51,7 +51,10 @@ class Conversation extends React.Component {
     const actual = this.props.conversations.find(conversation => conversation.id == id);
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
-    this.setState({fileID: actual.file_id});
+    this.setState({ file_fabric_id: actual.file_fabric_id ? actual.file_fabric_id : null });
+    if (actual.file_fabric_id) {
+      await this.props.fetchDocument(this.props.fabric_id);
+    }
     // Fetch new conversation details and messages
     await this.props.getMessages({ conversation_id: id });
   }
@@ -76,7 +79,7 @@ class Conversation extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-    console.log('la conversation', this.state.actualConversation);
+
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
@@ -92,6 +95,8 @@ class Conversation extends React.Component {
           previousChat={true}
           conversationID={id}
           actualConversation={this.state.actualConversation}
+          documentInfo={this.props.documents.document}
+          documentInfoSidebar={this.props.documentInfoSidebar}
         />
       </fabric-component>
 
