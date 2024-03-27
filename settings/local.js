@@ -53,6 +53,12 @@ module.exports = {
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   temperature: 0,
+  trainer: {
+    enable: false,
+    hosts: ['localhost:7777'],
+    interval: 1000,
+    limit: 10
+  },
   workers: 8,
   agents: {
     // Local Agents
@@ -100,7 +106,7 @@ module.exports = {
       port: 443,
       secure: true
     }, */
-    llama: {
+    /* llama: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: YMIR,
@@ -127,7 +133,7 @@ module.exports = {
       host: THOR,
       port: 11434,
       secure: false
-    },
+    }, */
     // Untested so far
     /*
     chatgpt: {
