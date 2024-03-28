@@ -2027,53 +2027,9 @@ class Jeeves extends Hub {
       // - create help conversation
     });
 
-    this.http._addRoute('GET', '/invitations', async (req, res) => {
-      try {
-        const invitations = await this.db('invitations')
-        .join('users', 'invitations.sender_id', '=', 'users.id')
-        .select('invitations.*', 'users.username as sender_username')
-        .orderBy('invitations.created_at', 'desc');
+    this.http._addRoute('GET', '/invitations', ROUTES.invitations.getInvitations.bind(this));
 
-        res.send(invitations);
-      } catch (error) {
-        console.error('Error fetching invitations:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/checkInvitationToken/:id', async (req, res) => {
-      const  invitationToken = req.params.id;
-
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Yor invitation link is not valid.' });
-        }
-
-        // Check if the invitation has already been accepted or declined
-        if (invitation.status === 'accepted') {
-          return res.status(409).json({
-            message: 'This invitation has already been accepted. If you believe this is an error or if you need further assistance, please do not hesitate to contact our support team at support@novo.com.'
-          });
-        } else if (invitation.status === 'declined') {
-          return res.status(409).json({
-            message: 'You have previously declined this invitation. If this was not your intention, or if you have any questions, please feel free to reach out to our support team at support@novo.com for assistance.'
-          });
-        }
-
-        // Check if the token is older than 30 days
-        const tokenAgeInDays = (new Date() - new Date(invitation.updated_at)) / (1000 * 60 * 60 * 24);
-        if (tokenAgeInDays > 30) {
-          return res.status(410).json({ message: 'Your invitation link has expired.' });
-        }
-
-        res.json({ message: 'Invitation token is valid and pending.', invitation });
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
     //endpoint to change the status of an invitation when its accepted
     this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {

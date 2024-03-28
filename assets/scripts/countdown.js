@@ -1,5 +1,5 @@
+const countdownElement = document.getElementById("countdown");
 function updateCountdown() {
-  const countdownElement = document.getElementById("countdown");
   const targetDate = new Date('February 12, 2024 09:00:00 GMT-06:00');
   const currentDate = new Date();
   const totalSeconds = (targetDate - currentDate) / 1000;
@@ -9,7 +9,7 @@ function updateCountdown() {
   const minutes = Math.floor(totalSeconds / 60) % 60;
   const seconds = Math.floor(totalSeconds) % 60;
 
-  countdownElement.innerHTML = `
+  countdownElement ? countdownElement.innerHTML = `
         <div class="time-unit">
             <span class="number">${days}</span>
             <span class="label">Days</span>
@@ -26,7 +26,13 @@ function updateCountdown() {
             <span class="number">${seconds}</span>
             <span class="label">Seconds</span>
         </div>
-    `;
+    ` : console.log('countdownElement not found')
 }
 
-setInterval(updateCountdown, 1000);
+
+if  (countdownElement) {
+    setInterval(updateCountdown, 1000);
+} else {
+    clearInterval(updateCountdown);
+    return;
+}
