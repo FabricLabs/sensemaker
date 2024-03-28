@@ -3,6 +3,7 @@
 // Constants
 const ENABLE_FILESYSTEM_INGEST = false;
 const ENABLE_DOCUMENT_INGEST = true;
+const ENABLE_JURISDICTION_INGEST = true;
 
 // Settings
 const settings = require('../settings/local');
@@ -34,6 +35,7 @@ async function main (input = {}) {
   console.log('[TRAINER]', '[MAIN]', 'Starting training process...');
 
   // Ingest all files
+  // TODO: subscribe to filesystem changes
   if (ENABLE_FILESYSTEM_INGEST) {
     for (let file of filesystem.files) {
       console.debug('[TRAINER]', '[MAIN]', '[FILE]', file);
@@ -50,7 +52,20 @@ async function main (input = {}) {
     }
   }
 
-  // TODO: subscribe to filesystem changes
+  if (ENABLE_JURISDICTION_INGEST) {
+    const jurisdictionStream = db('jurisdictions').select('*').stream();
+    for await (const jurisdiction of jurisdictionStream) {
+      const start = new Date();
+      // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
+      const actor = { name: `novo/jurisdictions/${jurisdiction.id}` }; // Novo reference ID (name)
+      const title = { name: `novo/jurisdictions/${jurisdiction.id}/name`, content: jurisdiction.name };
+      const reference = await trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
+      const embedding = await trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
+      const ingested = await trainer.ingestDocument({ content: JSON.stringify(jurisdiction), metadata: jurisdiction }, 'jurisdiction');
+      const duration = new Date() - start;
+      console.debug('[TRAINER]', '[MAIN]', `Ingested jurisdiction in ${duration / 1000}s with result:`, ingested);
+    }
+  }
 
   // Documents
   if (ENABLE_DOCUMENT_INGEST) {
