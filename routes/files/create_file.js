@@ -80,7 +80,21 @@ module.exports = async function (req, res, next) {
           file_id: savedFile[0],
 
         }).then((insertedDocument) => {
-          this.trainer.ingestDocument({
+          console.debug('[FILES]', 'Inserted document:', insertedDocument[0]);
+
+          // queue job
+          this.queue.addJob({
+            method: 'IngestDocument',
+            params: [insertedDocument[0]]
+          });
+
+          this.queue.addJob({
+            method: 'IngestFile',
+            params: [savedFile[0]]
+          });
+
+          res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });
+          /* this.trainer.ingestDocument({
             content: data.toString('utf8'),
             encoding: 'utf8',
             filename: req.file.originalname,
@@ -88,7 +102,7 @@ module.exports = async function (req, res, next) {
             owner: req.user.id,
           }).then((ingestedDocument) => {
             res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id:actor.id });
-          });
+          }); */
         });
       });
     });

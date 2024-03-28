@@ -84,16 +84,30 @@ class OpenAIService extends Service {
       const entropy = request.entropy || 0.0;
       const seed = new Actor({ name: `entropies/${entropy + ''}` });
       const message = (request.message_id) ? { id: request.message_id } : { id: seed.id };
+      const configuration = {
+        max_tokens: CHATGPT_MAX_TOKENS,
+        messages: request.messages,
+        model: this.settings.model,
+        stream: true,
+        temperature: this.settings.temperature,
+        tool_choice: request.tool_choice,
+        tools: request.tools
+      };
+
+      if (request.bias) {
+        configuration.logit_bias = request.bias;
+      }
+
+      if (request.json) {
+        configuration.response_format = 'json';
+      }
+
+      if (request.temperature) {
+        configuration.temperature = request.temperature;
+      }
 
       try {
-        const stream = this.openai.beta.chat.completions.stream({
-          max_tokens: CHATGPT_MAX_TOKENS,
-          messages: request.messages,
-          model: this.settings.model,
-          stream: true,
-          tool_choice: request.tool_choice,
-          tools: request.tools
-        });
+        const stream = this.openai.beta.chat.completions.stream(configuration);
 
         this.emit('MessageStart', {
           message_id: request.message_id,

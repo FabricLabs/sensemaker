@@ -28,6 +28,10 @@ module.exports = {
     listFiles: require('./matters/list_matter_files'),
     listNotes: require('./matters/list_matter_notes'),
   },
+  invitations: {
+    getInvitations: require('./invitations/get_invitations'),
+    checkInvitationToken: require('./invitations/check_invitation_token'),
+  },
   messages: {
     create: require('./messages/create_message'),
   },
