@@ -29,8 +29,13 @@ module.exports = {
     listNotes: require('./matters/list_matter_notes'),
   },
   invitations: {
+    createInvitations: require('./invitations/create_invitation'),
     getInvitations: require('./invitations/get_invitations'),
     checkInvitationToken: require('./invitations/check_invitation_token'),
+    resendInvitation : require('./invitations/resend_invitation'),
+    acceptInvitation: require('./invitations/accept_invitation'),
+    declineInvitation: require('./invitations/decline_invitation'),
+    deleteInvitation: require('./invitations/delete_invitation'),
   },
   messages: {
     create: require('./messages/create_message'),
