@@ -16,6 +16,7 @@ const {
   CardContent,
   Card,
   Icon,
+  Button
 } = require('semantic-ui-react');
 
 // const QueryForm = require('./QueryForm');
@@ -43,7 +44,7 @@ class DocumentView extends React.Component {
 
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
-        <Segment fluid style={{ width: '100%', paddingBottom: '1.5em' }}>
+        <Segment fluid style={{ width: '100%', paddingBottom: '3em', overflowY: 'hidden' }}>
           {documents.document.file_id ? (<section>
             <div className='document-file-header'>
               <Header as='h3' style={{ margin: 0 }}>{documents.document.title}</Header>
@@ -53,6 +54,12 @@ class DocumentView extends React.Component {
               <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
               <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
             </div>
+            <Link to={'/conversations/documents/' + documents.document.fabric_id} style={{ marginBottom: '2.5em' }} onClick={()=> this.props.resetChat()}>
+              <Button
+                primary
+                content='Start Conversation'
+              />
+            </Link>
           </section>
           ) : (
             <div className='document-file-header'>

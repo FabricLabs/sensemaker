@@ -218,7 +218,7 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID, matterID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
     let dataToSubmit;
 
     this.stopPolling();
@@ -251,12 +251,12 @@ class ChatBox extends React.Component {
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
-
-
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      effectiveMatterID
+      effectiveMatterID,
+      fileFabricID
     ).then((output) => {
 
       // dispatch getMessages
@@ -273,12 +273,6 @@ class ChatBox extends React.Component {
     // Clear the input after sending the message
     this.setState({ query: '' });
   }
-
-  // toggleInformationSidebar = () => {
-  //   this.setState(prevState => ({
-  //     informationSidebarOpen: !prevState.informationSidebarOpen
-  //   }));
-  // };
 
   messageInfo = (ID) => {
     let newState = {
@@ -303,60 +297,12 @@ class ChatBox extends React.Component {
   };
 
 
-  // // thumbs up handler
-  // thumbsUp = (ID) => {
-  //   this.setState({ thumbsDownClicked: false });
-
-  //   // if thumbsUp was clicked for this message already, close sidebar
-  //   if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
-  //     this.setState({
-  //       informationSidebarOpen: false,
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: false
-  //     });
-  //   } else {
-  //     //else, open (or keep open) sidebar, and fix states
-  //     this.setState({
-  //       thumbsUpClicked: true,
-  //       thumbsDownClicked: false,
-  //       checkingMessageID: ID,
-  //       informationSidebarOpen: true
-  //     });
-  //   }
-  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  //   this.props.resetInformationSidebar();
-
-  // };
-
-  // // thumbs down handler
-  // thumbsDown = (ID) => {
-  //   this.setState({ thumbsUpClicked: false });
-  //   // if thumbsDown was clicked for this message already, close sidebar
-  //   if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
-  //     this.setState({
-  //       informationSidebarOpen: false,
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: false
-  //     });
-  //   } else {
-  //     //else, open (or keep open) sidebar, and fix states
-  //     this.setState({
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: true,
-  //       checkingMessageID: ID,
-  //       informationSidebarOpen: true
-  //     });
-  //   }
-  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  //   this.props.resetInformationSidebar();
-  // };
-
   regenerateAnswer = (event) => {
     event.preventDefault();
 
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
 
     this.stopPolling();
 
@@ -393,8 +339,12 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
+
     // dispatch submitMessage
-    this.props.regenAnswer(dataToSubmit).then((output) => {
+    this.props.regenAnswer(dataToSubmit, effectiveMatterID, fileFabricID).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -763,6 +713,21 @@ class ChatBox extends React.Component {
               {actualConversation.matter_id && (
                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
+              {(this.props.documentInfo && !documentChat) && (
+                <Popup
+                  content="View related Document"
+                  trigger={
+                    <Icon
+                      name='file alternate'
+                      size='big'
+                      className='primary'
+                      primary
+                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}
+                      style={{ cursor: "pointer" }}
+                    />
+                  }
+                />
+              )}
             </div>
           )}
           {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
@@ -774,8 +739,8 @@ class ChatBox extends React.Component {
           )}
           {documentChat && (
             <div className='conversation-title-container'>
-              <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.props.documentInfo.filename}
-                <Link onClick={() => this.props.documentInfoSidebar(this.props.documentInfo, null)} />
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename}</Link>
               </Header>
               {/* <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header> */}
             </div>

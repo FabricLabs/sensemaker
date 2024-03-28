@@ -2641,9 +2641,9 @@ class Jeeves extends Hub {
 
           // TODO: re-evaluate security of `is_admin` check
           if (req.user?.state?.roles?.includes('admin')) {
-            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name','matter_id').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
+            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name','matter_id','file_fabric_id').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
           } else {
-            results = await this.db.select('id', 'title', 'created_at').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
+            results = await this.db.select('id', 'title', 'created_at','matter_id','file_fabric_id').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
             // TODO: update the conversation upon change (new user message, new agent message)
             // TODO: sort conversations by updated_at (below line)
             // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
@@ -2872,7 +2872,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations').where({ id: req.params.id }).first();
+      const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();
       const messages = await this.db('messages')
         .whereIn('id', conversation.log)
         .select('id', 'content', 'created_at');
@@ -3049,7 +3049,9 @@ class Jeeves extends Hub {
         conversation_id,
         content,
         messageID,
-        regenerate
+        regenerate,
+        matter_id,
+        file_fabric_id,
       } = req.body;
 
       if (!regenerate) console.warn('[JEEVES]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');
