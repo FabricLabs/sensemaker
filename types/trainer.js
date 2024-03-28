@@ -220,11 +220,11 @@ class Trainer extends Service {
    * @param {Object} request Search object.
    * @returns {Promise} Resolves with the result of the operation.
    */
-  async search (request) {
+  async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
       console.debug('[TRAINER]', 'searching:', request.query);
       if (!request.query) return reject(new Error('No query provided.'));
-      this.embeddings.similaritySearch(request.query).then((results) => {
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter || { type: 'case' }).then((results) => {
         console.debug('[TRAINER]', 'results:', results);
         resolve({
           type: 'TrainerSearchResponse',

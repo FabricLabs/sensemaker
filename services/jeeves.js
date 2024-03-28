@@ -685,7 +685,7 @@ class Jeeves extends Hub {
       });
 
       // RAG
-      const cases = await this._vectorSearchCases(request.query);
+      const cases = await this._vectorSearchCases(request.query, 5);
       const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
 
       // Variables
@@ -1223,14 +1223,22 @@ class Jeeves extends Hub {
       this.agents[name] = this.createAgent(configuration);
     }
 
-    this.queue._registerMethod('IngestDocument', (...params) => {
+    // Worker Methods
+    // TODO: define these with a map / loop
+    // Document Ingest
+    this.queue._registerMethod('IngestDocument', async (...params) => {
       console.debug('[NOVO]', '[QUEUE]', 'Ingesting document...', params);
-      return { status: 'COMPLETED' };
+      const document = await this.db('documents').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
+      return { status: 'COMPLETED', ingested };
     });
 
-    this.queue._registerMethod('IngestFile', (...params) => {
+    // User Upload Ingest
+    this.queue._registerMethod('IngestFile', async (...params) => {
       console.debug('[NOVO]', '[QUEUE]', 'Ingesting file...', params);
-      return { status: 'COMPLETED' };
+      const file = await this.db('files').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(file), metadata: { id: file.id }}, 'file');
+      return { status: 'COMPLETED', ingested };
     });
 
     // Trainer
@@ -2529,14 +2537,14 @@ class Jeeves extends Hub {
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       // Data Updates
-      if (instance.courtlistener_id) {
+      if (instance.courtlistener_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
       }
 
-      if (instance.pacer_case_id) {
+      if (instance.pacer_case_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
@@ -4352,7 +4360,7 @@ class Jeeves extends Hub {
 
   async _searchCases (request) {
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request);
+    const redisResults = await this.trainer.search(request, 10);
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
     const mappedQueries = redisResults.content.map((result) => {
@@ -4746,14 +4754,14 @@ class Jeeves extends Hub {
     });
   }
 
-  async _vectorSearchCases (query = '') {
+  async _vectorSearchCases (query = '', limit = 100) {
     const words = await this.wordTokens(query);
     const uniques = [...new Set(words)];
 
     console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', query);
     console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
 
-    const redisResults = await this.trainer.search({ query: query, resources: ['cases', 'documents'] });
+    const redisResults = await this.trainer.search({ query: query, filter: { type: 'case' }}, limit);
     console.debug('[NOVO]', '[VECTOR]', 'Redis Results:', redisResults);
 
     const results = await Promise.all(uniques.map((word) => {
@@ -4766,7 +4774,7 @@ class Jeeves extends Hub {
       cases = cases.concat(results[i]);
     }
 
-    if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+    // if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
 
     const mapped = await Promise.all(redisResults.content.map((result) => {
       console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
