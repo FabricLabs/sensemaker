@@ -1,5 +1,13 @@
 'use strict';
 
+const ALLOWED_UPLOAD_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/tiff',
+  'image/bmp',
+  'application/pdf',
+];
+
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
@@ -67,15 +75,7 @@ class DocumentUploader extends React.Component {
   }
 
   isValidFileType(fileType) {
-    const allowedTypes = [
-      'image/png',
-      'image/jpeg',
-      'image/tiff',
-      'image/bmp',
-      'application/pdf',
-    ];
-
-    return allowedTypes.includes(fileType);
+    return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
 
   render() {
@@ -84,7 +84,7 @@ class DocumentUploader extends React.Component {
       <Form className='documents-upload-form'>
         <Form.Field>
           <div style={{ maxWidth: '500px', gap: '0.5em', display: 'flex' }}>
-            <Input type='file' name='file' onChange={this.handleFileChange} />
+            <Input type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
             <Button
               icon='upload'
               disabled={!this.state.file}

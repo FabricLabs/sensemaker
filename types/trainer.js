@@ -201,11 +201,15 @@ class Trainer extends Service {
   }
 
   async query (request) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      /* const embedded = await this.embeddings.embedQuery(request.query);
+      console.debug('Embedded query:', embedded); */
       this.langchain.call({ query: request.query }).then((answer) => {
         resolve({
           type: 'TrainerQueryResponse',
-          content: answer
+          content: answer,
+          messages: request.messages,
+          query: request.query
         });
       });
     });

@@ -356,6 +356,7 @@ class Agent extends Service {
             console.debug('[!!!]', 'base:', base);
 
             if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
+            if (base.error) return reject(new Error(base.error));
 
             if (request.requery) {
               sample.push({ role: 'assistant', content: base.choices[0].message.content });

@@ -48,7 +48,6 @@ const Peer = require('@fabric/core/types/peer'); // fabric peers
 const Token = require('@fabric/core/types/token'); // fabric tokens
 const Actor = require('@fabric/core/types/actor'); // fabric actors
 const Chain = require('@fabric/core/types/chain'); // fabric chains
-const Queue = require('@fabric/core/types/queue');
 const Logger = require('@fabric/core/types/logger');
 // const Worker = require('@fabric/core/types/worker');
 const Message = require('@fabric/core/types/message');
@@ -90,6 +89,7 @@ const Coordinator = require('../types/coordinator');
 const Learner = require('../types/learner');
 const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
+const Queue = require('../types/queue');
 
 // Components
 const CaseHome = require('../components/CaseHome');
@@ -1223,9 +1223,27 @@ class Jeeves extends Hub {
       this.agents[name] = this.createAgent(configuration);
     }
 
-    // Redis
+    this.queue._registerMethod('IngestDocument', (...params) => {
+      console.debug('[NOVO]', '[QUEUE]', 'Ingesting document...', params);
+      return { status: 'COMPLETED' };
+    });
+
+    this.queue._registerMethod('IngestFile', (...params) => {
+      console.debug('[NOVO]', '[QUEUE]', 'Ingesting file...', params);
+      return { status: 'COMPLETED' };
+    });
+
+    // Trainer
     try {
       await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Trainer:', exception);
+      process.exit();
+    }
+
+    // Queue
+    try {
+      await this.queue.start();
     } catch (exception) {
       console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
       process.exit();
@@ -1599,7 +1617,8 @@ class Jeeves extends Hub {
         '  - / (index, all object types)\n' +
         '  - /cases (case database)\n' +
         // '  - /documents (document database)\n' +
-        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.  Remember, your response will be executed directly by a SQL client, so ensure it is a valid query given the schema.'
+        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.  Remember, your response will be executed directly by a SQL client, so ensure it is a valid query given the schema.\n' +
+        '\nFor example, if the user asks "How many cases are in the database?" you would respond with "SELECT count(id) as case_count FROM cases;" as an optimized query.'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -1705,8 +1724,8 @@ class Jeeves extends Hub {
 
     this._slowcrawler = setInterval(async () => {
       // Sync Health First
-      const health = await this.checkHealth();
-      console.debug('[JEEVES]', 'Health:', health);
+      // const health = await this.checkHealth();
+      // console.debug('[JEEVES]', 'Health:', health);
 
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
