@@ -175,7 +175,7 @@ const addContext = (note, filename, id, file) => {
     dispatch(addContextRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = createTimeoutPromise(120000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+      const timeoutPromise = createTimeoutPromise(1200000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
       let file_id = null;
       if (filename) {
         const data = new FormData();
