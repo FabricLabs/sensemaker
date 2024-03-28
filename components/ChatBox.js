@@ -274,27 +274,27 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  messageInfo = (ID) => {
-    let newState = {
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      checkingMessageID: ID,
-      informationSidebarOpen: true
-    };
+  // messageInfo = (ID) => {
+  //   let newState = {
+  //     thumbsUpClicked: false,
+  //     thumbsDownClicked: false,
+  //     checkingMessageID: ID,
+  //     informationSidebarOpen: true
+  //   };
 
-    // if sidebar is open and checkingMessageID === actual clicked message,
-    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
-    // icon twice for the same message)
-    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
-      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
-      newState.informationSidebarOpen = false;
-    }
+  //   // if sidebar is open and checkingMessageID === actual clicked message,
+  //   // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
+  //   // icon twice for the same message)
+  //   if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
+  //     !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
+  //     newState.informationSidebarOpen = false;
+  //   }
 
-    this.setState(newState);
-    // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-    this.props.resetInformationSidebar();
+  //   this.setState(newState);
+  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
+  //   this.props.resetInformationSidebar();
 
-  };
+  // };
 
 
   regenerateAnswer = (event) => {

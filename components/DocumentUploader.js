@@ -84,7 +84,7 @@ class DocumentUploader extends React.Component {
       <Form className='documents-upload-form'>
         <Form.Field>
           <div style={{ maxWidth: '500px', gap: '0.5em', display: 'flex' }}>
-            <Input type='file' name='file' onChange={this.handleFileChange} />
+            <Input type='file' name='file' onChange={this.handleFileChange} style={{cursor: 'pointer'}}/>
             <Button
               icon='upload'
               disabled={!this.state.file}
