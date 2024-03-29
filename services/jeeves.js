@@ -1933,129 +1933,15 @@ class Jeeves extends Hub {
       res.send(documents);
     });
 
-    this.http._addRoute('POST', '/users', async (req, res) => {
-      const { username, password } = req.body;
+    this.http._addRoute('POST', '/users', ROUTES.users.createUser.bind(this));
 
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt
-        });
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/users/full', async (req, res) => {
-      const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
-
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Check if the email already exists
-        const existingEmail = await this.db('users').where('email', email).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Email already registered.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          firm_name: firmName,
-          firm_size: firmSize,
-          firm_name: firmName ? firmName : null,
-          firm_size: firmSize || firmSize === 0 ? firmSize : null,
-        });
-
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/users/full',ROUTES.users.createFullUser.bind(this));
 
     //endpoint to check if the username is available
-    this.http._addRoute('POST', '/users/:id', async (req, res) => {
-      const  username = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ username: username }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
-        }
-        res.json({ message: 'Username avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
-
+    this.http._addRoute('POST', '/users/:id', ROUTES.users.checkExistingUsername.bind(this));
 
     //endpoint to check if the email is available
-    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
-      const  email = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ email: email }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
-        }
-        res.json({ message: 'Email avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-    });
-
-    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
+    this.http._addRoute('POST', '/users/email/:id', ROUTES.users.checkExistingEmail.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {

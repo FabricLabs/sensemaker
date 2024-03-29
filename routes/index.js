@@ -68,6 +68,10 @@ module.exports = {
     editUsername: require('./users/edit_username'),
     editEmail: require('./users/edit_email'),
     view: require('./users/view_user'),
+    createUser: require('./users/create_user.js'),
+    createFullUser: require('./users/create_full_user'),
+    checkExistingUsername: require('./users/check_username'),
+    checkExistingEmail: require('./users/check_email'),
   },
   feedback: {
     create: require('./feedback/create_feedback.js')
