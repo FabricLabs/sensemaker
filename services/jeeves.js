@@ -6,6 +6,7 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  SNAPSHOT_INTERVAL,
   AGENT_MAX_TOKENS,
   MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
@@ -1738,11 +1739,11 @@ class Jeeves extends Hub {
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
       if (this.settings.embeddings.enable) {
-        this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
+        /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
           console.debug('[JEEVES]', 'Embedding sync complete:', output);
-        });
+        }); */
       }
-    }, 600000); // 10 minutes
+    }, SNAPSHOT_INTERVAL); // 10 minutes
 
     // Internal APIs
     // Counts

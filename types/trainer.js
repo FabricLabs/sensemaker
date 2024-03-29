@@ -204,7 +204,11 @@ class Trainer extends Service {
     return new Promise(async (resolve, reject) => {
       /* const embedded = await this.embeddings.embedQuery(request.query);
       console.debug('Embedded query:', embedded); */
-      this.langchain.call({ query: request.query }).then((answer) => {
+
+      RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
+        messages: request.messages,
+        query: request.query
+      }).then((answer) => {
         resolve({
           type: 'TrainerQueryResponse',
           content: answer,
@@ -222,9 +226,17 @@ class Trainer extends Service {
    */
   async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
-      console.debug('[TRAINER]', 'searching:', request.query);
+      console.debug('[TRAINER]', 'searching:', request);
+      let filter = null;
       if (!request.query) return reject(new Error('No query provided.'));
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter || { type: 'case' }).then((results) => {
+      /* if (request.filter) {
+        for (const [key, value] of Object.entries(request.filter)) {
+          if (key === 'type') filter = x => x.metadata.type === value;
+        }
+      } */
+      filter = request.filter;
+
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
         console.debug('[TRAINER]', 'results:', results);
         resolve({
           type: 'TrainerSearchResponse',
@@ -299,8 +311,6 @@ class Trainer extends Service {
 
         // const check = await this.langchain.call({ query: QUERY_FIXTURE });
         // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
-
-        this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
         // this._state.content.checkstate = check.text;
         // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
         this._state.content.status = this._state.status = 'STARTED';
