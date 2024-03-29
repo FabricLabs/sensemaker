@@ -51,7 +51,6 @@ class ReporterHome extends React.Component {
   render() {
     const { loading, error, } = this.props;
     const { filteredReporters, searchQuery, searching } = this.state;
-
     const displayReporters = searchQuery ? filteredReporters : this.props.reporters.reporters;
 
     return (
@@ -84,11 +83,10 @@ class ReporterHome extends React.Component {
               displayReporters.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
-                    <h3><Link to={"/reporters/" + instance.id}> {instance.name} </Link> </h3>
-                    {/* <h3><Link to={"/"}> {instance.name} </Link> </h3> */}
+                    <h3><Link to={"/reporters/" + instance.id}>{instance.name}</Link></h3>
                     <Label.Group basic>
-                      <Label title='Date of birth'><Icon name='calendar alternate outline' /> {instance.date_of_birth}</Label>
-                      <Label title='City/State of birth '><Icon name='building' /> {instance.birth_city}, {instance.birth_state}</Label>
+                      <Label icon='calendar'>Start Year: {formatDate(instance.start_year)}</Label>
+                      <Label icon='calendar'>End Year: {formatDate(instance.end_year)}</Label>
                     </Label.Group>
                   </Card.Content>
                 </List.Item>
