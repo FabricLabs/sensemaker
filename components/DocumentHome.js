@@ -72,7 +72,7 @@ class DocumentHome extends React.Component {
     return (
       <fabric-document-home>
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
-          <Button color='green' floated='right' as={Link} to='/documents/new'>Create Document &raquo;</Button>
+          <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
           {/* <Form className='documents-upload-form'>
             <Form.Field>
