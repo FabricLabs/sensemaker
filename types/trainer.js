@@ -204,14 +204,14 @@ class Trainer extends Service {
     return new Promise(async (resolve, reject) => {
       /* const embedded = await this.embeddings.embedQuery(request.query);
       console.debug('Embedded query:', embedded); */
-
+      console.debug('[TRAINER]', 'Handling request:', request);
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
       }).then((answer) => {
         resolve({
           type: 'TrainerQueryResponse',
-          content: answer,
+          content: answer.text,
           messages: request.messages,
           query: request.query
         });

@@ -18,7 +18,8 @@ class Queue extends Actor {
         status: 'STOPPED',
         jobs: {}
       },
-      workers: 1
+      worker: false,
+      workers: 0
     }, settings);
 
     this._state = {
@@ -63,25 +64,28 @@ class Queue extends Actor {
 
   async _tick () {
     ++this.clock;
-    console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
-    if (!this._state.current) this._state.current = await this._takeJob();
-    console.debug('[QUEUE]', 'Current job:', this._state.current);
-    if (this._state.current && !this._state.current.status) {
-      this._state.current.status = 'COMPUTING';
-      Promise.race([
-        this._completeJob(this._state.current),
-        new Promise((resolve, reject) => {
-          setTimeout(() => {
-            reject(new Error('Job timed out.'));
-          }, this.interval);
-        })
-      ]).catch((exception) => {
-        console.error('[QUEUE]', 'Job failed:', exception);
-        this._state.current = null;
-      }).then((result) => {
-        console.debug('[QUEUE]', 'Finished work:', result);
-        this._state.current = null;
-      });
+
+    if (this.settings.worker) {
+      console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
+      if (!this._state.current) this._state.current = await this._takeJob();
+      console.debug('[QUEUE]', 'Current job:', this._state.current);
+      if (this._state.current && !this._state.current.status) {
+        this._state.current.status = 'COMPUTING';
+        Promise.race([
+          this._completeJob(this._state.current),
+          new Promise((resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('Job timed out.'));
+            }, this.interval);
+          })
+        ]).catch((exception) => {
+          console.error('[QUEUE]', 'Job failed:', exception);
+          this._state.current = null;
+        }).then((result) => {
+          console.debug('[QUEUE]', 'Finished work:', result);
+          this._state.current = null;
+        });
+      }
     }
 
     console.debug('[QUEUE]', 'TICK', this.clock);
