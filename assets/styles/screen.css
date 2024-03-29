@@ -276,6 +276,11 @@ jeeves-dashboard #collapse-sidebar{
 .settings-menu-container:hover #settingsItem{
   transform: translateY(0);
 }
+
+.ui.search .prompt {
+  border-radius: 4px !important;
+}
+
 .ui.search#global-search{
   font-family: 'Avant Garde Book BT' !important;
 }

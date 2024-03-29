@@ -6,6 +6,7 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  SNAPSHOT_INTERVAL,
   AGENT_MAX_TOKENS,
   MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
@@ -685,7 +686,7 @@ class Jeeves extends Hub {
       });
 
       // RAG
-      const cases = await this._vectorSearchCases(request.query);
+      const cases = await this._vectorSearchCases(request.query, 5);
       const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
 
       // Variables
@@ -1223,14 +1224,22 @@ class Jeeves extends Hub {
       this.agents[name] = this.createAgent(configuration);
     }
 
-    this.queue._registerMethod('IngestDocument', (...params) => {
+    // Worker Methods
+    // TODO: define these with a map / loop
+    // Document Ingest
+    this.queue._registerMethod('IngestDocument', async (...params) => {
       console.debug('[NOVO]', '[QUEUE]', 'Ingesting document...', params);
-      return { status: 'COMPLETED' };
+      const document = await this.db('documents').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
+      return { status: 'COMPLETED', ingested };
     });
 
-    this.queue._registerMethod('IngestFile', (...params) => {
+    // User Upload Ingest
+    this.queue._registerMethod('IngestFile', async (...params) => {
       console.debug('[NOVO]', '[QUEUE]', 'Ingesting file...', params);
-      return { status: 'COMPLETED' };
+      const file = await this.db('files').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(file), metadata: { id: file.id }}, 'file');
+      return { status: 'COMPLETED', ingested };
     });
 
     // Trainer
@@ -1730,11 +1739,11 @@ class Jeeves extends Hub {
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
       if (this.settings.embeddings.enable) {
-        this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
+        /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
           console.debug('[JEEVES]', 'Embedding sync complete:', output);
-        });
+        }); */
       }
-    }, 600000); // 10 minutes
+    }, SNAPSHOT_INTERVAL); // 10 minutes
 
     // Internal APIs
     // Counts
@@ -2530,14 +2539,14 @@ class Jeeves extends Hub {
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       // Data Updates
-      if (instance.courtlistener_id) {
+      if (instance.courtlistener_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
       }
 
-      if (instance.pacer_case_id) {
+      if (instance.pacer_case_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
@@ -4353,7 +4362,7 @@ class Jeeves extends Hub {
 
   async _searchCases (request) {
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request);
+    const redisResults = await this.trainer.search(request, 10);
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
     const mappedQueries = redisResults.content.map((result) => {
@@ -4426,19 +4435,46 @@ class Jeeves extends Hub {
   }
 
   async _searchDocuments (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching documents :', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
+    return new Promise((resolve, reject) => {
+      console.debug('[JEEVES]', '[SEARCH]', 'Searching documents:', request);
+      if (!request) throw new Error('No request provided.');
+      if (!request.query) throw new Error('No query provided.');
 
-    let response = [];
+      // Specify filter
+      request.filter = { type: 'document' };
 
-    try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
-    }
+      // Use vector search
+      this.trainer.search(request, 1).then(async (results) => {
+        let response = [];
+        console.debug('search results:', results.content);
+        for (let i = 0; i < results.content.length; i++) {
+          const result = results.content[i];
+          switch (result.metadata.type) {
+            case 'document':
+              const document = await this.db('documents').where({ id: result.metadata.id }).first();
+              response.push(document);
+              break;
+            case 'file':
+              const file = await this.db('files').where({ id: result.metadata.id }).first();
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'File:', file);
+              response.push(file);
+              break;
+            default:
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result.metadata.type);
+              break;
+          }
+        }
 
-    return response;
+        resolve(response);
+      });
+
+      // Direct keyword search (expensive)
+      /* try {
+        // response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
+      } catch (exception) {
+        console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
+      } */
+    });
   }
 
   async _searchHarvardCourts (request) {
@@ -4747,14 +4783,14 @@ class Jeeves extends Hub {
     });
   }
 
-  async _vectorSearchCases (query = '') {
+  async _vectorSearchCases (query = '', limit = 100) {
     const words = await this.wordTokens(query);
     const uniques = [...new Set(words)];
 
     console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', query);
     console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
 
-    const redisResults = await this.trainer.search({ query: query, resources: ['cases', 'documents'] });
+    const redisResults = await this.trainer.search({ query: query, filter: { type: 'case' }}, limit);
     console.debug('[NOVO]', '[VECTOR]', 'Redis Results:', redisResults);
 
     const results = await Promise.all(uniques.map((word) => {
@@ -4767,7 +4803,7 @@ class Jeeves extends Hub {
       cases = cases.concat(results[i]);
     }
 
-    if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+    // if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
 
     const mapped = await Promise.all(redisResults.content.map((result) => {
       console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);

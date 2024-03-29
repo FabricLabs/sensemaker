@@ -52,7 +52,7 @@ class ReporterView extends React.Component {
           <Header as='h3'>{reporters.current.name_short}</Header>
           <Label.Group>
             <Label icon='calendar'>Start Year: {formatDate(reporters.current.start_year)}</Label>
-            <Label icon='calendar'>End Year: {formatDate(reporters.current.start_year)}</Label>
+            <Label icon='calendar'>End Year: {formatDate(reporters.current.end_year)}</Label>
           </Label.Group>
         </Segment>
       </Segment>

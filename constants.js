@@ -8,6 +8,7 @@ const MAX_RESPONSE_TIME_MS = 600000;
 // Fabric
 const GENESIS_HASH = '';
 const MAX_MEMORY_SIZE = 32 * 1024 * 1024; // 32 MB
+const SNAPSHOT_INTERVAL = 1000 * 60 * 10; // 10 minutes
 const {
   BITCOIN_NETWORK,
   FIXTURE_SEED
@@ -61,6 +62,7 @@ module.exports = {
   GENESIS_HASH, // TODO: use a real genesis hash
   RELEASE_NAME, // TODO: use a real release name
   RELEASE_DESCRIPTION, // TODO: use a real release description
+  SNAPSHOT_INTERVAL, // 10 minutes for snapshot interval
   MAX_RESPONSE_TIME_MS, // 60 seconds for maximum response time
   BITCOIN_NETWORK, // Use mainnet for production
   FIXTURE_SEED, // Use a fixture seed for development

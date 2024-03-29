@@ -581,6 +581,7 @@ class ChatBox extends React.Component {
   };
 
   render() {
+    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
     const { messages } = this.props.chat;
     const {
       loading,
@@ -850,7 +851,7 @@ class ChatBox extends React.Component {
                     </Feed.Summary>
                     <Feed.Extra text>
                       {message.status !== "computing" && (
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || ""), }} />
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
                       )}
                     </Feed.Extra>
                     <Feed.Extra text>

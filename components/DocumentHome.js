@@ -72,7 +72,7 @@ class DocumentHome extends React.Component {
     return (
       <fabric-document-home>
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
-          {/* <Button>Create Document &raquo;</Button> */}
+          <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
           <DocumentUploader documents={this.props.documents} uploadDocument={this.props.uploadDocument} resetChat={this.props.resetChat}/>
           <jeeves-search fluid placeholder='Find...' className='ui search'>

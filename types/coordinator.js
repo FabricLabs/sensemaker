@@ -43,7 +43,8 @@ class Coordinator extends Service {
     try {
       const response = await this.chooser.query({
         state: this.state,
-        query: 'What action to take?'
+        query: 'What action to take?',
+        format: 'json'
       });
 
       choice = response.content;

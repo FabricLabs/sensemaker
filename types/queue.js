@@ -18,7 +18,8 @@ class Queue extends Actor {
         status: 'STOPPED',
         jobs: {}
       },
-      workers: 1
+      worker: false,
+      workers: 0
     }, settings);
 
     this._state = {
@@ -64,29 +65,29 @@ class Queue extends Actor {
   async _tick () {
     ++this.clock;
 
-    if (!this._state.current) this._state.current = await this._takeJob();
-    console.debug('[QUEUE]', 'Current job:', this._state.current);
-    console.debug('[QUEUE]', 'Current interval:', this.settings.interval);
-    if (this._state.current && !this._state.current.status) {
-      this._state.current.status = 'COMPUTING';
-
-      Promise.race([
-        this._completeJob(this._state.current),
-        new Promise((resolve, reject) => {
-          setTimeout(() => {
-            reject(new Error('Job timed out.'));
-          }, this.interval);
-        })
-      ]).catch((exception) => {
-        console.error('[QUEUE]', 'Job failed:', exception);
-        this._state.current = null;
-      }).then((result) => {
-        console.debug('[QUEUE]', 'Finished work:', result);
-        this._state.current = null;
-      });
+    if (this.settings.worker) {
+      console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
+      if (!this._state.current) this._state.current = await this._takeJob();
+      console.debug('[QUEUE]', 'Current job:', this._state.current);
+      if (this._state.current && !this._state.current.status) {
+        this._state.current.status = 'COMPUTING';
+        Promise.race([
+          this._completeJob(this._state.current),
+          new Promise((resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('Job timed out.'));
+            }, this.interval);
+          })
+        ]).catch((exception) => {
+          console.error('[QUEUE]', 'Job failed:', exception);
+          this._state.current = null;
+        }).then((result) => {
+          console.debug('[QUEUE]', 'Finished work:', result);
+          this._state.current = null;
+        });
+      }
     }
 
-    console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
     console.debug('[QUEUE]', 'TICK', this.clock);
   }
 
@@ -96,17 +97,31 @@ class Queue extends Actor {
     });
 
     if (this.settings.redis) {
+      // Primary Redis client
       this.redis = createClient({
         username: this.settings.redis.username,
         password: this.settings.redis.password,
         socket: this.settings.redis
       });
 
+      // For subscriptions (blocking, requires its own connection)
+      this.subscriber = this.redis.duplicate();
+
+      // Event Listeners
       this.redis.on('ready', (err) => {
         console.debug('[QUEUE]', 'Redis ready:', err);
       });
 
       await this.redis.connect();
+      await this.subscriber.connect();
+      // TODO: enable `notify-keyspace-events` on Redis server
+      await this.subscriber.pSubscribe(`__keyspace@0__:queue:*`, async (message, channel) =>{
+        console.debug('[QUEUE]', 'Received message:', channel, message);
+        const affectedKey = channel.substring('__keyspace@0__:'.length);
+        if (affectedKey === this.settings.collection) {
+          console.debug('[QUEUE]', 'Affected key:', affectedKey);
+        }
+      });
     }
 
     for (let i = 0; i < this.settings.workers; i++) {
@@ -155,14 +170,8 @@ class Queue extends Actor {
     }
 
     switch (job.method) {
-      case 'IngestDocument':
-        console.debug('[QUEUE]', 'Completing job:', job);
-        return { status: 'COMPLETED' };
-      case 'IngestFile':
-        console.debug('[QUEUE]', 'Completing job:', job);
-        return { status: 'COMPLETED' };
       default:
-        console.debug('[QUEUE]', 'Unhandled job type:', job.method);
+        console.warn('[QUEUE]', 'Unhandled job type:', job.method);
         return { status: 'FAILED', message: 'Unhandled job type.' };
     }
   }

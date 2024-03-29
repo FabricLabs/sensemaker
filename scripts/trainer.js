@@ -1,12 +1,13 @@
 'use strict';
 
 // Constants
+// TODO: import these from constants file
 const ENABLE_FILESYSTEM_INGEST = false;
-const ENABLE_DOCUMENT_INGEST = true;
+const ENABLE_DOCUMENT_INGEST = false;
 const ENABLE_UPLOAD_INGEST = true;
 const ENABLE_JURISDICTION_INGEST = false;
-const ENABLE_COURT_INGEST = true;
-const ENABLE_CASE_INGEST = true;
+const ENABLE_COURT_INGEST = false;
+const ENABLE_CASE_INGEST = false;
 
 const {
   SYNC_EMBEDDINGS_COUNT
@@ -21,17 +22,21 @@ const knex = require('knex');
 const Filesystem = require('@fabric/core/types/filesystem');
 
 // Types
+const Queue = require('../types/queue');
 const Trainer = require('../types/trainer');
 
 // Main Program
 async function main (input = {}) {
   // Fabric Filesystem
-  const filesystem = new Filesystem(settings.files);
+  const filesystem = new Filesystem(input.files);
   await filesystem.start();
 
   // Sensemaker
   const trainer = new Trainer(input);
   await trainer.start();
+
+  // Queue
+  const queue = new Queue(input);
 
   // Database
   const db = knex({
