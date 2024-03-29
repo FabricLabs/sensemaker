@@ -4434,19 +4434,46 @@ class Jeeves extends Hub {
   }
 
   async _searchDocuments (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching documents :', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
+    return new Promise((resolve, reject) => {
+      console.debug('[JEEVES]', '[SEARCH]', 'Searching documents:', request);
+      if (!request) throw new Error('No request provided.');
+      if (!request.query) throw new Error('No query provided.');
 
-    let response = [];
+      // Specify filter
+      request.filter = { type: 'document' };
 
-    try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
-    }
+      // Use vector search
+      this.trainer.search(request, 1).then(async (results) => {
+        let response = [];
+        console.debug('search results:', results.content);
+        for (let i = 0; i < results.content.length; i++) {
+          const result = results.content[i];
+          switch (result.metadata.type) {
+            case 'document':
+              const document = await this.db('documents').where({ id: result.metadata.id }).first();
+              response.push(document);
+              break;
+            case 'file':
+              const file = await this.db('files').where({ id: result.metadata.id }).first();
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'File:', file);
+              response.push(file);
+              break;
+            default:
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result.metadata.type);
+              break;
+          }
+        }
 
-    return response;
+        resolve(response);
+      });
+
+      // Direct keyword search (expensive)
+      /* try {
+        // response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
+      } catch (exception) {
+        console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
+      } */
+    });
   }
 
   async _searchHarvardCourts (request) {
