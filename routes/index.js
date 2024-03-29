@@ -13,6 +13,7 @@ module.exports = {
     list: require('./files/list_files'),
     view: require('./files/view_file'),
     serve: require('./files/serve_file.js'),
+    find: require('./files/find_file.js'),
   },
   matters: {
     create: require('./matters/create_matter'),

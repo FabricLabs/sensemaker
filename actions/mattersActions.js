@@ -178,26 +178,48 @@ const addContext = (note, filename, id, file) => {
       const timeoutPromise = createTimeoutPromise(1200000, 'Matter edition could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
       let file_id = null;
       if (filename) {
-        const data = new FormData();
 
-        data.append('name', file.name);
-        data.append('file', file);
-
-        const fileCreation = await fetch('/files', {
+        //this fetch is to check if this specific user already uploaded this file
+        //if it did previously it will add it to the matters_files list but not
+        //created twice. This searchs on files of this specific user
+        const response = await fetch(`/files/find/${filename}`, {
+          method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-          method: 'POST',
-          body: data
         });
 
-        if (!fileCreation.ok) {
-          const errorData = await fileCreation.json();
+        if (!response.ok) {
+          const errorData = await response.json();
           throw new Error(errorData.message || 'Server error');
         }
+        const foundFile = await response.json(); // Parsing the JSON body of the response
+        //if the file already existed we dont create it again
+        if (!foundFile.id) {
+          const data = new FormData();
 
-        const fileAnswer = await fileCreation.json();
-        file_id = fileAnswer.file_id;//this is passed to add the id of the table 'files' in 'matters_files' to relate with the actual file
+          data.append('name', file.name);
+          data.append('file', file);
+
+          const fileCreation = await fetch('/files', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            method: 'POST',
+            body: data
+          });
+
+          if (!fileCreation.ok) {
+            const errorData = await fileCreation.json();
+            throw new Error(errorData.message || 'Server error');
+          }
+
+          const fileAnswer = await fileCreation.json();
+          file_id = fileAnswer.file_id;//this is passed to add the id of the table 'files' in 'matters_files' to relate with the actual file
+        } else {
+          file_id = foundFile.id;
+        }
 
       }
       const fetchPromise = fetch(`/matters/context/${id}`, {
