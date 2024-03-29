@@ -1828,6 +1828,7 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
