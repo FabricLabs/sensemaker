@@ -7,12 +7,15 @@ module.exports = {
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
+    newConversation: require('./documents/document_new_chat'),
   },
   files: {
     create: require('./files/create_file'),
     list: require('./files/list_files'),
     view: require('./files/view_file'),
     serve: require('./files/serve_file.js'),
+    find: require('./files/find_file.js'),
+
   },
   matters: {
     create: require('./matters/create_matter'),

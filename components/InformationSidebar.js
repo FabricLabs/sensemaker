@@ -147,6 +147,10 @@ class InformationSidebar extends React.Component {
     } = this.state;
     const { visible, documentSection, documentInfo } = this.props;
 
+    const sidebarStyle = {
+      transition: 'width 0.5s ease-in-out',
+    };
+
     return (
       <Sidebar
         as={Form}
@@ -154,7 +158,8 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        style={documentSection ? { width: '600px' } : null}
+        style={{...sidebarStyle, ...documentSection ? { width: '600px' } : {}}}
+
       >
         <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
         {visible ? (
