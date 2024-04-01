@@ -75,5 +75,8 @@ module.exports = {
   },
   feedback: {
     create: require('./feedback/create_feedback.js')
-  }
+  },
+  conversations: {
+    getConversations: require('./conversations/get_conversations'),
+  },
 };
