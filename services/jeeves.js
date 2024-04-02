@@ -458,6 +458,7 @@ class Jeeves extends Hub {
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
+    // TODO: define Agent methods from `documentation`
     if (!this._state.agents[agent.id]) this._state.agents[agent.id] = agent;
     this._state.content.agents[agent.id] = configuration;
     // this.commit();
@@ -1789,6 +1790,9 @@ class Jeeves extends Hub {
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
+    // Agents
+    this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
+
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
     // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
@@ -2584,7 +2588,7 @@ class Jeeves extends Hub {
         });
       }
 
-      if (!instance.summary) {
+      if (!instance.summary || instance.summary === 'false') {
         const merged = Object.assign({}, instance, updates);
         this._summarizeCaseToLength(merged).then(async (summary) => {
           if (summary) updates.summary = summary;

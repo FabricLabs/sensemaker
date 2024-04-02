@@ -5,6 +5,11 @@
 See `scripts/` for a list of available tools.
 
 ### Install
+### Ubuntu
+```
+sudo mkdir -p /media/storage/node/files
+```
+
 ### MacOS
 - Homebrew
 - NVM: `./scripts/nvm/install.sh`
