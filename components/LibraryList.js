@@ -78,9 +78,14 @@ class LibraryList extends React.Component {
             <LibrarySearch auth={this.props.auth} searchGlobal={this.props.searchGlobal} search={this.props.search}/>
           </Menu.Item>
         )}
-        <Menu.Item as={Link} to='/conversations'>
+        <Menu.Item as={Link} to='/conversations' onClick={() => this.props.resetChat()}>
           <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
         </Menu.Item>
+        {USER_IS_BETA && ENABLE_CASE_SEARCH && (
+          <Menu.Item as={Link} to='/cases'>
+            <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
         {USER_IS_ALPHA && ENABLE_DOCUMENT_SEARCH && (
           <Menu.Item as={Link} to='/documents'>
             <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
@@ -109,11 +114,6 @@ class LibraryList extends React.Component {
         {USER_IS_ALPHA && ENABLE_VOLUME_SEARCH && (
           <Menu.Item as={Link} to='/volumes'>
             <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Volumes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-          </Menu.Item>
-        )}
-        {USER_IS_BETA && ENABLE_CASE_SEARCH && (
-          <Menu.Item as={Link} to='/cases'>
-            <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA && ENABLE_JUDGE_SEARCH && (

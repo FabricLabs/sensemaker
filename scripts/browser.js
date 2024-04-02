@@ -148,7 +148,8 @@ const {
 // ## Document Actions
 const {
   fetchDocuments,
-  fetchDocument
+  fetchDocument,
+  uploadDocument,
 } = require('../actions/documentActions');
 
 // ## Matters Actions
@@ -265,6 +266,7 @@ async function main (input = {}) {
     fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    uploadDocument: uploadDocument,
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
     deleteInquiry: deleteInquiry,

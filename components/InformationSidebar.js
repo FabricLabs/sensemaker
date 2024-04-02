@@ -147,6 +147,10 @@ class InformationSidebar extends React.Component {
     } = this.state;
     const { visible, documentSection, documentInfo } = this.props;
 
+    const sidebarStyle = {
+      transition: 'width 0.5s ease-in-out',
+    };
+
     return (
       <Sidebar
         as={Form}
@@ -154,7 +158,8 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        style={documentSection ? { width: '600px' } : null}
+        style={{...sidebarStyle, ...documentSection ? { width: '600px' } : {}}}
+
       >
         <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
         {visible ? (
@@ -167,9 +172,11 @@ class InformationSidebar extends React.Component {
                     {/* <CardHeader>{documentInfo.filename}</CardHeader> */}
                   </CardContent>
                   <CardContent style={{ paddingTop: '0.5em', marginBottom: '1.5em' }}>
-                    <CardDescription>
-                      <strong>Matter:</strong> {this.props.matterTitle}
-                    </CardDescription>
+                    {this.props.matterTitle && (
+                      <CardDescription>
+                        <strong>Matter:</strong> {this.props.matterTitle}
+                      </CardDescription>
+                    )}
                     <CardDescription>
                       <strong>Created:</strong> {this.formatDateTime(documentInfo.created_at)}
                     </CardDescription>
@@ -179,8 +186,7 @@ class InformationSidebar extends React.Component {
                   </CardContent>
                 </Card>
                 <iframe
-                  // src='https://www.cartercenter.org/resources/pdfs/health/ephti/library/lecture_notes/health_officers/ln_internal_med_final.pdf'
-                  src={`http://localhost:3045/files/serve/${documentInfo.file_id}`}
+                  src={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/files/serve/${documentInfo.file_id}`}
                   className='document-frame'
                 ></iframe>
               </section>
@@ -300,8 +306,8 @@ class InformationSidebar extends React.Component {
                   </div>
                 )
             )
-        ): (
-          <div className='info-sidebar center-elements-column'/>
+        ) : (
+          <div className='info-sidebar center-elements-column' />
         )}
       </Sidebar>
     )

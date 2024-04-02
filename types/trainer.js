@@ -201,11 +201,19 @@ class Trainer extends Service {
   }
 
   async query (request) {
-    return new Promise((resolve, reject) => {
-      this.langchain.call({ query: request.query }).then((answer) => {
+    return new Promise(async (resolve, reject) => {
+      /* const embedded = await this.embeddings.embedQuery(request.query);
+      console.debug('Embedded query:', embedded); */
+      console.debug('[TRAINER]', 'Handling request:', request);
+      RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
+        messages: request.messages,
+        query: request.query
+      }).then((answer) => {
         resolve({
           type: 'TrainerQueryResponse',
-          content: answer
+          content: answer.text,
+          messages: request.messages,
+          query: request.query
         });
       });
     });
@@ -216,12 +224,20 @@ class Trainer extends Service {
    * @param {Object} request Search object.
    * @returns {Promise} Resolves with the result of the operation.
    */
-  async search (request) {
+  async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
-      console.debug('[TRAINER]', 'searching:', request.query);
+      console.debug('[TRAINER]', 'searching:', request);
+      let filter = null;
       if (!request.query) return reject(new Error('No query provided.'));
-      this.embeddings.similaritySearch(request.query).then((results) => {
-        console.debug('results:', results);
+      /* if (request.filter) {
+        for (const [key, value] of Object.entries(request.filter)) {
+          if (key === 'type') filter = x => x.metadata.type === value;
+        }
+      } */
+      filter = request.filter;
+
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
+        console.debug('[TRAINER]', 'results:', results);
         resolve({
           type: 'TrainerSearchResponse',
           content: results
@@ -246,12 +262,14 @@ class Trainer extends Service {
         // console.debug('[TRAINER]', 'SPA:', spa);
 
         // Terms of Use
-        const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
-        const contractChunks = await this.splitter.splitDocuments([contract]);
+        // const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
+        // const contractChunks = await this.splitter.splitDocuments([contract]);
         // const chunks = await this.splitter.splitDocuments(spa);
         // const allDocs = [contract].concat(spa, contractChunks, chunks);
         // const allDocs = contractChunks.concat(chunks);
-        const allDocs = contractChunks;
+
+        const stub = new Document({ pageContent: 'Hello, world!', metadata: { type: 'text/plain' } });
+        const allDocs = [ stub ];
 
         // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
         if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
@@ -263,52 +281,52 @@ class Trainer extends Service {
   }
 
   async start () {
-    this._state.content.status = this._state.status = 'STARTING';
+    return new Promise(async (resolve, reject) => {
+      this._state.content.status = this._state.status = 'STARTING';
 
-    // Start Services
-    // Redis
-    console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
-    console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
+      // Start Services
+      // Redis
+      console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
+      console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
 
-    this.redis.on('connect', async () => {
-      console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
-      await this.ingestReferences();
-      console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+      this.redis.on('connect', async () => {
+        console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
+        const allDocs = await this.ingestReferences();
+        console.debug('[NOVO]', '[TRAINER]', 'Ingested references:', allDocs);
+
+        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
+          redisClient: this.redis,
+          indexName: this.settings.redis.name || 'novo-embeddings'
+        });
+
+        console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+
+        /* try {
+          const docs = await this.loader.load();
+          if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
+        } catch (exception) {
+          if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
+        } */
+
+        // const check = await this.langchain.call({ query: QUERY_FIXTURE });
+        // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
+        // this._state.content.checkstate = check.text;
+        // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
+        this._state.content.status = this._state.status = 'STARTED';
+
+        this.commit();
+
+        resolve(this);
+      });
+
+      try {
+        await this.redis.connect();
+      } catch (exception) {
+        console.error('[TRAINER]', 'Error starting Redis:', exception);
+        // process.exit(); // TODO: look at exit codes
+      }
     });
-
-    try {
-      await this.redis.connect();
-    } catch (exception) {
-      console.error('[TRAINER]', 'Error starting Redis:', exception);
-      // process.exit(); // TODO: look at exit codes
-    }
-
-    const allDocs = await this.ingestReferences();
-
-    this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
-      redisClient: this.redis,
-      indexName: this.settings.redis.indexName || 'novo-embeddings'
-    });
-
-    /* try {
-      const docs = await this.loader.load();
-      if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
-    } catch (exception) {
-      if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
-    } */
-
-    this.langchain = RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever());
-
-    // const check = await this.langchain.call({ query: QUERY_FIXTURE });
-    // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
-
-    // this._state.content.checkstate = check.text;
-    // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
-    this._state.content.status = this._state.status = 'STARTED';
-
-    this.commit();
-
-    return this;
   }
 
   async stop () {

@@ -1,4 +1,7 @@
 module.exports = {
+  agents: {
+    list: require('./agents/list_agents'),
+  },
   cases: {
     list: require('./cases/get_cases'),
   },
@@ -6,12 +9,16 @@ module.exports = {
     // list: require('./documents/list_documents'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
+    view: require('./documents/view_document'),
+    newConversation: require('./documents/document_new_chat'),
   },
   files: {
     create: require('./files/create_file'),
     list: require('./files/list_files'),
     view: require('./files/view_file'),
     serve: require('./files/serve_file.js'),
+    find: require('./files/find_file.js'),
+
   },
   matters: {
     create: require('./matters/create_matter'),
@@ -27,6 +34,10 @@ module.exports = {
     listFiles: require('./matters/list_matter_files'),
     listNotes: require('./matters/list_matter_notes'),
   },
+  invitations: {
+    getInvitations: require('./invitations/get_invitations'),
+    checkInvitationToken: require('./invitations/check_invitation_token'),
+  },
   messages: {
     create: require('./messages/create_message'),
   },
@@ -35,6 +46,8 @@ module.exports = {
   },
   reporters: {
     search: require('./reporters/search_reporters'),
+    view: require('./reporters/view_reporter'),
+
   },
   jurisdictions: {
     view: require('./jurisdictions/jurisdiction_view'),
