@@ -44,31 +44,39 @@ class SignUpForm extends React.Component {
   }
 
   componentDidMount = async () => {
-
+    console.log('here mounted');
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "Novo · Your Legal Assistant";
 
-    const { invitationToken, invitation, invitationError } = this.props;
-    this.setState({ loading: true });
-    try {
-      await this.props.checkInvitationToken(invitationToken);
-    } catch (error) {
-      this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
-    }
+    const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
+    if (!adminPanel) {
+      this.setState({ loading: true });
+      try {
+        await this.props.checkInvitationToken(invitationToken);
+      } catch (error) {
+        this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
+      }
+    } else {this.setState({loading :false, tokenError:false})}
+
   };
 
 
   componentDidUpdate(prevProps) {
-    //it goes here when the invitation reducer changes
-    if (prevProps.invitation !== this.props.invitation) {
-      const { invitation } = this.props;
-      if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
-        this.props.checkEmailAvailable(this.props.invitation.invitation.target);
-      } else {
-        this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+    const {adminPanel} = this.props
+
+    if (!adminPanel) {
+      //it goes here when the invitation reducer changes
+      if (prevProps.invitation !== this.props.invitation) {
+        const { invitation } = this.props;
+        if (invitation.invitationValid) {
+          this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
+          this.props.checkEmailAvailable(this.props.invitation.invitation.target);
+        } else {
+          this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+        }
       }
     }
+
     //it goes here when the auth reducer changes
     if (prevProps.auth !== this.props.auth) {
       const { auth } = this.props;
@@ -91,7 +99,9 @@ class SignUpForm extends React.Component {
         this.setState({ registering: false });
         if (auth.registerSuccess) {
           this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
-          this.props.acceptInvitation(this.props.invitationToken);
+          if (!adminPanel) {
+            this.props.acceptInvitation(this.props.invitationToken);
+          }
         } else {
           this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
         }
@@ -367,7 +377,8 @@ class SignUpForm extends React.Component {
 }
 
 function SignUp(props) {
+  const { adminPanel} = this.props
   const { invitationToken } = useParams();
-  return <SignUpForm invitationToken={invitationToken} {...props} />;
+  return <SignUpForm invitationToken={adminPanel ? '' : invitationToken} {...props} />;
 }
 module.exports = SignUp;

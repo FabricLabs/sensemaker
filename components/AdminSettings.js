@@ -24,11 +24,12 @@ const {
 const toRelativeTime = require('../functions/toRelativeTime');
 
 // Components
-const AccountCreator = require('./AccountCreator');
+// const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminInquiries = require('./AdminSettingsInquiries');
 const AdminInvitations = require('./AdminSettingsInvitations');
 const AdminUsers = require('./AdminSettingsUsers');
+const SignUpForm = require('./SignUpForm');
 // const ConversationList = require('./ConversationList');
 
 class AdminSettings extends React.Component {
@@ -165,7 +166,8 @@ class AdminSettings extends React.Component {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
           <AdminUsers {...this.props} />
           <Header as='h3'>Create User</Header>
-          <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/>
+          <SignUpForm adminPanel={true}></SignUpForm>
+          {/* <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/> */}
         </Tab.Pane>
       },
       {
