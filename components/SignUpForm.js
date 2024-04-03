@@ -8,13 +8,11 @@ const {
 
 // Semantic UI
 const {
-  Link,
   Form,
   Button,
   Message,
   Header,
   Segment,
-  Label,
   Image
 } = require('semantic-ui-react');
 
@@ -61,6 +59,7 @@ class SignUpForm extends React.Component {
 
 
   componentDidUpdate(prevProps) {
+    //it goes here when the invitation reducer changes
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       if (invitation.invitationValid) {
@@ -70,13 +69,17 @@ class SignUpForm extends React.Component {
         this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
       }
     }
+    //it goes here when the auth reducer changes
     if (prevProps.auth !== this.props.auth) {
       const { auth } = this.props;
+      //if the username is available and the username state is not empty
       if (auth.usernameAvailable && this.state.username) {
         this.setState({ isNewUserValid: true, usernameError: '' });
       } else {
         this.setState({ isNewUserValid: false, usernameError: 'Username already exists. Please choose a different one.' });
       }
+
+      //if the email is available and the username state is not empty
       if (auth.emailAvailable && this.state.email) {
         this.setState({ isEmailValid: true, emailError: '' });
       } else {
@@ -112,6 +115,7 @@ class SignUpForm extends React.Component {
         this.validateUsername(event.target.value);
       }
       if (event.target.name === 'email') {
+        //if previouse validations are OK, then it calls this api action
         this.props.checkEmailAvailable(event.target.value);
       }
     });
@@ -124,6 +128,8 @@ class SignUpForm extends React.Component {
     const { username, password, email, firstName, lastName, firmName, firmSize } = this.state;
 
     try {
+      //here we call the register api action, we set our state to registering
+      //until we have the answer from reducer in componentDidUpdate
       this.setState({ registering: true });
       //forced delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -150,6 +156,7 @@ class SignUpForm extends React.Component {
           usernameError: 'Username must have at least 3 characters.',
         });
       } else {
+        //if previouse validations are OK, then it calls this api action
         this.props.checkUsernameAvailable(value);
       }
     }
@@ -203,6 +210,8 @@ class SignUpForm extends React.Component {
       pointing: 'above',
     };
 
+    //the error message wont be shown if the username state or email state are still empty, those error will start
+    //showing once the user writes and invalid username or email
     const userErrorMsg = (isNewUserValid || !username) ? null : {
       content: usernameError,
       pointing: 'above',
@@ -350,11 +359,6 @@ class SignUpForm extends React.Component {
                 </div>
               </Message>
             )}
-            {/* <Message negative>
-              <Message.Header>Invitation Declined</Message.Header>
-              <p>We have registered that you declined our invitation. We will not send any further requests or communications.</p>
-              <p>Should you change your mind or have any questions in the future, please feel free to contact us.</p>
-            </Message> */}
           </Form>
         </Segment>
       </div>

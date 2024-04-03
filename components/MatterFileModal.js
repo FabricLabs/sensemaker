@@ -1,5 +1,13 @@
 'use strict';
 
+const ALLOWED_UPLOAD_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/tiff',
+  'image/bmp',
+  'application/pdf',
+];
+
 // Dependencies
 const React = require('react');
 
@@ -84,15 +92,7 @@ class MatterFileModal extends React.Component {
   };
 
   isValidFileType(fileType) {
-    const allowedTypes = [
-      'image/png',
-      'image/jpeg',
-      'image/tiff',
-      'image/bmp',
-      'application/pdf',
-    ];
-
-    return allowedTypes.includes(fileType);
+    return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
 
 
@@ -139,7 +139,6 @@ class MatterFileModal extends React.Component {
 
   removeFile = () => {
     this.setState({ filename: null, file: null, fileExists: false, formatError: false });
-    //this.props.deleteFile();
   };
 
   render() {
@@ -172,6 +171,7 @@ class MatterFileModal extends React.Component {
               </div>
             )}
             <input
+              accept={ALLOWED_UPLOAD_TYPES.join(',')}
               name='file'
               type="file"
               ref={this.fileInputRef}
@@ -186,7 +186,6 @@ class MatterFileModal extends React.Component {
               placeholder="Write a note..."
               value={this.state.note}
               onChange={this.handleChange}
-            // disabled={(this.state.filename)}
             />
           </Form>
         </Modal.Content>

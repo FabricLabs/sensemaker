@@ -75,10 +75,6 @@ class MatterView extends React.Component {
   componentDidUpdate(prevProps) {
     const { matters, jurisdictions, courts } = this.props;
 
-    // if (prevProps.matters !== matters) {
-    //   console.log(matters);
-    // }
-
     if (this.props.id !== prevProps.id) {
       this.props.fetchMatter(this.props.id);
       this.props.fetchMatterConversations(this.props.id);
@@ -162,11 +158,7 @@ class MatterView extends React.Component {
   };
 
   handleModalSubmit = async (note, filename, file) => {
-    // console.log("Note:", note, "Files:", file);
     const id = this.props.id;
-
-    //TO DO: STORE THE FILE SOMEWHERE
-    //the actual full file is in "file"
 
     if (filename) {
       this.setState({ filename: filename });
@@ -216,7 +208,6 @@ class MatterView extends React.Component {
       expandedNoteId: prevState.expandedNoteId === id ? null : id // Toggle expansion
     }));
   };
-
 
   openDocument = (documentInfo) => {
     this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
