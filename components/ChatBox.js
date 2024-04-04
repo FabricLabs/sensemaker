@@ -81,6 +81,7 @@ class ChatBox extends React.Component {
   componentDidUpdate(prevProps) {
     const { messages } = this.props.chat;
 
+    //here we store the last message from prevProps and current messages
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
     if (this.props.conversationID)
@@ -92,13 +93,13 @@ class ChatBox extends React.Component {
     // we go this way if we have more messages than before or if the content of the last message
     // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
+      //if the previous last message is different than the current last message, we call the groupMessages function again
       (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
 
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
@@ -133,6 +134,7 @@ class ChatBox extends React.Component {
     window.removeEventListener('resize', this.handleResize);
   }
 
+  //stops the watcher, important when we switch conversations
   stopPolling = () => {
     if (this.watcher) {
       clearInterval(this.watcher);
@@ -140,6 +142,7 @@ class ChatBox extends React.Component {
     }
   };
 
+  //starts the watchear again
   startPolling = (id) => {
     // Ensure any existing polling is stopped before starting a new one
     this.stopPolling();
@@ -667,8 +670,10 @@ class ChatBox extends React.Component {
               <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
             </div>
           )}
+          {/* when we open a previous conversation, this is the title that shows */}
           {(conversationID && actualConversation) && (
             <div className='conversation-title-container' >
+              {/* this is the call for the conversation title rendering, that lets you edit the title of the conversation */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
@@ -690,12 +695,14 @@ class ChatBox extends React.Component {
               )}
             </div>
           )}
+          {/* this shows the matter title in the conversation title when we are on a new matter conversation */}
           {matterID && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
               <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
             </div>
           )}
+          {/* when we start a new conversation for a document, the title is the filename */}
           {documentChat && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>

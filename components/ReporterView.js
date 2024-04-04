@@ -37,11 +37,7 @@ class ReporterView extends React.Component {
   }
 
   render() {
-    const { error, reporters } = this.props;
-
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
+    const { reporters } = this.props;
 
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={reporters.loading}>
