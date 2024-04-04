@@ -207,6 +207,7 @@ class SignUpForm extends React.Component {
       registerSuccess,
       registerError,
       registering,
+      adminPanel,
     } = this.state;
 
     //these next const are for the popup errors showed in the inputs
@@ -234,13 +235,23 @@ class SignUpForm extends React.Component {
 
     return (
       <div className='fade-in signup-form'>
-        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+        {
+          !adminPanel ? 
+          <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+          : ''
+        }
         <Segment>
           <Form loading={loading} centered>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sign Up</Header>
-                <p>Complete your registration to access Novo.</p>
+                {
+                  !adminPanel ?
+                  <>
+                    <Header as='h3' textAlign="center">Sign Up</Header>
+                    <p>Complete your registration to access Novo.</p>
+                  </>
+                  : ''
+                }
                 <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
@@ -377,8 +388,7 @@ class SignUpForm extends React.Component {
 }
 
 function SignUp(props) {
-  const { adminPanel} = this.props
   const { invitationToken } = useParams();
-  return <SignUpForm invitationToken={adminPanel ? '' : invitationToken} {...props} />;
+  return <SignUpForm invitationToken={invitationToken} {...props} />;
 }
 module.exports = SignUp;
