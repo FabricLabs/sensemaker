@@ -1799,6 +1799,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
+    this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
 
     // Matters
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
@@ -1831,6 +1832,7 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));

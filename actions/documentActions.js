@@ -67,7 +67,7 @@ const uploadDocument = (file) => {
     dispatch(uploadDocumentRequest());
     try {
       const { token } = getState().auth;
-      const timeoutPromise = createTimeoutPromise(60000, 'File upload could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
+      const timeoutPromise = createTimeoutPromise(1200000, 'File upload could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
       const data = new FormData();
 

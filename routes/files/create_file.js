@@ -21,6 +21,14 @@ module.exports = async function (req, res, next) {
       return;
     }
 
+    const documentExist = await this.db('documents').where('filename', req.file.originalname).andWhere('owner','=',req.user.id).first();
+
+    if (documentExist) {
+      res.status(400);
+      res.send({ status: 'error', message: 'Document already exist. Please upload a different one.' });
+      return;
+    }
+
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
     const destination = path.join(userDir, safeFilename);

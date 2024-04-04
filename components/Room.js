@@ -40,6 +40,7 @@ class Conversation extends React.Component {
       this.setState({ recoveryFlag: true, recovering: false });
       this.fetchData(this.props.id);
     }
+    //if the conversation is related to a document, it sets the document info.
     if (this.props.documents !== prevProps.documents && this.props.documents.document) {
       this.setState({documentInfo: this.props.documents.document});
     }
@@ -55,8 +56,8 @@ class Conversation extends React.Component {
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
     this.setState({ file_fabric_id: actual.file_fabric_id ? actual.file_fabric_id : null });
+    //if the conversation is related to a document, it fetchs for that document info
     if (actual.file_fabric_id) {
-      console.log('actual conversation file id',);
       await this.props.fetchDocument(actual.file_fabric_id);
     }else{
       this.setState({documentInfo: null});

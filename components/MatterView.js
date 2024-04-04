@@ -217,14 +217,8 @@ class MatterView extends React.Component {
     }));
   };
 
-  // toggleInformationSidebar = () => {
-  //   this.setState(prevState => ({
-  //     informationSidebarOpen: !prevState.informationSidebarOpen
-  //   }));
-  // };
 
   openDocument = (documentInfo) => {
-    // this.setState({ documentInfo: file, informationSidebarOpen: true });
     this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
   }
   render() {
@@ -237,7 +231,6 @@ class MatterView extends React.Component {
     };
     return (
       <Segment
-        // onClick={() => this.setState({ informationSidebarOpen: false })}
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
         style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <section className='matter-header'>
@@ -438,22 +431,23 @@ class MatterView extends React.Component {
                 />
               </GridColumn>
             </GridRow>
-            {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
-              <GridRow>
-                <GridColumn width={2} />
-                <GridColumn width={10}>
-                  <div className='col-center'>
-                    <Header as='h2'>Files</Header>
-                    <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
-                      <Table simple >
-                        <Table.Header>
-                          <Table.Row>
-                            <Table.HeaderCell>File Name</Table.HeaderCell>
-                            <Table.HeaderCell>Uploaded</Table.HeaderCell>
-                            <Table.HeaderCell>Modified</Table.HeaderCell>
-                            <Table.HeaderCell>Actions</Table.HeaderCell>
-                          </Table.Row>
-                        </Table.Header>
+
+            <GridRow>
+              <GridColumn width={2} />
+              <GridColumn width={10}>
+                <div className='col-center'>
+                  <Header as='h2'>Files</Header>
+                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
+                    <Table simple >
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.HeaderCell>File Name</Table.HeaderCell>
+                          <Table.HeaderCell>Uploaded</Table.HeaderCell>
+                          <Table.HeaderCell>Modified</Table.HeaderCell>
+                          <Table.HeaderCell>Actions</Table.HeaderCell>
+                        </Table.Row>
+                      </Table.Header>
+                      {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
                         <Table.Body>
                           {matters.matterFiles.map(instance => {
                             return (
@@ -476,12 +470,20 @@ class MatterView extends React.Component {
                             )
                           })}
                         </Table.Body>
-                      </Table>
-                    </Segment>
-                  </div>
-                </GridColumn>
-              </GridRow>
-            }
+                      ) : (
+                        <Table.Body>
+                          <Table.Row>
+                            <Table.Cell />
+                          </Table.Row>
+                        </Table.Body>
+                      )
+                      }
+                    </Table>
+                  </Segment>
+                </div>
+              </GridColumn>
+            </GridRow>
+
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
                 <GridColumn width={2} />
