@@ -1618,11 +1618,11 @@ class Jeeves extends Hub {
         'Supported tables:\n' +
         '  - cases\n' +
         // '  - documents\n' +
-        'Schema definitions:' +
+        'Schema definitions:\n' +
         '```\n' +
         caseDef[0][0]['Create Table'] + '\n' +
         // documentDef[0][0]['Create Table'] + '\n' +
-        '```\n' +
+        '```\n\n' +
         'Supported paths:\n' +
         '  - / (index, all object types)\n' +
         '  - /cases (case database)\n' +

@@ -208,7 +208,7 @@ class Trainer extends Service {
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
-      }).then((answer) => {
+      }).catch(reject).then((answer) => {
         resolve({
           type: 'TrainerQueryResponse',
           content: answer.text,
@@ -299,7 +299,7 @@ class Trainer extends Service {
           indexName: this.settings.redis.name || 'novo-embeddings'
         });
 
-        console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        // console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
         console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
 
         /* try {
