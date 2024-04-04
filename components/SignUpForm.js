@@ -44,11 +44,12 @@ class SignUpForm extends React.Component {
   }
 
   componentDidMount = async () => {
-    console.log('here mounted');
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "Novo · Your Legal Assistant";
 
     const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
+    console.log('first mount admin panel: ', adminPanel)
+    
     if (!adminPanel) {
       this.setState({ loading: true });
       try {
@@ -63,7 +64,7 @@ class SignUpForm extends React.Component {
 
   componentDidUpdate(prevProps) {
     const {adminPanel} = this.props
-
+    console.log('admin panel: ', adminPanel)
     if (!adminPanel) {
       //it goes here when the invitation reducer changes
       if (prevProps.invitation !== this.props.invitation) {
@@ -236,7 +237,7 @@ class SignUpForm extends React.Component {
     return (
       <div className='fade-in signup-form'>
         {
-          !adminPanel ? 
+          !this.props.adminPanel ? 
           <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
           : ''
         }
@@ -245,7 +246,7 @@ class SignUpForm extends React.Component {
             {(!tokenError && !registerSuccess) && (
               <section>
                 {
-                  !adminPanel ?
+                  !this.props.adminPanel ?
                   <>
                     <Header as='h3' textAlign="center">Sign Up</Header>
                     <p>Complete your registration to access Novo.</p>
