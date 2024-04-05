@@ -233,7 +233,7 @@ class SignUpForm extends React.Component {
     };
 
     return (
-      <div className='fade-in signup-form'>
+      <div className={`${this.props.adminPanel ?'col-center' :'fade-in signup-form'}`} >
         {
           !this.props.adminPanel &&
           <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
