@@ -40,7 +40,6 @@ Run dependencies with docker-compose (optional)
 docker-compose up -d
 ```
 
-
 ## Debian/Ubuntu
 ```
 ssh-keygen -t ed25519
