@@ -2244,9 +2244,7 @@ class Jeeves extends Hub {
       }
     });
 
-    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
+    this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {

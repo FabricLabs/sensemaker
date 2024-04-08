@@ -13,6 +13,9 @@ const FETCH_COURTS_FAILURE = 'FETCH_COURTS_FAILURE';
 const FETCH_COURT_REQUEST = 'FETCH_COURT_REQUEST';
 const FETCH_COURT_SUCCESS = 'FETCH_COURT_SUCCESS';
 const FETCH_COURT_FAILURE = 'FETCH_COURT_FAILURE';
+const SEARCH_COURT_REQUEST = 'SEARCH_COURT_REQUEST';
+const SEARCH_COURT_SUCCESS = 'SEARCH_COURT_SUCCESS';
+const SEARCH_COURT_FAILURE = 'SEARCH_COURT_FAILURE';
 
 // Action creators
 const fetchCourtsRequest = () => ({ type: FETCH_COURTS_REQUEST, loading: true });
@@ -21,6 +24,9 @@ const fetchCourtsFailure = (error) => ({ type: FETCH_COURTS_FAILURE, payload: er
 const fetchCourtRequest = () => ({ type: FETCH_COURT_REQUEST, loading: true });
 const fetchCourtSuccess = (instance) => ({ type: FETCH_COURT_SUCCESS, payload: instance, loading: false });
 const fetchCourtFailure = (error) => ({ type: FETCH_COURT_FAILURE, payload: error, loading: false });
+const searchCourtRequest = () => ({ type: SEARCH_COURT_REQUEST });
+const searchCourtSuccess = (results) => ({ type: SEARCH_COURT_SUCCESS, payload: results });
+const searchCourtFailure = (error) => ({ type: SEARCH_COURT_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchCourts = () => {
@@ -49,13 +55,46 @@ const fetchCourt = (id) => {
   };
 };
 
+const searchCourt = (query) => {
+  return async (dispatch, getState) => {
+    dispatch(searchCourtRequest());
+    const { token } = getState().auth;
+    try {
+
+      let results;
+
+      fetch('/courts', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'SEARCH',
+        body: JSON.stringify({ query })
+      }).then(async (result) => {
+        const obj = await result.json();
+        // console.log('fetch result: ', obj);
+        results = obj.content;
+      }).finally(() => {
+        dispatch(searchCourtSuccess(results));
+      })
+    } catch (error) {
+      dispatch(searchCourtFailure(error.message));
+    }
+  }
+}
+
 module.exports = {
   fetchCourt,
   fetchCourts,
+  searchCourt,
   FETCH_COURT_REQUEST,
   FETCH_COURT_SUCCESS,
   FETCH_COURT_FAILURE,
   FETCH_COURTS_REQUEST,
   FETCH_COURTS_SUCCESS,
-  FETCH_COURTS_FAILURE
+  FETCH_COURTS_FAILURE,
+  SEARCH_COURT_REQUEST,
+  SEARCH_COURT_SUCCESS,
+  SEARCH_COURT_FAILURE,
 };

@@ -69,13 +69,15 @@ const {
 // ## Case Actions
 const {
   fetchCases,
-  fetchCase
+  fetchCase,
+  searchCase,
 } = require('../actions/caseActions');
 
 // ## Courts Actions
 const {
   fetchCourts,
-  fetchCourt
+  fetchCourt,
+  searchCourt
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -253,6 +255,7 @@ async function main (input = {}) {
   const mapDispatchToProps = {
     fetchCases: fetchCases,
     fetchCase: fetchCase,
+    searchCase: searchCase,
     fetchContract: fetchContract,
     signContract: signContract,
     fetchConversation: fetchConversation,
@@ -262,6 +265,7 @@ async function main (input = {}) {
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    searchCourt: searchCourt,
     fetchJurisdictions: fetchJurisdictions,
     fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
