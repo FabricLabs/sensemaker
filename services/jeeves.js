@@ -3512,7 +3512,30 @@ class Jeeves extends Hub {
           console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
           this.agents[agent].query(request).then((response) => {
             console.debug('[NOVO]', '[API]', '[CHAT]', 'Got response from agent:', agent, response);
-            resolve(response);
+            const object =  {
+              object: 'chat.completion',
+              created: Date.now() / 1000,
+              model: request.model || 'novo',
+              system_fingerprint: 'net_novo',
+              choices: [
+                {
+                  index: 0,
+                  message: {
+                    role: 'assistant',
+                    content: response.content
+                  },
+                  finish_reason: 'stop'
+                }
+              ],
+              usage: {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0
+              }
+            }
+            const actor = new Actor(object);
+            const output = merge({}, object, { id: actor.id });
+            resolve(output);
           });
         });
       })
