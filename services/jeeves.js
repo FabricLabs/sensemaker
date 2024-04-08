@@ -3510,38 +3510,40 @@ class Jeeves extends Hub {
         console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
         return new Promise((resolve, reject) => {
           console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-          this.agents[agent].query(request).then((response) => {
+          this.agents[agent].query(request).catch(reject).then((response) => {
             console.debug('[NOVO]', '[API]', '[CHAT]', 'Got response from agent:', agent, response);
-            const object =  {
-              object: 'chat.completion',
-              created: Date.now() / 1000,
-              model: request.model || 'novo',
-              system_fingerprint: 'net_novo',
-              choices: [
-                {
-                  index: 0,
-                  message: {
-                    role: 'assistant',
-                    content: response.content
-                  },
-                  finish_reason: 'stop'
-                }
-              ],
-              usage: {
-                prompt_tokens: 0,
-                completion_tokens: 0,
-                total_tokens: 0
-              }
-            }
-            const actor = new Actor(object);
-            const output = merge({}, object, { id: actor.id });
-            resolve(output);
+            resolve(response);
           });
         });
       })
     ]).then((results) => {
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
-      res.json(results);
+      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+      const object =  {
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: request.model || 'novo',
+        system_fingerprint: 'net_novo',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: results.content
+            },
+            finish_reason: 'stop'
+          }
+        ],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
+        }
+      }
+      const actor = new Actor(object);
+      const output = merge({}, object, { id: actor.id });
+
+      res.json(output);
     });
   }
 
