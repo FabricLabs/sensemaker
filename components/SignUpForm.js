@@ -240,7 +240,7 @@ class SignUpForm extends React.Component {
           
         }
         <Segment>
-          <Form loading={loading} centered>
+          <Form loading={loading} centered style={{width: this.props.adminPanel ? '500px' : 'auto'}}>
             {(!tokenError && !registerSuccess) && (
               <section>
                 {
