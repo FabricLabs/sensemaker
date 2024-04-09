@@ -233,7 +233,7 @@ class SignUpForm extends React.Component {
     };
 
     return (
-      <div className={`${this.props.adminPanel ?'col-center' :'fade-in signup-form'}`} >
+      <div className={`${this.props.adminPanel ?'col-center signup-form' :'fade-in signup-form'}`} >
         {
           !this.props.adminPanel &&
           <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
@@ -368,7 +368,7 @@ class SignUpForm extends React.Component {
                 <p>{errorContent}</p>
               </Message>
             )}
-            {registerSuccess && (
+            {registerSuccess && !this.props.adminPanel ? (
               <Message positive centered>
                 <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
@@ -376,6 +376,11 @@ class SignUpForm extends React.Component {
                 <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
                   <Button primary href="/sessions">Log In</Button>
                 </div>
+              </Message>
+            ) : registerSuccess && this.props.adminPanel && (
+              <Message positive centered>
+                <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
+                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
               </Message>
             )}
           </Form>
