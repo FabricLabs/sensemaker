@@ -45,7 +45,7 @@ const fetchCourts = () => {
 const fetchCourt = (id) => {
   return async (dispatch, getState) => {
     dispatch(fetchCourtRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try {
       const instance = await fetchFromAPI(`/courts/${id}`, null, token);
       dispatch(fetchCourtSuccess(instance));

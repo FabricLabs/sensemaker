@@ -18,16 +18,14 @@ const {
 // const QueryForm = require('./QueryForm');
 // const Feed = require('./Feed');
 
-const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');
 
-class Conversation extends React.Component {
+class CourtView extends React.Component {
+
   componentDidMount () {
     const { id } = this.props;
-    const { message } = this.props.courts;
-
+    console.log(id);
     this.props.fetchCourt(id);
-    console.log(this.props);
   }
 
   render () {
@@ -35,7 +33,7 @@ class Conversation extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
-
+    console.log(courts);
     return (
       <fabric-container>
         <Segment fluid loading={loading} className='court-info'>
@@ -64,9 +62,9 @@ class Conversation extends React.Component {
   }
 }
 
-function Chat (props) {
+function Court (props) {
   const { id } = useParams();
-  return <Conversation id={id} {...props} />;
+  return <CourtView id={id} {...props} />;
 }
 
-module.exports = Chat;
+module.exports = Court;

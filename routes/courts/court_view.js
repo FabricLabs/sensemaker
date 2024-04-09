@@ -5,7 +5,7 @@ module.exports = function (req, res, next) {
     json: async () => {
       // TODO: pagination
       try {
-        const court = await this.db('courts').select('*').where('id', req.params.id).first();
+        const court = await this.db('courts').select('*').where('slug', req.params.id).first();
         res.send(court);
       } catch (exception) {
         res.status(503);
