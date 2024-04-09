@@ -3516,10 +3516,13 @@ class Jeeves extends Hub {
           });
         });
       })
-    ]).then((results) => {
+    ]).catch((error) => {
+      console.error('[NOVO]', '[API]', '[CHAT]', 'Error:', error);
+      res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
+    }).then((results) => {
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-      const object =  {
+      const object = {
         object: 'chat.completion',
         created: Date.now() / 1000,
         model: request.model || 'novo',
@@ -3540,6 +3543,7 @@ class Jeeves extends Hub {
           total_tokens: 0
         }
       }
+
       const actor = new Actor(object);
       const output = merge({}, object, { id: actor.id });
 
