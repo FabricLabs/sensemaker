@@ -42,12 +42,12 @@ const fetchCourts = () => {
   };
 };
 
-const fetchCourt = (id) => {
+const fetchCourt = (slug) => {
   return async (dispatch, getState) => {
     dispatch(fetchCourtRequest());
     const { token } = getState().auth;
     try {
-      const instance = await fetchFromAPI(`/courts/${id}`, null, token);
+      const instance = await fetchFromAPI(`/courts/${slug}`, null, token);
       dispatch(fetchCourtSuccess(instance));
     } catch (error) {
       dispatch(fetchCourtFailure(error));
