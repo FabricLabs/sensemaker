@@ -3508,13 +3508,7 @@ class Jeeves extends Hub {
     Promise.race([
       Object.keys(this.agents).map((agent) => {
         console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-        return new Promise((resolve, reject) => {
-          console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-          this.agents[agent].query(request).catch(reject).then((response) => {
-            console.debug('[NOVO]', '[API]', '[CHAT]', 'Got response from agent:', agent, response);
-            resolve(response);
-          });
-        });
+        return this.agents[agent].query(request);
       })
     ]).catch((error) => {
       console.error('[NOVO]', '[API]', '[CHAT]', 'Error:', error);
