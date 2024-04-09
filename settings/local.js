@@ -12,11 +12,11 @@ const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by loca
 const YMIR = '10.8.0.3';
 const ODIN = '10.8.0.4';
 const THOR = '10.8.0.5';
-const TANGO = '192.168.127.176';
-const MANGO = '192.168.127.181';
-const FOXTROT = '192.168.127.222';
-const CLARITY = '192.168.127.186';
-const BALROG = '192.168.127.133';
+const TANGO = '10.8.0.30';
+const MANGO = '10.8.0.32';
+const FOXTROT = '10.8.0.31';
+const CLARITY = '10.8.0.34';
+const BALROG = '10.8.0.33';
 
 // Dependencies
 const fs = require('fs');
