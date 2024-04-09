@@ -3515,7 +3515,6 @@ class Jeeves extends Hub {
       res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
     }).then((results) => {
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
-      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
       const object = {
         object: 'chat.completion',
         created: Date.now() / 1000,
