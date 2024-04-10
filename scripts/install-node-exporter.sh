@@ -49,6 +49,7 @@ EOF'
 # Start systemd daemon
 echo "[+] Starting systemd service"
 systemctl daemon-reload
+systemctl enable node_exporter
 systemctl start node_exporter
 
 # Cleanup files
