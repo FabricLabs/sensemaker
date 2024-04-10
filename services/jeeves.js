@@ -3505,17 +3505,16 @@ class Jeeves extends Hub {
   async _handleChatCompletionRequest (req, res, next) {
     const request = req.body;
     console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion request:', request);
-    Promise.race([
-      Object.keys(this.agents).map((agent) => {
-        console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-        return this.agents[agent].query(request);
-      })
-    ]).catch((error) => {
+    const network = Object.keys(this.agents).map((agent) => {
+      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+      return this.agents[agent].query(request);
+    });
+
+    Promise.race(network).catch((error) => {
       console.error('[NOVO]', '[API]', '[CHAT]', 'Error:', error);
       res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
     }).then((results) => {
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
-      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
       const object = {
         object: 'chat.completion',
         created: Date.now() / 1000,
