@@ -353,7 +353,7 @@ class Agent extends Service {
             }
 
             // console.debug('messages:', messages);
-            console.debug('[!!!]', 'base:', base);
+            console.debug('[!!!]', `[${this.settings.name.toLocaleUpperCase()}]`, 'base:', base);
 
             if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
             if (!base) return reject(new Error('No response from agent.'));
