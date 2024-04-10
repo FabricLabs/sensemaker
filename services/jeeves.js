@@ -2843,23 +2843,7 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/messages', async (req, res, next) => {
-      let messages = [];
-
-      if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
-          conversation_id: req.query.conversation_id
-        }).orderBy('created_at', 'asc');
-      } else {
-        // messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
-      }
-
-      messages = messages.map((m) => {
-        return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
-      });
-
-      res.send(messages);
-    });
+    this.http._addRoute('GET', '/messages', ROUTES.messages.getMessages.bind(this));
 
     this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
       const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();

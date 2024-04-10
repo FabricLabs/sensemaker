@@ -40,6 +40,7 @@ module.exports = {
   },
   messages: {
     create: require('./messages/create_message'),
+    getMessages: require('./messages/get_messages'),
   },
   products: {
     list: require('./products/list_products'),
