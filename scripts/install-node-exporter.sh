@@ -9,9 +9,10 @@ if [ "$EUID" -ne 0 ]
 fi
 
 # Download binary
-(cd /tmp && curl -OL https://github.com/prometheus/node_exporter/releases/download/$VERSION/node_exporter-$VERSION.linux-amd64.tar.gz)
+(cd /tmp && curl -OL https://github.com/prometheus/node_exporter/releases/download/v$VERSION/node_exporter-$VERSION.linux-amd64.tar.gz)
 
 # Unzip 
+echo "[+] Unzipping tar"
 (cd /tmp && tar -xvf /tmp/node_exporter-$VERSION.linux-amd64.tar.gz)
 
 # Create user and group for node exporter
