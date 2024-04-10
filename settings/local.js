@@ -403,7 +403,7 @@ module.exports = {
   },
   openai: {
     enable: true,
-    key: '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',
+    key: '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',
     model: 'gpt-4-1106-preview',
     temperature: 0
   },
