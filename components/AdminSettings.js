@@ -163,18 +163,20 @@ class AdminSettings extends React.Component {
         </Tab.Pane>
       },
       {
-        menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading}>
+        menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading} className='col-center'>
           <AdminUsers {...this.props} />
-          <Header as='h3'>Create User</Header>
-          <SignUpForm
-            adminPanel={true}
-            checkInvitationToken={this.props.checkInvitationToken}
-            checkUsernameAvailable={this.props.checkUsernameAvailable}
-            checkEmailAvailable={this.props.checkEmailAvailable}
-            auth={this.props.auth}
-            invitation={this.props.invitation}
-            fullRegister={this.props.fullRegister}
-          ></SignUpForm>
+          <section style={{ width: '100%', marginTop:'1em' }} className='col-center'>
+            <Header as='h3'>Create User</Header>
+            <SignUpForm
+              adminPanel={true}
+              checkInvitationToken={this.props.checkInvitationToken}
+              checkUsernameAvailable={this.props.checkUsernameAvailable}
+              checkEmailAvailable={this.props.checkEmailAvailable}
+              auth={this.props.auth}
+              invitation={this.props.invitation}
+              fullRegister={this.props.fullRegister}
+            ></SignUpForm>
+          </section>
           {/* <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/> */}
         </Tab.Pane>
       },

@@ -233,14 +233,14 @@ class SignUpForm extends React.Component {
     };
 
     return (
-      <div className={`${this.props.adminPanel ?'col-center signup-form' :'fade-in signup-form'}`} >
+      <div className={'fade-in signup-form'} >
         {
           !this.props.adminPanel &&
           <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
           
         }
         <Segment>
-          <Form loading={loading} centered style={{width: this.props.adminPanel ? '500px' : 'auto'}}>
+          <Form loading={loading} centered style={{width:'500px'}}>
             {(!tokenError && !registerSuccess) && (
               <section>
                 {
