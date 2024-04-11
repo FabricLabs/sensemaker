@@ -365,7 +365,7 @@ class Agent extends Service {
               console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
               console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
               // Re-execute query with John Cena
-              return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
+              return this.query({ query: `Are you sure about that?`, messages: sample });
             }
 
             this.emit('completion', base);
