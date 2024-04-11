@@ -393,7 +393,7 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 11434,
     secure: false,
     models: ['llama2', 'mistral', 'gemma']
