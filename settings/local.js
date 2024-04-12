@@ -396,7 +396,7 @@ module.exports = {
     host: '127.0.0.1',
     port: 11434,
     secure: false,
-    models: ['llama2', 'mistral', 'gemma']
+    models: ['llama2']
   },
   pacer: {
     enable: true
