@@ -227,7 +227,7 @@ class Jeeves extends Hub {
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
     this.trainer = new Trainer(this.settings);
-    this.coordinator = new Coordinator({ name: 'Jeeves', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'] });
+    this.coordinator = new Coordinator({ name: 'Jeeves', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'], agent: this.settings.ollama });
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
@@ -347,7 +347,7 @@ class Jeeves extends Hub {
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, host: null, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
     this.usa = new Agent({ name: 'USA', model: 'llama2', prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
 
     // Pipeline Datasources
@@ -682,7 +682,9 @@ class Jeeves extends Hub {
       const action = 'none';
 
       // Get the recommended action
-      this.coordinator.chooseAction({ action, request }).then((decision) => {
+      this.coordinator.chooseAction({ action, request }).catch((error) => {
+        console.error('[NOVO]', '[PIPELINE]', 'Coordinator error:', error);
+      }).then((decision) => {
         console.debug('[NOVO]', '[PIPELINE]', 'Coordinator decision:', decision);
       });
 
@@ -703,31 +705,35 @@ class Jeeves extends Hub {
         const words = this.importantWords(request.query);
         const phrases = this.importantPhrases(request.query);
 
-        searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
-        if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
+        try {
+          searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
+          if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
-        if (!searchterm.content) searchterm.content = '';
+          if (!searchterm.content) searchterm.content = '';
 
-        // Remove whitespace
-        searchterm.content = searchterm.content.trim();
+          // Remove whitespace
+          searchterm.content = searchterm.content.trim();
 
-        // Remove wrapping quotes
-        searchterm.content = searchterm.content.replace(/^"/, '').replace(/"$/, ''); // exact double quotes
-        searchterm.content = searchterm.content.replace(/^'/, '').replace(/'$/, ''); // exact single quotes
-        searchterm.content = searchterm.content.replace(/^“/, '').replace(/”$/, ''); // fancy double quotes
-        searchterm.content = searchterm.content.replace(/^‘/, '').replace(/’$/, ''); // fancy single quotes
+          // Remove wrapping quotes
+          searchterm.content = searchterm.content.replace(/^"/, '').replace(/"$/, ''); // exact double quotes
+          searchterm.content = searchterm.content.replace(/^'/, '').replace(/'$/, ''); // exact single quotes
+          searchterm.content = searchterm.content.replace(/^“/, '').replace(/”$/, ''); // fancy double quotes
+          searchterm.content = searchterm.content.replace(/^‘/, '').replace(/’$/, ''); // fancy single quotes
 
-        // Still too long!
-        // TODO: convert limit here to constant
-        if (searchterm.content.length > 50) {
-          searchterm.content = searchterm.content.substr(0, 50);
+          // Still too long!
+          // TODO: convert limit here to constant
+          if (searchterm.content.length > 50) {
+            searchterm.content = searchterm.content.substr(0, 50);
+          }
+
+          console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
+
+          // Search for cases
+          topical = await this._vectorSearchCases(searchterm.content);
+        } catch (exception) {
+          console.error('[NOVO]', '[PIPELINE]', 'Search Exception:', exception);
         }
-
-        console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
-
-        // Search for cases
-        topical = await this._vectorSearchCases(searchterm.content);
       }
       // END EXPANDER
 
@@ -1599,8 +1605,8 @@ class Jeeves extends Hub {
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
     this.summarizer = new Agent({ name: this.settings.name, listen: false, host: null, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: false, host: null, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
 
     // ChatGPT
     this.chatgpt = new Agent({ name: 'GPT4', host: null, model: this.settings.openai.model, prompt: this.prompt, rules: this.settings.rules, openai: this.settings.openai });
@@ -4360,7 +4366,7 @@ class Jeeves extends Hub {
 
       const request = { query };
 
-      this.createTimedRequest(request).then((output) => {
+      this.createTimedRequest(request).catch(reject).then((output) => {
         // console.debug('got summarized case:', output);
         resolve(output.content);
       });
