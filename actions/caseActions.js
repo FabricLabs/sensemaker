@@ -27,8 +27,8 @@ const fetchCaseRequest = () => ({ type: FETCH_CASE_REQUEST, loading: true });
 const fetchCaseSuccess = (instance) => ({ type: FETCH_CASE_SUCCESS, payload: instance, loading: false });
 const fetchCaseFailure = (error) => ({ type: FETCH_CASE_FAILURE, payload: error, loading: false });
 
-const searchCaseRequest = () => ({ type: SEARCH_CASE_REQUEST});
-const searchCaseSuccess = (results) => ({ type: SEARCH_CASE_SUCCESS, payload: results});
+const searchCaseRequest = () => ({ type: SEARCH_CASE_REQUEST });
+const searchCaseSuccess = (results) => ({ type: SEARCH_CASE_SUCCESS, payload: results });
 const searchCaseFailure = (error) => ({ type: SEARCH_CASE_FAILURE, payload: error });
 
 
@@ -64,29 +64,26 @@ const searchCase = (query) => {
     dispatch(searchCaseRequest());
     const { token } = getState().auth;
     try {
-      let results;
-
-      await fetch('/cases', {
+      const response = await fetch('/cases', {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
         method: 'SEARCH',
         body: JSON.stringify({ query })
-      }).then(async (result) => {
-        const obj = await result.json();
-        console.debug('fetch result: ', obj);
-
-        results = obj.content;
-
-      }).finally(() => {
-        dispatch(searchCaseSuccess(results));
       });
+
+      const obj = await response.json();
+      console.debug('fetch result: ', obj);
+
+      dispatch(searchCaseSuccess(obj.content));
     } catch (error) {
+      console.error('Error fetching data:', error);
       dispatch(searchCaseFailure(error.message));
     }
   }
 }
+
 
 module.exports = {
   fetchCase,

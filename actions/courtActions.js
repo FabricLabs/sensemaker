@@ -60,10 +60,7 @@ const searchCourt = (query) => {
     dispatch(searchCourtRequest());
     const { token } = getState().auth;
     try {
-
-      let results;
-
-      fetch('/courts', {
+      const response = await fetch('/courts', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json',
@@ -71,14 +68,14 @@ const searchCourt = (query) => {
         },
         method: 'SEARCH',
         body: JSON.stringify({ query })
-      }).then(async (result) => {
-        const obj = await result.json();
-        // console.log('fetch result: ', obj);
-        results = obj.content;
-      }).finally(() => {
-        dispatch(searchCourtSuccess(results));
-      })
+      });
+      
+      const obj = await response.json();
+      console.log('fetch result: ', obj);
+      
+      dispatch(searchCourtSuccess(obj.content));
     } catch (error) {
+      console.error('Error fetching data:', error);
       dispatch(searchCourtFailure(error.message));
     }
   }

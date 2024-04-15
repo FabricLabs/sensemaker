@@ -18,7 +18,7 @@ const {
 const formatDate = require('../contracts/formatDate');
 
 class CourtHome extends React.Component {
-  constructor (settings = {}) {
+  constructor(settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
@@ -27,41 +27,31 @@ class CourtHome extends React.Component {
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchCourts();
+  }
+
+  componentDidUpdate(prevProps) {
+    const { courts } = this.props;
+    if (prevProps.courts != courts) {
+      if (!courts.loading && this.state.searching) {
+        this.setState({ filteredCourts: courts.results, searching: false });
+      }
+    }
   }
 
   handleSearchChange = debounce((query) => {
     //console.debug('search change:', query);
 
     this.setState({ searching: true });
-
-    fetch('/courts', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'SEARCH',
-      body: JSON.stringify({ query })
-    }).then(async (result) => {
-      const obj = await result.json();
-
-      console.log('fetch result: ', obj);
-
-      this.setState({
-        filteredCourts: obj.content,
-        searchQuery: query,
-      });
-    }).catch((error) => {
-      console.error('Error fetching data:', error);
-    }).finally(() => {
-      this.setState({ searching: false }); // Set searching to false after fetch is complete
-    });
+    this.props.searchCourt(query);
   }, 1000);
 
-  render () {
-    const { loading, error } = this.props;
+  render() {
+    const { loading, courts } = this.props;
     const { filteredCourts, searchQuery, searching } = this.state;
+
+    const displayCourts = searchQuery ? filteredCourts : courts;
 
     return (
       <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
@@ -87,12 +77,11 @@ class CourtHome extends React.Component {
           </div>
         </jeeves-search>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
-        {searching ? (
+          {searching || courts.loading ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
-          searchQuery ? // if searching, goes this way
-            (filteredCourts && filteredCourts.courts && filteredCourts.courts.length > 0 ? (
-              filteredCourts.courts.map((instance) => (
+            (displayCourts && displayCourts.courts && displayCourts.courts.length > 0 ? (
+              displayCourts.courts.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
                     <h3><Link to={"/courts/" + instance.slug}>{instance.short_name}</Link></h3>
@@ -104,30 +93,14 @@ class CourtHome extends React.Component {
                   </Card.Content>
                 </List.Item>
               ))
-              ) : (<p>No results found</p>)
-            ) : this.props.courts && this.props.courts.courts && this.props.courts.courts.length > 0 ? (
-              this.props.courts.courts.map((instance) => (
-                <List.Item as={Card} key={instance.id}>
-                  <Card.Content>
-                    <h3><Link to={"/courts/" + instance.slug}> {instance.short_name} </Link> </h3>
-                    <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="calendar">{formatDate(instance.start_date)}</Label>
-                      <Label icon="calendar">{formatDate(instance.end_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
-                    </Label.Group>
-                    <p>{instance.content}</p>
-                  </Card.Content>
-                </List.Item>
-              ))
-            ) : (<p>No courts available</p>)
+            ) : (<p>No results found</p>))
           }
         </List>
       </Segment>
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }
