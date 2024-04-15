@@ -2732,7 +2732,7 @@ class Jeeves extends Hub {
           // Create response
           const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
-              id: doc.fabric_id,
+              fabric_id: doc.fabric_id,
               created_at: doc.created_at,
               description: doc.description,
               sha1: doc.sha1,
