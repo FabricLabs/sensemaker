@@ -17,8 +17,6 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-// const QueryForm = require('./QueryForm');
-// const Feed = require('./Feed');
 
 const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');

@@ -504,7 +504,6 @@ class Dashboard extends React.Component {
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
                         <p>Send us an email: <a href="mailto:support@jeeves.dev">support@trynovo.com</a></p>
-                        {/* <p><strong>Call Chuck!</strong> +1 (d00) p00-d00p</p> */}
                       </Popup.Content>
                     </Popup>
                     <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
@@ -554,16 +553,13 @@ class Dashboard extends React.Component {
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
                 <Bridge />
-                {/* <p><small><Link to='/contracts/terms-of-use'>Terms of Use</Link></small></p> */}
                 <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
             </section>
           </Sidebar>
 
-          {/* <div id="main-content" style={{ marginLeft: '350px', paddingRight: '1em' }}> */}
           <Container fluid style={containerStyle} onClick={() => this.closeSidebars()}>
-            {/* <Button className='mobile-only'><Icon name='ellipsis horizontal' /></Button> */}
             {this.state.debug ? (
               <div>
                 <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
@@ -634,7 +630,6 @@ class Dashboard extends React.Component {
               </Routes>
             )}
           </Container>
-          {/* </div> */}
         </div>
         <Popup
           content="Give us feedback!"
