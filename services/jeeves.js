@@ -1969,34 +1969,7 @@ class Jeeves extends Hub {
 
     this.http._addRoute('POST', '/passwordChange', ROUTES.account.changePassword.bind(this));
 
-    this.http._addRoute('POST', '/usernameChange', async (req, res, next) => {
-      const { newUsername, password } = req.body;
-
-      try {
-        const user = await this.db('users').where('id', req.user.id).first();
-        //check for the password
-        if (!user || !compareSync(password, user.password)) {
-          return res.status(401).json({ message: 'Invalid password.' });
-        }
-
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', newUsername).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Update the user's username in the database
-        await this.db('users').where('id', user.id).update({
-          username: newUsername,
-        });
-
-        return res.json({
-          message: 'Username updated successfully.',
-        });
-      } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/usernameChange', ROUTES.account.changeUsername.bind(this));
 
     //this is the function that generates a password reset token
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
@@ -2121,33 +2094,7 @@ class Jeeves extends Hub {
     });
 
     //route to edit a conversation title
-    this.http._addRoute('PATCH', '/conversations/:id', async (req, res, next) => {
-      const { title } = req.body;
-
-      try {
-        const conversationEditing = await this.db('conversations')
-        .where({
-          id: req.params.id,
-          creator_id: req.user.id  // validates if the user editing is the creator of the conversation
-        }).first();
-
-        if (!conversationEditing) {
-          return res.status(401).json({ message: 'Invalid conversation.' });
-        }
-
-        // Update the conversation's title in the database
-        await this.db('conversations').where('id', req.params.id).update({
-          title: title
-        });
-
-        return res.json({
-          message: 'Title edited successfully.',
-        });
-      } catch (error) {
-        console.error('Error editing title: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
 
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
@@ -2273,67 +2220,14 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
-      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
-      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
-      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
-      res.send(pdf); */
-      res.redirect(instance.harvard_case_law_pdf);
-    });
+    this.http._addRoute('GET', '/cases/:id/pdf', ROUTES.cases.getCaseFile.bind(this));
 
     this.http._addRoute('GET', '/conversations', ROUTES.conversations.getConversations.bind(this));
 
     this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
-    this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
-      const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
-      res.format({
-        json: () => {
-          if (!court) return res.status(404).json({ message: 'Court not found.' });
-          res.send(court);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.findCourt.bind(this));
 
-    this.http._addRoute('GET', '/people', async (req, res, next) => {
-      const page = req.query.page || 1;
-      const people = await this.db.select(
-        'id as dbid',
-        'fabric_id as id',
-        'full_name',
-        'name_first',
-        'name_middle',
-        'name_last',
-        'name_suffix',
-        'date_of_birth',
-        'date_of_death',
-        'birth_city',
-        'birth_state',
-        'courtlistener_id'
-      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: page
-      });
-
-      res.setHeader('X-Fabric-Type', 'Collection');
-      res.setHeader('X-Pagination', true);
-      res.setHeader('X-Pagination-Current', `${people.pagination.from}-${people.pagination.to}`);
-      res.setHeader('X-Pagination-Per', people.pagination.perPage);
-      res.setHeader('X-Pagination-Total', people.pagination.total);
-
-      res.format({
-        json: () => {
-          res.send(people.data);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      })
-    });
+    this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
 
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
       const person = await this.db.select(

@@ -4,6 +4,7 @@ module.exports = {
   },
   cases: {
     list: require('./cases/get_cases'),
+    getCaseFile: require('./cases/get_cases_id_pdf.js'),
   },
   documents: {
     // list: require('./documents/list_documents'),
@@ -60,6 +61,7 @@ module.exports = {
   courts: {
     list: require('./courts/list_courts'),
     view: require('./courts/court_view'),
+    findCourt: require('./courts/find_court'),
   },
   sessions: {
     create: require('./sessions/create_session')
@@ -84,8 +86,13 @@ module.exports = {
   },
   conversations: {
     getConversations: require('./conversations/get_conversations'),
+    editConversationsTitle: require('./conversations/edit_conversations_title'),
   },
   account: {
     changePassword: require('./account/change_password'),
+    changeUsername: require('./account/change_username'),
   },
+  people: {
+    list: require('./people/get_people'),
+  }
 };
