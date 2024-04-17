@@ -2,6 +2,9 @@
 
 const { fetchFromAPI } = require('./apiActions');
 
+const createTimeoutPromise = require('../functions/createTimeoutPromise');
+
+
 // API Functions
 async function fetchStatsFromAPI (token) {
   const response = await fetch('/statistics/admin', {
@@ -162,11 +165,8 @@ const editUsername = (id, newUsername) => {
         body: JSON.stringify({ id, newUsername }),
       });
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Fetch timed out"));
-        }, 15000);
-      });
+      const timeoutPromise = createTimeoutPromise(15000, 'Fetch timed out');
+
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       dispatch(editUsernameSuccess());
     } catch (error) {
@@ -189,11 +189,8 @@ const editEmail = (id, newEmail) => {
         body: JSON.stringify({ id, newEmail }),
       });
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Fetch timed out"));
-        }, 15000);
-      });
+      const timeoutPromise = createTimeoutPromise(15000, 'Fetch timed out');
+
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       dispatch(editEmailSuccess());
     } catch (error) {
