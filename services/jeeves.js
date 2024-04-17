@@ -1852,7 +1852,8 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
 
     // Courts
-    this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
+    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
+    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.view.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
@@ -2278,9 +2279,7 @@ class Jeeves extends Hub {
       }
     });
 
-    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
+    this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
@@ -2678,20 +2677,19 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
-    this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
-      const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
-      res.format({
-        json: () => {
-          if (!court) return res.status(404).json({ message: 'Court not found.' });
-          res.send(court);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    // this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
+    //   const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
+    //   res.format({
+    //     json: () => {
+    //       if (!court) return res.status(404).json({ message: 'Court not found.' });
+    //       res.send(court);
+    //     },
+    //     html: () => {
+    //       // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+    //       return res.send(this.applicationString);
+    //     }
+    //   });
+    // });
 
     this.http._addRoute('GET', '/people', async (req, res, next) => {
       const page = req.query.page || 1;
@@ -2768,7 +2766,7 @@ class Jeeves extends Hub {
           // Create response
           const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
             return {
-              id: doc.fabric_id,
+              fabric_id: doc.fabric_id,
               created_at: doc.created_at,
               description: doc.description,
               sha1: doc.sha1,
