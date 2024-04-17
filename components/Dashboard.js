@@ -62,11 +62,12 @@ const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
 const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
+const FeedbackBox = require('./FeedbackBox');
+const HelpBox = require('./HelpBox');
 
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
-const FeedbackBox = require('./FeedbackBox');
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -648,6 +649,7 @@ class Dashboard extends React.Component {
           sendFeedback={this.props.sendFeedback}
           feedback={this.props.feedback}
         />
+        <HelpBox/>
 
         <InformationSidebar
           visible={informationSidebarOpen}
