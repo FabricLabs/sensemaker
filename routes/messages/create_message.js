@@ -99,7 +99,9 @@ module.exports = async function (req, res, next) {
         const messages = await this._getConversationMessages(conversation_id);
         this._summarizeMessagesToTitle(messages.map((x) => {
           return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-        })).then(async (output) => {
+        })).catch((error) => {
+          console.error('[NOVO]', '[HTTP]', 'Error summarizing messages:', error);
+        }).then(async (output) => {
           console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
