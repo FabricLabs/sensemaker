@@ -85,4 +85,7 @@ module.exports = {
   conversations: {
     getConversations: require('./conversations/get_conversations'),
   },
+  account: {
+    changePassword: require('./account/change_password'),
+  },
 };
