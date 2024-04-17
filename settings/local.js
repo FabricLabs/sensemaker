@@ -1,6 +1,16 @@
 'use strict';
 
-const YMIR = '';
+// Constants
+const NAME = 'NOVO';
+const VERSION = '1.0.0-RC2';
+const {
+  FIXTURE_SEED
+} = require('@fabric/core/constants');
+
+// Hosts
+const YMIR = '10.8.0.3';
+const ODIN = '10.8.0.4';
+const THOR = '10.8.0.5';
 
 // Dependencies
 const fs = require('fs');
@@ -18,13 +28,6 @@ environment.start();
 // PROJECT: @fabric/http
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
-
-// Constants
-const NAME = 'NOVO';
-const VERSION = '1.0.0-RC1';
-const {
-  FIXTURE_SEED
-} = require('@fabric/core/constants');
 
 // Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
@@ -49,8 +52,16 @@ module.exports = {
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
+  temperature: 0,
+  trainer: {
+    enable: false,
+    hosts: ['localhost:7777'],
+    interval: 1000,
+    limit: 10
+  },
   workers: 8,
   agents: {
+    // Local Agents
     local: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
@@ -73,6 +84,7 @@ module.exports = {
       port: 11434,
       secure: false
     },
+    // Network Agents
     /* alpha: {
       prompt: alphaPrompt.toString('utf8'),
       model: 'llama2',
@@ -87,13 +99,41 @@ module.exports = {
       port: 11434,
       secure: false
     }, */
-    gamma: {
+    /* gamma: {
       prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
+      model: 'gemma',
       host: 'ollama.trynovo.com',
       port: 443,
       secure: true
+    }, */
+    /* llama: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: YMIR,
+      port: 11434,
+      secure: false
     },
+    ymir: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'mixtral',
+      host: YMIR,
+      port: 11434,
+      secure: false
+    },
+    odin: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: ODIN,
+      port: 11434,
+      secure: false
+    },
+    thor: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'yarn-llama2:7b-128k',
+      host: THOR,
+      port: 11434,
+      secure: false
+    }, */
     // Untested so far
     /*
     chatgpt: {

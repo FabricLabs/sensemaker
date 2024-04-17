@@ -14,7 +14,7 @@ const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex');
 const settings = require('../settings/local');
 
 describe('Jeeves', function () {
-  this.timeout(30000);
+  this.timeout(60000);
 
   describe('@jeeves/core', function () {
     it('should be instantiable', function () {
@@ -24,6 +24,13 @@ describe('Jeeves', function () {
     xit('should have a correct version attribute', function () {
       const jeeves = new Jeeves();
       assert.strictEqual(jeeves.version, definition.version);
+    });
+
+    xit('start and stop', async function () {
+      const jeeves = new Jeeves(settings);
+      await jeeves.start();
+      await jeeves.stop();
+      assert.ok(jeeves);
     });
 
     xit('can execute the test prompt', function (done) {

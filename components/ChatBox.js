@@ -218,7 +218,7 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID, matterID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
     let dataToSubmit;
 
     this.stopPolling();
@@ -251,12 +251,12 @@ class ChatBox extends React.Component {
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
-
-
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      effectiveMatterID
+      effectiveMatterID,
+      fileFabricID
     ).then((output) => {
 
       // dispatch getMessages
@@ -274,89 +274,35 @@ class ChatBox extends React.Component {
     this.setState({ query: '' });
   }
 
-  toggleInformationSidebar = () => {
-    this.setState(prevState => ({
-      informationSidebarOpen: !prevState.informationSidebarOpen
-    }));
-  };
+  // messageInfo = (ID) => {
+  //   let newState = {
+  //     thumbsUpClicked: false,
+  //     thumbsDownClicked: false,
+  //     checkingMessageID: ID,
+  //     informationSidebarOpen: true
+  //   };
 
-  messageInfo = (ID) => {
-    let newState = {
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      checkingMessageID: ID,
-      informationSidebarOpen: true
-    };
-
-    // if sidebar is open and checkingMessageID === actual clicked message,
-    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
-    // icon twice for the same message)
-    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
-      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
-      newState.informationSidebarOpen = false;
-    }
-
-    this.setState(newState);
-    // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-    this.props.resetInformationSidebar();
-
-  };
-
-
-  // // thumbs up handler
-  // thumbsUp = (ID) => {
-  //   this.setState({ thumbsDownClicked: false });
-
-  //   // if thumbsUp was clicked for this message already, close sidebar
-  //   if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
-  //     this.setState({
-  //       informationSidebarOpen: false,
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: false
-  //     });
-  //   } else {
-  //     //else, open (or keep open) sidebar, and fix states
-  //     this.setState({
-  //       thumbsUpClicked: true,
-  //       thumbsDownClicked: false,
-  //       checkingMessageID: ID,
-  //       informationSidebarOpen: true
-  //     });
+  //   // if sidebar is open and checkingMessageID === actual clicked message,
+  //   // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
+  //   // icon twice for the same message)
+  //   if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
+  //     !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
+  //     newState.informationSidebarOpen = false;
   //   }
+
+  //   this.setState(newState);
   //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
   //   this.props.resetInformationSidebar();
 
   // };
 
-  // // thumbs down handler
-  // thumbsDown = (ID) => {
-  //   this.setState({ thumbsUpClicked: false });
-  //   // if thumbsDown was clicked for this message already, close sidebar
-  //   if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
-  //     this.setState({
-  //       informationSidebarOpen: false,
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: false
-  //     });
-  //   } else {
-  //     //else, open (or keep open) sidebar, and fix states
-  //     this.setState({
-  //       thumbsUpClicked: false,
-  //       thumbsDownClicked: true,
-  //       checkingMessageID: ID,
-  //       informationSidebarOpen: true
-  //     });
-  //   }
-  //   // this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  //   this.props.resetInformationSidebar();
-  // };
 
   regenerateAnswer = (event) => {
     event.preventDefault();
 
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
 
     this.stopPolling();
 
@@ -393,8 +339,12 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
+
     // dispatch submitMessage
-    this.props.regenAnswer(dataToSubmit).then((output) => {
+    this.props.regenAnswer(dataToSubmit, effectiveMatterID, fileFabricID).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -631,6 +581,7 @@ class ChatBox extends React.Component {
   };
 
   render() {
+    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
     const { messages } = this.props.chat;
     const {
       loading,
@@ -654,6 +605,7 @@ class ChatBox extends React.Component {
       matterID,
       matterTitle,
       actualConversation,
+      documentChat
     } = this.props;
 
     //this is the style of the chat container with no messages on the chat
@@ -762,6 +714,21 @@ class ChatBox extends React.Component {
               {actualConversation.matter_id && (
                 <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
               )}
+              {(this.props.documentInfo && !documentChat) && (
+                <Popup
+                  content="View related Document"
+                  trigger={
+                    <Icon
+                      name='file alternate'
+                      size='big'
+                      className='primary'
+                      primary
+                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}
+                      style={{ cursor: "pointer" }}
+                    />
+                  }
+                />
+              )}
             </div>
           )}
           {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
@@ -769,6 +736,14 @@ class ChatBox extends React.Component {
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
               <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
+            </div>
+          )}
+          {documentChat && (
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename}</Link>
+              </Header>
+              {/* <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header> */}
             </div>
           )}
           {/* The chat messages start rendering here */}
@@ -876,7 +851,7 @@ class ChatBox extends React.Component {
                     </Feed.Summary>
                     <Feed.Extra text>
                       {message.status !== "computing" && (
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || ""), }} />
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
                       )}
                     </Feed.Extra>
                     <Feed.Extra text>

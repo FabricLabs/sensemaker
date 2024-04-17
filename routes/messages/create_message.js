@@ -12,9 +12,10 @@ module.exports = async function (req, res, next) {
     case_id,
     conversation_id,
     content,
-    matter_id
+    matter_id,
+    file_fabric_id
   } = req.body;
-
+  console.log('fabric id', file_fabric_id);
   if (!conversation_id) {
     isNew = true;
 
@@ -26,6 +27,7 @@ module.exports = async function (req, res, next) {
       log: JSON.stringify([]),
       title: name,
       matter_id: matter_id,
+      file_fabric_id: file_fabric_id,
       // matrix_room_id: room.room_id
     });
 

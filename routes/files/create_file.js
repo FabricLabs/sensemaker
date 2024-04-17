@@ -21,6 +21,14 @@ module.exports = async function (req, res, next) {
       return;
     }
 
+    const documentExist = await this.db('documents').where('filename', req.file.originalname).andWhere('owner','=',req.user.id).first();
+
+    if (documentExist) {
+      res.status(400);
+      res.send({ status: 'error', message: 'Document already exist. Please upload a different one.' });
+      return;
+    }
+
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
     const destination = path.join(userDir, safeFilename);
@@ -33,6 +41,7 @@ module.exports = async function (req, res, next) {
       type: mimeType,
     });
 
+    const insertedFile = await this.db('files').where({ id: savedFile[0] }).first(); //getting the inserted row in files
 
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -60,7 +69,7 @@ module.exports = async function (req, res, next) {
         const actor = new Actor({ content: data.toString('utf8') });
 
         this.db('documents').insert({
-          title:req.file.originalname,
+          title: req.file.originalname,
           content: data.toString('utf8'),
           fabric_id: actor.id,
           encoding: 'utf8',
@@ -71,15 +80,29 @@ module.exports = async function (req, res, next) {
           file_id: savedFile[0],
 
         }).then((insertedDocument) => {
-          this.trainer.ingestDocument({
+          console.debug('[FILES]', 'Inserted document:', insertedDocument[0]);
+
+          // queue job
+          this.queue.addJob({
+            method: 'IngestDocument',
+            params: [insertedDocument[0]]
+          });
+
+          this.queue.addJob({
+            method: 'IngestFile',
+            params: [savedFile[0]]
+          });
+
+          res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });
+          /* this.trainer.ingestDocument({
             content: data.toString('utf8'),
             encoding: 'utf8',
             filename: req.file.originalname,
             sha256: digest,
             owner: req.user.id,
           }).then((ingestedDocument) => {
-            res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0] });
-          });
+            res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id:actor.id });
+          }); */
         });
       });
     });

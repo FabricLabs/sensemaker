@@ -6,6 +6,7 @@ require('@babel/register');
 // Package
 const definition = require('../package');
 const {
+  SNAPSHOT_INTERVAL,
   AGENT_MAX_TOKENS,
   MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
@@ -38,7 +39,7 @@ const Hub = require('@fabric/hub'); // messaging hub
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server'); // fabric edge server
-// const Sandbox = require('@fabric/http/types/sandbox'); // browser sandbox
+// const Sandbox = require('@fabric/http/types/sandbox'); // edge client sandbox (web browser)
 
 // Fabric Types
 // TODO: reduce to whole library import?
@@ -48,7 +49,6 @@ const Peer = require('@fabric/core/types/peer'); // fabric peers
 const Token = require('@fabric/core/types/token'); // fabric tokens
 const Actor = require('@fabric/core/types/actor'); // fabric actors
 const Chain = require('@fabric/core/types/chain'); // fabric chains
-const Queue = require('@fabric/core/types/queue');
 const Logger = require('@fabric/core/types/logger');
 // const Worker = require('@fabric/core/types/worker');
 const Message = require('@fabric/core/types/message');
@@ -90,6 +90,7 @@ const Coordinator = require('../types/coordinator');
 const Learner = require('../types/learner');
 const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
+const Queue = require('../types/queue');
 
 // Components
 const CaseHome = require('../components/CaseHome');
@@ -139,6 +140,11 @@ class Jeeves extends Hub {
         password: '',
         database: 'db_jeeves'
       },
+      files: {
+        corpus: './sensemaker',
+        path: './jeeves-files',
+        userstore: './jeeves-files/uploads/users'
+      },
       http: {
         hostname: 'localhost',
         listen: true,
@@ -153,6 +159,7 @@ class Jeeves extends Hub {
       },
       matrix: {},
       agents: null,
+      ollama: {},
       openai: {},
       pacer: {},
       harvard: {},
@@ -226,8 +233,8 @@ class Jeeves extends Hub {
 
     // Services
     // Optional Services
-    this.email = (this.settings.email.enable) ? new EmailService(this.settings.email) : null;
-    this.matrix = (this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
+    this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
+    this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
@@ -299,6 +306,7 @@ class Jeeves extends Hub {
     // File Uploads
     this.uploader = new multer({ dest: this.settings.files.path });
 
+    // TODO: evaluate use of temperature
     this.openai.settings.temperature = this.settings.temperature;
     this.apollo = null;
 
@@ -450,6 +458,7 @@ class Jeeves extends Hub {
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
+    // TODO: define Agent methods from `documentation`
     if (!this._state.agents[agent.id]) this._state.agents[agent.id] = agent;
     this._state.content.agents[agent.id] = configuration;
     // this.commit();
@@ -678,7 +687,7 @@ class Jeeves extends Hub {
       });
 
       // RAG
-      const cases = await this._vectorSearchCases(request.query);
+      const cases = await this._vectorSearchCases(request.query, 5);
       const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
 
       // Variables
@@ -807,7 +816,8 @@ class Jeeves extends Hub {
         // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
         return this.agents[name].query({ query, messages, requery: true });
       }).concat([
-        this.chatgpt.query({ query, messages })
+        this.chatgpt.query({ query, messages, requery: true }),
+        this.trainer.query({ query, messages }),
       ]);
 
       // Either all settle, or timeout
@@ -829,9 +839,23 @@ class Jeeves extends Hub {
         // TODO: restore validator here
         // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
 
-        /* for (let i = 0; i < options.length; i++) {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', options[i]);
-        } */
+        for (let i = 0; i < options.length; i++) {
+          const option = options[i];
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
+          this.extractor.query({
+            query: `What cases are mentioned in this message:\n\`\`\`\n${JSON.stringify(option, null, '  ')}\n\`\`\``,
+            json: true
+          }).catch((exception) => {
+            console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extractor Exception:', exception);
+          }).then((extracted) => {
+            console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extracted:', extracted);
+          });
+        }
+
+        // 1. Get baseline from ChatGPT
+        // 2. Get answers from all agents
+        // 3. Remove any low-quality answers (can't find mentioned case, is irrelevant, inaccurate, etc.)
+        // 4. Summarize the network results with a large-context agent
 
         this.chatgpt.query({ query, messages }).then(async (baseline) => {
           console.debug('[NOVO]', '[TIMEDREQUEST]', 'Baseline:', baseline);
@@ -873,6 +897,36 @@ class Jeeves extends Hub {
             console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
           }
 
+          /* const extracted = await this.extractor.query({
+            query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+          });
+          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+          if (extracted && extracted.content) {
+            console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+            try {
+              const caseCards = JSON.parse(extracted.content).map((x) => {
+                const actor = new Actor({ name: x });
+                return {
+                  type: 'CaseCard',
+                  content: {
+                    id: actor.id,
+                    title: x
+                  }
+                };
+              });
+
+              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+              // Find each case in the database and reject if not found
+              /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                cards: JSON.stringify(caseCards.map((x) => x.content.id))
+              }); */
+            /* } catch (exception) {
+              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+            }
+          } */
+
           const end = new Date();
           console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
 
@@ -881,99 +935,6 @@ class Jeeves extends Hub {
           console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
         });
       });
-
-      // Consensus Agents
-      if (this.settings.pipeline && this.settings.pipeline.enable) {
-        const agentResults = Promise.allSettled([
-          this.chatgpt.query({ query, messages }), // ChatGPT
-          // this.alpha.query({ query, messages }), // ChatGPT
-          // this.beta.query({ query, messages }), // Ollama
-          // this.gemini.query({ query, messages }), // requires USA-based egress
-          // this.lennon.query({ query, messages }), // Adversarial RAG
-          this.llama.query({ query, messages /* , requery: true */}), // Ollama
-          // this.gemma.query({ query, messages, requery: true }), // Ollama
-          // this.mistral.query({ query, messages }), // Ollama
-          // this.mixtral.query({ query, messages }), // Ollama
-        ]);
-
-        // TODO: execute RAG query for additional metadata
-        const ragger = new Agent({ host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, messages: messages, prompt: `You are RagAI, an automated agent designed to generate a SQL query returning case IDs from a local case database most likely to pertain to the user query.  The database is MySQL, table named "cases" — fields are "title" and "summary".  Available hosts: beta.jeeves.dev, gamma.trynovo.com`, openai: this.settings.openai });
-
-        // return reject(new Error('debug'));
-
-        // Either all agents resolved, or timeout
-        Promise.race([
-          agentResults,
-          // networkResults,
-          new Promise((resolve, reject) => setTimeout(reject, timeout, new Error('Timeout!')))
-        ]).then(async (results) => {
-          if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Results:', results);
-          const answers = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-          if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Answers:', answers);
-
-          /* for (let i = 0; i < answers.length; i++) {
-            const answer = answers[i];
-            if (!answer.content) continue;
-
-            const ragged = await ragger.query({ query: `$CONTENT\n\`\`\`\n${answer.content}\n\`\`\`` });
-            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Ragged:', ragged);
-          } */
-
-          const agentList = `${answers.map((x) => `- [${x.name}] ${x.content}`).join('\n')}`;
-          if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Agent List:', agentList);
-          // TODO: loop over all agents
-          // TODO: compress to 4096 tokens
-          this.summarizer.query({
-            messages: messages,
-            query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
-          }).catch((exception) => {
-            console.error('[NOVO]', '[TIMEDREQUEST]', 'Exception summarizing:', exception);
-            reject(exception);
-          }).then(async (summarized) => {
-            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Summarized:', summarized);
-            if (!summarized) summarized = { content: 'I am unable to answer your query at this time.' };
-            const actor = new Actor({ content: summarized.content });
-            const bundle = {
-              type: 'TimedResponse',
-              content: summarized.content
-            };
-
-            /* const extracted = await this.extractor.query({
-              query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
-            });
-            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
-
-            if (extracted && extracted.content) {
-              console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
-              try {
-                const caseCards = JSON.parse(extracted.content).map((x) => {
-                  const actor = new Actor({ name: x });
-                  return {
-                    type: 'CaseCard',
-                    content: {
-                      id: actor.id,
-                      title: x
-                    }
-                  };
-                });
-
-                console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
-
-                // Find each case in the database and reject if not found
-                /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-                  cards: JSON.stringify(caseCards.map((x) => x.content.id))
-                }); */
-              /* } catch (exception) {
-                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
-              }
-            } */
-          });
-        }).catch((exception) => {
-          console.error('[NOVO]', '[TIMEDREQUEST]', 'Exception:', exception);
-          process.exit();
-          reject(exception);
-        });
-      }
     });
   }
 
@@ -1264,9 +1225,35 @@ class Jeeves extends Hub {
       this.agents[name] = this.createAgent(configuration);
     }
 
-    // Redis
+    // Worker Methods
+    // TODO: define these with a map / loop
+    // Document Ingest
+    this.queue._registerMethod('IngestDocument', async (...params) => {
+      console.debug('[NOVO]', '[QUEUE]', 'Ingesting document...', params);
+      const document = await this.db('documents').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
+      return { status: 'COMPLETED', ingested };
+    });
+
+    // User Upload Ingest
+    this.queue._registerMethod('IngestFile', async (...params) => {
+      console.debug('[NOVO]', '[QUEUE]', 'Ingesting file...', params);
+      const file = await this.db('files').where('id', params[0]).first();
+      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(file), metadata: { id: file.id }}, 'file');
+      return { status: 'COMPLETED', ingested };
+    });
+
+    // Trainer
     try {
       await this.trainer.start();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Trainer:', exception);
+      process.exit();
+    }
+
+    // Queue
+    try {
+      await this.queue.start();
     } catch (exception) {
       console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
       process.exit();
@@ -1611,7 +1598,7 @@ class Jeeves extends Hub {
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
     this.summarizer = new Agent({ name: this.settings.name, listen: false, host: null, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: null, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
     this.validator = new Agent({ name: 'ValidatorAI', listen: false, host: null, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
 
     // ChatGPT
@@ -1625,22 +1612,23 @@ class Jeeves extends Hub {
     this.rag = new Agent({
       name: 'AugmentorRAG',
       listen: this.settings.fabric.listen,
+      host: null,
       openai: this.settings.openai,
-      prompt: 'You are AugmentorRAG, designed to return an SQL query that returns any cases that match the provided titles.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.\n\n' +
+      prompt: 'You are AugmentorRAG, designed to create SQL queries which will return the most relevant results to the user\'s query.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.  You can use JOIN to create a unified data view, but be sure that the user query and conversation history are considered carefully to generate the most relevant results.\n\n' +
         'Supported tables:\n' +
         '  - cases\n' +
-        '    ```\n' +
+        // '  - documents\n' +
+        'Schema definitions:' +
+        '```\n' +
         caseDef[0][0]['Create Table'] + '\n' +
-        '    ```\n' +
-        '  - documents\n' +
-        '    ```\n' +
-        documentDef[0][0]['Create Table'] + '\n' +
-        '    ```\n' +
+        // documentDef[0][0]['Create Table'] + '\n' +
+        '```\n' +
         'Supported paths:\n' +
-        '  - /\n' +
-        '  - /cases\n' +
-        '  - /documents\n' +
-        ''
+        '  - / (index, all object types)\n' +
+        '  - /cases (case database)\n' +
+        // '  - /documents (document database)\n' +
+        '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.  Remember, your response will be executed directly by a SQL client, so ensure it is a valid query given the schema.\n' +
+        '\nFor example, if the user asks "How many cases are in the database?" you would respond with "SELECT count(id) as case_count FROM cases;" as an optimized query.'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -1746,17 +1734,17 @@ class Jeeves extends Hub {
 
     this._slowcrawler = setInterval(async () => {
       // Sync Health First
-      const health = await this.checkHealth();
-      console.debug('[JEEVES]', 'Health:', health);
+      // const health = await this.checkHealth();
+      // console.debug('[JEEVES]', 'Health:', health);
 
       /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
       if (this.courtlistener) this.courtlistener.syncSamples();
       if (this.settings.embeddings.enable) {
-        this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
+        /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
           console.debug('[JEEVES]', 'Embedding sync complete:', output);
-        });
+        }); */
       }
-    }, 600000); // 10 minutes
+    }, SNAPSHOT_INTERVAL); // 10 minutes
 
     // Internal APIs
     // Counts
@@ -1802,19 +1790,23 @@ class Jeeves extends Hub {
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
+    // Agents
+    this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
+
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
     // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
+    this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
 
     // Matters
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
     this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
     this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
     this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
-    this.http._addRoute('GET', '/matters/conversations/new/:matterID', ROUTES.matters.newConversation.bind(this));
+    this.http._addRoute('GET', '/conversations/new/:matterID', ROUTES.matters.newConversation.bind(this));
     this.http._addRoute('GET', '/matters/files/:id', ROUTES.matters.listFiles.bind(this));
     this.http._addRoute('GET', '/matters/notes/:id', ROUTES.matters.listNotes.bind(this));
     this.http._addRoute('GET', '/matters/:matterID/conversations', ROUTES.matters.getConversations.bind(this)); //this one gets the list of a specific Matter's conversations
@@ -1840,6 +1832,7 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
@@ -2235,14 +2228,14 @@ class Jeeves extends Hub {
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       // Data Updates
-      if (instance.courtlistener_id) {
+      if (instance.courtlistener_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
       }
 
-      if (instance.pacer_case_id) {
+      if (instance.pacer_case_id && this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
@@ -2281,7 +2274,7 @@ class Jeeves extends Hub {
         });
       }
 
-      if (!instance.summary) {
+      if (!instance.summary || instance.summary === 'false') {
         const merged = Object.assign({}, instance, updates);
         this._summarizeCaseToLength(merged).then(async (summary) => {
           if (summary) updates.summary = summary;
@@ -2397,7 +2390,7 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/documents', async (req, res, next) => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
@@ -2531,7 +2524,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations').where({ id: req.params.id }).first();
+      const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();
       const messages = await this.db('messages')
         .whereIn('id', conversation.log)
         .select('id', 'content', 'created_at');
@@ -2708,7 +2701,9 @@ class Jeeves extends Hub {
         conversation_id,
         content,
         messageID,
-        regenerate
+        regenerate,
+        matter_id,
+        file_fabric_id,
       } = req.body;
 
       if (!regenerate) console.warn('[JEEVES]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');
@@ -4034,7 +4029,7 @@ class Jeeves extends Hub {
 
   async _searchCases (request) {
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request);
+    const redisResults = await this.trainer.search(request, 10);
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
     const mappedQueries = redisResults.content.map((result) => {
@@ -4107,19 +4102,46 @@ class Jeeves extends Hub {
   }
 
   async _searchDocuments (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching documents :', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
+    return new Promise((resolve, reject) => {
+      console.debug('[JEEVES]', '[SEARCH]', 'Searching documents:', request);
+      if (!request) throw new Error('No request provided.');
+      if (!request.query) throw new Error('No query provided.');
 
-    let response = [];
+      // Specify filter
+      request.filter = { type: 'document' };
 
-    try {
-      response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`);
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
-    }
+      // Use vector search
+      this.trainer.search(request, 1).then(async (results) => {
+        let response = [];
+        console.debug('search results:', results.content);
+        for (let i = 0; i < results.content.length; i++) {
+          const result = results.content[i];
+          switch (result.metadata.type) {
+            case 'document':
+              const document = await this.db('documents').where({ id: result.metadata.id }).first();
+              response.push(document);
+              break;
+            case 'file':
+              const file = await this.db('files').where({ id: result.metadata.id }).first();
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'File:', file);
+              response.push(file);
+              break;
+            default:
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result.metadata.type);
+              break;
+          }
+        }
 
-    return response;
+        resolve(response);
+      });
+
+      // Direct keyword search (expensive)
+      /* try {
+        // response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
+      } catch (exception) {
+        console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
+      } */
+    });
   }
 
   async _searchHarvardCourts (request) {
@@ -4376,8 +4398,8 @@ class Jeeves extends Hub {
             const element = jurisdictions[i];
             const actor = { name: `novo/jurisdictions/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/jurisdictions/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
+            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
             if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[JURISDICTIONS]', 'Ingested:', embedding);
           }
         }),
@@ -4386,8 +4408,8 @@ class Jeeves extends Hub {
             const element = courts[i];
             const actor = { name: `novo/courts/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/courts/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
+            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
             if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[COURTS]', 'Ingested:', embedding);
           }
         }),
@@ -4396,8 +4418,8 @@ class Jeeves extends Hub {
             const element = reporters[i];
             const actor = { name: `novo/reporters/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/reporters/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
+            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
             if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
           }
         }),
@@ -4407,8 +4429,9 @@ class Jeeves extends Hub {
             const actor = { name: `novo/cases/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/cases/${element.id}/title`, content: element.title };
             const whole = { name: `novo/cases/${element.id}`, content: element };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor });
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title });
+            // TODO: process PDF here
+            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
+            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
             const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole }, 'case');
             if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
           }
@@ -4427,14 +4450,14 @@ class Jeeves extends Hub {
     });
   }
 
-  async _vectorSearchCases (query = '') {
+  async _vectorSearchCases (query = '', limit = 100) {
     const words = await this.wordTokens(query);
     const uniques = [...new Set(words)];
 
     console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', query);
     console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
 
-    const redisResults = await this.trainer.search({ query: query, resources: ['cases', 'documents'] });
+    const redisResults = await this.trainer.search({ query: query, filter: { type: 'case' }}, limit);
     console.debug('[NOVO]', '[VECTOR]', 'Redis Results:', redisResults);
 
     const results = await Promise.all(uniques.map((word) => {
@@ -4447,7 +4470,7 @@ class Jeeves extends Hub {
       cases = cases.concat(results[i]);
     }
 
-    if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
+    // if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
 
     const mapped = await Promise.all(redisResults.content.map((result) => {
       console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);

@@ -217,14 +217,8 @@ class MatterView extends React.Component {
     }));
   };
 
-  // toggleInformationSidebar = () => {
-  //   this.setState(prevState => ({
-  //     informationSidebarOpen: !prevState.informationSidebarOpen
-  //   }));
-  // };
 
   openDocument = (documentInfo) => {
-    // this.setState({ documentInfo: file, informationSidebarOpen: true });
     this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
   }
   render() {
@@ -237,7 +231,6 @@ class MatterView extends React.Component {
     };
     return (
       <Segment
-        // onClick={() => this.setState({ informationSidebarOpen: false })}
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
         style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <section className='matter-header'>
@@ -438,30 +431,28 @@ class MatterView extends React.Component {
                 />
               </GridColumn>
             </GridRow>
-            {(matters && matters.matterFiles && matters.matterFiles.length > 0) &&
-              <GridRow>
-                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Files</Header>
-                </GridColumn> */}
-                <GridColumn width={2} />
-                <GridColumn width={10}>
-                  <div className='col-center'>
-                    <Header as='h2'>Files</Header>
-                    <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
-                      <Table simple >
-                        <Table.Header>
-                          <Table.Row>
-                            <Table.HeaderCell>File Name</Table.HeaderCell>
-                            <Table.HeaderCell>Uploaded</Table.HeaderCell>
-                            <Table.HeaderCell>Modified</Table.HeaderCell>
-                            <Table.HeaderCell>Actions</Table.HeaderCell>
-                          </Table.Row>
-                        </Table.Header>
+
+            <GridRow>
+              <GridColumn width={2} />
+              <GridColumn width={10}>
+                <div className='col-center'>
+                  <Header as='h2'>Files</Header>
+                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
+                    <Table simple >
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.HeaderCell>File Name</Table.HeaderCell>
+                          <Table.HeaderCell>Uploaded</Table.HeaderCell>
+                          <Table.HeaderCell>Modified</Table.HeaderCell>
+                          <Table.HeaderCell>Actions</Table.HeaderCell>
+                        </Table.Row>
+                      </Table.Header>
+                      {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
                         <Table.Body>
                           {matters.matterFiles.map(instance => {
                             return (
                               <Table.Row key={instance.id}>
-                                <Table.Cell><Link onClick={(e) => {e.stopPropagation(); this.openDocument(instance);}}>{instance.filename}</Link></Table.Cell>
+                                <Table.Cell><Link onClick={(e) => { e.stopPropagation(); this.openDocument(instance); }}>{instance.filename}</Link></Table.Cell>
                                 <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell textAlign="center">
@@ -479,21 +470,26 @@ class MatterView extends React.Component {
                             )
                           })}
                         </Table.Body>
-                      </Table>
-                    </Segment>
-                  </div>
-                </GridColumn>
-              </GridRow>
-            }
+                      ) : (
+                        <Table.Body>
+                          <Table.Row>
+                            <Table.Cell />
+                          </Table.Row>
+                        </Table.Body>
+                      )
+                      }
+                    </Table>
+                  </Segment>
+                </div>
+              </GridColumn>
+            </GridRow>
+
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
-                {/* <GridColumn width={3} style={{ paddingTop: '0.5em' }}>
-                  <Header as='h3'>Aditional Notes</Header>
-                </GridColumn> */}
                 <GridColumn width={2} />
                 <GridColumn width={10}>
                   <div className='col-center'>
-                    <Header as='h2'>Aditional Notes</Header>
+                    <Header as='h2'>Additional Notes</Header>
                     <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
                       <List loading={matters.loading} size='small'>
                         {matters.matterNotes.map(instance => {
@@ -561,7 +557,7 @@ class MatterView extends React.Component {
             <GridRow>
               <GridColumn width={2} />
               <GridColumn width={10} textAlign='center'>
-                <Link to={'/matters/conversations/new/' + this.props.id} >
+                <Link to={'/conversations/new/' + this.props.id} >
                   <Button
                     primary
                     content="Start a new conversation"
@@ -597,13 +593,6 @@ class MatterView extends React.Component {
             style={{ maxWidth: '400px' }}
           />
         </section>
-        {/* <InformationSidebar
-          visible={this.state.informationSidebarOpen}
-          toggleInformationSidebar={this.toggleInformationSidebar}
-          documentSection={true}
-          documentInfo={this.state.documentInfo}
-          matterTitle={this.props.matters.current.title}
-        /> */}
       </Segment>
     );
   }
