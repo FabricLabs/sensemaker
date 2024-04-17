@@ -316,9 +316,11 @@ class Agent extends Service {
               keep_alive: -1,
               prompt: this.prompt,
               options: {
-                num_ctx: 4096 // TODO: make this configurable
+                num_ctx: 4096, // TODO: make this configurable
+                temperature: (this.settings.temperature) ? this.settings.temperature : 0,
               },
-              messages: sample
+              messages: sample,
+              format: (request.format === 'json') ? 'json' : undefined
             })
           }).catch((exception) => {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);

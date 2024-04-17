@@ -57,7 +57,8 @@ module.exports = {
     view: require('./courts/court_view'),
   },
   sessions: {
-    create: require('./sessions/create_session')
+    create: require('./sessions/create_session'),
+    get: require('./sessions/get_session'),
   },
   statutes: {
     list: require('./statutes/list_statutes'),
