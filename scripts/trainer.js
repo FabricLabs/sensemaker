@@ -7,7 +7,7 @@ const ENABLE_DOCUMENT_INGEST = false;
 const ENABLE_UPLOAD_INGEST = true;
 const ENABLE_JURISDICTION_INGEST = false;
 const ENABLE_COURT_INGEST = false;
-const ENABLE_CASE_INGEST = false;
+const ENABLE_CASE_INGEST = true;
 
 const {
   SYNC_EMBEDDINGS_COUNT
@@ -110,8 +110,8 @@ async function main (input = {}) {
     for await (const jurisdiction of jurisdictionStream) {
       const start = new Date();
       // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
-      const actor = { name: `novo/jurisdictions/${jurisdiction.id}` }; // Novo reference ID (name)
-      const title = { name: `novo/jurisdictions/${jurisdiction.id}/name`, content: jurisdiction.name };
+      const actor = { name: `${input.domain}/jurisdictions/${jurisdiction.id}` }; // Novo reference ID (name)
+      const title = { name: `${input.domain}/jurisdictions/${jurisdiction.id}/name`, content: jurisdiction.name };
       const reference = await trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
       const embedding = await trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
       const ingested = await trainer.ingestDocument({ content: JSON.stringify(jurisdiction), metadata: jurisdiction }, 'jurisdiction');
@@ -125,8 +125,8 @@ async function main (input = {}) {
     for await (const court of courtStream) {
       const start = new Date();
       // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
-      const actor = { name: `novo/courts/${court.id}` }; // Novo reference ID (name)
-      const title = { name: `novo/courts/${court.id}/name`, content: court.name };
+      const actor = { name: `${input.domain}/courts/${court.id}` }; // Novo reference ID (name)
+      const title = { name: `${input.domain}/courts/${court.id}/name`, content: court.name };
       const reference = await trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
       const embedding = await trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
       const ingested = await trainer.ingestDocument({ content: JSON.stringify(court), metadata: court }, 'court');
@@ -136,12 +136,12 @@ async function main (input = {}) {
   }
 
   if (ENABLE_CASE_INGEST) {
-    const caseStream = db('cases').select('*').stream();
+    const caseStream = db('cases').select('*').orderByRaw('RAND()').stream();
     for await (const instance of caseStream) {
       const start = new Date();
       // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
-      const actor = { name: `novo/cases/${instance.id}` }; // Novo reference ID (name)
-      const title = { name: `novo/cases/${instance.id}/name`, content: instance.name };
+      const actor = { name: `${input.domain}/cases/${instance.id}` }; // Novo reference ID (name)
+      const title = { name: `${input.domain}/cases/${instance.id}/name`, content: instance.name };
       const reference = await trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
       const embedding = await trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
       const ingested = await trainer.ingestDocument({ content: JSON.stringify(instance), metadata: instance }, 'court');

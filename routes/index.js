@@ -6,6 +6,7 @@ module.exports = {
     list: require('./cases/get_cases'),
   },
   documents: {
+    create: require('./documents/create_document'),
     // list: require('./documents/list_documents'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),

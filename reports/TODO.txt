@@ -4,17 +4,22 @@
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
 ./settings/local.js: // TODO: is this necessary if we aren't loading the wallet?
 ./settings/local.js: // TODO: @chrisinajar
+./settings/local.js: domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
+./settings/network.js: // TODO: network DNS configuration
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
+./types/queue.js: // TODO: enable `notify-keyspace-events` on Redis server
+./types/queue.js: // TODO: bind state?
 ./types/compiler.js: // TODO: load from:
 ./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
 ./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
 ./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
-./types/agent.js: num_ctx: 4096 // TODO: make this configurable
+./types/agent.js: num_ctx: 4096, // TODO: make this configurable
 ./types/agent.js: }); // TODO: remove this...
 ./Dockerfile: # TODO: mount SSHFS / similar here
+./CRAWLING.md: TODO: review instructions from CodingIT team
 ./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/Bridge.js: // TODO: re-evaluate multiple connections
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
@@ -23,6 +28,7 @@
 ./components/AdminSettings.js: // TODO: add users to admin settings
 ./components/AdminSettings.js: // TODO: add pagination to users
 ./components/Splash.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
+./components/DocumentDrafter.js: // TODO: add more fields
 ./components/InformationSidebar.js: // TODO: implement message->case API
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/ContractHome.js: // TODO: implement this.applicationString
@@ -30,6 +36,11 @@
 ./components/Collection.js: // TODO: assign endpoint to search
 ./components/Collection.js: // TODO: generalize collection contents into cards
 ./scripts/setup.sh: # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
+./scripts/trainer.js: // TODO: import these from constants file
+./scripts/trainer.js: // TODO: subscribe to filesystem changes
+./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
+./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
+./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
 ./scripts/browser.js: // TODO: consider localforage
 ./scripts/browser.js: // TODO: consider schema from Knex / MySQL
 ./scripts/browser.js: // TODO: consider GraphQL to pass schema
@@ -50,7 +61,9 @@
 ./routes/files/create_file.js: // TODO: report file for cleanup / investigation
 ./routes/courts/court_view.js: // TODO: pagination
 ./routes/courts/list_courts.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./routes/matters/view_matter.js: // TODO: pagination
+./routes/documents/create_document.js: // TODO: parse JSON, return to object before creating Actor
+./routes/documents/create_document.js: // TODO: handle errors
+./routes/reporters/view_reporter.js: // TODO: pagination
 ./routes/matters/get_conversations.js: // TODO: pagination
 ./routes/matters/matter_view.js: // TODO: pagination
 ./services/gemini.js: // TODO: import from prompts/sensemaker.txt
@@ -59,7 +72,9 @@
 ./services/jeeves.js: // TODO: reduce to whole library import?
 ./services/jeeves.js: // TODO: use path
 ./services/jeeves.js: // TODO: enable recursive Filesystem (directories)
+./services/jeeves.js: // TODO: evaluate use of temperature
 ./services/jeeves.js: // TODO: safe shutdown
+./services/jeeves.js: // TODO: define Agent methods from `documentation`
 ./services/jeeves.js: // TODO: remove async, use local state instead
 ./services/jeeves.js: // TODO: assign `then` to allow async processing
 ./services/jeeves.js: // TODO: add `user_id` to request, assign to `creator`
@@ -68,13 +83,11 @@
 ./services/jeeves.js: // TODO: convert limit here to constant
 ./services/jeeves.js: // TODO: Compressor
 ./services/jeeves.js: // TODO: restore validator here
-./services/jeeves.js: // TODO: execute RAG query for additional metadata
-./services/jeeves.js: // TODO: loop over all agents
-./services/jeeves.js: // TODO: compress to 4096 tokens
 ./services/jeeves.js: // TODO: load from STATE file
 ./services/jeeves.js: courts: [], // TODO: implement
 ./services/jeeves.js: documents: [], // TODO: implement
 ./services/jeeves.js: people: [], // TODO: implement
+./services/jeeves.js: // TODO: define these with a map / loop
 ./services/jeeves.js: // TODO: allow configurable whitelist
 ./services/jeeves.js: // TODO: remove
 ./services/jeeves.js: // TODO: test each search endpoint
@@ -92,7 +105,7 @@
 ./services/jeeves.js: // TODO: update the conversation upon change (new user message, new agent message)
 ./services/jeeves.js: // TODO: sort conversations by updated_at (below line)
 ./services/jeeves.js: // TODO: provide state
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./services/jeeves.js: //       // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
@@ -120,6 +133,7 @@
 ./services/jeeves.js: // TODO: Harvard search
 ./services/jeeves.js: // TODO: CourtListener search
 ./services/jeeves.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+./services/jeeves.js: // TODO: process PDF here
 ./services/jeeves.js: // TODO: consider additional metadata fields
 ./services/jeeves.js: // TODO: direct store to graph database
 ./services/fabric.js: // TODO: validate documents
