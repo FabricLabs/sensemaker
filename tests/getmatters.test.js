@@ -76,12 +76,9 @@ describe('Matters test', () => {
     mockResponse.json(matters.data);
     await myMiddleware(mockRequest, mockResponse, nextFunction);
     sinon.assert.calledOnce(mockResponse.json);
-    //expect(mockResponse.json.firstCall.args[0]).to.includes({ id: 11, title: "new test matter", creator: 11 });
+    expect(mockResponse.json.firstCall.args).to.be.an('array');
     expect(mockResponse.json.firstCall.args[0].some((item)=> item.id ===1 || item.creator === 11)).to.equal(true);
 
-    // await myMiddleware(mockRequest, mockResponse, nextFunction);
-    // sinon.assert.calledOnce(mockResponse.send);
-    // expect(mockResponse.send.firstCall.args[0]).to.deep.equal([{ id: 1, name: "Matter 1", creator: 1 }]);
   });
 
 });
