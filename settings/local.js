@@ -9,6 +9,7 @@ const {
 
 // Hosts
 const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
+const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
 const ODIN = '10.8.0.4';
 const THOR = '10.8.0.5';
@@ -71,139 +72,14 @@ module.exports = {
   },
   workers: 8,
   agents: merge({}, network, {
-    socrates: {
+    local: {
+      name: 'MAINSTAY',
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
-      host: 'socrates',
+      host: '127.0.0.1',
       port: 11434,
       secure: false
-    },
-    /* cinco: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'cinco',
-      port: 11434,
-      secure: false
-    }, */
-    /* tango: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: TANGO,
-      port: 11434,
-      secure: false
-    },
-    mango: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: MANGO,
-      port: 11434,
-      secure: false
-    },
-    clarity: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'mistral',
-      host: CLARITY,
-      port: 11434,
-      secure: false
-    },
-    foxtrot: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: FOXTROT,
-      port: 11434,
-      secure: false
-    },
-    balrog: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: BALROG,
-      port: 11434,
-      secure: false
-    }, */
-    /* chuck: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: '192.168.127.100',
-      port: 11434,
-      secure: false
-    }, */
-    // Network Agents
-    /* alpha: {
-      prompt: alphaPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'jeeves.dev',
-      port: 11434,
-      secure: false
-    }, */
-    /* beta: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'ollama.jeeves.dev',
-      port: 11434,
-      secure: false
-    }, */
-    /* gamma: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: 'ollama.trynovo.com',
-      port: 443,
-      secure: true
-    }, */
-    /* llama: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: YMIR,
-      port: 11434,
-      secure: false
-    },
-    ymir: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'mixtral',
-      host: YMIR,
-      port: 11434,
-      secure: false
-    },
-    odin: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: ODIN,
-      port: 11434,
-      secure: false
-    },
-    thor: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'yarn-llama2:7b-128k',
-      host: THOR,
-      port: 11434,
-      secure: false
-    }, */
-    // Untested so far
-    /*
-    chatgpt: {
-      prompt: novoPrompt.toString('utf8'),
-      host: null
-    },
-    delta: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'delta.trynovo.com',
-      port: 443,
-      secure: true
-    },
-    mistral: {
-      prompt: betaPrompt.toString('utf8'),
-      model: 'mistral',
-      host: '192.168.127.175',
-      port: 11434,
-      secure: false
-    }, */
-    /* gemma: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: 'localhost',
-      port: 11434,
-      secure: false
-    }, */
+    }
   }),
   pipeline: {
     enable: false,
@@ -384,7 +260,7 @@ module.exports = {
     host: '127.0.0.1',
     port: 11434,
     secure: false,
-    model: 'mistral', // default model
+    model: 'gemma', // default model
     models: ['llama2', 'mistral', 'gemma'] // models to "prime" (preload)
   },
   pacer: {
