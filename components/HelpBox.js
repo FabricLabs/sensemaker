@@ -7,6 +7,8 @@ const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
+const HelpConversations = require('./HelpConversations');
+
 const {
   Segment,
   Button,
@@ -36,8 +38,8 @@ class HelpBox extends React.Component {
 
     return (
       <Segment className="fade-in" id='help-box' fluid style={{ padding: '0', maxHeight: '100%', width: '350px', height: '500px' }}>
-        <section style={{ height: '90%', color: 'white', marginBottom: '0' }}>
-          <p>asdsadsadsa</p>
+        <section style={{ height: '90%', color: 'white', marginBottom: '0', padding: '1em' }}>
+          <HelpConversations/>
         </section>
         <Button.Group style={{ width: '100%', height: '10%' }}>
           <Button icon style={{
