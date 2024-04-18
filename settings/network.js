@@ -3,7 +3,7 @@
 // Dependencies
 const fs = require('fs');
 const path = require('path');
-const prompt = path.join(__dirname, '../prompts/novo.txt');
+const prompt = path.join(__dirname, '../prompts/baseline.txt');
 const baseline = fs.readFileSync(prompt, 'utf8');
 
 // Hosts
