@@ -7,7 +7,7 @@ const ENABLE_DOCUMENT_INGEST = false;
 const ENABLE_UPLOAD_INGEST = true;
 const ENABLE_JURISDICTION_INGEST = false;
 const ENABLE_COURT_INGEST = false;
-const ENABLE_CASE_INGEST = false;
+const ENABLE_CASE_INGEST = true;
 
 const {
   SYNC_EMBEDDINGS_COUNT
@@ -136,7 +136,7 @@ async function main (input = {}) {
   }
 
   if (ENABLE_CASE_INGEST) {
-    const caseStream = db('cases').select('*').stream();
+    const caseStream = db('cases').select('*').orderByRaw('RAND()').stream();
     for await (const instance of caseStream) {
       const start = new Date();
       // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
