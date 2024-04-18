@@ -240,7 +240,7 @@ class SignUpForm extends React.Component {
           
         }
         <Segment>
-          <Form loading={loading} centered style={{width:'500px'}}>
+          <Form id='signup-form' loading={loading} centered style={{width:'500px'}}>
             {(!tokenError && !registerSuccess) && (
               <section>
                 {

@@ -111,6 +111,10 @@
   align-items: center;
 }
 
+#signup-form .signup-form-group .field{
+  width: 100% !important;
+}
+
 .signup-form-group {
   display: flex;
   flex-direction: row;
