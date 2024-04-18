@@ -259,11 +259,12 @@ module.exports = {
   },
   redis: {
     name: 'novo',
+    host: 'balrog',
     username: 'default',
-    host: 'localhost',
     password: null,
     port: 6379,
     hosts: [
+      'redis://default@localhost:6379',
       'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
     ]
   },
@@ -396,7 +397,8 @@ module.exports = {
     host: '127.0.0.1',
     port: 11434,
     secure: false,
-    models: ['llama2']
+    model: 'mistral', // default model
+    models: ['llama2', 'mistral'] // models to "prime" (preload)
   },
   pacer: {
     enable: true

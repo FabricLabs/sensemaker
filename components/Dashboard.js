@@ -39,6 +39,7 @@ const JudgeHome = require('./JudgeHome');
 const JurisdictionHome = require('./JurisdictionHome');
 const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
+const DocumentDrafter = require('./DocumentDrafter');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const DocumentNewChat = require('./DocumentNewChat');
@@ -613,6 +614,7 @@ class Dashboard extends React.Component {
                 <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} />} />
+                <Route path="/documents/draft" element={<DocumentDrafter documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/documents/:id" element={<DocumentView documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />

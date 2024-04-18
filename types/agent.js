@@ -320,7 +320,7 @@ class Agent extends Service {
                 temperature: (this.settings.temperature) ? this.settings.temperature : 0,
               },
               messages: sample,
-              format: (request.format === 'json') ? 'json' : undefined
+              format: (request.format === 'json' || request.json) ? 'json' : undefined
             })
           }).catch((exception) => {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
