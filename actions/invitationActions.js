@@ -6,6 +6,9 @@ async function fetchInvitationsFromAPI(token) {
   return fetchFromAPI('/invitations', null, token);
 }
 
+const createTimeoutPromise = require('../functions/createTimeoutPromise');
+
+
 // Action types
 const FETCH_INVITATIONS_REQUEST = 'FETCH_INVITATIONS_REQUEST';
 const FETCH_INVITATIONS_SUCCESS = 'FETCH_INVITATIONS_SUCCESS';
@@ -97,11 +100,8 @@ const sendInvitation = (email) => {
     dispatch(sendInvitationRequest());
     const { token } = getState().auth;
     try {
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Fetch timed out"));
-        }, 60000);
-      });
+
+      const timeoutPromise = createTimeoutPromise(60000, 'Fetch timed out');
 
       const fetchPromise = fetch('/invitations', {
         method: "POST",
@@ -134,11 +134,8 @@ const reSendInvitation = (id) => {
     const { token } = getState().auth;
 
     try {
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Fetch timed out"));
-        }, 60000);
-      });
+
+      const timeoutPromise = createTimeoutPromise(60000, 'Fetch timed out');
 
       const fetchPromise = fetch(`/invitations/${id}`, {
         method: "PATCH",
@@ -163,15 +160,13 @@ const reSendInvitation = (id) => {
   }
 }
 
+//validates if the invitation token is correct and didnt expire
 const checkInvitationToken = (invitationToken) => {
   return async (dispatch) => {
     dispatch(checkInvitationTokenRequest());
     try {
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Error: Please check your internet connection"));
-        }, 15000);
-      });
+
+      const timeoutPromise = createTimeoutPromise(15000, 'Error: Please check your internet connection');
 
       const fetchPromise = fetch(`/checkInvitationToken/${invitationToken}`, {
         method: 'POST',
@@ -195,6 +190,7 @@ const checkInvitationToken = (invitationToken) => {
   }
 }
 
+//called when the user succesfully registers with an invitation token
 const acceptInvitation = (invitationToken) => {
   return async dispatch => {
     dispatch(acceptInvitationRequest());
@@ -219,6 +215,9 @@ const acceptInvitation = (invitationToken) => {
 
   }
 }
+
+//declines invitation sent by email, the user clicks on the link to decline invitation
+//and then confirms to decline.
 
 const declineInvitation = (invitationToken) => {
   return async dispatch => {

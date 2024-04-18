@@ -119,6 +119,7 @@ class JeevesUI extends React.Component {
   }
 
   componentDidMount () {
+    //if the user was already logged in previously, we reload the session
     const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
 
     dbRequest.onupgradeneeded = function (event) {

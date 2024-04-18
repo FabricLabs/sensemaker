@@ -515,6 +515,7 @@ fabric-motd {
 .case-info {
   max-height: 40vh;
   min-height: 40vh;
+  width: 100% !important;
 }
 @media (min-height: 1200px) {
   .case-info {

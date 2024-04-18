@@ -19,9 +19,6 @@ const {
   Button
 } = require('semantic-ui-react');
 
-// const QueryForm = require('./QueryForm');
-// const Feed = require('./Feed');
-
 const formatDate = require('../contracts/formatDate');
 
 class DocumentView extends React.Component {
@@ -36,7 +33,6 @@ class DocumentView extends React.Component {
     if (prevProps.id !== this.props.id) {
       this.props.fetchDocument(this.props.id);
     }
-
   }
 
   render() {
@@ -54,7 +50,7 @@ class DocumentView extends React.Component {
               <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
               <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
             </div>
-            <Link to={'/conversations/documents/' + documents.document.fabric_id} style={{ marginBottom: '2.5em' }} onClick={()=> this.props.resetChat()}>
+            <Link to={'/conversations/documents/' + documents.document.fabric_id} style={{ marginBottom: '2.5em' }} onClick={() => this.props.resetChat()}>
               <Button
                 primary
                 content='Start Conversation'
