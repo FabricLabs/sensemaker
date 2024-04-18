@@ -21,6 +21,7 @@ const BALROG = '10.8.0.33';
 // Dependencies
 const fs = require('fs');
 const path = require('path');
+const merge = require('lodash.merge');
 
 // Fabric Types
 const Environment = require('@fabric/core/types/environment');
@@ -43,13 +44,16 @@ const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
 const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
 const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
 
+// Configurations
+const network = require('./network');
+
 /**
  * Provides the user's local settings.
  */
 module.exports = {
   alias: NAME,
   benchmark: false,
-  domain: 'trynovo.com',
+  domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
   name: 'Novo',
@@ -66,32 +70,15 @@ module.exports = {
     limit: 10
   },
   workers: 8,
-  agents: {
-    // Local Agents
-    local: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: '127.0.0.1',
-      port: 11434,
-      secure: false,
-      temperature: 0
-    },
-    hivemind: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: HIVEMIND,
-      port: 3045,
-      secure: false,
-      temperature: 0
-    },
-    /* socrates: {
+  agents: merge({}, network, {
+    socrates: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: 'socrates',
       port: 11434,
       secure: false
     },
-    cinco: {
+    /* cinco: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: 'cinco',
@@ -217,7 +204,7 @@ module.exports = {
       port: 11434,
       secure: false
     }, */
-  },
+  }),
   pipeline: {
     enable: false,
     consensus: ['socrates']
@@ -398,7 +385,7 @@ module.exports = {
     port: 11434,
     secure: false,
     model: 'mistral', // default model
-    models: ['llama2', 'mistral'] // models to "prime" (preload)
+    models: ['llama2', 'mistral', 'gemma'] // models to "prime" (preload)
   },
   pacer: {
     enable: true
