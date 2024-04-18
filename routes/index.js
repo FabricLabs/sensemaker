@@ -1,4 +1,7 @@
 module.exports = {
+  agents: {
+    list: require('./agents/list_agents'),
+  },
   cases: {
     list: require('./cases/get_cases'),
   },

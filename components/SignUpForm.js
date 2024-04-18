@@ -44,31 +44,38 @@ class SignUpForm extends React.Component {
   }
 
   componentDidMount = async () => {
-
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "Novo · Your Legal Assistant";
 
-    const { invitationToken, invitation, invitationError } = this.props;
-    this.setState({ loading: true });
-    try {
-      await this.props.checkInvitationToken(invitationToken);
-    } catch (error) {
-      this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
-    }
+    const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
+
+    if (!adminPanel) {
+      this.setState({ loading: true });
+      try {
+        await this.props.checkInvitationToken(invitationToken);
+      } catch (error) {
+        this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
+      }
+    } else {this.setState({loading :false, tokenError:false})}
+
   };
 
 
   componentDidUpdate(prevProps) {
-    //it goes here when the invitation reducer changes
-    if (prevProps.invitation !== this.props.invitation) {
-      const { invitation } = this.props;
-      if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
-        this.props.checkEmailAvailable(this.props.invitation.invitation.target);
-      } else {
-        this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+    const {adminPanel} = this.props
+    if (!adminPanel) {
+      //it goes here when the invitation reducer changes
+      if (prevProps.invitation !== this.props.invitation) {
+        const { invitation } = this.props;
+        if (invitation.invitationValid) {
+          this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
+          this.props.checkEmailAvailable(this.props.invitation.invitation.target);
+        } else {
+          this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+        }
       }
     }
+
     //it goes here when the auth reducer changes
     if (prevProps.auth !== this.props.auth) {
       const { auth } = this.props;
@@ -91,7 +98,9 @@ class SignUpForm extends React.Component {
         this.setState({ registering: false });
         if (auth.registerSuccess) {
           this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
-          this.props.acceptInvitation(this.props.invitationToken);
+          if (!adminPanel) {
+            this.props.acceptInvitation(this.props.invitationToken);
+          }
         } else {
           this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
         }
@@ -197,6 +206,7 @@ class SignUpForm extends React.Component {
       registerSuccess,
       registerError,
       registering,
+      adminPanel,
     } = this.state;
 
     //these next const are for the popup errors showed in the inputs
@@ -223,14 +233,23 @@ class SignUpForm extends React.Component {
     };
 
     return (
-      <div className='fade-in signup-form'>
-        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+      <div className={'fade-in signup-form'} >
+        {
+          !this.props.adminPanel &&
+          <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+          
+        }
         <Segment>
-          <Form loading={loading} centered>
+          <Form loading={loading} centered style={{width:'500px'}}>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sign Up</Header>
-                <p>Complete your registration to access Novo.</p>
+                {
+                  !this.props.adminPanel &&
+                  <>
+                    <Header as='h3' textAlign="center">Sign Up</Header>
+                    <p>Complete your registration to access Novo.</p>
+                  </>
+                }
                 <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
@@ -349,7 +368,7 @@ class SignUpForm extends React.Component {
                 <p>{errorContent}</p>
               </Message>
             )}
-            {registerSuccess && (
+            {registerSuccess && !this.props.adminPanel ? (
               <Message positive centered>
                 <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
@@ -357,6 +376,11 @@ class SignUpForm extends React.Component {
                 <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
                   <Button primary href="/sessions">Log In</Button>
                 </div>
+              </Message>
+            ) : registerSuccess && this.props.adminPanel && (
+              <Message positive centered>
+                <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
+                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
               </Message>
             )}
           </Form>
