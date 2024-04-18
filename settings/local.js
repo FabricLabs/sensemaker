@@ -53,7 +53,7 @@ const network = require('./network');
 module.exports = {
   alias: NAME,
   benchmark: false,
-  domain: 'trynovo.com',
+  domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
   name: 'Novo',
