@@ -1886,6 +1886,11 @@ class Jeeves extends Hub {
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
 
+    // Help chat
+    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
+    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
+    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
+
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
     this.http._addRoute('GET', '/inquiries', this._handleInquiryListRequest.bind(this));

@@ -47,12 +47,12 @@ const fetchHelpConversations = () => {
   };
 };
 
-const fetchHelpMessages = (id) => {
+const fetchHelpMessages = (conversation_id) => {
   return async (dispatch, getState) => {
     dispatch(fetchHelpMessagesRequest());
     const { token } = getState().auth;
     try {
-      const messages = await fetchFromAPI(`/conversations/${id}`, token);
+      const messages = await fetchFromAPI(`/messages/help/${conversation_id}`, token);
       dispatch(fetchHelpMessagesSuccess(messages));
     } catch (error) {
       dispatch(fetchHelpMessagesFailure(error));
@@ -68,13 +68,13 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
 
     try {
 
-      const response = await fetch('/messages/help', {
+      const response = await fetch(`/messages/help/${conversation_id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(content, conversation_id, help_role)
+        body: JSON.stringify(content, help_role)
       });
 
       if (!response.ok) {

@@ -1,4 +1,8 @@
 'use strict';
+// Constants
+const {
+  PER_PAGE_LIMIT
+} = require('../../constants');
 
 module.exports = function (req, res, next) {
   res.format({
@@ -7,14 +11,18 @@ module.exports = function (req, res, next) {
       try {
         const conversations = await this.db.select('*')
           .from('conversations')
-          .where({ matter_id: req.params.matterID })
+          .where({ help_chat: 1 })
           .where({ creator_id: req.user.id })
-          .orderBy('created_at', 'desc');
+          .orderBy('created_at', 'desc')
+          .paginate({
+            perPage: PER_PAGE_LIMIT,
+            currentPage: 1
+          });
         res.send(conversations);
       } catch (exception) {
         res.status(503);
         return res.send({
-          type: 'Fetch matter conversations',
+          type: 'Fetch help conversations',
           content: exception
         });
       }
