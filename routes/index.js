@@ -74,5 +74,10 @@ module.exports = {
   },
   feedback: {
     create: require('./feedback/create_feedback.js')
+  },
+  help: {
+    getConversations: require('./help/get_conversations.js'),
+    getMessages: require('./help/get_messages.js'),
+    sendMessage: require('./help/send_message.js'),
   }
 };
