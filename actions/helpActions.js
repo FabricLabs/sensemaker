@@ -2,8 +2,8 @@
 
 const { fetchFromAPI } = require('./apiActions');
 
-async function fetchConversationsFromAPI(token, params = {}) {
-  return fetchFromAPI('/conversations', params, token);
+async function fetchHelpConversationsFromAPI(token, params = {}) {
+  return fetchFromAPI('/conversations/help', params, token);
 }
 
 // Action types
@@ -25,7 +25,7 @@ const fetchHelpConversationsSuccess = (conversations) => ({ type: FETCH_HELP_CON
 const fetchHelpConversationsFailure = (error) => ({ type: FETCH_HELP_CONVERSATIONS_FAILURE, payload: error });
 
 const fetchHelpMessagesRequest = () => ({ type: FETCH_HELP_MESSAGES_REQUEST });
-const fetchHelpMessagesSuccess = (conversation) => ({ type: FETCH_HELP_MESSAGES_SUCCESS, payload: conversation });
+const fetchHelpMessagesSuccess = (messages) => ({ type: FETCH_HELP_MESSAGES_SUCCESS, payload: messages });
 const fetchHelpMessagesFailure = (error) => ({ type: FETCH_HELP_MESSAGES_FAILURE, payload: error });
 
 const sendHelpMessageRequest = () => ({ type: SEND_HELP_MESSAGE_REQUEST });
@@ -39,7 +39,7 @@ const fetchHelpConversations = () => {
     dispatch(fetchHelpConversationsRequest());
     const { token } = getState().auth;
     try {
-      const conversations = await fetchConversationsFromAPI(token);
+      const conversations = await fetchHelpConversationsFromAPI(token);
       dispatch(fetchHelpConversationsSuccess(conversations));
     } catch (error) {
       dispatch(fetchHelpConversationsFailure(error));
@@ -47,67 +47,48 @@ const fetchHelpConversations = () => {
   };
 };
 
-const fetchConversation = (id) => {
+const fetchHelpMessages = (id) => {
   return async (dispatch, getState) => {
-    dispatch(fetchConversationRequest());
+    dispatch(fetchHelpMessagesRequest());
     const { token } = getState().auth;
     try {
-      const conversation = await fetchFromAPI(`/conversations/${id}`, token);
-      dispatch(fetchConversationSuccess(conversation));
+      const messages = await fetchFromAPI(`/conversations/${id}`, token);
+      dispatch(fetchHelpMessagesSuccess(messages));
     } catch (error) {
-      dispatch(fetchConversationFailure(error));
+      dispatch(fetchHelpMessagesFailure(error));
     }
   };
 };
 
-const fetchMatterConversations = (matterID) => {
+const sendHelpMessage = (content, conversation_id, help_role) => {
   return async (dispatch, getState) => {
-    dispatch(fetchMatterConversationsRequest());
+
+    dispatch(sendHelpMessageRequest());
     const { token } = getState().auth;
+
     try {
-      const conversations = await fetch(`/matters/${matterID}/conversations`, {
-        method: 'GET',
+
+      const response = await fetch('/messages/help', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify(content, conversation_id, help_role)
       });
-      const data = await conversations.json();
-      dispatch(fetchMatterConversationsSuccess(data));
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      dispatch(sendHelpMessageSuccess());
     } catch (error) {
-      dispatch(fetchMatterConversationsFailure(error));
+      dispatch(sendHelpMessageFailure(error));
     }
   };
 };
-
-const conversationTitleEdit = (id, title) => {
-  return async (dispatch, getState) => {
-    const { token } = getState().auth;
-    try {
-      dispatch(conversationTitlEditRequest());
-      const fetchPromise = fetch(`/conversations/${id}`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ title: title }),
-      });
-
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Fetch timed out'));
-        }, 15000);
-      });
-      const response = await Promise.race([timeoutPromise, fetchPromise]);
-      dispatch(conversationTitleEditSuccess());
-    } catch (error) {
-      dispatch(conversationTitleEditFailure(error));
-    }
-  }
-}
-
-
 
 module.exports = {
   fetchHelpConversations,
