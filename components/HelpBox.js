@@ -39,18 +39,23 @@ class HelpBox extends React.Component {
     return (
       <Segment className="fade-in" id='help-box' fluid style={{ padding: '0', maxHeight: '100%', width: '350px', height: '500px' }}>
         <section style={{ height: '90%', color: 'white', marginBottom: '0', padding: '1em' }}>
-          <HelpConversations/>
+          <HelpConversations
+            fetchHelpConversations={this.props.fetchHelpConversations}
+            fetchHelpMessages={this.props.fetchHelpMessages}
+            sendHelpMessage={this.props.sendHelpMessage}
+            help={this.props.help}
+          />
         </section>
         <Button.Group style={{ width: '100%', height: '10%' }}>
           <Button icon style={{
             backgroundColor: 'white'
           }}>
-            <Icon name='home' size='big'/>
+            <Icon name='home' size='big' />
           </Button>
           <Button icon style={{
             backgroundColor: 'white'
           }}>
-            <Icon name='chat' size='big'/>
+            <Icon name='chat' size='big' />
           </Button>
         </Button.Group>
 

@@ -150,6 +150,8 @@
   height: 26px;
 }
 
+/* HELP CHAT CSS */
+
 #help-box {
   position: fixed;
   bottom: 80px;
@@ -165,6 +167,19 @@
   background: linear-gradient(to bottom, grey, white);
   border-radius: 20px;
   border: none;
+}
+
+.help-user-msg{
+  color: white;
+  margin-left: 25%;
+  padding: 0.5em;
+  background-color: #336699;
+}
+
+.help-admin-msg{
+  margin-right: 25%;
+  padding: 0.5em;
+  background-color: #d8d8d8;  
 }
 
 body {
