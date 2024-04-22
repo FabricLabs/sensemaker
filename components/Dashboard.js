@@ -651,7 +651,12 @@ class Dashboard extends React.Component {
           sendFeedback={this.props.sendFeedback}
           feedback={this.props.feedback}
         />
-        <HelpBox/>
+        <HelpBox
+          fetchHelpConversations={this.props.fetchHelpConversations}
+          fetchHelpMessages={this.props.fetchHelpMessages}
+          sendHelpMessage={this.props.sendHelpMessage}
+          help={this.props.help}
+        />
 
         <InformationSidebar
           visible={informationSidebarOpen}

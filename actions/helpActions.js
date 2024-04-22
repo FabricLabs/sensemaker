@@ -29,7 +29,7 @@ const fetchHelpMessagesSuccess = (messages) => ({ type: FETCH_HELP_MESSAGES_SUCC
 const fetchHelpMessagesFailure = (error) => ({ type: FETCH_HELP_MESSAGES_FAILURE, payload: error });
 
 const sendHelpMessageRequest = () => ({ type: SEND_HELP_MESSAGE_REQUEST });
-const sendHelpMessageSuccess = () => ({ type: SEND_HELP_MESSAGE_SUCCESS });
+const sendHelpMessageSuccess = (conversation_id) => ({ type: SEND_HELP_MESSAGE_SUCCESS, payload: conversation_id });
 const sendHelpMessageFailure = (error) => ({ type: SEND_HELP_MESSAGE_FAILURE, payload: error });
 
 
@@ -67,14 +67,14 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
     const { token } = getState().auth;
 
     try {
-
+      console.log("data to send:", token,content,conversation_id,help_role);
       const response = await fetch(`/messages/help/${conversation_id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(content, help_role)
+        body: JSON.stringify({content, help_role})
       });
 
       if (!response.ok) {
@@ -83,7 +83,7 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
       }
 
       const result = await response.json();
-      dispatch(sendHelpMessageSuccess());
+      dispatch(sendHelpMessageSuccess(result.conversation_id));
     } catch (error) {
       dispatch(sendHelpMessageFailure(error));
     }

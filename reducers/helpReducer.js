@@ -18,6 +18,7 @@ const initialState = {
   loading: false,
   sending: false,
   sentSuccess: false,
+  conversation_id: null,
 };
 
 function inquiriesReducer(state = initialState, action) {
@@ -39,7 +40,7 @@ function inquiriesReducer(state = initialState, action) {
     case SEND_HELP_MESSAGE_REQUEST:
       return { ...state, sentSuccess: false, error: null, sending: true };
     case SEND_HELP_MESSAGE_SUCCESS:
-      return { ...state, sentSuccess: true, sending: false };
+      return { ...state, conversation_id: action.payload, sentSuccess: true, sending: false };
     case SEND_HELP_MESSAGE_FAILURE:
       console.debug('send help message failure:', state, action);
       return { ...state, sentSuccess: false, error: action.payload, sending: false };
