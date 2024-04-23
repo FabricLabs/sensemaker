@@ -77,6 +77,7 @@ module.exports = {
   },
   help: {
     getConversations: require('./help/get_conversations.js'),
+    getAdmConversations: require('./help/get_conversations_adm.js'),
     getMessages: require('./help/get_messages.js'),
     sendMessage: require('./help/send_message.js'),
   }

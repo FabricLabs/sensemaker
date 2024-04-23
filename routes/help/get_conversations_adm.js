@@ -1,18 +1,18 @@
 'use strict';
-// Constants
-const {
-  PER_PAGE_LIMIT
-} = require('../../constants');
 
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       try {
+        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
+        if (!user || user.is_admin !== 1) {
+          return res.status(401).json({ message: 'User not allowed to get Help conversations.' });
+        }
         const conversations = await this.db('conversations')
           .select('*')
           .where({ help_chat: 1 })
-          .where({ creator_id: req.user.id })
           .orderBy('created_at', 'desc');
+
         res.send(conversations);
       } catch (exception) {
         res.status(503);

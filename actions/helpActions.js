@@ -6,10 +6,18 @@ async function fetchHelpConversationsFromAPI(token, params = {}) {
   return fetchFromAPI('/conversations/help', params, token);
 }
 
+async function fetchAdminHelpConversationsFromAPI(token, params = {}) {
+  return fetchFromAPI('/conversations/help/admin', params, token);
+}
+
 // Action types
 const FETCH_HELP_CONVERSATIONS_REQUEST = 'FETCH_HELP_CONVERSATIONS_REQUEST';
 const FETCH_HELP_CONVERSATIONS_SUCCESS = 'FETCH_HELP_CONVERSATIONS_SUCCESS';
 const FETCH_HELP_CONVERSATIONS_FAILURE = 'FETCH_HELP_CONVERSATIONS_FAILURE';
+
+const FETCH_ADMIN_HELP_CONVERSATIONS_REQUEST = 'FETCH_HELP_CONVERSATIONS_REQUEST';
+const FETCH_ADMIN_HELP_CONVERSATIONS_SUCCESS = 'FETCH_HELP_CONVERSATIONS_SUCCESS';
+const FETCH_ADMIN_HELP_CONVERSATIONS_FAILURE = 'FETCH_HELP_CONVERSATIONS_FAILURE';
 
 const FETCH_HELP_MESSAGES_REQUEST = 'FETCH_HELP_MESSAGES_REQUEST';
 const FETCH_HELP_MESSAGES_SUCCESS = 'FETCH_HELP_MESSAGES_SUCCESS';
@@ -23,6 +31,10 @@ const SEND_HELP_MESSAGE_FAILURE = 'SEND_MESSAGE_FAILURE';
 const fetchHelpConversationsRequest = () => ({ type: FETCH_HELP_CONVERSATIONS_REQUEST });
 const fetchHelpConversationsSuccess = (conversations) => ({ type: FETCH_HELP_CONVERSATIONS_SUCCESS, payload: conversations });
 const fetchHelpConversationsFailure = (error) => ({ type: FETCH_HELP_CONVERSATIONS_FAILURE, payload: error });
+
+const fetchAdminHelpConversationsRequest = () => ({ type: FETCH_ADMIN_HELP_CONVERSATIONS_REQUEST });
+const fetchAdminHelpConversationsSuccess = (conversations) => ({ type: FETCH_ADMIN_HELP_CONVERSATIONS_SUCCESS, payload: conversations });
+const fetchAdminHelpConversationsFailure = (error) => ({ type: FETCH_ADMIN_HELP_CONVERSATIONS_FAILURE, payload: error });
 
 const fetchHelpMessagesRequest = () => ({ type: FETCH_HELP_MESSAGES_REQUEST });
 const fetchHelpMessagesSuccess = (messages) => ({ type: FETCH_HELP_MESSAGES_SUCCESS, payload: messages });
@@ -40,10 +52,22 @@ const fetchHelpConversations = () => {
     const { token } = getState().auth;
     try {
       const conversations = await fetchHelpConversationsFromAPI(token);
-     // const data = await conversations.json();
       dispatch(fetchHelpConversationsSuccess(conversations));
     } catch (error) {
       dispatch(fetchHelpConversationsFailure(error));
+    }
+  };
+};
+
+const fetchAdminHelpConversations = () => {
+  return async (dispatch, getState) => {
+    dispatch(fetchAdminHelpConversationsRequest());
+    const { token } = getState().auth;
+    try {
+      const conversations = await fetchAdminHelpConversationsFromAPI(token);
+      dispatch(fetchAdminHelpConversationsSuccess(conversations));
+    } catch (error) {
+      dispatch(fetchAdminHelpConversationsFailure(error));
     }
   };
 };
@@ -93,11 +117,15 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
 
 module.exports = {
   fetchHelpConversations,
+  fetchAdminHelpConversations,
   fetchHelpMessages,
   sendHelpMessage,
   FETCH_HELP_CONVERSATIONS_REQUEST,
   FETCH_HELP_CONVERSATIONS_SUCCESS,
   FETCH_HELP_CONVERSATIONS_FAILURE,
+  FETCH_ADMIN_HELP_CONVERSATIONS_REQUEST,
+  FETCH_ADMIN_HELP_CONVERSATIONS_SUCCESS,
+  FETCH_ADMIN_HELP_CONVERSATIONS_FAILURE,
   FETCH_HELP_MESSAGES_REQUEST,
   FETCH_HELP_MESSAGES_SUCCESS,
   FETCH_HELP_MESSAGES_FAILURE,

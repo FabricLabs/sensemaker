@@ -1888,6 +1888,7 @@ class Jeeves extends Hub {
 
     // Help chat
     this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
+    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
     this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
     this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
 
