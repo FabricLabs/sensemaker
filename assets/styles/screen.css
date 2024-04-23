@@ -169,17 +169,29 @@
   border: none;
 }
 
+.help-chat-board{
+  flex: 1;
+  overflow-y: 'auto';
+  padding: 0 0.5em 0.5em 0.5em;
+}
+
 .help-user-msg{
   color: white;
-  margin-left: 25%;
-  padding: 0.5em;
+  margin-left: auto;
+  width: fit-content;
+  max-width: 70%;
+  padding: 1em;
   background-color: #336699;
+  border-radius: 10px;
 }
 
 .help-admin-msg{
-  margin-right: 25%;
-  padding: 0.5em;
-  background-color: #d8d8d8;  
+  margin-right: auto;
+  width: fit-content;
+  max-width: 70%;
+  padding: 1em;
+  background-color: #d8d8d8;
+  border-radius: 10px;
 }
 
 body {
