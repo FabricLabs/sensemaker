@@ -40,6 +40,7 @@ const fetchHelpConversations = () => {
     const { token } = getState().auth;
     try {
       const conversations = await fetchHelpConversationsFromAPI(token);
+     // const data = await conversations.json();
       dispatch(fetchHelpConversationsSuccess(conversations));
     } catch (error) {
       dispatch(fetchHelpConversationsFailure(error));

@@ -181,7 +181,7 @@
   width: fit-content;
   max-width: 70%;
   padding: 1em;
-  background-color: #336699;
+  background-color: var(--primary-color);
   border-radius: 10px;
 }
 

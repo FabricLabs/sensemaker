@@ -29,6 +29,7 @@ const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminInquiries = require('./AdminSettingsInquiries');
 const AdminInvitations = require('./AdminSettingsInvitations');
 const AdminUsers = require('./AdminSettingsUsers');
+const AdminHelp = require('./AdminSettingsHelp');
 const SignUpForm = require('./SignUpForm');
 // const ConversationList = require('./ConversationList');
 
@@ -165,6 +166,7 @@ class AdminSettings extends React.Component {
       {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading} className='col-center'>
           <AdminUsers {...this.props} />
+          <AdminHelp />
           <section style={{ width: '100%', marginTop:'1em' }} className='col-center'>
             <Header as='h3'>Create User</Header>
             <SignUpForm

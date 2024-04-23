@@ -88,25 +88,16 @@ class HelpChat extends React.Component {
               )
             ))
           ) : (
-            <p>What can we do to help you?</p>
+            <p className='help-admin-msg' >What can we do to help you?</p>
           )}
         </div>
-        {/* <Input
-          icon={{ name: 'send', onClick: this.handleIconClick, style: { cursor: 'pointer' } }}
-          placeholder='Write your message...'
-          name='messageQuery'
-          onChange={this.handleInputChange}
-          onKeyDown={this.handleKeyDown}
-          value={this.state.messageQuery}
-          style={{ flex: '0 0 auto', width: '100%' }}
-        /> */}
         <Input
           placeholder='Write your message...'
           name='messageQuery'
           onChange={this.handleInputChange}
           onKeyDown={this.handleKeyDown}
           value={this.state.messageQuery}
-          icon  // Indicates that there is an icon inside the input
+          icon
           style={{ flex: '0 0 auto', width: '100%' }}
         >
           <input />
@@ -114,7 +105,7 @@ class HelpChat extends React.Component {
             name='send'
             onClick={this.handleIconClick}
             style={{ cursor: 'pointer' }}
-            link  // Makes the icon behave like a clickable link
+            link 
           />
         </Input>
 
