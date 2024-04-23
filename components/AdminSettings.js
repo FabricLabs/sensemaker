@@ -166,7 +166,7 @@ class AdminSettings extends React.Component {
       {
         menuItem: 'Users', render: () => <Tab.Pane loading={this.state.loading} className='col-center'>
           <AdminUsers {...this.props} />
-          <AdminHelp />
+          <AdminHelp {...this.props}/>
           <section style={{ width: '100%', marginTop:'1em' }} className='col-center'>
             <Header as='h3'>Create User</Header>
             <SignUpForm

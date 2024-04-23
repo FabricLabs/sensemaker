@@ -105,7 +105,7 @@ class HelpChat extends React.Component {
             name='send'
             onClick={this.handleIconClick}
             style={{ cursor: 'pointer' }}
-            link 
+            link
           />
         </Input>
 

@@ -188,6 +188,7 @@ const {
 // ## Help Actions
 const {
   fetchHelpConversations,
+  fetchAdminHelpConversations,
   fetchHelpMessages,
   sendHelpMessage,
 } = require('../actions/helpActions');
@@ -337,6 +338,7 @@ async function main (input = {}) {
     searchGlobal: searchGlobal,
     sendFeedback: sendFeedback,
     fetchHelpConversations: fetchHelpConversations,
+    fetchAdminHelpConversations: fetchAdminHelpConversations,
     fetchHelpMessages: fetchHelpMessages,
     sendHelpMessage: sendHelpMessage,
   };
