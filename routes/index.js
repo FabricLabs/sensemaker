@@ -7,7 +7,8 @@ module.exports = {
     getCaseFile: require('./cases/get_cases_id_pdf.js'),
   },
   documents: {
-    // list: require('./documents/list_documents'),
+    list: require('./documents/list_documents'),
+    getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
@@ -87,6 +88,7 @@ module.exports = {
   conversations: {
     getConversations: require('./conversations/get_conversations'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),
+    getConversationsByID: require('./conversations/get_conversations_by_id'),
   },
   account: {
     changePassword: require('./account/change_password'),

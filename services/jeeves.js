@@ -2255,56 +2255,9 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/documents', async (req, res, next) => {
-      const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: currentPage
-      });
+    this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
 
-      res.format({
-        json: () => {
-          // Create response
-          const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
-            return {
-              id: doc.fabric_id,
-              created_at: doc.created_at,
-              description: doc.description,
-              sha1: doc.sha1,
-              sha256: doc.sha256,
-              size: doc.file_size,
-              title: doc.title,
-              file_id: doc.file_id,
-            };
-          }) : [];
-
-          // Set Pagination Headers
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
-          res.setHeader('X-Pagination-Per', documents.pagination.perPage);
-          res.setHeader('X-Pagination-Total', documents.pagination.total);
-
-          return res.send(response);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/documents/:fabricID', async (req, res, next) => {
-      const document = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id', ).where('fabric_id', req.params.fabricID).first();
-      res.format({
-        json: () => {
-          return res.send(document);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/documents/:fabricID',ROUTES.documents.getDocumentByID.bind(this));
 
     this.http._addRoute('GET', '/opinions', async (req, res, next) => {
       const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
@@ -2390,24 +2343,7 @@ class Jeeves extends Hub {
       res.send(messages);
     });
 
-    this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();
-      const messages = await this.db('messages')
-        .whereIn('id', conversation.log)
-        .select('id', 'content', 'created_at');
-
-      conversation.messages = messages;
-
-      res.format({
-        json: () => {
-          res.send(conversation);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
       const contract = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
