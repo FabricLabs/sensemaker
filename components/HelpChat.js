@@ -20,6 +20,7 @@ class HelpChat extends React.Component {
       sending: false,
       conversation_id: 0, //this is used cause if we are in a new conversation, we update this during the proccess.
     };
+    this.messagesEndRef = React.createRef();
   }
 
   componentDidMount() {
@@ -29,6 +30,8 @@ class HelpChat extends React.Component {
       this.setState({ conversation_id: conversationID });
       this.props.fetchHelpMessages(conversationID);
     }
+
+    this.scrollToBottom();
   }
 
   componentDidUpdate(prevProps) {
@@ -45,7 +48,30 @@ class HelpChat extends React.Component {
         this.props.fetchHelpMessages(help.conversation_id);
       }
     }
+    if (prevProps.help.messages.length != help.messages.length) {
+      this.scrollToBottom();
+    }
   }
+
+  // scrollToBottom = () => {
+  //   setTimeout(() => {
+  //       this.messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); // Smooth scroll to the bottom
+  //   }, 100);
+  // }
+
+  scrollToBottom = () => {
+    const messagesContainer = this.messagesEndRef.current;
+    if (messagesContainer) {
+        // Calculate the new scroll position to be the bottom of the container
+        const scrollHeight = messagesContainer.scrollHeight;
+        const height = messagesContainer.clientHeight;
+        const maxScrollTop = scrollHeight - height;
+        setTimeout(() => {
+            messagesContainer.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
+        }, 100);
+    }
+}
+
 
   handleInputChange = (event) => {
     this.setState({
@@ -78,10 +104,10 @@ class HelpChat extends React.Component {
     const { help } = this.props;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Button icon basic size='tiny' style={{width: '3em', marginLeft: 'auto', marginBottom: '1em'}} onClick={() => {this.props.closeHelpChat();}}>
+        <Button icon basic size='tiny' style={{ width: '3em', marginLeft: 'auto', marginBottom: '1em' }} onClick={() => { this.props.closeHelpChat(); }}>
           <Icon name='close' />
         </Button>
-        <div className='help-messages' style={{ flex: 1, overflowY: 'auto' }}>
+        <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }} ref={this.messagesEndRef}>
           {(help && help.messages && help.messages.length > 0) ? (
             help.messages.map((instance) => (
               instance.help_role === 'user' ? (
@@ -93,6 +119,7 @@ class HelpChat extends React.Component {
           ) : (
             <p className='help-admin-msg' >What can we do to help you?</p>
           )}
+          {/* <div ref={this.messagesEndRef} /> */}
         </div>
         <Input
           placeholder='Write your message...'

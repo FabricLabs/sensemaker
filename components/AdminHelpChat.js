@@ -77,7 +77,7 @@ class AdminHelpChat extends React.Component {
     const { help } = this.props;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className='help-messages' style={{ flex: 1, overflowY: 'auto' }}>
+        <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }}>
           {(help && help.messages && help.messages.length > 0) ? (
             help.messages.map((instance) => (
               instance.help_role === 'user' ? (

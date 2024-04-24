@@ -59,7 +59,7 @@ class HelpConversations extends React.Component {
         {!displayChat ? (<section className='col-center' style={{ width: '100%', height: '100%' }}>
           {(help && help.conversations && help.conversations.length > 0) ? (
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              <Menu loading={help.loading} vertical fluid >
+              <Menu vertical fluid >
                 {help.conversations.map((instance) => (
                   <Menu.Item
                     key={instance.id}

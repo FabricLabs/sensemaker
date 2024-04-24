@@ -7,7 +7,7 @@ const {
   Icon,
   Button,
   Table,
-  Message,  
+  Message,
   Segment,
   Input,
   Header,
@@ -55,10 +55,10 @@ class AdminHelp extends React.Component {
 
     return (
       <section>
-        <Header as='h3' style={{marginTop: '2em'}}>User Assistance</Header>
+        <Header as='h3' style={{ marginTop: '2em' }}>User Assistance</Header>
         <Segment style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '60vh', gap: '1em' }}>
           {(help && help.conversations && help.conversations.length > 0) ? (
-            <div style={{ flex: 1, overflowY: 'auto', width: '50%', maxHeight: '55vh', padding: '0', marginBottom: '0' }}>
+            <div style={{ flex: 1, overflowY: 'auto', width: '50%', minHeight: '55vh', maxHeight: '55vh', padding: '0', marginBottom: '0' }}>
               <Menu loading={help.loading} vertical fluid >
                 {help.conversations.map((instance) => (
                   <Menu.Item
@@ -81,11 +81,11 @@ class AdminHelp extends React.Component {
           ) : (
             <h5>You dont have any conversation yet</h5>
           )}
-          <div style={{ flex: 1, overflowY: 'auto', width: '50%', height: '100%', maxHeight: '55vh' }}>
+          <Segment style={{ flex: 1, overflowY: 'auto', width: '50%', height: '100%', maxHeight: '55vh' }}>
             {displayChat &&
               <AdminHelpChat {...this.props} conversationID={conversation_id} />
             }
-          </div>
+          </Segment>
         </Segment>
       </section>
     );
