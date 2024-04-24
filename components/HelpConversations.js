@@ -44,6 +44,9 @@ class HelpConversations extends React.Component {
     return new Date(dateTimeStr).toLocaleString('en-US', options);
   }
 
+  closeHelpChat = () => {
+    this.setState({ displayChat: false, conversationID: null });
+  }
 
   render() {
     const { displayChat } = this.state;
@@ -81,6 +84,7 @@ class HelpConversations extends React.Component {
               sendHelpMessage={this.props.sendHelpMessage}
               help={this.props.help}
               conversationID={this.state.conversationID}
+              closeHelpChat = {this.closeHelpChat}
             />
           )
         }

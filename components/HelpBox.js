@@ -37,9 +37,10 @@ class HelpBox extends React.Component {
 
 
   render() {
+    const displayStyle = this.props.open ? {} : { display: 'none' };
 
     return (
-      <Segment className="fade-in" id='help-box' fluid style={{ padding: '0', maxHeight: '100%', width: '350px', height: '600px' }}>
+      <Segment className="fade-in" id='help-box' fluid style={{ ...displayStyle, padding: '0', maxHeight: '100%', width: '350px', height: '600px' }}>
         <section style={{ height: '90%', color: 'white', marginBottom: '0', padding: '1em', display: 'flex', flexDirection: 'column' }}>
           <Header as='h3' fluid textAlign='center' style={{ flex: 'none', color: 'white' }}>Conversations</Header>
           <div style={{ flex: '1', overflowY: 'auto' }}>

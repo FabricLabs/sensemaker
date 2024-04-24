@@ -9,9 +9,15 @@ module.exports = function (req, res, next) {
           return res.status(401).json({ message: 'User not allowed to get Help conversations.' });
         }
         const conversations = await this.db('conversations')
-          .select('*')
-          .where({ help_chat: 1 })
-          .orderBy('created_at', 'desc');
+          .join('users', 'conversations.creator_id', '=', 'users.id')
+          .select(
+            'conversations.*', 
+            'users.id as creator_id',
+            'users.username as creator_username', 
+            'users.first_name as creator_first_name'
+          )
+          .where({ 'conversations.help_chat': 1 })
+          .orderBy('conversations.created_at', 'desc');
 
         res.send(conversations);
       } catch (exception) {

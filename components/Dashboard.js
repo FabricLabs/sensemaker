@@ -207,7 +207,7 @@ class Dashboard extends React.Component {
 
   //closes left and right sidebars
   closeSidebars = () => {
-    this.setState({ openSectionBar: false });
+    this.setState({ openSectionBar: false, feedbackBoxOpen: false});
     if (this.state.informationSidebarOpen) {
       this.toggleInformationSidebar();
     }
@@ -639,19 +639,21 @@ class Dashboard extends React.Component {
           </Container>
         </div>
         <Popup
-          content="Give us feedback!"
+          content="Help menu"
           trigger={
-            <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({ feedbackBoxOpen: true })} />
+            // <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({ feedbackBoxOpen: true })} />
+            <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.toggleFeedbackBox()} />
           }
         />
-        <FeedbackBox
+        {/* <FeedbackBox
           open={this.state.feedbackBoxOpen}
           toggleFeedbackBox={this.toggleFeedbackBox}
           feedbackSection={true}
           sendFeedback={this.props.sendFeedback}
           feedback={this.props.feedback}
-        />
+        /> */}
         <HelpBox
+          open={this.state.feedbackBoxOpen}
           fetchHelpConversations={this.props.fetchHelpConversations}
           fetchHelpMessages={this.props.fetchHelpMessages}
           sendHelpMessage={this.props.sendHelpMessage}

@@ -11,7 +11,7 @@ const {
   Input
 } = require('semantic-ui-react');
 
-class HelpChat extends React.Component {
+class AdminHelpChat extends React.Component {
   constructor(settings = {}) {
     super(settings);
     this.state = {
@@ -39,8 +39,7 @@ class HelpChat extends React.Component {
       this.props.fetchHelpMessages(conversationID);
     }
     if (prevProps.help != help) {
-      console.log(help);
-      if (!help.sending && help.sentSuccess && this.state.sending) {
+        if (!help.sending && help.sentSuccess && this.state.sending) {
         this.setState({ sending: false, conversation_id: help.conversation_id })
         this.props.fetchHelpMessages(help.conversation_id);
       }
@@ -65,7 +64,7 @@ class HelpChat extends React.Component {
     if (messageQuery !== '') {
       this.setState({ sending: true });
       console.log(messageQuery);
-      this.props.sendHelpMessage(messageQuery, conversation_id, 'user');
+      this.props.sendHelpMessage(messageQuery, conversation_id, 'admin');
       this.setState({ messageQuery: '' });
     }
   };
@@ -78,16 +77,13 @@ class HelpChat extends React.Component {
     const { help } = this.props;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Button icon basic size='tiny' style={{width: '3em', marginLeft: 'auto', marginBottom: '1em'}} onClick={() => {this.props.closeHelpChat();}}>
-          <Icon name='close' />
-        </Button>
         <div className='help-messages' style={{ flex: 1, overflowY: 'auto' }}>
           {(help && help.messages && help.messages.length > 0) ? (
             help.messages.map((instance) => (
               instance.help_role === 'user' ? (
-                <p id={instance.id} className='help-user-msg'>{instance.content}</p>
-              ) : (
                 <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
+              ) : (
+                <p id={instance.id} className='help-user-msg'>{instance.content}</p>
               )
             ))
           ) : (
@@ -121,4 +117,4 @@ class HelpChat extends React.Component {
   }
 }
 
-module.exports = HelpChat;
+module.exports = AdminHelpChat;
