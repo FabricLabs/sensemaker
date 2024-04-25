@@ -55,23 +55,17 @@ class HelpChat extends React.Component {
 
   // scrollToBottom = () => {
   //   setTimeout(() => {
-  //       this.messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); // Smooth scroll to the bottom
+  //     this.messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   //   }, 100);
   // }
 
   scrollToBottom = () => {
     const messagesContainer = this.messagesEndRef.current;
     if (messagesContainer) {
-        // Calculate the new scroll position to be the bottom of the container
-        const scrollHeight = messagesContainer.scrollHeight;
-        const height = messagesContainer.clientHeight;
-        const maxScrollTop = scrollHeight - height;
-        setTimeout(() => {
-            messagesContainer.scrollTop = maxScrollTop > 0 ? maxScrollTop : 0;
-        }, 100);
+        // Scroll directly to the bottom by setting scrollTop to the scrollHeight
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 }
-
 
   handleInputChange = (event) => {
     this.setState({
@@ -104,10 +98,13 @@ class HelpChat extends React.Component {
     const { help } = this.props;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Button icon basic size='tiny' style={{ width: '3em', marginLeft: 'auto', marginBottom: '1em' }} onClick={() => { this.props.closeHelpChat(); }}>
-          <Icon name='close' />
+        <Button icon size='tiny' style={{ position: 'absolute' }} onClick={() => { this.props.closeHelpChat(); }}>
+          <Icon name='chevron left' />
         </Button>
-        <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }} ref={this.messagesEndRef}>
+        {/* <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }} ref={this.messagesEndRef}> */}
+        {/* <div className='help-chat-board' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }}> */}
+        <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth' }} ref={this.messagesEndRef}>
+
           {(help && help.messages && help.messages.length > 0) ? (
             help.messages.map((instance) => (
               instance.help_role === 'user' ? (
@@ -117,7 +114,7 @@ class HelpChat extends React.Component {
               )
             ))
           ) : (
-            <p className='help-admin-msg' >What can we do to help you?</p>
+            <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
           )}
           {/* <div ref={this.messagesEndRef} /> */}
         </div>

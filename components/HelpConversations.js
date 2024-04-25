@@ -46,6 +46,7 @@ class HelpConversations extends React.Component {
 
   closeHelpChat = () => {
     this.setState({ displayChat: false, conversationID: null });
+    this.props.fetchHelpConversations();
   }
 
   render() {
@@ -56,27 +57,32 @@ class HelpConversations extends React.Component {
       <Segment fluid
         style={{ width: '100%', height: '100%', color: 'black' }}
       >
-        {!displayChat ? (<section className='col-center' style={{ width: '100%', height: '100%' }}>
-          {(help && help.conversations && help.conversations.length > 0) ? (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              <Menu vertical fluid >
-                {help.conversations.map((instance) => (
-                  <Menu.Item
-                    key={instance.id}
-                    onClick={() => this.openConversation(instance.id)}
-                    style={{ display: 'flex', flexDirection: 'row', gap: '1em', alignItems: 'center' }}
-                  >
-                    <Icon name='mail outline' size='big' />
-                    <p>Conversation from {this.formatDateTime(instance.created_at)}</p>
-                  </Menu.Item>
-                ))}
-              </Menu>
-            </div>
-          ) : (
-            <h5>You dont have any conversation yet</h5>
-          )}
-          <Button primary content='Chat with an assistant' style={{ flex: '0 0 auto', marginTop: '1em' }} onClick={() => this.openConversation(0)} />
-        </section>
+        {!displayChat ? (
+          <section className='col-center' style={{ width: '100%', height: '100%' }}>
+            {(help && help.conversations && help.conversations.length > 0) ? (
+              <div style={{ flex: 1, overflowY: 'auto', width: '100%', maxWidth: '100%' }}>
+                <Menu vertical fluid id='help-conversations' >
+                  {help.conversations.map((instance) => (
+                    <Menu.Item
+                      key={instance.id}
+                      onClick={() => this.openConversation(instance.id)}
+                      style={{ display: 'flex', flexDirection: 'row', gap: '1em', alignItems: 'center' }}
+                    >
+                      <Icon name='mail outline' size='big' />
+                      <div style={{maxWidth: '70%'}}>
+                        <p style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{instance.last_message.content}</p>
+                        {/* <p>{instance.last_message.content}</p> */}
+                        <p>{this.formatDateTime(instance.last_message.created_at)}</p>
+                      </div>
+                    </Menu.Item>
+                  ))}
+                </Menu>
+              </div>
+            ) : (
+              <h5>You dont have any conversation yet</h5>
+            )}
+            <Button primary content='Chat with an assistant' style={{ flex: '0 0 auto', marginTop: '1em' }} onClick={() => this.openConversation(0)} />
+          </section>
         )
           : (
             <HelpChat
@@ -84,7 +90,7 @@ class HelpConversations extends React.Component {
               sendHelpMessage={this.props.sendHelpMessage}
               help={this.props.help}
               conversationID={this.state.conversationID}
-              closeHelpChat = {this.closeHelpChat}
+              closeHelpChat={this.closeHelpChat}
             />
           )
         }
