@@ -24,24 +24,41 @@ class HelpBox extends React.Component {
     super(settings);
     this.state = {
       open: true,
+      windowHeight: window.innerHeight,
     };
   }
 
   componentDidMount() {
+    window.addEventListener('resize', this.handleResize);
+  }
 
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
   }
 
   componentDidUpdate(prevProps) {
 
   }
 
+  handleResize = () => {
+    // Force a re-render when the window resizes
+    this.setState({ windowHeight: window.innerHeight, });
+    this.forceUpdate();
+  };
+
+
 
   render() {
+    const { windowHeight } = this.state;
+
+    //a few fixes for laptops and bigger screens
+    const heightStyle = windowHeight > 720 ? { height: '650px' } : { height: '450px' };
+    const chatStyle = windowHeight > 720 ? { height: '90%' } : { height: '87%' };
     const displayStyle = this.props.open ? {} : { display: 'none' };
 
     return (
-      <Segment className="fade-in" id='help-box' fluid style={{ ...displayStyle, padding: '0', maxHeight: '100%', width: '350px', height: '600px' }}>
-        <section style={{ height: '90%', color: 'white', marginBottom: '0', padding: '1em', display: 'flex', flexDirection: 'column' }}>
+      <Segment className="fade-in" id='help-box' fluid style={{ ...heightStyle, ...displayStyle, padding: '0', maxHeight: '100%', width: '350px', overflowY: 'hidden' }}>
+        <section style={{ ...chatStyle, color: 'white', marginBottom: '0', padding: '1em', paddingTop: '1.5em', display: 'flex', flexDirection: 'column' }}>
           <Header as='h3' fluid textAlign='center' style={{ flex: 'none', color: 'white' }}>Conversations</Header>
           <div style={{ flex: '1', overflowY: 'auto' }}>
             <HelpConversations
@@ -59,7 +76,7 @@ class HelpBox extends React.Component {
           </Button>
 
           <Button icon style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }} className='col-center'>
-            <Icon name='chat' size='big'/>
+            <Icon name='chat' size='big' />
             <p>Messages</p>
           </Button>
         </Button.Group>
