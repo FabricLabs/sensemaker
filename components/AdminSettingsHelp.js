@@ -58,30 +58,35 @@ class AdminHelp extends React.Component {
       <section>
         <Header as='h3' style={{ marginTop: '2em' }}>User Assistance</Header>
         <Segment style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '60vh', gap: '1em' }}>
-          {(help && help.conversations && help.conversations.length > 0) ? (
-            <Segment style={{ flex: 1, overflowY: 'auto', width: '50%', minHeight: '55vh', maxHeight: '55vh', padding: '0', marginBottom: '0' }}>
-              <div style={{maxWidth: '100%'}}>
-              <Menu loading={help.loading} vertical fluid style={{ border: 'none' }}>
-                {help.conversations.map((instance) => (
-                  <Menu.Item
-                    key={instance.id}
-                    onClick={() => this.openConversation(instance.id)}
-                    style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
-                  >
-                    <Icon name='mail outline' size='big' />
-                    <div style={{maxWidth: '70%'}}>
-                      <p className='help-adm-conversation' style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{instance.last_message.content}</p>
-                      {/* <p>{instance.last_message.content}</p> */}
-                      <p className='help-adm-conversation' style={{ margin: 0 }}>{this.formatDateTime(instance.last_message.created_at)}</p>
-                      {/* <p>Conversation from {this.formatDateTime(instance.created_at)}</p> */}
-                      <p>Username: <span style={{ color: '#336699' }}>{instance.creator_username}</span>
-                        - ID: <span style={{ color: '#336699' }}>{instance.creator_id}</span>
-                        - Name: <span style={{ color: '#336699' }}>{instance.creator_first_name}</span>
-                      </p>
-                    </div>
-                  </Menu.Item>
-                ))}
-              </Menu>
+          {(help && help.admin_conversations && help.admin_conversations.length > 0) ? (
+            <Segment style={{ flex: 1, overflowY: 'auto', width: '50%', minHeight: '55vh', maxHeight: '55vh', padding: '0', marginBottom: '0', overflowX: 'hidden' }}>
+              <div style={{ maxWidth: '100%' }}>
+                <Menu loading={help.loading} vertical fluid style={{ border: 'none' }}>
+                  {help.admin_conversations.map((instance) => (
+                    <Menu.Item
+                      key={instance.id}
+                      onClick={() => this.openConversation(instance.id)}
+                      style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
+                    >
+                      <Icon name='mail outline' size='big' />
+                      <div style={{ maxWidth: '40vw' }}>
+                        <p
+                          className='help-adm-conversation'
+                          style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '50%' }}
+                        >
+                          {instance.last_message.content}
+                        </p>
+                        {/* <p>{instance.last_message.content}</p> */}
+                        <p className='help-adm-conversation' style={{ margin: 0 }}>{this.formatDateTime(instance.last_message.created_at)}</p>
+                        {/* <p>Conversation from {this.formatDateTime(instance.created_at)}</p> */}
+                        <p>Username: <span style={{ color: '#336699' }}>{instance.creator_username}</span>
+                          - ID: <span style={{ color: '#336699' }}>{instance.creator_id}</span>
+                          - Name: <span style={{ color: '#336699' }}>{instance.creator_first_name}</span>
+                        </p>
+                      </div>
+                    </Menu.Item>
+                  ))}
+                </Menu>
               </div>
             </Segment>
           ) : (

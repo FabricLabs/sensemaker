@@ -18,7 +18,7 @@ class AdminHelpChat extends React.Component {
       open: true,
       messageQuery: '',
       sending: false,
-      conversation_id: 0, //this is used cause if we are in a new conversation, we update this during the proccess.      
+      conversation_id: 0, //this is used cause if we are in a new conversation, we update this during the proccess.
     };
     this.messagesEndRef = React.createRef();
   }
@@ -40,14 +40,16 @@ class AdminHelpChat extends React.Component {
     if (prevProps.conversationID != conversationID && !this.state.sending) {
       this.setState({ conversation_id: conversationID });
       this.props.fetchHelpMessages(conversationID,true); //second parameter as true for the admin flag
+      this.scrollToBottom();
     }
     if (prevProps.help != help) {
         if (!help.sending && help.sentSuccess && this.state.sending) {
         this.setState({ sending: false, conversation_id: help.conversation_id })
         this.props.fetchHelpMessages(help.conversation_id, true); //second parameter as true for the admin flag
+        this.scrollToBottom();
       }
     }
-    if (prevProps.help.messages.length != help.messages.length) {
+    if (prevProps.help.admin_messages.length != help.admin_messages.length) {
       this.scrollToBottom();
     }
   }
@@ -92,7 +94,7 @@ class AdminHelpChat extends React.Component {
     const {conversation_id} = this.state;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className='help-chat-feed' style={{ overflowY: 'auto', paddingBottom: '1em', scrollBehavior: 'smooth'}} ref={this.messagesEndRef}>
+        <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth'}} ref={this.messagesEndRef}>
           {(help && help.admin_messages && help.admin_messages.length > 0 && conversation_id != 0) ? (
             help.admin_messages.map((instance) => (
               instance.help_role === 'user' ? (
