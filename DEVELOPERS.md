@@ -5,57 +5,7 @@
 See `scripts/` for a list of available tools.
 
 ### Install
-### Ubuntu
-```
-sudo mkdir -p /media/storage/node/files
-```
-
-### MacOS
-- Homebrew
-- NVM: `./scripts/nvm/install.sh`
-- Node: `nvm install 18.19.0` (double-check documentation)
-- `brew install python3 pkg-config pixman cairo pango`
-- `ssh-keygen -t ed25519`
-- PUPPETEER_SKIP_DOWNLOAD=true npm run report:install
-- brew tap redis-stack/redis-stack
-
-Setup
-```bash
-git clone git@github.com:lttinc/jeeves.dev.git
-cd jeeves.dev
-PUPPETEER_SKIP_DOWNLOAD=true npm run report:install
-```
-
-Database Setup
-```
-sudo mysql
-```
-
-In the MySQL shell:
-```
-CREATE DATABASE db_jeeves;
-CREATE USER 'db_user_jeeves'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON db_jeeves.* TO 'db_user_jeeves'@'localhost';
-EXIT;
-```
-
-Install Knex, Seed Database
-```
-npm i -g knex # schema management tool
-knex migrate:latest # create tables
-knex seed:run # insert data
-```
-
-Ollama
-```
-./scripts/install-ollama.sh
-./scripts/install-models.sh
-```
-
-Run dependencies with docker-compose (optional)
-```
-docker-compose up -d
-```
+See `INSTALL.md` for a complete install guide.
 
 ## Principles
 1. Pull Requests should be the smallest possible set of changes implementing the desired feature.

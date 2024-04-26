@@ -17,8 +17,6 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-// const QueryForm = require('./QueryForm');
-// const Feed = require('./Feed');
 
 const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');
@@ -39,11 +37,7 @@ class ReporterView extends React.Component {
   }
 
   render() {
-    const { error, reporters } = this.props;
-
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
+    const { reporters } = this.props;
 
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={reporters.loading}>

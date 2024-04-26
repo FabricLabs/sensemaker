@@ -8,9 +8,15 @@ const {
 } = require('@fabric/core/constants');
 
 // Hosts
+const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
 const ODIN = '10.8.0.4';
 const THOR = '10.8.0.5';
+const TANGO = '10.8.0.30';
+const MANGO = '10.8.0.32';
+const FOXTROT = '10.8.0.31';
+const CLARITY = '10.8.0.34';
+const BALROG = '10.8.0.33';
 
 // Dependencies
 const fs = require('fs');
@@ -70,7 +76,15 @@ module.exports = {
       secure: false,
       temperature: 0
     },
-    socrates: {
+    hivemind: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: HIVEMIND,
+      port: 3045,
+      secure: false,
+      temperature: 0
+    },
+    /* socrates: {
       prompt: novoPrompt.toString('utf8'),
       model: 'llama2',
       host: 'socrates',
@@ -83,7 +97,49 @@ module.exports = {
       host: 'cinco',
       port: 11434,
       secure: false
+    }, */
+    /* tango: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: TANGO,
+      port: 11434,
+      secure: false
     },
+    mango: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: MANGO,
+      port: 11434,
+      secure: false
+    },
+    clarity: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'mistral',
+      host: CLARITY,
+      port: 11434,
+      secure: false
+    },
+    foxtrot: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: FOXTROT,
+      port: 11434,
+      secure: false
+    },
+    balrog: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'gemma',
+      host: BALROG,
+      port: 11434,
+      secure: false
+    }, */
+    /* chuck: {
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama2',
+      host: '192.168.127.100',
+      port: 11434,
+      secure: false
+    }, */
     // Network Agents
     /* alpha: {
       prompt: alphaPrompt.toString('utf8'),
@@ -202,6 +258,7 @@ module.exports = {
     }
   },
   redis: {
+    name: 'novo',
     username: 'default',
     host: 'localhost',
     password: null,
@@ -336,17 +393,17 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: 'ollama.trynovo.com',
+    host: '127.0.0.1',
     port: 11434,
-    secure: true,
-    models: ['llama2', 'mistral']
+    secure: false,
+    models: ['llama2']
   },
   pacer: {
     enable: true
   },
   openai: {
     enable: true,
-    key: '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',
+    key: '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',
     model: 'gpt-4-1106-preview',
     temperature: 0
   },
