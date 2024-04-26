@@ -327,6 +327,8 @@ class Jeeves extends Hub {
       model: 'llama2',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
       prompt: this.settings.prompt
     });
 

@@ -8,6 +8,7 @@ const {
 } = require('@fabric/core/constants');
 
 // Hosts
+const ALPHA = '10.8.0.50';
 const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
 const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
@@ -78,7 +79,8 @@ module.exports = {
       model: 'llama2',
       host: '127.0.0.1',
       port: 11434,
-      secure: false
+      secure: false,
+      temperature: 0
     }
   }),
   pipeline: {
