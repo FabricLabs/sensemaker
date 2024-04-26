@@ -184,6 +184,9 @@ class Dashboard extends React.Component {
   };
 
   toggleHelpBox = () => {
+    if (!this.state.helpBoxOpen) {
+      this.props.fetchHelpConversations();
+    }
     this.setState(prevState => ({
       helpBoxOpen: !prevState.helpBoxOpen
     }));
@@ -207,7 +210,8 @@ class Dashboard extends React.Component {
 
   //closes left and right sidebars
   closeSidebars = () => {
-    this.setState({ openSectionBar: false, helpBoxOpen: false });
+    this.setState({ openSectionBar: false });
+    this.closeHelpBox();
     if (this.state.informationSidebarOpen) {
       this.toggleInformationSidebar();
     }
@@ -375,7 +379,9 @@ class Dashboard extends React.Component {
     // Set the new state
     this.setState(newState);
   };
-
+  closeHelpBox = () => {
+    this.setState({ helpBoxOpen: false });
+  }
   //====================================================//
 
   render() {
@@ -424,7 +430,7 @@ class Dashboard extends React.Component {
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => this.toggleInformationSidebar()}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => {this.toggleInformationSidebar(); this.closeHelpBox();}}>
             <div>
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
@@ -497,7 +503,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => this.toggleInformationSidebar()}>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => {this.toggleInformationSidebar(); this.closeHelpBox()}}>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -642,7 +648,7 @@ class Dashboard extends React.Component {
         <Icon
           size='big'
           // name='question circle outline'
-          name={this.state.helpBoxOpen ? 'close' : 'question circle outline'} 
+          name={this.state.helpBoxOpen ? 'close' : 'question circle outline'}
           id='feedback-button'
           className='grey'
           onClick={() => this.toggleHelpBox()}
@@ -674,7 +680,7 @@ class Dashboard extends React.Component {
           documentSection={documentSection}
           documentInfo={documentInfo}
           matterTitle={matterTitle}
-          onClick={() => this.setState({ openSectionBar: false })}
+          onClick={() => {this.setState({ openSectionBar: false }); this.closeHelpBox();}}
         />
 
       </jeeves-dashboard>

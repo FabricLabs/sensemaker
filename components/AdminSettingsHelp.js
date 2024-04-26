@@ -89,7 +89,7 @@ class AdminHelp extends React.Component {
                           {instance.last_message.content}
                         </p>
                         {/* <p>{instance.last_message.content}</p> */}
-                        <p className='help-adm-conversation' style={{ margin: 0 }}>{this.formatDateTime(instance.last_message.created_at)}</p>
+                        <p className='help-adm-conversation' style={{ margin: '0', fontStyle: 'italic', fontSize: '0.8em' }}>{this.formatDateTime(instance.last_message.created_at)}</p>
                         {/* <p>Conversation from {this.formatDateTime(instance.created_at)}</p> */}
                         <p>Username: <span style={{ color: '#336699' }}>{instance.creator_username}</span>
                           - ID: <span style={{ color: '#336699' }}>{instance.creator_id}</span>
