@@ -185,6 +185,15 @@ const {
   sendFeedback,
 } = require('../actions/feedbackActions');
 
+// ## Help Actions
+const {
+  fetchHelpConversations,
+  fetchAdminHelpConversations,
+  fetchHelpMessages,
+  sendHelpMessage,
+  markMessagesRead
+} = require('../actions/helpActions');
+
 // ## Main Process
 async function main (input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
@@ -250,6 +259,7 @@ async function main (input = {}) {
       users: state.users,
       search: state.search,
       feedback: state.feedback,
+      help: state.help,
     }
   };
 
@@ -328,6 +338,11 @@ async function main (input = {}) {
     askPasswordReset: askPasswordReset,
     searchGlobal: searchGlobal,
     sendFeedback: sendFeedback,
+    fetchHelpConversations: fetchHelpConversations,
+    fetchAdminHelpConversations: fetchAdminHelpConversations,
+    fetchHelpMessages: fetchHelpMessages,
+    sendHelpMessage: sendHelpMessage,
+    markMessagesRead: markMessagesRead,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

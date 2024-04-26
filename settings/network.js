@@ -8,6 +8,7 @@ const baseline = fs.readFileSync(prompt, 'utf8');
 
 // Hosts
 // TODO: network DNS configuration
+const ALPHA = '10.8.0.50';
 const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
 const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
@@ -20,24 +21,51 @@ const CLARITY = '10.8.0.34';
 const BALROG = '10.8.0.33';
 
 module.exports = {
-  socrates: {
+  /* alpha: {
+    name: 'ALPHA',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3',
+    host: ALPHA,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  }, */
+  /* balrog: {
+    name: 'BALROG',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3:70b',
+    host: BALROG,
+    port: 3045,
+    secure: false,
+    temperature: 0
+  }, */
+  /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),
     model: 'gemma',
     host: SOCRATES,
     port: 11434,
     secure: false
-  },
-  hivemind: {
+  }, */
+  /* hivemind: {
     name: 'HIVEMIND',
     prompt: baseline.toString('utf8'),
-    model: 'gemma',
+    model: 'llama3:70b',
     host: BALROG,
     port: 3045,
     secure: false,
     temperature: 0
-  },
-  clarity: {
+  }, */
+  /* mango: {
+    name: 'MANGO',
+    prompt: baseline.toString('utf8'),
+    model: 'wizardlm2:7b-fp16',
+    host: MANGO,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  }, */
+  /* clarity: {
     name: 'CLARITY',
     prompt: baseline.toString('utf8'),
     model: 'wizardlm2:7b-fp16',
@@ -45,15 +73,8 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  },
+  }, */
   /*
-  alpha: {
-    prompt: alphaPrompt.toString('utf8'),
-    model: 'llama2',
-    host: 'jeeves.dev',
-    port: 11434,
-    secure: false
-  },
   beta: {
     prompt: novoPrompt.toString('utf8'),
     model: 'llama2',

@@ -327,6 +327,8 @@ class Jeeves extends Hub {
       model: 'llama2',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
       prompt: this.settings.prompt
     });
 
@@ -1885,6 +1887,13 @@ class Jeeves extends Hub {
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
+
+    // Help chat
+    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
+    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
+    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
+    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
+    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));  
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

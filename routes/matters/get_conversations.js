@@ -5,7 +5,11 @@ module.exports = function (req, res, next) {
     json: async () => {
       // TODO: pagination
       try {
-        const conversations = await this.db.select('*').from('conversations').where({matter_id: req.params.matterID, creator_id: req.user.id});
+        const conversations = await this.db.select('*')
+          .from('conversations')
+          .where({ matter_id: req.params.matterID })
+          .where({ creator_id: req.user.id })
+          .orderBy('created_at', 'desc');
         res.send(conversations);
       } catch (exception) {
         res.status(503);
