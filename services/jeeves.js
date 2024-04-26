@@ -327,6 +327,8 @@ class Jeeves extends Hub {
       model: 'llama2',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
       prompt: this.settings.prompt
     });
 
@@ -686,6 +688,12 @@ class Jeeves extends Hub {
         console.error('[NOVO]', '[PIPELINE]', 'Coordinator error:', error);
       }).then((decision) => {
         console.debug('[NOVO]', '[PIPELINE]', 'Coordinator decision:', decision);
+        const action = decision?.action;
+        switch (action) {
+          default:
+            console.debug('[NOVO]', '[PIPELINE]', 'Unhandled action:', action);
+            break;
+        }
       });
 
       // RAG
@@ -890,77 +898,78 @@ class Jeeves extends Hub {
           // console.debug('[NOVO]', '[TIMEDREQUEST]', 'Baseline:', baseline);
           // const agentList = options.concat({ name: 'ChatGPT', content: baseline.content }).map((x) => `- [${x.name}] ${x.content}`).join('\n');
           const agentList = options.map((x) => `- [${x.name}] ${x.content}`).join('\n');
-          const cowardice = await this.summarizer.query({
+          this.summarizer.query({
             messages: messages,
             query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
-          });
-
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Cowardice summary:', cowardice);
-
-          try {
-            const actor = new Actor({ content: cowardice.content });
-            const documentIDs = await this.db('documents').insert({
-              fabric_id: actor.id,
-              content: cowardice.content,
-              owner: 1
-            });
-
-            const responseIDs = await this.db('responses').insert({
-              actor: this.summarizer.id,
-              content: `/documents/${documentIDs[0]}`
-            });
-
-            // Update database with completed response
-            const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
-              status: 'ready',
-              content: cowardice.content,
-              updated_at: this.db.fn.now()
-            });
-
-            console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
-
-            this.emit('response', {
-              id: responseIDs[0],
-              content: cowardice.content
-            });
-          } catch (exception) {
-            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
-          }
-
-          /* const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
-          });
-          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
-
-          if (extracted && extracted.content) {
-            console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+          }).catch((exception) => {
+            console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+          }).then(async (cowardice) => {
+            console.debug('[NOVO]', '[TIMEDREQUEST]', 'Cowardice summary:', cowardice);
             try {
-              const caseCards = JSON.parse(extracted.content).map((x) => {
-                const actor = new Actor({ name: x });
-                return {
-                  type: 'CaseCard',
-                  content: {
-                    id: actor.id,
-                    title: x
-                  }
-                };
+              const actor = new Actor({ content: cowardice.content });
+              const documentIDs = await this.db('documents').insert({
+                fabric_id: actor.id,
+                content: cowardice.content,
+                owner: 1
               });
 
-              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+              const responseIDs = await this.db('responses').insert({
+                actor: this.summarizer.id,
+                content: `/documents/${documentIDs[0]}`
+              });
 
-              // Find each case in the database and reject if not found
-              /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-                cards: JSON.stringify(caseCards.map((x) => x.content.id))
-              }); */
-            /* } catch (exception) {
-              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+              // Update database with completed response
+              const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+                status: 'ready',
+                content: cowardice.content,
+                updated_at: this.db.fn.now()
+              });
+
+              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
+              this.emit('response', {
+                id: responseIDs[0],
+                content: cowardice.content
+              });
+            } catch (exception) {
+              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
             }
-          } */
 
-          const end = new Date();
-          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+            /* const extracted = await this.extractor.query({
+              query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+            });
+            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
-          resolve(cowardice);
+            if (extracted && extracted.content) {
+              console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+              try {
+                const caseCards = JSON.parse(extracted.content).map((x) => {
+                  const actor = new Actor({ name: x });
+                  return {
+                    type: 'CaseCard',
+                    content: {
+                      id: actor.id,
+                      title: x
+                    }
+                  };
+                });
+
+                console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+                // Find each case in the database and reject if not found
+                /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                  cards: JSON.stringify(caseCards.map((x) => x.content.id))
+                }); */
+              /* } catch (exception) {
+                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+              }
+            } */
+
+            const end = new Date();
+            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+
+            resolve(cowardice);
+          });
         // }).catch((exception) => {
         //   console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
         // });
@@ -1862,6 +1871,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
 
     // Documents
+    this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
     this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
@@ -1877,6 +1887,13 @@ class Jeeves extends Hub {
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
+
+    // Help chat
+    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
+    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
+    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
+    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
+    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));  
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

@@ -39,6 +39,7 @@ const JudgeHome = require('./JudgeHome');
 const JurisdictionHome = require('./JurisdictionHome');
 const StatuteHome = require('./StatuteHome');
 const OpinionHome = require('./OpinionHome');
+const DocumentDrafter = require('./DocumentDrafter');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const DocumentNewChat = require('./DocumentNewChat');
@@ -62,11 +63,12 @@ const Settings = require('./Settings');
 const AdminSettings = require('./AdminSettings');
 const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
+const FeedbackBox = require('./FeedbackBox');
+const HelpBox = require('./HelpBox');
 
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
-const FeedbackBox = require('./FeedbackBox');
 
 class Dashboard extends React.Component {
   constructor(props) {
@@ -87,7 +89,7 @@ class Dashboard extends React.Component {
         openLibrary: true,
         openConversations: false,
         openSectionBar: false,
-        feedbackBoxOpen: false,
+        helpBoxOpen: false,
 
         //iformation Sidebar states
         informationSidebarOpen: false,
@@ -181,9 +183,9 @@ class Dashboard extends React.Component {
     this.setState({ search: e.target.value });
   };
 
-  toggleFeedbackBox = () => {
+  toggleHelpBox = () => {
     this.setState(prevState => ({
-      feedbackBoxOpen: !prevState.feedbackBoxOpen
+      helpBoxOpen: !prevState.helpBoxOpen
     }));
   };
 
@@ -205,7 +207,7 @@ class Dashboard extends React.Component {
 
   //closes left and right sidebars
   closeSidebars = () => {
-    this.setState({ openSectionBar: false });
+    this.setState({ openSectionBar: false, helpBoxOpen: false });
     if (this.state.informationSidebarOpen) {
       this.toggleInformationSidebar();
     }
@@ -613,6 +615,7 @@ class Dashboard extends React.Component {
                 <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} />} />
+                <Route path="/documents/draft" element={<DocumentDrafter documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/documents/:id" element={<DocumentView documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
@@ -635,18 +638,30 @@ class Dashboard extends React.Component {
             )}
           </Container>
         </div>
-        <Popup
-          content="Give us feedback!"
-          trigger={
-            <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({ feedbackBoxOpen: true })} />
-          }
+
+        <Icon
+          size='big'
+          // name='question circle outline'
+          name={this.state.helpBoxOpen ? 'close' : 'question circle outline'} 
+          id='feedback-button'
+          className='grey'
+          onClick={() => this.toggleHelpBox()}
         />
-        <FeedbackBox
-          open={this.state.feedbackBoxOpen}
-          toggleFeedbackBox={this.toggleFeedbackBox}
+
+        {/* <FeedbackBox
+          open={this.state.helpBoxOpen}
+          toggleHelpBox={this.toggleHelpBox}
           feedbackSection={true}
           sendFeedback={this.props.sendFeedback}
           feedback={this.props.feedback}
+        /> */}
+        <HelpBox
+          open={this.state.helpBoxOpen}
+          fetchHelpConversations={this.props.fetchHelpConversations}
+          fetchHelpMessages={this.props.fetchHelpMessages}
+          sendHelpMessage={this.props.sendHelpMessage}
+          markMessagesRead={this.props.markMessagesRead}
+          help={this.props.help}
         />
 
         <InformationSidebar
