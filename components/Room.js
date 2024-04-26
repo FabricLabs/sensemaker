@@ -7,12 +7,10 @@ const {
 } = require('react-router-dom');
 
 const {
-  Card,
   Header,
   Segment
 } = require('semantic-ui-react');
 
-const QueryForm = require('./QueryForm');
 const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
 

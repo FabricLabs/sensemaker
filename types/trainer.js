@@ -180,6 +180,7 @@ class Trainer extends Service {
     return new Promise((resolve, reject) => {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
+      console.trace('[TRAINER]', 'Ingesting document:', document);
       const element = new Document({ pageContent: document.content, metadata: document.metadata });
       this.embeddings.addDocuments([element]).catch(reject).then(() => {
         resolve({ type: 'IngestedDocument', content: element });
@@ -208,7 +209,9 @@ class Trainer extends Service {
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
-      }).then((answer) => {
+      }).catch(reject).then((answer) => {
+        console.debug('[TRAINER]', 'Answer:', answer);
+        if (!answer || !answer.text) return reject(new Error('No answer provided.'));
         resolve({
           type: 'TrainerQueryResponse',
           content: answer.text,
@@ -299,7 +302,7 @@ class Trainer extends Service {
           indexName: this.settings.redis.name || 'novo-embeddings'
         });
 
-        console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        // console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
         console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
 
         /* try {

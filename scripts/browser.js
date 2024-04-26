@@ -69,13 +69,15 @@ const {
 // ## Case Actions
 const {
   fetchCases,
-  fetchCase
+  fetchCase,
+  searchCase,
 } = require('../actions/caseActions');
 
 // ## Courts Actions
 const {
   fetchCourts,
-  fetchCourt
+  fetchCourt,
+  searchCourt
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -150,6 +152,7 @@ const {
   fetchDocuments,
   fetchDocument,
   uploadDocument,
+  searchDocument,
 } = require('../actions/documentActions');
 
 // ## Matters Actions
@@ -181,6 +184,15 @@ const {
 const {
   sendFeedback,
 } = require('../actions/feedbackActions');
+
+// ## Help Actions
+const {
+  fetchHelpConversations,
+  fetchAdminHelpConversations,
+  fetchHelpMessages,
+  sendHelpMessage,
+  markMessagesRead
+} = require('../actions/helpActions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -247,12 +259,14 @@ async function main (input = {}) {
       users: state.users,
       search: state.search,
       feedback: state.feedback,
+      help: state.help,
     }
   };
 
   const mapDispatchToProps = {
     fetchCases: fetchCases,
     fetchCase: fetchCase,
+    searchCase: searchCase,
     fetchContract: fetchContract,
     signContract: signContract,
     fetchConversation: fetchConversation,
@@ -262,10 +276,12 @@ async function main (input = {}) {
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    searchCourt: searchCourt,
     fetchJurisdictions: fetchJurisdictions,
     fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    searchDocument: searchDocument,
     uploadDocument: uploadDocument,
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
@@ -322,6 +338,11 @@ async function main (input = {}) {
     askPasswordReset: askPasswordReset,
     searchGlobal: searchGlobal,
     sendFeedback: sendFeedback,
+    fetchHelpConversations: fetchHelpConversations,
+    fetchAdminHelpConversations: fetchAdminHelpConversations,
+    fetchHelpMessages: fetchHelpMessages,
+    sendHelpMessage: sendHelpMessage,
+    markMessagesRead: markMessagesRead,
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

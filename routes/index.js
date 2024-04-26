@@ -7,6 +7,7 @@ module.exports = {
     getCaseFile: require('./cases/get_cases_id_pdf.js'),
   },
   documents: {
+    create: require('./documents/create_document'),
     list: require('./documents/list_documents'),
     getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
@@ -66,7 +67,8 @@ module.exports = {
     findCourt: require('./courts/find_court'),
   },
   sessions: {
-    create: require('./sessions/create_session')
+    create: require('./sessions/create_session'),
+    get: require('./sessions/get_session'),
   },
   statutes: {
     list: require('./statutes/list_statutes'),
@@ -97,5 +99,12 @@ module.exports = {
   },
   people: {
     list: require('./people/get_people'),
+  },
+  help: {
+    getConversations: require('./help/get_conversations.js'),
+    getAdmConversations: require('./help/get_conversations_adm.js'),
+    getMessages: require('./help/get_messages.js'),
+    sendMessage: require('./help/send_message.js'),
+    setMessagesRead: require('./help/set_messages_read.js')
   }
 };
