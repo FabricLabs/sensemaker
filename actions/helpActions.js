@@ -106,6 +106,31 @@ const fetchHelpMessages = (conversation_id, isAdmin = false) => {
   };
 };
 
+//this function will get a conversation_id, and the help_role (user,admin) of the messages from that conversation
+//to mark them as read, if an user open a conversation that has messages, it will mark all the messages from the assistant as read
+//and the same goes if an assistan opens that user's conversation it will mark the user's messages as read.
+const markMessagesRead = (conversation_id, help_role) => {
+  return async (dispatch, getState) => {
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/messages/read/${conversation_id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ help_role })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }      
+    } catch (error) {
+      console.log(error);
+    }
+  };
+}
 
 const sendHelpMessage = (content, conversation_id, help_role) => {
   return async (dispatch, getState) => {
@@ -114,14 +139,13 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
     const { token } = getState().auth;
 
     try {
-      console.log("data to send:", token,content,conversation_id,help_role);
       const response = await fetch(`/messages/help/${conversation_id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({content, help_role})
+        body: JSON.stringify({ content, help_role })
       });
 
       if (!response.ok) {
@@ -142,6 +166,7 @@ module.exports = {
   fetchAdminHelpConversations,
   fetchHelpMessages,
   sendHelpMessage,
+  markMessagesRead,
   FETCH_HELP_CONVERSATIONS_REQUEST,
   FETCH_HELP_CONVERSATIONS_SUCCESS,
   FETCH_HELP_CONVERSATIONS_FAILURE,

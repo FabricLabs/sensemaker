@@ -1,5 +1,6 @@
 :root {
   --primary-color: #336699;
+  --sidebar-black: rgb(27, 28, 29);
   /* Define a variable */
 }
 
@@ -164,7 +165,7 @@
   width: 26px;
   height: 26px;
   z-index: 1000000;
-  background: linear-gradient(to bottom, grey, white);
+  background: linear-gradient(to bottom, var(--sidebar-black), white);
   border-radius: 20px;
   border: none;
 }
@@ -204,6 +205,15 @@
 	font-weight: 600;
 	position: absolute;
 	top: 15%;
+}
+
+#help-box .ui.buttons .ui.button{
+  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+  background-color: white;
+  padding-top:0.5em;
+  font-weight: 400;
+  color: var(--sidebar-black);
+
 }
 
 #help-conversations{

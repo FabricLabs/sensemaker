@@ -8,7 +8,8 @@ const {
   Segment,
   Button,
   Icon,
-  Input
+  Input,
+  Transition
 } = require('semantic-ui-react');
 
 class HelpChat extends React.Component {
@@ -19,6 +20,7 @@ class HelpChat extends React.Component {
       messageQuery: '',
       sending: false,
       conversation_id: 0, //this is used cause if we are in a new conversation, we update this during the proccess.
+      loading: false,
     };
     this.messagesEndRef = React.createRef();
   }
@@ -34,12 +36,14 @@ class HelpChat extends React.Component {
     this.scrollToBottom();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate = async (prevProps) => {
     const { help, conversationID } = this.props;
     //this updates the conversation_id state in case we switch help_conversations
     if (prevProps.conversationID != conversationID && !this.state.sending) {
-      this.setState({ conversation_id: conversationID });
+      this.setState({ conversation_id: conversationID, loading: true });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       this.props.fetchHelpMessages(conversationID);
+      this.setState({ loading: false });
     }
     if (prevProps.help != help) {
       console.log(help);
@@ -62,10 +66,10 @@ class HelpChat extends React.Component {
   scrollToBottom = () => {
     const messagesContainer = this.messagesEndRef.current;
     if (messagesContainer) {
-        // Scroll directly to the bottom by setting scrollTop to the scrollHeight
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      // Scroll directly to the bottom by setting scrollTop to the scrollHeight
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-}
+  }
 
   handleInputChange = (event) => {
     this.setState({
@@ -98,26 +102,28 @@ class HelpChat extends React.Component {
     const { help } = this.props;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <Button icon size='tiny' style={{ position: 'absolute' }} onClick={() => { this.props.closeHelpChat(); }}>
+        <Button icon style={{ position: 'absolute', backgroundColor: 'transparent' }} onClick={() => { this.props.closeHelpChat(); }}>
           <Icon name='chevron left' />
         </Button>
         {/* <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }} ref={this.messagesEndRef}> */}
         {/* <div className='help-chat-board' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }}> */}
-        <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth' }} ref={this.messagesEndRef}>
+        <Transition visible={!help.loadingMsgs}  animation='fade' duration={1000}>
+          <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth' }} ref={this.messagesEndRef}>
 
-          {(help && help.messages && help.messages.length > 0) ? (
-            help.messages.map((instance) => (
-              instance.help_role === 'user' ? (
-                <p id={instance.id} className='help-user-msg'>{instance.content}</p>
-              ) : (
-                <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
-              )
-            ))
-          ) : (
-            <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
-          )}
-          {/* <div ref={this.messagesEndRef} /> */}
-        </div>
+            {(help && help.messages && help.messages.length > 0) ? (
+              help.messages.map((instance) => (
+                instance.help_role === 'user' ? (
+                  <p id={instance.id} className='help-user-msg'>{instance.content}</p>
+                ) : (
+                  <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
+                )
+              ))
+            ) : (
+              <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
+            )}
+            {/* <div ref={this.messagesEndRef} /> */}
+          </div>
+        </Transition>
         <Input
           placeholder='Write your message...'
           name='messageQuery'

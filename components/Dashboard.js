@@ -89,7 +89,7 @@ class Dashboard extends React.Component {
         openLibrary: true,
         openConversations: false,
         openSectionBar: false,
-        feedbackBoxOpen: false,
+        helpBoxOpen: false,
 
         //iformation Sidebar states
         informationSidebarOpen: false,
@@ -183,9 +183,9 @@ class Dashboard extends React.Component {
     this.setState({ search: e.target.value });
   };
 
-  toggleFeedbackBox = () => {
+  toggleHelpBox = () => {
     this.setState(prevState => ({
-      feedbackBoxOpen: !prevState.feedbackBoxOpen
+      helpBoxOpen: !prevState.helpBoxOpen
     }));
   };
 
@@ -207,7 +207,7 @@ class Dashboard extends React.Component {
 
   //closes left and right sidebars
   closeSidebars = () => {
-    this.setState({ openSectionBar: false, feedbackBoxOpen: false});
+    this.setState({ openSectionBar: false, helpBoxOpen: false });
     if (this.state.informationSidebarOpen) {
       this.toggleInformationSidebar();
     }
@@ -638,22 +638,25 @@ class Dashboard extends React.Component {
             )}
           </Container>
         </div>
-        <Popup
-          content="Help menu"
-          trigger={
-            // <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.setState({ feedbackBoxOpen: true })} />
-            <Icon size='big' name='question circle outline' id='feedback-button' className='grey' onClick={() => this.toggleFeedbackBox()} />
-          }
+
+        <Icon
+          size='big'
+          // name='question circle outline'
+          name={this.state.helpBoxOpen ? 'close' : 'question circle outline'} 
+          id='feedback-button'
+          className='grey'
+          onClick={() => this.toggleHelpBox()}
         />
+
         {/* <FeedbackBox
-          open={this.state.feedbackBoxOpen}
-          toggleFeedbackBox={this.toggleFeedbackBox}
+          open={this.state.helpBoxOpen}
+          toggleHelpBox={this.toggleHelpBox}
           feedbackSection={true}
           sendFeedback={this.props.sendFeedback}
           feedback={this.props.feedback}
         /> */}
         <HelpBox
-          open={this.state.feedbackBoxOpen}
+          open={this.state.helpBoxOpen}
           fetchHelpConversations={this.props.fetchHelpConversations}
           fetchHelpMessages={this.props.fetchHelpMessages}
           sendHelpMessage={this.props.sendHelpMessage}

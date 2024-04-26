@@ -68,11 +68,22 @@ class AdminHelp extends React.Component {
                       onClick={() => this.openConversation(instance.id)}
                       style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
                     >
-                      <Icon name='mail outline' size='big' />
+                      {/* <Icon name='mail outline' size='big' /> */}
+                      <Icon
+                        name={
+                          (instance.last_message.help_role === 'user' && instance.last_message.is_read === 1) ||
+                            instance.last_message.help_role === 'admin' ? 'envelope open outline' : 'envelope outline'
+                        }
+                        color={
+                          (instance.last_message.help_role === 'user' && instance.last_message.is_read === 1) ||
+                          instance.last_message.help_role === 'admin' ? 'grey' : undefined
+                        }
+                        size='big'
+                      />
                       <div style={{ maxWidth: '40vw' }}>
                         <p
                           className='help-adm-conversation'
-                          style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '50%' }}
+                          style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}
                         >
                           {instance.last_message.content}
                         </p>

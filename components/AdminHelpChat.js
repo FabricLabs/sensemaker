@@ -8,7 +8,8 @@ const {
   Segment,
   Button,
   Icon,
-  Input
+  Input,
+  Transition
 } = require('semantic-ui-react');
 
 class AdminHelpChat extends React.Component {
@@ -28,7 +29,7 @@ class AdminHelpChat extends React.Component {
 
     if (conversationID) {
       this.setState({ conversation_id: conversationID });
-      this.props.fetchHelpMessages(conversationID,true); //second parameter as true for the admin flag
+      this.props.fetchHelpMessages(conversationID, true); //second parameter as true for the admin flag
     }
 
     this.scrollToBottom();
@@ -39,11 +40,11 @@ class AdminHelpChat extends React.Component {
     //this updates the conversation_id state in case we switch help_conversations
     if (prevProps.conversationID != conversationID && !this.state.sending) {
       this.setState({ conversation_id: conversationID });
-      this.props.fetchHelpMessages(conversationID,true); //second parameter as true for the admin flag
+      this.props.fetchHelpMessages(conversationID, true); //second parameter as true for the admin flag
       this.scrollToBottom();
     }
     if (prevProps.help != help) {
-        if (!help.sending && help.sentSuccess && this.state.sending) {
+      if (!help.sending && help.sentSuccess && this.state.sending) {
         this.setState({ sending: false, conversation_id: help.conversation_id })
         this.props.fetchHelpMessages(help.conversation_id, true); //second parameter as true for the admin flag
         this.scrollToBottom();
@@ -57,10 +58,10 @@ class AdminHelpChat extends React.Component {
   scrollToBottom = () => {
     const messagesContainer = this.messagesEndRef.current;
     if (messagesContainer) {
-        // Scroll directly to the bottom by setting scrollTop to the scrollHeight
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      // Scroll directly to the bottom by setting scrollTop to the scrollHeight
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-}
+  }
 
   handleInputChange = (event) => {
     this.setState({
@@ -91,22 +92,24 @@ class AdminHelpChat extends React.Component {
 
   render() {
     const { help } = this.props;
-    const {conversation_id} = this.state;
+    const { conversation_id } = this.state;
     return (
       <section style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth'}} ref={this.messagesEndRef}>
-          {(help && help.admin_messages && help.admin_messages.length > 0 && conversation_id != 0) ? (
-            help.admin_messages.map((instance) => (
-              instance.help_role === 'user' ? (
-                <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
-              ) : (
-                <p id={instance.id} className='help-user-msg'>{instance.content}</p>
-              )
-            ))
-          ) : (
-            <p className='help-welcome-msg' >What can we do to help you?</p>
-          )}
-        </div>
+        <Transition visible={!help.loadingMsgsAdmin} animation='fade' duration={1000}>
+          <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth', maxWidth: '100%' }} ref={this.messagesEndRef}>
+            {(help && help.admin_messages && help.admin_messages.length > 0 && conversation_id != 0) ? (
+              help.admin_messages.map((instance) => (
+                instance.help_role === 'user' ? (
+                  <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
+                ) : (
+                  <p id={instance.id} className='help-user-msg'>{instance.content}</p>
+                )
+              ))
+            ) : (
+              <p className='help-welcome-msg' >What can we do to help you?</p>
+            )}
+          </div>
+        </Transition>
         <Input
           placeholder='Write your message...'
           name='messageQuery'

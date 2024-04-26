@@ -27,6 +27,8 @@ const initialState = {
   sending: false,
   sentSuccess: false,
   conversation_id: null,
+  loadingMsgs: false,
+  loadingMsgsAdmin: false,
 };
 
 function inquiriesReducer(state = initialState, action) {
@@ -46,19 +48,19 @@ function inquiriesReducer(state = initialState, action) {
       console.debug('fetch help admin conversations failure:', state, action);
       return { ...state,  admin_conversations: [], error: action.payload, loading: false };
     case FETCH_HELP_MESSAGES_REQUEST:
-      return { ...state, error: null, loading: true };
+      return { ...state, error: null, loadingMsgs: true };
     case FETCH_HELP_MESSAGES_SUCCESS:
-      return { ...state, messages: action.payload, loading: false };
+      return { ...state, messages: action.payload, loadingMsgs: false };
     case FETCH_HELP_MESSAGES_FAILURE:
       console.debug('fetch help messages failure:', state, action);
-      return { ...state, error: action.payload, messages: [], loading: false };
+      return { ...state, error: action.payload, messages: [], loadingMsgs: false };
     case FETCH_ADMIN_HELP_MESSAGES_REQUEST:
-      return { ...state, error: null, loading: true };
+      return { ...state, error: null, loadingMsgsAdmin: true };
     case FETCH_ADMIN_HELP_MESSAGES_SUCCESS:
-      return { ...state, admin_messages: action.payload, loading: false };
+      return { ...state, admin_messages: action.payload, loadingMsgsAdmin: false };
     case FETCH_ADMIN_HELP_MESSAGES_FAILURE:
       console.debug('fetch help messages failure:', state, action);
-      return { ...state, error: action.payload, admin_messages: [], loading: false };
+      return { ...state, error: action.payload, admin_messages: [], loadingMsgsAdmin: false };
     case SEND_HELP_MESSAGE_REQUEST:
       return { ...state, sentSuccess: false, error: null, sending: true };
     case SEND_HELP_MESSAGE_SUCCESS:
