@@ -22,7 +22,7 @@
     "serve:docs": "fabric-http docs",
     "setup": "knex migrate:latest",
     "start": "npm run build && node --max-old-space-size=8192 scripts/node.js",
-    "test": "mocha tests/getmatters.test.js",
+    "test": "mocha tests",
     "upgrade": "knex migrate:latest",
     "watch": "rollup -c -w"
   },
