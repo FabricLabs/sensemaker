@@ -48,6 +48,7 @@ class AdminHelp extends React.Component {
   openConversation = (id) => {
     console.log("conversation clicked:", id);
     this.setState({ displayChat: true, conversation_id: id });
+    this.props.markMessagesRead(id,'user');
   }
 
   render() {
@@ -72,7 +73,7 @@ class AdminHelp extends React.Component {
                       <Icon
                         name={
                           (instance.last_message.help_role === 'user' && instance.last_message.is_read === 1) ||
-                            instance.last_message.help_role === 'admin' ? 'envelope open outline' : 'envelope outline'
+                            instance.last_message.help_role === 'admin' ? 'envelope open outline' : 'envelope'
                         }
                         color={
                           (instance.last_message.help_role === 'user' && instance.last_message.is_read === 1) ||

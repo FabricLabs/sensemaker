@@ -660,6 +660,7 @@ class Dashboard extends React.Component {
           fetchHelpConversations={this.props.fetchHelpConversations}
           fetchHelpMessages={this.props.fetchHelpMessages}
           sendHelpMessage={this.props.sendHelpMessage}
+          markMessagesRead={this.props.markMessagesRead}
           help={this.props.help}
         />
 

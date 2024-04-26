@@ -107,7 +107,7 @@ class HelpChat extends React.Component {
         </Button>
         {/* <div className='help-messages' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }} ref={this.messagesEndRef}> */}
         {/* <div className='help-chat-board' style={{ flex: 1, overflowY: 'auto', paddingBottom: '1em' }}> */}
-        <Transition visible={!help.loadingMsgs}  animation='fade' duration={1000}>
+        <Transition visible={!help.loadingMsgs} animation='fade' duration={1000}>
           <div className='help-chat-feed' style={{ overflowY: 'auto', scrollBehavior: 'smooth' }} ref={this.messagesEndRef}>
 
             {(help && help.messages && help.messages.length > 0) ? (
@@ -118,8 +118,9 @@ class HelpChat extends React.Component {
                   <p id={instance.id} className='help-admin-msg'>{instance.content}</p>
                 )
               ))
-            ) : (
-              <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
+            ) : (!help.loadingMsgs && (
+                  <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
+                )
             )}
             {/* <div ref={this.messagesEndRef} /> */}
           </div>

@@ -80,5 +80,6 @@ module.exports = {
     getAdmConversations: require('./help/get_conversations_adm.js'),
     getMessages: require('./help/get_messages.js'),
     sendMessage: require('./help/send_message.js'),
+    setMessagesRead: require('./help/set_messages_read.js')
   }
 };

@@ -113,8 +113,8 @@ const markMessagesRead = (conversation_id, help_role) => {
   return async (dispatch, getState) => {
     const { token } = getState().auth;
     try {
-      const response = await fetch(`/messages/read/${conversation_id}`, {
-        method: 'POST',
+      const response = await fetch(`/messages/help/${conversation_id}`, {
+        method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
