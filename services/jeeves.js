@@ -324,7 +324,7 @@ class Jeeves extends Hub {
     // Sensemaker
     this.sensemaker = new Agent({
       name: 'SENSEMAKER',
-      model: 'llama2',
+      model: 'llama3',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
       port: this.settings.ollama.port,
@@ -343,7 +343,7 @@ class Jeeves extends Hub {
     // this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
 
     // Well-known Models
-    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama3', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
@@ -851,7 +851,7 @@ class Jeeves extends Hub {
         // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
         return this.agents[name].query({ query, messages, /* requery: true */ });
       }).concat([
-        this.chatgpt.query({ query, messages, requery: true }),
+        // this.chatgpt.query({ query, messages, requery: true }),
         this.trainer.query({ query, messages }),
       ]);
 
@@ -3834,7 +3834,7 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
-      this.alpha.query(request).catch(reject).then(resolve);
+      this.sensemaker.query(request).catch(reject).then(resolve);
     });
   }
 
