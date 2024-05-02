@@ -324,9 +324,11 @@ class Jeeves extends Hub {
     // Sensemaker
     this.sensemaker = new Agent({
       name: 'SENSEMAKER',
-      model: 'llama2',
+      model: 'llama3',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
       prompt: this.settings.prompt
     });
 
@@ -341,7 +343,7 @@ class Jeeves extends Hub {
     // this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
 
     // Well-known Models
-    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama3', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
@@ -849,7 +851,7 @@ class Jeeves extends Hub {
         // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
         return this.agents[name].query({ query, messages, /* requery: true */ });
       }).concat([
-        this.chatgpt.query({ query, messages, requery: true }),
+        // this.chatgpt.query({ query, messages, requery: true }),
         this.trainer.query({ query, messages }),
       ]);
 
@@ -1937,126 +1939,10 @@ class Jeeves extends Hub {
     });
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
-    this.http._addRoute('POST', '/invitations', async (req, res) => {
-      const { email } = req.body;
-
-      try {
-        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        if (!user || user.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        }
-
-        // Generate a unique token
-        let uniqueTokenFound = false;
-        let invitationToken = '';
-
-        while (!uniqueTokenFound) {
-          invitationToken = crypto.randomBytes(20).toString('hex');
-          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-          if (!tokenExists) {
-            uniqueTokenFound = true;
-          }
-        };
-
-        //Flag for Eric
-        //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
-        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
-        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
-        // TODO: serve from assets (@nplayer89)
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
-
-        await this.email.send({
-          from: 'agent@trynovo.com',
-          to: email,
-          subject: 'Invitation to join Novo',
-          html: htmlContent
-        });
-
-        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
-        if (!existingInvite) {
-          const invitation = await this.db('invitations').insert({
-            sender_id: req.user.id,
-            target: email,
-            token: invitationToken
-          });
-
-          // update the inquiry status to invited from the waitlist
-          const inquiryInvitedStatus = await this.db('inquiries')
-            .where({ email: email })
-            .update({
-              updated_at: new Date(),
-              status: 'invited',
-            });
-          if (!inquiryInvitedStatus) {
-            return res.status(500).json({ message: 'Error updating the inquiry.' });
-          }
-        } else {
-          return res.status(500).json({ message: 'Error: Invitation already exist.' });
-        }
-        res.send({
-          message: 'Invitation created successfully!'
-        });
-      } catch (error) {
-        console.error('Error occurred:', error);
-        res.status(500).json({ message: 'Error sending invitation.' });
-      }
-    });
+    this.http._addRoute('POST', '/invitations', ROUTES.invitations.createInvitations.bind(this) );
 
     //this endponint resends invitations to the ones created before
-    this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-      try {
-        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        if (!user || user.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        }
-
-        // Generate a unique token
-        let uniqueTokenFound = false;
-        let invitationToken = '';
-        while (!uniqueTokenFound) {
-          invitationToken = crypto.randomBytes(20).toString('hex');
-          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-          if (!tokenExists) {
-            uniqueTokenFound = true;
-          }
-        };
-
-        const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
-        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
-        await this.email.send({
-          from: 'agent@trynovo.com',
-          to: invitation.target,
-          subject: 'Invitation to join Novo',
-          html: htmlContent
-        });
-
-        const updateResult = await this.db('invitations')
-          .where({ id: req.params.id })
-          .increment('invitation_count', 1)
-          .update({
-            updated_at: new Date(),
-            sender_id: req.user.id,
-            token: invitationToken
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation count.' });
-        }
-
-        res.send({
-          message: 'Invitation re-sent successfully!'
-        });
-      } catch (error) {
-        console.error('Error occurred:', error);
-        res.status(500).json({ message: 'Error sending invitation.' });
-      }
-    });
+    this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
 
 
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
@@ -2067,102 +1953,16 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/invitations', ROUTES.invitations.getInvitations.bind(this));
-
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
     //endpoint to change the status of an invitation when its accepted
-    this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {
-      const invitationToken = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation token' });
-        }
-
-        const updateResult = await this.db('invitations')
-          .where({ token: invitationToken })
-          .update({
-            updated_at: new Date(),
-            status: 'accepted',
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation status.' });
-        }
-
-        res.send({
-          message: 'Invitation accepted successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/accept/:id', ROUTES.invitations.acceptInvitation.bind(this));
 
     //endpoint to change the status of an invitation when its declined
-    this.http._addRoute('PATCH', '/invitations/decline/:id', async (req, res) => {
-      const invitationToken = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation token' });
-        }
-
-        const updateResult = await this.db('invitations')
-          .where({ token: invitationToken })
-          .update({
-            updated_at: new Date(),
-            status: 'declined',
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation status.' });
-        }
-
-        res.send({
-          message: 'Invitation declined successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/decline/:id', ROUTES.invitations.declineInvitation.bind(this));
 
     //endpoint to delete invitation from admin panel
-    this.http._addRoute('PATCH', '/invitations/delete/:id', async (req, res) => {
-      const invitationID = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ id: invitationID }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation' });
-        }
-
-        // update the invitation status to deleted from the invitations list
-        const invitationDeleteStatus = await this.db('invitations')
-          .where({ id: invitationID })
-          .update({
-            updated_at: new Date(),
-            status: 'deleted',
-          });
-
-        if (!invitationDeleteStatus) {
-          return res.status(500).json({ message: 'Error deleting the invitation.' });
-        }
-
-        res.send({
-          message: 'Invitation deleted successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/delete/:id', ROUTES.invitations.deleteInvitation.bind(this));
 
     this.http._addRoute('GET', '/dockets', async (req, res) => {
       const dockets = await this.courtlistener.paginateDockets();
@@ -2174,126 +1974,15 @@ class Jeeves extends Hub {
       res.send(documents);
     });
 
-    this.http._addRoute('POST', '/users', async (req, res) => {
-      const { username, password } = req.body;
+    this.http._addRoute('POST', '/users', ROUTES.users.createUser.bind(this));
 
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt
-        });
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/users/full', async (req, res) => {
-      const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
-
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Check if the email already exists
-        const existingEmail = await this.db('users').where('email', email).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Email already registered.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          firm_name: firmName,
-          firm_size: firmSize,
-          firm_name: firmName ? firmName : null,
-          firm_size: firmSize || firmSize === 0 ? firmSize : null,
-        });
-
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/users/full',ROUTES.users.createFullUser.bind(this));
 
     //endpoint to check if the username is available
-    this.http._addRoute('POST', '/users/:id', async (req, res) => {
-      const  username = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ username: username }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
-        }
-        res.json({ message: 'Username avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
-
+    this.http._addRoute('POST', '/users/:id', ROUTES.users.checkExistingUsername.bind(this));
 
     //endpoint to check if the email is available
-    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
-      const  email = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ email: email }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
-        }
-        res.json({ message: 'Email avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-    });
-
+    this.http._addRoute('POST', '/users/email/:id', ROUTES.users.checkExistingEmail.bind(this));
     this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
@@ -2327,63 +2016,9 @@ class Jeeves extends Hub {
       }
     });
 
-    this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
-      const { oldPassword, newPassword } = req.body;
+    this.http._addRoute('POST', '/passwordChange', ROUTES.account.changePassword.bind(this));
 
-      try {
-        const user = await this.db('users').where('id', req.user.id).first();
-        if (!user || !compareSync(oldPassword, user.password)) {
-          return res.status(401).json({ message: 'Invalid password.' });
-        }
-
-        // Generate a salt and hash the new password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(newPassword, salt);
-
-        // Update the user's password in the database
-        await this.db('users').where('id', user.id).update({
-          password: hashedPassword,
-          salt: salt
-        });
-
-        return res.json({
-          message: 'Password updated successfully.',
-        });
-      } catch (error) {
-        console.error('Error authenticating user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/usernameChange', async (req, res, next) => {
-      const { newUsername, password } = req.body;
-
-      try {
-        const user = await this.db('users').where('id', req.user.id).first();
-        //check for the password
-        if (!user || !compareSync(password, user.password)) {
-          return res.status(401).json({ message: 'Invalid password.' });
-        }
-
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', newUsername).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Update the user's username in the database
-        await this.db('users').where('id', user.id).update({
-          username: newUsername,
-        });
-
-        return res.json({
-          message: 'Username updated successfully.',
-        });
-      } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/usernameChange', ROUTES.account.changeUsername.bind(this));
 
     //this is the function that generates a password reset token
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
@@ -2508,33 +2143,7 @@ class Jeeves extends Hub {
     });
 
     //route to edit a conversation title
-    this.http._addRoute('PATCH', '/conversations/:id', async (req, res, next) => {
-      const { title } = req.body;
-
-      try {
-        const conversationEditing = await this.db('conversations')
-        .where({
-          id: req.params.id,
-          creator_id: req.user.id  // validates if the user editing is the creator of the conversation
-        }).first();
-
-        if (!conversationEditing) {
-          return res.status(401).json({ message: 'Invalid conversation.' });
-        }
-
-        // Update the conversation's title in the database
-        await this.db('conversations').where('id', req.params.id).update({
-          title: title
-        });
-
-        return res.json({
-          message: 'Title edited successfully.',
-        });
-      } catch (error) {
-        console.error('Error editing title: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
 
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
@@ -2660,88 +2269,14 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
-      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
-      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
-      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
-      res.send(pdf); */
-      res.redirect(instance.harvard_case_law_pdf);
-    });
+    this.http._addRoute('GET', '/cases/:id/pdf', ROUTES.cases.getCaseFile.bind(this));
 
-    this.http._addRoute('GET', '/conversations', async (req, res, next) => {
-      res.format({
-        json: async () => {
-          let results = [];
+    this.http._addRoute('GET', '/conversations', ROUTES.conversations.getConversations.bind(this));
 
-          // TODO: re-evaluate security of `is_admin` check
-          if (req.user?.state?.roles?.includes('admin')) {
-            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name','matter_id','file_fabric_id').from('conversations as c').where('help_chat', 0).orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
-          } else {
-            results = await this.db.select('id', 'title', 'created_at','matter_id','file_fabric_id').from('conversations').where({ creator_id: req.user.id }).where('help_chat', 0).orderBy('created_at', 'desc');
-            // TODO: update the conversation upon change (new user message, new agent message)
-            // TODO: sort conversations by updated_at (below line)
-            // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
-          }
+    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
+    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.findCourt.bind(this));
 
-          res.send(results);
-        },
-        html: () => {
-          // TODO: provide state
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    // this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
-    //   const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
-    //   res.format({
-    //     json: () => {
-    //       if (!court) return res.status(404).json({ message: 'Court not found.' });
-    //       res.send(court);
-    //     },
-    //     html: () => {
-    //       // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-    //       return res.send(this.applicationString);
-    //     }
-    //   });
-    // });
-
-    this.http._addRoute('GET', '/people', async (req, res, next) => {
-      const page = req.query.page || 1;
-      const people = await this.db.select(
-        'id as dbid',
-        'fabric_id as id',
-        'full_name',
-        'name_first',
-        'name_middle',
-        'name_last',
-        'name_suffix',
-        'date_of_birth',
-        'date_of_death',
-        'birth_city',
-        'birth_state',
-        'courtlistener_id'
-      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: page
-      });
-
-      res.setHeader('X-Fabric-Type', 'Collection');
-      res.setHeader('X-Pagination', true);
-      res.setHeader('X-Pagination-Current', `${people.pagination.from}-${people.pagination.to}`);
-      res.setHeader('X-Pagination-Per', people.pagination.perPage);
-      res.setHeader('X-Pagination-Total', people.pagination.total);
-
-      res.format({
-        json: () => {
-          res.send(people.data);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      })
-    });
+    this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
 
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
       const person = await this.db.select(
@@ -2769,56 +2304,9 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/documents', async (req, res, next) => {
-      const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: currentPage
-      });
+    this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
 
-      res.format({
-        json: () => {
-          // Create response
-          const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
-            return {
-              fabric_id: doc.fabric_id,
-              created_at: doc.created_at,
-              description: doc.description,
-              sha1: doc.sha1,
-              sha256: doc.sha256,
-              size: doc.file_size,
-              title: doc.title,
-              file_id: doc.file_id,
-            };
-          }) : [];
-
-          // Set Pagination Headers
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
-          res.setHeader('X-Pagination-Per', documents.pagination.perPage);
-          res.setHeader('X-Pagination-Total', documents.pagination.total);
-
-          return res.send(response);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/documents/:fabricID', async (req, res, next) => {
-      const document = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id', ).where('fabric_id', req.params.fabricID).first();
-      res.format({
-        json: () => {
-          return res.send(document);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/documents/:fabricID',ROUTES.documents.getDocumentByID.bind(this));
 
     this.http._addRoute('GET', '/opinions', async (req, res, next) => {
       const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
@@ -2886,42 +2374,9 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/messages', async (req, res, next) => {
-      let messages = [];
+    this.http._addRoute('GET', '/messages', ROUTES.messages.getMessages.bind(this));
 
-      if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
-          conversation_id: req.query.conversation_id
-        }).orderBy('created_at', 'asc');
-      } else {
-        // messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
-      }
-
-      messages = messages.map((m) => {
-        return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
-      });
-
-      res.send(messages);
-    });
-
-    this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();
-      const messages = await this.db('messages')
-        .whereIn('id', conversation.log)
-        .select('id', 'content', 'created_at');
-
-      conversation.messages = messages;
-
-      res.format({
-        json: () => {
-          res.send(conversation);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
       const contract = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
@@ -4379,7 +3834,7 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
-      this.alpha.query(request).catch(reject).then(resolve);
+      this.sensemaker.query(request).catch(reject).then(resolve);
     });
   }
 

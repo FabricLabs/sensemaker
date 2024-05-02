@@ -8,6 +8,7 @@ const {
 } = require('@fabric/core/constants');
 
 // Hosts
+const ALPHA = '10.8.0.50';
 const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
 const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
@@ -75,10 +76,11 @@ module.exports = {
     local: {
       name: 'MAINSTAY',
       prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
+      model: 'llama3',
       host: '127.0.0.1',
       port: 11434,
-      secure: false
+      secure: false,
+      temperature: 0
     }
   }),
   pipeline: {
@@ -122,7 +124,7 @@ module.exports = {
   },
   redis: {
     name: 'novo',
-    host: 'balrog',
+    host: '127.0.0.1',
     username: 'default',
     password: null,
     port: 6379,
@@ -260,8 +262,8 @@ module.exports = {
     host: '127.0.0.1',
     port: 11434,
     secure: false,
-    model: 'gemma', // default model
-    models: ['llama2', 'mistral', 'gemma'] // models to "prime" (preload)
+    model: 'llama3', // default model
+    models: ['llama2', 'mistral', 'gemma', 'llama3', 'llama3:70b'] // models to "prime" (preload)
   },
   pacer: {
     enable: true
@@ -269,7 +271,7 @@ module.exports = {
   openai: {
     enable: true,
     key: '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',
-    model: 'gpt-4-1106-preview',
+    model: 'gpt-4-turbo',
     temperature: 0
   },
   twilio: {
