@@ -266,6 +266,8 @@ class Agent extends Service {
   async query (request) {
     return new Promise(async (resolve, reject) => {
       console.debug('[AGENT]', 'Name:', this.settings.name);
+      console.debug('[AGENT]', 'Host:', this.settings.host);
+      console.debug('[AGENT]', 'Model:', this.settings.model);
       console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
       console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
       console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
