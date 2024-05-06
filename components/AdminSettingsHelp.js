@@ -25,8 +25,8 @@ class AdminHelp extends React.Component {
     this.state = {
       conversation_id: null,
       displayChat: false,
-      showAll: true, // state for pending checkbox
-      showUnread: false, // state for accepted checkbox
+      showAll: true,
+      showUnread: false,
     };
   }
 
@@ -54,11 +54,6 @@ class AdminHelp extends React.Component {
     this.props.markMessagesRead(id, 'user');
   }
 
-  // toggleCheckbox = (checkboxName) => {
-  //   this.setState(prevState => ({
-  //     [checkboxName]: !prevState[checkboxName]
-  //   }));
-  // }
 
   toggleCheckbox = (checkboxName) => {
     if (checkboxName === 'showAll' && this.state.showUnread) {
@@ -93,18 +88,6 @@ class AdminHelp extends React.Component {
               basic
               style={{ border: 'none', backgroundColor: 'transparent', boxShadow: 'none' }}
             />
-            {/* <Checkbox
-              label='Show All'
-              name='showAll'
-              onChange={() => this.toggleCheckbox('showAll')}
-              defaultChecked
-            />
-            <Checkbox
-              label='Show only Unread'
-              name='showUnread'
-              onChange={() => this.toggleCheckbox('showUnread')}
-
-            /> */}
             <Checkbox
               label='Show All'
               name='showAll'
@@ -118,17 +101,8 @@ class AdminHelp extends React.Component {
               onChange={() => this.toggleCheckbox('showUnread')}
               style={{marginLeft: '1em'}}
             />
-            {/* <Input
-              icon='search'
-              placeholder='Find by Email/Sender'
-              name='searchQuery'
-              onChange={this.handleInputChange}
-              style={{ marginLeft: '20px' }}
-            >
-            </Input> */}
           </div>
         </div>
-        {/* <Header as='h3' style={{ marginTop: '2em' }}>User Assistance</Header> */}
         <Segment style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', height: '60vh', gap: '1em' }}>
           {(help && help.admin_conversations && help.admin_conversations.length > 0) ? (
             <Segment style={{ flex: 1, overflowY: 'auto', width: '50%', minHeight: '55vh', maxHeight: '55vh', padding: '0', marginBottom: '0', overflowX: 'hidden' }}>
@@ -142,7 +116,6 @@ class AdminHelp extends React.Component {
                         onClick={() => this.openConversation(instance.id)}
                         style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
                       >
-                        {/* <Icon name='mail outline' size='big' /> */}
                         <Icon
                           name={
                             (instance.last_message.help_role === 'user' && instance.last_message.is_read === 1) ||
@@ -161,9 +134,7 @@ class AdminHelp extends React.Component {
                           >
                             {instance.last_message.content}
                           </p>
-                          {/* <p>{instance.last_message.content}</p> */}
                           <p className='help-adm-conversation' style={{ margin: '0', fontStyle: 'italic', fontSize: '0.8em' }}>{this.formatDateTime(instance.last_message.created_at)}</p>
-                          {/* <p>Conversation from {this.formatDateTime(instance.created_at)}</p> */}
                           <p>Username: <span style={{ color: '#336699' }}>{instance.creator_username}</span>
                             - ID: <span style={{ color: '#336699' }}>{instance.creator_id}</span>
                             - Name: <span style={{ color: '#336699' }}>{instance.creator_first_name}</span>

@@ -234,6 +234,22 @@
   margin-bottom: 1rem;
 }
 
+@keyframes jiggle {
+  0% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+  100% {
+    transform: rotate(-5deg);
+  }
+}
+
+.jiggle-animation {
+  animation: jiggle 0.5s ease infinite;
+}
+
 body {
   background: #fff;
 }
