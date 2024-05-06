@@ -224,6 +224,16 @@
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
 
+.help-section-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 1em;
+  align-items: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
 body {
   background: #fff;
 }

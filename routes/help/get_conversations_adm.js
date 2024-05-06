@@ -17,7 +17,7 @@ module.exports = function (req, res, next) {
             'users.first_name as creator_first_name'
           )
           .where({ 'conversations.help_chat': 1 })
-          .orderBy('conversations.created_at', 'desc');
+          .orderBy('conversations.updated_at', 'desc');
 
         for (let conversation of conversations) {
           const lastMessage = await this.db('messages')
