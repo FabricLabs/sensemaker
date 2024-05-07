@@ -80,7 +80,10 @@ class Agent extends Service {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
       constraints: {
-        max_tokens: 4096
+        max_tokens: 4096,
+        tokens: {
+          max: 4096
+        }
       },
       mistral: {
         authority: 'https://mistral.on.fabric.pub'
@@ -318,7 +321,7 @@ class Agent extends Service {
               keep_alive: -1,
               prompt: this.prompt,
               options: {
-                num_ctx: 4096, // TODO: make this configurable
+                num_ctx: this.settings.constraints.tokens.max,
                 temperature: (this.settings.temperature) ? this.settings.temperature : 0,
               },
               messages: sample,
