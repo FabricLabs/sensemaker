@@ -224,6 +224,32 @@
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
 
+.help-section-head {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 1em;
+  align-items: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+@keyframes jiggle {
+  0% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+  100% {
+    transform: rotate(-5deg);
+  }
+}
+
+.jiggle-animation {
+  animation: jiggle 0.5s ease infinite;
+}
+
 body {
   background: #fff;
 }
