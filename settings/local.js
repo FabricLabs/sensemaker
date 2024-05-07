@@ -73,7 +73,7 @@ module.exports = {
   },
   workers: 8,
   agents: merge({}, network, {
-    local: {
+    /* local: {
       name: 'MAINSTAY',
       prompt: novoPrompt.toString('utf8'),
       model: 'llama3',
@@ -81,7 +81,7 @@ module.exports = {
       port: 11434,
       secure: false,
       temperature: 0
-    }
+    } */
   }),
   pipeline: {
     enable: false,
@@ -263,7 +263,7 @@ module.exports = {
     port: 11434,
     secure: false,
     model: 'llama3', // default model
-    models: ['llama2', 'mistral', 'gemma', 'llama3', 'llama3:70b'] // models to "prime" (preload)
+    models: ['llama2', 'mistral', 'gemma', 'llama3'] // models to "prime" (preload)
   },
   pacer: {
     enable: true

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Baseline Prompt
-const prompt = path.join(__dirname, '../prompts/baseline.txt');
+const prompt = path.join(__dirname, '../prompts/novo.txt');
 const baseline = fs.readFileSync(prompt, 'utf8');
 
 // Hosts
