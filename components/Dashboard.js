@@ -215,9 +215,9 @@ class Dashboard extends React.Component {
     if (!this.state.helpBoxOpen) {
       this.props.fetchHelpConversations();
     }
+    this.setState({helpNotification: false,});
     this.setState(prevState => ({
       helpBoxOpen: !prevState.helpBoxOpen,
-      helpNotification: false,
     }));
   };
 
