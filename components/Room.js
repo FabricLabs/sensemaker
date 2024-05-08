@@ -84,7 +84,7 @@ class Conversation extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-    console.log('docs en el room',this.props.documents.document);
+    
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
