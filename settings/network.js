@@ -3,7 +3,9 @@
 // Dependencies
 const fs = require('fs');
 const path = require('path');
-const prompt = path.join(__dirname, '../prompts/baseline.txt');
+
+// Baseline Prompt
+const prompt = path.join(__dirname, '../prompts/novo.txt');
 const baseline = fs.readFileSync(prompt, 'utf8');
 
 // Hosts
@@ -15,12 +17,22 @@ const YMIR = '10.8.0.3';
 const ODIN = '10.8.0.4';
 const THOR = '10.8.0.5';
 const TANGO = '10.8.0.30';
-const MANGO = '10.8.0.32';
 const FOXTROT = '10.8.0.31';
-const CLARITY = '10.8.0.34';
+const MANGO = '10.8.0.32';
 const BALROG = '10.8.0.33';
+const CLARITY = '10.8.0.34';
+const DURINSBANE = '10.8.0.35';
 
 module.exports = {
+  local: {
+    name: 'LOCAL',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3',
+    host: 'localhost',
+    port: 11434,
+    secure: false,
+    temperature: 0
+  },
   /* alpha: {
     name: 'ALPHA',
     prompt: baseline.toString('utf8'),
@@ -30,15 +42,24 @@ module.exports = {
     secure: false,
     temperature: 0
   }, */
-  /* balrog: {
+  balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
     model: 'llama3:70b',
     host: BALROG,
-    port: 3045,
+    port: 11434,
     secure: false,
     temperature: 0
-  }, */
+  },
+  durinsbane: {
+    name: 'DURINSBANE',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3:70b',
+    host: DURINSBANE,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  },
   /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),

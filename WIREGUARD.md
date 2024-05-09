@@ -34,8 +34,7 @@ sudo cat ~/wg0node.key | wg pubkey | sudo tee ~/wg0node.pub
 ## Create Wireguard Config
 
 create the file `/etc/wireguard/wg0.conf`
-<br>
-<br>
+
 copy the following into the file:
 ```
 [Interface]
@@ -50,6 +49,7 @@ EndPoint = 65.109.159.101:51820
 AllowedIPs = 10.8.0.0/24
 PersistentKeepalive = 25
 ```
+
 ### Start Wireguard VPN
 Using the CLI:
 <br>
