@@ -49,7 +49,7 @@ class Conversation extends React.Component {
   }
 
   fetchData = async (id) => {
-    // Assuming you have a method to fetch a conversation by ID
+    await this.props.fetchConversations();
     const actual = this.props.conversations.find(conversation => conversation.id == id);
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
@@ -71,6 +71,7 @@ class Conversation extends React.Component {
 
   render() {
     const { id, chat, messages } = this.props;
+    console.log('entro al room');
 
     const componentStyle = {
       display: 'absolute',
@@ -84,7 +85,7 @@ class Conversation extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-    
+
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
@@ -102,6 +103,7 @@ class Conversation extends React.Component {
           actualConversation={this.state.actualConversation}
           documentInfo={this.state.documentInfo}
           documentInfoSidebar={this.props.documentInfoSidebar}
+          fetchData={this.fetchData}
         />
       </fabric-component>
 

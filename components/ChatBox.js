@@ -10,6 +10,8 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 const hark = require('hark');
+const { Navigate } = require('react-router-dom');
+
 
 const toRelativeTime = require('../functions/toRelativeTime');
 
@@ -63,6 +65,7 @@ class ChatBox extends React.Component {
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
+
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -78,7 +81,7 @@ class ChatBox extends React.Component {
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const { messages } = this.props.chat;
 
     //here we store the last message from prevProps and current messages
@@ -97,7 +100,6 @@ class ChatBox extends React.Component {
       (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
-
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
@@ -107,16 +109,17 @@ class ChatBox extends React.Component {
 
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
-          if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
-            this.setState({ generatingReponse: true });
-          }
+          this.setState({ generatingReponse: true });
+
+          // if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
+          //   this.setState({ generatingReponse: true });
+          // }
         }
       }
       this.scrollToBottom();
     }
+
   }
-
-
 
   componentWillUnmount() {
 
@@ -271,6 +274,9 @@ class ChatBox extends React.Component {
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+    if(this.props.conversationID && this.props.fetchData){
+      this.props.fetchData(this.props.conversationID);
+    }
   }
 
   regenerateAnswer = (event) => {
@@ -558,7 +564,8 @@ class ChatBox extends React.Component {
 
   render() {
     const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
-    const { messages } = this.props.chat;
+    const { messages, message } = this.props.chat;
+
     const {
       loading,
       generatingReponse,
@@ -566,7 +573,7 @@ class ChatBox extends React.Component {
       query,
       windowWidth,
       windowHeight,
-      checkingMessageID
+      checkingMessageID,
     } = this.state;
 
     const {
@@ -625,6 +632,10 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
     };
 
+    if (message?.conversation && !conversationID && !matterID && !caseID) {
+      return <Navigate to={`/conversations/${message.conversation}`} replace />;
+    }
+
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
@@ -672,7 +683,7 @@ class ChatBox extends React.Component {
           )}
           {/* when we open a previous conversation, this is the title that shows */}
           {(conversationID && actualConversation) && (
-            <div className='conversation-title-container' >
+            <div className='conversation-title-container fade-in' >
               {/* this is the call for the conversation title rendering, that lets you edit the title of the conversation */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
