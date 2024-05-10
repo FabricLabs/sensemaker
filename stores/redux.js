@@ -26,6 +26,7 @@ const usersReducer = require('../reducers/usersReducer');
 const searchReducer = require('../reducers/searchReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
 const reportersReducer = require('../reducers/reportersReducer');
+const helpReducer = require('../reducers/helpReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -50,6 +51,7 @@ const rootReducer = combineReducers({
   search: searchReducer,
   feedback: feedbackReducer,
   reporters: reportersReducer,
+  help: helpReducer,
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));
