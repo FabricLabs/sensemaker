@@ -8,6 +8,7 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const HelpConversations = require('./HelpConversations');
+const HelpFaq = require('./HelpFaq');
 
 const {
   Segment,
@@ -25,6 +26,8 @@ class HelpBox extends React.Component {
     this.state = {
       open: true,
       windowHeight: window.innerHeight,
+      showFaq: true,
+      showConversations: false,
     };
   }
 
@@ -37,6 +40,9 @@ class HelpBox extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
+    if (!prevProps.open && this.props.open) {
+      this.setState({ showFaq: true, showConversations: false });
+    }
 
   }
 
@@ -49,7 +55,7 @@ class HelpBox extends React.Component {
 
 
   render() {
-    const { windowHeight } = this.state;
+    const { windowHeight, showFaq, showConversations } = this.state;
 
     //a few fixes for laptops and bigger screens
     const heightStyle = windowHeight > 720 ? { height: '650px' } : { height: '450px' };
@@ -59,24 +65,40 @@ class HelpBox extends React.Component {
     return (
       <Segment className="fade-in" id='help-box' fluid style={{ ...heightStyle, ...displayStyle, padding: '0', maxHeight: '100%', width: '350px', overflowY: 'hidden' }}>
         <section style={{ ...chatStyle, color: 'white', marginBottom: '0', padding: '1em', paddingTop: '1.5em', display: 'flex', flexDirection: 'column' }}>
-          <Header as='h3' fluid textAlign='center' style={{ flex: 'none', color: 'white' }}>Conversations</Header>
+          {showFaq ?
+            (<Header as='h3' fluid textAlign='center' style={{ flex: 'none', color: 'white' }}>FAQ</Header>) :
+            (<Header as='h3' fluid textAlign='center' style={{ flex: 'none', color: 'white' }}>Conversations</Header>)
+          }
           <div style={{ flex: '1', overflowY: 'auto' }}>
-            <HelpConversations
-              fetchHelpConversations={this.props.fetchHelpConversations}
-              fetchHelpMessages={this.props.fetchHelpMessages}
-              sendHelpMessage={this.props.sendHelpMessage}
-              markMessagesRead={this.props.markMessagesRead}
-              help={this.props.help}
-            />
+            {showFaq ? (
+              <HelpFaq />
+            ) :
+              (
+                <HelpConversations
+                  fetchHelpConversations={this.props.fetchHelpConversations}
+                  fetchHelpMessages={this.props.fetchHelpMessages}
+                  sendHelpMessage={this.props.sendHelpMessage}
+                  markMessagesRead={this.props.markMessagesRead}
+                  help={this.props.help}
+                />
+              )}
+
           </div>
         </section>
         <Button.Group style={{ width: '100%', height: '10%' }}>
-          <Button icon style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }} className='col-center'>
+          <Button
+            icon
+            style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
+            className='col-center' onClick={() => this.setState({ showFaq: true, showConversations: false })}>
             <Icon name='home' size='big' />
             <p>Home</p>
           </Button>
 
-          <Button icon style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }} className='col-center'>
+          <Button
+            icon
+            style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
+            className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
+            onClick={() => { this.setState({ showFaq: false, showConversations: true }); this.props.stopNotification(); this.forceUpdate();}}>
             <Icon name='chat' size='big' />
             <p>Messages</p>
           </Button>

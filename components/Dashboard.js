@@ -706,6 +706,8 @@ class Dashboard extends React.Component {
           sendHelpMessage={this.props.sendHelpMessage}
           markMessagesRead={this.props.markMessagesRead}
           help={this.props.help}
+          notification={this.state.helpNotification}
+          stopNotification={()=>this.setState({helpNotification: false})}
         />
 
         <InformationSidebar

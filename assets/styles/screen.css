@@ -250,6 +250,23 @@
   animation: jiggle 0.5s ease infinite;
 }
 
+@keyframes backgroundFade {
+  0% {
+      background-color: white;
+  }
+  50% {
+      background-color: var(--primary-color);
+  }
+  100% {
+      background-color: white;
+  }
+}
+
+.notify-active {
+  animation: backgroundFade 3s ease-in-out infinite;
+}
+
+
 body {
   background: #fff;
 }
