@@ -216,13 +216,17 @@
 
 }
 
-#help-conversations{
+#help-conversations, #faq-themes, .help-adm-conversation{
+  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+}
+
+/* #faq-themes{
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
 
 .help-adm-conversation{
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-}
+} */
 
 .help-section-head {
   display: flex;

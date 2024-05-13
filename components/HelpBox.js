@@ -27,6 +27,7 @@ class HelpBox extends React.Component {
       open: true,
       windowHeight: window.innerHeight,
       showFaq: true,
+      showFaqMenu: true,
       showConversations: false,
     };
   }
@@ -52,10 +53,15 @@ class HelpBox extends React.Component {
     this.forceUpdate();
   };
 
+  toggleFaqMenu = () => {
+    this.setState(prevState => ({
+      showFaqMenu: !prevState.showFaqMenu
+    }));
+  };
 
 
   render() {
-    const { windowHeight, showFaq, showConversations } = this.state;
+    const { windowHeight, showFaq, showFaqMenu, showConversations } = this.state;
 
     //a few fixes for laptops and bigger screens
     const heightStyle = windowHeight > 720 ? { height: '650px' } : { height: '450px' };
@@ -71,7 +77,11 @@ class HelpBox extends React.Component {
           }
           <div style={{ flex: '1', overflowY: 'auto' }}>
             {showFaq ? (
-              <HelpFaq />
+              <HelpFaq
+                openHelpChat={() => this.setState({ showFaq: false, showConversations: true })}
+                showFaqMenu={showFaqMenu}
+                toggleFaqMenu={() => this.toggleFaqMenu()}
+              />
             ) :
               (
                 <HelpConversations
@@ -89,7 +99,7 @@ class HelpBox extends React.Component {
           <Button
             icon
             style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
-            className='col-center' onClick={() => this.setState({ showFaq: true, showConversations: false })}>
+            className='col-center' onClick={() => this.setState({ showFaq: true, showConversations: false, showFaqMenu: true })}>
             <Icon name='home' size='big' />
             <p>Home</p>
           </Button>
@@ -98,7 +108,7 @@ class HelpBox extends React.Component {
             icon
             style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
             className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
-            onClick={() => { this.setState({ showFaq: false, showConversations: true }); this.props.stopNotification(); this.forceUpdate();}}>
+            onClick={() => { this.setState({ showFaq: false, showConversations: true }); this.props.stopNotification(); this.forceUpdate(); }}>
             <Icon name='chat' size='big' />
             <p>Messages</p>
           </Button>
