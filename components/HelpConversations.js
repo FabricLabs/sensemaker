@@ -31,7 +31,7 @@ class HelpConversations extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.help != this.props.help) {
-      console.log(this.props.help);
+      // console.log(this.props.help);
     }
   }
 

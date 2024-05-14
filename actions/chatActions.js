@@ -96,7 +96,7 @@ const regenAnswer = (message, matter_id = null, file_fabric_id = null) => {
     }
 
     // If file_id is not null, add it to the requestBody
-    if (file_id !== null) {
+    if (file_fabric_id !== null) {
       requestBody.file_fabric_id = file_fabric_id;
     }
 

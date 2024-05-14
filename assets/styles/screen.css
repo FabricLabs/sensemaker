@@ -216,13 +216,17 @@
 
 }
 
-#help-conversations{
+#help-conversations, #faq-themes, .help-adm-conversation{
+  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+}
+
+/* #faq-themes{
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
 
 .help-adm-conversation{
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-}
+} */
 
 .help-section-head {
   display: flex;
@@ -249,6 +253,23 @@
 .jiggle-animation {
   animation: jiggle 0.5s ease infinite;
 }
+
+@keyframes backgroundFade {
+  0% {
+      background-color: white;
+  }
+  50% {
+      background-color: var(--primary-color);
+  }
+  100% {
+      background-color: white;
+  }
+}
+
+.notify-active {
+  animation: backgroundFade 3s ease-in-out infinite;
+}
+
 
 body {
   background: #fff;
