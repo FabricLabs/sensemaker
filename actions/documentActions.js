@@ -58,12 +58,12 @@ const fetchDocuments = () => {
   };
 };
 
-const fetchDocument = (id) => {
+const fetchDocument = (fabricID) => {
   return async (dispatch, getState) => {
     dispatch(fetchDocumentRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/documents/${id}`, null, token);
+      const instance = await fetchFromAPI(`/documents/${fabricID}`, null, token);
       dispatch(fetchDocumentSuccess(instance));
     } catch (error) {
       dispatch(fetchDocumentFailure(error));

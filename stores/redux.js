@@ -15,6 +15,7 @@ const conversationReducer = require('../reducers/conversationReducer');
 const courtReducer = require('../reducers/courtReducer');
 const jurisdictionsReducer = require('../reducers/jurisdictionsReducer');
 const documentReducer = require('../reducers/documentReducer');
+const fileReducer = require('../reducers/fileReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
 const personReducer = require('../reducers/personReducer');
@@ -38,6 +39,7 @@ const rootReducer = combineReducers({
   conversations: conversationReducer,
   courts: courtReducer,
   documents: documentReducer,
+  files: fileReducer,
   stats: adminReducer,
   people: personReducer,
   opinions: opinionReducer,

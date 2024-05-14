@@ -1891,7 +1891,7 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
-    this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
@@ -2325,7 +2325,7 @@ class Jeeves extends Hub {
 
     this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
 
-    this.http._addRoute('GET', '/documents/:fabricID',ROUTES.documents.getDocumentByID.bind(this));
+    // this.http._addRoute('GET', '/documents/:fabricID',ROUTES.documents.getDocumentByID.bind(this));
 
     this.http._addRoute('GET', '/opinions', async (req, res, next) => {
       const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');

@@ -36,12 +36,12 @@ class DocumentUploader extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { documents } = this.props;
-    if (documents !== prevProps.documents && this.state.uploading && !documents.loading) {
-      if (documents.fileUploaded) {
-        this.setState({ uploadSuccess: true, file_id: documents.fileId });
+    const { files } = this.props;
+    if (files !== prevProps.files && this.state.uploading && !files.loading) {
+      if (files.fileUploaded) {
+        this.setState({ uploadSuccess: true, file_id: files.fileId });
       } else {
-        this.setState({ errorMsg: documents.error });
+        this.setState({ errorMsg: files.error });
       }
     }
   }
@@ -71,7 +71,7 @@ class DocumentUploader extends React.Component {
       errorMsg: '',
       uploadSuccess: false,
     });
-    await this.props.uploadDocument(this.state.file);
+    await this.props.uploadFile(this.state.file);
   }
 
   isValidFileType(fileType) {
@@ -79,7 +79,7 @@ class DocumentUploader extends React.Component {
   }
 
   render() {
-    const { documents } = this.props;
+    const { files } = this.props;
     return (
       <Form className='documents-upload-form'>
         <Form.Field>
@@ -89,7 +89,7 @@ class DocumentUploader extends React.Component {
               icon='upload'
               disabled={!this.state.file}
               onClick={() => this.handleUpload()}
-              loading={documents.loading}
+              loading={files.loading}
             >
               Upload
             </Button>
@@ -111,7 +111,7 @@ class DocumentUploader extends React.Component {
               <Message.Content>
                 Document uploaded successfully! Now you can start a new conversation about this document.
               </Message.Content>
-              <Link to={'/conversations/documents/' + documents.fabric_id} onClick={()=>this.props.resetChat()}>
+              <Link to={'/conversations/documents/' + files.fabric_id} onClick={()=>this.props.resetChat()}>
                 <Button
                   primary
                   content='Start Conversation'

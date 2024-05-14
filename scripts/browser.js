@@ -155,6 +155,14 @@ const {
   searchDocument,
 } = require('../actions/documentActions');
 
+// ## Files Actions
+const {
+  fetchFiles,
+  fetchFile,
+  uploadFile,
+  searchFile,
+} = require('../actions/fileActions');
+
 // ## Matters Actions
 const {
   fetchMatters,
@@ -195,7 +203,7 @@ const {
 } = require('../actions/helpActions');
 
 // ## Main Process
-async function main (input = {}) {
+async function main(input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
 
   window.addEventListener('load', async () => {
@@ -241,6 +249,7 @@ async function main (input = {}) {
       conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
+      files: state.files,
       judges: state.judges,
       people: state.people,
       reporters: state.reporters,
@@ -283,6 +292,9 @@ async function main (input = {}) {
     fetchDocument: fetchDocument,
     searchDocument: searchDocument,
     uploadDocument: uploadDocument,
+    fetchFiles: fetchFiles,
+    fetchFile: fetchFile,
+    uploadFile: uploadFile,
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
     deleteInquiry: deleteInquiry,
@@ -312,7 +324,7 @@ async function main (input = {}) {
     logout: logout,
     reLogin: reLogin,
     register: register,
-    fullRegister:fullRegister,
+    fullRegister: fullRegister,
     checkUsernameAvailable: checkUsernameAvailable,
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,

@@ -632,7 +632,7 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
     };
 
-    if (message?.conversation && !conversationID && !matterID && !caseID) {
+    if (message?.conversation && !conversationID && !matterID && !caseID && !documentChat) {
       return <Navigate to={`/conversations/${message.conversation}`} replace />;
     }
 
