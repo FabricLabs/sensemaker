@@ -69,7 +69,7 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 
 // Providers
-const { StatuteProvider } = require('../libraries/statute-scraper');
+//const { StatuteProvider } = require('../libraries/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
