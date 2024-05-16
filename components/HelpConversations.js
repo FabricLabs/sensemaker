@@ -31,7 +31,7 @@ class HelpConversations extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.help != this.props.help) {
-      console.log(this.props.help);
+      // console.log(this.props.help);
     }
   }
 
@@ -84,7 +84,7 @@ class HelpConversations extends React.Component {
                       <div style={{ maxWidth: '70%' }}>
                         <p style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{instance.last_message.content}</p>
                         {/* <p>{instance.last_message.content}</p> */}
-                        <p>{this.formatDateTime(instance.last_message.created_at)}</p>
+                        <p style={{ fontStyle: 'italic', fontSize: '0.8em' }}>{this.formatDateTime(instance.last_message.created_at)}</p>
                       </div>
                     </Menu.Item>
                   ))}

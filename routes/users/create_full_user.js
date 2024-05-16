@@ -1,5 +1,7 @@
 'use strict';
 
+const { hashSync, genSaltSync } = require('bcrypt');
+
 module.exports = function (req, res) {
   const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
   res.format({

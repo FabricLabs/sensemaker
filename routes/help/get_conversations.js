@@ -10,7 +10,7 @@ module.exports = function (req, res, next) {
       try {
         const conversations = await this.db('conversations')
           .where({ help_chat: 1, creator_id: req.user.id })
-          .orderBy('created_at', 'desc');
+          .orderBy('updated_at', 'desc');
 
         // Fetch the last message for each conversation
         for (let conversation of conversations) {

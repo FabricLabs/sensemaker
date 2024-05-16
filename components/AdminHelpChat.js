@@ -48,6 +48,7 @@ class AdminHelpChat extends React.Component {
         this.setState({ sending: false, conversation_id: help.conversation_id })
         this.props.fetchHelpMessages(help.conversation_id, true); //second parameter as true for the admin flag
         this.scrollToBottom();
+        this.props.fetchHelpConversations();
       }
     }
     if (prevProps.help.admin_messages.length != help.admin_messages.length) {

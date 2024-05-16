@@ -101,6 +101,8 @@ class Dashboard extends React.Component {
         thumbsUpClicked: false,
         thumbsDownClicked: false,
 
+        helpNotification: false,
+
         steps: [
           {
             target: '.my-first-step',
@@ -131,6 +133,7 @@ class Dashboard extends React.Component {
     // $('.ui.sidebar').sidebar();
 
     this.props.fetchConversations();
+    this.props.fetchHelpConversations();
 
     // Simulate a loading delay
     setTimeout(() => {
@@ -138,6 +141,31 @@ class Dashboard extends React.Component {
       this.setState({ isLoading: false });
     }, 250);
   }
+
+  // componentDidUpdate(prevProps) {
+  //   const {help} = this.props;
+  //   if (prevProps.help != help) {
+  //     if(help.conversation && help.conversations.length > 0){
+
+  //     }
+  //   }
+  // }
+
+  componentDidUpdate(prevProps) {
+    const { help } = this.props;
+    if (prevProps.help != help) {
+      if (help.conversations && help.conversations.length > 0) {
+        // Check if any conversation matches the condition
+        const hasUnreadAdminMessage = help.conversations.some(instance => instance.last_message.help_role === 'admin' && instance.last_message.is_read === 0);
+        // Set helpNotification state based on the result
+        this.setState({ helpNotification: hasUnreadAdminMessage });
+      } else {
+        // If there are no conversations, set helpNotification to false
+        this.setState({ helpNotification: false });
+      }
+    }
+  }
+
 
   handleLogout = () => {
     this.setState({
@@ -184,8 +212,12 @@ class Dashboard extends React.Component {
   };
 
   toggleHelpBox = () => {
+    if (!this.state.helpBoxOpen) {
+      this.props.fetchHelpConversations();
+    }
+    this.setState({helpNotification: false,});
     this.setState(prevState => ({
-      helpBoxOpen: !prevState.helpBoxOpen
+      helpBoxOpen: !prevState.helpBoxOpen,
     }));
   };
 
@@ -207,7 +239,8 @@ class Dashboard extends React.Component {
 
   //closes left and right sidebars
   closeSidebars = () => {
-    this.setState({ openSectionBar: false, helpBoxOpen: false });
+    this.setState({ openSectionBar: false });
+    this.closeHelpBox();
     if (this.state.informationSidebarOpen) {
       this.toggleInformationSidebar();
     }
@@ -375,7 +408,9 @@ class Dashboard extends React.Component {
     // Set the new state
     this.setState(newState);
   };
-
+  closeHelpBox = () => {
+    this.setState({ helpBoxOpen: false });
+  }
   //====================================================//
 
   render() {
@@ -424,7 +459,7 @@ class Dashboard extends React.Component {
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => this.toggleInformationSidebar()}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); this.props.fetchHelpConversations(); }}>
             <div>
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
@@ -497,7 +532,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => this.toggleInformationSidebar()}>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); this.props.fetchHelpConversations(); }}>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -623,7 +658,7 @@ class Dashboard extends React.Component {
                 <Route path="/reporters/:id" element={<ReporterView reporters={this.props.reporters} fetchReporter={this.props.fetchReporter} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} />} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
@@ -638,15 +673,24 @@ class Dashboard extends React.Component {
             )}
           </Container>
         </div>
-
-        <Icon
-          size='big'
-          // name='question circle outline'
-          name={this.state.helpBoxOpen ? 'close' : 'question circle outline'} 
-          id='feedback-button'
-          className='grey'
-          onClick={() => this.toggleHelpBox()}
-        />
+        <div id='feedback-button'>
+          {this.state.helpNotification ?
+            (<Icon
+              size='big'
+              // name='question circle outline'
+              name={this.state.helpBoxOpen ? 'close' : 'bell outline'}
+              className='red jiggle-animation'
+              onClick={() => this.toggleHelpBox()}
+            />) :
+            (<Icon
+              size='big'
+              // name='question circle outline'
+              name={this.state.helpBoxOpen ? 'close' : 'question circle outline'}
+              // id='feedback-button'
+              className='grey'
+              onClick={() => this.toggleHelpBox()}
+            />)}
+        </div>
 
         {/* <FeedbackBox
           open={this.state.helpBoxOpen}
@@ -662,6 +706,8 @@ class Dashboard extends React.Component {
           sendHelpMessage={this.props.sendHelpMessage}
           markMessagesRead={this.props.markMessagesRead}
           help={this.props.help}
+          notification={this.state.helpNotification}
+          stopNotification={()=>this.setState({helpNotification: false})}
         />
 
         <InformationSidebar
@@ -674,7 +720,7 @@ class Dashboard extends React.Component {
           documentSection={documentSection}
           documentInfo={documentInfo}
           matterTitle={matterTitle}
-          onClick={() => this.setState({ openSectionBar: false })}
+          onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
         />
 
       </jeeves-dashboard>
