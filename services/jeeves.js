@@ -708,7 +708,7 @@ class Jeeves extends Hub {
         }
 
 
-        console.debug('GOT OUTLINE:', outline);
+        //console.debug('GOT OUTLINE:', outline);
 
         // RAG
         const cases = await this._vectorSearchCases(request.query, 5);

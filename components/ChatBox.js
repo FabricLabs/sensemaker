@@ -16,7 +16,8 @@ const { Navigate } = require('react-router-dom');
 const toRelativeTime = require('../functions/toRelativeTime');
 
 const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
-const InformationSidebar = require('./InformationSidebar');
+// const InformationSidebar = require('./InformationSidebar');
+const Typewriter = require('./Typewriter');
 
 const { Link, useParams } = require('react-router-dom');
 
@@ -65,6 +66,7 @@ class ChatBox extends React.Component {
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
+      startedChatting: false,
 
     };
 
@@ -225,7 +227,7 @@ class ChatBox extends React.Component {
 
     this.stopPolling();
 
-    this.setState({ loading: true, previousFlag: true });
+    this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
     this.props.getMessageInformation(query);
 
@@ -289,7 +291,7 @@ class ChatBox extends React.Component {
     this.stopPolling();
 
     let dataToSubmit;
-    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
+    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, startedChatting: true });
 
     const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
@@ -825,8 +827,13 @@ class ChatBox extends React.Component {
                       )}
                     </Feed.Summary>
                     <Feed.Extra text>
-                      {message.status !== "computing" && (
+                      {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
+                        // <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                        <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
+                      )}
+                      {message.status !== "computing" && (message.role !== "assistant" || !this.state.startedChatting) &&(
                         <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                        // <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
                       )}
                     </Feed.Extra>
                     <Feed.Extra text>
