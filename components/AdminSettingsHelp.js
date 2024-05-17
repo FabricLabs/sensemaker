@@ -49,7 +49,6 @@ class AdminHelp extends React.Component {
   }
 
   openConversation = (id) => {
-    console.log("conversation clicked:", id);
     this.setState({ displayChat: true, conversation_id: id });
     this.props.markMessagesRead(id, 'user');
   }

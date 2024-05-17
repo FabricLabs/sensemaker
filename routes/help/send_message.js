@@ -1,5 +1,9 @@
 'use strict';
 
+const Message = require('@fabric/core/types/message');
+const Token = require('@fabric/core/types/token'); // fabric tokens
+
+
 module.exports = async function (req, res) {
 
   try {
@@ -28,6 +32,35 @@ module.exports = async function (req, res) {
       .update({
         updated_at: new Date(),
       });
+
+    if (help_role === 'admin') {
+
+      const conversation = await this.db('conversations')
+        .where({ id: conversation_id })
+        .select('creator_id')
+        .first();
+
+      const token = new Token({
+        capability: 'OP_IDENTITY',
+        issuer: null,
+        subject: conversation.creator_id + '', // String value of integer ID
+        state: {
+          roles: ['user']
+        }
+      });
+
+      const object = {
+        sender: req.user.id,
+        creator: token.toString(),
+        content: content,
+        conversation_id: conversation_id,
+        help_role: help_role,
+        type: 'HelpMsgAdmin'
+      }
+
+      const message = Message.fromVector(['HelpMsgAdmin', JSON.stringify(object)]);
+      this.http.broadcast(message);
+    }
 
     return res.send({
       message: 'Help Message successfully sent',
