@@ -411,6 +411,11 @@ class Dashboard extends React.Component {
   closeHelpBox = () => {
     this.setState({ helpBoxOpen: false });
   }
+
+  catchServerAction = (action) => {
+    console.log('el action en el dashboard', action);
+    console.log('el auth', this.props.auth);
+  }
   //====================================================//
 
   render() {
@@ -593,7 +598,7 @@ class Dashboard extends React.Component {
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
-                <Bridge />
+                <Bridge  catchServerAction = {this.catchServerAction}/>
                 <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
