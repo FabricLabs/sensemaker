@@ -59,7 +59,7 @@ Using the CLI:
 Using the mac GUI:
 <br>
 `File -> Import Tunnel(s) From File... -> select wg0.conf`
-<be>
+<br>
 Start Wireguard on boot (Linux)
 ```
 sudo systemctl enable wg-quick@wg0.service
