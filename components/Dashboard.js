@@ -420,6 +420,9 @@ class Dashboard extends React.Component {
     const { id } = this.props.auth;
     if (action.type == 'HelpMsgAdmin' && id == action.creator) {
       this.props.fetchHelpConversations();
+      if (this.state.helpBoxOpen) {
+        this.props.fetchHelpMessages(action.conversation_id);
+      }
       toast('You have a message from an assistant!', {
         position: "bottom-center",
         autoClose: 5000,
@@ -429,7 +432,7 @@ class Dashboard extends React.Component {
         draggable: true,
         progress: undefined,
         theme: "dark",
-        });
+      });
     }
 
   }
@@ -554,7 +557,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox();}}>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -727,6 +730,7 @@ class Dashboard extends React.Component {
           fetchHelpMessages={this.props.fetchHelpMessages}
           sendHelpMessage={this.props.sendHelpMessage}
           markMessagesRead={this.props.markMessagesRead}
+          clearHelpMessages={this.props.clearHelpMessages}
           help={this.props.help}
           notification={this.state.helpNotification}
           stopNotification={() => this.setState({ helpNotification: false })}

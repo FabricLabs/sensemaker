@@ -199,7 +199,8 @@ const {
   fetchAdminHelpConversations,
   fetchHelpMessages,
   sendHelpMessage,
-  markMessagesRead
+  markMessagesRead,
+  clearHelpMessages,
 } = require('../actions/helpActions');
 
 // ## Main Process
@@ -355,6 +356,8 @@ async function main(input = {}) {
     fetchHelpMessages: fetchHelpMessages,
     sendHelpMessage: sendHelpMessage,
     markMessagesRead: markMessagesRead,
+    clearHelpMessages: clearHelpMessages,
+
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

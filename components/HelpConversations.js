@@ -36,6 +36,9 @@ class HelpConversations extends React.Component {
   }
 
   openConversation = (id) => {
+    if (id === 0) {
+      this.props.clearHelpMessages();
+    }
     this.setState({ displayChat: true, conversationID: id });
     this.props.markMessagesRead(id, 'admin');
   }

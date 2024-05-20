@@ -14,6 +14,9 @@ const {
   SEND_HELP_MESSAGE_REQUEST,
   SEND_HELP_MESSAGE_SUCCESS,
   SEND_HELP_MESSAGE_FAILURE,
+  CLEAR_HELP_MESSAGES_REQUEST,
+  CLEAR_HELP_MESSAGES_SUCCESS,
+  CLEAR_HELP_MESSAGES_FAILURE,
 } = require('../actions/helpActions');
 
 
@@ -39,14 +42,14 @@ function inquiriesReducer(state = initialState, action) {
       return { ...state, conversations: action.payload, loading: false };
     case FETCH_HELP_CONVERSATIONS_FAILURE:
       console.debug('fetch help conversations failure:', state, action);
-      return { ...state,  conversations: [], error: action.payload, loading: false };
+      return { ...state, conversations: [], error: action.payload, loading: false };
     case FETCH_ADMIN_HELP_CONVERSATIONS_REQUEST:
-      return { ...state,error: null, loading: true };
+      return { ...state, error: null, loading: true };
     case FETCH_ADMIN_HELP_CONVERSATIONS_SUCCESS:
       return { ...state, admin_conversations: action.payload, loading: false };
     case FETCH_ADMIN_HELP_CONVERSATIONS_FAILURE:
       console.debug('fetch help admin conversations failure:', state, action);
-      return { ...state,  admin_conversations: [], error: action.payload, loading: false };
+      return { ...state, admin_conversations: [], error: action.payload, loading: false };
     case FETCH_HELP_MESSAGES_REQUEST:
       return { ...state, error: null, loadingMsgs: true };
     case FETCH_HELP_MESSAGES_SUCCESS:
@@ -68,6 +71,13 @@ function inquiriesReducer(state = initialState, action) {
     case SEND_HELP_MESSAGE_FAILURE:
       console.debug('send help message failure:', state, action);
       return { ...state, sentSuccess: false, error: action.payload, sending: false };
+    case CLEAR_HELP_MESSAGES_REQUEST:
+      return { ...state, sentSuccess: false, error: null, };
+    case CLEAR_HELP_MESSAGES_SUCCESS:
+      return { ...state,  messages: [], error:null };
+    case CLEAR_HELP_MESSAGES_FAILURE:
+      console.debug('clear help messages failure:', state, action);
+      return { ...state, error: action.payload };
     default:
       return state;
   }

@@ -89,6 +89,7 @@ class HelpBox extends React.Component {
                   fetchHelpMessages={this.props.fetchHelpMessages}
                   sendHelpMessage={this.props.sendHelpMessage}
                   markMessagesRead={this.props.markMessagesRead}
+                  clearHelpMessages={this.props.clearHelpMessages}
                   help={this.props.help}
                 />
               )}
@@ -107,7 +108,8 @@ class HelpBox extends React.Component {
           <Button
             icon
             style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
-            className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
+            //className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
+            className='col-center'
             onClick={() => { this.setState({ showFaq: false, showConversations: true }); this.props.stopNotification(); this.forceUpdate(); }}>
             <Icon name='chat' size='big' />
             <p>Messages</p>
