@@ -46,7 +46,6 @@ class HelpChat extends React.Component {
       this.setState({ loading: false });
     }
     if (prevProps.help != help) {
-      console.log(help);
       if (!help.sending && help.sentSuccess && this.state.sending) {
         this.setState({ sending: false, conversation_id: help.conversation_id })
         this.props.fetchHelpMessages(help.conversation_id);
@@ -57,11 +56,6 @@ class HelpChat extends React.Component {
     }
   }
 
-  // scrollToBottom = () => {
-  //   setTimeout(() => {
-  //     this.messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  //   }, 100);
-  // }
 
   scrollToBottom = () => {
     const messagesContainer = this.messagesEndRef.current;
@@ -88,7 +82,6 @@ class HelpChat extends React.Component {
     const { messageQuery, conversation_id } = this.state;
     if (messageQuery !== '') {
       this.setState({ sending: true });
-      console.log(messageQuery);
       this.props.sendHelpMessage(messageQuery, conversation_id, 'user');
       this.setState({ messageQuery: '' });
     }
@@ -119,8 +112,8 @@ class HelpChat extends React.Component {
                 )
               ))
             ) : (!help.loadingMsgs && (
-                  <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
-                )
+              <p className='help-welcome-msg' >What can we do to help you? Tell us anything you need, an assistant will answer shortly.</p>
+            )
             )}
             {/* <div ref={this.messagesEndRef} /> */}
           </div>

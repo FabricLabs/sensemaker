@@ -94,9 +94,6 @@ class Bridge extends React.Component {
           try {
             const chunk = JSON.parse(message.body);
 
-            console.log('el chunk', chunk);
-            console.log('el chunk type', chunk.type);
-
             switch (chunk.type) {
               case 'MessageStart':
                 const selector = `[data-message-id="` + chunk.message_id + `"]`;
