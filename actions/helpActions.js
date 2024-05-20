@@ -27,9 +27,13 @@ const FETCH_ADMIN_HELP_MESSAGES_REQUEST = 'FETCH_ADMIN_HELP_MESSAGES_REQUEST';
 const FETCH_ADMIN_HELP_MESSAGES_SUCCESS = 'FETCH_ADMIN_HELP_MESSAGES_SUCCESS';
 const FETCH_ADMIN_HELP_MESSAGES_FAILURE = 'FETCH_ADMIN_HELP_MESSAGES_FAILURE';
 
-const SEND_HELP_MESSAGE_REQUEST = 'SEND_MESSAGE_REQUEST';
-const SEND_HELP_MESSAGE_SUCCESS = 'SEND_MESSAGE_SUCCESS';
-const SEND_HELP_MESSAGE_FAILURE = 'SEND_MESSAGE_FAILURE';
+const SEND_HELP_MESSAGE_REQUEST = 'SEND_HELP_MESSAGE_REQUEST';
+const SEND_HELP_MESSAGE_SUCCESS = 'SEND_HELP_MESSAGE_SUCCESS';
+const SEND_HELP_MESSAGE_FAILURE = 'SEND_HELP_MESSAGE_FAILURE';
+
+const CLEAR_HELP_MESSAGES_REQUEST = 'CLEAR_HELP_MESSAGES_REQUEST';
+const CLEAR_HELP_MESSAGES_SUCCESS = 'CLEAR_HELP_MESSAGES_SUCCESS';
+const CLEAR_HELP_MESSAGES_FAILURE = 'CLEAR_HELP_MESSAGES_FAILURE';
 
 // Action creators
 const fetchHelpConversationsRequest = () => ({ type: FETCH_HELP_CONVERSATIONS_REQUEST });
@@ -51,6 +55,10 @@ const fetchAdminHelpMessagesFailure = (error) => ({ type: FETCH_ADMIN_HELP_MESSA
 const sendHelpMessageRequest = () => ({ type: SEND_HELP_MESSAGE_REQUEST });
 const sendHelpMessageSuccess = (conversation_id) => ({ type: SEND_HELP_MESSAGE_SUCCESS, payload: conversation_id });
 const sendHelpMessageFailure = (error) => ({ type: SEND_HELP_MESSAGE_FAILURE, payload: error });
+
+const clearHelpMessagesRequest = () => ({ type: CLEAR_HELP_MESSAGES_REQUEST });
+const clearHelpMessagesSuccess = (conversation_id) => ({ type: CLEAR_HELP_MESSAGES_SUCCESS });
+const clearHelpMessagesFailure = (error) => ({ type: CLEAR_HELP_MESSAGES_FAILURE, payload: error });
 
 
 // Thunk action creator
@@ -125,7 +133,7 @@ const markMessagesRead = (conversation_id, help_role) => {
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message);
-      }      
+      }
     } catch (error) {
       console.log(error);
     }
@@ -161,12 +169,19 @@ const sendHelpMessage = (content, conversation_id, help_role) => {
   };
 };
 
+const clearHelpMessages = () => {
+  return async (dispatch) => {
+    dispatch(clearHelpMessagesSuccess());
+  };
+}
+
 module.exports = {
   fetchHelpConversations,
   fetchAdminHelpConversations,
   fetchHelpMessages,
   sendHelpMessage,
   markMessagesRead,
+  clearHelpMessages,
   FETCH_HELP_CONVERSATIONS_REQUEST,
   FETCH_HELP_CONVERSATIONS_SUCCESS,
   FETCH_HELP_CONVERSATIONS_FAILURE,
@@ -182,4 +197,7 @@ module.exports = {
   SEND_HELP_MESSAGE_REQUEST,
   SEND_HELP_MESSAGE_SUCCESS,
   SEND_HELP_MESSAGE_FAILURE,
+  CLEAR_HELP_MESSAGES_REQUEST,
+  CLEAR_HELP_MESSAGES_SUCCESS,
+  CLEAR_HELP_MESSAGES_FAILURE,
 };
