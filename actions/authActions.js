@@ -123,7 +123,8 @@ const reLogin = (token) => {
         email: user.email,
         isAdmin: user.isAdmin,
         isBeta: user.isBeta,
-        isCompliant: user.isCompliant
+        isCompliant: user.isCompliant,
+        id: user.id
       }
 
       if (!response.ok) {

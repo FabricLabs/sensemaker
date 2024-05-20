@@ -40,18 +40,9 @@ module.exports = async function (req, res) {
         .select('creator_id')
         .first();
 
-      const token = new Token({
-        capability: 'OP_IDENTITY',
-        issuer: null,
-        subject: conversation.creator_id + '', // String value of integer ID
-        state: {
-          roles: ['user']
-        }
-      });
-
       const object = {
         sender: req.user.id,
-        creator: token.toString(),
+        creator: conversation.creator_id,
         content: content,
         conversation_id: conversation_id,
         help_role: help_role,

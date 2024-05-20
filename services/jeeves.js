@@ -2027,7 +2027,8 @@ class Jeeves extends Hub {
           email: user.email,
           isAdmin: user.is_admin,
           isBeta: user.is_beta,
-          isCompliant: user.is_compliant
+          isCompliant: user.is_compliant,
+          id: user.id
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);

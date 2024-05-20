@@ -33,6 +33,7 @@ class SPA extends FabricSPA {
     <link rel="stylesheet" type="text/css" href="/semantic.min.css" />
     <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
     <link rel="stylesheet" type="text/css" href="/styles/styles.css" />
+    <link rel="stylesheet" type="text/css" href="/styles/ReactToastify.css">
     <script src="/scripts/jquery-3.4.1.js"></script>
     <script src="/semantic.min.js"></script>
     <link rel="icon" href="/images/favicon.svg" />
