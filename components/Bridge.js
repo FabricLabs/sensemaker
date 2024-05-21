@@ -107,6 +107,7 @@ class Bridge extends React.Component {
               case 'MessageChunk':
                 this.addJob('MessageChunk', chunk);
                 break;
+              case 'HelpMsgUser':
               case 'HelpMsgAdmin':
                 this.props.catchServerAction(chunk);
                 break;

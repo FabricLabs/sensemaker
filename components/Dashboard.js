@@ -94,6 +94,7 @@ class Dashboard extends React.Component {
         openConversations: false,
         openSectionBar: false,
         helpBoxOpen: false,
+        helpConversationUpdate: 0, //this value is used to tell the help admin chat which conversation got a new message from user (from bridge), to update the conversation
 
         //iformation Sidebar states
         informationSidebarOpen: false,
@@ -417,13 +418,32 @@ class Dashboard extends React.Component {
   }
 
   catchServerAction = (action) => {
-    const { id } = this.props.auth;
+    const { id, isAdmin } = this.props.auth;
+
     if (action.type == 'HelpMsgAdmin' && id == action.creator) {
       this.props.fetchHelpConversations();
       if (this.state.helpBoxOpen) {
         this.props.fetchHelpMessages(action.conversation_id);
       }
       toast('You have a message from an assistant!', {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+    }
+
+    if (action.type == 'HelpMsgUser' && isAdmin) {
+
+      this.setState({ helpConversationUpdate: action.conversation_id });
+
+      this.props.fetchAdminHelpConversations();
+
+      toast(`An user sent a message asking for assistance`, {
         position: "bottom-center",
         autoClose: 5000,
         hideProgressBar: false,
@@ -691,7 +711,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
+                <Route path="/settings/admin" element={<AdminSettings {...this.props} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} />} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>

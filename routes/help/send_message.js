@@ -33,23 +33,30 @@ module.exports = async function (req, res) {
         updated_at: new Date(),
       });
 
+    const conversation = await this.db('conversations')
+      .where({ id: conversation_id })
+      .select('creator_id')
+      .first();
+
+    const object = {
+      sender: req.user.id,
+      creator: conversation.creator_id,
+      content: content,
+      conversation_id: conversation_id,
+      help_role: help_role,
+    }
+
     if (help_role === 'admin') {
 
-      const conversation = await this.db('conversations')
-        .where({ id: conversation_id })
-        .select('creator_id')
-        .first();
-
-      const object = {
-        sender: req.user.id,
-        creator: conversation.creator_id,
-        content: content,
-        conversation_id: conversation_id,
-        help_role: help_role,
-        type: 'HelpMsgAdmin'
-      }
+      object.type = 'HelpMsgAdmin';
 
       const message = Message.fromVector(['HelpMsgAdmin', JSON.stringify(object)]);
+      this.http.broadcast(message);
+
+    } else {
+
+      object.type = 'HelpMsgUser';
+      const message = Message.fromVector(['HelpMsgUser', JSON.stringify(object)]);
       this.http.broadcast(message);
     }
 
