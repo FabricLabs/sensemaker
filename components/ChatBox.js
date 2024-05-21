@@ -276,7 +276,7 @@ class ChatBox extends React.Component {
 
     // Clear the input after sending the message
     this.setState({ query: '' });
-    if(this.props.conversationID && this.props.fetchData){
+    if (this.props.conversationID && this.props.fetchData) {
       this.props.fetchData(this.props.conversationID);
     }
   }
@@ -827,14 +827,18 @@ class ChatBox extends React.Component {
                       )}
                     </Feed.Summary>
                     <Feed.Extra text>
-                      {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
+                      {message.status !== "computing" && (
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                      )}
+                      {/* DO NOT DELETE THIS BLOCK */}
+                      {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
                         // <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
                         <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
                       )}
                       {message.status !== "computing" && (message.role !== "assistant" || !this.state.startedChatting) &&(
                         <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
                         // <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
-                      )}
+                      )} */}
                     </Feed.Extra>
                     <Feed.Extra text>
                       {generatingReponse &&

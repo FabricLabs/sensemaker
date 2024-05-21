@@ -14,12 +14,11 @@ module.exports = function (req, res, next) {
             updated_at: new Date(),
           });
 
-        res.send(update);
+        res.send('updated');
       } catch (exception) {
-        res.status(503);
-        return res.send({
+        res.status(503).send({
           type: 'Mark read messages failure',
-          content: exception
+          content: exception.message
         });
       }
     }
