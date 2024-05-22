@@ -456,6 +456,7 @@ class Dashboard extends React.Component {
     }
 
   }
+ 
   //====================================================//
 
   render() {
@@ -711,7 +712,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/settings/admin" element={<AdminSettings {...this.props} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} />} />
+                <Route path="/settings/admin" element={<AdminSettings {...this.props} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>

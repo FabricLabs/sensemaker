@@ -40,6 +40,7 @@ class AdminHelp extends React.Component {
     if (prevProps.helpConversationUpdate !== helpConversationUpdate) {
       if (helpConversationUpdate == conversation_id) {
         this.props.fetchHelpMessages(conversation_id, true); //second parameter as true for the admin flag
+        this.props.resetHelpUpdated(); //once updated, this resets the state in dashboard
       }
     }
   };
