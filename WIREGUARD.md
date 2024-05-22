@@ -59,7 +59,14 @@ Using the CLI:
 Using the mac GUI:
 <br>
 `File -> Import Tunnel(s) From File... -> select wg0.conf`
-
+<br>
+<br>
+Start Wireguard on boot (Linux)
+```
+sudo systemctl enable wg-quick@wg0.service
+sudo systemctl start wg-quick@wg0.service
+sudo systemctl status wg-quick@wg0.service
+```
 
 ### Available Resources
 GPU Rigs:
