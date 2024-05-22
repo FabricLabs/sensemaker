@@ -69,7 +69,7 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 
 // Providers
-//const { StatuteProvider } = require('../libraries/statute-scraper');
+// const { StatuteProvider } = require('../libraries/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
@@ -537,6 +537,17 @@ class Jeeves extends Hub {
 
   async generateDocumentOutline (request) {
     const message = `Generate an outline of a document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
+    return new Promise((resolve, reject) => {
+      this.outliner.query({ query: message }).then((response) => {
+        resolve(response);
+      }).catch((exception) => {
+        reject(exception);
+      });
+    });
+  }
+
+  async generateDocumentSection (request) {
+    const message = `Generate the appropriate text for the following section of the document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
     return new Promise((resolve, reject) => {
       this.outliner.query({ query: message }).then((response) => {
         resolve(response);
