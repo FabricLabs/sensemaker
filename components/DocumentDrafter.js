@@ -34,25 +34,25 @@ const DOCUMENT_TYPES = [
  * Document Drafting interface.
  */
 class DocumentDrafter extends React.Component {
-  createDocument(...params) {
-    console.debug('CREATE DOCUMENT:', params);
-    fetch('/documents', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${this.props.token}`,
-        'Content-Type': 'application/json'
-      },
-      // TODO: add more fields
-      body: JSON.stringify({ type: 'letter' })
-    }).then((response) => {
-      console.debug('RESPONSE:', response);
-      return response.json();
-    }).then((document) => {
-      console.debug('DOCUMENT:', document);
-      this.props.typeSelected(document.fabric_id);
-    });
-  }
+  // createDocument(...params) {
+    // console.debug('CREATE DOCUMENT:', params);
+    // fetch('/documents', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Authorization': `Bearer ${this.props.token}`,
+    //     'Content-Type': 'application/json'
+    //   },
+    //   // TODO: add more fields
+    //   body: JSON.stringify({ type: 'letter' })
+    // }).then((response) => {
+    //   console.debug('RESPONSE:', response);
+    //   return response.json();
+    // }).then((document) => {
+    //   console.debug('DOCUMENT:', document);
+    //   this.props.typeSelected(document.fabric_id);
+    // });
+  //}
 
   componentDidMount() {
     const { id } = this.props;
@@ -92,7 +92,7 @@ class DocumentDrafter extends React.Component {
           <Header as='h2'>Type</Header>
           <p>What kind of document would you like to draft?</p>
           <Dropdown value='letter' search selection closeOnChange onChange={this.handleDocumentTypeChange.bind(this)} options={DOCUMENT_TYPES} />
-          <Button color='green' icon='right chevron' iconPosition='right' onClick={this.createDocument.bind(this)}>Start Drafting</Button>
+          <Button color='green' icon='right chevron' iconPosition='right' onClick={() => this.props.createDocument('i need a demand letter for someone cause wrong drone use')}>Start Drafting</Button>
         </div>
       </Segment>
     );

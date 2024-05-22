@@ -133,11 +133,38 @@ const searchDocument = (query) => {
   }
 }
 
+
+//remember to add the reducer
+const createDocument = (query) => {
+  return async (dispatch, getState) => {
+    //dispatch(createDocumentRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch('/documents', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({ query })
+      });
+
+      const obj = await response.json();
+      console.debug('fetch result: ', obj);
+
+      //dispatch(createDocumentSuccess(obj.content));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      //dispatch(createDocumentFailure(error.message));
+    }
+  }
+}
 module.exports = {
   fetchDocument,
   fetchDocuments,
   uploadDocument,
   searchDocument,
+  createDocument,
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
