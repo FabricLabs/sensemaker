@@ -162,7 +162,6 @@ class Dashboard extends React.Component {
 
   componentDidUpdate(prevProps) {
     //console.log('HERE LOCATION ON UPDATE: ', this.props.location);
-    console.log(this.state.helpConversationUpdate);
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
