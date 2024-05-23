@@ -25,6 +25,9 @@ const SEARCH_DOCUMENT_REQUEST = 'SEARCH_DOCUMENT_REQUEST';
 const SEARCH_DOCUMENT_SUCCESS = 'SEARCH_DOCUMENT_SUCCESS';
 const SEARCH_DOCUMENT_FAILURE = 'SEARCH_DOCUMENT_FAILURE';
 
+const CREATE_DOCUMENT_REQUEST = 'CREATE_DOCUMENT_REQUEST';
+const CREATE_DOCUMENT_SUCCESS = 'CREATE_DOCUMENT_SUCCESS';
+const CREATE_DOCUMENT_FAILURE = 'CREATE_DOCUMENT_FAILURE';
 
 // Action creators
 const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
@@ -42,6 +45,10 @@ const uploadDocumentFailure = (error) => ({ type: UPLOAD_DOCUMENT_FAILURE, paylo
 const searchDocumentRequest = () => ({ type: SEARCH_DOCUMENT_REQUEST });
 const searchDocumentSuccess = (results) => ({ type: SEARCH_DOCUMENT_SUCCESS, payload: results });
 const searchDocumentFailure = (error) => ({ type: SEARCH_DOCUMENT_FAILURE, payload: error });
+
+const createDocumentRequest = () => ({ type: CREATE_DOCUMENT_REQUEST });
+const createDocumentSuccess = (results) => ({ type: CREATE_DOCUMENT_SUCCESS, payload: results });
+const createDocumentFailure = (error) => ({ type: CREATE_DOCUMENT_FAILURE, payload: error });
 
 
 // Thunk action creator
@@ -137,7 +144,7 @@ const searchDocument = (query) => {
 //remember to add the reducer
 const createDocument = (query) => {
   return async (dispatch, getState) => {
-    //dispatch(createDocumentRequest());
+    dispatch(createDocumentRequest());
     const { token } = getState().auth;
     try {
       const response = await fetch('/documents', {
@@ -152,10 +159,10 @@ const createDocument = (query) => {
       const obj = await response.json();
       console.debug('fetch result: ', obj);
 
-      //dispatch(createDocumentSuccess(obj.content));
+      dispatch(createDocumentSuccess(obj.content));
     } catch (error) {
       console.error('Error fetching data:', error);
-      //dispatch(createDocumentFailure(error.message));
+      dispatch(createDocumentFailure(error.message));
     }
   }
 }
@@ -177,4 +184,7 @@ module.exports = {
   SEARCH_DOCUMENT_REQUEST,
   SEARCH_DOCUMENT_SUCCESS,
   SEARCH_DOCUMENT_FAILURE,
+  CREATE_DOCUMENT_REQUEST,
+  CREATE_DOCUMENT_SUCCESS,
+  CREATE_DOCUMENT_FAILURE,
 };

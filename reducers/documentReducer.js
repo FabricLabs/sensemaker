@@ -11,6 +11,9 @@ const {
   SEARCH_DOCUMENT_REQUEST,
   SEARCH_DOCUMENT_SUCCESS,
   SEARCH_DOCUMENT_FAILURE,
+  CREATE_DOCUMENT_REQUEST,
+  CREATE_DOCUMENT_SUCCESS,
+  CREATE_DOCUMENT_FAILURE,
 } = require('../actions/documentActions');
 
 const initialState = {
@@ -49,6 +52,12 @@ function documentReducer(state = initialState, action) {
       return { ...state, loading: false, results: action.payload, error: null };
     case SEARCH_DOCUMENT_FAILURE:
       return { ...state, loading: false, error: action.payload, results: [] };
+    case CREATE_DOCUMENT_REQUEST:
+      return { ...state, creating: true, error: null, results: [], };
+    case CREATE_DOCUMENT_SUCCESS:
+      return { ...state, creating: false, results: action.payload, error: null };
+    case CREATE_DOCUMENT_FAILURE:
+      return { ...state, creating: false, error: action.payload, results: [] };
     default:
       // console.warn('Unhandled action in documents reducer:', action);
       return state;
