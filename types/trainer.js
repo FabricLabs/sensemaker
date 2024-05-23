@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const merge = require('lodash.merge');
+const fetch = require('cross-fetch');
 
 const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
