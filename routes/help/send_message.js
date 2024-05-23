@@ -38,27 +38,24 @@ module.exports = async function (req, res) {
       .select('creator_id')
       .first();
 
-    const object = {
+    const conversationMessage = {
       sender: req.user.id,
       creator: conversation.creator_id,
       content: content,
       conversation_id: conversation_id,
       help_role: help_role,
     }
+    
+    console.log('HELP ROLE HERE!: ', help_role);
 
     if (help_role === 'admin') {
-
-      object.type = 'HelpMsgAdmin';
-
-      const message = Message.fromVector(['HelpMsgAdmin', JSON.stringify(object)]);
-      this.http.broadcast(message);
-
+      conversationMessage.type = 'HelpMsgAdmin';
     } else {
-
-      object.type = 'HelpMsgUser';
-      const message = Message.fromVector(['HelpMsgUser', JSON.stringify(object)]);
-      this.http.broadcast(message);
+      conversationMessage.type = 'HelpMsgUser';
     }
+    //here we broadcast the message, telling 'Bridge.js' which role sent a message
+    const message = Message.fromVector([conversationMessage.type, JSON.stringify(conversationMessage)]);
+    this.http.broadcast(message);
 
     return res.send({
       message: 'Help Message successfully sent',

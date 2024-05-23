@@ -2,8 +2,8 @@
 
 // Dependencies
 const React = require('react');
-const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
-const { ToastContainer, toast } = require('react-toastify');
+const { Link, Navigate, Route, Routes, Switch,useLocation, useParams, useNavigate } = require('react-router-dom');
+const { ToastContainer, toast, Slide } = require('react-toastify');
 
 
 // const LoadingBar = require('react-top-loading-bar');
@@ -19,6 +19,8 @@ const {
   Popup,
   Sidebar,
 } = require('semantic-ui-react');
+
+const {helpMessageToastEmitter} = require('../functions/toastifyProps.js')
 
 const {
   BRAND_NAME,
@@ -133,6 +135,8 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount() {
+    const {location, params, navigate} = this.props;
+    console.log('HERE LOCATION ON MOUNT: ', location);
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -157,11 +161,15 @@ class Dashboard extends React.Component {
   // }
 
   componentDidUpdate(prevProps) {
+    console.log('HERE LOCATION ON UPDATE: ', this.props.location);
+
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
         // Check if any conversation matches the condition
-        const hasUnreadAdminMessage = help.conversations.some(instance => instance.last_message.help_role === 'admin' && instance.last_message.is_read === 0);
+        const hasUnreadAdminMessage = help.conversations.some(
+          instance => instance.last_message.help_role === 'admin' && instance.last_message.is_read === 0
+        );
         // Set helpNotification state based on the result
         this.setState({ helpNotification: hasUnreadAdminMessage });
       } else {
@@ -186,10 +194,10 @@ class Dashboard extends React.Component {
       });
     }, 500);
   };
+  // TODO: review and determine what to do with this function 
+  // handleSettings = () => {
 
-  handleSettings = () => {
-
-  }
+  // }
 
   startProgress = () => {
     this.intervalId = setInterval(() => {
@@ -417,7 +425,7 @@ class Dashboard extends React.Component {
     this.setState({ helpBoxOpen: false });
   }
 
-  catchServerAction = (action) => {
+  ResponseCapture = (action) => {
     const { id, isAdmin } = this.props.auth;
 
     if (action.type == 'HelpMsgAdmin' && id == action.creator) {
@@ -425,34 +433,20 @@ class Dashboard extends React.Component {
       if (this.state.helpBoxOpen) {
         this.props.fetchHelpMessages(action.conversation_id);
       }
-      toast('You have a message from an assistant!', {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
+      //emit toast for user
+      toast('You have a message from an assistant!', helpMessageToastEmitter);
+
     }
 
     if (action.type == 'HelpMsgUser' && isAdmin) {
-
       this.setState({ helpConversationUpdate: action.conversation_id });
-
       this.props.fetchAdminHelpConversations();
+      //emit toast for admin
+      console.log('ON RESPONSE: ', this.props.location);
+      //if(this.props.location !== '/settings/admin') {
+        toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
+      //}
 
-      toast(`An user sent a message asking for assistance`, {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "dark",
-      });
     }
 
   }
@@ -460,6 +454,9 @@ class Dashboard extends React.Component {
   //====================================================//
 
   render() {
+
+    // const {location, params, navigate} = this.props;
+    // console.log('HERE LOCATION: ', location);
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
@@ -639,7 +636,7 @@ class Dashboard extends React.Component {
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
-                <Bridge catchServerAction={this.catchServerAction} />
+                <Bridge ResponseCapture={this.ResponseCapture} />
                 <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
@@ -776,4 +773,11 @@ class Dashboard extends React.Component {
   }
 }
 
-module.exports = Dashboard;
+function dashboard(props) {
+  const location = useLocation();
+  const params = useParams();
+  const navigate = useNavigate();
+  return <Dashboard {...{location, navigate, params}} {...props} />
+}
+
+module.exports = dashboard;
