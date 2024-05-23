@@ -1,5 +1,9 @@
 'use strict';
 
+const Message = require('@fabric/core/types/message');
+const Token = require('@fabric/core/types/token'); // fabric tokens
+
+
 module.exports = async function (req, res) {
 
   try {
@@ -28,6 +32,30 @@ module.exports = async function (req, res) {
       .update({
         updated_at: new Date(),
       });
+
+    const conversation = await this.db('conversations')
+      .where({ id: conversation_id })
+      .select('creator_id')
+      .first();
+
+    const conversationMessage = {
+      sender: req.user.id,
+      creator: conversation.creator_id,
+      content: content,
+      conversation_id: conversation_id,
+      help_role: help_role,
+    }
+    
+    console.log('HELP ROLE HERE!: ', help_role);
+
+    if (help_role === 'admin') {
+      conversationMessage.type = 'HelpMsgAdmin';
+    } else {
+      conversationMessage.type = 'HelpMsgUser';
+    }
+    //here we broadcast the message, telling 'Bridge.js' which role sent a message
+    const message = Message.fromVector([conversationMessage.type, JSON.stringify(conversationMessage)]);
+    this.http.broadcast(message);
 
     return res.send({
       message: 'Help Message successfully sent',

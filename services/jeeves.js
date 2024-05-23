@@ -1899,7 +1899,7 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
-    this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
@@ -2035,7 +2035,8 @@ class Jeeves extends Hub {
           email: user.email,
           isAdmin: user.is_admin,
           isBeta: user.is_beta,
-          isCompliant: user.is_compliant
+          isCompliant: user.is_compliant,
+          id: user.id
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);

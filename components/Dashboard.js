@@ -2,7 +2,10 @@
 
 // Dependencies
 const React = require('react');
-const { Link, Navigate, Route, Routes, Switch } = require('react-router-dom');
+const { Link, Navigate, Route, Routes, Switch,useLocation, useParams, useNavigate } = require('react-router-dom');
+const { ToastContainer, toast, Slide } = require('react-toastify');
+
+
 // const LoadingBar = require('react-top-loading-bar');
 
 // Semantic UI
@@ -17,6 +20,8 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
+const {helpMessageToastEmitter} = require('../functions/toastifyProps.js')
+
 const {
   BRAND_NAME,
   RELEASE_NAME,
@@ -26,6 +31,7 @@ const {
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS
 } = require('../constants');
+
 
 // Components
 const Home = require('./Home');
@@ -90,6 +96,7 @@ class Dashboard extends React.Component {
         openConversations: false,
         openSectionBar: false,
         helpBoxOpen: false,
+        helpConversationUpdate: 0, //this value is used to tell the help admin chat which conversation got a new message from user (from bridge), to update the conversation
 
         //iformation Sidebar states
         informationSidebarOpen: false,
@@ -128,6 +135,8 @@ class Dashboard extends React.Component {
   }
 
   componentDidMount() {
+    const {location, params, navigate} = this.props;
+    //console.log('HERE LOCATION ON MOUNT: ', location);
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -152,11 +161,14 @@ class Dashboard extends React.Component {
   // }
 
   componentDidUpdate(prevProps) {
+    //console.log('HERE LOCATION ON UPDATE: ', this.props.location);
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
         // Check if any conversation matches the condition
-        const hasUnreadAdminMessage = help.conversations.some(instance => instance.last_message.help_role === 'admin' && instance.last_message.is_read === 0);
+        const hasUnreadAdminMessage = help.conversations.some(
+          instance => instance.last_message.help_role === 'admin' && instance.last_message.is_read === 0
+        );
         // Set helpNotification state based on the result
         this.setState({ helpNotification: hasUnreadAdminMessage });
       } else {
@@ -181,10 +193,10 @@ class Dashboard extends React.Component {
       });
     }, 500);
   };
+  // TODO: review and determine what to do with this function
+  // handleSettings = () => {
 
-  handleSettings = () => {
-
-  }
+  // }
 
   startProgress = () => {
     this.intervalId = setInterval(() => {
@@ -215,7 +227,7 @@ class Dashboard extends React.Component {
     if (!this.state.helpBoxOpen) {
       this.props.fetchHelpConversations();
     }
-    this.setState({helpNotification: false,});
+    this.setState({ helpNotification: false, });
     this.setState(prevState => ({
       helpBoxOpen: !prevState.helpBoxOpen,
     }));
@@ -411,9 +423,39 @@ class Dashboard extends React.Component {
   closeHelpBox = () => {
     this.setState({ helpBoxOpen: false });
   }
+
+  responseCapture = (action) => {
+    const { id, isAdmin } = this.props.auth;
+
+    if (action.type == 'HelpMsgAdmin' && id == action.creator) {
+      this.props.fetchHelpConversations();
+      if (this.state.helpBoxOpen) {
+        this.props.fetchHelpMessages(action.conversation_id);
+      }
+      //emit toast for user
+      toast('You have a message from an assistant!', helpMessageToastEmitter);
+
+    }
+
+    if (action.type == 'HelpMsgUser' && isAdmin) {
+      this.setState({ helpConversationUpdate: action.conversation_id });
+      this.props.fetchAdminHelpConversations();
+      //emit toast for admin
+      //console.log('ON RESPONSE: ', this.props.location);
+      //if(this.props.location !== '/settings/admin') {
+        toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
+      //}
+
+    }
+
+  }
+
   //====================================================//
 
   render() {
+
+    // const {location, params, navigate} = this.props;
+    // console.log('HERE LOCATION: ', location);
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
@@ -459,7 +501,7 @@ class Dashboard extends React.Component {
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); this.props.fetchHelpConversations(); }}>
+          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div>
               <Menu.Item as={Link} to="/" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center' }} onClick={() => this.props.resetChat()}>
                 <Image src="/images/novo-cat-white.svg" style={{ height: 'auto', width: '75%', verticalAlign: 'top' }} />
@@ -532,7 +574,7 @@ class Dashboard extends React.Component {
           </Sidebar>
 
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); this.props.fetchHelpConversations(); }}>
+          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div className='collapse-sidebar-arrow'>
               <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
@@ -593,7 +635,7 @@ class Dashboard extends React.Component {
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
-                <Bridge />
+                <Bridge responseCapture={this.responseCapture} />
                 <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
@@ -649,7 +691,7 @@ class Dashboard extends React.Component {
                 <Route path="/statutes" element={<StatuteHome statutes={this.props.statutes} fetchStatutes={this.props.fetchStatutes} chat={this.props.chat} />} />
                 <Route path="/judges" element={<JudgeHome judges={this.props.judges} fetchJudges={this.props.fetchJudges} chat={this.props.chat} />} />
                 <Route path="/opinions" element={<OpinionHome opinions={this.props.opinions} fetchOpinions={this.props.fetchOpinions} chat={this.props.chat} />} />
-                <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} />} />
+                <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} />
                 <Route path="/documents/draft" element={<DocumentDrafter documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/documents/:id" element={<DocumentView documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
@@ -666,7 +708,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/settings/admin" element={<AdminSettings {...this.props} fetchAdminStats={this.props.fetchAdminStats} />} />
+                <Route path="/settings/admin" element={<AdminSettings {...this.props} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
@@ -705,9 +747,10 @@ class Dashboard extends React.Component {
           fetchHelpMessages={this.props.fetchHelpMessages}
           sendHelpMessage={this.props.sendHelpMessage}
           markMessagesRead={this.props.markMessagesRead}
+          clearHelpMessages={this.props.clearHelpMessages}
           help={this.props.help}
           notification={this.state.helpNotification}
-          stopNotification={()=>this.setState({helpNotification: false})}
+          stopNotification={() => this.setState({ helpNotification: false })}
         />
 
         <InformationSidebar
@@ -723,9 +766,17 @@ class Dashboard extends React.Component {
           onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
         />
 
+        <ToastContainer />
       </jeeves-dashboard>
     );
   }
 }
 
-module.exports = Dashboard;
+function dashboard(props) {
+  const location = useLocation();
+  const params = useParams();
+  const navigate = useNavigate();
+  return <Dashboard {...{location, navigate, params}} {...props} />
+}
+
+module.exports = dashboard;

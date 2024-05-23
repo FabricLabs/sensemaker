@@ -35,12 +35,14 @@ class AdminHelp extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { help } = this.props;
-    if (prevProps.help != help) {
-      // console.log("the help state", help);
-      // this.props.fetchAdminHelpConversations();
+    const { help, helpConversationUpdate } = this.props;
+    const { conversation_id } = this.state;
+    if (prevProps.helpConversationUpdate !== helpConversationUpdate) {
+      if (helpConversationUpdate == conversation_id) {
+        this.props.fetchHelpMessages(conversation_id, true); //second parameter as true for the admin flag
+        this.props.resetHelpUpdated(); //once updated, this resets the state in dashboard
+      }
     }
-
   };
 
   formatDateTime(dateTimeStr) {
@@ -49,7 +51,6 @@ class AdminHelp extends React.Component {
   }
 
   openConversation = (id) => {
-    console.log("conversation clicked:", id);
     this.setState({ displayChat: true, conversation_id: id });
     this.props.markMessagesRead(id, 'user');
   }
@@ -99,7 +100,7 @@ class AdminHelp extends React.Component {
               name='showUnread'
               checked={this.state.showUnread}
               onChange={() => this.toggleCheckbox('showUnread')}
-              style={{marginLeft: '1em'}}
+              style={{ marginLeft: '1em' }}
             />
           </div>
         </div>
@@ -113,7 +114,7 @@ class AdminHelp extends React.Component {
                     .map((instance) => (
                       <Menu.Item
                         key={instance.id}
-                        onClick={() => this.openConversation(instance.id)}
+                        onClick={() => {this.openConversation(instance.id); this.props.resetHelpUpdated()}}
                         style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
                       >
                         <Icon

@@ -1,6 +1,5 @@
 'use strict';
 
-const debounce = require('lodash.debounce');
 const fetch = require('cross-fetch');
 
 const React = require('react');
@@ -14,11 +13,9 @@ const {
   Segment,
   Button,
   Icon,
-  Popup,
   Header
 } = require('semantic-ui-react');
 
-const formatDate = require('../contracts/formatDate');
 
 class HelpBox extends React.Component {
   constructor(settings = {}) {
@@ -44,7 +41,6 @@ class HelpBox extends React.Component {
     if (!prevProps.open && this.props.open) {
       this.setState({ showFaq: true, showConversations: false });
     }
-
   }
 
   handleResize = () => {
@@ -89,6 +85,7 @@ class HelpBox extends React.Component {
                   fetchHelpMessages={this.props.fetchHelpMessages}
                   sendHelpMessage={this.props.sendHelpMessage}
                   markMessagesRead={this.props.markMessagesRead}
+                  clearHelpMessages={this.props.clearHelpMessages}
                   help={this.props.help}
                 />
               )}
@@ -107,7 +104,8 @@ class HelpBox extends React.Component {
           <Button
             icon
             style={{ backgroundColor: 'white', paddingTop: '0.5em', fontWeight: '400' }}
-            className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
+            //className={`col-center ${this.props.notification ? 'notify-active' : ''}`}
+            className='col-center'
             onClick={() => { this.setState({ showFaq: false, showConversations: true }); this.props.stopNotification(); this.forceUpdate(); }}>
             <Icon name='chat' size='big' />
             <p>Messages</p>

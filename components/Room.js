@@ -71,7 +71,6 @@ class Conversation extends React.Component {
 
   render() {
     const { id, chat, messages } = this.props;
-    console.log('entro al room');
 
     const componentStyle = {
       display: 'absolute',

@@ -34,7 +34,7 @@ const DOCUMENT_TYPES = [
  * Document Drafting interface.
  */
 class DocumentDrafter extends React.Component {
-  createDocument (...params) {
+  createDocument(...params) {
     console.debug('CREATE DOCUMENT:', params);
     fetch('/documents', {
       method: 'POST',
@@ -54,18 +54,20 @@ class DocumentDrafter extends React.Component {
     });
   }
 
-  componentDidMount () {
+  componentDidMount() {
     const { id } = this.props;
-    this.props.fetchDocument(id);
+    if (id) {
+      this.props.fetchDocument(id);
+    }
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     if (prevProps.id !== this.props.id) {
       this.props.fetchDocument(this.props.id);
     }
   }
 
-  handleDocumentTypeChange (event, data) {
+  handleDocumentTypeChange(event, data) {
     console.debug('GOT TYPE CHANGE:', event, data);
     fetch('/documents', {
       method: 'POST',
@@ -80,7 +82,7 @@ class DocumentDrafter extends React.Component {
     });
   }
 
-  render () {
+  render() {
     const { documents } = this.props;
 
     return (
@@ -96,12 +98,12 @@ class DocumentDrafter extends React.Component {
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }
 
-function View (props) {
+function View(props) {
   const { id } = useParams();
   const navigate = useNavigate();
   const navigateToDocument = (id) => navigate(`/documents/${id}`);
