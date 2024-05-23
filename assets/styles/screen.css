@@ -216,6 +216,11 @@
 
 }
 
+#help-box .ui.buttons .ui.button:hover{
+
+  background-color: rgb(165, 159, 159) !important;
+}
+
 #help-conversations, #faq-themes, .help-adm-conversation{
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
