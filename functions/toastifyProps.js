@@ -1,6 +1,6 @@
 const {Slide} = require('react-toastify');
 
-export const helpMessageToastEmitter = {
+const helpMessageToastEmitter = {
   position: "bottom-center",
   autoClose: 5000,
   icon: "🗨️",
@@ -11,4 +11,6 @@ export const helpMessageToastEmitter = {
   progress: undefined,
   theme: "light",
   transition: Slide,
-}
+};
+
+module.exports = {helpMessageToastEmitter,};

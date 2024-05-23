@@ -20,7 +20,7 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
-const helpMessageToastEmitter = require('../functions/toastifyProps');
+const {helpMessageToastEmitter} = require('../functions/toastifyProps.js')
 
 const {
   BRAND_NAME,
