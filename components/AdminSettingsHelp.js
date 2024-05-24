@@ -114,7 +114,7 @@ class AdminHelp extends React.Component {
                     .map((instance) => (
                       <Menu.Item
                         key={instance.id}
-                        onClick={() => this.openConversation(instance.id)}
+                        onClick={() => {this.openConversation(instance.id); this.props.resetHelpUpdated()}}
                         style={{ display: 'flex', flexDirection: 'row', gap: '2em', alignItems: 'center' }}
                       >
                         <Icon
