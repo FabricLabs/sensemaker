@@ -41,7 +41,7 @@ class DocumentView extends React.Component {
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
         <Segment fluid style={{ width: '100%', paddingBottom: '3em', overflowY: 'hidden' }}>
-          {documents.document.file_id ? (<section>
+          {documents.document.fabric_id ? (<section>
             <div className='document-file-header'>
               <Header as='h3' style={{ margin: 0 }}>{documents.document.title}</Header>
               <Header as="h3" style={{ margin: 0 }}><Link to={"/documents"}><Icon name='left chevron' /> Back to documents</Link></Header>

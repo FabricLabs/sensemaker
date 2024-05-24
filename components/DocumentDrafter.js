@@ -27,14 +27,18 @@ const {
   StepContent,
   Button,
   TextArea,
-  Form
+  Form,
+  Placeholder,
+  PlaceholderLine,
+  PlaceholderHeader,
+  PlaceholderParagraph,
 } = require('semantic-ui-react');
 
 // Constants
 const DOCUMENT_TYPES = [
-  { key: 'contract', text: 'Contract', value: 'contract' },
-  { key: 'proposal', text: 'Proposal', value: 'proposal' },
-  { key: 'letter', text: 'Letter', value: 'letter' }
+  { key: 'contract', text: 'Contract', value: 'Contract' },
+  { key: 'proposal', text: 'Proposal', value: 'Proposal' },
+  { key: 'letter', text: 'Letter', value: 'Letter' }
 ];
 
 /**
@@ -46,9 +50,10 @@ class DocumentDrafter extends React.Component {
     this.state = {
       stepType: true,
       stepInfo: false,
-      stepDraft: false,
-      documentType: 'letter',
+      stepReview: false,
+      documentType: null,
       content: null,
+      draftLoading: false,
     };
 
   }
@@ -80,13 +85,21 @@ class DocumentDrafter extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
+    const {documents} = this.props;
     if (prevProps.id !== this.props.id) {
       this.props.fetchDocument(this.props.id);
+    }
+
+    if(prevProps.documents !== documents){
+      if(this.state.draftLoading && !documents.creating && documents.creationSuccess){
+        this.setState({draftLoading: false});
+        this.props.typeSelected(documents.fabric_id);
+      }
     }
   }
 
   handleDocumentTypeChange(event, data) {
-    console.debug('GOT TYPE CHANGE:', event, data);
+    console.debug('GOT TYPE CHANGE:', data.value);
     // fetch('/documents', {
     //   method: 'POST',
     //   headers: {
@@ -108,9 +121,15 @@ class DocumentDrafter extends React.Component {
     });
   };
 
+  formatContent(content) {
+    return content.split('\n').map((line, index) => (
+      <p key={index} style={{ marginBottom: '0' }}>{line}</p>
+    ));
+  }
+
   render() {
     const { documents } = this.props;
-    const { stepType, stepInfo, stepDraft } = this.state;
+    const { stepType, stepInfo, stepReview, documentType, content, draftLoading } = this.state;
 
     return (
       <Segment id='document-drafter' className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
@@ -132,11 +151,11 @@ class DocumentDrafter extends React.Component {
             </StepContent>
           </Step>
 
-          <Step active={stepDraft}>
+          <Step active={stepReview}>
             <Icon name='edit outline' />
             <StepContent>
-              <StepTitle>Draft Document</StepTitle>
-              <StepDescription>Check your document</StepDescription>
+              <StepTitle>Review</StepTitle>
+              <StepDescription>Check your information</StepDescription>
             </StepContent>
           </Step>
         </StepGroup>
@@ -151,25 +170,80 @@ class DocumentDrafter extends React.Component {
               onChange={this.handleDocumentTypeChange.bind(this)}
               options={DOCUMENT_TYPES}
               placeholder="Choose a type"
-              value={this.state.documentType}
+              value={documentType}
               fluid
             />
-            <Button color='green' style={{ marginTop: '1rem' }} fluid onClick={() => this.setState({ stepType: false, stepInfo: true })}>Next <Icon name='chevron right' /></Button>
+            <Button color='green' disabled={!documentType} style={{ marginTop: '1rem' }} fluid onClick={() => this.setState({ stepType: false, stepInfo: true })}>Next <Icon name='chevron right' /></Button>
           </section>
         )}
         {stepInfo && (
-          <section style={{ marginTop: '1rem' }}>
-            <Header as='h2'>Information</Header>
-            <p>Enter any information you can give us about the document you want to draft.</p>
-            <p>Provided information will help Novo to draft a better document for you</p>
-            <Form>
-              <TextArea name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
+          <section style={{ marginTop: '1rem' }} className='col-center'>
+            <div>
+              <Header as='h2'>Information</Header>
+              <p>Enter any information you can give us about the document you want to draft.</p>
+              <p>Provided information will help Novo to draft a better document for you</p>
+            </div>
+            <Form style={{ width: '100%', marginTop: '1rem' }}>
+              <TextArea value={content} name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
             </Form>
             <div className='col-center' style={{ width: '100%' }}>
               <Button.Group style={{ marginTop: '1rem', width: '80%' }}>
                 <Button primary icon onClick={() => this.setState({ stepInfo: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
-                <Button color='green' icon onClick={() => this.setState({ stepInfo: false, stepDraft: true })}>Next <Icon name='chevron right' /></Button>
+                <Button color='green' icon onClick={() => this.setState({ stepInfo: false, stepReview: true })} disabled={!content}>Next <Icon name='chevron right' /></Button>
               </Button.Group>
+            </div>
+          </section>
+        )}
+        {stepReview && (
+          <section style={{ marginTop: '1rem', width: '75%' }} className='col-center'>
+            <div>
+              <Header as='h2' centered>Review Information</Header>
+              <p>Please review the information you provided, you can edit it</p>
+              <p>by clicking in the information you want to change</p>
+              <p>Once You are ready press Draft Document to start.</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '2em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
+              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }} disabled={draftLoading}>
+                <Header as='h4' onClick={() => this.setState({ stepReview: false, stepInfo: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
+                <div onClick={() => this.setState({ stepReview: false, stepInfo: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
+                  {this.formatContent(content)}
+                </div>
+              </Segment>
+              <Button.Group vertical>
+                <Button color='green' icon onClick={() => {this.props.createDocument(documentType, content); this.setState({draftLoading: true})}} style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={draftLoading}>Start Drafting! <Icon name='chevron right' /></Button>
+                <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={draftLoading}><Icon name='chevron left' /> Back</Button>
+              </Button.Group>
+              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }} loading={draftLoading}>
+                <Placeholder>
+                  <PlaceholderHeader>
+                    <PlaceholderLine />
+                  </PlaceholderHeader>
+                  <PlaceholderParagraph>
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                  </PlaceholderParagraph>
+                  <PlaceholderParagraph>
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                  </PlaceholderParagraph>
+                  <PlaceholderParagraph>
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                  </PlaceholderParagraph>
+                  <PlaceholderParagraph>
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                    <PlaceholderLine />
+                  </PlaceholderParagraph>
+                </Placeholder>
+              </Segment>
+            </div>
+            <div className='col-center' style={{ width: '100%' }}>
             </div>
           </section>
         )}
@@ -189,4 +263,4 @@ function View(props) {
   return <DocumentDrafter id={id} typeSelected={navigateToDocument} {...props} />;
 }
 
-module.exports = DocumentDrafter;
+module.exports = View;

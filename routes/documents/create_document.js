@@ -4,17 +4,17 @@ const merge = require('lodash.merge');
 const Actor = require('@fabric/core/types/actor');
 
 module.exports = async function (req, res, next) {
+  const { type, content } = req.body;
   // TODO: make error messages nicer, use both HTML and JSON depending on header
   if (!req.user || !req.user.id) {
     return res.status(401).json({ status: 'error', message: 'Unauthorized' });
   }
-
   // ATTENTION: this allows the user to set any fields on the document, including 'status' and 'owner'
-  const obj = merge({}, req.body, { created: (new Date()).toISOString() });
+  const obj = merge({}, content, { created: (new Date()).toISOString() });
   console.debug('[NOVO]', '[HTTP]', 'Creating new document:', obj);
 
   this.generateDocumentOutline({
-    type: 'Demand Letter', // TODO: allow configuration of document type
+    type: type, // TODO: allow configuration of document type
     parameters: obj
   }).catch((exception) => {
     console.error('[NOVO]', '[HTTP]', 'Error generating document outline:', exception);
