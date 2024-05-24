@@ -33,6 +33,7 @@ class DocumentView extends React.Component {
     if (prevProps.id !== this.props.id) {
       this.props.fetchDocument(this.props.id);
     }
+    console.log(this.props.documents.document);
   }
 
   render() {
