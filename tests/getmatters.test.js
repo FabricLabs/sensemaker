@@ -1,12 +1,6 @@
-// to run this test, please change the package.json "test" line to "test": "mocha tests/getmatters.test.js",
-
-
 const chai = require('chai');
 const sinon = require('sinon');
 const expect = chai.expect;
-//const Jeeves = require('../services/jeeves');
-
-
 
 const myMiddleware = require('../routes/matters/list_matters');
 
@@ -15,12 +9,12 @@ describe('Matters test', () => {
 
   beforeEach(() => {
     // Here we provide a hardcoded bearer token
-    const token = "Bearer eyJhbGciOiJFUzI1NksiLCJpc3MiOiIwMjI3NGUwNzU0NDQxYzk3ZWZhM2YxZDExYzk2M2NkMDBiZTFlYzlhNDY4MTRmYThkMjk4NDNlMjFlZWU1NDY4YTAiLCJ0eXAiOiJKV1QifQ.eyJjYXAiOiJPUF9JREVOVElUWSIsImlhdCI6MTcxMzE5Mzk4NCwiaXNzIjoiMDIyNzRlMDc1NDQ0MWM5N2VmYTNmMWQxMWM5NjNjZDAwYmUxZWM5YTQ2ODE0ZmE4ZDI5ODQzZTIxZWVlNTQ2OGEwIiwic3ViIjoiMTEiLCJzdGF0ZSI6eyJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXX19.ZmE2NTg3MmMzMDNmZjczZGZiMTc4NTg3Y2U2ZDIzZWZiZDBiMzI0NDNjOGE5YjNjYzRjZjA3MzlkMjQwY2NjOA";
+    // const token = "Bearer eyJhbGciOiJFUzI1NksiLCJpc3MiOiIwMjI3NGUwNzU0NDQxYzk3ZWZhM2YxZDExYzk2M2NkMDBiZTFlYzlhNDY4MTRmYThkMjk4NDNlMjFlZWU1NDY4YTAiLCJ0eXAiOiJKV1QifQ.eyJjYXAiOiJPUF9JREVOVElUWSIsImlhdCI6MTcxMzE5Mzk4NCwiaXNzIjoiMDIyNzRlMDc1NDQ0MWM5N2VmYTNmMWQxMWM5NjNjZDAwYmUxZWM5YTQ2ODE0ZmE4ZDI5ODQzZTIxZWVlNTQ2OGEwIiwic3ViIjoiMTEiLCJzdGF0ZSI6eyJyb2xlcyI6WyJhZG1pbiIsInVzZXIiXX19.ZmE2NTg3MmMzMDNmZjczZGZiMTc4NTg3Y2U2ZDIzZWZiZDBiMzI0NDNjOGE5YjNjYzRjZjA3MzlkMjQwY2NjOA";
 
     // Mock the request object including authorization header
     mockRequest = {
       headers: {
-        authorization: token
+        // authorization: token
       },
       user: {
         id: 11

@@ -24,3 +24,4 @@ ollama pull yarn-llama2:13b-64k
 
 ### Embedding Models
 ollama pull snowflake-arctic-embed # fast embeddings
+ollama pull mxbai-embed-large # large embeddings

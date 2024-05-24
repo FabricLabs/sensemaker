@@ -718,9 +718,6 @@ class Jeeves extends Hub {
             break;
         }
 
-
-        //console.debug('GOT OUTLINE:', outline);
-
         // RAG
         const cases = await this._vectorSearchCases(request.query, 5);
         // const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);

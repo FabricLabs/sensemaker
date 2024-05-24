@@ -61,10 +61,7 @@ describe('Middleware Unit Test', function() {
 
     res.json(middlewareFn(req, res));
 
-    console.log('1: ');
     expect(res.format.calledOnce).to.be.true;
-    console.log('2: ');
-    console.log('THIS IS RES: ',res);
     expect(res.json.firstCall.args).to.be.an('array');
     sinon.assert.calledOnce(res.json);
 
