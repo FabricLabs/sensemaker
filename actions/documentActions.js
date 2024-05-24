@@ -142,7 +142,7 @@ const searchDocument = (query) => {
 
 
 //remember to add the reducer
-const createDocument = (query) => {
+const createDocument = (type,query) => {
   return async (dispatch, getState) => {
     dispatch(createDocumentRequest());
     const { token } = getState().auth;
@@ -153,13 +153,13 @@ const createDocument = (query) => {
           'Content-Type': 'application/json'
         },
         method: 'POST',
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ type,query })
       });
 
       const obj = await response.json();
       console.debug('fetch result: ', obj);
 
-      dispatch(createDocumentSuccess(obj.content));
+      dispatch(createDocumentSuccess(obj.fabric_id));
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(createDocumentFailure(error.message));
