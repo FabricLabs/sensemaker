@@ -1006,3 +1006,10 @@ fabric-motd {
   align-items: center;
   margin-bottom: 2em;
 }
+
+/* Document Drafter */
+
+
+#document-drafter section textarea {
+  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+}
