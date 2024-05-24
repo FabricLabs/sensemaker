@@ -93,7 +93,7 @@ class DocumentDrafter extends React.Component {
     if(prevProps.documents !== documents){
       if(this.state.draftLoading && !documents.creating && documents.creationSuccess){
         this.setState({draftLoading: false});
-        this.props.typeSelected(document.results.fabric_id);
+        this.props.typeSelected(document.fabric_id);
       }
     }
   }
