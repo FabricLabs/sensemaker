@@ -110,7 +110,7 @@ class DocumentHome extends React.Component {
               )
             }
           </List>
-          <Segment>
+          {/* <Segment>
             <Form>
               <Form.Field>
                 <Header as='h3'>Draft Documents</Header>
@@ -119,7 +119,7 @@ class DocumentHome extends React.Component {
                 <Button icon='file'>Draft</Button>
               </Form.Field>
             </Form>
-          </Segment>
+          </Segment> */}
         </Segment>
 
       </fabric-document-home>
