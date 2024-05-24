@@ -160,8 +160,8 @@ class DocumentDrafter extends React.Component {
           <Step active={stepReview}>
             <Icon name='edit outline' />
             <StepContent>
-              <StepTitle>Review</StepTitle>
-              <StepDescription>Check your information</StepDescription>
+              <StepTitle>Preview</StepTitle>
+              <StepDescription>Check the document outline</StepDescription>
             </StepContent>
           </Step>
         </StepGroup>
