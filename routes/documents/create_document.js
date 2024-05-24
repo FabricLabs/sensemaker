@@ -6,7 +6,7 @@ const Actor = require('@fabric/core/types/actor');
 module.exports = async function (req, res, next) {
   // TODO: make error messages nicer, use both HTML and JSON depending on header
   if (!req.user || !req.user.id) {
-    return res.error(401, 'Unauthorized');
+    return res.status(401).json({ status: 'error', message: 'Unauthorized' });
   }
 
   // ATTENTION: this allows the user to set any fields on the document, including 'status' and 'owner'
@@ -22,11 +22,15 @@ module.exports = async function (req, res, next) {
   }).then(async (output) => {
     console.debug('[NOVO]', '[HTTP]', 'Generated document outline:', output);
 
+    /*
     const section = { outline: output, target: 'Introduction' };
     this.generateDocumentSection(section).catch((exception) => {
+      console.error('[NOVO]', '[HTTP]', 'Error generating document section:', exception);
+      res.error(500, 'Error generating document section');
     }).then((generated) => {
       console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated);
     });
+    */
 
     // TODO: parse JSON, return to object before creating Actor
     const actor = new Actor(obj);
