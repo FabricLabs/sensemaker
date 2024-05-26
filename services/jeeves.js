@@ -1310,6 +1310,8 @@ class Jeeves extends Hub {
     });
 
     // Trainer
+    this.trainer.attachDatabase(this.db);
+
     try {
       await this.trainer.start();
     } catch (exception) {

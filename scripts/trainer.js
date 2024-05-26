@@ -49,6 +49,7 @@ async function main (input = {}) {
 
   // Documents
   if (ENABLE_DOCUMENT_INGEST) {
+    // TODO: filter documents by embedding status (only process documents lacking embeddings)
     const documentStream = db('documents').select('*').where('is_available', true).orderByRaw('RAND()').limit(SYNC_EMBEDDINGS_COUNT).stream();
     console.log('[TRAINER]', '[MAIN]', 'Documents:', documentStream);
 

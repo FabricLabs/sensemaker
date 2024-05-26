@@ -153,6 +153,10 @@ class Trainer extends Service {
     return this;
   }
 
+  attachDatabase (db) {
+    this.db = db;
+  }
+
   /**
    * Ingest a directory of files.
    * @param {String} directory Path to ingest.
