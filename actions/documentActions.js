@@ -29,6 +29,10 @@ const CREATE_DOCUMENT_REQUEST = 'CREATE_DOCUMENT_REQUEST';
 const CREATE_DOCUMENT_SUCCESS = 'CREATE_DOCUMENT_SUCCESS';
 const CREATE_DOCUMENT_FAILURE = 'CREATE_DOCUMENT_FAILURE';
 
+const CREATE_DOCUMENT_SECTION_REQUEST = 'CREATE_DOCUMENT_SECTION_REQUEST';
+const CREATE_DOCUMENT_SECTION_SUCCESS = 'CREATE_DOCUMENT_SECTION_SUCCESS';
+const CREATE_DOCUMENT_SECTION_FAILURE = 'CREATE_DOCUMENT_SECTION_FAILURE';
+
 // Action creators
 const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
 const fetchDocumentsSuccess = (documents) => ({ type: FETCH_DOCUMENTS_SUCCESS, payload: documents });
@@ -49,6 +53,11 @@ const searchDocumentFailure = (error) => ({ type: SEARCH_DOCUMENT_FAILURE, paylo
 const createDocumentRequest = () => ({ type: CREATE_DOCUMENT_REQUEST });
 const createDocumentSuccess = (results) => ({ type: CREATE_DOCUMENT_SUCCESS, payload: results });
 const createDocumentFailure = (error) => ({ type: CREATE_DOCUMENT_FAILURE, payload: error });
+
+const createSectionRequest = () => ({ type: CREATE_DOCUMENT_SECTION_REQUEST });
+const createSectionSuccess = (results) => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS, payload: results });
+const createSectionFailure = (error) => ({ type: CREATE_DOCUMENT_SECTION_FAILURE, payload: error });
+
 
 
 // Thunk action creator
@@ -140,8 +149,6 @@ const searchDocument = (query) => {
   }
 }
 
-
-//remember to add the reducer
 const createDocument = (type,query) => {
   return async (dispatch, getState) => {
     dispatch(createDocumentRequest());
@@ -166,12 +173,39 @@ const createDocument = (type,query) => {
     }
   }
 }
+
+//remember to add the reducer
+const createDocumentSection = (fabricID,sectionNumber,title) => {
+  return async (dispatch, getState) => {
+    dispatch(createSectionRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/documents/${fabricID}/section/${sectionNumber}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({ title })
+      });
+
+      const obj = await response.json();
+      console.debug('fetch result: ', obj);
+
+      dispatch(createSectionSuccess(obj.fabric_id));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      dispatch(createSectionFailure(error.message));
+    }
+  }
+}
 module.exports = {
   fetchDocument,
   fetchDocuments,
   uploadDocument,
   searchDocument,
   createDocument,
+  createDocumentSection,
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
@@ -187,4 +221,7 @@ module.exports = {
   CREATE_DOCUMENT_REQUEST,
   CREATE_DOCUMENT_SUCCESS,
   CREATE_DOCUMENT_FAILURE,
+  CREATE_DOCUMENT_SECTION_REQUEST,
+  CREATE_DOCUMENT_SECTION_SUCCESS,
+  CREATE_DOCUMENT_SECTION_FAILURE,
 };

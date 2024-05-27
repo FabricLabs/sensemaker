@@ -8,6 +8,7 @@ module.exports = {
   },
   documents: {
     create: require('./documents/create_document'),
+    createSection: require('./documents/create_document_section.js'),
     list: require('./documents/list_documents'),
     getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
