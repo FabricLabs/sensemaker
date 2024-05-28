@@ -208,6 +208,13 @@ class Trainer extends Service {
         const json = await response.json();
         console.debug('[TRAINER]', 'Ollama JSON:', json);
 
+        const inserted = await this.db('embeddings').insert({
+          text: document.content,
+          content: JSON.stringify(json.embedding)
+        });
+
+        console.debug('[TRAINER]', 'Inserted:', inserted);
+
         // Old Embeddings (specific to Langchain)
         const element = new Document({ pageContent: document.content, metadata: document.metadata });
         this.embeddings.addDocuments([element]).catch(reject).then(() => {
