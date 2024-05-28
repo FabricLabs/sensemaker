@@ -155,6 +155,7 @@ const {
   searchDocument,
   createDocument,
   createDocumentSection,
+  editDocument,
 } = require('../actions/documentActions');
 
 // ## Files Actions
@@ -297,6 +298,7 @@ async function main(input = {}) {
     uploadDocument: uploadDocument,
     createDocument: createDocument,
     createDocumentSection: createDocumentSection,
+    editDocument: editDocument,
     fetchFiles: fetchFiles,
     fetchFile: fetchFile,
     uploadFile: uploadFile,

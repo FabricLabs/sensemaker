@@ -10,6 +10,7 @@ module.exports = {
     create: require('./documents/create_document'),
     createSection: require('./documents/create_document_section.js'),
     list: require('./documents/list_documents'),
+    edit: require('./documents/edit_document.js'),
     getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
