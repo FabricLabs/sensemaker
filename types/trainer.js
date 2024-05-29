@@ -41,6 +41,7 @@ const { TensorFlowEmbeddings } = require('@langchain/community/embeddings/tensor
 const { Document } = require('@langchain/core/documents');
 
 // Fabric Types
+const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
 // Sensemaker Types
@@ -191,6 +192,7 @@ class Trainer extends Service {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
       console.trace('[TRAINER]', 'Ingesting document:', document);
+      const actor = new Actor({ content: document.content });
       const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
       fetch(endpoint, {
         headers: {
@@ -204,15 +206,14 @@ class Trainer extends Service {
       }).catch((exception) => {
         console.error('[TRAINER]', 'Error ingesting document:', exception);
       }).then(async (response) => {
-        console.debug('[TRAINER]', 'Ollama response:', response);
         const json = await response.json();
-        console.debug('[TRAINER]', 'Ollama JSON:', json);
-
         const inserted = await this.db('embeddings').insert({
-          text: document.content,
+          fabric_id: actor.id,
+          // text: document.content, // TODO: re-work storage, use document ID instead
           content: JSON.stringify(json.embedding)
         });
 
+        if (!inserted || !inserted.length) return reject(new Error('No embeddings inserted.'));
         console.debug('[TRAINER]', 'Inserted:', inserted);
 
         // Old Embeddings (specific to Langchain)
