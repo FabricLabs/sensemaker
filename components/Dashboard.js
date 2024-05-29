@@ -20,7 +20,7 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
-const {helpMessageToastEmitter} = require('../functions/toastifyProps.js')
+const {helpMessageToastEmitter, helpMessageSound} = require('../functions/toastifyProps.js')
 
 const {
   BRAND_NAME,
@@ -425,8 +425,10 @@ class Dashboard extends React.Component {
     this.setState({ helpBoxOpen: false });
   }
 
+
   ResponseCapture = (action) => {
     const { id, isAdmin } = this.props.auth;
+    const sound = new Audio(helpMessageSound);
 
     if (action.type == 'HelpMsgAdmin' && id == action.creator) {
       this.props.fetchHelpConversations();
@@ -434,18 +436,18 @@ class Dashboard extends React.Component {
         this.props.fetchHelpMessages(action.conversation_id);
       }
       //emit toast for user
+      sound.play().catch((error) => {console.error('Failed to play sound: ', error);});
       toast('You have a message from an assistant!', helpMessageToastEmitter);
-
     }
 
     if (action.type == 'HelpMsgUser' && isAdmin) {
       this.setState({ helpConversationUpdate: action.conversation_id });
       this.props.fetchAdminHelpConversations();
       //emit toast for admin
-      console.log('ON RESPONSE: ', this.props.location);
-      //if(this.props.location !== '/settings/admin') {
+      if(this.props.location.pathname !== '/settings/admin') {
+        sound.play().catch((error) => {console.error('Failed to play sound: ', error);});
         toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
-      //}
+      }
 
     }
 
