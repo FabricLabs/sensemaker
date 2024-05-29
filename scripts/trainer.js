@@ -27,22 +27,23 @@ const Trainer = require('../types/trainer');
 
 // Main Program
 async function main (input = {}) {
+  // Database
+  const db = knex({
+    client: 'mysql2',
+    connection: input.db
+  });
+
   // Fabric Filesystem
   const filesystem = new Filesystem(input.files);
   await filesystem.start();
 
   // Sensemaker
   const trainer = new Trainer(input);
+  trainer.attachDatabase(db);
   await trainer.start();
 
   // Queue
   const queue = new Queue(input);
-
-  // Database
-  const db = knex({
-    client: 'mysql2',
-    connection: input.db
-  });
 
   // Main Training Loop
   console.log('[TRAINER]', '[MAIN]', 'Starting training process...');
