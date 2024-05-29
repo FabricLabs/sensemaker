@@ -1,6 +1,5 @@
 'use strict';
 
-const debounce = require('lodash.debounce');
 const fetch = require('cross-fetch');
 
 const React = require('react');
@@ -14,11 +13,9 @@ const {
   Segment,
   Button,
   Icon,
-  Popup,
   Header
 } = require('semantic-ui-react');
 
-const formatDate = require('../contracts/formatDate');
 
 class HelpBox extends React.Component {
   constructor(settings = {}) {
@@ -44,7 +41,6 @@ class HelpBox extends React.Component {
     if (!prevProps.open && this.props.open) {
       this.setState({ showFaq: true, showConversations: false });
     }
-
   }
 
   handleResize = () => {

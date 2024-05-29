@@ -136,7 +136,7 @@ class Dashboard extends React.Component {
 
   componentDidMount() {
     const {location, params, navigate} = this.props;
-    console.log('HERE LOCATION ON MOUNT: ', location);
+    //console.log('HERE LOCATION ON MOUNT: ', location);
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -161,8 +161,7 @@ class Dashboard extends React.Component {
   // }
 
   componentDidUpdate(prevProps) {
-    console.log('HERE LOCATION ON UPDATE: ', this.props.location);
-
+    //console.log('HERE LOCATION ON UPDATE: ', this.props.location);
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
@@ -194,7 +193,7 @@ class Dashboard extends React.Component {
       });
     }, 500);
   };
-  // TODO: review and determine what to do with this function 
+  // TODO: review and determine what to do with this function
   // handleSettings = () => {
 
   // }
@@ -426,7 +425,7 @@ class Dashboard extends React.Component {
   }
 
 
-  ResponseCapture = (action) => {
+  responseCapture = (action) => {
     const { id, isAdmin } = this.props.auth;
     const sound = new Audio(helpMessageSound);
 
@@ -452,7 +451,7 @@ class Dashboard extends React.Component {
     }
 
   }
- 
+
   //====================================================//
 
   render() {
@@ -638,7 +637,7 @@ class Dashboard extends React.Component {
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
-                <Bridge ResponseCapture={this.ResponseCapture} />
+                <Bridge responseCapture={this.responseCapture} />
                 <p style={{ marginTop: '2em' }}><small className="subtle">&copy; 2024 Legal Tools &amp; Technology, Inc.</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>

@@ -109,7 +109,7 @@ class Bridge extends React.Component {
                 break;
               case 'HelpMsgUser':
               case 'HelpMsgAdmin':
-                this.props.ResponseCapture(chunk);
+                this.props.responseCapture(chunk);
                 break;
 
             }
