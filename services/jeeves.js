@@ -1892,6 +1892,7 @@ class Jeeves extends Hub {
     // Courts
     this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
     this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.view.bind(this));
+    this.http._addRoute('GET', '/courts/id/:id', ROUTES.courts.viewById.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));

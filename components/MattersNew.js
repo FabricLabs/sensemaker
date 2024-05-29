@@ -117,10 +117,33 @@ class MattersNew extends React.Component {
     if (title && plaintiff && defendant && jurisdiction_id !== null) {
       this.setState({ creating: true });
       const representing = representingOption === 'Plaintiff' ? 'P' : 'D';
+      console.log('este es el court id', court_id);
       this.props.createMatter(title, description, plaintiff, defendant, representing, jurisdiction_id, court_id);
     }
   };
 
+  selectJurisdiction = (value) => {
+    const { courts } = this.props;
+
+    this.setState({ jurisdiction_id: value, jurisdictionError: false });
+
+    if (courts.courts.length > 0) {
+      const filteredCourts = this.props.courts.courts.filter(court => court.jurisdiction_id === value);
+      const options = filteredCourts.map(instance => ({
+        key: instance.id,
+        value: instance.id,
+        text: instance.name
+      }));
+      options.sort((a, b) => a.text.localeCompare(b.text));
+      options.unshift({
+        key: 'none',
+        value: '',
+        text: 'None'
+      });
+      console.log('options', options);
+      this.setState({ courtsOptions: options });
+    }
+  }
 
   render() {
     const { jurisdictions, courts, matters } = this.props;
@@ -139,6 +162,8 @@ class MattersNew extends React.Component {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
+    console.log("jurisdictions", jurisdictions);
+    console.log("courts", courts);
     return (
       <Segment style={{ height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
@@ -237,7 +262,7 @@ class MattersNew extends React.Component {
                       selection
                       required
                       options={jurisdictionsOptions}
-                      onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                      onChange={(e, { value }) => this.selectJurisdiction(value)}
                       error={jurisdictionErrorMessage}
                     />
                   </Table.Cell>
@@ -254,6 +279,7 @@ class MattersNew extends React.Component {
                       selection
                       options={courtsOptions}
                       onChange={(e, { value }) => this.setState({ court_id: value })}
+                      disabled={!this.state.jurisdiction_id}
                     />
                   </Table.Cell>
                   <Table.Cell />

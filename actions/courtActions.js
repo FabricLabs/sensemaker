@@ -13,6 +13,9 @@ const FETCH_COURTS_FAILURE = 'FETCH_COURTS_FAILURE';
 const FETCH_COURT_REQUEST = 'FETCH_COURT_REQUEST';
 const FETCH_COURT_SUCCESS = 'FETCH_COURT_SUCCESS';
 const FETCH_COURT_FAILURE = 'FETCH_COURT_FAILURE';
+const FETCH_COURT_BY_ID_REQUEST = 'FETCH_COURT_BY_ID_REQUEST';
+const FETCH_COURT_BY_ID_SUCCESS = 'FETCH_COURT_BY_ID_SUCCESS';
+const FETCH_COURT_BY_ID_FAILURE = 'FETCH_COURT_BY_ID_FAILURE';
 const SEARCH_COURT_REQUEST = 'SEARCH_COURT_REQUEST';
 const SEARCH_COURT_SUCCESS = 'SEARCH_COURT_SUCCESS';
 const SEARCH_COURT_FAILURE = 'SEARCH_COURT_FAILURE';
@@ -24,6 +27,9 @@ const fetchCourtsFailure = (error) => ({ type: FETCH_COURTS_FAILURE, payload: er
 const fetchCourtRequest = () => ({ type: FETCH_COURT_REQUEST, loading: true });
 const fetchCourtSuccess = (instance) => ({ type: FETCH_COURT_SUCCESS, payload: instance, loading: false });
 const fetchCourtFailure = (error) => ({ type: FETCH_COURT_FAILURE, payload: error, loading: false });
+const fetchCourtByIdRequest = () => ({ type: FETCH_COURT_BY_ID_REQUEST, loading: true });
+const fetchCourtByIdSuccess = (instance) => ({ type: FETCH_COURT_BY_ID_SUCCESS, payload: instance, loading: false });
+const fetchCourtByIdFailure = (error) => ({ type: FETCH_COURT_BY_ID_FAILURE, payload: error, loading: false });
 const searchCourtRequest = () => ({ type: SEARCH_COURT_REQUEST });
 const searchCourtSuccess = (results) => ({ type: SEARCH_COURT_SUCCESS, payload: results });
 const searchCourtFailure = (error) => ({ type: SEARCH_COURT_FAILURE, payload: error });
@@ -51,6 +57,19 @@ const fetchCourt = (slug) => {
       dispatch(fetchCourtSuccess(instance));
     } catch (error) {
       dispatch(fetchCourtFailure(error));
+    }
+  };
+};
+
+const fetchCourtById = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchCourtByIdRequest());
+    const { token } = getState().auth;
+    try {
+      const instance = await fetchFromAPI(`/courts/id/${id}`, null, token);
+      dispatch(fetchCourtByIdSuccess(instance));
+    } catch (error) {
+      dispatch(fetchCourtByIdFailure(error));
     }
   };
 };
@@ -84,10 +103,14 @@ const searchCourt = (query) => {
 module.exports = {
   fetchCourt,
   fetchCourts,
+  fetchCourtById,
   searchCourt,
   FETCH_COURT_REQUEST,
   FETCH_COURT_SUCCESS,
   FETCH_COURT_FAILURE,
+  FETCH_COURT_BY_ID_REQUEST,
+  FETCH_COURT_BY_ID_SUCCESS,
+  FETCH_COURT_BY_ID_FAILURE,
   FETCH_COURTS_REQUEST,
   FETCH_COURTS_SUCCESS,
   FETCH_COURTS_FAILURE,

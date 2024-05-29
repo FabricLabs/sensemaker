@@ -66,6 +66,7 @@ module.exports = {
   courts: {
     list: require('./courts/list_courts'),
     view: require('./courts/court_view'),
+    viewById: require('./courts/court_view_by_id'),
     findCourt: require('./courts/find_court'),
   },
   sessions: {

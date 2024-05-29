@@ -93,7 +93,7 @@ class MatterView extends React.Component {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
       }
       if (matters.current.court_id) {
-        this.props.fetchCourt(matters.current.court_id);
+        this.props.fetchCourtById(matters.current.court_id);
       }
       if (!this.state.isEditMode) {
         this.setState({ representingOption: matters.current.representing });
@@ -216,6 +216,7 @@ class MatterView extends React.Component {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
 
+    console.log(courts.current);
     const jurisdictionErrorMessage = (!this.state.jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
