@@ -65,6 +65,7 @@ module.exports = {
   },
   courts: {
     list: require('./courts/list_courts'),
+    listByJurisdiction: require('./courts/list_courts_by_jurisdiction.js'),
     view: require('./courts/court_view'),
     viewById: require('./courts/court_view_by_id'),
     findCourt: require('./courts/find_court'),

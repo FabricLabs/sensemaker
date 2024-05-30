@@ -67,7 +67,7 @@ class MatterView extends React.Component {
     this.props.fetchMatter(this.props.id);
     this.props.fetchMatterConversations(this.props.id);
     this.props.fetchJurisdictions();
-    this.props.fetchCourts();
+    // this.props.fetchCourts();
     this.props.fetchMatterFiles(this.props.id);
     this.props.fetchMatterNotes(this.props.id);
   }
@@ -79,7 +79,7 @@ class MatterView extends React.Component {
       this.props.fetchMatter(this.props.id);
       this.props.fetchMatterConversations(this.props.id);
       this.props.fetchJurisdictions();
-      this.props.fetchCourts();
+      // this.props.fetchCourts();
       this.props.fetchMatterFiles(this.props.id);
       this.props.fetchMatterNotes(this.props.id);
     }
@@ -91,6 +91,7 @@ class MatterView extends React.Component {
 
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
+        this.props.fetchCourtsByJurisdiction(matters.current.jurisdiction_id);
       }
       if (matters.current.court_id) {
         this.props.fetchCourtById(matters.current.court_id);
@@ -341,7 +342,10 @@ class MatterView extends React.Component {
                     selection
                     options={this.state.jurisdictionsOptions}
                     value={this.state.jurisdiction_id}
-                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                    onChange={(e, { value }) => {
+                      this.setState({ jurisdiction_id: value, jurisdictionError: false });
+                      this.props.fetchCourtsByJurisdiction(value)
+                    }}
                     error={jurisdictionErrorMessage}
                   />
                 ) : (

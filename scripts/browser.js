@@ -78,7 +78,8 @@ const {
   fetchCourts,
   fetchCourt,
   fetchCourtById,
-  searchCourt
+  searchCourt,
+  fetchCourtsByJurisdiction,
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -289,6 +290,7 @@ async function main(input = {}) {
     fetchStatutes: fetchStatutes,
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
+    fetchCourtsByJurisdiction: fetchCourtsByJurisdiction,
     fetchCourt: fetchCourt,
     fetchCourtById: fetchCourtById,
     searchCourt: searchCourt,

@@ -5,6 +5,9 @@ const { fetchFromAPI } = require('./apiActions');
 async function fetchCourtsFromAPI (token) {
   return fetchFromAPI('/courts', null, token);
 }
+async function fetchJurisdictionCourtsFromAPI (jurisdiction_id,token) {
+  return fetchFromAPI(`/courts/jurisdiction/${jurisdiction_id}`, null, token);
+}
 
 // Action types
 const FETCH_COURTS_REQUEST = 'FETCH_COURTS_REQUEST';
@@ -41,6 +44,20 @@ const fetchCourts = () => {
     const { token } = getState().auth;
     try {
       const courts = await fetchCourtsFromAPI(token);
+      dispatch(fetchCourtsSuccess(courts));
+    } catch (error) {
+      dispatch(fetchCourtsFailure(error));
+    }
+  };
+};
+
+
+const fetchCourtsByJurisdiction = (jurisdiction_id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchCourtsRequest());
+    const { token } = getState().auth;
+    try {
+      const courts = await fetchJurisdictionCourtsFromAPI(jurisdiction_id,token);
       dispatch(fetchCourtsSuccess(courts));
     } catch (error) {
       dispatch(fetchCourtsFailure(error));
@@ -88,10 +105,10 @@ const searchCourt = (query) => {
         method: 'SEARCH',
         body: JSON.stringify({ query })
       });
-      
+
       const obj = await response.json();
       console.log('fetch result: ', obj);
-      
+
       dispatch(searchCourtSuccess(obj.content));
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -103,6 +120,7 @@ const searchCourt = (query) => {
 module.exports = {
   fetchCourt,
   fetchCourts,
+  fetchCourtsByJurisdiction,
   fetchCourtById,
   searchCourt,
   FETCH_COURT_REQUEST,
