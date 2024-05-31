@@ -17,7 +17,8 @@ module.exports = async function (req, res, next) {
 
   const target = req.params.id;
   const existing = await this.db('document_sections').where({ document_id: document.id, section_number: target }).first();
-
+  //HERE IF THE USER WANTS TO CREATE A SECTION BETWEEN OTHER THAT ALREADY EXIST, WE NEED TO UPDATE THE NEXT SECTIONS "section_number"
+  //we will need to make the next sections with the section_number +1
   if (existing) {
     return res.status(409).json({ status: 'error', message: 'Section already exists.' });
   }
