@@ -3,7 +3,7 @@
 module.exports = async function (req, res) {
   console.debug('[NOVO]', 'Editing document:', req.params.fabricID);
   try {
-    const { document} = req.body;
+    const { document } = req.body;
     const update = await this.db('documents')
       .where({ fabric_id: req.params.fabricID })
       .update({

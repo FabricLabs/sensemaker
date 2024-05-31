@@ -1,3 +1,5 @@
+const { editDocument, deleteDocument } = require('../actions/documentActions.js');
+
 module.exports = {
   agents: {
     list: require('./agents/list_agents'),
@@ -9,6 +11,8 @@ module.exports = {
   documents: {
     create: require('./documents/create_document'),
     createSection: require('./documents/create_document_section.js'),
+    editSection: require('./documents/edit_document_section.js'),
+    delete: require('./documents/delete_document.js'),
     list: require('./documents/list_documents'),
     edit: require('./documents/edit_document.js'),
     getDocumentByID: require('./documents/get_document_by_id'),

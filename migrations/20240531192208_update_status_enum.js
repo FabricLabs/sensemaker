@@ -8,7 +8,6 @@ exports.up = function(knex) {
 
 exports.down = function(knex) {
   return knex.schema.table('documents', function(table) {
-    // Revert the status column to the previous state
     table.enum('status', ['draft', 'published'])
           .alter();
   });

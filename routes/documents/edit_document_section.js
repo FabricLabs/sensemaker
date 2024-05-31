@@ -26,7 +26,9 @@ module.exports = async function (req, res, next) {
     section_number: target
   }).update({
     title: req.body.title || `Section ${target}`,
+    content: req.body.content, //null by default
+    updated_at: new Date(),
   });
 
-  return res.redirect(`/documents/${actor.id}/sections/${target}`);
+  return res.redirect(`/documents/${req.params.fabricID}/sections/${target}`);
 };

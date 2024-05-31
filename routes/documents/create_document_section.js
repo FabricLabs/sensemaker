@@ -38,5 +38,5 @@ module.exports = async function (req, res, next) {
     status: 'draft'
   });
 
-  return res.redirect(`/documents/${actor.id}/sections/${target}`);
+  return res.redirect(`/documents/${req.params.fabricID}/sections/${target}`);
 };
