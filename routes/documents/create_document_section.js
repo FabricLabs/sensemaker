@@ -33,6 +33,7 @@ module.exports = async function (req, res, next) {
   const created = await this.db('document_sections').insert({
     creator: req.user.id,
     fabric_id: actor.id,
+    document_id: document.id,
     title: obj.title || `Section ${target}`,
     content: obj.content,
     status: 'draft'
