@@ -14,9 +14,18 @@ const {
   CREATE_DOCUMENT_REQUEST,
   CREATE_DOCUMENT_SUCCESS,
   CREATE_DOCUMENT_FAILURE,
+  CREATE_DOCUMENT_SECTION_REQUEST,
+  CREATE_DOCUMENT_SECTION_SUCCESS,
+  CREATE_DOCUMENT_SECTION_FAILURE,
   EDIT_DOCUMENT_REQUEST,
   EDIT_DOCUMENT_SUCCESS,
   EDIT_DOCUMENT_FAILURE,
+  EDIT_DOCUMENT_SECTION_REQUEST,
+  EDIT_DOCUMENT_SECTION_SUCCESS,
+  EDIT_DOCUMENT_SECTION_FAILURE,
+  DELETE_DOCUMENT_REQUEST,
+  DELETE_DOCUMENT_SUCCESS,
+  DELETE_DOCUMENT_FAILURE,
 } = require('../actions/documentActions');
 
 const initialState = {
@@ -30,6 +39,7 @@ const initialState = {
   results: [],
   creationSuccess: false,
   editionSuccess: false,
+  deleteSuccess: false,
 };
 
 function documentReducer(state = initialState, action) {
@@ -65,6 +75,20 @@ function documentReducer(state = initialState, action) {
       return { ...state, creating: false, fabric_id: action.payload, error: null, creationSuccess: true };
     case CREATE_DOCUMENT_FAILURE:
       return { ...state, creating: false, error: action.payload, fabric_id: null, creationSuccess: false };
+    case CREATE_DOCUMENT_SECTION_REQUEST:
+      return { ...state, creating: true, error: null, creationSuccess: false };
+    case CREATE_DOCUMENT_SECTION_SUCCESS:
+      console.log(action.payload);
+      return { ...state, creating: false, error: null, creationSuccess: true };
+    case CREATE_DOCUMENT_SECTION_FAILURE:
+      return { ...state, creating: false, error: action.payload, creationSuccess: false };
+    case EDIT_DOCUMENT_SECTION_REQUEST:
+      return { ...state, creating: true, error: null, editionSuccess: false };
+    case EDIT_DOCUMENT_SECTION_SUCCESS:
+      console.log(action.payload);
+      return { ...state, creating: false, error: null, editionSuccess: true };
+    case EDIT_DOCUMENT_SECTION_FAILURE:
+      return { ...state, creating: false, error: action.payload, editionSuccess: false };
     case EDIT_DOCUMENT_REQUEST:
       return { ...state, editing: true, error: null, editionSuccess: false };
     case EDIT_DOCUMENT_SUCCESS:
@@ -72,6 +96,13 @@ function documentReducer(state = initialState, action) {
       return { ...state, editing: false, error: null, editionSuccess: true };
     case EDIT_DOCUMENT_FAILURE:
       return { ...state, editing: false, error: action.payload, editionSuccess: false };
+    case DELETE_DOCUMENT_REQUEST:
+      return { ...state, editing: true, error: null, deleteSuccess: false };
+    case DELETE_DOCUMENT_SUCCESS:
+      console.log(action.payload);
+      return { ...state, editing: false, error: null, deleteSuccess: true };
+    case DELETE_DOCUMENT_FAILURE:
+      return { ...state, editing: false, error: action.payload, deleteSuccess: false };
     default:
       // console.warn('Unhandled action in documents reducer:', action);
       return state;

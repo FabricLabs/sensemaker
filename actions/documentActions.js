@@ -33,9 +33,17 @@ const CREATE_DOCUMENT_SECTION_REQUEST = 'CREATE_DOCUMENT_SECTION_REQUEST';
 const CREATE_DOCUMENT_SECTION_SUCCESS = 'CREATE_DOCUMENT_SECTION_SUCCESS';
 const CREATE_DOCUMENT_SECTION_FAILURE = 'CREATE_DOCUMENT_SECTION_FAILURE';
 
+const EDIT_DOCUMENT_SECTION_REQUEST = 'EDIT_DOCUMENT_SECTION_REQUEST';
+const EDIT_DOCUMENT_SECTION_SUCCESS = 'EDIT_DOCUMENT_SECTION_SUCCESS';
+const EDIT_DOCUMENT_SECTION_FAILURE = 'EDIT_DOCUMENT_SECTION_FAILURE';
+
 const EDIT_DOCUMENT_REQUEST = 'EDIT_DOCUMENT_REQUEST';
 const EDIT_DOCUMENT_SUCCESS = 'EDIT_DOCUMENT_SUCCESS';
 const EDIT_DOCUMENT_FAILURE = 'EDIT_DOCUMENT_FAILURE';
+
+const DELETE_DOCUMENT_REQUEST = 'DELETE_DOCUMENT_REQUEST';
+const DELETE_DOCUMENT_SUCCESS = 'DELETE_DOCUMENT_SUCCESS';
+const DELETE_DOCUMENT_FAILURE = 'DELETE_DOCUMENT_FAILURE';
 
 // Action creators
 const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
@@ -59,12 +67,20 @@ const createDocumentSuccess = (results) => ({ type: CREATE_DOCUMENT_SUCCESS, pay
 const createDocumentFailure = (error) => ({ type: CREATE_DOCUMENT_FAILURE, payload: error });
 
 const createSectionRequest = () => ({ type: CREATE_DOCUMENT_SECTION_REQUEST });
-const createSectionSuccess = (results) => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS, payload: results });
+const createSectionSuccess = () => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS });
 const createSectionFailure = (error) => ({ type: CREATE_DOCUMENT_SECTION_FAILURE, payload: error });
 
-const editDocumentRequest = () => ({ type: CREATE_DOCUMENT_SECTION_REQUEST });
-const editDocumentSuccess = () => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS });
-const editDocumentFailure = (error) => ({ type: CREATE_DOCUMENT_SECTION_FAILURE, payload: error });
+const editSectionRequest = () => ({ type: EDIT_DOCUMENT_SECTION_REQUEST });
+const editSectionSuccess = () => ({ type: EDIT_DOCUMENT_SECTION_SUCCESS });
+const editSectionFailure = (error) => ({ type: EDIT_DOCUMENT_SECTION_FAILURE, payload: error });
+
+const editDocumentRequest = () => ({ type: EDIT_DOCUMENT_REQUEST });
+const editDocumentSuccess = () => ({ type: EDIT_DOCUMENT_SUCCESS });
+const editDocumentFailure = (error) => ({ type: EDIT_DOCUMENT_FAILURE, payload: error });
+
+const deleteDocumentRequest = () => ({ type: DELETE_DOCUMENT_REQUEST });
+const deleteDocumentSuccess = () => ({ type: DELETE_DOCUMENT_SUCCESS });
+const deleteDocumentFailure = (error) => ({ type: DELETE_DOCUMENT_FAILURE, payload: error });
 
 
 
@@ -156,8 +172,8 @@ const searchDocument = (query) => {
     }
   }
 }
-
-const createDocument = (type,query) => {
+//this starts the document outline, its called in step 2 from document drafter
+const createDocument = (type, query) => {
   return async (dispatch, getState) => {
     dispatch(createDocumentRequest());
     const { token } = getState().auth;
@@ -168,7 +184,7 @@ const createDocument = (type,query) => {
           'Content-Type': 'application/json'
         },
         method: 'POST',
-        body: JSON.stringify({ type,query })
+        body: JSON.stringify({ type, query })
       });
 
       const obj = await response.json();
@@ -182,24 +198,26 @@ const createDocument = (type,query) => {
   }
 }
 
-const createDocumentSection = (fabricID,sectionNumber,title) => {
+//this creates a new document section, it needs document fabricID, the order number that section will have and its title
+//can be called in step 3 when the user, and in the document view edit mode.
+const createDocumentSection = (fabricID, target, title, content = null) => {
   return async (dispatch, getState) => {
     dispatch(createSectionRequest());
     const { token } = getState().auth;
     try {
-      const response = await fetch(`/documents/${fabricID}/section/${sectionNumber}`, {
+      const response = await fetch(`/documents/${fabricID}/section/${target}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         method: 'POST',
-        body: JSON.stringify({ title })
+        body: JSON.stringify({ title, content })
       });
 
       const obj = await response.json();
       console.debug('fetch result: ', obj);
 
-      dispatch(createSectionSuccess(obj.fabric_id));
+      dispatch(createSectionSuccess());
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(createSectionFailure(error.message));
@@ -207,6 +225,36 @@ const createDocumentSection = (fabricID,sectionNumber,title) => {
   }
 }
 
+//this edits the document section, first we wont be editing content
+const editDocumentSection = (fabricID, target, title, content = null) => {
+  return async (dispatch, getState) => {
+    dispatch(editSectionRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/documents/${fabricID}/section/${target}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'PATCH',
+        body: JSON.stringify({ title, content })
+      });
+
+      const obj = await response.json();
+      console.debug('fetch result: ', obj);
+
+      dispatch(editSectionSuccess());
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      dispatch(editSectionFailure(error.message));
+    }
+  }
+}
+
+//this will be called in the document view
+//right now its sending a whole document, that will have the user's changes
+//in the API we should use that objet to update the documet
+//not 100% about doing it this way, it might be changed
 const editDocument = (document) => {
   return async (dispatch, getState) => {
     dispatch(editDocumentRequest());
@@ -225,11 +273,38 @@ const editDocument = (document) => {
         const error = await response.json();
         throw new Error(error.message);
       }
-      
       dispatch(editDocumentSuccess());
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(editDocumentFailure(error.message));
+    }
+  }
+}
+
+//this sets the document status to deleted
+//remember to add the last migration
+const deleteDocument = (fabricID) => {
+  return async (dispatch, getState) => {
+    dispatch(deleteDocumentRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/documents/delete/${fabricID}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'PATCH',
+        body: JSON.stringify({ fabricID })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+      dispatch(deleteDocumentSuccess());
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      dispatch(deleteDocumentFailure(error.message));
     }
   }
 }
@@ -243,7 +318,9 @@ module.exports = {
   searchDocument,
   createDocument,
   createDocumentSection,
+  editDocumentSection,
   editDocument,
+  deleteDocument,
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
@@ -262,7 +339,13 @@ module.exports = {
   CREATE_DOCUMENT_SECTION_REQUEST,
   CREATE_DOCUMENT_SECTION_SUCCESS,
   CREATE_DOCUMENT_SECTION_FAILURE,
+  EDIT_DOCUMENT_SECTION_REQUEST,
+  EDIT_DOCUMENT_SECTION_SUCCESS,
+  EDIT_DOCUMENT_SECTION_FAILURE,
   EDIT_DOCUMENT_REQUEST,
   EDIT_DOCUMENT_SUCCESS,
   EDIT_DOCUMENT_FAILURE,
+  DELETE_DOCUMENT_REQUEST,
+  DELETE_DOCUMENT_SUCCESS,
+  DELETE_DOCUMENT_FAILURE,
 };

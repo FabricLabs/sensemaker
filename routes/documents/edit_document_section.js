@@ -25,7 +25,7 @@ module.exports = async function (req, res, next) {
     document_id: document.id,
     section_number: target
   }).update({
-    title: obj.title || `Section ${target}`,
+    title: req.body.title || `Section ${target}`,
   });
 
   return res.redirect(`/documents/${actor.id}/sections/${target}`);
