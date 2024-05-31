@@ -1892,6 +1892,8 @@ class Jeeves extends Hub {
     // Courts
     this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
     this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.view.bind(this));
+    this.http._addRoute('GET', '/courts/jurisdiction/:jurisdictionID', ROUTES.courts.listByJurisdiction.bind(this));
+    this.http._addRoute('GET', '/courts/id/:id', ROUTES.courts.viewById.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
@@ -1901,7 +1903,9 @@ class Jeeves extends Hub {
 
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
+    this.http._addRoute('POST', '/documents/:fabricID/section/:id', ROUTES.documents.createSection.bind(this));
     this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
+    this.http._addRoute('PATCH', '/documents/:fabricID', ROUTES.documents.edit.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
@@ -1922,7 +1926,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
     this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
     this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
-    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));  
+    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

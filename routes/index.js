@@ -8,7 +8,9 @@ module.exports = {
   },
   documents: {
     create: require('./documents/create_document'),
+    createSection: require('./documents/create_document_section.js'),
     list: require('./documents/list_documents'),
+    edit: require('./documents/edit_document.js'),
     getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
@@ -64,7 +66,9 @@ module.exports = {
   },
   courts: {
     list: require('./courts/list_courts'),
+    listByJurisdiction: require('./courts/list_courts_by_jurisdiction.js'),
     view: require('./courts/court_view'),
+    viewById: require('./courts/court_view_by_id'),
     findCourt: require('./courts/find_court'),
   },
   sessions: {

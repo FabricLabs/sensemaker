@@ -40,12 +40,12 @@ class MattersNew extends React.Component {
   }
 
   componentDidMount() {
-    this.props.fetchCourts();
     this.props.fetchJurisdictions();
   }
 
   componentDidUpdate(prevProps) {
     const { jurisdictions, courts, matters } = this.props;
+    //this block builds the options for the jurisdiction options
     if (prevProps.jurisdictions !== jurisdictions) {
       if (jurisdictions.jurisdictions.length > 0) {
         const options = jurisdictions.jurisdictions.map(instance => ({
@@ -57,6 +57,7 @@ class MattersNew extends React.Component {
         this.setState({ jurisdictionsOptions: options });
       }
     }
+    //this block builds the options for the courts options, the app will come here after jurisdiction is selected
     if (prevProps.courts !== courts) {
       if (courts.courts.length > 0) {
         const options = courts.courts.map(instance => ({
@@ -117,10 +118,17 @@ class MattersNew extends React.Component {
     if (title && plaintiff && defendant && jurisdiction_id !== null) {
       this.setState({ creating: true });
       const representing = representingOption === 'Plaintiff' ? 'P' : 'D';
+      console.log('este es el court id', court_id);
       this.props.createMatter(title, description, plaintiff, defendant, representing, jurisdiction_id, court_id);
     }
   };
 
+  selectJurisdiction = (value) => {
+    const { courts } = this.props;
+    this.setState({ jurisdiction_id: value, jurisdictionError: false });
+    //once the jurisdiction is selected, it looks for the courts related to that jurisdiction
+    this.props.fetchCourtsByJurisdiction(value);
+  }
 
   render() {
     const { jurisdictions, courts, matters } = this.props;
@@ -139,6 +147,8 @@ class MattersNew extends React.Component {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
+    console.log("jurisdictions", jurisdictions);
+    console.log("courts", courts);
     return (
       <Segment style={{ height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>
@@ -237,7 +247,7 @@ class MattersNew extends React.Component {
                       selection
                       required
                       options={jurisdictionsOptions}
-                      onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                      onChange={(e, { value }) => this.selectJurisdiction(value)}
                       error={jurisdictionErrorMessage}
                     />
                   </Table.Cell>
@@ -254,6 +264,7 @@ class MattersNew extends React.Component {
                       selection
                       options={courtsOptions}
                       onChange={(e, { value }) => this.setState({ court_id: value })}
+                      disabled={!this.state.jurisdiction_id || this.props.courts.loading}
                     />
                   </Table.Cell>
                   <Table.Cell />

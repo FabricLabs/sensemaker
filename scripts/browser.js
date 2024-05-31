@@ -77,7 +77,9 @@ const {
 const {
   fetchCourts,
   fetchCourt,
-  searchCourt
+  fetchCourtById,
+  searchCourt,
+  fetchCourtsByJurisdiction,
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -154,6 +156,8 @@ const {
   uploadDocument,
   searchDocument,
   createDocument,
+  createDocumentSection,
+  editDocument,
 } = require('../actions/documentActions');
 
 // ## Files Actions
@@ -286,7 +290,9 @@ async function main(input = {}) {
     fetchStatutes: fetchStatutes,
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
+    fetchCourtsByJurisdiction: fetchCourtsByJurisdiction,
     fetchCourt: fetchCourt,
+    fetchCourtById: fetchCourtById,
     searchCourt: searchCourt,
     fetchJurisdictions: fetchJurisdictions,
     fetchJurisdiction: fetchJurisdiction,
@@ -295,6 +301,8 @@ async function main(input = {}) {
     searchDocument: searchDocument,
     uploadDocument: uploadDocument,
     createDocument: createDocument,
+    createDocumentSection: createDocumentSection,
+    editDocument: editDocument,
     fetchFiles: fetchFiles,
     fetchFile: fetchFile,
     uploadFile: uploadFile,
