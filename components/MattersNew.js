@@ -40,12 +40,12 @@ class MattersNew extends React.Component {
   }
 
   componentDidMount() {
-    this.props.fetchCourts();
     this.props.fetchJurisdictions();
   }
 
   componentDidUpdate(prevProps) {
     const { jurisdictions, courts, matters } = this.props;
+    //this block builds the options for the jurisdiction options
     if (prevProps.jurisdictions !== jurisdictions) {
       if (jurisdictions.jurisdictions.length > 0) {
         const options = jurisdictions.jurisdictions.map(instance => ({
@@ -57,6 +57,7 @@ class MattersNew extends React.Component {
         this.setState({ jurisdictionsOptions: options });
       }
     }
+    //this block builds the options for the courts options, the app will come here after jurisdiction is selected
     if (prevProps.courts !== courts) {
       if (courts.courts.length > 0) {
         const options = courts.courts.map(instance => ({
@@ -124,25 +125,9 @@ class MattersNew extends React.Component {
 
   selectJurisdiction = (value) => {
     const { courts } = this.props;
-
     this.setState({ jurisdiction_id: value, jurisdictionError: false });
-
-    if (courts.courts.length > 0) {
-      const filteredCourts = this.props.courts.courts.filter(court => court.jurisdiction_id === value);
-      const options = filteredCourts.map(instance => ({
-        key: instance.id,
-        value: instance.id,
-        text: instance.name
-      }));
-      options.sort((a, b) => a.text.localeCompare(b.text));
-      options.unshift({
-        key: 'none',
-        value: '',
-        text: 'None'
-      });
-      console.log('options', options);
-      this.setState({ courtsOptions: options });
-    }
+    //once the jurisdiction is selected, it looks for the courts related to that jurisdiction
+    this.props.fetchCourtsByJurisdiction(value);
   }
 
   render() {
@@ -279,7 +264,7 @@ class MattersNew extends React.Component {
                       selection
                       options={courtsOptions}
                       onChange={(e, { value }) => this.setState({ court_id: value })}
-                      disabled={!this.state.jurisdiction_id}
+                      disabled={!this.state.jurisdiction_id || this.props.courts.loading}
                     />
                   </Table.Cell>
                   <Table.Cell />
