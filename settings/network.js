@@ -22,6 +22,7 @@ const MANGO = '10.8.0.32';
 const BALROG = '10.8.0.33';
 const CLARITY = '10.8.0.34';
 const DURINSBANE = '10.8.0.35';
+const GOTHMOG = '10.8.0.60';
 
 module.exports = {
   local: {
@@ -56,6 +57,15 @@ module.exports = {
     prompt: baseline.toString('utf8'),
     model: 'llama3:70b',
     host: DURINSBANE,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  },
+  gothmog: {
+    name: 'GOTHMOG',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3:70b-instruct-fp16',
+    host: GOTHMOG,
     port: 11434,
     secure: false,
     temperature: 0

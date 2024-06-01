@@ -9,6 +9,9 @@ ollama pull gemma # runs in most places
 ollama pull mixtral # runs in most places (16GB RAM?)
 ollama pull mixtral:8x22b
 ollama pull command-r-plus # too slow (104B parameters)
+ollama pull llama3
+ollama pull llama3:70b
+ollama pull llama3:70b-instruct-fp16
 
 ### Untested Models
 ollama pull wizardlm2
