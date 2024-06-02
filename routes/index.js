@@ -4,9 +4,12 @@ module.exports = {
   },
   cases: {
     list: require('./cases/get_cases'),
+    getCaseFile: require('./cases/get_cases_id_pdf.js'),
   },
   documents: {
-    // list: require('./documents/list_documents'),
+    create: require('./documents/create_document'),
+    list: require('./documents/list_documents'),
+    getDocumentByID: require('./documents/get_document_by_id'),
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
@@ -35,11 +38,17 @@ module.exports = {
     listNotes: require('./matters/list_matter_notes'),
   },
   invitations: {
+    createInvitations: require('./invitations/create_invitation'),
     getInvitations: require('./invitations/get_invitations'),
     checkInvitationToken: require('./invitations/check_invitation_token'),
+    resendInvitation : require('./invitations/resend_invitation'),
+    acceptInvitation: require('./invitations/accept_invitation'),
+    declineInvitation: require('./invitations/decline_invitation'),
+    deleteInvitation: require('./invitations/delete_invitation'),
   },
   messages: {
     create: require('./messages/create_message'),
+    getMessages: require('./messages/get_messages'),
   },
   products: {
     list: require('./products/list_products'),
@@ -55,9 +64,11 @@ module.exports = {
   courts: {
     list: require('./courts/list_courts'),
     view: require('./courts/court_view'),
+    findCourt: require('./courts/find_court'),
   },
   sessions: {
-    create: require('./sessions/create_session')
+    create: require('./sessions/create_session'),
+    get: require('./sessions/get_session'),
   },
   statutes: {
     list: require('./statutes/list_statutes'),
@@ -69,8 +80,31 @@ module.exports = {
     editUsername: require('./users/edit_username'),
     editEmail: require('./users/edit_email'),
     view: require('./users/view_user'),
+    createUser: require('./users/create_user.js'),
+    createFullUser: require('./users/create_full_user'),
+    checkExistingUsername: require('./users/check_username'),
+    checkExistingEmail: require('./users/check_email'),
   },
   feedback: {
     create: require('./feedback/create_feedback.js')
+  },
+  conversations: {
+    getConversations: require('./conversations/get_conversations'),
+    editConversationsTitle: require('./conversations/edit_conversations_title'),
+    getConversationsByID: require('./conversations/get_conversations_by_id'),
+  },
+  account: {
+    changePassword: require('./account/change_password'),
+    changeUsername: require('./account/change_username'),
+  },
+  people: {
+    list: require('./people/get_people'),
+  },
+  help: {
+    getConversations: require('./help/get_conversations.js'),
+    getAdmConversations: require('./help/get_conversations_adm.js'),
+    getMessages: require('./help/get_messages.js'),
+    sendMessage: require('./help/send_message.js'),
+    setMessagesRead: require('./help/set_messages_read.js')
   }
 };

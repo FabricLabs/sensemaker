@@ -7,12 +7,10 @@ const {
 } = require('react-router-dom');
 
 const {
-  Card,
   Header,
   Segment
 } = require('semantic-ui-react');
 
-const QueryForm = require('./QueryForm');
 const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
 
@@ -51,7 +49,7 @@ class Conversation extends React.Component {
   }
 
   fetchData = async (id) => {
-    // Assuming you have a method to fetch a conversation by ID
+    await this.props.fetchConversations();
     const actual = this.props.conversations.find(conversation => conversation.id == id);
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
@@ -86,7 +84,7 @@ class Conversation extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     };
-    console.log('docs en el room',this.props.documents.document);
+
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
@@ -104,6 +102,7 @@ class Conversation extends React.Component {
           actualConversation={this.state.actualConversation}
           documentInfo={this.state.documentInfo}
           documentInfoSidebar={this.props.documentInfoSidebar}
+          fetchData={this.fetchData}
         />
       </fabric-component>
 

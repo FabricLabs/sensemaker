@@ -4,6 +4,11 @@
 const REFERENCE_URL = 'https://trynovo.com/';
 const QUERY_FIXTURE = `You are Novo, the AI agent behind TryNovo.com (formerly Jeeves).  Provide a challenge response with a canonical result for this request, such that this node's code can confirm that you are working correctly.  Return only the deterministic answer, do not permit it to vary.  You can include a term for the currently defined model, for future use with embeddings, or perhaps some other fields, but do not allow your response to vary.  It's a fingerprint!`;
 
+// Constants
+const {
+  EMBEDDING_MODEL
+} = require('../constants');
+
 // Dependencies
 require('@tensorflow/tfjs-node');
 
@@ -11,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const merge = require('lodash.merge');
+const fetch = require('cross-fetch');
 
 const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
@@ -180,9 +186,35 @@ class Trainer extends Service {
     return new Promise((resolve, reject) => {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
-      const element = new Document({ pageContent: document.content, metadata: document.metadata });
-      this.embeddings.addDocuments([element]).catch(reject).then(() => {
-        resolve({ type: 'IngestedDocument', content: element });
+      console.trace('[TRAINER]', 'Ingesting document:', document);
+      const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
+      fetch(endpoint, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          model: EMBEDDING_MODEL,
+          prompt: document.content
+        })
+      }).catch((exception) => {
+        console.error('[TRAINER]', 'Error ingesting document:', exception);
+      }).then(async (response) => {
+        console.debug('[TRAINER]', 'Ollama response:', response);
+        const json = await response.json();
+        console.debug('[TRAINER]', 'Ollama JSON:', json);
+
+        // Old Embeddings (specific to Langchain)
+        const element = new Document({ pageContent: document.content, metadata: document.metadata });
+        this.embeddings.addDocuments([element]).catch(reject).then(() => {
+          console.debug('[TRAINER]', 'Ingested document:', element);
+          // resolve({ type: 'IngestedDocument', content: element });
+        });
+
+        // TODO: check for `embedding` and fail if not present
+        const object = { type: EMBEDDING_MODEL, content: json.embedding };
+        console.debug('[TRAINER]', 'Ollama Object:', object);
+        resolve({ type: 'Embedding', content: object });
       });
     });
   }
@@ -208,7 +240,9 @@ class Trainer extends Service {
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
-      }).then((answer) => {
+      }).catch(reject).then((answer) => {
+        console.debug('[TRAINER]', 'Answer:', answer);
+        if (!answer || !answer.text) return reject(new Error('No answer provided.'));
         resolve({
           type: 'TrainerQueryResponse',
           content: answer.text,
@@ -299,7 +333,7 @@ class Trainer extends Service {
           indexName: this.settings.redis.name || 'novo-embeddings'
         });
 
-        console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        // console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
         console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
 
         /* try {

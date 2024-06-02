@@ -80,7 +80,10 @@ class Agent extends Service {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
       constraints: {
-        max_tokens: 4096
+        max_tokens: 4096,
+        tokens: {
+          max: 4096
+        }
       },
       mistral: {
         authority: 'https://mistral.on.fabric.pub'
@@ -266,6 +269,8 @@ class Agent extends Service {
   async query (request) {
     return new Promise(async (resolve, reject) => {
       console.debug('[AGENT]', 'Name:', this.settings.name);
+      console.debug('[AGENT]', 'Host:', this.settings.host);
+      console.debug('[AGENT]', 'Model:', this.settings.model);
       console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
       console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
       console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
@@ -316,9 +321,11 @@ class Agent extends Service {
               keep_alive: -1,
               prompt: this.prompt,
               options: {
-                num_ctx: 4096 // TODO: make this configurable
+                num_ctx: this.settings.constraints.tokens.max,
+                temperature: (this.settings.temperature) ? this.settings.temperature : 0,
               },
-              messages: sample
+              messages: sample,
+              format: (request.format === 'json' || request.json) ? 'json' : undefined
             })
           }).catch((exception) => {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
@@ -353,17 +360,19 @@ class Agent extends Service {
             }
 
             // console.debug('messages:', messages);
-            console.debug('[!!!]', 'base:', base);
+            console.debug('[!!!]', `[${this.settings.name.toLocaleUpperCase()}]`, 'base:', base);
 
             if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
+            if (!base) return reject(new Error('No response from agent.'));
             if (base.error) return reject(new Error(base.error));
+            if (!base.choices) return reject(new Error('No choices in response.'));
 
             if (request.requery) {
               sample.push({ role: 'assistant', content: base.choices[0].message.content });
               console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
               console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
               // Re-execute query with John Cena
-              return this.query({ query: `Are you sure about that?`, messages: sample }).catch(reject).then(resolve);
+              return this.query({ query: `Are you sure about that?`, messages: sample });
             }
 
             this.emit('completion', base);

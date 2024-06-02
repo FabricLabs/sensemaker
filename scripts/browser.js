@@ -69,13 +69,15 @@ const {
 // ## Case Actions
 const {
   fetchCases,
-  fetchCase
+  fetchCase,
+  searchCase,
 } = require('../actions/caseActions');
 
 // ## Courts Actions
 const {
   fetchCourts,
-  fetchCourt
+  fetchCourt,
+  searchCourt
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -150,7 +152,16 @@ const {
   fetchDocuments,
   fetchDocument,
   uploadDocument,
+  searchDocument,
 } = require('../actions/documentActions');
+
+// ## Files Actions
+const {
+  fetchFiles,
+  fetchFile,
+  uploadFile,
+  searchFile,
+} = require('../actions/fileActions');
 
 // ## Matters Actions
 const {
@@ -182,8 +193,18 @@ const {
   sendFeedback,
 } = require('../actions/feedbackActions');
 
+// ## Help Actions
+const {
+  fetchHelpConversations,
+  fetchAdminHelpConversations,
+  fetchHelpMessages,
+  sendHelpMessage,
+  markMessagesRead,
+  clearHelpMessages,
+} = require('../actions/helpActions');
+
 // ## Main Process
-async function main (input = {}) {
+async function main(input = {}) {
   console.log('[JEEVES:BROWSER] main() executing...');
 
   window.addEventListener('load', async () => {
@@ -229,6 +250,7 @@ async function main (input = {}) {
       conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
+      files: state.files,
       judges: state.judges,
       people: state.people,
       reporters: state.reporters,
@@ -247,12 +269,14 @@ async function main (input = {}) {
       users: state.users,
       search: state.search,
       feedback: state.feedback,
+      help: state.help,
     }
   };
 
   const mapDispatchToProps = {
     fetchCases: fetchCases,
     fetchCase: fetchCase,
+    searchCase: searchCase,
     fetchContract: fetchContract,
     signContract: signContract,
     fetchConversation: fetchConversation,
@@ -262,11 +286,16 @@ async function main (input = {}) {
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
     fetchCourt: fetchCourt,
+    searchCourt: searchCourt,
     fetchJurisdictions: fetchJurisdictions,
     fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    searchDocument: searchDocument,
     uploadDocument: uploadDocument,
+    fetchFiles: fetchFiles,
+    fetchFile: fetchFile,
+    uploadFile: uploadFile,
     fetchInquiry: fetchInquiry,
     fetchInquiries: fetchInquiries,
     deleteInquiry: deleteInquiry,
@@ -296,7 +325,7 @@ async function main (input = {}) {
     logout: logout,
     reLogin: reLogin,
     register: register,
-    fullRegister:fullRegister,
+    fullRegister: fullRegister,
     checkUsernameAvailable: checkUsernameAvailable,
     checkEmailAvailable: checkEmailAvailable,
     createInvitation: createInvitation,
@@ -322,6 +351,13 @@ async function main (input = {}) {
     askPasswordReset: askPasswordReset,
     searchGlobal: searchGlobal,
     sendFeedback: sendFeedback,
+    fetchHelpConversations: fetchHelpConversations,
+    fetchAdminHelpConversations: fetchAdminHelpConversations,
+    fetchHelpMessages: fetchHelpMessages,
+    sendHelpMessage: sendHelpMessage,
+    markMessagesRead: markMessagesRead,
+    clearHelpMessages: clearHelpMessages,
+
   };
 
   console.debug('[JEEVES]', 'Connecting UI...');

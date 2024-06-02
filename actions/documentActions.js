@@ -21,6 +21,10 @@ const UPLOAD_DOCUMENT_REQUEST = 'UPLOAD_DOCUMENT_REQUEST';
 const UPLOAD_DOCUMENT_SUCCESS = 'UPLOAD_DOCUMENT_SUCCESS';
 const UPLOAD_DOCUMENT_FAILURE = 'UPLOAD_DOCUMENT_FAILURE';
 
+const SEARCH_DOCUMENT_REQUEST = 'SEARCH_DOCUMENT_REQUEST';
+const SEARCH_DOCUMENT_SUCCESS = 'SEARCH_DOCUMENT_SUCCESS';
+const SEARCH_DOCUMENT_FAILURE = 'SEARCH_DOCUMENT_FAILURE';
+
 
 // Action creators
 const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
@@ -34,6 +38,11 @@ const fetchDocumentFailure = (error) => ({ type: FETCH_DOCUMENT_FAILURE, payload
 const uploadDocumentRequest = () => ({ type: UPLOAD_DOCUMENT_REQUEST });
 const uploadDocumentSuccess = (fabric_id) => ({ type: UPLOAD_DOCUMENT_SUCCESS, payload: fabric_id });
 const uploadDocumentFailure = (error) => ({ type: UPLOAD_DOCUMENT_FAILURE, payload: error });
+
+const searchDocumentRequest = () => ({ type: SEARCH_DOCUMENT_REQUEST });
+const searchDocumentSuccess = (results) => ({ type: SEARCH_DOCUMENT_SUCCESS, payload: results });
+const searchDocumentFailure = (error) => ({ type: SEARCH_DOCUMENT_FAILURE, payload: error });
+
 
 // Thunk action creator
 const fetchDocuments = () => {
@@ -49,12 +58,12 @@ const fetchDocuments = () => {
   };
 };
 
-const fetchDocument = (id) => {
+const fetchDocument = (fabricID) => {
   return async (dispatch, getState) => {
     dispatch(fetchDocumentRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/documents/${id}`, null, token);
+      const instance = await fetchFromAPI(`/documents/${fabricID}`, null, token);
       dispatch(fetchDocumentSuccess(instance));
     } catch (error) {
       dispatch(fetchDocumentFailure(error));
@@ -99,10 +108,36 @@ const uploadDocument = (file) => {
   }
 }
 
+const searchDocument = (query) => {
+  return async (dispatch, getState) => {
+    dispatch(searchDocumentRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch('/documents', {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        method: 'SEARCH',
+        body: JSON.stringify({ query })
+      });
+
+      const obj = await response.json();
+      console.debug('fetch result: ', obj);
+
+      dispatch(searchDocumentSuccess(obj.content));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      dispatch(searchDocumentFailure(error.message));
+    }
+  }
+}
+
 module.exports = {
   fetchDocument,
   fetchDocuments,
   uploadDocument,
+  searchDocument,
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
@@ -112,4 +147,7 @@ module.exports = {
   UPLOAD_DOCUMENT_REQUEST,
   UPLOAD_DOCUMENT_SUCCESS,
   UPLOAD_DOCUMENT_FAILURE,
+  SEARCH_DOCUMENT_REQUEST,
+  SEARCH_DOCUMENT_SUCCESS,
+  SEARCH_DOCUMENT_FAILURE,
 };

@@ -13,7 +13,7 @@ const {
 const Message = require('@fabric/core/types/message');
 
 class Bridge extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.settings = Object.assign({
@@ -37,15 +37,15 @@ class Bridge extends React.Component {
     return this;
   }
 
-  get authority () {
+  get authority() {
     return ((this.settings.secure) ? `wss` : `ws`) + `://${this.settings.host}:${this.settings.port}`;
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.start();
   }
 
-  componentWillUnmount () {
+  componentWillUnmount() {
     this.connections.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -53,7 +53,7 @@ class Bridge extends React.Component {
     });
   }
 
-  connect (path) {
+  connect(path) {
     console.debug('[BRIDGE]', 'Opening connection...');
     this.ws = new WebSocket(`${this.authority}${path}`);
 
@@ -80,6 +80,10 @@ class Bridge extends React.Component {
       const buffer = Buffer.from(array);
       const message = Message.fromBuffer(buffer);
 
+      // console.log('el array del bridge',array);
+      // console.log('el buffer del bridge',buffer);
+      // console.log('el mensaje del bridge',message);
+
       // TODO: refactor @fabric/core/types/message to support arbitrary message types
       // This will remove the need to parse before evaluating this switch
       switch (message.type) {
@@ -103,6 +107,11 @@ class Bridge extends React.Component {
               case 'MessageChunk':
                 this.addJob('MessageChunk', chunk);
                 break;
+              case 'HelpMsgUser':
+              case 'HelpMsgAdmin':
+                this.props.responseCapture(chunk);
+                break;
+
             }
           } catch (exception) {
             console.error('Could not process message:', exception);
@@ -135,15 +144,15 @@ class Bridge extends React.Component {
     };
   }
 
-  generateInterval (attempts) {
+  generateInterval(attempts) {
     return Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
   }
 
-  addJob (type, data) {
+  addJob(type, data) {
     this.queue.push({ type, data });
   }
 
-  takeJob () {
+  takeJob() {
     if (!this.queue.length) return;
     const job = this.queue.shift();
     if (!job) return;
@@ -153,7 +162,7 @@ class Bridge extends React.Component {
         console.warn('[BRIDGE]', 'Unhandled Bridge job type:', job.type);
         break;
       case 'MessageChunk':
-       // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
+        // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
         break;
       case 'MessageEnd':
         console.debug('[BRIDGE]', 'MessageEnd:', job.data);
@@ -164,7 +173,7 @@ class Bridge extends React.Component {
     }
   }
 
-  render () {
+  render() {
     const { data, error } = this.state;
 
     if (error && this.settings.debug) {
@@ -187,26 +196,26 @@ class Bridge extends React.Component {
     );
   }
 
-  start () {
+  start() {
     this.connect('/');
     // this.connect('/conversations');
     this._heartbeat = setInterval(this.tick.bind(this), this.settings.tickrate);
   }
 
-  stop () {
+  stop() {
     if (this._heartbeat) clearInterval(this._heartbeat);
   }
 
-  tick () {
+  tick() {
     this.takeJob();
   }
 
-  subscribe (channel) {
+  subscribe(channel) {
     const message = Message.fromVector(['SUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }
 
-  unsubscribe (channel) {
+  unsubscribe(channel) {
     const message = Message.fromVector(['UNSUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }

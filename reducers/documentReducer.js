@@ -8,6 +8,9 @@ const {
   UPLOAD_DOCUMENT_REQUEST,
   UPLOAD_DOCUMENT_SUCCESS,
   UPLOAD_DOCUMENT_FAILURE,
+  SEARCH_DOCUMENT_REQUEST,
+  SEARCH_DOCUMENT_SUCCESS,
+  SEARCH_DOCUMENT_FAILURE,
 } = require('../actions/documentActions');
 
 const initialState = {
@@ -16,7 +19,8 @@ const initialState = {
   loading: false,
   error: null,
   fileUploaded: false,
-  fabric_id: null //this is the id inserted in table 'files' in the db after creating the file
+  fabric_id: null, //this is the id inserted in table 'files' in the db after creating the file
+  results: [],
 };
 
 function documentReducer(state = initialState, action) {
@@ -39,6 +43,12 @@ function documentReducer(state = initialState, action) {
       return { ...state, loading: false, fileUploaded: true, fabric_id: action.payload, error: null };
     case UPLOAD_DOCUMENT_FAILURE:
       return { ...state, loading: false, error: action.payload, fileUploaded: false, fabric_id: null };
+    case SEARCH_DOCUMENT_REQUEST:
+      return { ...state, loading: true, error: null, results: [], };
+    case SEARCH_DOCUMENT_SUCCESS:
+      return { ...state, loading: false, results: action.payload, error: null };
+    case SEARCH_DOCUMENT_FAILURE:
+      return { ...state, loading: false, error: action.payload, results: [] };
     default:
       // console.warn('Unhandled action in documents reducer:', action);
       return state;

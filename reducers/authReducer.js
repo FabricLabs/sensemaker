@@ -28,6 +28,7 @@ const initialState = {
   isCompliant: false,
   token: null,
   error: null,
+  id: null,
   usernameAvailable: false,
   emailAvailable: false,
   registering: false,
@@ -36,6 +37,7 @@ const initialState = {
   checking: false,
   shortRegisterError: null,
   shortRegisterSuccess: false,
+
 };
 
 function authReducer(state = initialState, action) {
@@ -43,7 +45,7 @@ function authReducer(state = initialState, action) {
     case LOGIN_REQUEST:
       return { ...state, isAuthenticated: false, token: null, error: null, loading: true }; // reset state
     case LOGIN_SUCCESS:
-      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, loading: false };
+      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, id: action.payload.id, loading: false };
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
       return { ...state, isAuthenticated: false, token: null, error: action.payload, loading: false };

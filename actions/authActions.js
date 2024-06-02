@@ -9,6 +9,8 @@ const {
 // Dependencies
 const fetch = require('cross-fetch');
 
+const createTimeoutPromise = require('../functions/createTimeoutPromise');
+
 // Action Types
 const LOGIN_REQUEST = 'LOGIN_REQUEST';
 const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -121,7 +123,8 @@ const reLogin = (token) => {
         email: user.email,
         isAdmin: user.isAdmin,
         isBeta: user.isBeta,
-        isCompliant: user.isCompliant
+        isCompliant: user.isCompliant,
+        id: user.id
       }
 
       if (!response.ok) {
@@ -168,11 +171,8 @@ const fullRegister = (username, password, email, firstName, lastName, firmName, 
     dispatch(fullRegisterRequest());
     try {
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
+      //this creates a timeout promise of 15000 ms, which returns the string msg there.
+      const timeoutPromise = createTimeoutPromise(15000, 'Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
       const fetchPromise = fetch('/users/full', {
         method: 'POST',
@@ -182,6 +182,10 @@ const fullRegister = (username, password, email, firstName, lastName, firmName, 
         body: JSON.stringify({ username, password, email, firstName, lastName, firmName, firmSize }),
       });
 
+      //promise.race runs the two promises, and returns the answer from the one that ends up first
+      //this means if the fetch goes well it will return with the answer, but if there are some network problems
+      //the timeout will end up first, and cuts, this is to stop the app to hang loading waiting for an api answer forever
+      
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (!response.ok) {
         const errorData = await response.json();

@@ -8,13 +8,22 @@ const {
 } = require('@fabric/core/constants');
 
 // Hosts
+const ALPHA = '10.8.0.50';
+const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
+const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
 const YMIR = '10.8.0.3';
 const ODIN = '10.8.0.4';
 const THOR = '10.8.0.5';
+const TANGO = '10.8.0.30';
+const MANGO = '10.8.0.32';
+const FOXTROT = '10.8.0.31';
+const CLARITY = '10.8.0.34';
+const BALROG = '10.8.0.33';
 
 // Dependencies
 const fs = require('fs');
 const path = require('path');
+const merge = require('lodash.merge');
 
 // Fabric Types
 const Environment = require('@fabric/core/types/environment');
@@ -37,13 +46,16 @@ const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
 const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
 const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
 
+// Configurations
+const network = require('./network');
+
 /**
  * Provides the user's local settings.
  */
 module.exports = {
   alias: NAME,
   benchmark: false,
-  domain: 'trynovo.com',
+  domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
   name: 'Novo',
@@ -60,108 +72,17 @@ module.exports = {
     limit: 10
   },
   workers: 8,
-  agents: {
-    // Local Agents
-    local: {
+  agents: merge({}, network, {
+    /* local: {
+      name: 'MAINSTAY',
       prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
+      model: 'llama3',
       host: '127.0.0.1',
       port: 11434,
       secure: false,
       temperature: 0
-    },
-    socrates: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'socrates',
-      port: 11434,
-      secure: false
-    },
-    cinco: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'cinco',
-      port: 11434,
-      secure: false
-    },
-    // Network Agents
-    /* alpha: {
-      prompt: alphaPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'jeeves.dev',
-      port: 11434,
-      secure: false
-    }, */
-    /* beta: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'ollama.jeeves.dev',
-      port: 11434,
-      secure: false
-    }, */
-    /* gamma: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: 'ollama.trynovo.com',
-      port: 443,
-      secure: true
-    }, */
-    /* llama: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: YMIR,
-      port: 11434,
-      secure: false
-    },
-    ymir: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'mixtral',
-      host: YMIR,
-      port: 11434,
-      secure: false
-    },
-    odin: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: ODIN,
-      port: 11434,
-      secure: false
-    },
-    thor: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'yarn-llama2:7b-128k',
-      host: THOR,
-      port: 11434,
-      secure: false
-    }, */
-    // Untested so far
-    /*
-    chatgpt: {
-      prompt: novoPrompt.toString('utf8'),
-      host: null
-    },
-    delta: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama2',
-      host: 'delta.trynovo.com',
-      port: 443,
-      secure: true
-    },
-    mistral: {
-      prompt: betaPrompt.toString('utf8'),
-      model: 'mistral',
-      host: '192.168.127.175',
-      port: 11434,
-      secure: false
-    }, */
-    /* gemma: {
-      prompt: novoPrompt.toString('utf8'),
-      model: 'gemma',
-      host: 'localhost',
-      port: 11434,
-      secure: false
-    }, */
-  },
+    } */
+  }),
   pipeline: {
     enable: false,
     consensus: ['socrates']
@@ -202,11 +123,13 @@ module.exports = {
     }
   },
   redis: {
+    name: 'novo',
+    host: '127.0.0.1',
     username: 'default',
-    host: 'localhost',
     password: null,
     port: 6379,
     hosts: [
+      'redis://default@localhost:6379',
       'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
     ]
   },
@@ -336,18 +259,19 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: 'ollama.trynovo.com',
+    host: '127.0.0.1',
     port: 11434,
-    secure: true,
-    models: ['llama2', 'mistral']
+    secure: false,
+    model: 'llama3', // default model
+    models: ['llama2', 'mistral', 'gemma', 'llama3'] // models to "prime" (preload)
   },
   pacer: {
     enable: true
   },
   openai: {
     enable: true,
-    key: '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',
-    model: 'gpt-4-1106-preview',
+    key: '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',
+    model: 'gpt-4-turbo',
     temperature: 0
   },
   twilio: {

@@ -69,7 +69,7 @@ const Matrix = require('@fabric/matrix');
 // const GitHub = require('@fabric/github');
 
 // Providers
-const { StatuteProvider } = require('../libraries/statute-scraper');
+// const { StatuteProvider } = require('../libraries/statute-scraper');
 
 // Services
 const Fabric = require('./fabric');
@@ -227,7 +227,7 @@ class Jeeves extends Hub {
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
     this.trainer = new Trainer(this.settings);
-    this.coordinator = new Coordinator({ name: 'Jeeves', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'] });
+    this.coordinator = new Coordinator({ name: 'Jeeves', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'], agent: this.settings.ollama });
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
@@ -238,7 +238,7 @@ class Jeeves extends Hub {
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
-    this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
+    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
     this.pacer = new PACER(this.settings.pacer);
@@ -324,31 +324,34 @@ class Jeeves extends Hub {
     // Sensemaker
     this.sensemaker = new Agent({
       name: 'SENSEMAKER',
-      model: 'llama2',
+      model: 'llama3',
       rules: this.settings.rules,
       host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
       prompt: this.settings.prompt
     });
 
     // Agent Collection
     this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are LennonAI, designed to come up with a list of relevant citations of cases and statutes.  Use analytical reasoning to determine the best historical cases to cite, including text from the arguments and closing opinions.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', host: null, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.beta = new Agent({ name: 'BETA', model: 'llama2', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.gamma = new Agent({ name: 'GAMMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.delta = new Agent({ name: 'DELTA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.beta = new Agent({ name: 'BETA', model: this.settings.ollama.model, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.gamma = new Agent({ name: 'GAMMA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.delta = new Agent({ name: 'DELTA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
 
     // External Agents
     // this.gemini = new Gemini({ name: 'GEMINI', prompt: this.settings.prompt, ...this.settings.gemini, openai: this.settings.openai });
 
     // Well-known Models
-    this.llama = new Agent({ name: 'LLAMA', model: 'llama2', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
+    this.llama = new Agent({ name: 'LLAMA', model: 'llama3', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
     this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, host: null, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
-    this.usa = new Agent({ name: 'USA', model: 'llama2', prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
+    this.outliner = new Agent({ name: 'OUTLINER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are OutlinerAI, an artificial intelligence (AI) designed to generate document outlines for later expansion by other drafting AIs.  Do not annotate, only return valid JSON.' });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
+    this.usa = new Agent({ name: 'USA', model: this.settings.ollama.model, prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
 
     // Pipeline Datasources
     this.datasources = {
@@ -532,6 +535,28 @@ class Jeeves extends Hub {
     }
   }
 
+  async generateDocumentOutline (request) {
+    const message = `Generate an outline of a document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
+    return new Promise((resolve, reject) => {
+      this.outliner.query({ query: message }).then((response) => {
+        resolve(response);
+      }).catch((exception) => {
+        reject(exception);
+      });
+    });
+  }
+
+  async generateDocumentSection (request) {
+    const message = `Generate the appropriate text for the following section of the document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
+    return new Promise((resolve, reject) => {
+      this.outliner.query({ query: message }).then((response) => {
+        resolve(response);
+      }).catch((exception) => {
+        reject(exception);
+      });
+    });
+  }
+
   async tick () {
     const now = (new Date()).toISOString();
     this._lastTick = JSON.parse(JSON.stringify(this.clock || 0));
@@ -682,257 +707,298 @@ class Jeeves extends Hub {
       const action = 'none';
 
       // Get the recommended action
-      this.coordinator.chooseAction({ action, request }).then((decision) => {
+      this.coordinator.chooseAction({ action, request }).catch((error) => {
+        console.error('[NOVO]', '[PIPELINE]', 'Coordinator error:', error);
+      }).then(async (decision) => {
         console.debug('[NOVO]', '[PIPELINE]', 'Coordinator decision:', decision);
-      });
-
-      // RAG
-      const cases = await this._vectorSearchCases(request.query, 5);
-      const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
-
-      // Variables
-      let topical = [];
-      let searchterm = null;
-
-      // Expander
-      // BEGIN EXPANDER
-      if (this.settings.expander) {
-        // Compute most relevant tokens
-        // const hypotheticals = await this.lennon.query({ query: request.query });
-        const words = this.importantWords(request.query);
-        const phrases = this.importantPhrases(request.query);
-
-        searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
-        if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
-
-        if (!searchterm.content) searchterm.content = '';
-
-        // Remove whitespace
-        searchterm.content = searchterm.content.trim();
-
-        // Remove wrapping quotes
-        searchterm.content = searchterm.content.replace(/^"/, '').replace(/"$/, ''); // exact double quotes
-        searchterm.content = searchterm.content.replace(/^'/, '').replace(/'$/, ''); // exact single quotes
-        searchterm.content = searchterm.content.replace(/^“/, '').replace(/”$/, ''); // fancy double quotes
-        searchterm.content = searchterm.content.replace(/^‘/, '').replace(/’$/, ''); // fancy single quotes
-
-        // Still too long!
-        // TODO: convert limit here to constant
-        if (searchterm.content.length > 50) {
-          searchterm.content = searchterm.content.substr(0, 50);
+        const action = decision?.action;
+        switch (action) {
+          default:
+            console.debug('[NOVO]', '[PIPELINE]', 'Unhandled action:', action);
+            break;
         }
 
-        console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
+        // RAG
+        const cases = await this._vectorSearchCases(request.query, 5);
+        // const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
+        const recently = [];
 
-        // Search for cases
-        topical = await this._vectorSearchCases(searchterm.content);
-      }
-      // END EXPANDER
+        // Variables
+        let topical = [];
+        let searchterm = null;
 
-      // Format Metadata
-      const caseCount = await this.db('cases').count('id as count').first();
-      const meta = `metadata:\n` +
-        `  created: ${created}\n` +
-        `  clock: ${this.clock}\n` +
-        `  notes: Cases may be unrelated, search term used: ${searchterm && searchterm.content || 'none'}\n` +
-        `  matter: ${JSON.stringify(request.matter || null)}\n` +
-        // `  topics: ${searchterm.content || ''}\n` +
-        // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
-        // `  documents: null\n` +
-        `  cases:\n` +
-        cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`).join('\n') + `\n` +
-        `  counts:\n` +
-        `    cases: ` + caseCount.count +
-        `\n`;
-
-      // Format Query Text
-      const query = `---\n` +
-        meta +
-        `---\n` +
-        `${request.query}`;
-
-      // Estimate Cost
-      const metaTokenCount = this.estimateTokens(meta);
-      const requestTokenCount = this.estimateTokens(request.query);
-      const estimatedCost = requestTokenCount * 0.0001;
-
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
-
-      let messages = [];
-
-      if (request.conversation_id) {
-        console.debug('[NOVO]', '[TIMEDREQUEST]', 'Resuming conversation:', request.conversation_id);
-        // Resume conversation
-        const prev = await this._getConversationMessages(request.conversation_id);
-        messages = prev.map((x) => {
-          return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-        });
-      } else {
-        // New conversation
-        // messages = messages.concat([{ role: 'user', content: request.query }]);
-      }
-
-      if (request.subject) {
-        // Subject material provided
-        messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
-      }
-
-      if (request.matter_id) {
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
-        const matter = await this.db('matters').where({ id: request.matter_id }).first();
-        const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
-        const files = await this.db('files').whereIn('id', matterFiles.map((x) => x.file_id));
-
-        matter.files = files;
-
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
-        console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Files:', files);
-
-        messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
-      }
-
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
-
-      // Prompt
-      messages.unshift({
-        role: 'system',
-        content: this.settings.prompt
-      });
-
-      if (this.settings.debug) this.emit('debug', `[NOVO] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
-      if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
-
-      // TODO: Compressor
-      // Use a reliable high-context agent to compress the query
-
-      // Initiate Network Query
-      const networkPromises = Object.keys(this.agents).map((name) => {
-        console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
-        // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
-        return this.agents[name].query({ query, messages, requery: true });
-      }).concat([
-        this.chatgpt.query({ query, messages, requery: true }),
-        this.trainer.query({ query, messages }),
-      ]);
-
-      // Either all settle, or timeout
-      const resolver = Promise.race([
-        Promise.allSettled(networkPromises),
-        new Promise((resolve, reject) => setTimeout(reject, timeout, new Error('Timeout!')))
-      ]);
-
-      // Debugging
-      resolver.then((results) => {
-        console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[DEBUG]', 'Results:', results);
-      });
-
-      // Handle Results and return
-      const networkResults = Promise.allSettled(networkPromises).then((results) => {
-        console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
-        const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-
-        // TODO: restore validator here
-        // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
-
-        for (let i = 0; i < options.length; i++) {
-          const option = options[i];
-          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
-          this.extractor.query({
-            query: `What cases are mentioned in this message:\n\`\`\`\n${JSON.stringify(option, null, '  ')}\n\`\`\``,
-            json: true
-          }).catch((exception) => {
-            console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extractor Exception:', exception);
-          }).then((extracted) => {
-            console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extracted:', extracted);
-          });
-        }
-
-        // 1. Get baseline from ChatGPT
-        // 2. Get answers from all agents
-        // 3. Remove any low-quality answers (can't find mentioned case, is irrelevant, inaccurate, etc.)
-        // 4. Summarize the network results with a large-context agent
-
-        this.chatgpt.query({ query, messages }).then(async (baseline) => {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Baseline:', baseline);
-          const agentList = options.concat({ name: 'ChatGPT', content: baseline.content }).map((x) => `- [${x.name}] ${x.content}`).join('\n');
-          const cowardice = await this.summarizer.query({
-            messages: messages,
-            query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
-          });
-
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Cowardice summary:', cowardice);
+        // Expander
+        // BEGIN EXPANDER
+        if (this.settings.expander) {
+          // Compute most relevant tokens
+          // const hypotheticals = await this.lennon.query({ query: request.query });
+          const words = this.importantWords(request.query);
+          const phrases = this.importantPhrases(request.query);
 
           try {
-            const actor = new Actor({ content: cowardice.content });
-            const documentIDs = await this.db('documents').insert({
-              fabric_id: actor.id,
-              content: cowardice.content,
-              owner: 1
-            });
+            searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
+            if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
+            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
-            const responseIDs = await this.db('responses').insert({
-              actor: this.summarizer.id,
-              content: `/documents/${documentIDs[0]}`
-            });
+            if (!searchterm.content) searchterm.content = '';
 
-            // Update database with completed response
-            const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
-              status: 'ready',
-              content: cowardice.content,
-              updated_at: this.db.fn.now()
-            });
+            // Remove whitespace
+            searchterm.content = searchterm.content.trim();
 
-            console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+            // Remove wrapping quotes
+            searchterm.content = searchterm.content.replace(/^"/, '').replace(/"$/, ''); // exact double quotes
+            searchterm.content = searchterm.content.replace(/^'/, '').replace(/'$/, ''); // exact single quotes
+            searchterm.content = searchterm.content.replace(/^“/, '').replace(/”$/, ''); // fancy double quotes
+            searchterm.content = searchterm.content.replace(/^‘/, '').replace(/’$/, ''); // fancy single quotes
 
-            this.emit('response', {
-              id: responseIDs[0],
-              content: cowardice.content
-            });
+            // Still too long!
+            // TODO: convert limit here to constant
+            if (searchterm.content.length > 50) {
+              searchterm.content = searchterm.content.substr(0, 50);
+            }
+
+            console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
+
+            // Search for cases
+            topical = await this._vectorSearchCases(searchterm.content);
           } catch (exception) {
-            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
+            console.error('[NOVO]', '[PIPELINE]', 'Search Exception:', exception);
+          }
+        }
+        // END EXPANDER
+
+        // Format Metadata
+        const caseCount = await this.db('cases').count('id as count').first();
+        const meta = `metadata:\n` +
+          `  created: ${created}\n` +
+          `  clock: ${this.clock}\n` +
+          `  notes: Cases may be unrelated, search term used: ${searchterm && searchterm.content || 'none'}\n` +
+          `  matter: ${JSON.stringify(request.matter || null)}\n` +
+          // `  topics: ${searchterm.content || ''}\n` +
+          // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
+          // `  documents: null\n` +
+          `  cases:\n` +
+          cases.concat(recently).concat(topical).map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`).join('\n') + `\n` +
+          `  counts:\n` +
+          `    cases: ` + caseCount.count +
+          `\n`;
+
+        // Format Query Text
+        const query = `---\n` +
+          meta +
+          `---\n` +
+          `${request.query}`;
+
+        // Estimate Cost
+        const metaTokenCount = this.estimateTokens(meta);
+        const requestTokenCount = this.estimateTokens(request.query);
+        const estimatedCost = requestTokenCount * 0.0001;
+
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
+
+        let messages = [];
+
+        if (request.conversation_id) {
+          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Resuming conversation:', request.conversation_id);
+          // Resume conversation
+          const prev = await this._getConversationMessages(request.conversation_id);
+          messages = prev.map((x) => {
+            return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+          });
+        } else {
+          // New conversation
+          // messages = messages.concat([{ role: 'user', content: request.query }]);
+        }
+
+        if (request.subject) {
+          // Subject material provided
+          messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
+        }
+
+        if (request.matter_id) {
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request pertains to Matter ID:', request.matter_id);
+          const matter = await this.db('matters').where({ id: request.matter_id }).first();
+          const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
+          const files = await this.db('files').whereIn('id', matterFiles.map((x) => x.file_id));
+
+          matter.files = files;
+
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter:', matter);
+          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Files:', files);
+
+          messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${matter.title}:\n\n\`\`\`\n${JSON.stringify(matter)}\n\`\`\`` }]);
+        }
+
+        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
+
+        // Prompt
+        messages.unshift({
+          role: 'system',
+          content: this.settings.prompt
+        });
+
+        if (this.settings.debug) this.emit('debug', `[NOVO] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
+        if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
+
+        // TODO: Compressor
+        // Use a reliable high-context agent to compress the query
+
+        /* this.rag.query({ query: `Generate a SQL query for the following user request:\n\`\`\`\n${request.query}\n\`\`\`\n\nRemember, only ever respond with a SQL query that can be executed by me to return the results.  Do not wrap it in Markdown or a code block, the response must be only the raw query.`, messages }).catch((exception) => {
+          console.error('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Exception:', exception);
+        }).then(async (ragged) => {
+          console.debug('RAGGED:', ragged);
+          let results = null;
+          try {
+            results = await this.db.raw(ragged.content);
+          } catch (exception) {
+            console.error('[NOVO]', '[RAGGER]', 'Exception:', exception);
+            console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Messages to regenerate with:', messages);
+            this.rag.query({ query: `Your query failed:\n\`\`\`\n${exception.message}\n\`\`\`\n\nTry again, making sure to only return a valid SQL query given the provided schema.`, messages }).catch((exception) => {
+              console.error('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Secondary Exception:', exception);
+            }).then((ultimate) => {
+              console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Ultimate:', ultimate);
+            });
           }
 
-          /* const extracted = await this.extractor.query({
-            query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
-          });
-          console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Results:', results);
+        }); */
 
-          if (extracted && extracted.content) {
-            console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
-            try {
-              const caseCards = JSON.parse(extracted.content).map((x) => {
-                const actor = new Actor({ name: x });
-                return {
-                  type: 'CaseCard',
-                  content: {
-                    id: actor.id,
-                    title: x
-                  }
-                };
-              });
+        // Initiate Network Query
+        const networkPromises = Object.keys(this.agents).map((name) => {
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
+          // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
+          return this.agents[name].query({ query, messages, /* requery: true */ });
+        }).concat([
+          // this.chatgpt.query({ query, messages, requery: true }),
+          this.trainer.query({ query, messages }),
+        ]);
 
-              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+        // Either all settle, or timeout
+        Promise.race([
+          Promise.allSettled(networkPromises),
+          new Promise((resolve, reject) => setTimeout(reject, timeout, new Error('Timeout!')))
+        ]).catch((error) => {
+          console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
+        }).then(async (results) => {
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[SETTLEMENT]', 'Results:', results);
+        });
 
-              // Find each case in the database and reject if not found
-              /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
-                cards: JSON.stringify(caseCards.map((x) => x.content.id))
-              }); */
-            /* } catch (exception) {
-              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
-            }
+        // Handle Results and return
+        Promise.allSettled(networkPromises).catch((error) => {
+          console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
+        }).then(async (results) => {
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[DEBUG]', 'Results:', results);
+          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
+          if (!results) {
+            console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'No results!');
+            return;
+          }
+
+          const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
+
+          // TODO: restore validator here
+          // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
+          /* for (let i = 0; i < options.length; i++) {
+            const option = options[i];
+            console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
+            this.extractor.query({
+              query: `What cases are mentioned in this message:\n\`\`\`\n${JSON.stringify(option, null, '  ')}\n\`\`\``,
+              json: true
+            }).catch((exception) => {
+              console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extractor Exception:', exception);
+            }).then((extracted) => {
+              console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extracted:', extracted);
+            });
           } */
 
-          const end = new Date();
-          console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+          // 1. Get baseline from ChatGPT
+          // 2. Get answers from all agents
+          // 3. Remove any low-quality answers (can't find mentioned case, is irrelevant, inaccurate, etc.)
+          // 4. Summarize the network results with a large-context agent
 
-          resolve(cowardice);
-        }).catch((exception) => {
-          console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+          // this.chatgpt.query({ query, messages }).then(async (baseline) => {
+            // console.debug('[NOVO]', '[TIMEDREQUEST]', 'Baseline:', baseline);
+            // const agentList = options.concat({ name: 'ChatGPT', content: baseline.content }).map((x) => `- [${x.name}] ${x.content}`).join('\n');
+            const agentList = options.map((x) => `- [${x.name}] ${x.content}`).join('\n');
+            this.summarizer.query({
+              messages: messages,
+              query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
+            }).catch((exception) => {
+              console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+            }).then(async (cowardice) => {
+              console.debug('[NOVO]', '[TIMEDREQUEST]', 'Cowardice summary:', cowardice);
+              try {
+                const actor = new Actor({ content: cowardice.content });
+                const documentIDs = await this.db('documents').insert({
+                  fabric_id: actor.id,
+                  content: cowardice.content,
+                  owner: 1
+                });
+
+                const responseIDs = await this.db('responses').insert({
+                  actor: this.summarizer.id,
+                  content: `/documents/${documentIDs[0]}`
+                });
+
+                // Update database with completed response
+                const updated = await this.db('messages').where({ id: responseMessage[0] }).update({
+                  status: 'ready',
+                  content: cowardice.content,
+                  updated_at: this.db.fn.now()
+                });
+
+                console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+
+                this.emit('response', {
+                  id: responseIDs[0],
+                  content: cowardice.content
+                });
+              } catch (exception) {
+                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
+              }
+
+              /* const extracted = await this.extractor.query({
+                query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
+              });
+              console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+
+              if (extracted && extracted.content) {
+                console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+                try {
+                  const caseCards = JSON.parse(extracted.content).map((x) => {
+                    const actor = new Actor({ name: x });
+                    return {
+                      type: 'CaseCard',
+                      content: {
+                        id: actor.id,
+                        title: x
+                      }
+                    };
+                  });
+
+                  console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+
+                  // Find each case in the database and reject if not found
+                  /* const updated = await this.db('messages').where({ id: newMessage[0] }).update({
+                    cards: JSON.stringify(caseCards.map((x) => x.content.id))
+                  }); */
+                /* } catch (exception) {
+                  console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+                }
+              } */
+
+              const end = new Date();
+              console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+
+              resolve(cowardice);
+            });
+          // }).catch((exception) => {
+          //   console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+          // });
         });
       });
     });
@@ -1285,11 +1351,11 @@ class Jeeves extends Hub {
 
     // this.products = await this.stripe.enumerateProducts();
 
-    if (this.settings.statutes.enable && this.statutes) {
-      this.statutes.start().then((output) => {
-        console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
-      });
-    }
+    // if (this.settings.statutes.enable && this.statutes) {
+    //   this.statutes.start().then((output) => {
+    //     console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
+    //   });
+    // }
 
     // Primary Worker
     // Job Types
@@ -1596,10 +1662,10 @@ class Jeeves extends Hub {
     }
 
     // Retrieval Augmentation Generator (RAG)
-    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.summarizer = new Agent({ name: this.settings.name, listen: false, host: null, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: false, host: null, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
+    this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
+    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
+    this.validator = new Agent({ name: 'ValidatorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
+    this.summarizer = new Agent({ name: this.settings.name, listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
 
     // ChatGPT
     this.chatgpt = new Agent({ name: 'GPT4', host: null, model: this.settings.openai.model, prompt: this.prompt, rules: this.settings.rules, openai: this.settings.openai });
@@ -1618,11 +1684,11 @@ class Jeeves extends Hub {
         'Supported tables:\n' +
         '  - cases\n' +
         // '  - documents\n' +
-        'Schema definitions:' +
+        'Schema definitions:\n' +
         '```\n' +
         caseDef[0][0]['Create Table'] + '\n' +
         // documentDef[0][0]['Create Table'] + '\n' +
-        '```\n' +
+        '```\n\n' +
         'Supported paths:\n' +
         '  - / (index, all object types)\n' +
         '  - /cases (case database)\n' +
@@ -1822,7 +1888,8 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
 
     // Courts
-    this.http._addRoute('GET', '/courts/:id', ROUTES.courts.view.bind(this));
+    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
+    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.view.bind(this));
 
     // Statutes
     this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
@@ -1831,7 +1898,8 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
 
     // Documents
-    this.http._addRoute('GET', '/documents/:id', ROUTES.documents.view.bind(this));
+    this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
+    this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
     // Users
@@ -1846,6 +1914,13 @@ class Jeeves extends Hub {
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
+
+    // Help chat
+    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
+    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
+    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
+    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
+    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));  
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
@@ -1891,126 +1966,10 @@ class Jeeves extends Hub {
     });
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
-    this.http._addRoute('POST', '/invitations', async (req, res) => {
-      const { email } = req.body;
-
-      try {
-        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        if (!user || user.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        }
-
-        // Generate a unique token
-        let uniqueTokenFound = false;
-        let invitationToken = '';
-
-        while (!uniqueTokenFound) {
-          invitationToken = crypto.randomBytes(20).toString('hex');
-          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-          if (!tokenExists) {
-            uniqueTokenFound = true;
-          }
-        };
-
-        //Flag for Eric
-        //We have to change the acceptInvitationLink and the declineInvitationLink when it goes to the server so it redirects to the right hostname
-        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
-        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
-        // TODO: serve from assets (@nplayer89)
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
-
-        await this.email.send({
-          from: 'agent@trynovo.com',
-          to: email,
-          subject: 'Invitation to join Novo',
-          html: htmlContent
-        });
-
-        const existingInvite = await this.db.select('*').from('invitations').where({ target: email }).first();
-        if (!existingInvite) {
-          const invitation = await this.db('invitations').insert({
-            sender_id: req.user.id,
-            target: email,
-            token: invitationToken
-          });
-
-          // update the inquiry status to invited from the waitlist
-          const inquiryInvitedStatus = await this.db('inquiries')
-            .where({ email: email })
-            .update({
-              updated_at: new Date(),
-              status: 'invited',
-            });
-          if (!inquiryInvitedStatus) {
-            return res.status(500).json({ message: 'Error updating the inquiry.' });
-          }
-        } else {
-          return res.status(500).json({ message: 'Error: Invitation already exist.' });
-        }
-        res.send({
-          message: 'Invitation created successfully!'
-        });
-      } catch (error) {
-        console.error('Error occurred:', error);
-        res.status(500).json({ message: 'Error sending invitation.' });
-      }
-    });
+    this.http._addRoute('POST', '/invitations', ROUTES.invitations.createInvitations.bind(this) );
 
     //this endponint resends invitations to the ones created before
-    this.http._addRoute('PATCH', '/invitations/:id', async (req, res) => {
-      try {
-        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        if (!user || user.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        }
-
-        // Generate a unique token
-        let uniqueTokenFound = false;
-        let invitationToken = '';
-        while (!uniqueTokenFound) {
-          invitationToken = crypto.randomBytes(20).toString('hex');
-          const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-          if (!tokenExists) {
-            uniqueTokenFound = true;
-          }
-        };
-
-        const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
-        const htmlContent = this.createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
-        await this.email.send({
-          from: 'agent@trynovo.com',
-          to: invitation.target,
-          subject: 'Invitation to join Novo',
-          html: htmlContent
-        });
-
-        const updateResult = await this.db('invitations')
-          .where({ id: req.params.id })
-          .increment('invitation_count', 1)
-          .update({
-            updated_at: new Date(),
-            sender_id: req.user.id,
-            token: invitationToken
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation count.' });
-        }
-
-        res.send({
-          message: 'Invitation re-sent successfully!'
-        });
-      } catch (error) {
-        console.error('Error occurred:', error);
-        res.status(500).json({ message: 'Error sending invitation.' });
-      }
-    });
+    this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
 
 
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
@@ -2021,102 +1980,16 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/invitations', ROUTES.invitations.getInvitations.bind(this));
-
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
     //endpoint to change the status of an invitation when its accepted
-    this.http._addRoute('PATCH', '/invitations/accept/:id', async (req, res) => {
-      const invitationToken = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation token' });
-        }
-
-        const updateResult = await this.db('invitations')
-          .where({ token: invitationToken })
-          .update({
-            updated_at: new Date(),
-            status: 'accepted',
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation status.' });
-        }
-
-        res.send({
-          message: 'Invitation accepted successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/accept/:id', ROUTES.invitations.acceptInvitation.bind(this));
 
     //endpoint to change the status of an invitation when its declined
-    this.http._addRoute('PATCH', '/invitations/decline/:id', async (req, res) => {
-      const invitationToken = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation token' });
-        }
-
-        const updateResult = await this.db('invitations')
-          .where({ token: invitationToken })
-          .update({
-            updated_at: new Date(),
-            status: 'declined',
-          });
-
-        if (!updateResult) {
-          return res.status(500).json({ message: 'Error updating the invitation status.' });
-        }
-
-        res.send({
-          message: 'Invitation declined successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/decline/:id', ROUTES.invitations.declineInvitation.bind(this));
 
     //endpoint to delete invitation from admin panel
-    this.http._addRoute('PATCH', '/invitations/delete/:id', async (req, res) => {
-      const invitationID = req.params.id;
-      try {
-        const invitation = await this.db.select('*').from('invitations').where({ id: invitationID }).first();
-
-        if (!invitation) {
-          return res.status(404).json({ message: 'Invalid invitation' });
-        }
-
-        // update the invitation status to deleted from the invitations list
-        const invitationDeleteStatus = await this.db('invitations')
-          .where({ id: invitationID })
-          .update({
-            updated_at: new Date(),
-            status: 'deleted',
-          });
-
-        if (!invitationDeleteStatus) {
-          return res.status(500).json({ message: 'Error deleting the invitation.' });
-        }
-
-        res.send({
-          message: 'Invitation deleted successfully!'
-        });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
+    this.http._addRoute('PATCH', '/invitations/delete/:id', ROUTES.invitations.deleteInvitation.bind(this));
 
     this.http._addRoute('GET', '/dockets', async (req, res) => {
       const dockets = await this.courtlistener.paginateDockets();
@@ -2128,129 +2001,16 @@ class Jeeves extends Hub {
       res.send(documents);
     });
 
-    this.http._addRoute('POST', '/users', async (req, res) => {
-      const { username, password } = req.body;
+    this.http._addRoute('POST', '/users', ROUTES.users.createUser.bind(this));
 
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt
-        });
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/users/full', async (req, res) => {
-      const { username, password, email, firstName, lastName, firmName, firmSize } = req.body;
-
-      // Check if the username and password are provided
-      if (!username || !password) {
-        return res.status(400).json({ message: 'Username and password are required.' });
-      }
-
-      try {
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', username).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Check if the email already exists
-        const existingEmail = await this.db('users').where('email', email).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Email already registered.' });
-        }
-
-        // Generate a salt and hash the password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(password, salt);
-
-        // Insert the new user into the database
-        const newUser = await this.db('users').insert({
-          username: username,
-          password: hashedPassword,
-          salt: salt,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          firm_name: firmName,
-          firm_size: firmSize,
-          firm_name: firmName ? firmName : null,
-          firm_size: firmSize || firmSize === 0 ? firmSize : null,
-        });
-
-        console.log('New user registered:', username);
-
-        return res.json({ message: 'User registered successfully.' });
-      } catch (error) {
-        console.error('Error registering user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/users/full',ROUTES.users.createFullUser.bind(this));
 
     //endpoint to check if the username is available
-    this.http._addRoute('POST', '/users/:id', async (req, res) => {
-      const  username = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ username: username }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Username already exists. Please choose a different username.' });
-        }
-        res.json({ message: 'Username avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-
-    });
-
+    this.http._addRoute('POST', '/users/:id', ROUTES.users.checkExistingUsername.bind(this));
 
     //endpoint to check if the email is available
-    this.http._addRoute('POST', '/users/email/:id', async (req, res) => {
-      const  email = req.params.id;
-
-      try {
-        const user = await this.db.select('*').from('users').where({ email: email }).first();
-
-        if (user) {
-          return res.status(409).json({ message: 'Email already registered. Please choose a different username.' });
-        }
-        res.json({ message: 'Email avaliable' });
-
-      } catch (error) {
-        res.status(500).json({ message: 'Internal server error.', error });
-      }
-    });
-
-    this.http._addRoute('GET', '/sessions', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
+    this.http._addRoute('POST', '/users/email/:id', ROUTES.users.checkExistingEmail.bind(this));
+    this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
@@ -2275,7 +2035,8 @@ class Jeeves extends Hub {
           email: user.email,
           isAdmin: user.is_admin,
           isBeta: user.is_beta,
-          isCompliant: user.is_compliant
+          isCompliant: user.is_compliant,
+          id: user.id
         });
       } catch (error) {
         console.error('Error authenticating user: ', error);
@@ -2283,63 +2044,9 @@ class Jeeves extends Hub {
       }
     });
 
-    this.http._addRoute('POST', '/passwordChange', async (req, res, next) => {
-      const { oldPassword, newPassword } = req.body;
+    this.http._addRoute('POST', '/passwordChange', ROUTES.account.changePassword.bind(this));
 
-      try {
-        const user = await this.db('users').where('id', req.user.id).first();
-        if (!user || !compareSync(oldPassword, user.password)) {
-          return res.status(401).json({ message: 'Invalid password.' });
-        }
-
-        // Generate a salt and hash the new password
-        const saltRounds = 10;
-        const salt = genSaltSync(saltRounds);
-        const hashedPassword = hashSync(newPassword, salt);
-
-        // Update the user's password in the database
-        await this.db('users').where('id', user.id).update({
-          password: hashedPassword,
-          salt: salt
-        });
-
-        return res.json({
-          message: 'Password updated successfully.',
-        });
-      } catch (error) {
-        console.error('Error authenticating user: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('POST', '/usernameChange', async (req, res, next) => {
-      const { newUsername, password } = req.body;
-
-      try {
-        const user = await this.db('users').where('id', req.user.id).first();
-        //check for the password
-        if (!user || !compareSync(password, user.password)) {
-          return res.status(401).json({ message: 'Invalid password.' });
-        }
-
-        // Check if the username already exists
-        const existingUser = await this.db('users').where('username', newUsername).first();
-        if (existingUser) {
-          return res.status(409).json({ message: 'Username already exists.' });
-        }
-
-        // Update the user's username in the database
-        await this.db('users').where('id', user.id).update({
-          username: newUsername,
-        });
-
-        return res.json({
-          message: 'Username updated successfully.',
-        });
-      } catch (error) {
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('POST', '/usernameChange', ROUTES.account.changeUsername.bind(this));
 
     //this is the function that generates a password reset token
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
@@ -2464,33 +2171,7 @@ class Jeeves extends Hub {
     });
 
     //route to edit a conversation title
-    this.http._addRoute('PATCH', '/conversations/:id', async (req, res, next) => {
-      const { title } = req.body;
-
-      try {
-        const conversationEditing = await this.db('conversations')
-        .where({
-          id: req.params.id,
-          creator_id: req.user.id  // validates if the user editing is the creator of the conversation
-        }).first();
-
-        if (!conversationEditing) {
-          return res.status(401).json({ message: 'Invalid conversation.' });
-        }
-
-        // Update the conversation's title in the database
-        await this.db('conversations').where('id', req.params.id).update({
-          title: title
-        });
-
-        return res.json({
-          message: 'Title edited successfully.',
-        });
-      } catch (error) {
-        console.error('Error editing title: ', error);
-        return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
+    this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
 
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
@@ -2616,89 +2297,14 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/cases/:id/pdf', async (req, res, next) => {
-      const instance = await this.db.select('id', 'harvard_case_law_pdf').from('cases').where({ id: req.params.id, pdf_acquired: true }).first();
-      if (!instance || !instance.harvard_case_law_pdf) res.end(404);
-      /* const pdf = fs.readFileSync(`./stores/harvard/${instance.harvard_case_law_id}.pdf`);
-      res.send(pdf); */
-      res.redirect(instance.harvard_case_law_pdf);
-    });
+    this.http._addRoute('GET', '/cases/:id/pdf', ROUTES.cases.getCaseFile.bind(this));
 
-    this.http._addRoute('GET', '/conversations', async (req, res, next) => {
-      res.format({
-        json: async () => {
-          let results = [];
-
-          // TODO: re-evaluate security of `is_admin` check
-          if (req.user?.state?.roles?.includes('admin')) {
-            results = await this.db.select('c.id', 'c.title', 'c.created_at', 'username as creator_name','matter_id','file_fabric_id').from('conversations as c').orderBy('created_at', 'desc').join('users', 'c.creator_id', '=', 'users.id');
-          } else {
-            results = await this.db.select('id', 'title', 'created_at','matter_id','file_fabric_id').from('conversations').where({ creator_id: req.user.id }).orderBy('created_at', 'desc');
-            // TODO: update the conversation upon change (new user message, new agent message)
-            // TODO: sort conversations by updated_at (below line)
-            // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
-          }
-
-          res.send(results);
-        },
-        html: () => {
-          // TODO: provide state
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/conversations', ROUTES.conversations.getConversations.bind(this));
 
     this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
-    this.http._addRoute('GET', '/courts/:slug', async (req, res, next) => {
-      const court = await this.db.select('id', 'fabric_id', 'slug', 'name', 'short_name', 'founded_date', 'courtlistener_id', 'pacer_id', 'start_date', 'end_date').from('courts').where({ slug: req.params.slug }).first();
-      res.format({
-        json: () => {
-          if (!court) return res.status(404).json({ message: 'Court not found.' });
-          res.send(court);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.findCourt.bind(this));
 
-    this.http._addRoute('GET', '/people', async (req, res, next) => {
-      const page = req.query.page || 1;
-      const people = await this.db.select(
-        'id as dbid',
-        'fabric_id as id',
-        'full_name',
-        'name_first',
-        'name_middle',
-        'name_last',
-        'name_suffix',
-        'date_of_birth',
-        'date_of_death',
-        'birth_city',
-        'birth_state',
-        'courtlistener_id'
-      ).whereNotNull('fabric_id').from('people').orderBy('full_name', 'asc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: page
-      });
-
-      res.setHeader('X-Fabric-Type', 'Collection');
-      res.setHeader('X-Pagination', true);
-      res.setHeader('X-Pagination-Current', `${people.pagination.from}-${people.pagination.to}`);
-      res.setHeader('X-Pagination-Per', people.pagination.perPage);
-      res.setHeader('X-Pagination-Total', people.pagination.total);
-
-      res.format({
-        json: () => {
-          res.send(people.data);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      })
-    });
+    this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
 
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
       const person = await this.db.select(
@@ -2726,56 +2332,8 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/documents', async (req, res, next) => {
-      const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('id', 'sha1', 'sha256', 'description', 'created_at', 'fabric_id', 'html', 'content', 'title', 'file_id', 'file_size').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
-        currentPage: currentPage
-      });
-
-      res.format({
-        json: () => {
-          // Create response
-          const response = (documents && documents.data && documents.data.length) ? documents.data.map((doc) => {
-            return {
-              id: doc.fabric_id,
-              created_at: doc.created_at,
-              description: doc.description,
-              sha1: doc.sha1,
-              sha256: doc.sha256,
-              size: doc.file_size,
-              title: doc.title,
-              file_id: doc.file_id,
-            };
-          }) : [];
-
-          // Set Pagination Headers
-          res.setHeader('X-Pagination', true);
-          res.setHeader('X-Pagination-Current', `${documents.pagination.from}-${documents.pagination.to}`);
-          res.setHeader('X-Pagination-Per', documents.pagination.perPage);
-          res.setHeader('X-Pagination-Total', documents.pagination.total);
-
-          return res.send(response);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/documents/:fabricID', async (req, res, next) => {
-      const document = await this.db('documents').select('id', 'description', 'created_at', 'fabric_id', ).where('fabric_id', req.params.fabricID).first();
-      res.format({
-        json: () => {
-          return res.send(document);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
+    this.http._addRoute('GET', '/documents/:fabricID',ROUTES.documents.getDocumentByID.bind(this));
 
     this.http._addRoute('GET', '/opinions', async (req, res, next) => {
       const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
@@ -2843,42 +2401,9 @@ class Jeeves extends Hub {
       });
     });
 
-    this.http._addRoute('GET', '/messages', async (req, res, next) => {
-      let messages = [];
+    this.http._addRoute('GET', '/messages', ROUTES.messages.getMessages.bind(this));
 
-      if (req.query.conversation_id) {
-        messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
-          conversation_id: req.query.conversation_id
-        }).orderBy('created_at', 'asc');
-      } else {
-        // messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');
-      }
-
-      messages = messages.map((m) => {
-        return { ...m, author: m.username || 'User #' + m.user_id, role: (m.user_id == 1) ? 'assistant' : 'user' };
-      });
-
-      res.send(messages);
-    });
-
-    this.http._addRoute('GET', '/conversations/:id', async (req, res, next) => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log','matter_id','file_fabric_id').from('conversations').where({ id: req.params.id }).first();
-      const messages = await this.db('messages')
-        .whereIn('id', conversation.log)
-        .select('id', 'content', 'created_at');
-
-      conversation.messages = messages;
-
-      res.format({
-        json: () => {
-          res.send(conversation);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
+    this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
       const contract = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
@@ -3505,20 +3030,42 @@ class Jeeves extends Hub {
   async _handleChatCompletionRequest (req, res, next) {
     const request = req.body;
     console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion request:', request);
-    Promise.race([
-      Object.keys(this.agents).map((agent) => {
-        console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-        return new Promise((resolve, reject) => {
-          console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-          this.agents[agent].query(request).then((response) => {
-            console.debug('[NOVO]', '[API]', '[CHAT]', 'Got response from agent:', agent, response);
-            resolve(response);
-          });
-        });
-      })
-    ]).then((results) => {
+    const network = Object.keys(this.agents).map((agent) => {
+      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+      return this.agents[agent].query(request);
+    });
+
+    Promise.race(network).catch((error) => {
+      console.error('[NOVO]', '[API]', '[CHAT]', 'Error:', error);
+      res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
+    }).then((results) => {
       console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
-      res.json(results);
+      const object = {
+        object: 'chat.completion',
+        created: Date.now() / 1000,
+        model: request.model || 'novo',
+        system_fingerprint: 'net_novo',
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: results.content
+            },
+            finish_reason: 'stop'
+          }
+        ],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
+        }
+      }
+
+      const actor = new Actor(object);
+      const output = merge({}, object, { id: actor.id });
+
+      res.json(output);
     });
   }
 
@@ -4314,7 +3861,7 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
-      this.alpha.query(request).catch(reject).then(resolve);
+      this.sensemaker.query(request).catch(reject).then(resolve);
     });
   }
 
@@ -4337,7 +3884,7 @@ class Jeeves extends Hub {
 
       const request = { query };
 
-      this.createTimedRequest(request).then((output) => {
+      this.createTimedRequest(request).catch(reject).then((output) => {
         // console.debug('got summarized case:', output);
         resolve(output.content);
       });
@@ -4624,12 +4171,12 @@ class Jeeves extends Hub {
   }
 
   async _runFixtures () {
-    if (this.statutes) {
-      const STATUTE_FIXTURE = await this.statutes.search({
-        query: 'Texas'
-      });
-      console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
-    }
+    // if (this.statutes) {
+    //   const STATUTE_FIXTURE = await this.statutes.search({
+    //     query: 'Texas'
+    //   });
+    //   console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
+    // }
 
     const FABRIC_FIXTURE = await this.fabric.search({
       query: 'North\nCarolina',

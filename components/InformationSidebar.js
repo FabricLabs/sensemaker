@@ -147,10 +147,6 @@ class InformationSidebar extends React.Component {
     } = this.state;
     const { visible, documentSection, documentInfo } = this.props;
 
-    const sidebarStyle = {
-      transition: 'width 0.5s ease-in-out',
-    };
-
     return (
       <Sidebar
         as={Form}
@@ -158,7 +154,7 @@ class InformationSidebar extends React.Component {
         direction='right'
         visible={visible}
         width='wide'
-        style={{...sidebarStyle, ...documentSection ? { width: '600px' } : {}}}
+        style={documentSection ? { width: '600px' } : {}}
 
       >
         <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
@@ -166,10 +162,8 @@ class InformationSidebar extends React.Component {
           documentSection ?
             ((documentInfo && documentInfo.file_id) ? (
               <section className='info-sidebar center-elements-column'>
-                {/* this is just a random document, we need to add documentId to the src */}
                 <Card fluid className='info-file-card' style={{ paddingBottom: '1.5em' }}>
                   <CardContent header={documentInfo.filename} style={{ paddingBottom: '0' }}>
-                    {/* <CardHeader>{documentInfo.filename}</CardHeader> */}
                   </CardContent>
                   <CardContent style={{ paddingTop: '0.5em', marginBottom: '1.5em' }}>
                     {this.props.matterTitle && (
@@ -198,9 +192,7 @@ class InformationSidebar extends React.Component {
             : (
               (this.props.thumbsUpClicked || this.props.thumbsDownClicked) ?
                 (<div className='info-sidebar center-elements-column'>
-
                   <Header as='h2' style={{ color: '#fff', marginBottom: '2rem' }} >Feedback</Header>
-                  {/* <Icon name='close' onClick={() => this.handleClose()} className='feedback-close' /> */}
                   <Button.Group size='medium'>
                     {(this.props.thumbsDownClicked) ? (
                       <Popup

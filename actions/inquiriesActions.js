@@ -68,6 +68,7 @@ const fetchInquiry = (id) => {
   };
 };
 
+//this is called to join users to the waitlist, creating a new "inquiry"
 const createInquiry = (email) => {
   return async dispatch => {
     dispatch(createInquiryRequest());
@@ -87,6 +88,7 @@ const createInquiry = (email) => {
       });
 
       const results = await Promise.all([
+        //this is a forced delay
         new Promise((resolve, reject) => {
           setTimeout(resolve, 1500);
         }),

@@ -43,11 +43,11 @@ class Coordinator extends Service {
     try {
       const response = await this.chooser.query({
         state: this.state,
-        query: 'What action to take?',
+        query: 'What action to take?  Respond using JSON.',
         format: 'json'
       });
 
-      choice = response.content;
+      choice = JSON.parse(response.content);
     } catch (exception) {
       console.error('[COORDINATOR]', 'Error choosing action:', exception);
     }
@@ -76,7 +76,7 @@ class Coordinator extends Service {
 
   async start () {
     this.chooser = new Agent(merge(this.settings.agent, {
-      prompt: `You are ChooserAI, designed to pick the best action for a provided state.\n\n\nActions you can take:\n\n- ${this.settings.actions.join('\n  - ')}\n\n\nGoals you can achieve:\n\n- ${Object.values(this.settings.goals).map(JSON.stringify).join('\n  - ')}\n\n`,
+      prompt: `You are ChooserAI, designed to pick the best action for a provided state.\n\n\nActions you can take:\n\n- ${this.settings.actions.join('\n- ')}\n\n\nGoals you can achieve:\n\n- ${Object.values(this.settings.goals).map(JSON.stringify).join('\n- ')}\n\n`,
       format: 'json'
     }));
 
