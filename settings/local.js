@@ -19,6 +19,7 @@ const MANGO = '10.8.0.32';
 const FOXTROT = '10.8.0.31';
 const CLARITY = '10.8.0.34';
 const BALROG = '10.8.0.33';
+const GOTHMOG = '10.8.0.60';
 
 // Dependencies
 const fs = require('fs');
