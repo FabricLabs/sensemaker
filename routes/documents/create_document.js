@@ -18,7 +18,7 @@ module.exports = async function (req, res, next) {
     parameters: obj
   }).catch((exception) => {
     console.error('[NOVO]', '[HTTP]', 'Error generating document outline:', exception);
-    res.error(500, 'Error generating document outline');
+    res.status(500).json({ status: 'error', message: 'Error generating document outline' });
   }).then(async (output) => {
     console.debug('[NOVO]', '[HTTP]', 'Generated document outline:', output);
 
