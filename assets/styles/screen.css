@@ -333,6 +333,17 @@ jeeves-dashboard #collapse-sidebar {
   vertical-align: text-top;
 }
 
+#main-sidebar .expand-icon{
+  position: absolute;
+  top: 30%;
+  right: 5%;
+  display: none;
+}
+
+#main-sidebar .expand-menu:hover .expand-icon{
+  display: block;
+}
+
 @media (max-width: 1440px) and (max-height: 800px) {
   jeeves-dashboard #main-sidebar {
     min-width: 100px;

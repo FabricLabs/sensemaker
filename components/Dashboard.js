@@ -473,6 +473,8 @@ class Dashboard extends React.Component {
       documentInfo,
       matterTitle,
       informationSidebarOpen,
+      openLibrary,
+      openMatters,
     } = this.state;
 
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
@@ -516,8 +518,17 @@ class Dashboard extends React.Component {
                   position='right center'
                   trigger={(
                     <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
-                      <Icon name='gavel' size='large' />
-                      <p className='icon-label'>Matters</p>
+                      <div style={{ width: '100%', height: '100%' }} className='expand-menu'>
+                        <div className='col-center'>
+                          <Icon name='gavel' size='large' />
+                          <p className='icon-label'>Matters</p>
+                        </div>
+                        {!openSectionBar && (
+                          <div className='expand-icon'>
+                            <Icon name='right chevron' size='small' />
+                          </div>
+                        )}
+                      </div>
                     </Menu.Item>
                   )}>
                   <Popup.Content>
@@ -532,8 +543,17 @@ class Dashboard extends React.Component {
                 </Menu.Item>
               )}
               <Menu.Item onClick={() => { this.handleMenuItemClick('library'); this.props.fetchConversations(); }}>
-                <Icon name='book' size='large' />
-                <p className='icon-label'>Library</p>
+                <div style={{ width: '100%', height: '100%' }} className='expand-menu'>
+                  <div className='col-center'>
+                    <Icon name='book' size='large' />
+                    <p className='icon-label'>Library</p>
+                  </div>
+                  {!openSectionBar && (
+                    <div className='expand-icon'>
+                      <Icon name='right chevron' size='small' />
+                    </div>
+                  )}
+                </div>
               </Menu.Item>
               {ENABLE_CHANGELOG && (
                 <Menu.Item as={Link} to='/updates'>
