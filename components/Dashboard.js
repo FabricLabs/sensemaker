@@ -543,11 +543,9 @@ class Dashboard extends React.Component {
                   <Icon name='book' size='large' />
                   <p className='icon-label'>Library</p>
                 </div>
-                {!openSectionBar && (
-                  <div className='expand-icon'>
-                    <Icon name={(openSectionBar && openLibrary) ? 'left chevron' : 'right chevron'} size='small' />
-                  </div>
-                )}
+                <div className='expand-icon'>
+                  <Icon name={(openSectionBar && openLibrary) ? 'left chevron' : 'right chevron'} size='small' />
+                </div>
               </Menu.Item>
               {ENABLE_CHANGELOG && (
                 <Menu.Item as={Link} to='/updates'>
