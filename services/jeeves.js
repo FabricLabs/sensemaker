@@ -1906,6 +1906,7 @@ class Jeeves extends Hub {
     this.http._addRoute('POST', '/documents/:fabricID/section/:id', ROUTES.documents.createSection.bind(this));
     this.http._addRoute('PATCH', '/documents/:fabricID/section/:id', ROUTES.documents.editSection.bind(this));
     this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
+    this.http._addRoute('GET', '/documents/sections/:document_id', ROUTES.documents.getSections.bind(this));
     this.http._addRoute('PATCH', '/documents/:fabricID', ROUTES.documents.edit.bind(this));
     this.http._addRoute('PATCH', '/documents/delete/:fabricID', ROUTES.documents.delete.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));

@@ -1024,3 +1024,19 @@ fabric-motd {
 #document-drafter section textarea {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
 }
+
+#document-drafter .drafter-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5em 0;
+}
+
+#document-drafter .drafter-section-title .edit-icon{
+  display: none;
+  cursor: pointer;
+}
+
+#document-drafter .drafter-section-title:hover .edit-icon{
+  display: block;
+}
