@@ -78,6 +78,7 @@ module.exports = {
     port: 11434,
     secure: false
   }, */
+  /* TODO: enable hivemind */
   /* hivemind: {
     name: 'HIVEMIND',
     prompt: baseline.toString('utf8'),
