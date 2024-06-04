@@ -17,6 +17,10 @@ const FETCH_DOCUMENT_REQUEST = 'FETCH_DOCUMENT_REQUEST';
 const FETCH_DOCUMENT_SUCCESS = 'FETCH_DOCUMENT_SUCCESS';
 const FETCH_DOCUMENT_FAILURE = 'FETCH_DOCUMENT_FAILURE';
 
+const FETCH_DOCUMENT_SECTIONS_REQUEST = 'FETCH_DOCUMENT_SECTIONS_REQUEST';
+const FETCH_DOCUMENT_SECTIONS_SUCCESS = 'FETCH_DOCUMENT_SECTIONS_SUCCESS';
+const FETCH_DOCUMENT_SECTIONS_FAILURE = 'FETCH_DOCUMENT_SECTIONS_FAILURE';
+
 const UPLOAD_DOCUMENT_REQUEST = 'UPLOAD_DOCUMENT_REQUEST';
 const UPLOAD_DOCUMENT_SUCCESS = 'UPLOAD_DOCUMENT_SUCCESS';
 const UPLOAD_DOCUMENT_FAILURE = 'UPLOAD_DOCUMENT_FAILURE';
@@ -53,6 +57,10 @@ const fetchDocumentsFailure = (error) => ({ type: FETCH_DOCUMENTS_FAILURE, paylo
 const fetchDocumentRequest = () => ({ type: FETCH_DOCUMENT_REQUEST });
 const fetchDocumentSuccess = (instance) => ({ type: FETCH_DOCUMENT_SUCCESS, payload: instance });
 const fetchDocumentFailure = (error) => ({ type: FETCH_DOCUMENT_FAILURE, payload: error });
+
+const fetchDocumentSectionsRequest = () => ({ type: FETCH_DOCUMENT_SECTIONS_REQUEST });
+const fetchDocumentSectionsSuccess = (sections) => ({ type: FETCH_DOCUMENT_SECTIONS_SUCCESS, payload: sections });
+const fetchDocumentSectionsFailure = (error) => ({ type: FETCH_DOCUMENT_SECTIONS_FAILURE, payload: error });
 
 const uploadDocumentRequest = () => ({ type: UPLOAD_DOCUMENT_REQUEST });
 const uploadDocumentSuccess = (fabric_id) => ({ type: UPLOAD_DOCUMENT_SUCCESS, payload: fabric_id });
@@ -107,6 +115,19 @@ const fetchDocument = (fabricID) => {
       dispatch(fetchDocumentSuccess(instance));
     } catch (error) {
       dispatch(fetchDocumentFailure(error));
+    }
+  };
+};
+
+const fetchDocumentSections = (document_id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchDocumentSectionsRequest());
+    const { token } = getState().auth.token;
+    try {
+      const sections = await fetchFromAPI(`/documents/sections/${document_id}`, null, token);
+      dispatch(fetchDocumentSectionsSuccess(sections));
+    } catch (error) {
+      dispatch(fetchDocumentSectionsFailure(error));
     }
   };
 };
@@ -314,6 +335,7 @@ const deleteDocument = (fabricID) => {
 module.exports = {
   fetchDocument,
   fetchDocuments,
+  fetchDocumentSections,
   uploadDocument,
   searchDocument,
   createDocument,
@@ -327,6 +349,9 @@ module.exports = {
   FETCH_DOCUMENTS_REQUEST,
   FETCH_DOCUMENTS_SUCCESS,
   FETCH_DOCUMENTS_FAILURE,
+  FETCH_DOCUMENT_SECTIONS_REQUEST,
+  FETCH_DOCUMENT_SECTIONS_SUCCESS,
+  FETCH_DOCUMENT_SECTIONS_FAILURE,
   UPLOAD_DOCUMENT_REQUEST,
   UPLOAD_DOCUMENT_SUCCESS,
   UPLOAD_DOCUMENT_FAILURE,

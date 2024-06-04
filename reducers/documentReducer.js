@@ -2,6 +2,9 @@ const {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
+  FETCH_DOCUMENT_SECTIONS_REQUEST,
+  FETCH_DOCUMENT_SECTIONS_SUCCESS,
+  FETCH_DOCUMENT_SECTIONS_FAILURE,
   FETCH_DOCUMENTS_REQUEST,
   FETCH_DOCUMENTS_SUCCESS,
   FETCH_DOCUMENTS_FAILURE,
@@ -30,6 +33,7 @@ const {
 
 const initialState = {
   document: {},
+  sections: [],
   documents: [],
   loading: false,
   editing: false,
@@ -49,6 +53,12 @@ function documentReducer(state = initialState, action) {
     case FETCH_DOCUMENT_SUCCESS:
       return { ...state, loading: false, document: action.payload };
     case FETCH_DOCUMENT_FAILURE:
+      return { ...state, loading: false, error: action.payload };
+    case FETCH_DOCUMENT_SECTIONS_REQUEST:
+      return { ...state, loading: true, error: null };
+    case FETCH_DOCUMENT_SECTIONS_SUCCESS:
+      return { ...state, loading: false, sections: action.payload };
+    case FETCH_DOCUMENT_SECTIONS_FAILURE:
       return { ...state, loading: false, error: action.payload };
     case FETCH_DOCUMENTS_REQUEST:
       return { ...state, loading: true, error: null };

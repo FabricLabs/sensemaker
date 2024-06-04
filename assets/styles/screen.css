@@ -333,6 +333,17 @@ jeeves-dashboard #collapse-sidebar {
   vertical-align: text-top;
 }
 
+#main-sidebar .expand-icon{
+  position: absolute;
+  top: 30%;
+  right: 5%;
+  display: none;
+}
+
+#main-sidebar .expand-menu:hover .expand-icon{
+  display: block;
+}
+
 @media (max-width: 1440px) and (max-height: 800px) {
   jeeves-dashboard #main-sidebar {
     min-width: 100px;
@@ -1012,4 +1023,20 @@ fabric-motd {
 
 #document-drafter section textarea {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+}
+
+#document-drafter .drafter-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5em 0;
+}
+
+#document-drafter .drafter-section-title .edit-icon{
+  display: none;
+  cursor: pointer;
+}
+
+#document-drafter .drafter-section-title:hover .edit-icon{
+  display: block;
 }

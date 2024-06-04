@@ -473,6 +473,8 @@ class Dashboard extends React.Component {
       documentInfo,
       matterTitle,
       informationSidebarOpen,
+      openLibrary,
+      openMatters,
     } = this.state;
 
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
@@ -515,9 +517,14 @@ class Dashboard extends React.Component {
                   mouseEnterDelay={USER_HINT_TIME_MS}
                   position='right center'
                   trigger={(
-                    <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')}>
-                      <Icon name='gavel' size='large' />
-                      <p className='icon-label'>Matters</p>
+                    <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')} className='expand-menu'>
+                      <div className='col-center'>
+                        <Icon name='gavel' size='large' />
+                        <p className='icon-label'>Matters</p>
+                      </div>
+                      <div className='expand-icon'>
+                        <Icon name={(openSectionBar && openMatters) ? 'left chevron' : 'right chevron'} size='small' />
+                      </div>
                     </Menu.Item>
                   )}>
                   <Popup.Content>
@@ -531,9 +538,14 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Conversations</p>
                 </Menu.Item>
               )}
-              <Menu.Item onClick={() => { this.handleMenuItemClick('library'); this.props.fetchConversations(); }}>
-                <Icon name='book' size='large' />
-                <p className='icon-label'>Library</p>
+              <Menu.Item onClick={() => { this.handleMenuItemClick('library'); this.props.fetchConversations(); }} className='expand-menu'>
+                <div className='col-center'>
+                  <Icon name='book' size='large' />
+                  <p className='icon-label'>Library</p>
+                </div>
+                <div className='expand-icon'>
+                  <Icon name={(openSectionBar && openLibrary) ? 'left chevron' : 'right chevron'} size='small' />
+                </div>
               </Menu.Item>
               {ENABLE_CHANGELOG && (
                 <Menu.Item as={Link} to='/updates'>

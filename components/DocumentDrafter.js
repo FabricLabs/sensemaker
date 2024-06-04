@@ -14,13 +14,10 @@ const {
 const {
   Dropdown,
   Header,
-  Label,
   Segment,
-  CardDescription,
-  CardContent,
-  Card,
   Icon,
   Step,
+  Input,
   StepTitle,
   StepGroup,
   StepDescription,
@@ -54,6 +51,9 @@ class DocumentDrafter extends React.Component {
       documentType: null,
       content: null,
       outlineLoading: false,
+      editMode: false,
+      editSection: 0,
+      titleEditing: '',
     };
 
   }
@@ -97,7 +97,7 @@ class DocumentDrafter extends React.Component {
         this.props.fetchDocument(documents.fabric_id);
         this.setState({ stepInfo: false, stepReview: true });
       }
-      if(documents.document){
+      if (documents.document) {
         console.log(documents.document);
       }
     }
@@ -135,7 +135,7 @@ class DocumentDrafter extends React.Component {
 
   render() {
     const { documents } = this.props;
-    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading } = this.state;
+    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection } = this.state;
 
     return (
       <Segment id='document-drafter' className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
@@ -193,7 +193,7 @@ class DocumentDrafter extends React.Component {
               <TextArea value={content} name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
             </Form>
             <div className='col-center' style={{ width: '100%' }}>
-              <Button.Group  widths='2' style={{ marginTop: '1rem', width: '80%' }}>
+              <Button.Group widths='2' style={{ marginTop: '1rem', width: '80%' }}>
                 <Button primary icon onClick={() => this.setState({ stepInfo: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' onClick={() => { this.props.createDocument(documentType, content); this.setState({ outlineLoading: true }) }} icon loading={outlineLoading} disabled={!content}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
@@ -217,7 +217,7 @@ class DocumentDrafter extends React.Component {
                 </div>
               </Segment>
               <Button.Group vertical>
-                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id,1,'testing titles')}>Start Drafting! <Icon name='chevron right' /></Button>
+                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id, 1, 'testing titles')}>Start Drafting! <Icon name='chevron right' /></Button>
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
               <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }}>
@@ -225,8 +225,37 @@ class DocumentDrafter extends React.Component {
                   <PlaceholderHeader>
                     <PlaceholderLine />
                   </PlaceholderHeader>
+                </Placeholder>
+                {/* whem i get the real sections ill render this for each section */}
+                <div>
+                  {editMode ?
+                    (
+                      <div className='drafter-section-title'>
+                        <Input
+                          name='titleEditing'
+                          focus
+                          onChange={this.handleInputChange}
+                          defaultValue='prueba'
+                          style={{ width: '100%', marginRight: '1em' }}
+                        />
+                        <Button.Group>
+                          <Button icon color='green' size='small'>
+                            <Icon name='check' />
+                          </Button>
+                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false })}>
+                            <Icon name='close' />
+                          </Button>
+                        </Button.Group>
+                      </div>
+                    ) : (
+                      <div className='drafter-section-title'>
+                        <Header as='h3' style={{ margin: '0' }}>Testing header for edit</Header>
+                        <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: 1 })} />
+                      </div>
+                    )}
+                </div>
+                <Placeholder>
                   <PlaceholderParagraph>
-                    <PlaceholderLine />
                     <PlaceholderLine />
                     <PlaceholderLine />
                     <PlaceholderLine />
