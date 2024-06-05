@@ -2498,6 +2498,15 @@ class Jeeves extends Hub {
       })
     });
 
+    this.http._addRoute('GET', '/settings/admin/Overview', ROUTES.adminSettings.overview.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Settings', ROUTES.adminSettings.settings.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Users', ROUTES.adminSettings.users.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Growth', ROUTES.adminSettings.growth.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Conversations', ROUTES.adminSettings.conversations.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Services', ROUTES.adminSettings.services.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Design', ROUTES.adminSettings.design.bind(this));
+
+
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
       let result = {};
 

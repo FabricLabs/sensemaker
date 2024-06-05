@@ -106,5 +106,15 @@ module.exports = {
     getMessages: require('./help/get_messages.js'),
     sendMessage: require('./help/send_message.js'),
     setMessagesRead: require('./help/set_messages_read.js')
+  },
+  adminSettings: {
+    overview: require('./admin-settings/overview.js'),
+    settings: require('./admin-settings/settings.js'),
+    users: require('./admin-settings/users.js'),
+    growth: require('./admin-settings/growth.js'),
+    conversations: require('./admin-settings/conversations.js'),
+    services: require('./admin-settings/services.js'),
+    design: require('./admin-settings/design.js')
+
   }
 };

@@ -94,9 +94,12 @@ class AdminSettings extends React.Component {
     this.setState({ windowWidth: window.innerWidth });
   };
   
-  // componentDidUpdate() {
-
-  // }
+  componentDidUpdate(prevProps) {
+    const {activeIndex} = this.props
+    if (prevProps.activeIndex !== activeIndex ) {
+      this.setState({activeIndex: activeIndex})
+    }
+  }
 
   handleTabChange = (e, {activeIndex}) => {
     let path = '';
