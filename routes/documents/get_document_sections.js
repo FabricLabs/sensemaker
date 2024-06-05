@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res, next) {
-  const sections = await this.db.select('*').from('document_sections').where('document_id', req.params.document_id).orderBy('section_number', 'desc');
+  const sections = await this.db.select('*').from('document_sections').where('document_id', req.params.document_id).orderBy('section_number', 'asc');
 
   res.format({
     json: () => {

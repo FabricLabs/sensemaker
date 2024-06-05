@@ -39,7 +39,7 @@ const initialState = {
   editing: false,
   error: null,
   fileUploaded: false,
-  fabric_id: null, //this is the id inserted in table 'files' in the db after creating the file
+ // fabric_id: null, //this is the id inserted in table 'files' in the db after creating the file
   results: [],
   creationSuccess: false,
   editionSuccess: false,
@@ -79,12 +79,12 @@ function documentReducer(state = initialState, action) {
     case SEARCH_DOCUMENT_FAILURE:
       return { ...state, loading: false, error: action.payload, results: [] };
     case CREATE_DOCUMENT_REQUEST:
-      return { ...state, creating: true, error: null, fabric_id: null, creationSuccess: false };
+      return { ...state, creating: true, error: null, document: {}, creationSuccess: false };
     case CREATE_DOCUMENT_SUCCESS:
       console.log(action.payload);
-      return { ...state, creating: false, fabric_id: action.payload, error: null, creationSuccess: true };
+      return { ...state, creating: false, document: action.payload, error: null, creationSuccess: true };
     case CREATE_DOCUMENT_FAILURE:
-      return { ...state, creating: false, error: action.payload, fabric_id: null, creationSuccess: false };
+      return { ...state, creating: false, error: action.payload, document: {}, creationSuccess: false };
     case CREATE_DOCUMENT_SECTION_REQUEST:
       return { ...state, creating: true, error: null, creationSuccess: false };
     case CREATE_DOCUMENT_SECTION_SUCCESS:

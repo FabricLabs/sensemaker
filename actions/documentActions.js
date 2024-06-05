@@ -211,7 +211,7 @@ const createDocument = (type, query) => {
       const obj = await response.json();
       console.debug('fetch result: ', obj);
 
-      dispatch(createDocumentSuccess(obj.fabric_id));
+      dispatch(createDocumentSuccess(obj));
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(createDocumentFailure(error.message));

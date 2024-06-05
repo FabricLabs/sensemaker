@@ -92,13 +92,18 @@ class DocumentDrafter extends React.Component {
 
     if (prevProps.documents !== documents) {
       if (this.state.outlineLoading && !documents.creating && documents.creationSuccess) {
+        //if comes this way is cause the new document is created
         this.setState({ outlineLoading: false });
+        this.props.fetchDocumentSections(documents.document.id);
         // this.props.typeSelected(documents.fabric_id);
-        this.props.fetchDocument(documents.fabric_id);
+        // this.props.fetchDocument(documents.fabric_id);
         this.setState({ stepInfo: false, stepReview: true });
       }
       if (documents.document) {
-        console.log(documents.document);
+        console.log("actual document: ",documents.document);
+      }
+      if (prevProps.documents.sections !== documents.sections) {
+        console.log("actual document sections: ",documents.sections);
       }
     }
 
@@ -126,6 +131,15 @@ class DocumentDrafter extends React.Component {
       [event.target.name]: event.target.value
     });
   };
+
+  handleSectionEdit = () => {
+    const { documents } = this.props;
+    const { editSection, titleEditing } = this.state;
+    fabricID, target, title, content = null
+    this.props.editDocumentSection(documents.document.fabric_id, editSection, titleEditing);
+    this.props.
+    this.setState({ editMode: false, editSection: 0, titleEditing: '' });
+  }
 
   formatContent(content) {
     return content.split('\n').map((line, index) => (
@@ -239,10 +253,10 @@ class DocumentDrafter extends React.Component {
                           style={{ width: '100%', marginRight: '1em' }}
                         />
                         <Button.Group>
-                          <Button icon color='green' size='small'>
+                          <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
                             <Icon name='check' />
                           </Button>
-                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false })}>
+                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, titleEditing: '' })}>
                             <Icon name='close' />
                           </Button>
                         </Button.Group>
