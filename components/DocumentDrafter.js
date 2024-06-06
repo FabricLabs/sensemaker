@@ -29,6 +29,7 @@ const {
   PlaceholderLine,
   PlaceholderHeader,
   PlaceholderParagraph,
+  Popup,
 } = require('semantic-ui-react');
 
 // Constants
@@ -54,6 +55,7 @@ class DocumentDrafter extends React.Component {
       editMode: false,
       editSection: 0,
       titleEditing: '',
+      hoverSection: false,
     };
 
   }
@@ -100,10 +102,10 @@ class DocumentDrafter extends React.Component {
         this.setState({ stepInfo: false, stepReview: true });
       }
       if (documents.document) {
-        console.log("actual document: ",documents.document);
+        console.log("actual document: ", documents.document);
       }
       if (prevProps.documents.sections !== documents.sections) {
-        console.log("actual document sections: ",documents.sections);
+        console.log("actual document sections: ", documents.sections);
       }
     }
 
@@ -138,7 +140,7 @@ class DocumentDrafter extends React.Component {
     fabricID, target, title, content = null
     this.props.editDocumentSection(documents.document.fabric_id, editSection, titleEditing);
     this.props.
-    this.setState({ editMode: false, editSection: 0, titleEditing: '' });
+      this.setState({ editMode: false, editSection: 0, titleEditing: '' });
   }
 
   formatContent(content) {
@@ -147,9 +149,17 @@ class DocumentDrafter extends React.Component {
     ));
   }
 
+  handleMouseEnter = () => {//this has to be transformed to get an index
+    this.setState({ hoverSection: true });
+  };
+
+  handleMouseLeave = () => {
+    this.setState({ hoverSection: false });
+  };
+
   render() {
     const { documents } = this.props;
-    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection } = this.state;
+    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection, hoverSection } = this.state;
 
     return (
       <Segment id='document-drafter' className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
@@ -241,7 +251,10 @@ class DocumentDrafter extends React.Component {
                   </PlaceholderHeader>
                 </Placeholder>
                 {/* whem i get the real sections ill render this for each section */}
-                <div>
+                <section
+                  onMouseEnter={() => this.handleMouseEnter()}
+                  onMouseLeave={this.handleMouseLeave}
+                >
                   {editMode ?
                     (
                       <div className='drafter-section-title'>
@@ -267,30 +280,35 @@ class DocumentDrafter extends React.Component {
                         <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: 1 })} />
                       </div>
                     )}
-                </div>
-                <Placeholder>
-                  <PlaceholderParagraph>
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                  </PlaceholderParagraph>
-                  <PlaceholderParagraph>
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                  </PlaceholderParagraph>
-                  <PlaceholderParagraph>
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                  </PlaceholderParagraph>
-                  <PlaceholderParagraph>
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                    <PlaceholderLine />
-                  </PlaceholderParagraph>
-                </Placeholder>
+                  <Placeholder>
+                    <PlaceholderParagraph>
+                      <PlaceholderLine />
+                      <PlaceholderLine />
+                      <PlaceholderLine />
+                    </PlaceholderParagraph>
+                  </Placeholder>
+                  {hoverSection &&
+                    <div className='col-center' style={{ margin: '0 0.5em' }}>
+                      <Popup
+                        content="Add a new Section here"
+                        trigger={
+                          <Button icon basic size='mini' className='new-section-btn'>
+                            <Icon name='plus' size='mini' style={{cursor: 'pointer'}}/>
+                          </Button>
+                        }
+                      />
+                    </div>
+                  }
+                  <Placeholder>
+                    <PlaceholderParagraph>
+                      <PlaceholderLine />
+                      <PlaceholderLine />
+                      <PlaceholderLine />
+                    </PlaceholderParagraph>
+                  </Placeholder>
+                </section>
+
+
               </Segment>
             </div>
             <div className='col-center' style={{ width: '100%' }}>

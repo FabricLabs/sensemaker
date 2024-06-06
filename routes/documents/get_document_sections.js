@@ -1,7 +1,14 @@
 'use strict';
 
 module.exports = async function (req, res, next) {
-  const sections = await this.db.select('*').from('document_sections').where('document_id', req.params.document_id).orderBy('section_number', 'asc');
+
+  const document = await this.db('documents').where({ fabric_id: req.params.fabricID }).first();
+
+  if (!document) {
+    return res.status(404).json({ status: 'error', message: 'Document not found.' });
+  }
+
+  const sections = await this.db.select('*').from('document_sections').where('document_id', document.id).whereNot('status','deleted').orderBy('section_number', 'asc');
 
   res.format({
     json: () => {

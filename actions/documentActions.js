@@ -37,6 +37,10 @@ const CREATE_DOCUMENT_SECTION_REQUEST = 'CREATE_DOCUMENT_SECTION_REQUEST';
 const CREATE_DOCUMENT_SECTION_SUCCESS = 'CREATE_DOCUMENT_SECTION_SUCCESS';
 const CREATE_DOCUMENT_SECTION_FAILURE = 'CREATE_DOCUMENT_SECTION_FAILURE';
 
+const DELETE_DOCUMENT_SECTION_REQUEST = 'DELETE_DOCUMENT_SECTION_REQUEST';
+const DELETE_DOCUMENT_SECTION_SUCCESS = 'DELETE_DOCUMENT_SECTION_SUCCESS';
+const DELETE_DOCUMENT_SECTION_FAILURE = 'DELETE_DOCUMENT_SECTION_FAILURE';
+
 const EDIT_DOCUMENT_SECTION_REQUEST = 'EDIT_DOCUMENT_SECTION_REQUEST';
 const EDIT_DOCUMENT_SECTION_SUCCESS = 'EDIT_DOCUMENT_SECTION_SUCCESS';
 const EDIT_DOCUMENT_SECTION_FAILURE = 'EDIT_DOCUMENT_SECTION_FAILURE';
@@ -75,8 +79,12 @@ const createDocumentSuccess = (results) => ({ type: CREATE_DOCUMENT_SUCCESS, pay
 const createDocumentFailure = (error) => ({ type: CREATE_DOCUMENT_FAILURE, payload: error });
 
 const createSectionRequest = () => ({ type: CREATE_DOCUMENT_SECTION_REQUEST });
-const createSectionSuccess = () => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS });
+const createSectionSuccess = (sections) => ({ type: CREATE_DOCUMENT_SECTION_SUCCESS, payload: sections });
 const createSectionFailure = (error) => ({ type: CREATE_DOCUMENT_SECTION_FAILURE, payload: error });
+
+const deleteSectionRequest = () => ({ type: DELETE_DOCUMENT_SECTION_REQUEST });
+const deleteSectionSuccess = (sections) => ({ type: DELETE_DOCUMENT_SECTION_SUCCESS, payload: sections });
+const deleteSectionFailure = (error) => ({ type: DELETE_DOCUMENT_SECTION_FAILURE, payload: error });
 
 const editSectionRequest = () => ({ type: EDIT_DOCUMENT_SECTION_REQUEST });
 const editSectionSuccess = () => ({ type: EDIT_DOCUMENT_SECTION_SUCCESS });
@@ -119,12 +127,12 @@ const fetchDocument = (fabricID) => {
   };
 };
 
-const fetchDocumentSections = (document_id) => {
+const fetchDocumentSections = (fabric_id) => {
   return async (dispatch, getState) => {
     dispatch(fetchDocumentSectionsRequest());
     const { token } = getState().auth.token;
     try {
-      const sections = await fetchFromAPI(`/documents/sections/${document_id}`, null, token);
+      const sections = await fetchFromAPI(`/documents/sections/${fabric_id}`, null, token);
       dispatch(fetchDocumentSectionsSuccess(sections));
     } catch (error) {
       dispatch(fetchDocumentSectionsFailure(error));
@@ -235,13 +243,37 @@ const createDocumentSection = (fabricID, target, title, content = null) => {
         body: JSON.stringify({ title, content })
       });
 
-      const obj = await response.json();
-      console.debug('fetch result: ', obj);
+      const sections = await response.json();
+      console.debug('fetch result: ', sections);
 
-      dispatch(createSectionSuccess());
+      dispatch(createSectionSuccess(sections));
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(createSectionFailure(error.message));
+    }
+  }
+}
+
+const deleteDocumentSection = (fabricID, target) => {
+  return async (dispatch, getState) => {
+    dispatch(deleteSectionRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/documents/${fabricID}/section/delete/${target}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'PATCH',
+      });
+
+      const sections = await response.json();
+      console.debug('fetch result: ', sections);
+
+      dispatch(deleteSectionSuccess(sections));
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      dispatch(deleteSectionFailure(error.message));
     }
   }
 }
@@ -340,6 +372,7 @@ module.exports = {
   searchDocument,
   createDocument,
   createDocumentSection,
+  deleteDocumentSection,
   editDocumentSection,
   editDocument,
   deleteDocument,
@@ -364,6 +397,9 @@ module.exports = {
   CREATE_DOCUMENT_SECTION_REQUEST,
   CREATE_DOCUMENT_SECTION_SUCCESS,
   CREATE_DOCUMENT_SECTION_FAILURE,
+  DELETE_DOCUMENT_SECTION_REQUEST,
+  DELETE_DOCUMENT_SECTION_SUCCESS,
+  DELETE_DOCUMENT_SECTION_FAILURE,
   EDIT_DOCUMENT_SECTION_REQUEST,
   EDIT_DOCUMENT_SECTION_SUCCESS,
   EDIT_DOCUMENT_SECTION_FAILURE,

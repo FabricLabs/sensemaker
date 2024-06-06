@@ -12,6 +12,7 @@ module.exports = {
     create: require('./documents/create_document'),
     createSection: require('./documents/create_document_section.js'),
     getSections: require('./documents/get_document_sections.js'),
+    deleteSection: require('./documents/delete_document_section.js'),
     editSection: require('./documents/edit_document_section.js'),
     delete: require('./documents/delete_document.js'),
     list: require('./documents/list_documents'),
