@@ -6,60 +6,94 @@ const expect = chai.expect;
 const sinon = require('sinon');
 const handler = require('../routes/messages/get_messages');
 
-describe('Handler function tests', () => {
-    let dbMock;
-    let req;
-    let res;
-    let next;
-  
-    beforeEach(() => {
-      dbMock = {
-        join: sinon.stub().returnsThis(),
-        select: sinon.stub().returnsThis(),
-        where: sinon.stub().returnsThis(),
-        orderBy: sinon.stub().returnsThis(),
-      };
-  
-      req = {
-        query: {},
-      };
-  
-      res = {
-        format: sinon.stub(),
-        send: sinon.spy(),
-        json: sinon.spy(),
-      };
-  
-      next = sinon.spy();
-    });
+describe('Get Messages Tests', () => {
+  let req, res, next, dbStub;
 
-    afterEach(() => {
-      sinon.restore();
-    });
-  
-    it('should return messages with conversation_id', async () => {
-      const messages = [
-        { username: 'user1', id: 1, user_id: 1, created_at: '2021-01-01', updated_at: '2021-01-01', content: 'message1', status: 'sent', cards: null }
-      ];
-  
-      req.query.conversation_id = 1; 
-      dbMock.join.resolves(messages);
-  
-      res.format.callsFake((formats) => {
-        if (formats.json) {
-          return formats.json();
+  beforeEach(() => {
+    req = { query: { conversation_id: 1 } };
+    res = { format: sinon.stub(), send: sinon.stub() };
+    next = sinon.stub();
+    dbStub = {
+      join: sinon.stub().returnsThis(),
+      select: sinon.stub().returnsThis(),
+      where: sinon.stub().returnsThis(),
+      orderBy: sinon.stub().resolves([
+        {
+          username: 'user1',
+          id: 1,
+          user_id: 1,
+          created_at: '2024-01-01',
+          updated_at: '2024-01-01',
+          content: 'Hello',
+          status: 'sent',
+          cards: null
         }
-      });
-  
-      const handlerInstance = handler.bind({
-        db: dbMock
-      });
-  
-      await res.json(handlerInstance(req, res, next));
+      ])
+    };
+  });
 
-      expect(res.format.calledOnce).to.be.true;
-      expect(res.json.firstCall.args).to.be.an('array');
-      sinon.assert.calledOnce(res.json);
-      //expect(res.json.firstCall.args[0].some((item) => item.id === 1)).to.be.true;
+  it('should fetch and format messages for a given conversation_id in JSON format', async () => {
+    const testHandler = handler.bind({ db: () => dbStub });
+    res.format.callsFake((handlers) => {
+      handlers.json(); // Simulate JSON format request
     });
-  }); 
+    await testHandler(req, res, next);
+    expect(res.send.calledOnce).to.be.true;
+    expect(res.send.firstCall.args[0]).to.deep.equal([
+      {
+        username: 'user1',
+        id: 1,
+        user_id: 1,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        content: 'Hello',
+        status: 'sent',
+        cards: null,
+        author: 'user1',
+        role: 'assistant'
+      }
+    ]);
+  });
+
+  it('should map message properties correctly when id equals 1', async () => {
+    const testHandler = handler.bind({ db: () => dbStub });
+    res.format.callsFake((handlers) => {
+      handlers.json(); // Simulate JSON format request
+    });
+    await testHandler(req, res, next);
+    const messages = res.send.firstCall.args[0];
+    messages.forEach((message) => {
+      expect(message).to.have.property('author');
+      expect(message).to.have.property('role');
+      expect(message.role).to.equal('assistant');
+      expect(message.author).to.equal('user1')
+    });
+  });
+
+    it('should map message properties correctly when id not equal to 1', async () => {
+    const testHandler = handler.bind({ db: () => dbStub });
+    dbStub.orderBy.resolves([
+      {
+        username: 'user2',
+        id: 2,
+        user_id: 2,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        content: 'Hello',
+        status: 'sent',
+        cards: null
+      }
+    ])
+    res.format.callsFake((handlers) => {
+      handlers.json(); // Simulate JSON format request
+    });
+    await testHandler(req, res, next);
+    const messages = res.send.firstCall.args[0];
+    messages.forEach((message) => {
+      expect(message).to.have.property('author');
+      expect(message).to.have.property('role');
+      expect(message.role).to.equal('user');
+      expect(message.author).to.equal('user2')
+    });
+  })
+});
