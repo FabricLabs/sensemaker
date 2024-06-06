@@ -1,14 +1,15 @@
 'use strict';
 
 const React = require('react');
+
 const {
-  Header,
-  Icon,
-  List,
-  Statistic,
+  Header, Statistic
 } = require('semantic-ui-react');
 
-class AdminOverviewTab extends React.Component {
+const AdminInquiries = require('../../AdminSettingsInquiries');
+const AdminInvitations = require('../../AdminSettingsInvitations');
+
+class AdminGrowthTab extends React.Component {
   constructor(props) {
     super(props);
 
@@ -57,52 +58,45 @@ class AdminOverviewTab extends React.Component {
   };
 
   render () {
-    const { stats } = this.props;
-    const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
+    const {inquiries, invitation, stats} = this.props;
+
+    const inquiriesTotal = stats?.inquiries?.total ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
 
     return ( 
-      <adminOverviewTab>
+      <adminGrowthTab>
         <Header as='h4'>Metrics</Header>
         <Statistic>
-          <Statistic.Value>???</Statistic.Value>
-          <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
+          <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+          <Statistic.Label>Waiting</Statistic.Label>
+        </Statistic>
+        <Statistic>
+          <Statistic.Value>{invitationsTotal}</Statistic.Value>
+          <Statistic.Label>Sent</Statistic.Label>
         </Statistic>
         <Statistic>
           <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>
-        <Statistic>
-          <Statistic.Value>0</Statistic.Value>
-          <Statistic.Label>Conversations</Statistic.Label>
-        </Statistic>
-        <Statistic>
-          <Statistic.Value>0</Statistic.Value>
-          <Statistic.Label>Messages</Statistic.Label>
-        </Statistic>
-        <Statistic>
-          <Statistic.Value>0</Statistic.Value>
-          <Statistic.Label><abbr title="Feedback on a message, with sentiment and (optionally) rating, content, etc.">Comments</abbr></Statistic.Label>
-        </Statistic>
-        <Statistic>
-          <Statistic.Value>{inquiriesWaiting}</Statistic.Value>
-          <Statistic.Label>Waiting</Statistic.Label>
-        </Statistic>
-        <Statistic>
-          <Statistic.Value>{invitationsTotal}</Statistic.Value>
-          <Statistic.Label>Invited</Statistic.Label>
-        </Statistic>
-        <Header as='h4'>Resources</Header>
-        <List>
-          <List.Item>
-            <Icon name='file alternate outline' />
-            <a href="/courts.sql">Courts (SQL)</a>
-          </List.Item>
-        </List>
-      </adminOverviewTab>
+        <AdminInquiries
+          inquiries={inquiries}
+          fetchInquiries={this.props.fetchInquiries}
+          fetchInvitations={this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation}
+          invitation={invitation}
+          deleteInquiry={this.props.deleteInquiry}
+        />
+        <AdminInvitations
+          invitation={invitation}
+          fetchInvitations={this.props.fetchInvitations}
+          sendInvitation={this.props.sendInvitation}
+          reSendInvitation={this.props.reSendInvitation}
+          deleteInvitation={this.props.deleteInvitation}
+        />
+      </adminGrowthTab>
     )
   }
 }
 
-module.exports = AdminOverviewTab;
+module.exports = AdminGrowthTab;
