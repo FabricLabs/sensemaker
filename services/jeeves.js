@@ -546,7 +546,7 @@ class Jeeves extends Hub {
         let outline = null;
 
         try {
-          outline = JSON.parse(output.content);
+          outline = JSON.parse(response.content);
         } catch (exception) {
           console.error('[NOVO]', 'First pass generated incorrect JSON:', outline);
         }

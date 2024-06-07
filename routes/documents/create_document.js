@@ -25,13 +25,16 @@ module.exports = async function (req, res, next) {
       return res.status(500).json({ status: 'error', message: 'Error retrieving document outline.' });
     }
 
-    let outline = null;
+    // let outline = null;
 
-    try {
-      outline = JSON.parse(output.content);
-    } catch (exception) {
-      return res.status(500).json({ status: 'error', message: 'Error parsing document outline.', error: exception });
-    }
+    // try {
+    //   outline = JSON.parse(output.content);
+    // } catch (exception) {
+    //   console.debug('NAHUEL VINO POR ACA');
+    //   return res.status(500).json({ status: 'error', message: 'Error parsing document outline.', error: exception });
+    // }
+
+    let outline = output.content;
 
     console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
 

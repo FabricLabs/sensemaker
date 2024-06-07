@@ -288,12 +288,12 @@ class DocumentDrafter extends React.Component {
                     </PlaceholderParagraph>
                   </Placeholder>
                   {hoverSection &&
-                    <div className='col-center' style={{ margin: '0 0.5em' }}>
+                    <div className='col-center' style={{ margin: '0.5em 0' }}>
                       <Popup
                         content="Add a new Section here"
                         trigger={
                           <Button icon basic size='mini' className='new-section-btn'>
-                            <Icon name='plus' size='mini' style={{cursor: 'pointer'}}/>
+                            <Icon name='plus' style={{cursor: 'pointer'}}/>
                           </Button>
                         }
                       />
