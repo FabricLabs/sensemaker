@@ -25,28 +25,37 @@ module.exports = async function (req, res, next) {
       return res.status(500).json({ status: 'error', message: 'Error retrieving document outline.' });
     }
 
+    //nahuel: i've commented the next lines cause it was trying to parce output.content which was already parsed
+
     // let outline = null;
 
     // try {
     //   outline = JSON.parse(output.content);
     // } catch (exception) {
-    //   console.debug('NAHUEL VINO POR ACA');
     //   return res.status(500).json({ status: 'error', message: 'Error parsing document outline.', error: exception });
     // }
 
-    let outline = output.content;
 
+    //nahuel: replaced previous lines for thesse, seems to be working fine
+    let outline = output.content;
     console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
 
-    /*
+
+    //nahuel: this is the section creation code that was commented out,
+    //this ends up returning in generated.content a message that starts with:
+    // Here is the response in JSON format:
+    //```json
+    //and then the actual JSON, we should try to exctract that JSON there or we can
+    //just try to tell the sections outliner to just give the actual json and not that previous text
+    //after that, we will need to store each section in the DB, thats not made yet
     const section = { outline: output, target: 'Introduction' };
     this.generateDocumentSection(section).catch((exception) => {
       console.error('[NOVO]', '[HTTP]', 'Error generating document section:', exception);
       res.error(500, 'Error generating document section');
     }).then((generated) => {
-      console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated);
+      console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated.content);
     });
-    */
+
 
     // TODO: parse JSON, return to object before creating Actor
     const actor = new Actor(obj);

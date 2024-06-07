@@ -96,7 +96,7 @@ class DocumentDrafter extends React.Component {
       if (this.state.outlineLoading && !documents.creating && documents.creationSuccess) {
         //if comes this way is cause the new document is created
         this.setState({ outlineLoading: false });
-        this.props.fetchDocumentSections(documents.document.id);
+        this.props.fetchDocumentSections(documents.document.fabric_id);
         // this.props.typeSelected(documents.fabric_id);
         // this.props.fetchDocument(documents.fabric_id);
         this.setState({ stepInfo: false, stepReview: true });

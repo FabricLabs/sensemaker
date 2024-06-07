@@ -540,6 +540,7 @@ class Jeeves extends Hub {
   async generateDocumentOutline (request) {
     const message = `Generate an outline of a document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
     return new Promise((resolve, reject) => {
+      //nahuel: the only change i made in this is that actually the JSON.parse() wasnt calling response correctly
       this.outliner.query({ query: message }).then((response) => {
         console.debug('[NOVO]', 'Generated Document Outline (1st Pass):', response);
 
