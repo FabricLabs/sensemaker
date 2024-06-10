@@ -1,7 +1,4 @@
 const chai = require('chai');
-const { interfaces } = require('mocha');
-const { json } = require('react-router-dom');
-const { SegmentInline } = require('semantic-ui-react');
 const expect = chai.expect;
 const sinon = require('sinon');
 const handler = require('../routes/messages/get_messages');
@@ -35,7 +32,7 @@ describe('Get Messages Tests', () => {
   it('should fetch and format messages for a given conversation_id in JSON format', async () => {
     const testHandler = handler.bind({ db: () => dbStub });
     res.format.callsFake((handlers) => {
-      handlers.json(); // Simulate JSON format request
+      handlers.json();
     });
     await testHandler(req, res, next);
     expect(res.send.calledOnce).to.be.true;
@@ -58,7 +55,7 @@ describe('Get Messages Tests', () => {
   it('should map message properties correctly when id equals 1', async () => {
     const testHandler = handler.bind({ db: () => dbStub });
     res.format.callsFake((handlers) => {
-      handlers.json(); // Simulate JSON format request
+      handlers.json();
     });
     await testHandler(req, res, next);
     const messages = res.send.firstCall.args[0];
@@ -85,7 +82,7 @@ describe('Get Messages Tests', () => {
       }
     ])
     res.format.callsFake((handlers) => {
-      handlers.json(); // Simulate JSON format request
+      handlers.json(); 
     });
     await testHandler(req, res, next);
     const messages = res.send.firstCall.args[0];
