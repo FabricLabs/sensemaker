@@ -4,13 +4,12 @@ const chai = require('chai');
 const sinon = require('sinon');
 const expect = chai.expect;
 
-const handler = require('../routes/documents/get_document_by_id'); // Adjust the path as needed
-
+const handler = require('../routes/documents/get_document_by_id'); 
 describe('Get Documents By ID', () => {
   let req, res, next, dbStub;
 
   beforeEach(() => {
-    req = { params: { fabricID: 123 } }; // Example fabricID
+    req = { params: { fabricID: 123 } }; 
     res = { format: sinon.stub(), send: sinon.stub(), status: sinon.stub() };
     next = sinon.stub();
     dbStub = {
