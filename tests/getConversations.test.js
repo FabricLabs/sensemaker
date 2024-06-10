@@ -1,12 +1,12 @@
 const sinon = require('sinon');
 const { expect } = require('chai');
-const handler = require('../routes/conversations/get_conversations'); // Adjust the path as needed
+const handler = require('../routes/conversations/get_conversations'); 
 
 describe('Get Messages', () => {
     let req, res, next, dbStub;
   
     beforeEach(() => {
-      req = { user: { state: { roles: [] }, id: 123 } }; // Default user setup
+      req = { user: { state: { roles: [] }, id: 123 } };
       res = { format: sinon.stub(), send: sinon.stub(), status: sinon.stub() };
       next = sinon.stub();
       dbStub = {
@@ -30,7 +30,7 @@ describe('Get Messages', () => {
     });
   
     it('should fetch conversations for admin users in JSON format', async () => {
-      req.user.state.roles = ['admin']; // Simulate admin user
+      req.user.state.roles = ['admin'];
       const testHandler = handler.bind({ db: dbStub });
       res.format.callsFake(async (handlers) => {
         await handlers.json();
@@ -51,7 +51,7 @@ describe('Get Messages', () => {
     });
   
     it('should fetch conversations for non-admin users in JSON format', async () => {
-      req.user.state.roles = []; // Simulate non-admin user
+      req.user.state.roles = [];
       const mockData = {
           id: 2,
           title: 'Conversation 2',
