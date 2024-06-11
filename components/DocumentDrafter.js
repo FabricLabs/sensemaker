@@ -55,7 +55,8 @@ class DocumentDrafter extends React.Component {
       editMode: false,
       editSection: 0,
       titleEditing: '',
-      hoverSection: 0,
+      hoverSection: -1,
+      creatingSection: false,
     };
 
   }
@@ -93,14 +94,17 @@ class DocumentDrafter extends React.Component {
     }
 
     if (prevProps.documents !== documents) {
-      if (this.state.outlineLoading && !documents.creating && documents.creationSuccess) {
-        //if comes this way is cause the new document is created
-        this.setState({ outlineLoading: false });
-        this.props.fetchDocumentSections(documents.document.fabric_id);
-        // this.props.typeSelected(documents.fabric_id);
-        // this.props.fetchDocument(documents.fabric_id);
-        this.setState({ stepInfo: false, stepReview: true });
+      if (!documents.creating && documents.creationSuccess) {
+        if (this.state.outlineLoading) {
+          this.setState({ outlineLoading: false });
+          this.props.fetchDocumentSections(documents.document.fabric_id);
+          this.setState({ stepInfo: false, stepReview: true });
+        }
+        if (this.state.creatingSection) {
+          this.setState({ editMode: true, creatingSection: false });
+        }
       }
+
       if (documents.document) {
         console.log("actual document: ", documents.document);
       }
@@ -134,10 +138,16 @@ class DocumentDrafter extends React.Component {
     });
   };
 
+  createSection = (newSectionNumber) => {
+    const { document } = this.props.documents;
+    this.props.createDocumentSection(document.fabric_id, newSectionNumber, 'New Section');
+    this.setState({ creatingSection: true, editSection: newSectionNumber })
+  }
+
   handleSectionEdit = () => {
-    const { documents } = this.props;
+    const { document } = this.props.documents;
     const { editSection, titleEditing } = this.state;
-    this.props.editDocumentSection(documents.document.fabric_id, editSection, titleEditing);
+    this.props.editDocumentSection(document.fabric_id, editSection, titleEditing);
     this.setState({ editMode: false, editSection: 0, titleEditing: '' });
   }
 
@@ -152,7 +162,7 @@ class DocumentDrafter extends React.Component {
   };
 
   handleMouseLeave = () => {
-    this.setState({ hoverSection: 0 });
+    this.setState({ hoverSection: -1 });
   };
 
   render() {
@@ -243,6 +253,21 @@ class DocumentDrafter extends React.Component {
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
               <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }}>
+                <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave}>
+                  <Header as='h2' textAlign='center' >Document Outline</Header>
+                  {hoverSection === 0 &&
+                    <div className='col-center' style={{ margin: '0.5em 0' }}>
+                      <Popup
+                        content="Add a new Section here"
+                        trigger={
+                          <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
+                            <Icon name='plus' style={{ cursor: 'pointer' }} />
+                          </Button>
+                        }
+                      />
+                    </div>
+                  }
+                </section>
                 {documents && documents.sections && documents.sections.length > 0 &&
                   documents.sections.map((instance) =>
                     <section
@@ -286,7 +311,7 @@ class DocumentDrafter extends React.Component {
                           <Popup
                             content="Add a new Section here"
                             trigger={
-                              <Button icon basic size='mini' className='new-section-btn'>
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
                                 <Icon name='plus' style={{ cursor: 'pointer' }} />
                               </Button>
                             }
