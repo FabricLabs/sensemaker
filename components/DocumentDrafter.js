@@ -241,7 +241,7 @@ class DocumentDrafter extends React.Component {
               <p>Once You are ready press Draft Document to start.</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '2em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
-              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>
+              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>
                 <Header as='h2' textAlign='center'>Context</Header>
                 <Header as='h4' onClick={() => this.setState({ stepReview: false, stepInfo: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
                 <div onClick={() => this.setState({ stepReview: false, stepInfo: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
@@ -252,10 +252,10 @@ class DocumentDrafter extends React.Component {
                 <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id, 1, 'testing titles')}>Start Drafting! <Icon name='chevron right' /></Button>
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
-              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }}>
+              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave}>
                   <Header as='h2' textAlign='center' >Document Outline</Header>
-                  {hoverSection === 0 &&
+                  {hoverSection === 0 && !editMode &&
                     <div className='col-center' style={{ margin: '0.5em 0' }}>
                       <Popup
                         content="Add a new Section here"
@@ -306,7 +306,7 @@ class DocumentDrafter extends React.Component {
                           <PlaceholderLine />
                         </PlaceholderParagraph>
                       </Placeholder>
-                      {hoverSection === instance.section_number &&
+                      {(hoverSection === instance.section_number && !editMode) &&
                         <div className='col-center' style={{ margin: '0.5em 0' }}>
                           <Popup
                             content="Add a new Section here"
