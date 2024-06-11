@@ -55,7 +55,7 @@ class DocumentDrafter extends React.Component {
       editMode: false,
       editSection: 0,
       titleEditing: '',
-      hoverSection: false,
+      hoverSection: 0,
     };
 
   }
@@ -137,10 +137,8 @@ class DocumentDrafter extends React.Component {
   handleSectionEdit = () => {
     const { documents } = this.props;
     const { editSection, titleEditing } = this.state;
-    fabricID, target, title, content = null
     this.props.editDocumentSection(documents.document.fabric_id, editSection, titleEditing);
-    this.props.
-      this.setState({ editMode: false, editSection: 0, titleEditing: '' });
+    this.setState({ editMode: false, editSection: 0, titleEditing: '' });
   }
 
   formatContent(content) {
@@ -149,12 +147,12 @@ class DocumentDrafter extends React.Component {
     ));
   }
 
-  handleMouseEnter = () => {//this has to be transformed to get an index
-    this.setState({ hoverSection: true });
+  handleMouseEnter = (sectionNumber) => {//this has to be transformed to get an index
+    this.setState({ hoverSection: sectionNumber });
   };
 
   handleMouseLeave = () => {
-    this.setState({ hoverSection: false });
+    this.setState({ hoverSection: 0 });
   };
 
   render() {
@@ -245,70 +243,59 @@ class DocumentDrafter extends React.Component {
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
               <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }}>
-                <Placeholder>
-                  <PlaceholderHeader>
-                    <PlaceholderLine />
-                  </PlaceholderHeader>
-                </Placeholder>
-                {/* whem i get the real sections ill render this for each section */}
-                <section
-                  onMouseEnter={() => this.handleMouseEnter()}
-                  onMouseLeave={this.handleMouseLeave}
-                >
-                  {editMode ?
-                    (
-                      <div className='drafter-section-title'>
-                        <Input
-                          name='titleEditing'
-                          focus
-                          onChange={this.handleInputChange}
-                          defaultValue='prueba'
-                          style={{ width: '100%', marginRight: '1em' }}
-                        />
-                        <Button.Group>
-                          <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
-                            <Icon name='check' />
-                          </Button>
-                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, titleEditing: '' })}>
-                            <Icon name='close' />
-                          </Button>
-                        </Button.Group>
-                      </div>
-                    ) : (
-                      <div className='drafter-section-title'>
-                        <Header as='h3' style={{ margin: '0' }}>Testing header for edit</Header>
-                        <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: 1 })} />
-                      </div>
-                    )}
-                  <Placeholder>
-                    <PlaceholderParagraph>
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                    </PlaceholderParagraph>
-                  </Placeholder>
-                  {hoverSection &&
-                    <div className='col-center' style={{ margin: '0.5em 0' }}>
-                      <Popup
-                        content="Add a new Section here"
-                        trigger={
-                          <Button icon basic size='mini' className='new-section-btn'>
-                            <Icon name='plus' style={{cursor: 'pointer'}}/>
-                          </Button>
-                        }
-                      />
-                    </div>
-                  }
-                  <Placeholder>
-                    <PlaceholderParagraph>
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                    </PlaceholderParagraph>
-                  </Placeholder>
-                </section>
-
-
+                {documents && documents.sections && documents.sections.length > 0 &&
+                  documents.sections.map((instance) =>
+                    <section
+                      onMouseEnter={() => this.handleMouseEnter(instance.section_number)}
+                      onMouseLeave={this.handleMouseLeave}
+                    >
+                      {(editMode && editSection === instance.section_number) ?
+                        (
+                          <div className='drafter-section-title'>
+                            <Input
+                              name='titleEditing'
+                              focus
+                              onChange={this.handleInputChange}
+                              defaultValue={instance.title}
+                              style={{ width: '100%', marginRight: '1em' }}
+                            />
+                            <Button.Group>
+                              <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
+                                <Icon name='check' />
+                              </Button>
+                              <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, titleEditing: '' })}>
+                                <Icon name='close' />
+                              </Button>
+                            </Button.Group>
+                          </div>
+                        ) : (
+                          <div className='drafter-section-title'>
+                            <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
+                            <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
+                          </div>
+                        )}
+                      <Placeholder>
+                        <PlaceholderParagraph>
+                          <PlaceholderLine />
+                          <PlaceholderLine />
+                          <PlaceholderLine />
+                        </PlaceholderParagraph>
+                      </Placeholder>
+                      {hoverSection === instance.section_number &&
+                        <div className='col-center' style={{ margin: '0.5em 0' }}>
+                          <Popup
+                            content="Add a new Section here"
+                            trigger={
+                              <Button icon basic size='mini' className='new-section-btn'>
+                                <Icon name='plus' style={{ cursor: 'pointer' }} />
+                              </Button>
+                            }
+                          />
+                        </div>
+                      }
+                    </section>
+                  )
+                }
               </Segment>
             </div>
             <div className='col-center' style={{ width: '100%' }}>

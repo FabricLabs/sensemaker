@@ -87,7 +87,7 @@ const deleteSectionSuccess = (sections) => ({ type: DELETE_DOCUMENT_SECTION_SUCC
 const deleteSectionFailure = (error) => ({ type: DELETE_DOCUMENT_SECTION_FAILURE, payload: error });
 
 const editSectionRequest = () => ({ type: EDIT_DOCUMENT_SECTION_REQUEST });
-const editSectionSuccess = () => ({ type: EDIT_DOCUMENT_SECTION_SUCCESS });
+const editSectionSuccess = (sections) => ({ type: EDIT_DOCUMENT_SECTION_SUCCESS, payload: sections });
 const editSectionFailure = (error) => ({ type: EDIT_DOCUMENT_SECTION_FAILURE, payload: error });
 
 const editDocumentRequest = () => ({ type: EDIT_DOCUMENT_REQUEST });
@@ -296,7 +296,7 @@ const editDocumentSection = (fabricID, target, title, content = null) => {
       const obj = await response.json();
       console.debug('fetch result: ', obj);
 
-      dispatch(editSectionSuccess());
+      dispatch(editSectionSuccess(obj));
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(editSectionFailure(error.message));

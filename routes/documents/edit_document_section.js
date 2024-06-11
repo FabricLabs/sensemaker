@@ -30,5 +30,7 @@ module.exports = async function (req, res, next) {
     updated_at: new Date(),
   });
 
-  return res.redirect(`/documents/${req.params.fabricID}/sections/${target}`);
+  const sections = await this.db.select('*').from('document_sections').where('document_id', document.id).whereNot('status','deleted').orderBy('section_number', 'asc');
+
+  return res.send(sections);
 };

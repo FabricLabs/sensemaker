@@ -38,7 +38,7 @@ module.exports = async function (req, res, next) {
 
     //nahuel: replaced previous lines for thesse, seems to be working fine
     let outline = output.content;
-    console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
+//    console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
 
 
     //nahuel: this is the section creation code that was commented out,
@@ -48,13 +48,13 @@ module.exports = async function (req, res, next) {
     //and then the actual JSON, we should try to exctract that JSON there or we can
     //just try to tell the sections outliner to just give the actual json and not that previous text
     //after that, we will need to store each section in the DB, thats not made yet
-    const section = { outline: output, target: 'Introduction' };
-    this.generateDocumentSection(section).catch((exception) => {
-      console.error('[NOVO]', '[HTTP]', 'Error generating document section:', exception);
-      res.error(500, 'Error generating document section');
-    }).then((generated) => {
-      console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated.content);
-    });
+    // const section = { outline: output, target: 'Introduction' };
+    // this.generateDocumentSection(section).catch((exception) => {
+    //   console.error('[NOVO]', '[HTTP]', 'Error generating document section:', exception);
+    //   res.error(500, 'Error generating document section');
+    // }).then((generated) => {
+    //   console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated.content);
+    // });
 
 
     // TODO: parse JSON, return to object before creating Actor
@@ -69,6 +69,20 @@ module.exports = async function (req, res, next) {
       content: obj.content,
       status: 'draft'
     });
+
+    const documentId = created[0];  // Assuming created returns an array with the new document ID
+
+    // Insert each section into the 'document_sections' table
+    for (let section of outline) {
+      const sectionActor = new Actor({name: section.content, content: actor.id});
+      await this.db('document_sections').insert({
+        document_id: documentId,
+        section_number: section.number,
+        title: section.content,
+        fabric_id: sectionActor.id,
+        creator: req.user.id
+      });
+    }
 
     return res.redirect(`/documents/${actor.id}`);
   });
