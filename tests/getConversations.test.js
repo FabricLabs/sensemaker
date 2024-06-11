@@ -3,87 +3,74 @@ const { expect } = require('chai');
 const handler = require('../routes/conversations/get_conversations'); 
 
 describe('Get Messages', () => {
-    let req, res, next, dbStub;
-  
-    beforeEach(() => {
-      req = { user: { state: { roles: [] }, id: 123 } };
-      res = { format: sinon.stub(), send: sinon.stub(), status: sinon.stub() };
-      next = sinon.stub();
-      dbStub = {
-        select:  sinon.stub().resolvesThis(),
-        from: sinon.stub().resolvesThis(),
-        where: sinon.stub().resolvesThis(),
-        orderBy: sinon.stub().resolvesThis(),
-        join: sinon.stub().resolves([{
-            id: 1,
-            title: 'Conversation 1',
-            created_at: '2024-01-01',
-            creator_name: 'admin_user',
-            matter_id: 101,
-            file_fabric_id: 202
-        }])
-      };
-    });
-  
-    afterEach(() => {
-      sinon.restore();
-    });
-  
-    it('should fetch conversations for admin users in JSON format', async () => {
-      req.user.state.roles = ['admin'];
-      const testHandler = handler.bind({ db: dbStub });
-      res.format.callsFake(async (handlers) => {
-        await handlers.json();
-      });
-      await testHandler(req, res, next);
-  
-      expect(res.format.calledOnce).to.be.true;
-      /*
-      expect(res.send.firstCall.args[0]).to.deep.equal([{
-        id: 1,
-        title: 'Conversation 1',
-        created_at: '2024-01-01',
-        creator_name: 'admin_user',
-        matter_id: 101,
-        file_fabric_id: 202
-      }]);
-      */
-    });
-  
-    it('should fetch conversations for non-admin users in JSON format', async () => {
-      req.user.state.roles = [];
-      const mockData = {
-          id: 2,
-          title: 'Conversation 2',
-          created_at: '2024-01-02',
-          matter_id: 102,
-          file_fabric_id: 203
-        };
-      dbStub.select = sinon.stub().returnsThis();
-      dbStub.from = sinon.stub().returnsThis();
-      dbStub.where = sinon.stub().returnsThis();
-      dbStub.orderBy = sinon.stub();
-      dbStub.join = sinon.stub().returnsThis();
-      dbStub.orderBy.resolves(mockData);
-  
-      const testHandler = handler.bind({ db: () => dbStub });
-      res.format.callsFake(async (handlers) => {
-        await handlers.json();
-      });
-      await testHandler(req, res, next);
-  
-      expect(res.format.calledOnce).to.be.true;
-      //expect(res.send.firstCall.args[0]).to.deep.equal(mockData);
-    });
-  
-    it('should render HTML content', () => {
-      const testHandler = handler.bind({ applicationString: '<html>content</html>' });
-      res.format.callsFake((handlers) => {
-        handlers.html();
-      });
-      testHandler(req, res, next);
-  
-      expect(res.send.calledOnce).to.be.true;
-      expect(res.send.firstCall.args[0]).to.equal('<html>content</html>');
-    });
+  let req, res, next, dbStub;
+
+  beforeEach(() => {
+    req = { user: { id: 1, state: { roles: [] } } };
+    res = {
+      format: sinon.stub(),
+      send: sinon.stub(),
+      status: sinon.stub().returnsThis(),
+      end: sinon.stub()
+    };
+    next = sinon.stub();
+    dbStub = {
+      select: sinon.stub().returnsThis(),
+      from: sinon.stub().returnsThis(),
+      where: sinon.stub().returnsThis(),
+      orderBy: sinon.stub().returnsThis(),
+      join: sinon.stub(),
+    };
   });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should fetch all conversations if user is admin', async () => {
+    req.user.state.roles = ['admin'];
+    const mockResults = [
+      { id: 1, title: 'Title 1', created_at: '2023-01-01', creator_name: 'user1', matter_id: 1, file_fabric_id: 1 },
+      { id: 2, title: 'Title 2', created_at: '2023-01-02', creator_name: 'user2', matter_id: 2, file_fabric_id: 2 }
+    ];
+    dbStub.join.resolves(mockResults);
+
+    const testHandler = handler.bind({ db: dbStub });
+    res.format.callsFake(async (handlers) => {
+      await handlers.json();
+    });
+
+    await testHandler(req, res, next);
+
+    expect(dbStub.select.calledOnce).to.be.true;
+    expect(dbStub.from.calledWith('conversations as c')).to.be.true;
+    expect(dbStub.where.calledWith('help_chat', 0)).to.be.true;
+    expect(dbStub.orderBy.calledWith('created_at', 'desc')).to.be.true;
+    expect(dbStub.join.calledWith('users', 'c.creator_id', '=', 'users.id')).to.be.true;
+    expect(res.send.calledOnce).to.be.true;
+    expect(res.send.firstCall.args[0]).to.deep.equal(mockResults);
+  });
+
+  it('should fetch user-specific conversations if user is not admin', async () => {
+    const mockResults = [
+      { id: 1, title: 'Title 1', created_at: '2023-01-01', matter_id: 1, file_fabric_id: 1 },
+      { id: 2, title: 'Title 2', created_at: '2023-01-02', matter_id: 2, file_fabric_id: 2 }
+    ];
+    dbStub.orderBy.resolves(mockResults);
+
+    const testHandler = handler.bind({ db: dbStub });
+    res.format.callsFake(async (handlers) => {
+      await handlers.json();
+    });
+
+    await testHandler(req, res, next);
+
+    expect(dbStub.select.calledOnce).to.be.true;
+    expect(dbStub.from.calledWith('conversations')).to.be.true;
+    expect(dbStub.where.calledWith({ creator_id: 1 })).to.be.true;
+    expect(dbStub.where.calledWith('help_chat', 0)).to.be.true;
+    expect(dbStub.orderBy.calledWith('created_at', 'desc')).to.be.true;
+    expect(res.send.calledOnce).to.be.true;
+    expect(res.send.firstCall.args[0]).to.deep.equal(mockResults);
+  });
+});

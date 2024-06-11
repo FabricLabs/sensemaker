@@ -20,6 +20,10 @@ describe('Get Matters By ID Tests', () => {
     };
   });
 
+  afterEach(()=> {
+    sinon.restore();
+  });
+
   it('should send matter if creator matches req.user.id in JSON format', async () => {
     const testHandler = handler.bind({ db: () => dbStub });
     res.format.callsFake((handlers) => {
