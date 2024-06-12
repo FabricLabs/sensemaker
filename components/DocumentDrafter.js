@@ -24,6 +24,7 @@ const {
   StepContent,
   Button,
   TextArea,
+  Modal,
   Form,
   Placeholder,
   PlaceholderLine,
@@ -57,6 +58,7 @@ class DocumentDrafter extends React.Component {
       titleEditing: '',
       hoverSection: -1,
       creatingSection: false,
+      modalOpen: false
     };
 
   }
@@ -165,6 +167,40 @@ class DocumentDrafter extends React.Component {
     this.setState({ hoverSection: -1 });
   };
 
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.modalOpen}
+        onClose={this.cancelDelete}
+      >
+        <Modal.Header>Delete Section</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to delete this section?</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button.Group widths={2}>
+            <Button secondary onClick={this.cancelDelete}>Cancel</Button>
+            <Button negative onClick={this.confirmDelete}>Delete</Button>
+          </Button.Group>
+        </Modal.Actions>
+      </Modal>
+    )
+  }
+
+  cancelDelete = () => {
+    this.setState({ modalOpen: false, editSection: 0 });
+  }
+
+  confirmDelete = () => {
+    const { document } = this.props.documents;
+    const { editSection } = this.state;
+    this.props.deleteDocumentSection(document.fabric_id, editSection);
+    this.setState({ modalOpen: false, editSection: 0 });
+  }
+
+
   render() {
     const { documents } = this.props;
     const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection, hoverSection } = this.state;
@@ -249,7 +285,7 @@ class DocumentDrafter extends React.Component {
                 </div>
               </Segment>
               <Button.Group vertical>
-                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id, 1, 'testing titles')}>Start Drafting! <Icon name='chevron right' /></Button>
+                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id, 1, 'testing titles')}>Draft Document<Icon name='chevron right' /></Button>
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
               <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}>
@@ -296,7 +332,12 @@ class DocumentDrafter extends React.Component {
                         ) : (
                           <div className='drafter-section-title'>
                             <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
-                            <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
+                            {!editMode &&
+                              <div style={{ display: 'flex', gap: '0.5em' }}>
+                                <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
+                                <Icon name='trash alternate' className='edit-icon' onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })} />
+                              </div>
+                            }
                           </div>
                         )}
                       <Placeholder>
@@ -327,6 +368,7 @@ class DocumentDrafter extends React.Component {
             </div>
           </section>
         )}
+        {this.renderConfirmModal()}
       </Segment>
     );
   }
