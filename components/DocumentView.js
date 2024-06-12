@@ -24,14 +24,14 @@ const formatDate = require('../contracts/formatDate');
 class DocumentView extends React.Component {
 
   componentDidMount() {
-    const { id } = this.props;
-    this.props.fetchDocument(id);
+    const { fabricID } = this.props;
+    this.props.fetchDocument(fabricID);
 
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.id !== this.props.id) {
-      this.props.fetchDocument(this.props.id);
+    if (prevProps.fabricID !== this.props.fabricID) {
+      this.props.fetchDocument(this.props.fabricID);
     }
     console.log(this.props.documents.document);
   }
@@ -83,8 +83,8 @@ class DocumentView extends React.Component {
 }
 
 function Chat(props) {
-  const { id } = useParams();
-  return <DocumentView id={id} {...props} />;
+  const { fabricID } = useParams();
+  return <DocumentView fabricID={fabricID} {...props} />;
 }
 
 module.exports = Chat;

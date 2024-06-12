@@ -120,7 +120,7 @@ function documentReducer(state = initialState, action) {
       return { ...state, editing: true, error: null, editionSuccess: false };
     case EDIT_DOCUMENT_SUCCESS:
       console.log(action.payload);
-      return { ...state, editing: false, error: null, editionSuccess: true };
+      return { ...state, editing: false, error: null, document: action.payload , editionSuccess: true };
     case EDIT_DOCUMENT_FAILURE:
       return { ...state, editing: false, error: action.payload, editionSuccess: false };
 

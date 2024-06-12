@@ -60,12 +60,12 @@ module.exports = async function (req, res, next) {
     // TODO: parse JSON, return to object before creating Actor
     const actor = new Actor(obj);
     const type = obj.type || 'document';
-
+  
     // TODO: handle errors
     const created = await this.db('documents').insert({
       creator: req.user.id,
       fabric_id: actor.id,
-      title: obj.title || `Untitled ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+      title: obj.title || req.body.type + ' title',
       content: obj.content,
       status: 'draft'
     });
@@ -80,7 +80,7 @@ module.exports = async function (req, res, next) {
         section_number: section.number,
         title: section.content,
         fabric_id: sectionActor.id,
-        creator: req.user.id
+        creator: req.user.id,
       });
     }
 

@@ -91,7 +91,7 @@ const editSectionSuccess = (sections) => ({ type: EDIT_DOCUMENT_SECTION_SUCCESS,
 const editSectionFailure = (error) => ({ type: EDIT_DOCUMENT_SECTION_FAILURE, payload: error });
 
 const editDocumentRequest = () => ({ type: EDIT_DOCUMENT_REQUEST });
-const editDocumentSuccess = () => ({ type: EDIT_DOCUMENT_SUCCESS });
+const editDocumentSuccess = (document) => ({ type: EDIT_DOCUMENT_SUCCESS, payload: document });
 const editDocumentFailure = (error) => ({ type: EDIT_DOCUMENT_FAILURE, payload: error });
 
 const deleteDocumentRequest = () => ({ type: DELETE_DOCUMENT_REQUEST });
@@ -217,7 +217,6 @@ const createDocument = (type, query) => {
       });
 
       const obj = await response.json();
-      console.debug('fetch result: ', obj);
 
       dispatch(createDocumentSuccess(obj));
     } catch (error) {
@@ -244,7 +243,6 @@ const createDocumentSection = (fabricID, target, title, content = null) => {
       });
 
       const sections = await response.json();
-      console.debug('fetch result: ', sections);
 
       dispatch(createSectionSuccess(sections));
     } catch (error) {
@@ -268,8 +266,7 @@ const deleteDocumentSection = (fabricID, target) => {
       });
 
       const sections = await response.json();
-      console.debug('fetch result: ', sections);
-
+      
       dispatch(deleteSectionSuccess(sections));
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -294,8 +291,7 @@ const editDocumentSection = (fabricID, target, title, content = null) => {
       });
 
       const obj = await response.json();
-      console.debug('fetch result: ', obj);
-
+      
       dispatch(editSectionSuccess(obj));
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -304,11 +300,7 @@ const editDocumentSection = (fabricID, target, title, content = null) => {
   }
 }
 
-//this will be called in the document view
-//right now its sending a whole document, that will have the user's changes
-//in the API we should use that objet to update the documet
-//not 100% about doing it this way, it might be changed
-const editDocument = (document) => {
+const editDocument = (fabricID,title) => {
   return async (dispatch, getState) => {
     dispatch(editDocumentRequest());
     const { token } = getState().auth;
@@ -319,14 +311,12 @@ const editDocument = (document) => {
           'Content-Type': 'application/json'
         },
         method: 'PATCH',
-        body: JSON.stringify({ document })
+        body: JSON.stringify({ title })
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      dispatch(editDocumentSuccess());
+      const document = await response.json();
+
+      dispatch(editDocumentSuccess(document));
     } catch (error) {
       console.error('Error fetching data:', error);
       dispatch(editDocumentFailure(error.message));
