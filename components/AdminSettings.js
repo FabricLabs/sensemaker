@@ -2,30 +2,17 @@
 
 // Dependencies
 const React = require('react');
-const { Link} = require('react-router-dom');
 
 // Semantic UI
 const {
-  Button,
-  Divider,
   Header,
-  Icon,
-  Label,
-  List,
-  Loader,
-  Pagination,
-  Progress,
   Segment,
-  Statistic,
   Tab,
-  Table
 } = require('semantic-ui-react');
 
 const withNavigate = require('../components/Navigate');
-const toRelativeTime = require('../functions/toRelativeTime');
 
 // Components
-// const AccountCreator = require('./AccountCreator');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AdminOverviewTab = require('./tabs/admin/overview');
 const AdminSettingsTab = require('./tabs/admin/settings');
@@ -34,7 +21,6 @@ const AdminGrowthTab = require('./tabs/admin/growth');
 const AdminDesign = require ('./tabs/admin/design');
 const AdminConversationsTab = require('./tabs/admin/conversations');
 const AdminServicesTab = require('./tabs/admin/services');
-// const ConversationList = require('./ConversationList');
 
 
 //TODO: add history push to different tabs
@@ -73,10 +59,6 @@ class AdminSettings extends React.Component {
     this.props.fetchAdminStats();
     const path = this.props.location.pathname;
     this.setState({activeIndex: this.props.activeIndex})
-    // let activeIndex = 0;
-    // if (path === '/settings/admin/Settings') activeIndex = 1;
-    // else if (path === '/settings/admin/Users') activeIndex = 2;
-    // this.setState({activeIndex: activeIndex });
     //this is not doing anything yet
     //this.props.fetchAllConversationsFromAPI();
     window.addEventListener('resize', this.handleResize);
@@ -134,21 +116,8 @@ class AdminSettings extends React.Component {
   }
 
   render() {
-    const start = new Date();
-    const { login, register, error, onLoginSuccess, onRegisterSuccess, conversations, stats, inquiries, invitation,  } = this.props;
-    const { currentPage, windowWidth, activeIndex } = this.state;
-
-    // Math for pagination of conversation list
-    const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
-
-    const inquiriesTotal = stats?.inquiries?.total ?? 0;
-    const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
-    const invitationsTotal = stats?.invitations?.total ?? 0;
-    const usersTotal = stats?.users?.total ?? 0;
-
+    const { stats, inquiries, invitation,  } = this.props;
+    const {activeIndex } = this.state;
 
     // Admin Tabs
     // TODO: add users to admin settings
