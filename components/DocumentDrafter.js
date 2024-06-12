@@ -328,9 +328,15 @@ class DocumentDrafter extends React.Component {
                     : (
                       <>
                         <div className='drafter-section-title'>
-                          <Header as='h2' style={{ marginBottom: 0 }}>{documents.document.title}</Header>
+                          <Header as='h2' textAlign='center' style={{ marginBottom: 0, width: '100%' }}>{documents.document.title}</Header>
                           {!editMode &&
-                            <Icon name='pencil' title='Edit document title' className='edit-icon' onClick={() => this.setState({ editMode: true, editDocument: true })} />
+                            <Icon 
+                            name='pencil' 
+                            title='Edit document title' 
+                            className='edit-icon' 
+                            onClick={() => this.setState({ editMode: true, editDocument: true })} 
+                            style={{position: 'absolute', right: '1em'}}
+                            />
                           }
                         </div>
                         {hoverSection === 0 && !editMode &&
