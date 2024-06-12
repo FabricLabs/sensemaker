@@ -20,6 +20,7 @@ The converted model will appear in your gguf model directory. You can make a Mod
 
 >
 ```bash
+$ cd /path/to/gguf-model-directory/
 $ echo 'FROM ./converted_model.gguf' > Modelfile
 ```
 
