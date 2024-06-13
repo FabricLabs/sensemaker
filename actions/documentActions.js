@@ -216,6 +216,11 @@ const createDocument = (type, query) => {
         body: JSON.stringify({ type, query })
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Server error');
+      }
+
       const obj = await response.json();
 
       dispatch(createDocumentSuccess(obj));

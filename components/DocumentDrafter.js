@@ -30,6 +30,7 @@ const {
   PlaceholderLine,
   PlaceholderParagraph,
   Popup,
+  Message
 } = require('semantic-ui-react');
 
 // Constants
@@ -60,6 +61,7 @@ class DocumentDrafter extends React.Component {
       modalOpen: false,
       editDocument: false,
       editDocumentTitle: '',
+      creationError: false
     };
 
   }
@@ -97,25 +99,29 @@ class DocumentDrafter extends React.Component {
     }
 
     if (prevProps.documents !== documents) {
-      if (!documents.creating && documents.creationSuccess) {
-        if (this.state.outlineLoading) {
-          this.setState({ outlineLoading: false });
-          this.props.fetchDocumentSections(documents.document.fabric_id);
-          this.setState({ stepInfo: false, stepReview: true });
-          console.log("actual document: ", documents.document);
-        }
-        if (this.state.creatingSection) {
-          this.setState({ editMode: true, creatingSection: false });
-        }
-        if (documents.document) {
+      if (!documents.creating) {
+        if (documents.creationSuccess) {
+          if (this.state.outlineLoading) {
+            this.setState({ outlineLoading: false, creationError: false });
+            this.props.fetchDocumentSections(documents.document.fabric_id);
+            this.setState({ stepInfo: false, stepReview: true });
+            console.log("actual document: ", documents.document);
+          }
+          if (this.state.creatingSection) {
+            this.setState({ editMode: true, creatingSection: false });
+          }
+        } else {
+          this.setState({ outlineLoading: false, creationError: true });
         }
       }
+
       if (prevProps.documents.sections !== documents.sections) {
         console.log("actual document sections: ", documents.sections);
       }
     }
 
   }
+  
 
   handleDocumentTypeChange(event, data) {
     console.debug('GOT TYPE CHANGE:', data.value);
@@ -219,7 +225,19 @@ class DocumentDrafter extends React.Component {
 
   render() {
     const { documents } = this.props;
-    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection, hoverSection, editDocument } = this.state;
+    const {
+      stepType,
+      stepInfo,
+      stepReview,
+      documentType,
+      content,
+      outlineLoading,
+      editMode,
+      editSection,
+      hoverSection,
+      editDocument,
+      creationError
+    } = this.state;
 
     return (
       <Segment id='document-drafter' className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
@@ -281,6 +299,12 @@ class DocumentDrafter extends React.Component {
                 <Button primary icon onClick={() => this.setState({ stepInfo: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' onClick={() => { this.props.createDocument(documentType, content); this.setState({ outlineLoading: true }) }} icon loading={outlineLoading} disabled={!content}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
+              {creationError && (
+                <Message negative>
+                  <Message.Header>Error creating document outline</Message.Header>
+                  <p>There was an error during the creation of the document outline, please try again.</p>
+                </Message>
+              )}
             </div>
           </section>
         )}
@@ -305,7 +329,7 @@ class DocumentDrafter extends React.Component {
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
               <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}>
-                <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{marginBottom: '1em'}}>
+                <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
                     <div className='drafter-section-title'>
                       <Input
@@ -330,12 +354,12 @@ class DocumentDrafter extends React.Component {
                         <div className='drafter-section-title'>
                           <Header as='h2' textAlign='center' style={{ marginBottom: 0, width: '100%' }}>{documents.document.title}</Header>
                           {!editMode &&
-                            <Icon 
-                            name='pencil' 
-                            title='Edit document title' 
-                            className='edit-icon' 
-                            onClick={() => this.setState({ editMode: true, editDocument: true })} 
-                            style={{position: 'absolute', right: '1em'}}
+                            <Icon
+                              name='pencil'
+                              title='Edit document title'
+                              className='edit-icon'
+                              onClick={() => this.setState({ editMode: true, editDocument: true })}
+                              style={{ position: 'absolute', right: '1em' }}
                             />
                           }
                         </div>
