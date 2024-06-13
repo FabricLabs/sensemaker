@@ -24,12 +24,13 @@ const {
   StepContent,
   Button,
   TextArea,
+  Modal,
   Form,
   Placeholder,
   PlaceholderLine,
-  PlaceholderHeader,
   PlaceholderParagraph,
   Popup,
+  Message
 } = require('semantic-ui-react');
 
 // Constants
@@ -54,8 +55,13 @@ class DocumentDrafter extends React.Component {
       outlineLoading: false,
       editMode: false,
       editSection: 0,
-      titleEditing: '',
-      hoverSection: false,
+      editSectionTitle: '',
+      hoverSection: -1,
+      creatingSection: false,
+      modalOpen: false,
+      editDocument: false,
+      editDocumentTitle: '',
+      creationError: false
     };
 
   }
@@ -93,23 +99,29 @@ class DocumentDrafter extends React.Component {
     }
 
     if (prevProps.documents !== documents) {
-      if (this.state.outlineLoading && !documents.creating && documents.creationSuccess) {
-        //if comes this way is cause the new document is created
-        this.setState({ outlineLoading: false });
-        this.props.fetchDocumentSections(documents.document.fabric_id);
-        // this.props.typeSelected(documents.fabric_id);
-        // this.props.fetchDocument(documents.fabric_id);
-        this.setState({ stepInfo: false, stepReview: true });
+      if (!documents.creating) {
+        if (documents.creationSuccess) {
+          if (this.state.outlineLoading) {
+            this.setState({ outlineLoading: false, creationError: false });
+            this.props.fetchDocumentSections(documents.document.fabric_id);
+            this.setState({ stepInfo: false, stepReview: true });
+            console.log("actual document: ", documents.document);
+          }
+          if (this.state.creatingSection) {
+            this.setState({ editMode: true, creatingSection: false });
+          }
+        } else {
+          this.setState({ outlineLoading: false, creationError: true });
+        }
       }
-      if (documents.document) {
-        console.log("actual document: ", documents.document);
-      }
+
       if (prevProps.documents.sections !== documents.sections) {
         console.log("actual document sections: ", documents.sections);
       }
     }
 
   }
+  
 
   handleDocumentTypeChange(event, data) {
     console.debug('GOT TYPE CHANGE:', data.value);
@@ -134,13 +146,17 @@ class DocumentDrafter extends React.Component {
     });
   };
 
+  createSection = (newSectionNumber) => {
+    const { document } = this.props.documents;
+    this.props.createDocumentSection(document.fabric_id, newSectionNumber, 'New Section');
+    this.setState({ creatingSection: true, editSection: newSectionNumber })
+  }
+
   handleSectionEdit = () => {
-    const { documents } = this.props;
-    const { editSection, titleEditing } = this.state;
-    fabricID, target, title, content = null
-    this.props.editDocumentSection(documents.document.fabric_id, editSection, titleEditing);
-    this.props.
-      this.setState({ editMode: false, editSection: 0, titleEditing: '' });
+    const { document } = this.props.documents;
+    const { editSection, editSectionTitle } = this.state;
+    this.props.editDocumentSection(document.fabric_id, editSection, editSectionTitle);
+    this.setState({ editMode: false, editSection: 0, editSectionTitle: '' });
   }
 
   formatContent(content) {
@@ -149,17 +165,79 @@ class DocumentDrafter extends React.Component {
     ));
   }
 
-  handleMouseEnter = () => {//this has to be transformed to get an index
-    this.setState({ hoverSection: true });
+  handleMouseEnter = (sectionNumber) => {
+    this.setState({ hoverSection: sectionNumber });
   };
 
   handleMouseLeave = () => {
-    this.setState({ hoverSection: false });
+    this.setState({ hoverSection: -1 });
   };
+
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.modalOpen}
+        onClose={this.cancelDelete}
+      >
+        <Modal.Header>Delete Section</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to delete this section?</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button.Group widths={2}>
+            <Button secondary onClick={this.cancelDelete}>Cancel</Button>
+            <Button negative onClick={this.confirmDelete}>Delete</Button>
+          </Button.Group>
+        </Modal.Actions>
+      </Modal>
+    )
+  }
+
+  cancelDelete = () => {
+    this.setState({ modalOpen: false, editSection: 0 });
+  }
+
+  confirmDelete = () => {
+    const { document } = this.props.documents;
+    const { editSection } = this.state;
+    this.props.deleteDocumentSection(document.fabric_id, editSection);
+    this.setState({ modalOpen: false, editSection: 0 });
+  }
+
+  createDocumentDraft = () => {
+    const { documents } = this.props;
+    //
+    //we will do some magic here
+    //
+    this.props.navigateToDocument(documents.document.fabric_id);
+  }
+
+  handleTitleEdit = () => {
+    const { document } = this.props.documents;
+    const { editDocumentTitle } = this.state;
+
+    this.props.editDocument(document.fabric_id, editDocumentTitle);
+    this.setState({ editMode: false, editDocument: false, editDocumentTitle: '' })
+    console.log(this.state.editDocumentTitle);
+  }
 
   render() {
     const { documents } = this.props;
-    const { stepType, stepInfo, stepReview, documentType, content, outlineLoading, editMode, editSection, hoverSection } = this.state;
+    const {
+      stepType,
+      stepInfo,
+      stepReview,
+      documentType,
+      content,
+      outlineLoading,
+      editMode,
+      editSection,
+      hoverSection,
+      editDocument,
+      creationError
+    } = this.state;
 
     return (
       <Segment id='document-drafter' className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
@@ -221,6 +299,12 @@ class DocumentDrafter extends React.Component {
                 <Button primary icon onClick={() => this.setState({ stepInfo: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' onClick={() => { this.props.createDocument(documentType, content); this.setState({ outlineLoading: true }) }} icon loading={outlineLoading} disabled={!content}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
+              {creationError && (
+                <Message negative>
+                  <Message.Header>Error creating document outline</Message.Header>
+                  <p>There was an error during the creation of the document outline, please try again.</p>
+                </Message>
+              )}
             </div>
           </section>
         )}
@@ -233,7 +317,7 @@ class DocumentDrafter extends React.Component {
               <p>Once You are ready press Draft Document to start.</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '2em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
-              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>
+              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>
                 <Header as='h2' textAlign='center'>Context</Header>
                 <Header as='h4' onClick={() => this.setState({ stepReview: false, stepInfo: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
                 <div onClick={() => this.setState({ stepReview: false, stepInfo: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
@@ -241,80 +325,126 @@ class DocumentDrafter extends React.Component {
                 </div>
               </Segment>
               <Button.Group vertical>
-                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.props.createDocumentSection(documents.document.fabric_id, 1, 'testing titles')}>Start Drafting! <Icon name='chevron right' /></Button>
+                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
                 <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
               </Button.Group>
-              <Segment style={{ width: '50%', height: '45vh', margin: '0', maxWidth: '400px' }}>
-                <Placeholder>
-                  <PlaceholderHeader>
-                    <PlaceholderLine />
-                  </PlaceholderHeader>
-                </Placeholder>
-                {/* whem i get the real sections ill render this for each section */}
-                <section
-                  onMouseEnter={() => this.handleMouseEnter()}
-                  onMouseLeave={this.handleMouseLeave}
-                >
-                  {editMode ?
-                    (
-                      <div className='drafter-section-title'>
-                        <Input
-                          name='titleEditing'
-                          focus
-                          onChange={this.handleInputChange}
-                          defaultValue='prueba'
-                          style={{ width: '100%', marginRight: '1em' }}
-                        />
-                        <Button.Group>
-                          <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
-                            <Icon name='check' />
-                          </Button>
-                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, titleEditing: '' })}>
-                            <Icon name='close' />
-                          </Button>
-                        </Button.Group>
-                      </div>
-                    ) : (
-                      <div className='drafter-section-title'>
-                        <Header as='h3' style={{ margin: '0' }}>Testing header for edit</Header>
-                        <Icon name='pencil' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: 1 })} />
-                      </div>
-                    )}
-                  <Placeholder>
-                    <PlaceholderParagraph>
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                    </PlaceholderParagraph>
-                  </Placeholder>
-                  {hoverSection &&
-                    <div className='col-center' style={{ margin: '0.5em 0' }}>
-                      <Popup
-                        content="Add a new Section here"
-                        trigger={
-                          <Button icon basic size='mini' className='new-section-btn'>
-                            <Icon name='plus' style={{cursor: 'pointer'}}/>
-                          </Button>
-                        }
+              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}>
+                <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
+                  {(editMode && editDocument) ? (
+                    <div className='drafter-section-title'>
+                      <Input
+                        name='editDocumentTitle'
+                        focus
+                        onChange={this.handleInputChange}
+                        defaultValue={documents.document.title}
+                        style={{ width: '100%', marginRight: '1em' }}
                       />
+                      <Button.Group>
+                        <Button icon color='green' size='small' onClick={this.handleTitleEdit}>
+                          <Icon name='check' />
+                        </Button>
+                        <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editDocument: false, editDocumentTitle: '' })}>
+                          <Icon name='close' />
+                        </Button>
+                      </Button.Group>
                     </div>
+                  )
+                    : (
+                      <>
+                        <div className='drafter-section-title'>
+                          <Header as='h2' textAlign='center' style={{ marginBottom: 0, width: '100%' }}>{documents.document.title}</Header>
+                          {!editMode &&
+                            <Icon
+                              name='pencil'
+                              title='Edit document title'
+                              className='edit-icon'
+                              onClick={() => this.setState({ editMode: true, editDocument: true })}
+                              style={{ position: 'absolute', right: '1em' }}
+                            />
+                          }
+                        </div>
+                        {hoverSection === 0 && !editMode &&
+                          <div className='col-center' style={{ margin: '0.5em 0' }}>
+                            <Popup
+                              content="Add a new Section here"
+                              trigger={
+                                <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
+                                  <Icon name='plus' style={{ cursor: 'pointer' }} />
+                                </Button>
+                              }
+                            />
+                          </div>
+                        }
+                      </>
+                    )
                   }
-                  <Placeholder>
-                    <PlaceholderParagraph>
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                      <PlaceholderLine />
-                    </PlaceholderParagraph>
-                  </Placeholder>
+
                 </section>
-
-
+                {documents && documents.sections && documents.sections.length > 0 &&
+                  documents.sections.map((instance) =>
+                    <section
+                      onMouseEnter={() => this.handleMouseEnter(instance.section_number)}
+                      onMouseLeave={this.handleMouseLeave}
+                    >
+                      {(editMode && editSection === instance.section_number) ?
+                        (
+                          <div className='drafter-section-title'>
+                            <Input
+                              name='editSectionTitle'
+                              focus
+                              onChange={this.handleInputChange}
+                              defaultValue={instance.title}
+                              style={{ width: '100%', marginRight: '1em' }}
+                            />
+                            <Button.Group>
+                              <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
+                                <Icon name='check' />
+                              </Button>
+                              <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, editSectionTitle: '' })}>
+                                <Icon name='close' />
+                              </Button>
+                            </Button.Group>
+                          </div>
+                        ) : (
+                          <div className='drafter-section-title'>
+                            <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
+                            {!editMode &&
+                              <div style={{ display: 'flex', gap: '0.5em' }}>
+                                <Icon name='pencil' title='Edit section title' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
+                                <Icon name='trash alternate' title='Delete section' className='edit-icon' onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })} />
+                              </div>
+                            }
+                          </div>
+                        )}
+                      <Placeholder>
+                        <PlaceholderParagraph>
+                          <PlaceholderLine />
+                          <PlaceholderLine />
+                          <PlaceholderLine />
+                        </PlaceholderParagraph>
+                      </Placeholder>
+                      {(hoverSection === instance.section_number && !editMode) &&
+                        <div className='col-center' style={{ margin: '0.5em 0' }}>
+                          <Popup
+                            content="Add a new Section here"
+                            trigger={
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
+                                <Icon name='plus' style={{ cursor: 'pointer' }} />
+                              </Button>
+                            }
+                          />
+                        </div>
+                      }
+                    </section>
+                  )
+                }
               </Segment>
             </div>
             <div className='col-center' style={{ width: '100%' }}>
             </div>
           </section>
         )}
+        {this.renderConfirmModal()}
       </Segment>
     );
   }
@@ -328,7 +458,7 @@ function View(props) {
   const { id } = useParams();
   const navigate = useNavigate();
   const navigateToDocument = (id) => navigate(`/documents/${id}`);
-  return <DocumentDrafter id={id} typeSelected={navigateToDocument} {...props} />;
+  return <DocumentDrafter id={id} navigateToDocument={navigateToDocument} {...props} />;
 }
 
 module.exports = View;
