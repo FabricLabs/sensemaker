@@ -165,7 +165,7 @@ class DocumentDrafter extends React.Component {
     ));
   }
 
-  handleMouseEnter = (sectionNumber) => {//this has to be transformed to get an index
+  handleMouseEnter = (sectionNumber) => {
     this.setState({ hoverSection: sectionNumber });
   };
 
