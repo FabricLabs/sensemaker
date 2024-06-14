@@ -44,25 +44,13 @@ class EmbeddingModel(object):
 def api_embeddings():
     if request.method == 'POST':
         sentence = request.args.get('sentence', None)
-        t0 = time.time()
-        b = bert.get_embeddings(sentence)
-        t1 = time.time()
-        print(t1-t0)
-        print(bert.get_embeddings.cache_info())
-        return b.encode("utf-8")
+        return bert.get_embeddings(sentence).encode("utf-8")
 
 @app.route('/api/mask', methods = ['POST'])
 def api_mask():
     if request.method == 'POST':
         sentence = request.args.get('sentence', None)
-        t0 = time.time()
-        b = bert.get_mask(sentence)
-        t1 = time.time()
-        print(t1-t0)
-        print(bert.get_mask.cache_info())
-        return b.encode("utf-8")
-
-import time
+        return bert.get_mask(sentence).encode("utf-8")
 
 if __name__ == "__main__":
     
