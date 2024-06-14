@@ -1020,23 +1020,64 @@ fabric-motd {
 
 /* Document Drafter */
 
+/* #document-drafter {
 
-#document-drafter section textarea {
-  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-}
+  section textarea {
+    font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+  }
 
-#document-drafter .drafter-section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 0.5em 0;
-}
+  .drafter-section-title {
+    display: flex;
+    align-items: center;
+    margin: 0.5em 0;
+    gap: 2em;
+  }
 
-#document-drafter .drafter-section-title .edit-icon{
-  display: none;
-  cursor: pointer;
-}
+  .drafter-section-title .edit-icon {
+    display: none;
+    cursor: pointer;
+  }
 
-#document-drafter .drafter-section-title:hover .edit-icon{
-  display: block;
-}
+  .drafter-section-title:hover .edit-icon {
+    display: block;
+  }
+
+  .drafter-section-title .edit-icon-title {
+    visibility: hidden;
+    cursor: pointer;
+  }
+
+  .drafter-section-title:hover .edit-icon-title {
+    visibility: visible;
+  }
+} */
+
+ #document-drafter section textarea {
+   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+ }
+
+ .drafter-section-title {
+   display: flex;
+   align-items: center;
+   margin: 0.5em 0;
+   gap: 2em;
+ }
+
+ .drafter-section-title .edit-icon {
+   display: none;
+   cursor: pointer;
+ }
+
+ .drafter-section-title:hover .edit-icon {
+   display: block;
+ }
+
+ .drafter-section-title .edit-icon-title {
+   visibility: hidden;
+   cursor: pointer;
+ }
+
+ .drafter-section-title:hover .edit-icon-title {
+   visibility: visible;
+ }
+

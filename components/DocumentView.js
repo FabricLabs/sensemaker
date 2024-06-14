@@ -64,8 +64,17 @@ class DocumentView extends React.Component {
     if (prevProps.documents != documents) {
       console.log("[NOVO] Document:", this.props.documents.document);
       console.log("[NOVO] Sections:", this.props.documents.sections);
+      if (!documents.creating) {
+        if (documents.creationSuccess) {
+          // == //
+          if (this.state.creatingSection) {
+            this.setState({ editMode: true, creatingSection: false });
+          }
+        }
+      }
     }
   }
+
 
   handleInputChange = (event) => {
     this.setState({
@@ -76,7 +85,7 @@ class DocumentView extends React.Component {
   createSection = (newSectionNumber) => {
     const { document } = this.props.documents;
     this.props.createDocumentSection(document.fabric_id, newSectionNumber, 'New Section');
-    this.setState({ creatingSection: true, editSection: newSectionNumber })
+    this.setState({ creatingSection: true, editSection: newSectionNumber, editSectionTitle: 'New Section' })
   }
 
   handleSectionEdit = () => {
@@ -153,7 +162,7 @@ class DocumentView extends React.Component {
 
     return (
       <Segment className='col-center' style={{ height: '97vh' }} loading={documents.loading}>
-        <Segment fluid style={{ width: '100%', paddingBottom: '3em', overflowY: 'hidden' }}>
+        <Segment fluid style={{ width: '100%', paddingBottom: '3em' }}>
           {documents.document.fabric_id ? (
             <section>
               <div className='document-file-header'>
@@ -166,7 +175,7 @@ class DocumentView extends React.Component {
                   content='Start Conversation'
                 />
               </Link>
-              <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em', marginTop:'1em' }}>
                 <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
                 <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
               </div>
@@ -174,7 +183,8 @@ class DocumentView extends React.Component {
 
               {/* aca empieza el document editor */}
               {/* <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}> */}
-              <Segment style={{}}>
+
+              <Segment>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
                     <div className='drafter-section-title'>
@@ -197,30 +207,34 @@ class DocumentView extends React.Component {
                   )
                     : (
                       <>
-                        <div className='drafter-section-title'>
-                          <Header as='h2' textAlign='center' style={{ marginBottom: 0, width: '100%' }}>{documents.document.title}</Header>
+                        <div className='drafter-section-title' style={{ display: 'flex', justifyContent: 'center' }}>
+                          <Header as='h2' textAlign='center' style={{ marginBottom: 0 }}>{documents.document.title}</Header>
                           {!editMode &&
                             <Icon
                               name='pencil'
                               title='Edit document title'
-                              className='edit-icon'
+                              className='edit-icon-title'
                               onClick={() => this.setState({ editMode: true, editDocument: true })}
-                              style={{ position: 'absolute', right: '1em' }}
+                            // style={{ position: 'absolute', right: '1em' }}
                             />
                           }
                         </div>
-                        {hoverSection === 0 && !editMode &&
-                          <div className='col-center' style={{ margin: '0.5em 0' }}>
-                            <Popup
-                              content="Add a new Section here"
-                              trigger={
-                                <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
-                                  <Icon name='plus' style={{ cursor: 'pointer' }} />
-                                </Button>
-                              }
-                            />
-                          </div>
-                        }
+                        <div
+                          className='col-center'
+                          style={{
+                            margin: '0.5em 0',
+                            visibility: hoverSection === 0 && !editMode ? 'visible' : 'hidden'
+                          }}
+                        >
+                          <Popup
+                            content="Add a new Section here"
+                            trigger={
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
+                                <Icon name='plus' style={{ cursor: 'pointer' }} />
+                              </Button>
+                            }
+                          />
+                        </div>
                       </>
                     )
                   }
@@ -255,7 +269,7 @@ class DocumentView extends React.Component {
                           <div className='drafter-section-title'>
                             <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
                             {!editMode &&
-                              <div style={{ display: 'flex', gap: '0.5em' }}>
+                              <div style={{ display: 'flex' }}>
                                 <Icon name='pencil' title='Edit section title' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
                                 <Icon name='trash alternate' title='Delete section' className='edit-icon' onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })} />
                               </div>
@@ -270,17 +284,17 @@ class DocumentView extends React.Component {
                         </PlaceholderParagraph>
                       </Placeholder>
                       {/* {(hoverSection === instance.section_number && !editMode) &&
-                        <div className='col-center' style={{ margin: '0.5em 0' }}>
-                          <Popup
-                            content="Add a new Section here"
-                            trigger={
-                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
-                                <Icon name='plus' style={{ cursor: 'pointer' }} />
-                              </Button>
-                            }
-                          />
-                        </div>
-                      } */}
+                                   <div className='col-center' style={{ margin: '0.5em 0' }}>
+                                     <Popup
+                                       content="Add a new Section here"
+                                       trigger={
+                                         <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
+                                           <Icon name='plus' style={{ cursor: 'pointer' }} />
+                                         </Button>
+                                       }
+                                     />
+                                   </div>
+                                 } */}
                       <div
                         className='col-center'
                         style={{
@@ -301,8 +315,6 @@ class DocumentView extends React.Component {
                   )
                 }
               </Segment>
-
-
             </section>
           ) : (
             <div className='document-file-header'>
