@@ -10,9 +10,9 @@
 # curl -X POST -G "localhost:5000/api/mask" --data-urlencode "sentence=The model will predict the [MASK]."
 
 from transformers import BertTokenizer, BertConfig, BertModel, pipeline
+from transformers.pipelines.base import PipelineException
 
-from flask import Flask
-from flask import request
+from flask import Flask, abort, request
 
 from functools import lru_cache
 
@@ -31,26 +31,37 @@ class EmbeddingModel(object):
 
     @lru_cache(maxsize=32)
     def get_embeddings(self,sentence):
-        encoded_input = self.tokenizer(sentence[1], return_tensors='pt')
+        encoded_input = self.tokenizer(sentence, return_tensors='pt')
         output = self.model(**encoded_input)
         return json.dumps({ key: output[key].detach().numpy().tolist() for key in output.keys()})
 
     @lru_cache(maxsize=32)
     def get_mask(self,sentence):
-        unmasker = pipeline('fill-mask', model=self.model_dir)
-        return json.dumps(unmasker(sentence))
+        try:
+            unmasker = pipeline('fill-mask', model=self.model_dir)
+            return json.dumps(unmasker(sentence))
+        except PipelineException as e:
+            abort(422, description=e)
 
 @app.route('/api/embeddings', methods = ['POST'])
 def api_embeddings():
     if request.method == 'POST':
         sentence = request.args.get('sentence', None)
-        return bert.get_embeddings(sentence).encode("utf-8")
-
+        print("sentence: ", sentence)
+        if sentence != None:
+            return bert.get_embeddings(sentence).encode("utf-8")
+        else:
+            abort(400)
+        
 @app.route('/api/mask', methods = ['POST'])
 def api_mask():
     if request.method == 'POST':
         sentence = request.args.get('sentence', None)
-        return bert.get_mask(sentence).encode("utf-8")
+        if sentence != None:
+            return bert.get_mask(sentence).encode("utf-8")
+        else:
+            abort(400)
+
 
 if __name__ == "__main__":
     
