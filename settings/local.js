@@ -241,7 +241,7 @@ module.exports = {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
   linkedin: {
-    enable: false,
+    enable: true,
     id: 'get from linkedin',
     secret: 'get from linkedin'
   },

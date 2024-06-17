@@ -18,49 +18,20 @@ module.exports = async function (req, res, next) {
     parameters: obj
   }).catch((exception) => {
     console.error('[NOVO]', '[HTTP]', 'Error generating document outline:', exception);
-    res.status(500).json({ status: 'error', message: 'Error generating document outline.' });
+    return res.status(500).json({ status: 'error', message: 'Error generating document outline.' });
   }).then(async (output) => {
     console.debug('[NOVO]', '[HTTP]', 'Generated document outline:', output);
     if (!output || !output.content) {
       return res.status(500).json({ status: 'error', message: 'Error retrieving document outline.' });
     }
 
-    //nahuel: i've commented the next lines cause it was trying to parce output.content which was already parsed
-
-    // let outline = null;
-
-    // try {
-    //   outline = JSON.parse(output.content);
-    // } catch (exception) {
-    //   return res.status(500).json({ status: 'error', message: 'Error parsing document outline.', error: exception });
-    // }
-
-
-    //nahuel: replaced previous lines for thesse, seems to be working fine
-    let outline = output.content;
-//    console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
-
-
-    //nahuel: this is the section creation code that was commented out,
-    //this ends up returning in generated.content a message that starts with:
-    // Here is the response in JSON format:
-    //```json
-    //and then the actual JSON, we should try to exctract that JSON there or we can
-    //just try to tell the sections outliner to just give the actual json and not that previous text
-    //after that, we will need to store each section in the DB, thats not made yet
-    // const section = { outline: output, target: 'Introduction' };
-    // this.generateDocumentSection(section).catch((exception) => {
-    //   console.error('[NOVO]', '[HTTP]', 'Error generating document section:', exception);
-    //   res.error(500, 'Error generating document section');
-    // }).then((generated) => {
-    //   console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated.content);
-    // });
-
+    const outline = output.content;
+    console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
 
     // TODO: parse JSON, return to object before creating Actor
     const actor = new Actor(obj);
     const type = obj.type || 'document';
-  
+
     // TODO: handle errors
     const created = await this.db('documents').insert({
       creator: req.user.id,
@@ -74,13 +45,32 @@ module.exports = async function (req, res, next) {
 
     // Insert each section into the 'document_sections' table
     for (let section of outline) {
-      const sectionActor = new Actor({name: section.content, content: actor.id});
-      await this.db('document_sections').insert({
+      const sectionActor = new Actor({ name: section.content, content: actor.id });
+      const insertedSection = await this.db('document_sections').insert({
         document_id: documentId,
         section_number: section.number,
         title: section.content,
         fabric_id: sectionActor.id,
         creator: req.user.id,
+      });
+
+      // This is async, may be generated out of order
+      // TODO: re-summarize at end, and/or ensure each generator is passed the previous output
+      this.generateDocumentSection({
+        object: {
+          heading: section.content,
+          outline: outline
+        }
+      }).catch((exception) => {
+        console.error('[NOVO]', '[HTTP]', `Could not generate content for section ${section.number} of document ID ${documentId}:`, exception);
+      }).then(async (generated) => {
+        console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated);
+
+        try {
+          await this.db('document_sections').where({ id: insertedSection[0] }).update({ content: generated.content });
+        } catch (exception) {
+          console.error('[NOVO]', '[HTTP]', `Could not update content for section ${section.number} of document ID ${documentId}:`, exception);
+        }
       });
     }
 
