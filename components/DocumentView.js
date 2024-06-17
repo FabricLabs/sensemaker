@@ -175,7 +175,7 @@ class DocumentView extends React.Component {
                   content='Start Conversation'
                 />
               </Link>
-              <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em', marginTop:'1em' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em', marginTop: '1em' }}>
                 <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
                 <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
               </div>
@@ -183,8 +183,7 @@ class DocumentView extends React.Component {
 
               {/* aca empieza el document editor */}
               {/* <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}> */}
-
-              <Segment>
+              <Segment style={{ maxWidth: '800px' }}>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
                     <div className='drafter-section-title'>
@@ -229,8 +228,8 @@ class DocumentView extends React.Component {
                           <Popup
                             content="Add a new Section here"
                             trigger={
-                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
-                                <Icon name='plus' style={{ cursor: 'pointer' }} />
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{ width: '100%' }}>
+                                <Icon name='plus' />
                               </Button>
                             }
                           />
@@ -276,13 +275,7 @@ class DocumentView extends React.Component {
                             }
                           </div>
                         )}
-                      <Placeholder>
-                        <PlaceholderParagraph>
-                          <PlaceholderLine />
-                          <PlaceholderLine />
-                          <PlaceholderLine />
-                        </PlaceholderParagraph>
-                      </Placeholder>
+                      <p>{instance.content}</p>
                       {/* {(hoverSection === instance.section_number && !editMode) &&
                                    <div className='col-center' style={{ margin: '0.5em 0' }}>
                                      <Popup
@@ -304,8 +297,8 @@ class DocumentView extends React.Component {
                         <Popup
                           content="Add a new Section here"
                           trigger={
-                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
-                              <Icon name='plus' style={{ cursor: 'pointer' }} />
+                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{ width: '100%' }}>
+                              <Icon name='plus' />
                             </Button>
                           }
                         />

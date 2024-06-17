@@ -370,8 +370,8 @@ class DocumentDrafter extends React.Component {
                           <Popup
                             content="Add a new Section here"
                             trigger={
-                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)}>
-                                <Icon name='plus' style={{ cursor: 'pointer' }} />
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{width: '100%'}}>
+                                <Icon name='plus' />
                               </Button>
                             }
                           />
@@ -431,8 +431,8 @@ class DocumentDrafter extends React.Component {
                         <Popup
                           content="Add a new Section here"
                           trigger={
-                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
-                              <Icon name='plus' style={{ cursor: 'pointer' }} />
+                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{width: '100%'}}>
+                              <Icon name='plus'/>
                             </Button>
                           }
                         />
