@@ -11,6 +11,8 @@ See `INSTALL.md` for a complete install guide.
 1. Pull Requests should be the smallest possible set of changes implementing the desired feature.
 
 ## Overview
+The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
+
 - Coordinator: the Node.js master process
   - HTTPServer
   - FabricNode

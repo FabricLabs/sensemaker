@@ -34,7 +34,7 @@ module.exports = {
     secure: false,
     temperature: 0
   },
-  /* alpha: {
+  alpha: {
     name: 'ALPHA',
     prompt: baseline.toString('utf8'),
     model: 'llama3',
@@ -42,7 +42,7 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  }, */
+  },
   balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
