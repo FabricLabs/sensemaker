@@ -561,11 +561,11 @@ class Dashboard extends React.Component {
               ) */}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
-            {!this.state.openSectionBar && (
+            {/* {!this.state.openSectionBar && (
               <div className='expand-sidebar-arrow'>
                 <Icon id='expand-sidebar-icon' name='caret right' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: true })} />
               </div>
-            )}
+            )} */}
             <div>
               {(this.props.auth.isAdmin) ? (
                 <Menu.Item as={Link} to="/settings/admin" id='adminItem'>
