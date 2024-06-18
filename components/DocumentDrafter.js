@@ -287,9 +287,8 @@ class DocumentDrafter extends React.Component {
         {stepInfo && (
           <section style={{ marginTop: '1rem' }} className='col-center'>
             <div>
-              <Header as='h2'>Information</Header>
-              <p>Enter any information you can give us about the document you want to draft.</p>
-              <p>Provided information will help Novo to draft a better document for you</p>
+              <Header as='h2'>Describe Your Document</Header>
+              <p>Tell Novo about your document.</p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>
               <TextArea value={content} name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
@@ -311,10 +310,8 @@ class DocumentDrafter extends React.Component {
         {stepReview && (
           <section style={{ marginTop: '1rem', width: '75%' }} className='col-center'>
             <div>
-              <Header as='h2' centered>Review Information</Header>
-              <p>Please review the information you provided, you can edit it</p>
-              <p>by clicking in the information you want to change</p>
-              <p>Once You are ready press Draft Document to start.</p>
+              <Header as='h2' centered>Proposed Outline</Header>
+              <p>Review the following outline to ensure its accuracy.  Feel free to modify, delete or add new sections before proceeding to the next phase.</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '2em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
               <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>

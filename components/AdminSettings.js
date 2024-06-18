@@ -140,6 +140,10 @@ class AdminSettings extends React.Component {
               <a href="/courts.sql">Courts (SQL)</a>
             </List.Item>
           </List>
+          <Header as='h4'>Announcements</Header>
+          <List>
+            {/* TODO: enumerate announcements here */}
+          </List>
         </Tab.Pane>
       },
       {

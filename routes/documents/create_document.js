@@ -42,9 +42,16 @@ module.exports = async function (req, res, next) {
     });
 
     const documentId = created[0];  // Assuming created returns an array with the new document ID
+    const document = {
+      id: documentId,
+      type: type,
+      outline: outline,
+      content: ''
+    };
 
     // Insert each section into the 'document_sections' table
     for (let section of outline) {
+      // TODO: actor ID { documentID, sectionNumber }
       const sectionActor = new Actor({ name: section.content, content: actor.id });
       const insertedSection = await this.db('document_sections').insert({
         document_id: documentId,
@@ -54,16 +61,14 @@ module.exports = async function (req, res, next) {
         creator: req.user.id,
       });
 
-      // This is async, may be generated out of order
-      // TODO: re-summarize at end, and/or ensure each generator is passed the previous output
-      this.generateDocumentSection({
-        object: {
-          heading: section.content,
-          outline: outline
-        }
-      }).catch((exception) => {
-        console.error('[NOVO]', '[HTTP]', `Could not generate content for section ${section.number} of document ID ${documentId}:`, exception);
-      }).then(async (generated) => {
+      try {
+        const generated = await this.generateDocumentSection({
+          object: {
+            heading: section.content,
+            outline: outline
+          }
+        });
+
         console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated);
 
         try {
@@ -71,8 +76,17 @@ module.exports = async function (req, res, next) {
         } catch (exception) {
           console.error('[NOVO]', '[HTTP]', `Could not update content for section ${section.number} of document ID ${documentId}:`, exception);
         }
-      });
+
+        // Append section to document body
+        document.content += generated.content + '\n';
+      } catch (exception) {
+        console.error('[NOVO]', '[HTTP]', `Could not generate content for section ${section.number} of document ID ${documentId}:`, exception);
+      }
     }
+
+    console.debug('[NOVO]', '[HTTP]', 'Created document:', document);
+    const proof = await this.proofreader.query({ query: `Your response is a refined, corrected, and well-cited version of the following document:\n\`\`\`\n${document.content}\n\`\`\`` });
+    console.debug('[NOVO]', '[HTTP]', 'Proofread document:', proof);
 
     return res.redirect(`/documents/${actor.id}`);
   });
