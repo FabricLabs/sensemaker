@@ -358,7 +358,7 @@ class DocumentDrafter extends React.Component {
                               name='pencil'
                               title='Edit document title'
                               className='edit-icon-title'
-                              onClick={() => this.setState({ editMode: true, editDocument: true })}
+                              onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title})}
                               // style={{ position: 'absolute', right: '1em' }}
                             />
                           }
@@ -411,7 +411,7 @@ class DocumentDrafter extends React.Component {
                             <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
                             {!editMode &&
                               <div style={{ display: 'flex' }}>
-                                <Icon name='pencil' title='Edit section title' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
+                                <Icon name='pencil' title='Edit section title' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number, editSectionTitle: instance.title })} />
                                 <Icon name='trash alternate' title='Delete section' className='edit-icon' onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })} />
                               </div>
                             }

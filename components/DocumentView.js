@@ -12,19 +12,16 @@ const {
   Header,
   Label,
   Segment,
-  Card,
   Icon,
   Button,
   Input,
-  TextArea,
   Modal,
   Form,
-  Placeholder,
-  PlaceholderLine,
-  PlaceholderParagraph,
-  Popup,
-  Message
+  Popup,  
 } = require('semantic-ui-react');
+
+const TextareaAutosize = require('react-textarea-autosize').default;
+
 
 const formatDate = require('../contracts/formatDate');
 
@@ -37,12 +34,13 @@ class DocumentView extends React.Component {
       editMode: false,
       editSection: 0,
       editSectionTitle: '',
+      editSectionContent: '',
       hoverSection: -1,
       creatingSection: false,
       modalOpen: false,
       editDocument: false,
       editDocumentTitle: '',
-      creationError: false
+      creationError: false,
     };
 
   }
@@ -75,7 +73,6 @@ class DocumentView extends React.Component {
     }
   }
 
-
   handleInputChange = (event) => {
     this.setState({
       [event.target.name]: event.target.value
@@ -90,9 +87,9 @@ class DocumentView extends React.Component {
 
   handleSectionEdit = () => {
     const { document } = this.props.documents;
-    const { editSection, editSectionTitle } = this.state;
-    this.props.editDocumentSection(document.fabric_id, editSection, editSectionTitle);
-    this.setState({ editMode: false, editSection: 0, editSectionTitle: '' });
+    const { editSection, editSectionTitle, editSectionContent } = this.state;
+    this.props.editDocumentSection(document.fabric_id, editSection, editSectionTitle, editSectionContent);
+    this.setState({ editMode: false, editSection: 0, editSectionTitle: '', editSectionContent: '' });
   }
 
   formatContent(content) {
@@ -180,10 +177,7 @@ class DocumentView extends React.Component {
                 <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
               </div>
 
-
-              {/* aca empieza el document editor */}
-              {/* <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}> */}
-              <Segment style={{ maxWidth: '800px' }}>
+              <Segment id='document-editor' style={{ maxWidth: '800px' }}>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
                     <div className='drafter-section-title'>
@@ -213,8 +207,7 @@ class DocumentView extends React.Component {
                               name='pencil'
                               title='Edit document title'
                               className='edit-icon-title'
-                              onClick={() => this.setState({ editMode: true, editDocument: true })}
-                            // style={{ position: 'absolute', right: '1em' }}
+                              onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title })}
                             />
                           }
                         </div>
@@ -247,47 +240,52 @@ class DocumentView extends React.Component {
                     >
                       {(editMode && editSection === instance.section_number) ?
                         (
-                          <div className='drafter-section-title'>
-                            <Input
-                              name='editSectionTitle'
-                              focus
+                          <Form>
+                            <div className='drafter-section-title'>
+                              <Input
+                                name='editSectionTitle'
+                                focus
+                                onChange={this.handleInputChange}
+                                defaultValue={instance.title}
+                                style={{ width: '100%', marginRight: '1em' }}
+                              />
+                              <Button.Group>
+                                <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
+                                  <Icon name='check' />
+                                </Button>
+                                <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, editSectionTitle: '' })}>
+                                  <Icon name='close' />
+                                </Button>
+                              </Button.Group>
+                            </div>
+                            <TextareaAutosize
+                              id='section-content'
+                              placeholder={instance.content ? null : 'Add content to this section'}
+                              name='editSectionContent'
+                              defaultValue={instance.content}
                               onChange={this.handleInputChange}
-                              defaultValue={instance.title}
-                              style={{ width: '100%', marginRight: '1em' }}
+                              style={{ resize: 'none', minHeight: '100%' }}
                             />
-                            <Button.Group>
-                              <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
-                                <Icon name='check' />
-                              </Button>
-                              <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, editSectionTitle: '' })}>
-                                <Icon name='close' />
-                              </Button>
-                            </Button.Group>
-                          </div>
+
+                          </Form>
                         ) : (
-                          <div className='drafter-section-title'>
-                            <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
-                            {!editMode &&
-                              <div style={{ display: 'flex' }}>
-                                <Icon name='pencil' title='Edit section title' className='edit-icon' onClick={() => this.setState({ editMode: true, editSection: instance.section_number })} />
-                                <Icon name='trash alternate' title='Delete section' className='edit-icon' onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })} />
-                              </div>
-                            }
-                          </div>
+                          <article>
+                            <div className='drafter-section-title'>
+                              <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
+                              {!editMode &&
+                                <div style={{ display: 'flex' }}>
+                                  <Icon name='pencil' title='Edit section title' className='edit-icon'
+                                    onClick={() => this.setState({ editMode: true, editSection: instance.section_number, editSectionContent: instance.content, editSectionTitle: instance.title })}
+                                  />
+                                  <Icon name='trash alternate' title='Delete section' className='edit-icon'
+                                    onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })}
+                                  />
+                                </div>
+                              }
+                            </div>
+                            <div style={{ whiteSpace: 'pre-wrap' }}>{instance.content}</div>
+                          </article>
                         )}
-                      <p>{instance.content}</p>
-                      {/* {(hoverSection === instance.section_number && !editMode) &&
-                                   <div className='col-center' style={{ margin: '0.5em 0' }}>
-                                     <Popup
-                                       content="Add a new Section here"
-                                       trigger={
-                                         <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)}>
-                                           <Icon name='plus' style={{ cursor: 'pointer' }} />
-                                         </Button>
-                                       }
-                                     />
-                                   </div>
-                                 } */}
                       <div
                         className='col-center'
                         style={{
@@ -303,7 +301,6 @@ class DocumentView extends React.Component {
                           }
                         />
                       </div>
-
                     </section>
                   )
                 }
@@ -324,6 +321,7 @@ class DocumentView extends React.Component {
             ></iframe>
           </Segment>
         )}
+        {this.renderConfirmModal()}
       </Segment>
     );
   }
