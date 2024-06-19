@@ -72,6 +72,7 @@ module.exports = {
     interval: 1000,
     limit: 10
   },
+  worker: true,
   workers: 8,
   agents: merge({}, network, {
     /* local: {
