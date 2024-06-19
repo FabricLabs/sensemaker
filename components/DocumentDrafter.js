@@ -142,12 +142,6 @@ class DocumentDrafter extends React.Component {
     this.setState({ editMode: false, editSection: 0, editSectionTitle: '' });
   }
 
-  formatContent(content) {
-    return content.split('\n').map((line, index) => (
-      <p key={index} style={{ marginBottom: '0' }}>{line}</p>
-    ));
-  }
-
   handleMouseEnter = (sectionNumber) => {
     this.setState({ hoverSection: sectionNumber });
   };
@@ -299,7 +293,7 @@ class DocumentDrafter extends React.Component {
                 <Header as='h2' textAlign='center'>Context</Header>
                 <Header as='h4' onClick={() => this.setState({ stepReview: false, stepContext: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
                 <div onClick={() => this.setState({ stepReview: false, stepContext: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
-                  {/* {this.formatContent(context)} */}{context}
+                  {context}
                 </div>
               </Segment>
               <Segment style={{ width: '50%', height: '55vh', margin: '0' }}>
