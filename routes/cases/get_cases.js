@@ -10,29 +10,21 @@ const CaseHome = require('../../components/CaseHome');
 const { createClient } = require('redis');
 const crypto = require('crypto');
 
-const getHashKey = (text) => {
-  let retKey = '';
-  retKey = crypto.createHash('sha256').update(text).digest('hex');
-  return 'CACHE_ASIDE_' + retKey;
-};
-
-/*
-class Cache {
+class RedisCache {
   constructor(type) {
     this.type = type;
   }
-  async try(text) {
-    const hashKey = this.getHashKey(text);
+  async try(req_line) {
+    const hashKey = this.getHashKey(req_line);
     const cachedData = await this.redis.get(hashKey);
-    const docArr = cachedData ? JSON.parse(cachedData) : [];
+    return cachedData ? JSON.parse(cachedData) : false;
   }
-  getHashKey = (text) => {
+  getHashKey = (str) => {
     let retKey = '';
-    retKey = crypto.createHash('sha256').update(text).digest('hex');
+    retKey = crypto.createHash('sha256').update(str).digest('hex');
     return 'CACHE_ASIDE_' + retKey;
   }
 }
-*/
 
 // Exports
 module.exports = function (req, res, next) {
@@ -48,11 +40,8 @@ module.exports = function (req, res, next) {
 
       await this.redis.connect();
 
-      // "GET /cases HTTP/1.1"
-      // var request_line = req.method + " " + req.originalUrl + " HTTP/" + req.httpVersion;
-      const hashKey = getHashKey("GET /cases HTTP/1.1");
-      const cachedData = await this.redis.get(hashKey);
-      const docArr = cachedData ? JSON.parse(cachedData) : false;
+      this.cache = RedisCache();
+      const docArr = this.cache.try("GET /cases HTTP/1.1");
       
       if (docArr) {
         var cases = docArr;
