@@ -70,6 +70,15 @@ module.exports = {
     secure: false,
     temperature: 0
   },
+  gemma: {
+    name: 'GEMMA',
+    prompt: baseline.toString('utf8'),
+    model: 'gemma',
+    host: GOTHMOG,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  }
   /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),

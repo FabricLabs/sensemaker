@@ -48,7 +48,7 @@ class DocumentDrafter extends React.Component {
     super(props);
     this.state = {
       stepType: true,
-      stepInfo: false,
+      stepContext: false,
       stepReview: false,
       documentType: null,
       content: null,
@@ -104,7 +104,7 @@ class DocumentDrafter extends React.Component {
           if (this.state.outlineLoading) {
             this.setState({ outlineLoading: false, creationError: false });
             this.props.fetchDocumentSections(documents.document.fabric_id);
-            this.setState({ stepInfo: false, stepReview: true });
+            this.setState({ stepContext: false, stepReview: true });
             console.log("actual document: ", documents.document);
           }
           if (this.state.creatingSection) {
@@ -227,7 +227,7 @@ class DocumentDrafter extends React.Component {
     const { documents } = this.props;
     const {
       stepType,
-      stepInfo,
+      stepContext,
       stepReview,
       documentType,
       content,
@@ -251,7 +251,7 @@ class DocumentDrafter extends React.Component {
             </StepContent>
           </Step>
 
-          <Step active={stepInfo}>
+          <Step active={stepContext}>
             <Icon name='info' />
             <StepContent>
               <StepTitle>Information</StepTitle>
@@ -269,7 +269,7 @@ class DocumentDrafter extends React.Component {
         </StepGroup>
         {stepType && (
           <section style={{ marginTop: '1rem' }}>
-            <Header as='h2'>Type</Header>
+            <Header as='h2' style={{textAlign: 'center'}}>Type</Header>
             <p>What kind of document would you like to draft?</p>
             <Dropdown
               search
@@ -281,22 +281,21 @@ class DocumentDrafter extends React.Component {
               value={documentType}
               fluid
             />
-            <Button color='green' disabled={!documentType} style={{ marginTop: '1rem' }} fluid onClick={() => this.setState({ stepType: false, stepInfo: true })}>Next <Icon name='chevron right' /></Button>
+            <Button color='green' disabled={!documentType} style={{ marginTop: '2em' }} fluid onClick={() => this.setState({ stepType: false, stepContext: true })}>Next <Icon name='chevron right' /></Button>
           </section>
         )}
-        {stepInfo && (
+        {stepContext && (
           <section style={{ marginTop: '1rem' }} className='col-center'>
             <div>
-              <Header as='h2'>Information</Header>
-              <p>Enter any information you can give us about the document you want to draft.</p>
-              <p>Provided information will help Novo to draft a better document for you</p>
+              <Header as='h2'>Describe Your Document</Header>
+              <p>Tell Novo about your document.</p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>
               <TextArea value={content} name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
             </Form>
-            <div className='col-center' style={{ width: '100%' }}>
-              <Button.Group widths='2' style={{ marginTop: '1rem', width: '80%' }}>
-                <Button primary icon onClick={() => this.setState({ stepInfo: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
+            <div className='col-center' style={{ width: '100%', marginTop: '2em'}}>
+              <Button.Group widths='2' style={{ maxWidth: '400px' }}>
+                <Button primary icon onClick={() => this.setState({ stepContext: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' onClick={() => { this.props.createDocument(documentType, content); this.setState({ outlineLoading: true }) }} icon loading={outlineLoading} disabled={!content}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
               {creationError && (
@@ -309,26 +308,24 @@ class DocumentDrafter extends React.Component {
           </section>
         )}
         {stepReview && (
-          <section style={{ marginTop: '1rem', width: '75%' }} className='col-center'>
-            <div>
-              <Header as='h2' centered>Review Information</Header>
-              <p>Please review the information you provided, you can edit it</p>
-              <p>by clicking in the information you want to change</p>
-              <p>Once You are ready press Draft Document to start.</p>
+          <section style={{ marginTop: '1rem', width: '80%' }} className='col-center'>
+            <div style={{width: '100%'}}>
+              <Header as='h2' centered>Proposed Outline</Header>
+              <p>Review the following outline to ensure its accuracy.  Feel free to modify, delete or add new sections before proceeding to the next phase.</p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '2em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
-              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }} disabled={outlineLoading}>
+            <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '4em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
+              <Segment style={{ width: '50%', height: '55vh', margin: '0' }} disabled={outlineLoading}>
                 <Header as='h2' textAlign='center'>Context</Header>
-                <Header as='h4' onClick={() => this.setState({ stepReview: false, stepInfo: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
-                <div onClick={() => this.setState({ stepReview: false, stepInfo: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
+                <Header as='h4' onClick={() => this.setState({ stepReview: false, stepContext: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
+                <div onClick={() => this.setState({ stepReview: false, stepContext: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
                   {this.formatContent(content)}
                 </div>
               </Segment>
-              <Button.Group vertical>
+              {/* <Button.Group vertical>
                 <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
-                <Button primary icon onClick={() => this.setState({ stepInfo: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
-              </Button.Group>
-              <Segment style={{ width: '50%', height: '55vh', margin: '0', maxWidth: '400px' }}>
+                <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
+              </Button.Group> */}
+              <Segment style={{ width: '50%', height: '55vh', margin: '0' }}>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
                     <div className='drafter-section-title'>
@@ -351,15 +348,15 @@ class DocumentDrafter extends React.Component {
                   )
                     : (
                       <>
-                        <div className='drafter-section-title' style={{display: 'flex', justifyContent: 'center'}}>
+                        <div className='drafter-section-title' style={{ display: 'flex', justifyContent: 'center' }}>
                           <Header as='h2' textAlign='center' style={{ marginBottom: 0 }}>{documents.document.title}</Header>
                           {!editMode &&
                             <Icon
                               name='pencil'
                               title='Edit document title'
                               className='edit-icon-title'
-                              onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title})}
-                              // style={{ position: 'absolute', right: '1em' }}
+                              onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title })}
+                            // style={{ position: 'absolute', right: '1em' }}
                             />
                           }
                         </div>
@@ -370,7 +367,7 @@ class DocumentDrafter extends React.Component {
                           <Popup
                             content="Add a new Section here"
                             trigger={
-                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{width: '100%'}}>
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{ width: '100%' }}>
                                 <Icon name='plus' />
                               </Button>
                             }
@@ -431,8 +428,8 @@ class DocumentDrafter extends React.Component {
                         <Popup
                           content="Add a new Section here"
                           trigger={
-                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{width: '100%'}}>
-                              <Icon name='plus'/>
+                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{ width: '100%' }}>
+                              <Icon name='plus' />
                             </Button>
                           }
                         />
@@ -443,7 +440,11 @@ class DocumentDrafter extends React.Component {
                 }
               </Segment>
             </div>
-            <div className='col-center' style={{ width: '100%' }}>
+            <div className='col-center' style={{ marginTop: '2em', width: '100%' }}>
+              <Button.Group widths='2' style={{ maxWidth: '400px' }}>
+                <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
+                <Button color='green' icon disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
+              </Button.Group>
             </div>
           </section>
         )}
