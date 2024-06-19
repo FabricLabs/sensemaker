@@ -225,7 +225,6 @@ const createDocument = (type, query) => {
 
       dispatch(createDocumentSuccess(obj));
     } catch (error) {
-      console.error('Error fetching data:', error);
       dispatch(createDocumentFailure(error.message));
     }
   }

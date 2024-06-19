@@ -61,30 +61,11 @@ class DocumentDrafter extends React.Component {
       modalOpen: false,
       editDocument: false,
       editDocumentTitle: '',
-      creationError: false
+      creationError: false,
+      attemptsCounter: 0,
     };
 
   }
-  // createDocument(...params) {
-  // console.debug('CREATE DOCUMENT:', params);
-  // fetch('/documents', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Accept': 'application/json',
-  //     'Authorization': `Bearer ${this.props.token}`,
-  //     'Content-Type': 'application/json'
-  //   },
-  //   // TODO: add more fields
-  //   body: JSON.stringify({ type: 'letter' })
-  // }).then((response) => {
-  //   console.debug('RESPONSE:', response);
-  //   return response.json();
-  // }).then((document) => {
-  //   console.debug('DOCUMENT:', document);
-  //   this.props.typeSelected(document.fabric_id);
-  // });
-  //}
-
   componentDidMount() {
     const { id } = this.props;
     if (id) {
@@ -94,6 +75,7 @@ class DocumentDrafter extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { documents } = this.props;
+    const { attemptsCounter, documentType, context } = this.state;
     if (prevProps.id !== this.props.id) {
       this.props.fetchDocument(this.props.id);
     }
@@ -104,38 +86,39 @@ class DocumentDrafter extends React.Component {
           if (this.state.outlineLoading) {
             this.setState({ outlineLoading: false, creationError: false });
             this.props.fetchDocumentSections(documents.document.fabric_id);
-            this.setState({ stepContext: false, stepReview: true });
-            console.log("actual document: ", documents.document);
+            this.setState({ stepContext: false, stepReview: true, attemptsCounter: 0 });
+            // console.log("actual document: ", documents.document);
           }
           if (this.state.creatingSection) {
             this.setState({ editMode: true, creatingSection: false });
           }
         } else {
-          this.setState({ outlineLoading: false, creationError: true });
+          if (attemptsCounter < 5) {
+            console.log('[NOVO] Failed to create document outline, attempt: ', attemptsCounter, ' Trying again');
+            this.createOutline(documentType, context);
+          } else {
+            console.log('[NOVO] Failed to create document outline, attempt: ', attemptsCounter, ' Start the process again');
+            this.setState({ outlineLoading: false, creationError: true, attemptsCounter: 0 });
+          }
         }
       }
 
-      if (prevProps.documents.sections !== documents.sections) {
-        console.log("actual document sections: ", documents.sections);
-      }
+      // if (prevProps.documents.sections !== documents.sections) {
+      //   console.log("actual document sections: ", documents.sections);
+      // }
     }
-
   }
 
+  createOutline = (type, context) => {
+    this.props.createDocument(type, context);
+    this.setState((prevState) => ({
+      outlineLoading: true,
+      attemptsCounter: prevState.attemptsCounter + 1
+    }));
+  }
 
   handleDocumentTypeChange(event, data) {
-    console.debug('GOT TYPE CHANGE:', data.value);
-    // fetch('/documents', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${this.props.token}`,
-    //     'Content-Type': 'application/json'
-    //   },
-    //   body: JSON.stringify({ type: data.value })
-    // }).then((response) => {
-    //   console.debug('RESPONSE:', response);
-    //   return response.json();
-    // });
+    console.debug('DOCUMENT TYPE:', data.value);
     this.setState({ documentType: data.value })
   }
 
@@ -208,9 +191,6 @@ class DocumentDrafter extends React.Component {
 
   createDocumentDraft = () => {
     const { documents } = this.props;
-    //
-    //we will do some magic here
-    //
     this.props.navigateToDocument(documents.document.fabric_id);
   }
 
@@ -230,13 +210,14 @@ class DocumentDrafter extends React.Component {
       stepContext,
       stepReview,
       documentType,
-      content,
+      context,
       outlineLoading,
       editMode,
       editSection,
       hoverSection,
       editDocument,
-      creationError
+      creationError,
+      attemptsCounter
     } = this.state;
 
     return (
@@ -269,8 +250,8 @@ class DocumentDrafter extends React.Component {
         </StepGroup>
         {stepType && (
           <section style={{ marginTop: '1rem' }}>
-            <Header as='h2' style={{textAlign: 'center'}}>Type</Header>
-            <p>What kind of document would you like to draft?</p>
+            <Header as='h2' textAlign='center'>Type</Header>
+            <p style={{ textAlign: 'center' }}>What kind of document would you like to draft?</p>
             <Dropdown
               search
               selection
@@ -281,22 +262,22 @@ class DocumentDrafter extends React.Component {
               value={documentType}
               fluid
             />
-            <Button color='green' disabled={!documentType} style={{ marginTop: '2em' }} fluid onClick={() => this.setState({ stepType: false, stepContext: true })}>Next <Icon name='chevron right' /></Button>
+            <Button color='green' disabled={!documentType} style={{ marginTop: '2em' }} fluid onClick={() => this.setState({ stepType: false, stepContext: true, attemptsCounter: 0 })}>Next <Icon name='chevron right' /></Button>
           </section>
         )}
         {stepContext && (
-          <section style={{ marginTop: '1rem' }} className='col-center'>
+          <section style={{ marginTop: '1rem', width: '50%' }} className='col-center'>
             <div>
-              <Header as='h2'>Describe Your Document</Header>
-              <p>Tell Novo about your document.</p>
+              <Header as='h2' textAlign='center'>Describe Your Document</Header>
+              <p style={{ textAlign: 'center' }}>Tell Novo about your document.</p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>
-              <TextArea value={content} name='content' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
+              <TextArea value={context} name='context' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
             </Form>
-            <div className='col-center' style={{ width: '100%', marginTop: '2em'}}>
+            <div className='col-center' style={{ width: '100%', marginTop: '2em' }}>
               <Button.Group widths='2' style={{ maxWidth: '400px' }}>
-                <Button primary icon onClick={() => this.setState({ stepContext: false, stepType: true })}><Icon name='chevron left' /> Back</Button>
-                <Button color='green' onClick={() => { this.props.createDocument(documentType, content); this.setState({ outlineLoading: true }) }} icon loading={outlineLoading} disabled={!content}>Draft Outline <Icon name='chevron right' /></Button>
+                <Button primary icon onClick={() => this.setState({ stepContext: false, stepType: true, attemptsCounter: 0 })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
+                <Button color='green' onClick={() => this.createOutline(documentType, context)} icon loading={outlineLoading} disabled={!context}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
               {creationError && (
                 <Message negative>
@@ -309,22 +290,18 @@ class DocumentDrafter extends React.Component {
         )}
         {stepReview && (
           <section style={{ marginTop: '1rem', width: '80%' }} className='col-center'>
-            <div style={{width: '100%'}}>
-              <Header as='h2' centered>Proposed Outline</Header>
-              <p>Review the following outline to ensure its accuracy.  Feel free to modify, delete or add new sections before proceeding to the next phase.</p>
+            <div style={{ width: '100%' }}>
+              <Header as='h2' textAlign='center'>Proposed Outline</Header>
+              <p style={{ textAlign: 'center' }}>Review the following outline to ensure its accuracy.  Feel free to modify, delete or add new sections before proceeding to the next phase.</p>
             </div>
             <div style={{ display: 'flex', flexDirection: 'row', justifyContent: 'center', gap: '4em', alignItems: 'center', width: '100%', marginTop: '2em' }}>
               <Segment style={{ width: '50%', height: '55vh', margin: '0' }} disabled={outlineLoading}>
                 <Header as='h2' textAlign='center'>Context</Header>
                 <Header as='h4' onClick={() => this.setState({ stepReview: false, stepContext: false, stepType: true })} title='click to edit' style={{ cursor: 'pointer' }}>Document Type: {documentType}</Header>
                 <div onClick={() => this.setState({ stepReview: false, stepContext: true, stepType: false })} title='click to edit' style={{ cursor: 'pointer' }}>
-                  {this.formatContent(content)}
+                  {/* {this.formatContent(context)} */}{context}
                 </div>
               </Segment>
-              {/* <Button.Group vertical>
-                <Button color='green' icon style={{ display: 'flex', alignItems: 'center', height: '50px' }} disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
-                <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', height: '50px' }} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
-              </Button.Group> */}
               <Segment style={{ width: '50%', height: '55vh', margin: '0' }}>
                 <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
                   {(editMode && editDocument) ? (
@@ -356,7 +333,6 @@ class DocumentDrafter extends React.Component {
                               title='Edit document title'
                               className='edit-icon-title'
                               onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title })}
-                            // style={{ position: 'absolute', right: '1em' }}
                             />
                           }
                         </div>
@@ -442,7 +418,7 @@ class DocumentDrafter extends React.Component {
             </div>
             <div className='col-center' style={{ marginTop: '2em', width: '100%' }}>
               <Button.Group widths='2' style={{ maxWidth: '400px' }}>
-                <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
+                <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false, attemptsCounter: 0 })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' icon disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
               </Button.Group>
             </div>
