@@ -45,8 +45,8 @@ module.exports = function (req, res, next) {
       this.cache = new RedisCache(this.redis, "GET /cases HTTP/1.1");
 
       // If cached data exists, assign it to cases. Otherwise, assign the db call to cases.
-      let cached_cases = await this.cache.try();
-      let cases = cached_cases ? cached_cases : await this.db.select(
+      let cases = await this.cache.try();
+      if (!cases) cases = await this.db.select(
           'id',
           'title',
           'short_name',
