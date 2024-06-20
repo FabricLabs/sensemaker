@@ -17,7 +17,7 @@ const {
   Input,
   Modal,
   Form,
-  Popup,  
+  Popup,
 } = require('semantic-ui-react');
 
 const TextareaAutosize = require('react-textarea-autosize').default;
@@ -176,135 +176,136 @@ class DocumentView extends React.Component {
                 <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
                 <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>
               </div>
-
-              <Segment id='document-editor' style={{ maxWidth: '800px' }}>
-                <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
-                  {(editMode && editDocument) ? (
-                    <div className='drafter-section-title'>
-                      <Input
-                        name='editDocumentTitle'
-                        focus
-                        onChange={this.handleInputChange}
-                        defaultValue={documents.document.title}
-                        style={{ width: '100%', marginRight: '1em' }}
-                      />
-                      <Button.Group>
-                        <Button icon color='green' size='small' onClick={this.handleTitleEdit}>
-                          <Icon name='check' />
-                        </Button>
-                        <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editDocument: false, editDocumentTitle: '' })}>
-                          <Icon name='close' />
-                        </Button>
-                      </Button.Group>
-                    </div>
-                  )
-                    : (
-                      <>
-                        <div className='drafter-section-title' style={{ display: 'flex', justifyContent: 'center' }}>
-                          <Header as='h2' textAlign='center' style={{ marginBottom: 0 }}>{documents.document.title}</Header>
-                          {!editMode &&
-                            <Icon
-                              name='pencil'
-                              title='Edit document title'
-                              className='edit-icon-title'
-                              onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title })}
+              {!documents.document.file_id && (
+                <Segment id='document-editor' style={{ maxWidth: '800px' }}>
+                  <section onMouseEnter={() => this.handleMouseEnter(0)} onMouseLeave={this.handleMouseLeave} style={{ marginBottom: '1em' }}>
+                    {(editMode && editDocument) ? (
+                      <div className='drafter-section-title'>
+                        <Input
+                          name='editDocumentTitle'
+                          focus
+                          onChange={this.handleInputChange}
+                          defaultValue={documents.document.title}
+                          style={{ width: '100%', marginRight: '1em' }}
+                        />
+                        <Button.Group>
+                          <Button icon color='green' size='small' onClick={this.handleTitleEdit}>
+                            <Icon name='check' />
+                          </Button>
+                          <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editDocument: false, editDocumentTitle: '' })}>
+                            <Icon name='close' />
+                          </Button>
+                        </Button.Group>
+                      </div>
+                    )
+                      : (
+                        <>
+                          <div className='drafter-section-title' style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Header as='h2' textAlign='center' style={{ marginBottom: 0 }}>{documents.document.title}</Header>
+                            {!editMode &&
+                              <Icon
+                                name='pencil'
+                                title='Edit document title'
+                                className='edit-icon-title'
+                                onClick={() => this.setState({ editMode: true, editDocument: true, editDocumentTitle: documents.document.title })}
+                              />
+                            }
+                          </div>
+                          <div
+                            className='col-center'
+                            style={{
+                              margin: '0.5em 0',
+                              visibility: hoverSection === 0 && !editMode ? 'visible' : 'hidden'
+                            }}
+                          >
+                            <Popup
+                              content="Add a new Section here"
+                              trigger={
+                                <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{ width: '100%' }}>
+                                  <Icon name='plus' />
+                                </Button>
+                              }
                             />
-                          }
-                        </div>
+                          </div>
+                        </>
+                      )
+                    }
+
+                  </section>
+                  {documents && documents.sections && documents.sections.length > 0 &&
+                    documents.sections.map((instance) =>
+                      <section
+                        onMouseEnter={() => this.handleMouseEnter(instance.section_number)}
+                        onMouseLeave={this.handleMouseLeave}
+                      >
+                        {(editMode && editSection === instance.section_number) ?
+                          (
+                            <Form>
+                              <div className='drafter-section-title'>
+                                <Input
+                                  name='editSectionTitle'
+                                  focus
+                                  onChange={this.handleInputChange}
+                                  defaultValue={instance.title}
+                                  style={{ width: '100%', marginRight: '1em' }}
+                                />
+                                <Button.Group>
+                                  <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
+                                    <Icon name='check' />
+                                  </Button>
+                                  <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, editSectionTitle: '' })}>
+                                    <Icon name='close' />
+                                  </Button>
+                                </Button.Group>
+                              </div>
+                              <TextareaAutosize
+                                id='section-content'
+                                placeholder={instance.content ? null : 'Add content to this section'}
+                                name='editSectionContent'
+                                defaultValue={instance.content}
+                                onChange={this.handleInputChange}
+                                style={{ resize: 'none', minHeight: '100%' }}
+                              />
+
+                            </Form>
+                          ) : (
+                            <article>
+                              <div className='drafter-section-title'>
+                                <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
+                                {!editMode &&
+                                  <div style={{ display: 'flex' }}>
+                                    <Icon name='pencil' title='Edit section title' className='edit-icon'
+                                      onClick={() => this.setState({ editMode: true, editSection: instance.section_number, editSectionContent: instance.content, editSectionTitle: instance.title })}
+                                    />
+                                    <Icon name='trash alternate' title='Delete section' className='edit-icon'
+                                      onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })}
+                                    />
+                                  </div>
+                                }
+                              </div>
+                              <div style={{ whiteSpace: 'pre-wrap' }}>{instance.content}</div>
+                            </article>
+                          )}
                         <div
                           className='col-center'
                           style={{
                             margin: '0.5em 0',
-                            visibility: hoverSection === 0 && !editMode ? 'visible' : 'hidden'
-                          }}
-                        >
+                            visibility: hoverSection === instance.section_number && !editMode ? 'visible' : 'hidden'
+                          }}>
                           <Popup
                             content="Add a new Section here"
                             trigger={
-                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(1)} style={{ width: '100%' }}>
+                              <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{ width: '100%' }}>
                                 <Icon name='plus' />
                               </Button>
                             }
                           />
                         </div>
-                      </>
+                      </section>
                     )
                   }
-
-                </section>
-                {documents && documents.sections && documents.sections.length > 0 &&
-                  documents.sections.map((instance) =>
-                    <section
-                      onMouseEnter={() => this.handleMouseEnter(instance.section_number)}
-                      onMouseLeave={this.handleMouseLeave}
-                    >
-                      {(editMode && editSection === instance.section_number) ?
-                        (
-                          <Form>
-                            <div className='drafter-section-title'>
-                              <Input
-                                name='editSectionTitle'
-                                focus
-                                onChange={this.handleInputChange}
-                                defaultValue={instance.title}
-                                style={{ width: '100%', marginRight: '1em' }}
-                              />
-                              <Button.Group>
-                                <Button icon color='green' size='small' onClick={this.handleSectionEdit}>
-                                  <Icon name='check' />
-                                </Button>
-                                <Button icon color='grey' size='small' onClick={() => this.setState({ editMode: false, editSection: 0, editSectionTitle: '' })}>
-                                  <Icon name='close' />
-                                </Button>
-                              </Button.Group>
-                            </div>
-                            <TextareaAutosize
-                              id='section-content'
-                              placeholder={instance.content ? null : 'Add content to this section'}
-                              name='editSectionContent'
-                              defaultValue={instance.content}
-                              onChange={this.handleInputChange}
-                              style={{ resize: 'none', minHeight: '100%' }}
-                            />
-
-                          </Form>
-                        ) : (
-                          <article>
-                            <div className='drafter-section-title'>
-                              <Header as='h3' style={{ margin: '0' }}>{instance.title}</Header>
-                              {!editMode &&
-                                <div style={{ display: 'flex' }}>
-                                  <Icon name='pencil' title='Edit section title' className='edit-icon'
-                                    onClick={() => this.setState({ editMode: true, editSection: instance.section_number, editSectionContent: instance.content, editSectionTitle: instance.title })}
-                                  />
-                                  <Icon name='trash alternate' title='Delete section' className='edit-icon'
-                                    onClick={() => this.setState({ modalOpen: true, editSection: instance.section_number })}
-                                  />
-                                </div>
-                              }
-                            </div>
-                            <div style={{ whiteSpace: 'pre-wrap' }}>{instance.content}</div>
-                          </article>
-                        )}
-                      <div
-                        className='col-center'
-                        style={{
-                          margin: '0.5em 0',
-                          visibility: hoverSection === instance.section_number && !editMode ? 'visible' : 'hidden'
-                        }}>
-                        <Popup
-                          content="Add a new Section here"
-                          trigger={
-                            <Button icon basic size='mini' className='new-section-btn' onClick={() => this.createSection(instance.section_number + 1)} style={{ width: '100%' }}>
-                              <Icon name='plus' />
-                            </Button>
-                          }
-                        />
-                      </div>
-                    </section>
-                  )
-                }
-              </Segment>
+                </Segment>
+              )}
             </section>
           ) : (
             <div className='document-file-header'>

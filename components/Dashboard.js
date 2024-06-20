@@ -103,6 +103,7 @@ class Dashboard extends React.Component {
         checkingMessageID: 0,
         documentSection: false,
         documentInfo: null,
+        documentSections: null, //these are the actual sections from a specific document
         matterTitle: '',
         resetInformationSidebar: false,
         thumbsUpClicked: false,
@@ -345,7 +346,7 @@ class Dashboard extends React.Component {
   };
 
   // triggers when a document from a matter is clicked to display
-  documentInfoSidebar = (documentInfo, matterTitle) => {
+  documentInfoSidebar = (documentInfo, documentSections, matterTitle) => {
     this.setState({ openSectionBar: false });
     if (this.state.documentInfo !== documentInfo) {
       this.setState({
@@ -355,6 +356,7 @@ class Dashboard extends React.Component {
         thumbsDownClicked: false,
         documentSection: true,
         documentInfo: documentInfo,
+        documentSections: documentSections,
         matterTitle: matterTitle,
       });
     } else {
@@ -471,6 +473,7 @@ class Dashboard extends React.Component {
       thumbsDownClicked,
       documentSection,
       documentInfo,
+      documentSections,
       matterTitle,
       informationSidebarOpen,
       openLibrary,
@@ -712,7 +715,7 @@ class Dashboard extends React.Component {
                 <Route path="/reporters/:id" element={<ReporterView reporters={this.props.reporters} fetchReporter={this.props.fetchReporter} />} />
                 <Route path="/jurisdictions" element={<JurisdictionHome jurisdictions={this.props.jurisdictions} fetchJurisdictions={this.props.fetchJurisdictions} chat={this.props.chat} />} />
                 <Route path="/volumes" element={<VolumeHome volumes={this.props.volumes} fetchVolumes={this.props.fetchVolumes} chat={this.props.chat} />} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} />} />
+                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
@@ -774,6 +777,7 @@ class Dashboard extends React.Component {
           thumbsDownClicked={thumbsDownClicked}
           documentSection={documentSection}
           documentInfo={documentInfo}
+          documentSections={documentSections}
           matterTitle={matterTitle}
           onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
         />

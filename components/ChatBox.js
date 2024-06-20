@@ -700,7 +700,7 @@ class ChatBox extends React.Component {
                       size='big'
                       className='primary'
                       primary
-                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}
+                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, this.props.documentSections ? this.props.documentSections : null, null); }}
                       style={{ cursor: "pointer" }}
                     />
                   }
@@ -719,7 +719,7 @@ class ChatBox extends React.Component {
           {documentChat && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>
-                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename || this.props.documentInfo.title}</Link>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, this.props.documentSections ? this.props.documentSections : null, null); }}>{this.props.documentInfo.filename || this.props.documentInfo.title}</Link>
               </Header>
             </div>
           )}
