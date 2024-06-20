@@ -27,6 +27,8 @@ const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
+const { createClient } = require('redis');
+
 const multer = require('multer');
 // const { ApolloServer, gql } = require('apollo-server-express');
 // TODO: use bcryptjs instead of bcrypt?
@@ -232,7 +234,7 @@ class Jeeves extends Hub {
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
-    // Services
+     // Services
     // Optional Services
     this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
     this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
@@ -1313,6 +1315,27 @@ class Jeeves extends Hub {
     } catch (exception) {
       console.error('[JEEVES]', '[REDIS]', 'Error starting Trainer:', exception);
       process.exit();
+    }
+
+    // Redis client for subscribing to channels
+    const redisSubscriber = createClient({
+      username: this.settings.redis.username,
+      password: this.settings.redis.password,
+      socket: this.settings.redis
+    });
+
+    redisSubscriber.connect().then(() => {
+      console.log('Connected to Redis for subscribing');
+
+      redisSubscriber.subscribe('job:completed', (message) => {
+        const { job, result } = JSON.parse(message);
+        console.log('Job completed:', job.id, result);
+        updateAPI(job, result);
+      });
+    });
+    // random function to show the queue results
+    function updateAPI(job, result) {
+      console.log(`Updating API for job ${job.id} with result:`, result);
     }
 
     // Queue

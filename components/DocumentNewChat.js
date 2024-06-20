@@ -16,6 +16,7 @@ class DocumentNewChat extends React.Component {
     // this.props.fetchConversation(id);
     this.props.resetChat();
     this.props.fetchDocument(this.props.fabric_id);
+    this.props.fetchDocumentSections(this.props.fabric_id);
     window.addEventListener('resize', this.handleResize);
   }
 
@@ -23,6 +24,7 @@ class DocumentNewChat extends React.Component {
     if (this.props.fabric_id !== prevProps.fabric_id) {
       this.props.resetChat();
       this.props.fetchDocument(this.props.fabric_id);
+      this.props.fetchDocumentSections(this.props.fabric_id);
     }
   }
 
@@ -65,6 +67,7 @@ class DocumentNewChat extends React.Component {
           placeholder={'Ask me anything about this document...'}
           documentChat={true}
           documentInfo={documents.document}
+          documentSections={documents.sections}
           documentInfoSidebar={this.props.documentInfoSidebar}
         />
       </fabric-component>
