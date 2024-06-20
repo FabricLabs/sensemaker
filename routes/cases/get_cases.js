@@ -7,26 +7,8 @@ const {
 
 // Components
 const CaseHome = require('../../components/CaseHome');
+const Cache = require('../../types/cache');
 const { createClient } = require('redis');
-const crypto = require('crypto');
-
-class RedisCache {
-  constructor(redis, query) {
-    this.redis = redis;
-    this.fingerprint = this.getHashKey(query);
-  }
-  // Search database for SHA256 fingerprint and return JSON parsed cached data if the key value pair exists. Otherwise, return false.
-  async try() {
-    const cachedData = await this.redis.get(this.fingerprint);
-    return cachedData ? JSON.parse(cachedData) : false;
-  }
-  // Get a SHA256 fingerprint from query string.
-  getHashKey = (query) => {
-    let retKey = '';
-    retKey = crypto.createHash('sha256').update(query).digest('hex');
-    return 'CACHE_ASIDE_' + retKey;
-  }
-}
 
 // Exports
 module.exports = function (req, res, next) {
@@ -42,7 +24,7 @@ module.exports = function (req, res, next) {
 
       await this.redis.connect();
 
-      this.cache = new RedisCache(this.redis, "GET /cases HTTP/1.1");
+      this.cache = new Cache(this.redis, "GET /cases HTTP/1.1");
 
       // If cached data exists, assign it to cases. Otherwise, assign the db call to cases.
       let cases = await this.cache.try();
@@ -59,6 +41,7 @@ module.exports = function (req, res, next) {
           currentPage: 1
       });
 
+      // Store fingerprint cases pair
       this.redis.set(this.cache.fingerprint, JSON.stringify(cases), {NX: true});
 
       res.setHeader('X-Pagination', true);
