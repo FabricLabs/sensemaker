@@ -4,10 +4,6 @@ on:
   push:
     branches: ['beta']
 
-env:
-  REGISTRY: registry.trynovo.com
-  IMAGE_NAME: jeeves-beta
-
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
