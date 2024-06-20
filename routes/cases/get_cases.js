@@ -11,17 +11,17 @@ const { createClient } = require('redis');
 const crypto = require('crypto');
 
 class RedisCache {
-  constructor(type) {
-    this.type = type;
+  constructor(redis, query) {
+    this.redis = redis;
+    this.fingerprint = this.getHashKey(query);
   }
-  async try(req_line) {
-    const hashKey = this.getHashKey(req_line);
-    const cachedData = await this.redis.get(hashKey);
+  async try() {
+    const cachedData = await this.redis.get(this.fingerprint);
     return cachedData ? JSON.parse(cachedData) : false;
   }
-  getHashKey = (str) => {
+  getHashKey = (query) => {
     let retKey = '';
-    retKey = crypto.createHash('sha256').update(str).digest('hex');
+    retKey = crypto.createHash('sha256').update(query).digest('hex');
     return 'CACHE_ASIDE_' + retKey;
   }
 }
@@ -40,14 +40,10 @@ module.exports = function (req, res, next) {
 
       await this.redis.connect();
 
-      this.cache = RedisCache();
-      const docArr = this.cache.try("GET /cases HTTP/1.1");
-      
-      if (docArr) {
-        var cases = docArr;
-      }
-      else {
-        var cases = await this.db.select(
+      this.cache = new RedisCache(this.redis, "GET /cases HTTP/1.1");
+
+      var try_cases = await this.cache.try();
+      var cases = try_cases ? try_cases : await this.db.select(
           'id',
           'title',
           'short_name',
@@ -58,11 +54,9 @@ module.exports = function (req, res, next) {
         ).from('cases').whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').paginate({
           perPage: PER_PAGE_LIMIT,
           currentPage: 1
-        });
+      });
 
-        this.redis.set(hashKey, JSON.stringify(cases));
-
-      }
+      this.redis.set(this.cache.fingerprint, JSON.stringify(cases));
 
       res.setHeader('X-Pagination', true);
       res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
