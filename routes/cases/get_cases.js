@@ -42,8 +42,7 @@ module.exports = function (req, res, next) {
 
       this.cache = new RedisCache(this.redis, "GET /cases HTTP/1.1");
 
-      var try_cases = await this.cache.try();
-      var cases = try_cases ? try_cases : await this.db.select(
+      var cases = (cases = await this.cache.try()) ? cases : await this.db.select(
           'id',
           'title',
           'short_name',
