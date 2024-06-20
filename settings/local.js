@@ -19,6 +19,7 @@ const MANGO = '10.8.0.32';
 const FOXTROT = '10.8.0.31';
 const CLARITY = '10.8.0.34';
 const BALROG = '10.8.0.33';
+const GOTHMOG = '10.8.0.60';
 
 // Dependencies
 const fs = require('fs');
@@ -72,17 +73,7 @@ module.exports = {
     limit: 10
   },
   workers: 8,
-  agents: merge({}, network, {
-    /* local: {
-      name: 'MAINSTAY',
-      prompt: novoPrompt.toString('utf8'),
-      model: 'llama3',
-      host: '127.0.0.1',
-      port: 11434,
-      secure: false,
-      temperature: 0
-    } */
-  }),
+  agents: merge({}, network, {}),
   pipeline: {
     enable: false,
     consensus: ['socrates']
@@ -101,10 +92,10 @@ module.exports = {
   },
   db: {
     type: 'mysql',
-    host: process.env.JEEVES_DB_HOST || '127.0.0.1',
+    host: 'mysql.mysql.svc.cluster.local',
     port: 3306,
     user: 'db_user_jeeves',
-    password: 'chahcieYishi1wuu',
+    password: 'weedis6uozedaiwee4Eereesheequiem',
     database: 'db_jeeves'
   },
   embeddings: {
@@ -124,12 +115,11 @@ module.exports = {
   },
   redis: {
     name: 'novo',
-    host: '127.0.0.1',
+    host: 'redis-stack-server-master.redis.svc.cluster.local',
     username: 'default',
-    password: null,
+    password: "VNRfkXbvdMnEPS5GGIwADMeuGXFigayO",
     port: 6379,
     hosts: [
-      'redis://default@localhost:6379',
       'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
     ]
   },
@@ -240,7 +230,7 @@ module.exports = {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
   linkedin: {
-    enable: false,
+    enable: true,
     id: 'get from linkedin',
     secret: 'get from linkedin'
   },
@@ -259,11 +249,11 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: '127.0.0.1',
+    host: '10.8.0.60',
     port: 11434,
     secure: false,
     model: 'llama3', // default model
-    models: ['llama2', 'mistral', 'gemma', 'llama3'] // models to "prime" (preload)
+    models: ['llama3'] // models to "prime" (preload)
   },
   pacer: {
     enable: true
