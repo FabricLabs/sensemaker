@@ -15,10 +15,12 @@ class RedisCache {
     this.redis = redis;
     this.fingerprint = this.getHashKey(query);
   }
+  // Search database for SHA256 fingerprint and return JSON parsed cached data if the key value pair exists. Otherwise, return false.
   async try() {
     const cachedData = await this.redis.get(this.fingerprint);
     return cachedData ? JSON.parse(cachedData) : false;
   }
+  // Get a SHA256 fingerprint from query string.
   getHashKey = (query) => {
     let retKey = '';
     retKey = crypto.createHash('sha256').update(query).digest('hex');
@@ -42,7 +44,9 @@ module.exports = function (req, res, next) {
 
       this.cache = new RedisCache(this.redis, "GET /cases HTTP/1.1");
 
-      var cases = (cases = await this.cache.try()) ? cases : await this.db.select(
+      // If cached data exists, assign it to cases. Otherwise, assign the db call to cases.
+      let cached_cases = await this.cache.try();
+      let cases = cached_cases ? cached_cases : await this.db.select(
           'id',
           'title',
           'short_name',
@@ -55,7 +59,7 @@ module.exports = function (req, res, next) {
           currentPage: 1
       });
 
-      this.redis.set(this.cache.fingerprint, JSON.stringify(cases));
+      this.redis.set(this.cache.fingerprint, JSON.stringify(cases), {NX: true});
 
       res.setHeader('X-Pagination', true);
       res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
