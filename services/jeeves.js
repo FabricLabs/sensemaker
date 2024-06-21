@@ -21,6 +21,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // External Dependencies
+const { createClient } = require('redis');
 const fetch = require('cross-fetch');
 const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
@@ -378,6 +379,12 @@ class Jeeves extends Hub {
       objects: {},
       content: this.settings.state
     };
+
+    this.redis = createClient({
+      username: this.settings.redis.username,
+      password: this.settings.redis.password,
+      socket: this.settings.redis
+    });
 
     // Database connections
     this.db = knex({
@@ -1317,11 +1324,11 @@ class Jeeves extends Hub {
       process.exit();
     }
 
-    // Queue
+    // Redis Queue
     try {
       await this.queue.start();
     } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis:', exception);
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis Queue:', exception);
       process.exit();
     }
 
@@ -1330,6 +1337,14 @@ class Jeeves extends Hub {
       await this.coordinator.start();
     } catch (exception) {
       console.error('[NOVO]', '[COORDINATOR]', 'Error starting Coordinator:', exception);
+    }
+
+    // Redis Cache
+    try {
+      await this.redis.connect();
+    } catch (exception) {
+      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis Cache:', exception);
+      process.exit();
     }
 
     /* this.db.on('error', (...error) => {

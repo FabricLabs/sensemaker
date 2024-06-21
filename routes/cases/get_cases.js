@@ -8,21 +8,11 @@ const {
 // Components
 const CaseHome = require('../../components/CaseHome');
 const Cache = require('../../types/cache');
-const { createClient } = require('redis');
 
 // Exports
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-
-      // Primary Redis client
-      this.redis = createClient({
-        username: this.settings.redis.username,
-        password: this.settings.redis.password,
-        socket: this.settings.redis
-      });
-
-      await this.redis.connect();
 
       this.cache = new Cache(this.redis, "GET /cases HTTP/1.1");
 

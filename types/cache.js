@@ -20,6 +20,16 @@ class Cache {
     retKey = crypto.createHash('sha256').update(query).digest('hex');
     return 'CACHE_ASIDE_' + retKey;
   }
+  async select(...args)  {
+    let data = await this.try();
+    if (!data) data = await this.db.select(...args);
+    return data;
+  }
+  async from(...args)  {
+    let data = await this.try();
+    if (!data) data = await this.db.from(...args);
+    return data;
+  }
 }
 
 module.exports = Cache;
