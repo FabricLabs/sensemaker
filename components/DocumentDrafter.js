@@ -264,6 +264,7 @@ class DocumentDrafter extends React.Component {
             <div>
               <Header as='h2' textAlign='center'>Describe Your Document</Header>
               <p style={{ textAlign: 'center' }}>Tell Novo about your document.</p>
+              <p style={{ textAlign: 'center' }}>Type: <b>{documentType}</b></p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>
               <TextArea value={context} name='context' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
@@ -404,7 +405,6 @@ class DocumentDrafter extends React.Component {
                           }
                         />
                       </div>
-
                     </section>
                   )
                 }
