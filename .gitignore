@@ -17,3 +17,5 @@ node_modules
 stores/harvard
 settings/local.js
 documents/templates
+
+.venv/
