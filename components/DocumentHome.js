@@ -110,16 +110,6 @@ class DocumentHome extends React.Component {
               )
             }
           </List>
-          {/* <Segment>
-            <Form>
-              <Form.Field>
-                <Header as='h3'>Draft Documents</Header>
-                <p>Start drafting a new document by telling me the details of your case.</p>
-                <Form.TextArea />
-                <Button icon='file'>Draft</Button>
-              </Form.Field>
-            </Form>
-          </Segment> */}
         </Segment>
 
       </fabric-document-home>
