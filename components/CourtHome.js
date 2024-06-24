@@ -12,7 +12,10 @@ const {
   Segment,
   Label,
   List,
-  Loader
+  Loader,
+  Dropdown,
+  Input,
+  Form
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -23,38 +26,72 @@ class CourtHome extends React.Component {
     this.state = {
       searchQuery: '', // Initialize search query state
       filteredCourts: [], // Initialize filtered courts state
-      searching: false // Boolean to show a spinner icon while fetching
+      searching: false, // Boolean to show a spinner icon while fetching
+      jurisdictionsOptions: null,
+      jurisdiction_id: null,
     };
   }
 
   componentDidMount() {
     this.props.fetchCourts();
+    this.props.fetchJurisdictions();
   }
 
   componentDidUpdate(prevProps) {
-    const { courts } = this.props;
+    const { courts, jurisdictions } = this.props;
     if (prevProps.courts != courts) {
       if (!courts.loading && this.state.searching) {
         this.setState({ filteredCourts: courts.results, searching: false });
+        console.log('court-results: ', courts.results);
+      }
+    }
+
+    if (prevProps.jurisdictions !== jurisdictions) {
+      if (jurisdictions.jurisdictions.length > 0) {
+        const options = jurisdictions.jurisdictions.map(instance => ({
+          key: instance.id,
+          value: instance.id,
+          text: instance.name
+        }));
+        options.sort((a, b) => a.text.localeCompare(b.text));
+        options.unshift({ key: 'any', value: null, text: 'Any' });
+        this.setState({ jurisdictionsOptions: options });
+      }
+    }
+  }
+
+  selectJurisdiction = (value) => {
+    const { searchQuery } = this.state;
+    this.setState({ jurisdiction_id: value, jurisdictionError: false });
+    if (searchQuery) {
+      this.handleSearchChange(searchQuery);
+    } else {
+      if (value === null) {
+        this.props.fetchCourts();
+      } else {
+        //once the jurisdiction is selected, it looks for the courts related to that jurisdiction
+        this.props.fetchCourtsByJurisdiction(value);
       }
     }
   }
 
   handleSearchChange = debounce((query) => {
     //console.debug('search change:', query);
-
-    this.setState({ searching: true });
-    this.props.searchCourt(query);
+    const { jurisdiction_id } = this.state;
+    if (query) {
+      this.setState({ searching: true });
+      this.props.searchCourt(query, jurisdiction_id);
+    }
   }, 1000);
 
   render() {
     const { loading, courts } = this.props;
-    const { filteredCourts, searchQuery, searching } = this.state;
+    const { filteredCourts, searchQuery, searching, jurisdictionsOptions } = this.state;
 
     const displayCourts = searchQuery ? filteredCourts : courts;
 
     return (
-      <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
+      <Segment className="fade-in" fluid style={{ maxHeight: '100%', minHeight: '100%' }}>
         <h1>Courts</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
@@ -72,10 +109,21 @@ class CourtHome extends React.Component {
                 this.handleSearchChange(query); // Call the debounce function with the query
               }}
             />
-
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
+        <Form>
+          <Form.Dropdown
+            placeholder='Select Jurisdiction'
+            label='Jurisdiction'
+            fluid
+            search
+            selection
+            options={jurisdictionsOptions}
+            value={this.state.jurisdiction_id}
+            onChange={(e, { value }) => this.selectJurisdiction(value)}
+          />
+        </Form>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
           {searching || courts.loading ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true

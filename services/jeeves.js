@@ -3988,26 +3988,42 @@ class Jeeves extends Hub {
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
-    const tokens = this._tokenizeTerm(request.query);
-    const promises = tokens.map((token) => {
-      return new Promise((resolve, reject) => {
-        this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
-      });
-    });
+    let response = [];
 
-    const candidates = await Promise.allSettled([
-      (new Promise((resolve, reject) => {
-        setTimeout(reject, 15000, new Error('Timeout!'));
-      })),
-      promises[0] // first token only
-      // TODO: Harvard search
-      // TODO: CourtListener search
-    ]);
+    try {
+      if(request.jurisdiction_id){
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`).where('jurisdiction_id', request.jurisdiction_id);
+      } else {
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`);
+      }
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
+    }
 
-    console.debug('candidates:', candidates);
-    const results = candidates.filter((x) => (x.status === 'fulfilled'));
+    return response;
 
-    return results;
+    // This search down there wasnt working, replaced it for a local search for the moment
+
+    // const tokens = this._tokenizeTerm(request.query);
+    // const promises = tokens.map((token) => {
+    //   return new Promise((resolve, reject) => {
+    //     this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
+    //   });
+    // });
+
+    // const candidates = await Promise.allSettled([
+    //   (new Promise((resolve, reject) => {
+    //     setTimeout(reject, 15000, new Error('Timeout!'));
+    //   })),
+    //   promises[0] // first token only
+    //   // TODO: Harvard search
+    //   // TODO: CourtListener search
+    // ]);
+
+    // console.debug('candidates:', candidates);
+    // const results = candidates.filter((x) => (x.status === 'fulfilled'));
+
+    // return results;
   }
 
   async _searchCourtsByTerm (term) {
