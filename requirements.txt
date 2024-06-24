@@ -9,6 +9,7 @@ charset-normalizer==3.3.2
 datasets==2.16.1
 dill==0.3.7
 filelock==3.13.1
+flask==3.0.3
 frozenlist==1.4.1
 fsspec==2023.10.0
 huggingface-hub==0.20.2
