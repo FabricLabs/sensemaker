@@ -92,10 +92,10 @@ module.exports = {
   },
   db: {
     type: 'mysql',
-    host: 'mysql.mysql.svc.cluster.local',
+    host: process.env.SQL_DB_HOST || '127.0.0.1',
     port: 3306,
     user: 'db_user_jeeves',
-    password: 'weedis6uozedaiwee4Eereesheequiem',
+    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
   embeddings: {
@@ -115,9 +115,9 @@ module.exports = {
   },
   redis: {
     name: 'novo',
-    host: 'redis-stack-server-master.redis.svc.cluster.local',
+    host: process.env.REDIS_HOST || '127.0.0.1',
     username: 'default',
-    password: "VNRfkXbvdMnEPS5GGIwADMeuGXFigayO",
+    password: process.env.REDIS_CRED || null,
     port: 6379,
     hosts: [
       'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
@@ -249,7 +249,7 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: '10.8.0.60',
+    host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: 11434,
     secure: false,
     model: 'llama3', // default model
