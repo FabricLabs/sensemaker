@@ -13,4 +13,6 @@ const helpMessageToastEmitter = {
   transition: Slide,
 };
 
-module.exports = {helpMessageToastEmitter,};
+const helpMessageSound = 'https://s3.amazonaws.com/freecodecamp/simonSound1.mp3';
+
+module.exports = {helpMessageToastEmitter,helpMessageSound};
