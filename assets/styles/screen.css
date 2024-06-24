@@ -333,6 +333,17 @@ jeeves-dashboard #collapse-sidebar {
   vertical-align: text-top;
 }
 
+#main-sidebar .expand-icon{
+  position: absolute;
+  top: 30%;
+  right: 5%;
+  display: none;
+}
+
+#main-sidebar .expand-menu:hover .expand-icon{
+  display: block;
+}
+
 @media (max-width: 1440px) and (max-height: 800px) {
   jeeves-dashboard #main-sidebar {
     min-width: 100px;
@@ -1006,3 +1017,41 @@ fabric-motd {
   align-items: center;
   margin-bottom: 2em;
 }
+
+/* Document Drafter */
+
+ #document-drafter section textarea {
+   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+ }
+
+ .drafter-section-title {
+   display: flex;
+   align-items: center;
+   margin: 0.5em 0;
+   gap: 2em;
+ }
+
+ .drafter-section-title .edit-icon {
+   display: none;
+   cursor: pointer;
+ }
+
+ .drafter-section-title:hover .edit-icon {
+   display: block;
+ }
+
+ .drafter-section-title .edit-icon-title {
+   visibility: hidden;
+   cursor: pointer;
+ }
+
+ .drafter-section-title:hover .edit-icon-title {
+   visibility: visible;
+ }
+
+ /* Document View */
+
+ #document-editor #section-content{
+  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
+  width: '100%';
+ }

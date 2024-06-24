@@ -66,7 +66,7 @@ class DocumentHome extends React.Component {
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} />
+          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments}/>
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
@@ -110,16 +110,6 @@ class DocumentHome extends React.Component {
               )
             }
           </List>
-          <Segment>
-            <Form>
-              <Form.Field>
-                <Header as='h3'>Draft Documents</Header>
-                <p>Start drafting a new document by telling me the details of your case.</p>
-                <Form.TextArea />
-                <Button icon='file'>Draft</Button>
-              </Form.Field>
-            </Form>
-          </Segment>
         </Segment>
 
       </fabric-document-home>

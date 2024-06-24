@@ -23,6 +23,7 @@ class Conversation extends React.Component {
       recovering: false,
       file_fabric_id: null,
       documentInfo: null,
+      documentSections: null,
     };
 
     this.messagesEndRef = React.createRef();
@@ -42,6 +43,9 @@ class Conversation extends React.Component {
     if (this.props.documents !== prevProps.documents && this.props.documents.document) {
       this.setState({documentInfo: this.props.documents.document});
     }
+    if (this.props.documents !== prevProps.documents && this.props.documents.sections) {
+      this.setState({documentSections: this.props.documents.sections});
+    }
   }
 
   componentWillUnmount() {
@@ -57,6 +61,7 @@ class Conversation extends React.Component {
     //if the conversation is related to a document, it fetchs for that document info
     if (actual.file_fabric_id) {
       await this.props.fetchDocument(actual.file_fabric_id);
+      await this.props.fetchDocumentSections(actual.file_fabric_id);
     }else{
       this.setState({documentInfo: null});
     }
@@ -101,6 +106,7 @@ class Conversation extends React.Component {
           conversationID={id}
           actualConversation={this.state.actualConversation}
           documentInfo={this.state.documentInfo}
+          documentSections={this.state.documentSections}
           documentInfoSidebar={this.props.documentInfoSidebar}
           fetchData={this.fetchData}
         />

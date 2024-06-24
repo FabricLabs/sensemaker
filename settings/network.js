@@ -22,6 +22,7 @@ const MANGO = '10.8.0.32';
 const BALROG = '10.8.0.33';
 const CLARITY = '10.8.0.34';
 const DURINSBANE = '10.8.0.35';
+const GOTHMOG = '10.8.0.60';
 
 module.exports = {
   local: {
@@ -33,7 +34,7 @@ module.exports = {
     secure: false,
     temperature: 0
   },
-  /* alpha: {
+  alpha: {
     name: 'ALPHA',
     prompt: baseline.toString('utf8'),
     model: 'llama3',
@@ -41,7 +42,7 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  }, */
+  },
   balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
@@ -60,6 +61,24 @@ module.exports = {
     secure: false,
     temperature: 0
   },
+  gothmog: {
+    name: 'GOTHMOG',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3:70b-instruct-fp16',
+    host: GOTHMOG,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  },
+  gemma: {
+    name: 'GEMMA',
+    prompt: baseline.toString('utf8'),
+    model: 'gemma',
+    host: GOTHMOG,
+    port: 11434,
+    secure: false,
+    temperature: 0
+  }
   /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),
@@ -68,6 +87,7 @@ module.exports = {
     port: 11434,
     secure: false
   }, */
+  /* TODO: enable hivemind */
   /* hivemind: {
     name: 'HIVEMIND',
     prompt: baseline.toString('utf8'),
