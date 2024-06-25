@@ -254,7 +254,8 @@ module.exports = {
     port: 11434,
     secure: false,
     model: 'llama3', // default model
-    models: ['llama3'] // models to "prime" (preload)
+    models: ['llama3'], // models to "prime" (preload)
+    temperature: 0
   },
   pacer: {
     enable: true
