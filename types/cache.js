@@ -3,11 +3,21 @@
 const crypto = require('crypto');
 
 class Cache {
-  constructor(redis, query) {
+  constructor(redis, db, query) {
     this.redis = redis;
+    this.db = db;
     this.fingerprint = this.getHashKey(query);
 
-    return this;
+    return new Proxy(this, {
+      get: (object, property) => {
+          if (property) {
+              this[property] = this.db[property];
+              return this[property];
+          }
+      } 
+  });
+
+
   }
   // Search database for SHA256 fingerprint and return JSON parsed cached data if the key value pair exists. Otherwise, return false.
   async try() {
