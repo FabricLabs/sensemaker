@@ -1,12 +1,31 @@
 name: Build and push Docker image
 
 on:
-  push:
-    branches: ['beta']
+  workflow_run:
+    workflow: ["npm test"]
+    types:
+      - completed
 
 jobs:
-  build-and-push-image:
+  check-conditions:
     runs-on: ubuntu-latest
+    steps:
+      - name: Set branch environment variable
+        run: echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_ENV
+
+      - name: Check if branch is 'beta'
+        id: check-condition
+        run: |
+          if [[ "${{ env.branch }}" == "beta" ]]; then
+            echo "conditions_met=true" >> $GITHUB_ENV
+          else
+            echo "conditions_met=false" >> $GITHUB_ENV
+
+
+  build-and-push-image:
+    needs: check-conditions
+    runs-on: ubuntu-latest
+    if: env.conditions_met == 'true'
     steps: 
       -
         name: Get current Unix timestamp
