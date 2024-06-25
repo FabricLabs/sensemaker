@@ -15,7 +15,8 @@ const {
   Loader,
   Dropdown,
   Input,
-  Form
+  Form,
+  FormField
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -91,11 +92,11 @@ class CourtHome extends React.Component {
     const displayCourts = searchQuery ? filteredCourts : courts;
 
     return (
-      <Segment className="fade-in" fluid style={{ maxHeight: '100%', minHeight: '100%' }}>
+      <Segment id='courts-home' className="fade-in" fluid style={{ maxHeight: '100%', minHeight: '100%' }}>
         <h1>Courts</h1>
-        <Form style={{ display: 'flex', gap: '1em', width: '100%' }} size='huge'>
+        <Form style={{ width: '100%', gap: '1em'}} className='col-center' size='big'>
           <Input
-            style={{ width: '50%' }}
+            style={{ width: '100%' }}
             name='query'
             autoComplete='off'
             placeholder='Find...'
@@ -110,16 +111,20 @@ class CourtHome extends React.Component {
               this.handleSearchChange(query); // Call the debounce function with the query
             }}
           />
-          <Dropdown
-            style={{ width: '50%' }}
-            placeholder='Filter by Jurisdiction'
-            fluid
-            search
-            selection
-            options={jurisdictionsOptions}
-            value={this.state.jurisdiction_id}
-            onChange={(e, { value }) => this.selectJurisdiction(value)}
-          />
+          <FormField style={{ width: '50%' }}>
+            <label>Filter by jurisdiction</label>
+            <Dropdown
+              id='courts-filter'
+              fluid
+              placeholder='Any'
+              search
+              selection
+              options={jurisdictionsOptions}
+              value={this.state.jurisdiction_id}
+              onChange={(e, { value }) => this.selectJurisdiction(value)}
+              icon='filter'
+            />
+          </FormField>
         </Form>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
           {searching || courts.loading ? (
