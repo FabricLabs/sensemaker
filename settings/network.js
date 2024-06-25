@@ -25,6 +25,7 @@ const DURINSBANE = '10.8.0.35';
 const GOTHMOG = '10.8.0.60';
 
 module.exports = {
+/*
   local: {
     name: 'LOCAL',
     prompt: baseline.toString('utf8'),
@@ -42,7 +43,7 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  },
+  },*/
   balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
