@@ -45,8 +45,6 @@ module.exports = async function (req, res) {
       conversation_id: conversation_id,
       help_role: help_role,
     }
-    
-    console.log('HELP ROLE HERE!: ', help_role);
 
     if (help_role === 'admin') {
       conversationMessage.type = 'HelpMsgAdmin';

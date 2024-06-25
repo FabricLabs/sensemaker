@@ -4,7 +4,7 @@
 const React = require('react');
 const { Link, Navigate, Route, Routes, Switch, useLocation, useParams, useNavigate } = require('react-router-dom');
 const { ToastContainer, toast, Slide } = require('react-toastify');
-
+const { helpMessageToastEmitter, helpMessageSound } = require('../functions/toastifyProps.js')
 
 // const LoadingBar = require('react-top-loading-bar');
 
@@ -20,8 +20,6 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
-const { helpMessageToastEmitter } = require('../functions/toastifyProps.js')
-
 const {
   BRAND_NAME,
   RELEASE_NAME,
@@ -31,7 +29,6 @@ const {
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS
 } = require('../constants');
-
 
 // Components
 const Home = require('./Home');
@@ -137,7 +134,6 @@ class Dashboard extends React.Component {
 
   componentDidMount() {
     const { location, params, navigate } = this.props;
-    //console.log('HERE LOCATION ON MOUNT: ', location);
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -162,7 +158,6 @@ class Dashboard extends React.Component {
   // }
 
   componentDidUpdate(prevProps) {
-    //console.log('HERE LOCATION ON UPDATE: ', this.props.location);
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
@@ -426,8 +421,10 @@ class Dashboard extends React.Component {
     this.setState({ helpBoxOpen: false });
   }
 
+
   responseCapture = (action) => {
     const { id, isAdmin } = this.props.auth;
+    const sound = new Audio(helpMessageSound);
 
     if (action.type == 'HelpMsgAdmin' && id == action.creator) {
       this.props.fetchHelpConversations();
@@ -435,21 +432,19 @@ class Dashboard extends React.Component {
         this.props.fetchHelpMessages(action.conversation_id);
       }
       //emit toast for user
+      sound.play().catch((error) => {console.error('Failed to play sound: ', error);});
       toast('You have a message from an assistant!', helpMessageToastEmitter);
-
     }
 
     if (action.type == 'HelpMsgUser' && isAdmin) {
       this.setState({ helpConversationUpdate: action.conversation_id });
       this.props.fetchAdminHelpConversations();
       //emit toast for admin
-      //console.log('ON RESPONSE: ', this.props.location);
-      //if(this.props.location !== '/settings/admin') {
-      toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
-      //}
-
+      if (this.props.location.pathname !== '/settings/admin') {
+        sound.play().catch((error) => {console.error('Failed to play sound: ', error);});
+        toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
+      }
     }
-
   }
 
   //====================================================//
@@ -457,7 +452,6 @@ class Dashboard extends React.Component {
   render() {
 
     // const {location, params, navigate} = this.props;
-    // console.log('HERE LOCATION: ', location);
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
     const USER_IS_BETA = this.props.auth.isBeta || false;
@@ -722,8 +716,19 @@ class Dashboard extends React.Component {
                 <Route path="/matters/:id" element={<MatterView fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} fetchCourtById={this.props.fetchCourtById} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} />} />
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
+                {/* TODO: fix these routes */}
+                {/* /settings/admin should render the overview */}
+                {/* /settings/admin#users should load the user tab */}
+                <Route path="/settings/admin/Overview" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Settings" element={<AdminSettings {...this.props} activeIndex={1} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Users" element={<AdminSettings {...this.props} activeIndex={2} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Growth" element={<AdminSettings {...this.props} activeIndex={3} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Conversations" element={<AdminSettings {...this.props} activeIndex={4} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Services" element={<AdminSettings {...this.props} activeIndex={5} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                <Route path="/settings/admin/Design" element={<AdminSettings {...this.props} activeIndex={6} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
+                {/* END TODO */}
+                <Route path="/settings/admin" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated = {() => this.setState({helpConversationUpdate: 0})}/>} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/settings/admin" element={<AdminSettings {...this.props} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
