@@ -2,7 +2,7 @@ name: Build and push Docker image
 
 on:
   workflow_run:
-    workflow: ["npm test"]
+    workflow: [npm test]
     types:
       - completed
 
