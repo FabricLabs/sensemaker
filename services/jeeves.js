@@ -2796,7 +2796,7 @@ class Jeeves extends Hub {
     this.trust(this.agent);
 
     // Queue up a verification job
-    this.queue._addJob({ method: 'verify', params: [] });
+    // this.queue._addJob({ method: 'verify', params: [] });
 
     // Create a heartbeat
     this._heart = setInterval(this.tick.bind(this), this.settings.interval);
