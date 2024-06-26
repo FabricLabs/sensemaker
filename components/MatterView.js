@@ -67,7 +67,7 @@ class MatterView extends React.Component {
     this.props.fetchMatter(this.props.id);
     this.props.fetchMatterConversations(this.props.id);
     this.props.fetchJurisdictions();
-    this.props.fetchCourts();
+    // this.props.fetchCourts();
     this.props.fetchMatterFiles(this.props.id);
     this.props.fetchMatterNotes(this.props.id);
   }
@@ -79,7 +79,7 @@ class MatterView extends React.Component {
       this.props.fetchMatter(this.props.id);
       this.props.fetchMatterConversations(this.props.id);
       this.props.fetchJurisdictions();
-      this.props.fetchCourts();
+      // this.props.fetchCourts();
       this.props.fetchMatterFiles(this.props.id);
       this.props.fetchMatterNotes(this.props.id);
     }
@@ -91,9 +91,10 @@ class MatterView extends React.Component {
 
       if (matters.current.jurisdiction_id) {
         this.props.fetchJurisdiction(matters.current.jurisdiction_id);
+        this.props.fetchCourtsByJurisdiction(matters.current.jurisdiction_id);
       }
       if (matters.current.court_id) {
-        this.props.fetchCourt(matters.current.court_id);
+        this.props.fetchCourtById(matters.current.court_id);
       }
       if (!this.state.isEditMode) {
         this.setState({ representingOption: matters.current.representing });
@@ -216,6 +217,7 @@ class MatterView extends React.Component {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
 
+    console.log(courts.current);
     const jurisdictionErrorMessage = (!this.state.jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
@@ -340,7 +342,10 @@ class MatterView extends React.Component {
                     selection
                     options={this.state.jurisdictionsOptions}
                     value={this.state.jurisdiction_id}
-                    onChange={(e, { value }) => this.setState({ jurisdiction_id: value, jurisdictionError: false })}
+                    onChange={(e, { value }) => {
+                      this.setState({ jurisdiction_id: value, jurisdictionError: false });
+                      this.props.fetchCourtsByJurisdiction(value)
+                    }}
                     error={jurisdictionErrorMessage}
                   />
                 ) : (

@@ -40,6 +40,7 @@ class DocumentUploader extends React.Component {
     if (files !== prevProps.files && this.state.uploading && !files.loading) {
       if (files.fileUploaded) {
         this.setState({ uploadSuccess: true, file_id: files.fileId });
+        this.props.fetchDocuments();
       } else {
         this.setState({ errorMsg: files.error });
       }

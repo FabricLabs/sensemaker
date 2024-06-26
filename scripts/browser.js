@@ -77,7 +77,9 @@ const {
 const {
   fetchCourts,
   fetchCourt,
-  searchCourt
+  fetchCourtById,
+  searchCourt,
+  fetchCourtsByJurisdiction,
 } = require('../actions/courtActions');
 
 // ## Jurisdiction Actions
@@ -153,6 +155,13 @@ const {
   fetchDocument,
   uploadDocument,
   searchDocument,
+  createDocument,
+  createDocumentSection,
+  editDocumentSection,
+  editDocument,
+  deleteDocument,
+  fetchDocumentSections,
+  deleteDocumentSection,
 } = require('../actions/documentActions');
 
 // ## Files Actions
@@ -285,14 +294,23 @@ async function main(input = {}) {
     fetchStatutes: fetchStatutes,
     fetchStatute: fetchStatute,
     fetchCourts: fetchCourts,
+    fetchCourtsByJurisdiction: fetchCourtsByJurisdiction,
     fetchCourt: fetchCourt,
+    fetchCourtById: fetchCourtById,
     searchCourt: searchCourt,
     fetchJurisdictions: fetchJurisdictions,
     fetchJurisdiction: fetchJurisdiction,
     fetchDocuments: fetchDocuments,
     fetchDocument: fetchDocument,
+    fetchDocumentSections: fetchDocumentSections,
     searchDocument: searchDocument,
     uploadDocument: uploadDocument,
+    createDocument: createDocument,
+    createDocumentSection: createDocumentSection,
+    deleteDocumentSection: deleteDocumentSection,
+    editDocumentSection: editDocumentSection,
+    editDocument: editDocument,
+    deleteDocument: deleteDocument,
     fetchFiles: fetchFiles,
     fetchFile: fetchFile,
     uploadFile: uploadFile,

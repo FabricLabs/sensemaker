@@ -143,7 +143,7 @@ class Conversations extends React.Component {
       <Segment className='fade-in' fluid style={{ minHeight: '100%', maxHeight: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
           <h2 style={{ marginTop: '0' }}>Conversations</h2>
-          <Button icon>New Conversation <Icon name='right chevron' /></Button>
+          <Button icon color='green'>New Conversation <Icon name='right chevron' /></Button>
         </div>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
