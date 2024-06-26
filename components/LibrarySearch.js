@@ -42,8 +42,10 @@ class LibrarySearch extends React.Component {
   }
 
   handleSearchChange = debounce(async (query) => {
-    this.setState({ loading: true });
-    this.props.searchGlobal(query);
+    if (query) {
+      this.setState({ loading: true });
+      this.props.searchGlobal(query);
+    }
   }, 250);
 
   // renderResults() {

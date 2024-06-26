@@ -719,7 +719,7 @@ class ChatBox extends React.Component {
           {documentChat && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>
-                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename}</Link>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, null); }}>{this.props.documentInfo.filename || this.props.documentInfo.title}</Link>
               </Header>
             </div>
           )}

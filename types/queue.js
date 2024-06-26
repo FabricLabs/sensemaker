@@ -164,19 +164,27 @@ class Queue extends Actor {
     return job;
   }
 
-  async _completeJob (job) {
+  async _completeJob(job) {
     if (this._methods[job.method]) {
       const result = await this._methods[job.method](...job.params);
       console.debug('[QUEUE]', 'Completed job:', job);
+      if (this.redis) {
+        await this.redis.publish('job:completed', JSON.stringify({ job, result }));
+      }
       return result;
     }
 
     switch (job.method) {
       default:
         console.warn('[QUEUE]', 'Unhandled job type:', job.method);
-        return { status: 'FAILED', message: 'Unhandled job type.' };
+        const failureResult = { status: 'FAILED', message: 'Unhandled job type.' };
+        if (this.redis) {
+          await this.redis.publish('job:completed', JSON.stringify({ job, result: failureResult }));
+        }
+        return failureResult;
     }
   }
+
 
   async _failJob (job) {
 
