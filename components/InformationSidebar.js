@@ -19,6 +19,8 @@ const {
 const { Rating } = require('react-simple-star-rating');
 const store = require('../stores/redux');
 
+const InfoSidebarDocument = require('./InfoSidebarDocument');
+
 
 class InformationSidebar extends React.Component {
 
@@ -145,7 +147,7 @@ class InformationSidebar extends React.Component {
       sending,
       connectionProblem,
     } = this.state;
-    const { visible, documentSection, documentInfo } = this.props;
+    const { visible, documentSection, documentInfo, documentSections } = this.props;
 
     return (
       <Sidebar
@@ -160,30 +162,8 @@ class InformationSidebar extends React.Component {
         <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
         {visible ? (
           documentSection ?
-            ((documentInfo && documentInfo.file_id) ? (
-              <section className='info-sidebar center-elements-column'>
-                <Card fluid className='info-file-card' style={{ paddingBottom: '1.5em' }}>
-                  <CardContent header={documentInfo.filename} style={{ paddingBottom: '0' }}>
-                  </CardContent>
-                  <CardContent style={{ paddingTop: '0.5em', marginBottom: '1.5em' }}>
-                    {this.props.matterTitle && (
-                      <CardDescription>
-                        <strong>Matter:</strong> {this.props.matterTitle}
-                      </CardDescription>
-                    )}
-                    <CardDescription>
-                      <strong>Created:</strong> {this.formatDateTime(documentInfo.created_at)}
-                    </CardDescription>
-                    <CardDescription>
-                      <strong>Modified:</strong> {this.formatDateTime(documentInfo.updated_at)}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-                <iframe
-                  src={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/files/serve/${documentInfo.file_id}`}
-                  className='document-frame'
-                ></iframe>
-              </section>
+            ((documentInfo && documentInfo.fabric_id) ? (
+              <InfoSidebarDocument documentInfo={documentInfo} documentSections={documentSections}/>
             ) : (
               <section className='info-sidebar center-elements-column'>
                 <h3>File not found</h3>

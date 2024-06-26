@@ -1055,3 +1055,18 @@ fabric-motd {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
   width: '100%';
  }
+
+
+ /*Courts Home*/
+
+ #courts-home #courts-filter{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-right: 1em;
+  
+  .filter.icon{
+    color: grey;
+  }
+
+ }

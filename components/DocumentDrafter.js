@@ -11,6 +11,8 @@ const {
   useNavigate
 } = require('react-router-dom');
 
+const DocumentUploader = require('./DocumentUploader');
+
 const {
   Dropdown,
   Header,
@@ -63,6 +65,7 @@ class DocumentDrafter extends React.Component {
       editDocumentTitle: '',
       creationError: false,
       attemptsCounter: 0,
+      fileAttached: null
     };
 
   }
@@ -264,10 +267,14 @@ class DocumentDrafter extends React.Component {
             <div>
               <Header as='h2' textAlign='center'>Describe Your Document</Header>
               <p style={{ textAlign: 'center' }}>Tell Novo about your document.</p>
+              <p style={{ textAlign: 'center' }}>Type: <b>{documentType}</b></p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>
               <TextArea value={context} name='context' placeholder='Tell us your ideas' rows={10} onChange={this.handleInputChange} />
             </Form>
+
+            {/* <DocumentUploader drafterSection={true} files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments}/> */}
+
             <div className='col-center' style={{ width: '100%', marginTop: '2em' }}>
               <Button.Group widths='2' style={{ maxWidth: '400px' }}>
                 <Button primary icon onClick={() => this.setState({ stepContext: false, stepType: true, attemptsCounter: 0 })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
@@ -404,7 +411,6 @@ class DocumentDrafter extends React.Component {
                           }
                         />
                       </div>
-
                     </section>
                   )
                 }
