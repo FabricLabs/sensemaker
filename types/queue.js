@@ -49,7 +49,7 @@ class Queue extends Actor {
   }
 
   get interval () {
-    return 1000 / this.settings.frequency; // ms
+    return 100 / this.settings.frequency; // ms
   }
 
   get jobs () {
@@ -67,9 +67,10 @@ class Queue extends Actor {
 
     if (this.settings.worker) {
       console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
-      if (!this._state.current) this._state.current = await this._takeJob();
+      this._state.current = await this._takeJob();
       console.debug('[QUEUE]', 'Current job:', this._state.current);
       if (this._state.current && !this._state.current.status) {
+        console.log('actual current queue: ', this._state.current)
         this._state.current.status = 'COMPUTING';
         Promise.race([
           this._completeJob(this._state.current),
@@ -83,7 +84,8 @@ class Queue extends Actor {
           this._state.current = null;
         }).then((result) => {
           console.debug('[QUEUE]', 'Finished work:', result);
-          this._state.current = null;
+          this._state.current = result;
+          
         });
       }
     }

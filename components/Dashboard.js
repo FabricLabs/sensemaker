@@ -450,6 +450,10 @@ class Dashboard extends React.Component {
 
   }
 
+  captureFileUpload = (action) => {
+    toast('a file has finishing uploading', helpMessageToastEmitter);
+  }
+
   //====================================================//
 
   render() {

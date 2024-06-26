@@ -111,6 +111,10 @@ class Bridge extends React.Component {
               case 'HelpMsgAdmin':
                 this.props.responseCapture(chunk);
                 break;
+              case 'FileUploadMsg': 
+                //do the magic here
+                this.props.captureFileUpload(chunk)
+                break;
 
             }
           } catch (exception) {

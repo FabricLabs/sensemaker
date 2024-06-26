@@ -76,7 +76,7 @@ module.exports = {
     port: 3045,
     secure: false,
     temperature: 0
-  }, */
+  }, 
   /* mango: {
     name: 'MANGO',
     prompt: baseline.toString('utf8'),

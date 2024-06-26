@@ -1317,6 +1317,41 @@ class Jeeves extends Hub {
       process.exit();
     }
 
+    // Redis client for subscribing to channels
+    const redisSubscriber = createClient({
+      username: this.settings.redis.username,
+      password: this.settings.redis.password,
+      socket: this.settings.redis
+    });
+    function updateAPI(job, result) {
+      console.log(`Updating API for job ${job} with job ID: ${job.id} with result:`, result);
+
+      const fileUploadMessage = {
+        sender: 'req.user.id',
+        creator: true,
+        content: 'content',
+        conversation_id: 'conversation_id',
+        help_role: 'help_role',
+      }
+      fileUploadMessage.type = 'FileUploadMsg';
+      
+      //here we broadcast the message, telling 'Bridge.js' which role sent a message
+      const message = Message.fromVector([fileUploadMessage.type, JSON.stringify(fileUploadMessage)]);
+      this.http.broadcast(message);
+    }
+
+    redisSubscriber.connect().then(() => {
+      console.log('Connected to Redis for subscribing');
+
+      redisSubscriber.subscribe('job:completed', (message) => {
+        const { job, result } = JSON.parse(message);
+        console.log('Job completed:', job.id, result);
+        updateAPI(job, result);
+      });
+    });
+    // random function to show the queue results
+
+
     // Queue
     try {
       await this.queue.start();
