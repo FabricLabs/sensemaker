@@ -191,7 +191,7 @@ class Trainer extends Service {
     return new Promise((resolve, reject) => {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
-      console.trace('[TRAINER]', 'Ingesting document:', document);
+      console.debug('[TRAINER]', 'Ingesting document:', document);
       const actor = new Actor({ content: document.content });
       const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
       fetch(endpoint, {
@@ -205,6 +205,7 @@ class Trainer extends Service {
         })
       }).catch((exception) => {
         console.error('[TRAINER]', 'Error ingesting document:', exception);
+        reject(exception);
       }).then(async (response) => {
         const json = await response.json();
         const inserted = await this.db('embeddings').insert({
