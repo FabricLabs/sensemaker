@@ -408,6 +408,31 @@ class Jeeves extends Hub {
 
     attachPaginate();
 
+    knex.QueryBuilder.extend('redis', this.redis);
+    knex.QueryBuilder.extend('cache', async function (qry) {
+      try {
+        let getHashKey = (query) => {
+          let retKey = '';
+          retKey = crypto.createHash('sha256').update(query).digest('hex');
+          return 'CACHE_ASIDE_' + retKey;
+        }
+
+        const fingerprint = getHashKey(qry);
+        let cachedData = await this.redis.get(fingerprint);
+        if (cachedData) {
+          let parsedData = JSON.parse(cachedData);
+          return parsedData;
+        }
+        else {
+          let data = await this;
+          this.redis.set(fingerprint, JSON.stringify(data), {NX: true});
+          return this;
+        }
+      } catch (e) {
+        throw new Error(e);
+      }
+    });
+
     // Stop case
     /* process.on('exit', async () => {
       console.warn('Jeeves is shutting down...');
