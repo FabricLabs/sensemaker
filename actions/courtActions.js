@@ -2,10 +2,10 @@
 
 const { fetchFromAPI } = require('./apiActions');
 
-async function fetchCourtsFromAPI (token) {
+async function fetchCourtsFromAPI(token) {
   return fetchFromAPI('/courts', null, token);
 }
-async function fetchJurisdictionCourtsFromAPI (jurisdiction_id,token) {
+async function fetchJurisdictionCourtsFromAPI(jurisdiction_id, token) {
   return fetchFromAPI(`/courts/jurisdiction/${jurisdiction_id}`, null, token);
 }
 
@@ -26,7 +26,7 @@ const SEARCH_COURT_FAILURE = 'SEARCH_COURT_FAILURE';
 // Action creators
 const fetchCourtsRequest = () => ({ type: FETCH_COURTS_REQUEST, loading: true });
 const fetchCourtsSuccess = (courts) => ({ type: FETCH_COURTS_SUCCESS, payload: courts, loading: false });
-const fetchCourtsFailure = (error) => ({ type: FETCH_COURTS_FAILURE, payload: error, loading: false  });
+const fetchCourtsFailure = (error) => ({ type: FETCH_COURTS_FAILURE, payload: error, loading: false });
 const fetchCourtRequest = () => ({ type: FETCH_COURT_REQUEST, loading: true });
 const fetchCourtSuccess = (instance) => ({ type: FETCH_COURT_SUCCESS, payload: instance, loading: false });
 const fetchCourtFailure = (error) => ({ type: FETCH_COURT_FAILURE, payload: error, loading: false });
@@ -57,7 +57,7 @@ const fetchCourtsByJurisdiction = (jurisdiction_id) => {
     dispatch(fetchCourtsRequest());
     const { token } = getState().auth;
     try {
-      const courts = await fetchJurisdictionCourtsFromAPI(jurisdiction_id,token);
+      const courts = await fetchJurisdictionCourtsFromAPI(jurisdiction_id, token);
       dispatch(fetchCourtsSuccess(courts));
     } catch (error) {
       dispatch(fetchCourtsFailure(error));
@@ -91,7 +91,7 @@ const fetchCourtById = (id) => {
   };
 };
 
-const searchCourt = (query) => {
+const searchCourt = (query, jurisdiction_id = null) => {
   return async (dispatch, getState) => {
     dispatch(searchCourtRequest());
     const { token } = getState().auth;
@@ -103,7 +103,7 @@ const searchCourt = (query) => {
           'Content-Type': 'application/json'
         },
         method: 'SEARCH',
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query, jurisdiction_id })
       });
 
       const obj = await response.json();

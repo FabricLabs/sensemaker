@@ -1329,14 +1329,27 @@ class Jeeves extends Hub {
 
       redisSubscriber.subscribe('job:completed', (message) => {
         const { job, result } = JSON.parse(message);
-        console.log('Job completed:', job.id, result);
-        updateAPI(job, result);
+
+        //job.method gives the job type, like 'IngestFile'
+        //job.params[0] will give us the file/document id
+        //result.status we can check if the job was 'COMPLETED'
+
+        if (result.status === 'COMPLETED') {
+          switch (job.method) {
+            case 'IngestFile':
+              this._handleFileIngested(job.params[0]);
+              break;
+            case 'IngestDocument':
+              this._handleDocumentIngested(job.params[0]);
+              break;
+            default:
+              console.log('Unhandled complete Job Method: ', job.method);
+              break;
+          }
+        }
       });
     });
-    // random function to show the queue results
-    function updateAPI(job, result) {
-      console.log(`Updating API for job ${job.id} with result:`, result);
-    }
+
 
     // Queue
     try {
@@ -2796,7 +2809,7 @@ class Jeeves extends Hub {
     this.trust(this.agent);
 
     // Queue up a verification job
-    this.queue._addJob({ method: 'verify', params: [] });
+    // this.queue._addJob({ method: 'verify', params: [] });
 
     // Create a heartbeat
     this._heart = setInterval(this.tick.bind(this), this.settings.interval);
@@ -3997,26 +4010,42 @@ class Jeeves extends Hub {
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
-    const tokens = this._tokenizeTerm(request.query);
-    const promises = tokens.map((token) => {
-      return new Promise((resolve, reject) => {
-        this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
-      });
-    });
+    let response = [];
 
-    const candidates = await Promise.allSettled([
-      (new Promise((resolve, reject) => {
-        setTimeout(reject, 15000, new Error('Timeout!'));
-      })),
-      promises[0] // first token only
-      // TODO: Harvard search
-      // TODO: CourtListener search
-    ]);
+    try {
+      if(request.jurisdiction_id){
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`).where('jurisdiction_id', request.jurisdiction_id);
+      } else {
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`);
+      }
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
+    }
 
-    console.debug('candidates:', candidates);
-    const results = candidates.filter((x) => (x.status === 'fulfilled'));
+    return response;
 
-    return results;
+    // This search down there wasnt working, replaced it for a local search for the moment
+
+    // const tokens = this._tokenizeTerm(request.query);
+    // const promises = tokens.map((token) => {
+    //   return new Promise((resolve, reject) => {
+    //     this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
+    //   });
+    // });
+
+    // const candidates = await Promise.allSettled([
+    //   (new Promise((resolve, reject) => {
+    //     setTimeout(reject, 15000, new Error('Timeout!'));
+    //   })),
+    //   promises[0] // first token only
+    //   // TODO: Harvard search
+    //   // TODO: CourtListener search
+    // ]);
+
+    // console.debug('candidates:', candidates);
+    // const results = candidates.filter((x) => (x.status === 'fulfilled'));
+
+    // return results;
   }
 
   async _searchCourtsByTerm (term) {
@@ -4483,6 +4512,27 @@ class Jeeves extends Hub {
     }
 
     next();
+  }
+
+  //redis channel subscriber handlers
+  async _handleFileIngested(file_id){
+    let updated;
+    try{
+      updated = await this.db('files').where({id: file_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update file:', exception);
+    }
+    return updated;
+  }
+
+  async _handleDocumentIngested(document_id){
+    let updated;
+    try{
+      updated = await this.db('documents').where({id: document_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update document:', exception);
+    }
+    return updated;
   }
 }
 

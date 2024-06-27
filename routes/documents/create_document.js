@@ -38,7 +38,8 @@ module.exports = async function (req, res, next) {
       fabric_id: actor.id,
       title: obj.title || req.body.type + ' title',
       content: obj.content,
-      status: 'draft'
+      status: 'draft',
+      ingestion_status: 'processing'
     });
 
     const documentId = created[0];  // Assuming created returns an array with the new document ID

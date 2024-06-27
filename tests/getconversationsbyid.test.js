@@ -1,11 +1,10 @@
 const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
-const middleware = require('../routes/conversations/get_conversations_by_id'); // Assuming your middleware is exported from a file
+const middleware = require('../routes/conversations/get_conversations_by_id');
 
-describe('Middleware Test', function() {
+describe('Get Conversations By ID', function() {
   it('should retrieve conversation and messages', async function() {
-    // Mocking the necessary dependencies
     const req = { params: { id: 1 } };
     const res = {
       format: sinon.stub().callsFake(function(formatFn) {
