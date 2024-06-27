@@ -89,6 +89,7 @@ module.exports = async function (req, res, next) {
             owner: req.user.id,
             courtlistener_filepath_local: destination,
             file_id: savedFile[0],
+            ingestion_status: 'processing'
           });
 
           console.debug('[FILES]', 'Inserted document:', insertedDocument[0]);

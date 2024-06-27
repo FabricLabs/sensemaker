@@ -1329,14 +1329,30 @@ class Jeeves extends Hub {
 
       redisSubscriber.subscribe('job:completed', (message) => {
         const { job, result } = JSON.parse(message);
-        console.log('Job completed:', job.id, result);
-        updateAPI(job, result);
+        // console.log('Job completed:', job.id, result);
+        // console.log('nahuel');
+        console.log('hay q actualizar', job.method, job.params[0]);
+        console.log('resultado del job', result);
+        //job.method gives the job type, like 'IngestFile'
+        //job.params[0] will give us the file/document id
+        //result.status we can check if the job was 'COMPLETED'
+
+        if (result.status === 'COMPLETED') {
+          switch (job.method) {
+            case 'IngestFile':
+              this._handleFileIngested(job.params[0]);
+              break;
+            case 'IngestDocument':
+              this._handleDocumentIngested(job.params[0]);
+              break;
+            default:
+              console.log('Unhandled complete Job Method: ', job.method);
+              break;
+          }
+        }
       });
     });
-    // random function to show the queue results
-    function updateAPI(job, result) {
-      console.log(`Updating API for job ${job.id} with result:`, result);
-    }
+
 
     // Queue
     try {
@@ -4499,6 +4515,27 @@ class Jeeves extends Hub {
     }
 
     next();
+  }
+
+  //redis channel subscriber handlers
+  async _handleFileIngested(file_id){
+    let updated;
+    try{
+      updated = await this.db('files').where({id: file_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update file:', exception);
+    }
+    return updated;
+  }
+
+  async _handleDocumentIngested(document_id){
+    let updated;
+    try{
+      updated = await this.db('documents').where({id: document_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update document:', exception);
+    }
+    return updated;
   }
 }
 
