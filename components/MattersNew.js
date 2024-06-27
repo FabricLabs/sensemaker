@@ -147,8 +147,7 @@ class MattersNew extends React.Component {
       content: 'Please select a jurisdiction',
       pointing: 'above',
     };
-    console.log("jurisdictions", jurisdictions);
-    console.log("courts", courts);
+
     return (
       <Segment style={{ height: '97vh', overflow: 'visible' }} className='center-elements-column'>
         <Header as='h1'>New Matter</Header>

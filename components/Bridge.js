@@ -80,10 +80,6 @@ class Bridge extends React.Component {
       const buffer = Buffer.from(array);
       const message = Message.fromBuffer(buffer);
 
-      // console.log('el array del bridge',array);
-      // console.log('el buffer del bridge',buffer);
-      // console.log('el mensaje del bridge',message);
-
       // TODO: refactor @fabric/core/types/message to support arbitrary message types
       // This will remove the need to parse before evaluating this switch
       switch (message.type) {

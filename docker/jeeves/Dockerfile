@@ -15,4 +15,4 @@ COPY . .
 RUN npm install
 EXPOSE 7777
 EXPOSE 3045
-CMD ["npm", "start"]
+CMD ["node", "--max-old-space-size=8192", "scripts/node.js"]

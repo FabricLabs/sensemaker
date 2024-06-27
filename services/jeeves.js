@@ -354,7 +354,7 @@ class Jeeves extends Hub {
     // Custom Models
     // NOTE: these are tested with `llama3` but not other models
     this.outliner = new Agent({ name: 'OUTLINER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are OutlinerAI, an artificial intelligence (AI) designed to generate a list of section headers for a document to be written by other drafting AIs.  For each request, list all headings sequentially in an array, with each heading as an object containing `number`, `content` and `depth` properties.  Your responses should use the following template:\n```\n{\n  "type": "DocumentOutline",\n  "content": [\n    {\n      "number": 1,\n      "content": "Section 1",\n      "depth": 1\n    }\n  ]\n}\n```' });
-    this.drafter = new Agent({ name: 'DRAFTER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are DrafterAI, an artificial intelligence (AI) designed to draft sections of documents for later composition into complete documents.  For each request, generate the highest quality, most accurate and compelling text for the request.  Do not pretext the generated content with any decoration or explanation, simply produce the content.  Respond using Markdown.' });
+    this.drafter = new Agent({ name: 'DRAFTER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are DrafterAI, an artificial intelligence (AI) designed to draft sections of documents for later composition into complete documents.  For each request, generate the highest quality, most accurate and compelling text for the request.  Do not pretext the generated content with any decoration or explanation, simply produce the content.  You only ever produce the desired section, not the entire document, and you should expect your response to be concatenated verbatim to other sections for the complete document.  Respond using Markdown.' });
     this.citer = new Agent({ name: 'CITER', rules: this.settings.rules, prompt: 'You are CiterAI, designed to produce the correct legal citation for a specific case.  Respond using JSON.' });
     this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
     this.usa = new Agent({ name: 'USA', model: this.settings.ollama.model, prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
@@ -1345,14 +1345,27 @@ class Jeeves extends Hub {
 
       redisSubscriber.subscribe('job:completed', (message) => {
         const { job, result } = JSON.parse(message);
-        console.log('Job completed:', job.id, result);
-        updateAPI(job, result);
+
+        //job.method gives the job type, like 'IngestFile'
+        //job.params[0] will give us the file/document id
+        //result.status we can check if the job was 'COMPLETED'
+
+        if (result.status === 'COMPLETED') {
+          switch (job.method) {
+            case 'IngestFile':
+              this._handleFileIngested(job.params[0]);
+              break;
+            case 'IngestDocument':
+              this._handleDocumentIngested(job.params[0]);
+              break;
+            default:
+              console.log('Unhandled complete Job Method: ', job.method);
+              break;
+          }
+        }
       });
     });
-    // random function to show the queue results
-    function updateAPI(job, result) {
-      console.log(`Updating API for job ${job.id} with result:`, result);
-    }
+
 
     // Queue
     try {
@@ -2550,6 +2563,15 @@ class Jeeves extends Hub {
       })
     });
 
+    this.http._addRoute('GET', '/settings/admin/Overview', ROUTES.adminSettings.overview.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Settings', ROUTES.adminSettings.settings.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Users', ROUTES.adminSettings.users.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Growth', ROUTES.adminSettings.growth.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Conversations', ROUTES.adminSettings.conversations.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Services', ROUTES.adminSettings.services.bind(this));
+    this.http._addRoute('GET', '/settings/admin/Design', ROUTES.adminSettings.design.bind(this));
+
+
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
       let result = {};
 
@@ -2803,7 +2825,7 @@ class Jeeves extends Hub {
     this.trust(this.agent);
 
     // Queue up a verification job
-    this.queue._addJob({ method: 'verify', params: [] });
+    // this.queue._addJob({ method: 'verify', params: [] });
 
     // Create a heartbeat
     this._heart = setInterval(this.tick.bind(this), this.settings.interval);
@@ -4004,26 +4026,42 @@ class Jeeves extends Hub {
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
-    const tokens = this._tokenizeTerm(request.query);
-    const promises = tokens.map((token) => {
-      return new Promise((resolve, reject) => {
-        this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
-      });
-    });
+    let response = [];
 
-    const candidates = await Promise.allSettled([
-      (new Promise((resolve, reject) => {
-        setTimeout(reject, 15000, new Error('Timeout!'));
-      })),
-      promises[0] // first token only
-      // TODO: Harvard search
-      // TODO: CourtListener search
-    ]);
+    try {
+      if(request.jurisdiction_id){
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`).where('jurisdiction_id', request.jurisdiction_id);
+      } else {
+        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`);
+      }
+    } catch (exception) {
+      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
+    }
 
-    console.debug('candidates:', candidates);
-    const results = candidates.filter((x) => (x.status === 'fulfilled'));
+    return response;
 
-    return results;
+    // This search down there wasnt working, replaced it for a local search for the moment
+
+    // const tokens = this._tokenizeTerm(request.query);
+    // const promises = tokens.map((token) => {
+    //   return new Promise((resolve, reject) => {
+    //     this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
+    //   });
+    // });
+
+    // const candidates = await Promise.allSettled([
+    //   (new Promise((resolve, reject) => {
+    //     setTimeout(reject, 15000, new Error('Timeout!'));
+    //   })),
+    //   promises[0] // first token only
+    //   // TODO: Harvard search
+    //   // TODO: CourtListener search
+    // ]);
+
+    // console.debug('candidates:', candidates);
+    // const results = candidates.filter((x) => (x.status === 'fulfilled'));
+
+    // return results;
   }
 
   async _searchCourtsByTerm (term) {
@@ -4490,6 +4528,27 @@ class Jeeves extends Hub {
     }
 
     next();
+  }
+
+  //redis channel subscriber handlers
+  async _handleFileIngested(file_id){
+    let updated;
+    try{
+      updated = await this.db('files').where({id: file_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update file:', exception);
+    }
+    return updated;
+  }
+
+  async _handleDocumentIngested(document_id){
+    let updated;
+    try{
+      updated = await this.db('documents').where({id: document_id}).update({status: 'ingested', updated_at: new Date()});
+    } catch (exception) {
+      console.error('Unable to update document:', exception);
+    }
+    return updated;
   }
 }
 
