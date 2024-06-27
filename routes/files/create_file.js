@@ -1,13 +1,16 @@
 'use strict';
 
+// Dependencies
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const mimeTypes = require('mime-types');
+
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 
-module.exports = async function (req, res, next) {
-
+async function http_create_file (req, res, next) {
+  // TODO: refactor to use chaining instead of try/catch
   try {
     if (!req.user || !req.user.id) {
       res.status(401);
@@ -21,18 +24,20 @@ module.exports = async function (req, res, next) {
       return;
     }
 
+    // TODO: allow duplicate file upload
     const documentExist = await this.db('documents').where('filename', req.file.originalname).andWhere('owner','=',req.user.id).first();
-
     if (documentExist) {
       res.status(400);
       res.send({ status: 'error', message: 'Document already exist. Please upload a different one.' });
       return;
     }
 
+    // TODO: standardize the file upload logic into Jeeves (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
     const destination = path.join(userDir, safeFilename);
 
+    // TODO: restrict file types
     const mimeType = mimeTypes.lookup(destination);
     const savedFile = await this.db('files').insert({
       creator: req.user.id,
@@ -42,7 +47,6 @@ module.exports = async function (req, res, next) {
     });
 
     const insertedFile = await this.db('files').where({ id: savedFile[0] }).first(); //getting the inserted row in files
-
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
@@ -65,7 +69,6 @@ module.exports = async function (req, res, next) {
         console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
         const hash = crypto.createHash('sha256').update(data);
         const digest = hash.digest('hex');
-
         const actor = new Actor({ content: data.toString('utf8') });
 
         this.db('documents').insert({
@@ -88,6 +91,7 @@ module.exports = async function (req, res, next) {
             params: [insertedDocument[0]]
           });
 
+          // TODO: subscribe to job completion for this file (via Redis)
           this.queue.addJob({
             method: 'IngestFile',
             params: [savedFile[0]]
@@ -106,8 +110,9 @@ module.exports = async function (req, res, next) {
         });
       });
     });
-  }
-  catch (error) {
+  } catch (error) {
     console.log(error);
   }
-};
+}
+
+module.exports = http_create_file;
