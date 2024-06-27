@@ -1329,10 +1329,7 @@ class Jeeves extends Hub {
 
       redisSubscriber.subscribe('job:completed', (message) => {
         const { job, result } = JSON.parse(message);
-        // console.log('Job completed:', job.id, result);
-        // console.log('nahuel');
-        console.log('hay q actualizar', job.method, job.params[0]);
-        console.log('resultado del job', result);
+
         //job.method gives the job type, like 'IngestFile'
         //job.params[0] will give us the file/document id
         //result.status we can check if the job was 'COMPLETED'
