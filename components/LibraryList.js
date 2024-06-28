@@ -11,6 +11,8 @@ const {
   Menu,
   Label
 } = require('semantic-ui-react');
+
+// Components
 const ConversationsList = require('./ConversationsList');
 const LibrarySearch = require('./LibrarySearch');
 
@@ -22,6 +24,8 @@ const {
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_CONTRACTS,
   ENABLE_MATTERS,
+  ENABLE_UPLOADS,
+  ENABLE_FILES,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
   ENABLE_JUDGE_SEARCH,
@@ -47,14 +51,8 @@ class LibraryList extends React.Component {
       loading: false,
       search: '',
     };
-  }
 
-  componentDidMount() {
-
-  }
-
-  componentWillUnmount() {
-
+    return this;
   }
 
   render () {
@@ -135,6 +133,11 @@ class LibraryList extends React.Component {
         {USER_IS_ALPHA && ENABLE_CONTRACTS && (
           <Menu.Item as={Link} to='/contracts'>
             <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Contracts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+          </Menu.Item>
+        )}
+        {USER_IS_ALPHA && ENABLE_UPLOADS && (
+          <Menu.Item as={Link} to='/uploads'>
+            <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Uploads'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList
