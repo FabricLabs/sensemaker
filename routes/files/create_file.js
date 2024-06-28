@@ -24,17 +24,17 @@ async function http_create_file (req, res, next) {
       return;
     }
 
-    // TODO: allow duplicate file upload
-    const documentExist = await this.db('documents')
-      .where('filename', req.file.originalname)
-      .andWhere('owner', '=', req.user.id)
-      .first();
+    // // TODO: allow duplicate file upload
+    // const documentExist = await this.db('documents')
+    //   .where('filename', req.file.originalname)
+    //   .andWhere('owner', '=', req.user.id)
+    //   .first();
 
-    if (documentExist) {
-      res.status(400);
-      res.send({ status: 'error', message: 'Document already exists. Please upload a different one.' });
-      return;
-    }
+    // if (documentExist) {
+    //   res.status(400);
+    //   res.send({ status: 'error', message: 'Document already exists. Please upload a different one.' });
+    //   return;
+    // }
 
     // TODO: standardize the file upload logic into Jeeves (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);

@@ -440,7 +440,12 @@ class Dashboard extends React.Component {
         //actions here
       }
       if (action.type == 'IngestDocument') {
-        toast(<a href={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/documents/${action.fabric_id}`}>Your Document has been Ingested, view it here</a>, helpMessageToastEmitter);
+        toast(
+          <p>
+            Your document {action.title} has been Ingested, you can check it
+            <b><a href={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/documents/${action.fabric_id}`}> Here</a></b>
+          </p>,
+          helpMessageToastEmitter);
       }
     }
 

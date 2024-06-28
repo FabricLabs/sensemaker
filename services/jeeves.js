@@ -1351,9 +1351,10 @@ class Jeeves extends Hub {
                 break;
               case 'IngestDocument':
                 this._handleDocumentIngested(job.params[0]);
-                const document = await this.db.select('owner','fabric_id').from('documents').where({ id: job.params[0] }).first();
+                const document = await this.db.select('owner','fabric_id','title').from('documents').where({ id: job.params[0] }).first();
                 queueMessage.creator = document.owner;
                 queueMessage.fabric_id = document.fabric_id;
+                queueMessage.title = document.title;
                 const messageDocument = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
                 this.http.broadcast(messageDocument);
                 break;
