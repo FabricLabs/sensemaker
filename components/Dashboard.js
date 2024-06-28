@@ -20,6 +20,7 @@ const {
   Sidebar,
 } = require('semantic-ui-react');
 
+// Constants
 const {
   BRAND_NAME,
   RELEASE_NAME,
@@ -59,6 +60,7 @@ const MattersNew = require('./MattersNew');
 const MattersList = require('./MattersList');
 const MatterNewChat = require('./MatterNewChat');
 const MatterView = require('./MatterView');
+const UploadHome = require('./UploadHome');
 const UserView = require('./UserView');
 const Changelog = require('./Changelog');
 const Room = require('./Room');
@@ -68,7 +70,6 @@ const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
 const FeedbackBox = require('./FeedbackBox');
 const HelpBox = require('./HelpBox');
-
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
@@ -132,7 +133,7 @@ class Dashboard extends React.Component {
     return (<Navigate to='/settings' />);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     const { location, params, navigate } = this.props;
     // this.startProgress();
 
@@ -157,7 +158,7 @@ class Dashboard extends React.Component {
   //   }
   // }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
@@ -174,7 +175,6 @@ class Dashboard extends React.Component {
     }
   }
 
-
   handleLogout = () => {
     this.setState({
       loading: true,
@@ -189,10 +189,9 @@ class Dashboard extends React.Component {
       });
     }, 500);
   };
-  // TODO: review and determine what to do with this function
-  // handleSettings = () => {
 
-  // }
+  // TODO: review and determine what to do with this function
+  // handleSettings = () => {}
 
   startProgress = () => {
     this.intervalId = setInterval(() => {
@@ -261,7 +260,6 @@ class Dashboard extends React.Component {
 
   //this one triggers when the "i" icon in a chat message is clicked
   messageInfo = (ID) => {
-
     let newState = {
       thumbsUpClicked: false,
       thumbsDownClicked: false,
@@ -287,7 +285,6 @@ class Dashboard extends React.Component {
 
   // thumbs up handler from a chat message
   thumbsUp = (ID) => {
-
     this.setState({ thumbsDownClicked: false, openSectionBar: false, });
 
     // if thumbsUp was clicked for this message already, close sidebar
@@ -311,12 +308,10 @@ class Dashboard extends React.Component {
 
     }
     this.resetInformationSidebar();
-
   };
 
   // thumbs down handler from a chat message
   thumbsDown = (ID) => {
-
     this.setState({ thumbsUpClicked: false, openSectionBar: false, });
     // if thumbsDown was clicked for this message already, close sidebar
     if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
@@ -359,11 +354,6 @@ class Dashboard extends React.Component {
     }
     this.resetInformationSidebar();
   }
-
-
-  // toggleSidebar = (e) => {
-  //   $('.ui.sidebar').sidebar('toggle');
-  // }
 
   //this is the handler that sets which section is opened in the section bar in the left
   handleMenuItemClick = (menu) => {
@@ -463,7 +453,6 @@ class Dashboard extends React.Component {
   //====================================================//
 
   render() {
-
     // const {location, params, navigate} = this.props;
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || false;
@@ -728,6 +717,7 @@ class Dashboard extends React.Component {
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
                 <Route path="/matters/:id" element={<MatterView fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} fetchCourtById={this.props.fetchCourtById} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} />} />
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
+                <Route path="/uploads" element={<UploadHome {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 {/* TODO: fix these routes */}
                 {/* /settings/admin should render the overview */}

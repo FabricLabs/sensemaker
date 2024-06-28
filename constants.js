@@ -23,11 +23,13 @@ const EMBEDDING_MODEL = 'mxbai-embed-large';
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_CHANGELOG = false;
+const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_CONTRACTS = true;
+const ENABLE_FILES = true;
 const ENABLE_MATTERS = true;
+const ENABLE_UPLOADS = true;
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
 const ENABLE_JUDGE_SEARCH = false;
@@ -35,9 +37,9 @@ const ENABLE_OPINION_SEARCH = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_JURISDICTION_SEARCH = true;
-const ENABLE_REPORTER_SEARCH = true;
-const ENABLE_STATUTE_SEARCH = true;
-const ENABLE_VOLUME_SEARCH = true;
+const ENABLE_REPORTER_SEARCH = false;
+const ENABLE_STATUTE_SEARCH = false;
+const ENABLE_VOLUME_SEARCH = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
@@ -81,6 +83,7 @@ module.exports = {
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
+  ENABLE_FILES,
   ENABLE_JUDGE_SEARCH,
   ENABLE_OPINION_SEARCH,
   ENABLE_DOCUMENT_SEARCH,
@@ -88,6 +91,7 @@ module.exports = {
   ENABLE_JURISDICTION_SEARCH,
   ENABLE_REPORTER_SEARCH,
   ENABLE_STATUTE_SEARCH,
+  ENABLE_UPLOADS,
   ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,

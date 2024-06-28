@@ -101,6 +101,7 @@ const Conversations = require('../components/Conversations');
 
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
+const IngestFile = require('../functions/IngestFile');
 
 // Routes (Request Handlers)
 const ROUTES = require('../routes');
@@ -1300,12 +1301,7 @@ class Jeeves extends Hub {
     });
 
     // User Upload Ingest
-    this.queue._registerMethod('IngestFile', async (...params) => {
-      console.debug('[NOVO]', '[QUEUE]', 'Ingesting file...', params);
-      const file = await this.db('files').where('id', params[0]).first();
-      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(file), metadata: { id: file.id }}, 'file');
-      return { status: 'COMPLETED', ingested };
-    });
+    this.queue._registerMethod('IngestFile', IngestFile);
 
     // Trainer
     this.trainer.attachDatabase(this.db);
