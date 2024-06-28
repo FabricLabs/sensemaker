@@ -107,7 +107,10 @@ class Bridge extends React.Component {
               case 'HelpMsgAdmin':
                 this.props.responseCapture(chunk);
                 break;
-
+              case 'IngestFile':
+              case 'IngestDocument':
+                this.props.responseCapture(chunk);
+                break;
             }
           } catch (exception) {
             console.error('Could not process message:', exception);

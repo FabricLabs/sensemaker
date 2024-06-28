@@ -18,7 +18,8 @@ const {
   Icon,
   Input,
   Form,
-  TextArea
+  TextArea,
+  Message
 } = require('semantic-ui-react');
 const DocumentUploader = require('./DocumentUploader');
 
@@ -100,6 +101,14 @@ class DocumentHome extends React.Component {
                         <h3><Link to={"/documents/" + instance.fabric_id}>(doc #{instance.fabric_id}) </Link></h3>
                       )}
                       <Label.Group basic>
+                        {instance.ingestion_status === 'processing' &&
+                            <Message icon size='tiny'>
+                            <Icon name='circle notched' loading />
+                            <Message.Content>
+                              <Message.Header>Your file is being ingested by the AI</Message.Header>
+                            </Message.Content>
+                          </Message>
+                        }
                         <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
                         <p>{instance.description}</p>
                       </Label.Group>
