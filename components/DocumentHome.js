@@ -105,7 +105,7 @@ class DocumentHome extends React.Component {
                             <Message icon size='tiny'>
                             <Icon name='circle notched' loading />
                             <Message.Content>
-                              <Message.Header>Your file is being ingested by the AI</Message.Header>
+                              <Message.Header>Your document is being ingested by the AI</Message.Header>
                             </Message.Content>
                           </Message>
                         }
