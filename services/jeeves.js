@@ -1175,7 +1175,8 @@ class Jeeves extends Hub {
         body: JSON.stringify({ model: this.settings.ollama.models[i] })
       });
 
-      console.debug('[NOVO]', '[PRIME]', 'Primed:', prime);
+      // TODO: check for successful prime
+      console.debug('[NOVO]', '[PRIME]', 'Primed:', await prime.json());
     }
   }
 
@@ -1301,7 +1302,7 @@ class Jeeves extends Hub {
     });
 
     // User Upload Ingest
-    this.queue._registerMethod('IngestFile', IngestFile);
+    this.queue._registerMethod('IngestFile', IngestFile.bind(this));
 
     // Trainer
     this.trainer.attachDatabase(this.db);

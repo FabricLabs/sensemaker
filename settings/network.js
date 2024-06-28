@@ -25,7 +25,6 @@ const DURINSBANE = '10.8.0.35';
 const GOTHMOG = '10.8.0.60';
 
 module.exports = {
-/*
   local: {
     name: 'LOCAL',
     prompt: baseline.toString('utf8'),
@@ -35,7 +34,7 @@ module.exports = {
     secure: false,
     temperature: 0
   },
-  alpha: {
+  /* alpha: {
     name: 'ALPHA',
     prompt: baseline.toString('utf8'),
     model: 'llama3',
@@ -43,7 +42,7 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  },*/
+  }, */
   balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
@@ -62,7 +61,7 @@ module.exports = {
     secure: false,
     temperature: 0
   },
-  gothmog: {
+  'llama3-70b-fp16': {
     name: 'GOTHMOG',
     prompt: baseline.toString('utf8'),
     model: 'llama3:70b-instruct-fp16',
@@ -74,7 +73,7 @@ module.exports = {
   gemma: {
     name: 'GEMMA',
     prompt: baseline.toString('utf8'),
-    model: 'gemma',
+    model: 'gemma2',
     host: GOTHMOG,
     port: 11434,
     secure: false,

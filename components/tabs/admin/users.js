@@ -2,7 +2,6 @@
 
 const React = require('react');
 const AdminUsers = require('../../AdminSettingsUsers');
-const AdminHelp = require('../../AdminSettingsHelp');
 const SignUpForm = require('../../SignUpForm');
 
 const {
@@ -58,11 +57,9 @@ class AdminUsersTab extends React.Component {
   };
 
   render () {
-
-    return ( 
+    return (
       <adminUsersTab>
           <AdminUsers {...this.props} />
-          <AdminHelp {...this.props}/>
           <section style={{ width: '100%', marginTop:'1em' }} className='col-center'>
             <Header as='h3'>Create User</Header>
             <SignUpForm

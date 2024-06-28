@@ -4,6 +4,7 @@
 ollama pull llama2 # runs in most places (8GB RAM?)
 ollama pull mistral # runs in most places
 ollama pull gemma # runs in most places
+ollama pull gemma2 # runs in most places
 
 ### Very Large Models
 ollama pull mixtral # runs in most places (16GB RAM?)
@@ -11,7 +12,7 @@ ollama pull mixtral:8x22b
 ollama pull command-r-plus # too slow (104B parameters)
 ollama pull llama3
 ollama pull llama3:70b
-ollama pull llama3:70b-instruct-fp16
+ollama pull llama3:70b-instruct-fp16 # Biggest, highest-precision target
 
 ### Untested Models
 ollama pull wizardlm2

@@ -1,10 +1,8 @@
 'use strict';
 
-// Settings
-const settings = require('../settings/local');
-
 // Dependencies
 const { createClient } = require('redis');
+const merge = require('lodash.merge');
 
 // Fabric Types
 const Actor = require('@fabric/core/types/actor');
@@ -12,6 +10,13 @@ const Message = require('@fabric/core/types/message');
 
 // Jeeves
 const Jeeves = require('../services/jeeves');
+
+// Settings
+const settings = merge({}, require('../settings/local'), {
+  http: {
+    listen: false // Worker does not need to listen for HTTP traffic
+  }
+});
 
 // Main Program
 async function main (input = {}) {
