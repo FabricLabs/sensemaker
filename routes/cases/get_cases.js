@@ -14,7 +14,6 @@ module.exports = function (req, res, next) {
   res.format({
     json: async () => {
 
-      // If cached data exists, assign it to cases. Otherwise, assign the db call to cases.
       var cases = await this.db.select(
         'id',
         'title',
@@ -26,12 +25,11 @@ module.exports = function (req, res, next) {
       ).from('cases')
        .whereNotNull('harvard_case_law_id')
        .whereNotNull('harvard_case_law_pdf')
-       .orderBy('decision_date', 'desc')
-       .cache("GET /cases HTTP/1.1")
-       .paginate({
+       .orderBy('decision_date', 'desc').paginate({
           perPage: PER_PAGE_LIMIT,
-          currentPage: 1
-      });
+          currentPage: 1,
+          returnJSON: false
+      }).cache("GET /cases HTTP/1.1");
 
       res.setHeader('X-Pagination', true);
       res.setHeader('X-Pagination-Current', `${cases.pagination.from}-${cases.pagination.to}`);
