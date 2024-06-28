@@ -1,12 +1,16 @@
 'use strict';
 
+// Dependencies
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const mimeTypes = require('mime-types');
+
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 
-module.exports = async function (req, res, next) {
+async function http_create_file (req, res, next) {
+  // TODO: refactor to use chaining instead of try/catch
   try {
     if (!req.user || !req.user.id) {
       res.status(401);
@@ -20,6 +24,7 @@ module.exports = async function (req, res, next) {
       return;
     }
 
+    // TODO: allow duplicate file upload
     const documentExist = await this.db('documents')
       .where('filename', req.file.originalname)
       .andWhere('owner', '=', req.user.id)
@@ -31,10 +36,12 @@ module.exports = async function (req, res, next) {
       return;
     }
 
+    // TODO: standardize the file upload logic into Jeeves (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
     const destination = path.join(userDir, safeFilename);
 
+    // TODO: restrict file types
     const mimeType = mimeTypes.lookup(destination);
     const savedFile = await this.db('files').insert({
       creator: req.user.id,
@@ -76,9 +83,7 @@ module.exports = async function (req, res, next) {
           console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
           const hash = crypto.createHash('sha256').update(data);
           const digest = hash.digest('hex');
-
           const actor = new Actor({ content: data.toString('utf8') });
-
           const insertedDocument = await this.db('documents').insert({
             title: req.file.originalname,
             content: data.toString('utf8'),
@@ -118,4 +123,6 @@ module.exports = async function (req, res, next) {
     res.status(500);
     res.send({ status: 'error', message: 'An unexpected error occurred.', content: error });
   }
-};
+}
+
+module.exports = http_create_file;

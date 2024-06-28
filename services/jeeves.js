@@ -1343,24 +1343,42 @@ class Jeeves extends Hub {
     redisSubscriber.connect().then(() => {
       console.log('Connected to Redis for subscribing');
 
-      redisSubscriber.subscribe('job:completed', (message) => {
+      redisSubscriber.subscribe('job:completed', async (message) => {
         const { job, result } = JSON.parse(message);
 
         //job.method gives the job type, like 'IngestFile'
         //job.params[0] will give us the file/document id
         //result.status we can check if the job was 'COMPLETED'
 
+        const queueMessage = {
+          type: job.method,
+          param_id: job.params[0],
+        }
+
         if (result.status === 'COMPLETED') {
-          switch (job.method) {
-            case 'IngestFile':
-              this._handleFileIngested(job.params[0]);
-              break;
-            case 'IngestDocument':
-              this._handleDocumentIngested(job.params[0]);
-              break;
-            default:
-              console.log('Unhandled complete Job Method: ', job.method);
-              break;
+          try {
+            switch (job.method) {
+              case 'IngestFile':
+                this._handleFileIngested(job.params[0]);
+                const file = await this.db.select('creator').from('files').where({ id: job.params[0] }).first();
+                queueMessage.creator = file.creator;
+                const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+                this.http.broadcast(messageFile);
+                break;
+              case 'IngestDocument':
+                this._handleDocumentIngested(job.params[0]);
+                const document = await this.db.select('owner','fabric_id').from('documents').where({ id: job.params[0] }).first();
+                queueMessage.creator = document.owner;
+                queueMessage.fabric_id = document.fabric_id;
+                const messageDocument = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+                this.http.broadcast(messageDocument);
+                break;
+              default:
+                console.log('[NOVO] Unhandled complete Job Method: ', job.method);
+                break;
+            }
+          } catch (exception) {
+            console.error('[NOVO] Redis subscriber error:', exception);
           }
         }
       });
@@ -4544,7 +4562,7 @@ class Jeeves extends Hub {
   async _handleDocumentIngested(document_id){
     let updated;
     try{
-      updated = await this.db('documents').where({id: document_id}).update({status: 'ingested', updated_at: new Date()});
+      updated = await this.db('documents').where({id: document_id}).update({ingestion_status: 'ingested', updated_at: new Date()});
     } catch (exception) {
       console.error('Unable to update document:', exception);
     }
