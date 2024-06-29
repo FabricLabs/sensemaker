@@ -390,8 +390,7 @@ class Jeeves extends Hub {
       function paginate({ perPage = 10,
                           currentPage = 1,
                           isFromStart = false,
-                          isLengthAware = false,
-                          returnJSON = true }) {
+                          isLengthAware = false }) {
         if (isNaN(perPage)) {
           throw new Error('Paginate error: perPage must be a number.');
         }
@@ -460,17 +459,12 @@ class Jeeves extends Hub {
             from: offset,
             to: offset + result.length,
           });
-    
           return { data: result, pagination };
         });
     
-        if (returnJSON) {
-          return paginated;
-        }
-        else {
-          this.paginated = paginated;
-          return this;
-        }
+        paginated.redis = this.redis;
+        paginated.cache = this.cache;
+        return paginated;
       }
     );
 
@@ -490,7 +484,7 @@ class Jeeves extends Hub {
           return JSON.parse(cachedData);
         }
         else {
-          let data = await this.paginated;
+          let data = await this;
           this.redis.set(fingerprint, JSON.stringify(data), {NX: true});
           return data;
         }

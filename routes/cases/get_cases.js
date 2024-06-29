@@ -25,10 +25,10 @@ module.exports = function (req, res, next) {
       ).from('cases')
        .whereNotNull('harvard_case_law_id')
        .whereNotNull('harvard_case_law_pdf')
-       .orderBy('decision_date', 'desc').paginate({
+       .orderBy('decision_date', 'desc')
+       .paginate({
           perPage: PER_PAGE_LIMIT,
-          currentPage: 1,
-          returnJSON: false
+          currentPage: 1
       }).cache("GET /cases HTTP/1.1");
 
       res.setHeader('X-Pagination', true);
