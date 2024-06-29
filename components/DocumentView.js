@@ -18,6 +18,7 @@ const {
   Modal,
   Form,
   Popup,
+  Message
 } = require('semantic-ui-react');
 
 const TextareaAutosize = require('react-textarea-autosize').default;
@@ -166,12 +167,21 @@ class DocumentView extends React.Component {
                 <Header as='h3' style={{ margin: 0 }}>{documents.document.title}</Header>
                 <Header as="h3" style={{ margin: 0 }}><Link to={"/documents"}><Icon name='left chevron' /> Back to documents</Link></Header>
               </div>
-              <Link to={'/conversations/documents/' + documents.document.fabric_id} style={{ marginBottom: '2.5em' }} onClick={() => this.props.resetChat()}>
-                <Button
-                  primary
-                  content='Start Conversation'
-                />
-              </Link>
+              {documents.document.ingestion_status === 'processing' ? (
+                <Message icon size='tiny'>
+                  <Icon name='circle notched' loading />
+                  <Message.Content>
+                    <Message.Header>Your document is being ingested by the AI</Message.Header>
+                  </Message.Content>
+                </Message>
+              ) : (
+                <Link to={'/conversations/documents/' + documents.document.fabric_id} style={{ marginBottom: '2.5em' }} onClick={() => this.props.resetChat()}>
+                  <Button
+                    primary
+                    content='Start Conversation'
+                  />
+                </Link>
+              )}
               <div style={{ display: 'flex', flexDirection: 'row', marginBottom: '1em', marginTop: '1em' }}>
                 <Label><Icon name='calendar' />Created at: {formatDate(documents.document.created_at)}</Label>
                 <Label><Icon name='calendar' />Modified at: {formatDate(documents.document.created_at)}</Label>

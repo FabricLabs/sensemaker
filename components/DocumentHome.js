@@ -18,7 +18,8 @@ const {
   Icon,
   Input,
   Form,
-  TextArea
+  TextArea,
+  Message
 } = require('semantic-ui-react');
 const DocumentUploader = require('./DocumentUploader');
 
@@ -66,7 +67,7 @@ class DocumentHome extends React.Component {
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments}/>
+          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
@@ -100,6 +101,14 @@ class DocumentHome extends React.Component {
                         <h3><Link to={"/documents/" + instance.fabric_id}>(doc #{instance.fabric_id}) </Link></h3>
                       )}
                       <Label.Group basic>
+                        {instance.ingestion_status === 'processing' &&
+                          <Message icon size='tiny'>
+                            <Icon name='circle notched' loading />
+                            <Message.Content>
+                              <Message.Header>Your document is being ingested by the AI</Message.Header>
+                            </Message.Content>
+                          </Message>
+                        }
                         <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
                         <p>{instance.description}</p>
                       </Label.Group>
