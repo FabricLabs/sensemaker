@@ -39,7 +39,11 @@ async function main (input = {}) {
 
   // Sensemaker
   const trainer = new Trainer(input);
+
+  // Attach Database to Trainer
   trainer.attachDatabase(db);
+
+  // Start Trainer
   await trainer.start();
 
   // Queue
@@ -91,9 +95,10 @@ async function main (input = {}) {
   }
 
   if (ENABLE_UPLOAD_INGEST) {
-    const uploadStream = db('files').select('*').stream();
+    // TODO: warn about this loop on startup
+    const uploadStream = db('files').select('*').whereNull('embedding_id').stream();
     for await (const file of uploadStream) {
-      console.debug('[TRAINER]', '[MAIN]', '[UPLOAD]', 'Ingesting:', file);
+      console.debug('[TRAINER]', '[MAIN]', '[UPLOAD]', 'Found upload without an embedding, ingesting now:', file);
       const start = new Date();
       try {
         const content = fs.readFileSync(file.path);

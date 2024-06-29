@@ -13,6 +13,7 @@ const Jeeves = require('../services/jeeves');
 
 // Settings
 const settings = merge({}, require('../settings/local'), {
+  frequency: 1,
   http: {
     listen: false // Worker does not need to listen for HTTP traffic
   }

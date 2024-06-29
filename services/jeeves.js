@@ -1302,7 +1302,7 @@ class Jeeves extends Hub {
     });
 
     // User Upload Ingest
-    this.queue._registerMethod('IngestFile', IngestFile.bind(this));
+    this.queue._registerMethod('IngestFile', IngestFile, this);
 
     // Trainer
     this.trainer.attachDatabase(this.db);
@@ -4512,7 +4512,7 @@ class Jeeves extends Hub {
   }
 
   //redis channel subscriber handlers
-  async _handleFileIngested(file_id){
+  async _handleFileIngested (file_id) {
     let updated;
     try{
       updated = await this.db('files').where({id: file_id}).update({status: 'ingested', updated_at: new Date()});
@@ -4522,10 +4522,10 @@ class Jeeves extends Hub {
     return updated;
   }
 
-  async _handleDocumentIngested(document_id){
+  async _handleDocumentIngested (document_id) {
     let updated;
     try{
-      updated = await this.db('documents').where({id: document_id}).update({status: 'ingested', updated_at: new Date()});
+      updated = await this.db('documents').where({ id: document_id }).update({ ingestion_status: 'ingested', updated_at: new Date()});
     } catch (exception) {
       console.error('Unable to update document:', exception);
     }

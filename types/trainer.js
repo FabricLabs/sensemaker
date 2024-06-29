@@ -208,6 +208,7 @@ class Trainer extends Service {
         reject(exception);
       }).then(async (response) => {
         const json = await response.json();
+        console.debug('got embedding json:', json);
         const inserted = await this.db('embeddings').insert({
           fabric_id: actor.id,
           // text: document.content, // TODO: re-work storage, use document ID instead

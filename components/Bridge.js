@@ -12,8 +12,11 @@ const {
 // Fabric Types
 const Message = require('@fabric/core/types/message');
 
+/**
+ * Manages a WebSocket connection to a remote server.
+ */
 class Bridge extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.settings = Object.assign({
@@ -37,15 +40,15 @@ class Bridge extends React.Component {
     return this;
   }
 
-  get authority() {
+  get authority () {
     return ((this.settings.secure) ? `wss` : `ws`) + `://${this.settings.host}:${this.settings.port}`;
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.start();
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     this.connections.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.close();
@@ -53,76 +56,16 @@ class Bridge extends React.Component {
     });
   }
 
-  connect(path) {
+  connect (path) {
     console.debug('[BRIDGE]', 'Opening connection...');
     this.ws = new WebSocket(`${this.authority}${path}`);
 
     // TODO: re-evaluate multiple connections
     this.connections.push(this.ws);
 
-    this.ws.onopen = () => {
-      this.attempts = 1;
-      const now = Date.now();
-      const message = Message.fromVector(['Ping', now.toString()]);
-      this.ws.send(message.toBuffer());
-    };
-
-    this.ws.onmessage = async (msg) => {
-      // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
-      if (!msg.data || !msg.data.arrayBuffer) {
-        const warning = `Message does not provide an ArrayBuffer:`;
-        console.debug('[BRIDGE]', 'No arraybuffer:', warning, msg);
-        // this.emit('warning', `${warning} ${msg}`);
-        return;
-      }
-
-      const array = await msg.data.arrayBuffer();
-      const buffer = Buffer.from(array);
-      const message = Message.fromBuffer(buffer);
-
-      // TODO: refactor @fabric/core/types/message to support arbitrary message types
-      // This will remove the need to parse before evaluating this switch
-      switch (message.type) {
-        default:
-          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
-          break;
-        case 'GenericMessage':
-          try {
-            const chunk = JSON.parse(message.body);
-
-            switch (chunk.type) {
-              case 'MessageStart':
-                const selector = `[data-message-id="` + chunk.message_id + `"]`;
-
-                setTimeout(() => {
-                  const target = document.querySelector(selector);
-                }, 250);
-
-                this.addJob('MessageStart', chunk);
-                break;
-              case 'MessageChunk':
-                this.addJob('MessageChunk', chunk);
-                break;
-              case 'HelpMsgUser':
-              case 'HelpMsgAdmin':
-                this.props.responseCapture(chunk);
-                break;
-
-            }
-          } catch (exception) {
-            console.error('Could not process message:', exception);
-          }
-
-          break;
-      }
-
-      try {
-        const data = JSON.parse(msg.body);
-        this.setState({ data });
-      } catch (e) {
-        this.setState({ error: e });
-      }
-    };
+    // Attach Event Handlers
+    this.ws.onopen = this.onSocketOpen.bind(this);
+    this.ws.onmessage = this.onSocketMessage.bind(this);
 
     this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'Error:', error);
@@ -140,15 +83,15 @@ class Bridge extends React.Component {
     };
   }
 
-  generateInterval(attempts) {
+  generateInterval (attempts) {
     return Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
   }
 
-  addJob(type, data) {
+  addJob (type, data) {
     this.queue.push({ type, data });
   }
 
-  takeJob() {
+  takeJob () {
     if (!this.queue.length) return;
     const job = this.queue.shift();
     if (!job) return;
@@ -169,7 +112,7 @@ class Bridge extends React.Component {
     }
   }
 
-  render() {
+  render () {
     const { data, error } = this.state;
 
     if (error && this.settings.debug) {
@@ -192,27 +135,91 @@ class Bridge extends React.Component {
     );
   }
 
-  start() {
+  start () {
     this.connect('/');
     // this.connect('/conversations');
     this._heartbeat = setInterval(this.tick.bind(this), this.settings.tickrate);
   }
 
-  stop() {
+  stop () {
     if (this._heartbeat) clearInterval(this._heartbeat);
   }
 
-  tick() {
+  tick () {
     this.takeJob();
   }
 
-  subscribe(channel) {
+  subscribe (channel) {
     const message = Message.fromVector(['SUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }
 
-  unsubscribe(channel) {
+  unsubscribe (channel) {
     const message = Message.fromVector(['UNSUBSCRIBE', channel]);
+    this.ws.send(message.toBuffer());
+  }
+
+  async onSocketMessage (msg) {
+    // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
+    if (!msg.data || !msg.data.arrayBuffer) {
+      const warning = `Message does not provide an ArrayBuffer:`;
+      console.debug('[BRIDGE]', 'No arraybuffer:', warning, msg);
+      // this.emit('warning', `${warning} ${msg}`);
+      return;
+    }
+
+    const array = await msg.data.arrayBuffer();
+    const buffer = Buffer.from(array);
+    const message = Message.fromBuffer(buffer);
+
+    // TODO: refactor @fabric/core/types/message to support arbitrary message types
+    // This will remove the need to parse before evaluating this switch
+    switch (message.type) {
+      default:
+        console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+        break;
+      case 'GenericMessage':
+        try {
+          const chunk = JSON.parse(message.body);
+
+          switch (chunk.type) {
+            case 'MessageStart':
+              const selector = `[data-message-id="` + chunk.message_id + `"]`;
+
+              setTimeout(() => {
+                const target = document.querySelector(selector);
+              }, 250);
+
+              this.addJob('MessageStart', chunk);
+              break;
+            case 'MessageChunk':
+              this.addJob('MessageChunk', chunk);
+              break;
+            case 'HelpMsgUser':
+            case 'HelpMsgAdmin':
+              this.props.responseCapture(chunk);
+              break;
+
+          }
+        } catch (exception) {
+          console.error('Could not process message:', exception);
+        }
+
+        break;
+    }
+
+    try {
+      const data = JSON.parse(msg.body);
+      this.setState({ data });
+    } catch (e) {
+      this.setState({ error: e });
+    }
+  }
+
+  async onSocketOpen () {
+    this.attempts = 1;
+    const now = Date.now();
+    const message = Message.fromVector(['Ping', now.toString()]);
     this.ws.send(message.toBuffer());
   }
 }
