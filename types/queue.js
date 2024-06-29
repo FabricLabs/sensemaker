@@ -86,6 +86,7 @@ class Queue extends Actor {
           this._completeJob(this._state.current),
           new Promise((resolve, reject) => {
             setTimeout(() => {
+              console.error('[QUEUE]', 'Job timed out:', this._state.current);
               reject(new Error('Job timed out.'));
             }, this.interval);
           })

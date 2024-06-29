@@ -61,6 +61,7 @@ class UploadHome extends React.Component {
 
     return (
       <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
+        <Button color='green' floated='right' as={Link} to='/uploads#new'>Upload File &raquo;</Button>
         <h1>Files</h1>
         <p><strong>{totalUploads}</strong> files.</p>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
