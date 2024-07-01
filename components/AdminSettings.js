@@ -115,7 +115,7 @@ class AdminSettings extends React.Component {
     this.props.navigate('/settings/admin/' + path)
   }
 
-  render() {
+  render () {
     const { stats, inquiries, invitation,  } = this.props;
     const {activeIndex } = this.state;
 
@@ -124,26 +124,32 @@ class AdminSettings extends React.Component {
     // TODO: add pagination to users
     const panes = [
       {
-        menuItem: 'Overview', render: () => 
+        menuItem: 'Overview', render: () =>
         <Tab.Pane loading={stats.loading}>
-          <AdminOverviewTab {...this.props}/>
+          <AdminOverviewTab {...this.props} />
         </Tab.Pane>
       },
       {
-        menuItem: 'Settings', render: () => 
+        menuItem: 'Announcements', render: () =>
+        <Tab.Pane loading={this.state.loading}>
+          <AnnouncementCreator></AnnouncementCreator>
+        </Tab.Pane>
+      },
+      {
+        menuItem: 'Settings', render: () =>
         <Tab.Pane loading={this.state.loading}>
           <AdminSettingsTab {...this.props} />
         </Tab.Pane>
       },
       {
-        menuItem: 'Users', render: () => 
+        menuItem: 'Users', render: () =>
         <Tab.Pane loading={this.state.loading} className='col-center'>
           <AdminUsersTab {...this.props} />
           {/* <AccountCreator register={register} onRegisterSuccess={onRegisterSuccess} auth={this.props.auth}/> */}
         </Tab.Pane>
       },
       {
-        menuItem: 'Growth', render: () => 
+        menuItem: 'Growth', render: () =>
         <Tab.Pane loading={inquiries.loading || invitation.loading}>
           <AdminGrowthTab {...this.props} />
         </Tab.Pane>
@@ -155,14 +161,15 @@ class AdminSettings extends React.Component {
         </Tab.Pane>,
       },
       {
-        menuItem: 'Services', render: () => 
+        menuItem: 'Services', render: () =>
         <Tab.Pane loading={this.state.loading}>
           <AdminServicesTab {...this.props} />
         </Tab.Pane>
       },
       {
-        menuItem: 'Design', render: () => <Tab.Pane loading={this.state.loading}>
-          <AdminDesign {...this.props}/>
+        menuItem: 'Design', render: () =>
+        <Tab.Pane loading={this.state.loading}>
+          <AdminDesign {...this.props} />
         </Tab.Pane>
       }
     ];
@@ -173,7 +180,6 @@ class AdminSettings extends React.Component {
           <Header as='h2'>Admin</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Tab panes={panes} activeIndex={activeIndex} onTabChange={this.handleTabChange}/>
-          <AnnouncementCreator></AnnouncementCreator>
         </Segment>
       </jeeves-admin-settings>
     );

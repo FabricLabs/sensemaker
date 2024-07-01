@@ -67,7 +67,7 @@ class DocumentHome extends React.Component {
         <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
           <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
-          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments}/>
+          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
@@ -102,7 +102,7 @@ class DocumentHome extends React.Component {
                       )}
                       <Label.Group basic>
                         {instance.ingestion_status === 'processing' &&
-                            <Message icon size='tiny'>
+                          <Message icon size='tiny'>
                             <Icon name='circle notched' loading />
                             <Message.Content>
                               <Message.Header>Your document is being ingested by the AI</Message.Header>

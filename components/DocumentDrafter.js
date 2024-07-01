@@ -259,7 +259,7 @@ class DocumentDrafter extends React.Component {
               value={documentType}
               fluid
             />
-            <Button color='green' disabled={!documentType} style={{ marginTop: '2em' }} fluid onClick={() => this.setState({ stepType: false, stepContext: true, attemptsCounter: 0 })}>Next <Icon name='chevron right' /></Button>
+            <Button color='green' size='big' disabled={!documentType} style={{ marginTop: '2em' }} fluid onClick={() => this.setState({ stepType: false, stepContext: true, attemptsCounter: 0 })}>Next <Icon name='chevron right' /></Button>
           </section>
         )}
         {stepContext && (
@@ -276,7 +276,7 @@ class DocumentDrafter extends React.Component {
             {/* <DocumentUploader drafterSection={true} files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments}/> */}
 
             <div className='col-center' style={{ width: '100%', marginTop: '2em' }}>
-              <Button.Group widths='2' style={{ maxWidth: '400px' }}>
+              <Button.Group size='big' widths='2' style={{ maxWidth: '400px' }}>
                 <Button primary icon onClick={() => this.setState({ stepContext: false, stepType: true, attemptsCounter: 0 })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' onClick={() => this.createOutline(documentType, context)} icon loading={outlineLoading} disabled={!context}>Draft Outline <Icon name='chevron right' /></Button>
               </Button.Group>
@@ -417,7 +417,7 @@ class DocumentDrafter extends React.Component {
               </Segment>
             </div>
             <div className='col-center' style={{ marginTop: '2em', width: '100%' }}>
-              <Button.Group widths='2' style={{ maxWidth: '400px' }}>
+              <Button.Group size='big' widths='2' style={{ maxWidth: '400px' }}>
                 <Button primary icon onClick={() => this.setState({ stepContext: true, stepReview: false, attemptsCounter: 0 })} disabled={outlineLoading}><Icon name='chevron left' /> Back</Button>
                 <Button color='green' icon disabled={outlineLoading} onClick={() => this.createDocumentDraft()}>Draft Document<Icon name='chevron right' /></Button>
               </Button.Group>

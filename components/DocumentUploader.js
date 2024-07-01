@@ -40,9 +40,9 @@ class DocumentUploader extends React.Component {
     if (files !== prevProps.files && this.state.uploading && !files.loading) {
       if (files.fileUploaded) {
         this.setState({ uploadSuccess: true, file_id: files.fileId });
-        if(drafterSection){
+        if (drafterSection) {
           this.props.attachFile(this.state.file);
-        }else{
+        } else {
           this.props.fetchDocuments();
         }
       } else {
@@ -123,16 +123,13 @@ class DocumentUploader extends React.Component {
               </Message>
             ) : (
               <Message positive>
+                <Message.Header>Document uploaded successfully!</Message.Header>
                 <Message.Content>
-                  Document uploaded successfully! Now you can start a new conversation about this document.
+                  Novo is processing your Document, you will be able to start conversations about this conversation as soon the ingestion is complete.
                 </Message.Content>
-                <Link to={'/conversations/documents/' + files.fabric_id} onClick={() => this.props.resetChat()}>
-                  <Button
-                    primary
-                    content='Start Conversation'
-                    style={{ marginTop: '1em' }}
-                  />
-                </Link>
+                <Message.Content>
+                  You will receive a notification when the process is complete. You can check your document <b><Link to={'/documents/' + files.fabric_id}>Here</Link></b>
+                </Message.Content>
               </Message>
             )}
           </Form.Field>

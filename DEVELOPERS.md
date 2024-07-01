@@ -43,3 +43,10 @@ All other configuration options for your local node live in `settings/local.js` 
 - `email` — configures email settings
   - `enable` — boolean (true or false)
   - `host` — hostname for outbound email
+
+## Style
+- semicolon not optional
+- explicit over implicit (prefer clarity over brevity)
+- spaces after function names, not after calls
+- no double spacing (maximum one empty line)
+- newline at EOF

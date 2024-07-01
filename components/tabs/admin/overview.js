@@ -8,6 +8,8 @@ const {
   Statistic,
 } = require('semantic-ui-react');
 
+const AdminHelp = require('../../AdminSettingsHelp');
+
 class AdminOverviewTab extends React.Component {
   constructor(props) {
     super(props);
@@ -93,13 +95,7 @@ class AdminOverviewTab extends React.Component {
           <Statistic.Value>{invitationsTotal}</Statistic.Value>
           <Statistic.Label>Invited</Statistic.Label>
         </Statistic>
-        <Header as='h4'>Resources</Header>
-        <List>
-          <List.Item>
-            <Icon name='file alternate outline' />
-            <a href="/courts.sql">Courts (SQL)</a>
-          </List.Item>
-        </List>
+        <AdminHelp {...this.props} />
       </adminOverviewTab>
     )
   }

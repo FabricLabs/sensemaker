@@ -74,7 +74,17 @@ module.exports = {
   },
   worker: true,
   workers: 8,
-  agents: merge({}, network, {}),
+  agents: merge({
+    local: {
+      name: 'LOCAL',
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama3',
+      host: 'localhost',
+      port: 11434,
+      secure: false,
+      temperature: 0
+    }
+  }, network, {}),
   pipeline: {
     enable: false,
     consensus: ['socrates']

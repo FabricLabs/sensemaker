@@ -39,7 +39,7 @@ module.exports = async function (req, res, next) {
       title: obj.title || req.body.type + ' title',
       content: obj.content,
       status: 'draft',
-      ingestion_status: 'processing'
+      ingestion_status: 'ingested'
     });
 
     const documentId = created[0];  // Assuming created returns an array with the new document ID

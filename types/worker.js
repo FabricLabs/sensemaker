@@ -7,23 +7,34 @@ const fetch = require('cross-fetch');
 const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
+// Types
+const Queue = require('./queue');
+
+/**
+ * Worker service.
+ */
 class Worker extends Service {
   constructor (settings = {}) {
     super(settings);
 
     this.settings = Object.assign({
       authority: 'jeeves.dev',
-      frequency: 1,
+      frequency: 1, // Hz
       state: {
         jobs: [],
         objects: {}
       }
     }, settings);
 
+    // Core Queue
+    this.queue = new Queue(this.settings);
+
+    // Heartbeat
     this._timer = setInterval(() => {
       // console.debug('...keepalive');
     }, 5000);
 
+    // Local State
     this._state = {
       content: this.settings.state,
       current: null,
@@ -31,10 +42,8 @@ class Worker extends Service {
       types: {},
       working: false
     };
-  }
 
-  get cases () {
-    return this._state.content.cases;
+    return this;
   }
 
   get jobStack () {
@@ -75,6 +84,8 @@ class Worker extends Service {
       // console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
       await this._takeJob();
     }, (1 / this.settings.frequency) * 1000);
+
+    await this.queue.start();
 
     this.commit();
 

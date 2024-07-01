@@ -137,7 +137,7 @@ class LibraryList extends React.Component {
         )}
         {USER_IS_ALPHA && ENABLE_UPLOADS && (
           <Menu.Item as={Link} to='/uploads'>
-            <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Uploads'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='upload' /> {!this.state.sidebarCollapsed && 'Uploads'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList
