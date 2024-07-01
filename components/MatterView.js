@@ -73,7 +73,7 @@ class MatterView extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { matters, jurisdictions, courts } = this.props;
+    const { matters, jurisdictions, courts, files } = this.props;
 
     if (this.props.id !== prevProps.id) {
       this.props.fetchMatter(this.props.id);
@@ -133,6 +133,9 @@ class MatterView extends React.Component {
         });
         this.setState({ courtsOptions: options });
       }
+    }
+    if(prevProps.files !== files) {
+      this.props.fetchMatterFiles(this.props.id);
     }
   };
 
@@ -441,6 +444,7 @@ class MatterView extends React.Component {
                           <Table.HeaderCell>Uploaded</Table.HeaderCell>
                           <Table.HeaderCell>Modified</Table.HeaderCell>
                           <Table.HeaderCell>Actions</Table.HeaderCell>
+                          <Table.HeaderCell>Ingested</Table.HeaderCell>
                         </Table.Row>
                       </Table.Header>
                       {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
@@ -457,10 +461,20 @@ class MatterView extends React.Component {
                                     trigger={
                                       <Button
                                         icon='trash alternate'
+                                        size='big'
                                         onClick={() => this.setState({ confirmFileDelete: true, fileDeleting: instance.id })}
                                       />
                                     }
                                   />
+                                </Table.Cell>
+                                <Table.Cell  textAlign="center">
+                                  {instance.status !== 'ingested' ? (
+                                    <Popup content="Your File is being Ingested by the AI" trigger={
+                                      <Icon name='circle notch' loading size='big'/>
+                                    } />
+                                  ) : (
+                                    <Icon name='check' color='green' size='big'/>
+                                  )}
                                 </Table.Cell>
                               </Table.Row>
                             )
