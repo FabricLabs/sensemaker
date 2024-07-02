@@ -427,9 +427,16 @@ class Dashboard extends React.Component {
         toast('You have a message from an assistant!', helpMessageToastEmitter);
       }
       if (action.type == 'IngestFile') {
-        this.props.fetchFiles();
+        if(action.completed){
+          toast(
+            <p>
+              Your file <b>{action.filename}</b> has been Ingested!.
+            </p>,
+            helpMessageToastEmitter);
+          }
+          this.props.fetchFiles();
       }
-      if (action.type == 'IngestDocument') {
+      if (action.type == 'IngestDocument' && isAdmin) {
         toast(
           <p>
             Your document {action.title} has been Ingested, you can check it

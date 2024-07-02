@@ -8,6 +8,8 @@ const mimeTypes = require('mime-types');
 
 // Fabric Types
 const Actor = require('@fabric/core/types/actor');
+const Message = require('@fabric/core/types/message');
+
 
 async function http_create_file (req, res, next) {
   // TODO: refactor to use chaining instead of try/catch
@@ -51,6 +53,17 @@ async function http_create_file (req, res, next) {
       status: 'processing', // initial status
     });
 
+    const queueMessage = {
+      type: 'IngestFile',
+      param_id: savedFile[0],
+      creator: req.user.id,
+    }
+
+    const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+    this.http.broadcast(messageFile);
+
+
+
     const insertedFile = await this.db('files').where({ id: savedFile[0] }).first();
 
     if (!fs.existsSync(userDir)) {
@@ -80,6 +93,8 @@ async function http_create_file (req, res, next) {
               status: 'uploaded',
             });
 
+          this.http.broadcast(messageFile);
+
           console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
           const hash = crypto.createHash('sha256').update(data);
           const digest = hash.digest('hex');
@@ -101,13 +116,13 @@ async function http_create_file (req, res, next) {
 
           // Queue jobs
           this.queue.addJob({
-            method: 'IngestDocument',
-            params: [insertedDocument[0]],
+            method: 'IngestFile',
+            params: [savedFile[0]],
           });
 
           this.queue.addJob({
-            method: 'IngestFile',
-            params: [savedFile[0]],
+            method: 'IngestDocument',
+            params: [insertedDocument[0]],
           });
 
           res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });
