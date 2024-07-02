@@ -11,9 +11,12 @@ const {
   Menu,
   Label
 } = require('semantic-ui-react');
+
+// Components
 const ConversationsList = require('./ConversationsList');
 const LibrarySearch = require('./LibrarySearch');
 
+// Constants
 const {
   BRAND_NAME,
   RELEASE_NAME,
@@ -21,6 +24,8 @@ const {
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_CONTRACTS,
   ENABLE_MATTERS,
+  ENABLE_UPLOADS,
+  ENABLE_FILES,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
   ENABLE_JUDGE_SEARCH,
@@ -36,9 +41,8 @@ const {
   USER_MENU_HOVER_TIME_MS
 } = require('../constants');
 
-
 class LibraryList extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.messagesEndRef = React.createRef();
@@ -47,13 +51,8 @@ class LibraryList extends React.Component {
       loading: false,
       search: '',
     };
-  }
 
-  componentDidMount() {
-
-  }
-  componentWillUnmount() {
-
+    return this;
   }
 
   render () {
@@ -86,9 +85,9 @@ class LibraryList extends React.Component {
             <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_ALPHA && ENABLE_DOCUMENT_SEARCH && (
+        {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
           <Menu.Item as={Link} to='/documents'>
-            <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+            <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         {USER_IS_ALPHA && ENABLE_JURISDICTION_SEARCH && (
@@ -136,9 +135,9 @@ class LibraryList extends React.Component {
             <div><Icon name='pen' /> {!this.state.sidebarCollapsed && 'Contracts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
-        {USER_IS_ALPHA && ENABLE_LIBRARY && (
-          <Menu.Item as={Link} to='/settings/library'>
-            <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Library'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+        {USER_IS_ALPHA && ENABLE_UPLOADS && (
+          <Menu.Item as={Link} to='/uploads'>
+            <div><Icon name='upload' /> {!this.state.sidebarCollapsed && 'Uploads'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
           </Menu.Item>
         )}
         <ConversationsList

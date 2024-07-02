@@ -11,6 +11,9 @@ const {
 // Local Constants
 const FAILURE_PROBABILTY = 0;
 
+// Defaults
+const defaults = require('../settings/local');
+
 // Dependencies
 const fs = require('fs');
 const merge = require('lodash.merge');
@@ -58,9 +61,9 @@ class Agent extends Service {
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
-      host: 'ollama.trynovo.com',
-      port: 443,
-      secure: true,
+      host: defaults.ollama.host,
+      port: defaults.ollama.port,
+      secure: defaults.ollama.secure,
       database: {
         type: 'memory'
       },
@@ -71,7 +74,7 @@ class Agent extends Service {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
-      model: 'llama2',
+      model: defaults.ollama.model,
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'

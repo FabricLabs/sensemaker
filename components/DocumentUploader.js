@@ -36,13 +36,22 @@ class DocumentUploader extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { files } = this.props;
+    const { files, drafterSection } = this.props;
     if (files !== prevProps.files && this.state.uploading && !files.loading) {
       if (files.fileUploaded) {
         this.setState({ uploadSuccess: true, file_id: files.fileId });
+        if (drafterSection) {
+          this.props.attachFile(this.state.file);
+        } else {
+          this.props.fetchDocuments();
+        }
       } else {
         this.setState({ errorMsg: files.error });
       }
+      this.setState({
+        uploading: false,
+        file: null,
+      });
     }
   }
 
@@ -64,7 +73,6 @@ class DocumentUploader extends React.Component {
   handleUpload = async () => {
     this.setState({
       uploading: true,
-      file: null,
       fileExists: false,
       file_id: null,
       formatError: false,
@@ -84,7 +92,7 @@ class DocumentUploader extends React.Component {
       <Form className='documents-upload-form'>
         <Form.Field>
           <div style={{ maxWidth: '500px', gap: '0.5em', display: 'flex' }}>
-            <Input type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} style={{cursor: 'pointer'}}/>
+            <Input type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} style={{ cursor: 'pointer' }} />
             <Button
               icon='upload'
               disabled={!this.state.file}
@@ -107,18 +115,23 @@ class DocumentUploader extends React.Component {
         }
         {this.state.uploadSuccess &&
           <Form.Field>
-            <Message positive>
-              <Message.Content>
-                Document uploaded successfully! Now you can start a new conversation about this document.
-              </Message.Content>
-              <Link to={'/conversations/documents/' + files.fabric_id} onClick={()=>this.props.resetChat()}>
-                <Button
-                  primary
-                  content='Start Conversation'
-                  style={{ marginTop: '1em' }}
-                />
-              </Link>
-            </Message>
+            {this.props.drafterSection ? (
+              <Message positive>
+                <Message.Content>
+                  Document attached successfully!
+                </Message.Content>
+              </Message>
+            ) : (
+              <Message positive>
+                <Message.Header>Document uploaded successfully!</Message.Header>
+                <Message.Content>
+                  Novo is processing your Document, you will be able to start conversations about this conversation as soon the ingestion is complete.
+                </Message.Content>
+                <Message.Content>
+                  You will receive a notification when the process is complete. You can check your document <b><Link to={'/documents/' + files.fabric_id}>Here</Link></b>
+                </Message.Content>
+              </Message>
+            )}
           </Form.Field>
         }
       </Form>

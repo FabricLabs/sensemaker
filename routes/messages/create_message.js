@@ -143,6 +143,7 @@ module.exports = async function (req, res, next) {
     /*
     }); */
 
+    // Prepare Response
     if (!conversation.log) conversation.log = [];
     if (typeof conversation.log == 'string') {
       conversation.log = JSON.parse(conversation.log);
@@ -161,7 +162,8 @@ module.exports = async function (req, res, next) {
       message: 'Message sent.',
       object: {
         id: newMessage[0],
-        conversation: conversation_id
+        conversation: conversation_id,
+        // cards: request.cards
       }
     });
   } catch (error) {

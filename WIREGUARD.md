@@ -1,9 +1,6 @@
 # Wireguard LAN Setup
-
 ## Install Wireguard
-
 ### Macintosh
-
 Install wireguard-tools with brew
 
 `brew install wireguard-tools`
@@ -13,18 +10,16 @@ Install wireguard GUI from app store (optional)
 `https://itunes.apple.com/us/app/wireguard/id1441195209?ls=1&mt=8`
 
 ### Linux 
-
-Ubuntu/Debian:
+### Ubuntu/Debian
 `apt install wireguard openresolv`
 
-Fedora:
+### Fedora
 `dnf install wireguard-tools openresolv`
 
-Arch:
+### Arch
 `pacman -S wireguard-tools openresolv`
 
 ## Create Keypair
-
 ```
 wg genkey | sudo tee ~/wg0node.key
 sudo chmod go= ~/wg0node.key
@@ -32,7 +27,6 @@ sudo cat ~/wg0node.key | wg pubkey | sudo tee ~/wg0node.pub
 ```
 
 ## Create Wireguard Config
-
 create the file `/etc/wireguard/wg0.conf`
 
 copy the following into the file:

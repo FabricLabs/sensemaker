@@ -6,6 +6,7 @@ on:
   push:
     branches:
     - master
+    - beta
 jobs:
   test:
     name: Run tests
@@ -34,6 +35,7 @@ jobs:
     - name: Generate coverage report
       run: npm run report:coverage
     - name: Send coverage report
-      uses: codecov/codecov-action@v3.1.1
+      uses: codecov/codecov-action@v4.0.1
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./reports/

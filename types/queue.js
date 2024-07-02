@@ -1,10 +1,15 @@
 'use strict';
 
+// Dependencies
 const merge = require('lodash.merge');
-const Actor = require('@fabric/core/types/actor');
-
 const { createClient } = require('redis');
 
+// Fabric Types
+const Actor = require('@fabric/core/types/actor');
+
+/**
+ * A `Queue` is a simple job queue for managing asynchronous tasks.
+ */
 class Queue extends Actor {
   constructor (settings = {}) {
     super(settings);
@@ -26,6 +31,7 @@ class Queue extends Actor {
       clock: this.settings.clock,
       content: this.settings.state,
       current: null,
+      output: [],
       status: 'STOPPED'
     };
 
@@ -69,23 +75,34 @@ class Queue extends Actor {
       console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
       if (!this._state.current) this._state.current = await this._takeJob();
       console.debug('[QUEUE]', 'Current job:', this._state.current);
+
+      // If there's work to do, do it
       if (this._state.current && !this._state.current.status) {
         this._state.current.status = 'COMPUTING';
+
+        // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
+        // Race to Complete or Timeout
         Promise.race([
           this._completeJob(this._state.current),
           new Promise((resolve, reject) => {
             setTimeout(() => {
+              console.error('[QUEUE]', 'Job timed out:', this._state.current);
               reject(new Error('Job timed out.'));
             }, this.interval);
           })
         ]).catch((exception) => {
           console.error('[QUEUE]', 'Job failed:', exception);
           this._state.current = null;
+          // TODO: implement retries here (decrement counter, reinsert job into queue)
         }).then((result) => {
           console.debug('[QUEUE]', 'Finished work:', result);
           this._state.current = null;
+          this._state.output.push(result);
         });
       }
+
+      console.debug('[QUEUE]', 'Jobs completed this epoch:', this._state.output.length);
+      this._state.output = [];
     }
 
     console.debug('[QUEUE]', 'TICK', this.clock);
@@ -114,6 +131,7 @@ class Queue extends Actor {
 
       await this.redis.connect();
       await this.subscriber.connect();
+
       // TODO: enable `notify-keyspace-events` on Redis server
       await this.subscriber.pSubscribe(`__keyspace@0__:queue:*`, async (message, channel) =>{
         console.debug('[QUEUE]', 'Received message:', channel, message);
@@ -132,10 +150,9 @@ class Queue extends Actor {
     this.ticker = setInterval(this._tick.bind(this), this.interval);
   }
 
-  async _registerMethod (name, contract) {
+  async _registerMethod (name, contract, context = {}) {
     if (this._methods[name]) return this._methods[name];
-    // TODO: bind state?
-    this._methods[name] = contract.bind({});
+    this._methods[name] = contract.bind(context);
     return this._methods[name];
   }
 
@@ -159,6 +176,13 @@ class Queue extends Actor {
     const json = await this.redis.lPop(this.settings.collection);
     const job = JSON.parse(json);
     console.debug('[QUEUE]', 'Took job:', job);
+
+    // TODO: canonize this API
+    this.emit('QueueJob', {
+      type: 'QueueJob',
+      content: job
+    });
+
     return job;
   }
 
@@ -166,15 +190,26 @@ class Queue extends Actor {
     if (this._methods[job.method]) {
       const result = await this._methods[job.method](...job.params);
       console.debug('[QUEUE]', 'Completed job:', job);
+
+      // TODO: reverse this logic to reject if !this.redis
+      if (this.redis) {
+        await this.redis.publish('job:completed', JSON.stringify({ job, result }));
+      }
+
       return result;
     }
 
     switch (job.method) {
       default:
         console.warn('[QUEUE]', 'Unhandled job type:', job.method);
-        return { status: 'FAILED', message: 'Unhandled job type.' };
+        const failureResult = { status: 'FAILED', message: 'Unhandled job type.' };
+        if (this.redis) {
+          await this.redis.publish('job:completed', JSON.stringify({ job, result: failureResult }));
+        }
+        return failureResult;
     }
   }
+
 
   async _failJob (job) {
 

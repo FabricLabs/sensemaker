@@ -11,6 +11,8 @@ See `INSTALL.md` for a complete install guide.
 1. Pull Requests should be the smallest possible set of changes implementing the desired feature.
 
 ## Overview
+The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
+
 - Coordinator: the Node.js master process
   - HTTPServer
   - FabricNode
@@ -41,3 +43,10 @@ All other configuration options for your local node live in `settings/local.js` 
 - `email` — configures email settings
   - `enable` — boolean (true or false)
   - `host` — hostname for outbound email
+
+## Style
+- semicolon not optional
+- explicit over implicit (prefer clarity over brevity)
+- spaces after function names, not after calls
+- no double spacing (maximum one empty line)
+- newline at EOF

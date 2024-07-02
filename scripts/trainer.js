@@ -27,28 +27,34 @@ const Trainer = require('../types/trainer');
 
 // Main Program
 async function main (input = {}) {
-  // Fabric Filesystem
-  const filesystem = new Filesystem(input.files);
-  await filesystem.start();
-
-  // Sensemaker
-  const trainer = new Trainer(input);
-  await trainer.start();
-
-  // Queue
-  const queue = new Queue(input);
-
   // Database
   const db = knex({
     client: 'mysql2',
     connection: input.db
   });
 
+  // Fabric Filesystem
+  const filesystem = new Filesystem(input.files);
+  await filesystem.start();
+
+  // Sensemaker
+  const trainer = new Trainer(input);
+
+  // Attach Database to Trainer
+  trainer.attachDatabase(db);
+
+  // Start Trainer
+  await trainer.start();
+
+  // Queue
+  const queue = new Queue(input);
+
   // Main Training Loop
   console.log('[TRAINER]', '[MAIN]', 'Starting training process...');
 
   // Documents
   if (ENABLE_DOCUMENT_INGEST) {
+    // TODO: filter documents by embedding status (only process documents lacking embeddings)
     const documentStream = db('documents').select('*').where('is_available', true).orderByRaw('RAND()').limit(SYNC_EMBEDDINGS_COUNT).stream();
     console.log('[TRAINER]', '[MAIN]', 'Documents:', documentStream);
 
@@ -89,9 +95,10 @@ async function main (input = {}) {
   }
 
   if (ENABLE_UPLOAD_INGEST) {
-    const uploadStream = db('files').select('*').stream();
+    // TODO: warn about this loop on startup
+    const uploadStream = db('files').select('*').whereNull('embedding_id').stream();
     for await (const file of uploadStream) {
-      console.debug('[TRAINER]', '[MAIN]', '[UPLOAD]', 'Ingesting:', file);
+      console.debug('[TRAINER]', '[MAIN]', '[UPLOAD]', 'Found upload without an embedding, ingesting now:', file);
       const start = new Date();
       try {
         const content = fs.readFileSync(file.path);
