@@ -21,13 +21,13 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // External Dependencies
+const { createClient } = require('redis');
 const fetch = require('cross-fetch');
 const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
-const { createClient } = require('redis');
 
 const multer = require('multer');
 // const { ApolloServer, gql } = require('apollo-server-express');
