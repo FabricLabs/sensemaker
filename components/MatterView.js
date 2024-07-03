@@ -2,7 +2,7 @@
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link, useParams } = require('react-router-dom');
+const { Link, useParams, useNavigate } = require('react-router-dom');
 
 const {
   Segment,
@@ -22,7 +22,8 @@ const {
   TextArea,
   Form,
   Divider,
-  Confirm
+  Confirm,
+  Progress
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
@@ -134,7 +135,7 @@ class MatterView extends React.Component {
         this.setState({ courtsOptions: options });
       }
     }
-    if(prevProps.files !== files) {
+    if (prevProps.files !== files) {
       this.props.fetchMatterFiles(this.props.id);
     }
   };
@@ -220,7 +221,6 @@ class MatterView extends React.Component {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
     const { current } = matters;
 
-    console.log(courts.current);
     const jurisdictionErrorMessage = (!this.state.jurisdictionError) ? null : {
       content: 'Please select a jurisdiction',
       pointing: 'above',
@@ -444,7 +444,7 @@ class MatterView extends React.Component {
                           <Table.HeaderCell>Uploaded</Table.HeaderCell>
                           <Table.HeaderCell>Modified</Table.HeaderCell>
                           <Table.HeaderCell>Actions</Table.HeaderCell>
-                          <Table.HeaderCell>Ingested</Table.HeaderCell>
+                          <Table.HeaderCell textAlign='center' style={{ minWidth: '100px' }}>Status</Table.HeaderCell>
                         </Table.Row>
                       </Table.Header>
                       {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
@@ -467,14 +467,35 @@ class MatterView extends React.Component {
                                     }
                                   />
                                 </Table.Cell>
-                                <Table.Cell  textAlign="center">
-                                  {instance.status !== 'ingested' ? (
+                                <Table.Cell textAlign="center">
+                                  {/* {instance.status !== 'ingested' ? (
                                     <Popup content="Your File is being Ingested by the AI" trigger={
-                                      <Icon name='circle notch' loading size='big'/>
+                                      // <Icon name='circle notch' loading size='big'/>
+                                      <Progress percent={instance.status} indicating />
+
                                     } />
                                   ) : (
                                     <Icon name='check' color='green' size='big'/>
-                                  )}
+                                  )} */}
+                                  <Popup
+                                    content={
+                                      instance.status === 'processing' ? 'Your file is being Uploaded' :
+                                        instance.status === 'uploaded' ? 'Your file is being Ingested by the AI' :
+                                          instance.status === 'ingested' ? 'Your file is ready' : 'Processing'
+                                    }
+                                    trigger={
+                                      <Progress
+                                        style={{ margin: '0' }}
+                                        percent={
+                                          instance.status === 'processing' ? 33 :
+                                            instance.status === 'uploaded' ? 66 :
+                                              instance.status === 'ingested' ? 100 : 0
+                                        }
+                                        indicating
+                                      />
+                                    }
+                                  />
+
                                 </Table.Cell>
                               </Table.Row>
                             )
@@ -552,7 +573,6 @@ class MatterView extends React.Component {
                         return (
                           <div>
                             <List.Item style={{ marginTop: '0.5em' }}>
-                              {/* <Link to={'/matters/'+instance.id+'/conversations/' }> */}
                               <Link to={'/conversations/' + instance.id}>
                                 {new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                                 {instance.title}
@@ -567,12 +587,12 @@ class MatterView extends React.Component {
             <GridRow>
               <GridColumn width={2} />
               <GridColumn width={10} textAlign='center'>
-                <Link to={'/conversations/new/' + this.props.id} >
                   <Button
                     primary
                     content="Start a new conversation"
+                    disabled={matters.matterFiles.some(file => file.status !== 'ingested')}
+                    onClick={() => this.props.navigateTo(this.props.id)}
                   />
-                </Link>
               </GridColumn>
             </GridRow>
           </Grid>
@@ -618,6 +638,8 @@ class MatterView extends React.Component {
 
 function MattView(props) {
   const { id } = useParams();
-  return <MatterView id={id} {...props} />;
+  const navigate = useNavigate();
+  const navigateTo = (id) => navigate(`/conversations/new/${id}`);
+  return <MatterView id={id} navigateTo={navigateTo} {...props} />;
 }
 module.exports = MattView;

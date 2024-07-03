@@ -21,13 +21,13 @@ const fs = require('fs');
 const crypto = require('crypto');
 
 // External Dependencies
+const { createClient } = require('redis');
 const fetch = require('cross-fetch');
 const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
-const { createClient } = require('redis');
 
 const multer = require('multer');
 // const { ApolloServer, gql } = require('apollo-server-express');
@@ -1350,6 +1350,7 @@ class Jeeves extends Hub {
         const queueMessage = {
           type: job.method,
           param_id: job.params[0],
+          completed: true,
         }
 
         if (result.status === 'COMPLETED') {
@@ -1357,8 +1358,9 @@ class Jeeves extends Hub {
             switch (job.method) {
               case 'IngestFile':
                 this._handleFileIngested(job.params[0]);
-                const file = await this.db.select('creator').from('files').where({ id: job.params[0] }).first();
+                const file = await this.db.select('creator','name').from('files').where({ id: job.params[0] }).first();
                 queueMessage.creator = file.creator;
+                queueMessage.filename = file.name;
                 const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
                 this.http.broadcast(messageFile);
                 break;
