@@ -1331,13 +1331,23 @@ class Jeeves extends Hub {
         //job.params[0] will give us the file/document id
         //result.status we can check if the job was 'COMPLETED'
 
-        const queueMessage = {
-          type: job.method,
-          param_id: job.params[0],
-          completed: true,
+        if (job) {
+          const queueMessage = {
+            job: job,
+            type: 'completedJob',
+          }
+          const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+          this.http.broadcast(messageTook);
         }
 
         if (result.status === 'COMPLETED') {
+
+          const queueMessage = {
+            type: job.method,
+            param_id: job.params[0],
+            completed: true,
+          }
+
           try {
             switch (job.method) {
               case 'IngestFile':
@@ -1365,15 +1375,18 @@ class Jeeves extends Hub {
             console.error('[NOVO] Redis subscriber error:', exception);
           }
         }
+        
       });
 
       redisSubscriber.subscribe('job:taken', async (message) => {
         const { job } = JSON.parse(message);
+
         if (job) {
           const queueMessage = {
             job: job,
             type: 'takenJob',
           }
+
           const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
           this.http.broadcast(messageTook);
         }
@@ -1994,6 +2007,10 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
     this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
     this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
+
+    //Redis clientside connections
+
+    this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

@@ -197,14 +197,11 @@ class Bridge extends React.Component {
               break;
             case 'HelpMsgUser':
             case 'HelpMsgAdmin':
-              this.props.responseCapture(chunk);
-              break;
             case 'IngestFile':
             case 'IngestDocument':
-              this.props.responseCapture(chunk);
-              break;
             case 'takenJob':
-              console.log('the chunk',chunk);
+            case 'completedJob':
+              this.props.responseCapture(chunk);
               break;
           }
         } catch (exception) {
