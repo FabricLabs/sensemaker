@@ -50,3 +50,11 @@ All other configuration options for your local node live in `settings/local.js` 
 - spaces after function names, not after calls
 - no double spacing (maximum one empty line)
 - newline at EOF
+
+
+## File/Document Ingestion
+When a file or document is uploaded, it's stored on the DDBB first.
+Then, a Job is created for Redis to proccess, it's added to the queue and then taken assigned a status of 'COMPUTING'. - see `types/queue.js`.
+The file would have a document created, related to it, and will be added to the job.
+Once the job is taken from the queue it'll begin the ingestion and assign a status for that.
+If the ingestion is completed without error, It's status are updated in the ddbb, and will also be available for the AI to proccess.
