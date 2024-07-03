@@ -203,6 +203,9 @@ class Bridge extends React.Component {
             case 'IngestDocument':
               this.props.responseCapture(chunk);
               break;
+            case 'takenJob':
+              console.log('the chunk',chunk);
+              break;
           }
         } catch (exception) {
           console.error('Could not process message:', exception);
