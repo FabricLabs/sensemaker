@@ -133,8 +133,9 @@ class Dashboard extends React.Component {
     return (<Navigate to='/settings' />);
   }
 
-  componentDidMount () {
+  componentDidMount() {
     const { location, params, navigate } = this.props;
+    const { isAdmin } = this.props.auth;
     // this.startProgress();
 
     // $('.ui.sidebar').sidebar();
@@ -147,6 +148,11 @@ class Dashboard extends React.Component {
       // this.completeProgress();
       this.setState({ isLoading: false });
     }, 250);
+
+    if (isAdmin) {
+      this.props.syncRedisQueue();
+    }
+
   }
 
   // componentDidUpdate(prevProps) {
@@ -158,7 +164,7 @@ class Dashboard extends React.Component {
   //   }
   // }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
@@ -427,14 +433,14 @@ class Dashboard extends React.Component {
         toast('You have a message from an assistant!', helpMessageToastEmitter);
       }
       if (action.type == 'IngestFile') {
-        if(action.completed){
+        if (action.completed) {
           toast(
             <p>
               Your file <b>{action.filename}</b> has been Ingested!.
             </p>,
             helpMessageToastEmitter);
-          }
-          this.props.fetchFiles();
+        }
+        this.props.fetchFiles();
       }
       if (action.type == 'IngestDocument' && isAdmin) {
         toast(
@@ -453,6 +459,19 @@ class Dashboard extends React.Component {
       if (this.props.location.pathname !== '/settings/admin') {
         sound.play().catch((error) => { console.error('Failed to play sound: ', error); });
         toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
+      }
+    }
+
+    if (action.type == 'takenJob') {
+      this.props.lastJobTaken(action.job);
+      if (isAdmin) {
+        this.props.syncRedisQueue();
+      }
+    }
+    if (action.type == 'completedJob') {
+      this.props.lastJobCompleted(action.job);
+      if (isAdmin) {
+        this.props.syncRedisQueue();
       }
     }
   }
@@ -726,7 +745,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
                 <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
-                <Route path="/matters/:id" element={<MatterView fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} fetchCourtById={this.props.fetchCourtById} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} files={this.props.files}/>} />
+                <Route path="/matters/:id" element={<MatterView fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} fetchCourtById={this.props.fetchCourtById} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} files={this.props.files} />} />
                 <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/uploads" element={<UploadHome {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />

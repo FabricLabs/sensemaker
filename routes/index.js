@@ -127,5 +127,8 @@ module.exports = {
     services: require('./admin-settings/services.js'),
     design: require('./admin-settings/design.js')
 
-  }
+  },
+  redis: {
+    listQueue: require('./redis/list_queue.js'),
+  },
 };
