@@ -1324,6 +1324,20 @@ class Jeeves extends Hub {
     redisSubscriber.connect().then(() => {
       console.log('Connected to Redis for subscribing');
 
+      redisSubscriber.subscribe('job:taken', async (message) => {
+        const { job } = JSON.parse(message);
+
+        if (job) {
+          const queueMessage = {
+            job: job,
+            type: 'takenJob',
+          }
+          
+          const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+          this.http.broadcast(messageTook);
+        }
+      });
+
       redisSubscriber.subscribe('job:completed', async (message) => {
         const { job, result } = JSON.parse(message);
 
@@ -1376,20 +1390,6 @@ class Jeeves extends Hub {
           }
         }
         
-      });
-
-      redisSubscriber.subscribe('job:taken', async (message) => {
-        const { job } = JSON.parse(message);
-
-        if (job) {
-          const queueMessage = {
-            job: job,
-            type: 'takenJob',
-          }
-
-          const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-          this.http.broadcast(messageTook);
-        }
       });
     });
 
