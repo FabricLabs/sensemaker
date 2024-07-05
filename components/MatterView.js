@@ -436,10 +436,10 @@ class MatterView extends React.Component {
         </section>
 
         <section className='matter-details'>
-          <Grid columns={2}>
+          <Grid centered columns={'equal'} textAlign='center' verticalAlign='middle'>
             <GridRow>
-              <GridColumn width={2} />
-              <GridColumn width={10} textAlign='center'>
+              <GridColumn  />
+              <GridColumn  textAlign='center'>
                 <Header as='h2'>Context
                   <Popup trigger={<Icon name='info circle' size='small' style={{ margin: '0 0  0.2em 0.5em', color: '#336699' }} />}>
                     <Popup.Content>
@@ -466,19 +466,19 @@ class MatterView extends React.Component {
               <GridColumn >
                 <div className='col-center'>
                   <Header as='h2'>Files</Header>
-                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
-                    <Table  celled striped >
+                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '70vw' }} loading={matters.addingContext}>
+                    <Table textAlign='center' celled striped >
                       <Table.Header>
-                        <Table.Row>
+                        <Table.Row >
                           <Table.HeaderCell>File Name</Table.HeaderCell>
                           <Table.HeaderCell>Uploaded</Table.HeaderCell>
                           <Table.HeaderCell>Modified</Table.HeaderCell>
                           <Table.HeaderCell>Actions</Table.HeaderCell>
-                          <Table.HeaderCell textAlign='center' style={{ minWidth: '100px' }}>Status</Table.HeaderCell>
+                          <Table.HeaderCell style={{ minWidth: '100px' }}>Status</Table.HeaderCell>
                         </Table.Row>
                       </Table.Header>
                       {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
-                        <Table.Body>
+                        <Table.Body >
                           {matters.matterFiles.map(instance => {
                             return (
                               <Table.Row key={instance.id}>
@@ -546,12 +546,11 @@ class MatterView extends React.Component {
             </GridRow>
 
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
-              <GridRow>
-                <GridColumn width={2} />
-                <GridColumn width={8}>
+              <GridRow textAlign='center'>
+                <GridColumn >
                   <div className='col-center'>
                     <Header as='h2'>Additional Notes</Header>
-                    <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
+                    <Segment style={{ maxHeight: '40vh', width: '60vw' }} loading={matters.addingContext}>
                       <List loading={matters.loading} size='small'>
                         {matters.matterNotes.map(instance => {
                           const isExpanded = this.state.expandedNoteId === instance.id;
@@ -586,16 +585,15 @@ class MatterView extends React.Component {
             }
 
           </Grid>
-          <Grid columns={2}>
+          <Grid centered columns={'equal'} textAlign='center' verticalAlign='middle'>
             <GridRow>
-              <GridColumn width={3} />
-              <GridColumn width={8} textAlign='center'>
+              <GridColumn  textAlign='center'>
                 <Header as='h2'>Matter Conversations</Header>
               </GridColumn>
             </GridRow>
-            <GridRow>
-              <GridColumn width={4} />
-              <GridColumn width={8}>
+            <GridRow textAlign='center'>
+              <GridColumn/>
+              <GridColumn >
                 <div>
                   <List>
                     {(matterConversations && matterConversations.length > 0) && matterConversations
@@ -615,8 +613,8 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={2} />
-              <GridColumn width={10} textAlign='center'>
+              <GridColumn/>
+              <GridColumn textAlign='center'>
                   <Button
                     primary
                     content="Start a new conversation"
