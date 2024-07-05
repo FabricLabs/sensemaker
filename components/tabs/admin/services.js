@@ -118,13 +118,13 @@ class AdminServicesTab extends React.Component {
               <Table.Cell><Header as='h5'>Last job Taken</Header></Table.Cell>
               <Table.Cell><Label>{this.props.redis.lastJobTaken ? this.props.redis.lastJobTaken.method : 'Empty'}</Label></Table.Cell>
               <Table.Cell><Label>{this.props.redis.lastJobTaken ? this.props.redis.lastJobTaken.params : 'Empty'}</Label></Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>{this.props.redis.lastJobTaken?.status ? <Label>{this.props.redis.lastJobTaken.status}</Label> : ''}</Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell><Header as='h5'>Last job Completed</Header></Table.Cell>
               <Table.Cell><Label>{this.props.redis.lastJobCompleted ? this.props.redis.lastJobCompleted.method : 'Empty'}</Label></Table.Cell>
               <Table.Cell><Label>{this.props.redis.lastJobCompleted ? this.props.redis.lastJobCompleted.params : 'Empty'}</Label></Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell>{this.props.redis.lastJobCompleted?.status ? <Label>{this.props.redis.lastJobCompleted.status}</Label> : ''}</Table.Cell>
             </Table.Row>
             {(this.props.redis.queue?.length > 0) ? (
               <Table.Row>
@@ -139,7 +139,6 @@ class AdminServicesTab extends React.Component {
                 <Table.Cell><Label>Empty</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
-
               </Table.Row>
             )
             }

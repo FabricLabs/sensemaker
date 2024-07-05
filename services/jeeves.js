@@ -1332,7 +1332,7 @@ class Jeeves extends Hub {
             job: job,
             type: 'takenJob',
           }
-          
+
           const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
           this.http.broadcast(messageTook);
         }
@@ -1349,6 +1349,7 @@ class Jeeves extends Hub {
           const queueMessage = {
             job: job,
             type: 'completedJob',
+            status: result.status === 'COMPLETED'? result.status : 'FAILED',
           }
           const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
           this.http.broadcast(messageTook);
