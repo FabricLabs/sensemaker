@@ -469,6 +469,7 @@ class Dashboard extends React.Component {
       }
     }
     if (action.type == 'completedJob') {
+      action.job.status = action.status;
       this.props.lastJobCompleted(action.job);
       if (isAdmin) {
         this.props.syncRedisQueue();
