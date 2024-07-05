@@ -954,12 +954,16 @@ fabric-motd {
 }
 
 .matter-details {
-  max-width: 80vw;
+  max-width: 60vw;
   margin-top: 2em;
 }
 
+.matter-details-font {
+  font-size: 1.5em;
+}
+
 .matter-header {
-  width: 80vw;
+  max-width: 80vw;
 }
 
 .attach-file-area {

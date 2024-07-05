@@ -55,7 +55,7 @@ class Queue extends Actor {
   }
 
   get interval () {
-    return 100 / this.settings.frequency; // ms
+    return 1000 / this.settings.frequency; // ms
   }
 
   get jobs () {

@@ -11,6 +11,7 @@ const {
   List,
   Icon,
   Button,
+  ButtonOr,
   GridRow,
   GridColumn,
   Grid,
@@ -23,7 +24,8 @@ const {
   Form,
   Divider,
   Confirm,
-  Progress
+  Progress,
+  ButtonGroup
 } = require('semantic-ui-react');
 
 const MatterFileModal = require('./MatterFileModal');
@@ -39,7 +41,7 @@ class MatterView extends React.Component {
       isEditMode: false,
 
       // these are the field for the case that can be edited
-      representingOption: '',
+      representingOption: null,
       jurisdictionsOptions: null,
       courtsOptions: null,
       title: '',
@@ -226,23 +228,22 @@ class MatterView extends React.Component {
       pointing: 'above',
     };
     return (
-      <Segment
+      <Segment textAlign='center'
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
-        style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', justifyItems: 'center', alignItems: 'center' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
             <Grid columns={2} style={{ marginTop: '-1em' }}>
-              <GridRow>
-                <GridColumn width={2} />
-                <GridColumn width={8} textAlign='center'>
-                  <Input
+              <GridRow centered textAlign='center'>
+                <GridColumn textAlign='center'>
+                  <Input size='huge'
                     name='title'
                     onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
                     value={this.state.title}
                     style={{ width: '100%' }}
                   />
                 </GridColumn>
-                <GridColumn width={6} style={{ display: 'flex' }}>
+                <GridColumn textAlign='center' width={6} style={{ display: 'flex' , flexDirection:'row'}}>
                   <Button secondary content='Cancel' size='medium' onClick={this.toggleEditMode} style={{ marginLeft: '1.5em' }} />
                   <Button primary content='Save' size='medium' onClick={this.saveChanges} />
                 </GridColumn>
@@ -252,9 +253,9 @@ class MatterView extends React.Component {
             <Grid columns={2} style={{ marginTop: '-1em' }}>
               <GridRow>
                 <GridColumn width={5} />
-                <GridColumn width={8} textAlign='center'>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Header as='h1' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
+                <GridColumn width={16} textAlign='center'>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'center' }}>
+                    <Header as='h1' size='huge' style={{ marginTop: '0', marginBottom: '0' }}>{current.title}</Header>
                     <Popup content="Edit Matter's information" trigger={
                       <Icon name='edit' size='large' color='grey' onClick={this.toggleEditMode} style={{ marginLeft: '1em', cursor: 'pointer' }} />
                     } />
@@ -264,79 +265,108 @@ class MatterView extends React.Component {
             </Grid>
           )}
         </section>
-        <section className='matter-details'>
-          <Grid columns={2}>
-            <GridRow>
-              <GridColumn width={7} textAlign='center'>
-                <Header as='h2'>Details</Header>
+
+        <section className='matter-details ' style={{width: '60vw'}}>
+          <Grid centered columns={'equal'} textAlign='center' verticalAlign='middle'>
+            <GridRow textAlign='center'>
+              <GridColumn >
+                <Header textAlign='center'  as='h2' size='huge'>Details</Header>
               </GridColumn>
-              <GridColumn width={3}>
-                <Header as='h4'>I'm representing:</Header>
+              <GridColumn >
               </GridColumn>
+
             </GridRow>
           </Grid>
-          <Grid columns={3}>
+
+          <Grid centered columns={'equal'} textAlign='center' verticalAlign='middle'>
             <GridRow>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Header as='h3'>Plaintiff</Header>
+              <GridColumn textAlign='center'>
+                <Header as='h3' size='medium'>Plaintiff</Header>
               </GridColumn>
-              <GridColumn width={6}>
+              <GridColumn textAlign='center'>
                 {this.state.isEditMode ? (
-                  <Input
+                  <Input size='medium'
                     name='plaintiff'
                     onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
                     value={this.state.plaintiff}
                   />
                 ) : (
                   <Label>
-                    <Header as='h4'>{current.plaintiff}</Header>
+                    <Header as='h4' size='medium'>{current.plaintiff}</Header>
                   </Label>
                 )}
               </GridColumn>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Checkbox
-                  radio
-                  name='checkboxRadioGroup'
-                  checked={this.state.representingOption === 'P'}
-                  disabled={!this.state.isEditMode}
-                  value='P'
-                  onChange={(e, data) => this.setState({ representingOption: data.value })}
-                />
-              </GridColumn>
             </GridRow>
+              
             <GridRow>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Header as='h3'>Defendant</Header>
+              <GridColumn textAlign='center' >
+                <Header as='h3' size='medium'>Defendant</Header>
               </GridColumn>
-              <GridColumn width={6}>
+              <GridColumn textAlign='center'>
                 {this.state.isEditMode ? (
-                  <Input
+                  <Input size='medium'
                     name='defendant'
                     onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
                     value={this.state.defendant}
                   />
                 ) : (
                   <Label>
-                    <Header as='h4'>{current.defendant}</Header>
+                    <Header as='h4' size='medium'>{current.defendant}</Header>
                   </Label>
                 )}
               </GridColumn>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Checkbox
-                  radio
-                  name='checkboxRadioGroup'
-                  checked={this.state.representingOption === 'D'}
-                  value='D'
-                  disabled={!this.state.isEditMode}
-                  onChange={(e, data) => this.setState({ representingOption: data.value })}
-                />
+            </GridRow>
+              
+            <GridRow>
+              <GridColumn textAlign='center'>
+                <Header as='h3' size='medium'>I'm representing</Header>
+              </GridColumn>
+              <GridColumn textAlign='center'>
+                {this.state.isEditMode ?
+                  (<ButtonGroup>
+                    <Button  size='medium'
+                      name='checkboxRadioGroup' 
+                      value='P' 
+                      onClick={(e, data) => this.setState({ representingOption: data.value})} 
+                      toggle active={this.state.representingOption ==='P'}
+                      positive={this.state.representingOption ==='P'}
+                    >
+                      Plaintiff
+                    </Button>
+                    <ButtonOr/>
+                    <Button size='medium'
+                      name='checkboxRadioGroup' 
+                      value='D' 
+                      onClick={(e, data) => this.setState({ representingOption: data.value})} 
+                      toggle active={this.state.representingOption ==='D'}
+                      positive={this.state.representingOption ==='D'}
+                  
+                    >
+                      Defendant
+                    </Button>
+                  </ButtonGroup>) : (this.state.representingOption === 'P' ? (
+                    <Label>
+                      <Header as='h4' size='medium'>Plaintiff</Header>
+                    </Label>
+                  ) : (
+                    this.state.representingOption === 'D' ? 
+                      <Label>
+                        <Header as='h4' size='medium'>Defendant</Header>
+                      </Label> 
+                      : 
+                      <Label>
+                        <Header as='h4' size='medium'>Neither</Header>
+                      </Label>
+                  ) )
+                }
               </GridColumn>
             </GridRow>
+              
             <GridRow>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Header as='h3'>Jurisdiction</Header>
+              <GridColumn  textAlign='center'>
+                <Header as='h3' size='medium'>Jurisdiction</Header>
               </GridColumn>
-              <GridColumn width={10}>
+              <GridColumn textAlign='center'>
                 {this.state.isEditMode ? (
                   <Dropdown
                     placeholder='Select Jurisdiction'
@@ -347,23 +377,23 @@ class MatterView extends React.Component {
                     value={this.state.jurisdiction_id}
                     onChange={(e, { value }) => {
                       this.setState({ jurisdiction_id: value, jurisdictionError: false });
-                      this.props.fetchCourtsByJurisdiction(value)
+                      this.props.fetchCourtsByJurisdiction(value);
                     }}
                     error={jurisdictionErrorMessage}
                   />
                 ) : (
                   <Label>
-                    <Header as='h4'>{jurisdictions.current.name}</Header>
+                    <Header as='h4' size='medium'>{jurisdictions.current.name}</Header>
                   </Label>
                 )}
               </GridColumn>
-              <GridColumn width={2} />
             </GridRow>
+              
             <GridRow>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Header as='h3'>Court</Header>
+              <GridColumn textAlign='center'>
+                <Header as='h3' size='medium'>Court</Header>
               </GridColumn>
-              <GridColumn width={10}>
+              <GridColumn textAlign='center'>
                 {this.state.isEditMode ? (
                   <Dropdown
                     placeholder='Select Court'
@@ -376,34 +406,35 @@ class MatterView extends React.Component {
                   />
                 ) : (
                   <Label>
-                    <Header as='h4'>{(current.court_id ? courts.current.name : 'none selected')}</Header>
+                    <Header as='h4' size='medium'>{current.court_id ? courts.current.name : 'none selected'}</Header>
                   </Label>
                 )}
               </GridColumn>
-              <GridColumn width={2} />
             </GridRow>
+              
             <GridRow>
-              <GridColumn width={2} style={{ display: 'flex', alignItems: 'center' }}>
-                <Header as='h3'>Description</Header>
+              <GridColumn textAlign='center'>
+                <Header as='h3' size='medium'>Description</Header>
               </GridColumn>
-              <GridColumn width={10}>
+              <GridColumn textAlign='center'>
                 {this.state.isEditMode ? (
                   <Form>
                     <TextArea
                       name='description'
+                      style={{fontSize: '1.3em'}}
                       rows={6}
                       value={this.state.description}
                       onChange={(e, { name, value }) => this.handleInputChange(e, { name, value })}
                     />
                   </Form>
                 ) : (
-                  <Header as='h5'>{current.description}</Header>
+                  <Header as='h4' size='medium'>{current.description}</Header>
                 )}
               </GridColumn>
-              <GridColumn width={2} />
             </GridRow>
           </Grid>
         </section>
+
         <section className='matter-details'>
           <Grid columns={2}>
             <GridRow>
@@ -431,13 +462,12 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
 
-            <GridRow>
-              <GridColumn width={2} />
-              <GridColumn width={10}>
+            <GridRow centered textAlign='center' >
+              <GridColumn >
                 <div className='col-center'>
                   <Header as='h2'>Files</Header>
                   <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
-                    <Table simple >
+                    <Table  celled striped >
                       <Table.Header>
                         <Table.Row>
                           <Table.HeaderCell>File Name</Table.HeaderCell>
@@ -518,7 +548,7 @@ class MatterView extends React.Component {
             {(matters && matters.matterNotes && matters.matterNotes.length > 0) &&
               <GridRow>
                 <GridColumn width={2} />
-                <GridColumn width={10}>
+                <GridColumn width={8}>
                   <div className='col-center'>
                     <Header as='h2'>Additional Notes</Header>
                     <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
