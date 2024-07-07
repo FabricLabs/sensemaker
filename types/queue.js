@@ -183,6 +183,9 @@ class Queue extends Actor {
       content: job
     });
 
+    if (this.redis) {
+      await this.redis.publish('job:taken', JSON.stringify({ job }));
+    }
     return job;
   }
 

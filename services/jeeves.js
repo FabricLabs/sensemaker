@@ -1136,22 +1136,31 @@ class Jeeves extends Hub {
 
   async onJobCompleted (message) {
     const { job, result } = JSON.parse(message);
-    console.debug('onJobCompleted:', job, result);
 
     //job.method gives the job type, like 'IngestFile'
     //job.params[0] will give us the file/document id
     //result.status we can check if the job was 'COMPLETED'
 
-    const queueMessage = {
-      type: job.method,
-      param_id: job.params[0],
-      completed: true,
-    };
+    if (job) {
+      const queueMessage = {
+        job: job,
+        type: 'completedJob',
+      }
+      const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      this.http.broadcast(messageTook);
+    }
 
     if (result.status === 'COMPLETED') {
-      console.debug('file ingest complete:', job.params);
+
+      const queueMessage = {
+        type: job.method,
+        param_id: job.params[0],
+        completed: true,
+      }
+
       try {
         switch (job.method) {
+          case 'IngestFile':
             this._handleFileIngested(job.params[0]);
             const file = await this.db.select('creator','name').from('files').where({ id: job.params[0] }).first();
             queueMessage.creator = file.creator;
@@ -1175,6 +1184,19 @@ class Jeeves extends Hub {
       } catch (exception) {
         console.error('[NOVO] Redis subscriber error:', exception);
       }
+    }
+  }
+
+  async onJobTaken (message) {
+    const { job } = JSON.parse(message);
+    if (job) {
+      const queueMessage = {
+        job: job,
+        type: 'takenJob',
+      };
+
+      const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      this.http.broadcast(messageTook);
     }
   }
 
@@ -1368,6 +1390,7 @@ class Jeeves extends Hub {
     redisSubscriber.connect().then(() => {
       console.log('Connected to Redis for subscribing');
       redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
+      redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
     });
 
     // Queue
@@ -1983,6 +2006,10 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
     this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
     this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
+
+    //Redis clientside connections
+
+    this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

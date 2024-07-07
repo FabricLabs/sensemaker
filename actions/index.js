@@ -198,6 +198,13 @@ const {
   clearHelpMessages,
 } = require('../actions/helpActions');
 
+// ## Redis Actions
+const {
+  syncRedisQueue,
+  lastJobTaken,
+  lastJobCompleted,
+} = require('../actions/redisActions');
+
 module.exports = {
   fetchCases: fetchCases,
   fetchCase: fetchCase,
@@ -294,4 +301,7 @@ module.exports = {
   sendHelpMessage: sendHelpMessage,
   markMessagesRead: markMessagesRead,
   clearHelpMessages: clearHelpMessages,
+  syncRedisQueue: syncRedisQueue,
+  lastJobTaken: lastJobTaken,
+  lastJobCompleted: lastJobCompleted,
 };

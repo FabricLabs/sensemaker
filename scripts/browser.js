@@ -74,6 +74,7 @@ async function main (input = {}) {
       search: state.search,
       feedback: state.feedback,
       help: state.help,
+      redis: state.redis,
     }
   };
 
