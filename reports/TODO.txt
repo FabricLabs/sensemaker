@@ -1,3 +1,4 @@
+./constants.js: const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
 ./constants.js: const ENABLE_BILLING = false; // TODO: enable billing
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
@@ -6,17 +7,22 @@
 ./settings/local.js: // TODO: @chrisinajar
 ./settings/local.js: domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
 ./settings/network.js: // TODO: network DNS configuration
+./settings/network.js: /* TODO: enable hivemind */
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
+./types/queue.js: // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
+./types/queue.js: // TODO: implement retries here (decrement counter, reinsert job into queue)
 ./types/queue.js: // TODO: enable `notify-keyspace-events` on Redis server
-./types/queue.js: // TODO: bind state?
+./types/queue.js: // TODO: canonize this API
+./types/queue.js: // TODO: reverse this logic to reject if !this.redis
 ./types/compiler.js: // TODO: load from:
+./types/trainer.js: // text: document.content, // TODO: re-work storage, use document ID instead
+./types/trainer.js: // TODO: check for `embedding` and fail if not present
 ./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
 ./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
 ./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
-./types/agent.js: num_ctx: 4096, // TODO: make this configurable
 ./types/agent.js: }); // TODO: remove this...
 ./Dockerfile: # TODO: mount SSHFS / similar here
 ./CRAWLING.md: TODO: review instructions from CodingIT team
@@ -25,27 +31,36 @@
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
 ./components/Bridge.js: // TODO: refactor @fabric/core/types/message to support arbitrary message types
 ./components/Jeeves.js: // TODO: inherit from @fabric/http/types/component
+./components/AdminSettings.js: //TODO: add history push to different tabs
 ./components/AdminSettings.js: // TODO: add users to admin settings
 ./components/AdminSettings.js: // TODO: add pagination to users
 ./components/Splash.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
-./components/DocumentDrafter.js: // TODO: add more fields
 ./components/InformationSidebar.js: // TODO: implement message->case API
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/ContractHome.js: // TODO: implement this.applicationString
+./components/Dashboard.js: // TODO: review and determine what to do with this function
 ./components/Dashboard.js: * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
+./components/Dashboard.js: {/* TODO: fix these routes */}
+./components/Dashboard.js: {/* END TODO */}
 ./components/Collection.js: // TODO: assign endpoint to search
 ./components/Collection.js: // TODO: generalize collection contents into cards
 ./scripts/setup.sh: # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
 ./scripts/trainer.js: // TODO: import these from constants file
+./scripts/trainer.js: // TODO: filter documents by embedding status (only process documents lacking embeddings)
 ./scripts/trainer.js: // TODO: subscribe to filesystem changes
+./scripts/trainer.js: // TODO: warn about this loop on startup
 ./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
 ./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
 ./scripts/trainer.js: // TODO: consider using authority or domain instead of simply "novo" to enable cross-host training
+./scripts/browser.js: // TODO: restore fabric-chat-bar
 ./scripts/browser.js: // TODO: consider localforage
 ./scripts/browser.js: // TODO: consider schema from Knex / MySQL
 ./scripts/browser.js: // TODO: consider GraphQL to pass schema
+./scripts/browser.js: // TODO: migrate this to `functions/mapStateToProps.js`
 ./actions/usersActions.js: // TODO: pagination
 ./actions/bridgeActions.js: // TODO: get bridge instance
+./actions/uploadActions.js: // TODO: pagination
+./actions/uploadActions.js: body: JSON.stringify({ query }) // TODO: filter search to user's files (at API level)
 ./actions/caseActions.js: // TODO: pagination
 ./routes/messages/create_message.js: // TODO: document why array only for Postgres
 ./routes/messages/create_message.js: // TODO: emit message
@@ -55,17 +70,42 @@
 ./routes/messages/create_message.js: // TODO: restore titling
 ./routes/products/list_products.js: // TODO: import auth token, load data
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
-./routes/cases/get_cases.js: // TODO: import auth token, load data
 ./routes/index.js: // view: require('./statutes/view_statute'), // TODO: create this
+./routes/conversations/get_conversations_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/conversations/get_conversations.js: // TODO: re-evaluate security of `is_admin` check
+./routes/conversations/get_conversations.js: // TODO: update the conversation upon change (new user message, new agent message)
+./routes/conversations/get_conversations.js: // TODO: sort conversations by updated_at (below line)
+./routes/conversations/get_conversations.js: // TODO: provide state
 ./routes/users/list_users.js: // TODO: pagination
+./routes/people/get_people.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/files/create_file.js: // TODO: refactor to use chaining instead of try/catch
+./routes/files/create_file.js: // // TODO: allow duplicate file upload
+./routes/files/create_file.js: // TODO: standardize the file upload logic into Jeeves (folder to look for, folder to move to, etc.)
+./routes/files/create_file.js: // TODO: restrict file types
 ./routes/files/create_file.js: // TODO: report file for cleanup / investigation
+./routes/courts/list_courts_by_jurisdiction.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/courts/court_view_by_id.js: // TODO: pagination
 ./routes/courts/court_view.js: // TODO: pagination
 ./routes/courts/list_courts.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/courts/find_court.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/documents/delete_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
+./routes/documents/get_document_sections.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/documents/list_documents.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/documents/create_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
+./routes/documents/create_document_section.js: // TODO: parse JSON, return to object before creating Actor
+./routes/documents/create_document_section.js: // TODO: handle errors
+./routes/documents/get_document_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/documents/create_document.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
+./routes/documents/create_document.js: type: type, // TODO: allow configuration of document type
 ./routes/documents/create_document.js: // TODO: parse JSON, return to object before creating Actor
 ./routes/documents/create_document.js: // TODO: handle errors
+./routes/documents/create_document.js: // TODO: actor ID { documentID, sectionNumber }
+./routes/documents/edit_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
+./routes/documents/edit_document_section.js: // TODO: handle errors
 ./routes/reporters/view_reporter.js: // TODO: pagination
 ./routes/matters/get_conversations.js: // TODO: pagination
 ./routes/matters/matter_view.js: // TODO: pagination
+./routes/invitations/create_invitation.js: // TODO: serve from assets (@nplayer89)
 ./services/gemini.js: // TODO: import from prompts/sensemaker.txt
 ./services/jeeves.js: // TODO: use levelgraph instead of level?
 ./services/jeeves.js: // TODO: use bcryptjs instead of bcrypt?
@@ -82,8 +122,9 @@
 ./services/jeeves.js: // TODO: prepare maximum token length
 ./services/jeeves.js: // TODO: convert limit here to constant
 ./services/jeeves.js: // TODO: Compressor
-./services/jeeves.js: // TODO: restore validator here
+./services/jeeves.js: // TODO: reject any answers including case titles not found in our database
 ./services/jeeves.js: // TODO: load from STATE file
+./services/jeeves.js: // TODO: check for successful prime
 ./services/jeeves.js: courts: [], // TODO: implement
 ./services/jeeves.js: documents: [], // TODO: implement
 ./services/jeeves.js: people: [], // TODO: implement
@@ -93,7 +134,6 @@
 ./services/jeeves.js: // TODO: test each search endpoint
 ./services/jeeves.js: // TODO: switch to PATCH `/users/:username`
 ./services/jeeves.js: // TODO: move all handlers to class methods
-./services/jeeves.js: // TODO: serve from assets (@nplayer89)
 ./services/jeeves.js: // TODO: render page for accepting invitation
 ./services/jeeves.js: // TODO: change to /sessions
 ./services/jeeves.js: // TODO: change this route from `/sessionRestore` to use authMiddleware?
@@ -101,15 +141,6 @@
 ./services/jeeves.js: // TODO: provide state
 ./services/jeeves.js: // TODO: fix this hack
 ./services/jeeves.js: // const page = new CaseHome({}); // TODO: use CaseView
-./services/jeeves.js: // TODO: re-evaluate security of `is_admin` check
-./services/jeeves.js: // TODO: update the conversation upon change (new user message, new agent message)
-./services/jeeves.js: // TODO: sort conversations by updated_at (below line)
-./services/jeeves.js: // TODO: provide state
-./services/jeeves.js: //       // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
@@ -130,8 +161,8 @@
 ./services/jeeves.js: // TODO: multiple case search sources
 ./services/jeeves.js: // TODO: concat into results
 ./services/jeeves.js: // TODO: queue crawl jobs for missing cases
-./services/jeeves.js: // TODO: Harvard search
-./services/jeeves.js: // TODO: CourtListener search
+./services/jeeves.js: //   // TODO: Harvard search
+./services/jeeves.js: //   // TODO: CourtListener search
 ./services/jeeves.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
 ./services/jeeves.js: // TODO: process PDF here
 ./services/jeeves.js: // TODO: consider additional metadata fields

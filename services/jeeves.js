@@ -1134,6 +1134,72 @@ class Jeeves extends Hub {
     };
   }
 
+  async onJobCompleted (message) {
+    const { job, result } = JSON.parse(message);
+
+    //job.method gives the job type, like 'IngestFile'
+    //job.params[0] will give us the file/document id
+    //result.status we can check if the job was 'COMPLETED'
+
+    if (job) {
+      const queueMessage = {
+        job: job,
+        type: 'completedJob',
+      }
+      const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      this.http.broadcast(messageTook);
+    }
+
+    if (result.status === 'COMPLETED') {
+
+      const queueMessage = {
+        type: job.method,
+        param_id: job.params[0],
+        completed: true,
+      }
+
+      try {
+        switch (job.method) {
+          case 'IngestFile':
+            this._handleFileIngested(job.params[0]);
+            const file = await this.db.select('creator','name').from('files').where({ id: job.params[0] }).first();
+            queueMessage.creator = file.creator;
+            queueMessage.filename = file.name;
+            const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+            this.http.broadcast(messageFile);
+            break;
+          case 'IngestDocument':
+            this._handleDocumentIngested(job.params[0]);
+            const document = await this.db.select('owner','fabric_id','title').from('documents').where({ id: job.params[0] }).first();
+            queueMessage.creator = document.owner;
+            queueMessage.fabric_id = document.fabric_id;
+            queueMessage.title = document.title;
+            const messageDocument = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+            this.http.broadcast(messageDocument);
+            break;
+          default:
+            console.log('[NOVO] Unhandled complete Job Method: ', job.method);
+            break;
+        }
+      } catch (exception) {
+        console.error('[NOVO] Redis subscriber error:', exception);
+      }
+    }
+  }
+
+  async onJobTaken (message) {
+    const { job } = JSON.parse(message);
+    if (job) {
+      const queueMessage = {
+        job: job,
+        type: 'takenJob',
+      };
+
+      const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      this.http.broadcast(messageTook);
+    }
+  }
+
   async query (query) {
     console.debug('[JEEVES]', '[QUERY]', 'Received query:', query);
     const collections = {
@@ -1323,77 +1389,9 @@ class Jeeves extends Hub {
 
     redisSubscriber.connect().then(() => {
       console.log('Connected to Redis for subscribing');
-
-      redisSubscriber.subscribe('job:taken', async (message) => {
-        const { job } = JSON.parse(message);
-
-        if (job) {
-          const queueMessage = {
-            job: job,
-            type: 'takenJob',
-          }
-
-          const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-          this.http.broadcast(messageTook);
-        }
-      });
-
-      redisSubscriber.subscribe('job:completed', async (message) => {
-        const { job, result } = JSON.parse(message);
-
-        //job.method gives the job type, like 'IngestFile'
-        //job.params[0] will give us the file/document id
-        //result.status we can check if the job was 'COMPLETED'
-
-        if (job) {
-          const queueMessage = {
-            job: job,
-            type: 'completedJob',
-            status: result.status === 'COMPLETED'? result.status : 'FAILED',
-          }
-          const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-          this.http.broadcast(messageTook);
-        }
-
-        if (result.status === 'COMPLETED') {
-
-          const queueMessage = {
-            type: job.method,
-            param_id: job.params[0],
-            completed: true,
-          }
-
-          try {
-            switch (job.method) {
-              case 'IngestFile':
-                this._handleFileIngested(job.params[0]);
-                const file = await this.db.select('creator','name').from('files').where({ id: job.params[0] }).first();
-                queueMessage.creator = file.creator;
-                queueMessage.filename = file.name;
-                const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-                this.http.broadcast(messageFile);
-                break;
-              case 'IngestDocument':
-                this._handleDocumentIngested(job.params[0]);
-                const document = await this.db.select('owner','fabric_id','title').from('documents').where({ id: job.params[0] }).first();
-                queueMessage.creator = document.owner;
-                queueMessage.fabric_id = document.fabric_id;
-                queueMessage.title = document.title;
-                const messageDocument = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-                this.http.broadcast(messageDocument);
-                break;
-              default:
-                console.log('[NOVO] Unhandled complete Job Method: ', job.method);
-                break;
-            }
-          } catch (exception) {
-            console.error('[NOVO] Redis subscriber error:', exception);
-          }
-        }
-
-      });
+      redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
+      redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
     });
-
 
     // Queue
     try {
@@ -4567,11 +4565,13 @@ class Jeeves extends Hub {
   //redis channel subscriber handlers
   async _handleFileIngested (file_id) {
     let updated;
-    try{
-      updated = await this.db('files').where({id: file_id}).update({status: 'ingested', updated_at: new Date()});
+
+    try {
+      updated = await this.db('files').where({ id: file_id }).update({ status: 'ingested', updated_at: new Date() });
     } catch (exception) {
       console.error('Unable to update file:', exception);
     }
+
     return updated;
   }
 
