@@ -203,6 +203,7 @@ const {
   syncRedisQueue,
   lastJobTaken,
   lastJobCompleted,
+  clearQueue,
 } = require('../actions/redisActions');
 
 module.exports = {
@@ -304,4 +305,5 @@ module.exports = {
   syncRedisQueue: syncRedisQueue,
   lastJobTaken: lastJobTaken,
   lastJobCompleted: lastJobCompleted,
+  clearQueue: clearQueue,
 };

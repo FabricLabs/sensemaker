@@ -54,6 +54,10 @@ class Queue extends Actor {
     return this._addJob.bind(this);
   }
 
+  get _clearQueue() {
+    return this._clearQueue.bind(this);
+  }
+
   get interval() {
     return 1000 / this.settings.frequency; // ms
   }
@@ -279,6 +283,23 @@ class Queue extends Actor {
     console.debug('[QUEUE]', 'Retrying job:', job);
     await this._addJob(job);
   }
+
+async _clearQueue() {
+  try {
+    if (this.redis) {
+      await this.redis.del(this.settings.collection);
+      console.debug('[QUEUE]', 'Queue cleared in Redis');
+    }
+
+    this._state.content.jobs = {};
+    console.debug('[QUEUE]', 'Queue cleared in local state');
+  } catch (error) {
+    console.error('[QUEUE]', 'Failed to clear queue:', error);
+    throw error;
+  }
+  return this._state.content.jobs;
+}
+
 }
 
 

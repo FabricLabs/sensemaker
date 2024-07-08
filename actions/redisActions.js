@@ -19,6 +19,10 @@ const LAST_JOB_COMPLETED_REQUEST = 'LAST_JOB_COMPLETED_REQUEST';
 const LAST_JOB_COMPLETED_SUCCESS = 'LAST_JOB_COMPLETED_SUCCESS';
 const LAST_JOB_COMPLETED_FAILURE = 'LAST_JOB_COMPLETED_FAILURE';
 
+const CLEAR_QUEUE_REQUEST = 'CLEAR_QUEUE_REQUEST';
+const CLEAR_QUEUE_SUCCESS = 'CLEAR_QUEUE_SUCCESS';
+const CLEAR_QUEUE_FAILURE = 'CLEAR_QUEUE_FAILURE';
+
 // Action creators
 const syncQueueRequest = () => ({ type: SYNC_REDIS_QUEUE_REQUEST, loading: true });
 const syncQueueSuccess = (jobs) => ({ type: SYNC_REDIS_QUEUE_SUCCESS, payload: jobs, loading: false });
@@ -31,6 +35,10 @@ const lastJobTakenFailure = (error) => ({ type: LAST_JOB_TAKEN_FAILURE, payload:
 const lastJobCompletedRequest = () => ({ type: LAST_JOB_COMPLETED_REQUEST, loading: true });
 const lastJobCompletedSuccess = (job) => ({ type: LAST_JOB_COMPLETED_SUCCESS, payload: job });
 const lastJobCompletedFailure = (error) => ({ type: LAST_JOB_COMPLETED_FAILURE, payload: error });
+
+const clearQueueRequest = () => ({ type: CLEAR_QUEUE_REQUEST, loading: true });
+const clearQueueSuccess = (data) => ({ type: CLEAR_QUEUE_SUCCESS, payload: data });
+const clearQueueFailure = (error) => ({ type: CLEAR_QUEUE_FAILURE, payload: error });
 
 // Thunk action creator
 const syncRedisQueue = () => {
@@ -68,10 +76,35 @@ const lastJobCompleted = (job) => {
   };
 };
 
+const clearQueue = () => {
+  return async (dispatch,getState) => {
+    dispatch(clearQueueRequest());
+    const { token } = getState().auth;
+    try {
+        const response = await fetch(`/redis/queue`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Server error');
+        }
+        const data = await response.json();
+      dispatch(clearQueueSuccess(data));
+    } catch (error) {
+      dispatch(clearQueueFailure(error));
+    }
+  };
+};
+
 module.exports = {
   syncRedisQueue,
   lastJobTaken,
   lastJobCompleted,
+  clearQueue,
   SYNC_REDIS_QUEUE_REQUEST,
   SYNC_REDIS_QUEUE_SUCCESS,
   SYNC_REDIS_QUEUE_FAILURE,

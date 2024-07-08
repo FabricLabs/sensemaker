@@ -50,7 +50,7 @@ module.exports = {
     createInvitations: require('./invitations/create_invitation'),
     getInvitations: require('./invitations/get_invitations'),
     checkInvitationToken: require('./invitations/check_invitation_token'),
-    resendInvitation : require('./invitations/resend_invitation'),
+    resendInvitation: require('./invitations/resend_invitation'),
     acceptInvitation: require('./invitations/accept_invitation'),
     declineInvitation: require('./invitations/decline_invitation'),
     deleteInvitation: require('./invitations/delete_invitation'),
@@ -130,5 +130,6 @@ module.exports = {
   },
   redis: {
     listQueue: require('./redis/list_queue.js'),
+    clearQueue: require('./redis/clear_queue.js'),
   },
 };

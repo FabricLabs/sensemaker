@@ -1390,7 +1390,7 @@ class Jeeves extends Hub {
             console.error('[NOVO] Redis subscriber error:', exception);
           }
         }
-        
+
       });
     });
 
@@ -2012,6 +2012,8 @@ class Jeeves extends Hub {
     //Redis clientside connections
 
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
+    this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
+
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
