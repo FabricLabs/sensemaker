@@ -464,7 +464,7 @@ class MatterView extends React.Component {
               <GridColumn >
                 <div className='col-center'>
                   <Header as='h2'>Files</Header>
-                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '70vw' }} loading={matters.addingContext}>
+                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
                     <Table textAlign='center' celled striped >
                       <Table.Header>
                         <Table.Row >
@@ -548,7 +548,7 @@ class MatterView extends React.Component {
                 <GridColumn >
                   <div className='col-center'>
                     <Header as='h2'>Additional Notes</Header>
-                    <Segment style={{ maxHeight: '40vh', width: '60vw' }} loading={matters.addingContext}>
+                    <Segment style={{ maxHeight: '40vh', width: '100%' }} loading={matters.addingContext}>
                       <List loading={matters.loading} size='small'>
                         {matters.matterNotes.map(instance => {
                           const isExpanded = this.state.expandedNoteId === instance.id;
