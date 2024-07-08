@@ -438,7 +438,6 @@ class MatterView extends React.Component {
         <section className='matter-details'>
           <Grid centered columns={'equal'} textAlign='center' verticalAlign='middle'>
             <GridRow>
-              <GridColumn  />
               <GridColumn  textAlign='center'>
                 <Header as='h2'>Context
                   <Popup trigger={<Icon name='info circle' size='small' style={{ margin: '0 0  0.2em 0.5em', color: '#336699' }} />}>
@@ -452,8 +451,7 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn width={2} />
-              <GridColumn width={10} textAlign='center'>
+              <GridColumn textAlign='center'>
                 <Button
                   primary
                   content="+ Add File or Note"
@@ -592,7 +590,6 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow textAlign='center'>
-              <GridColumn/>
               <GridColumn >
                 <div>
                   <List>
@@ -613,7 +610,6 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn/>
               <GridColumn textAlign='center'>
                   <Button
                     primary
