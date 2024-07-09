@@ -3,7 +3,7 @@
 const React = require('react');
 
 const {
-  Label, Header, Table, Button, Icon
+  Label, Header, Table, Button, Icon, Modal
 } = require('semantic-ui-react');
 
 
@@ -24,7 +24,8 @@ class AdminServicesTab extends React.Component {
             messages: 0,
             courts: 0,
             cases: 0,
-            documents: 0
+            documents: 0,
+            deleteQueueModal: false,
           }
         },
         waitlistSignupCount: 0,
@@ -49,7 +50,7 @@ class AdminServicesTab extends React.Component {
   }
 
   componentDidUpdate() {
-    console.log(this.props.redis);
+    //console.log(this.props.redis);
   }
 
   handleResize = () => {
@@ -59,6 +60,30 @@ class AdminServicesTab extends React.Component {
   clearRedisQueue = async () => {
     await this.props.clearQueue();
     await this.props.syncRedisQueue();
+    this.closeConfirmDeleteModal();
+  }
+
+  closeConfirmDeleteModal = () => {
+    this.setState({deleteQueueModal: false});
+  }
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.deleteQueueModal}
+        onClose={this.closeConfirmDeleteModal}
+      >
+        <Modal.Header>Clear Redis queue</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to clear Redis queue? This could cause some file/documet Ingestion get lost.</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button secondary onClick={this.closeConfirmDeleteModal}>No</Button>
+          <Button negative onClick={this.clearRedisQueue}>Yes, clear it</Button>
+        </Modal.Actions>
+      </Modal>
+    )
   }
 
   render() {
@@ -109,8 +134,9 @@ class AdminServicesTab extends React.Component {
             </Table.Row>
           </Table.Body>
         </Table>
-        <Header as='h3'>Redis</Header>
-        <Button icon onClick={this.clearRedisQueue}><Icon name='trash alternate outline'/></Button>
+        <Header as='h3'>Redis
+          <Button icon size='small' onClick={()=> this.setState({deleteQueueModal: true})} style={{marginLeft: '2em'}}><Icon name='trash alternate outline' /></Button>
+        </Header>
         <Table celled striped>
           <Table.Header>
             <Table.Row>
@@ -153,6 +179,7 @@ class AdminServicesTab extends React.Component {
             }
           </Table.Body>
         </Table>
+        {this.renderConfirmModal()}
       </adminServicesTab>
     )
   }
