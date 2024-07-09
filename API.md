@@ -13,6 +13,9 @@
 <dt><a href="#Learner">Learner</a></dt>
 <dd><p>Basic neural network support.</p>
 </dd>
+<dt><a href="#Queue">Queue</a></dt>
+<dd><p>A <code>Queue</code> is a simple job queue for managing asynchronous tasks.</p>
+</dd>
 <dt><a href="#Site">Site</a></dt>
 <dd><p>Implements a full-capacity (Native + Edge nodes) for a Fabric Site.</p>
 </dd>
@@ -21,6 +24,9 @@
 </dd>
 <dt><a href="#Trainer">Trainer</a></dt>
 <dd><p>Implements document ingestion.</p>
+</dd>
+<dt><a href="#Worker">Worker</a></dt>
+<dd><p>Worker service.</p>
 </dd>
 <dt><a href="#CourtListener">CourtListener</a> ⇐ <code>Service</code></dt>
 <dd><p>CourtListener is a service for interacting with the CourtListener database.</p>
@@ -148,6 +154,26 @@ Write a buffer to memory.
 | address | <code>Number</code> | Address of the cell. |
 | value | <code>Buffer</code> | Data to write to memory. |
 
+<a name="Queue"></a>
+
+## Queue
+A `Queue` is a simple job queue for managing asynchronous tasks.
+
+**Kind**: global class  
+<a name="Queue+registerMethod"></a>
+
+### queue.registerMethod(name, contract, context) ⇒ <code>function</code>
+Register a method with the queue.
+
+**Kind**: instance method of [<code>Queue</code>](#Queue)  
+**Returns**: <code>function</code> - The registered method.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>String</code> | Name of the method to register. |
+| contract | <code>function</code> | Function to execute when the method is called. |
+| context | <code>Object</code> | Context in which to execute the method. |
+
 <a name="Site"></a>
 
 ## Site
@@ -220,6 +246,12 @@ Search the document store.
 | --- | --- | --- |
 | request | <code>Object</code> | Search object. |
 
+<a name="Worker"></a>
+
+## Worker
+Worker service.
+
+**Kind**: global class  
 <a name="CourtListener"></a>
 
 ## CourtListener ⇐ <code>Service</code>

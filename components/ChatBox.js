@@ -10,16 +10,7 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 const hark = require('hark');
-const { Navigate } = require('react-router-dom');
-
-
-const toRelativeTime = require('../functions/toRelativeTime');
-
-const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
-// const InformationSidebar = require('./InformationSidebar');
-const Typewriter = require('./Typewriter');
-
-const { Link, useParams } = require('react-router-dom');
+const { Link, Navigate, useParams } = require('react-router-dom');
 
 // Semantic UI
 const {
@@ -40,6 +31,14 @@ const {
 } = require('semantic-ui-react');
 
 const TextareaAutosize = require('react-textarea-autosize').default;
+
+// Functions
+const toRelativeTime = require('../functions/toRelativeTime');
+
+// Components
+const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
+// const InformationSidebar = require('./InformationSidebar');
+const Typewriter = require('./Typewriter');
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -712,7 +711,7 @@ class ChatBox extends React.Component {
           {matterID && (
             <div className='conversation-title-container'>
               <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + matterID} onClick={this.props.fetchConversations}><Icon name='left chevron' /> Back to Matter</Link></Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Button to={"/matters/" + matterID} onClick={this.props.fetchConversations} as={Link}><Icon name='left chevron' /> Back to Matter</Button></Header>
             </div>
           )}
           {/* when we start a new conversation for a document, the title is the filename */}

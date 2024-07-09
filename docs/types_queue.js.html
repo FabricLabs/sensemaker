@@ -1,4 +1,23 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: types/queue.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: types/queue.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
 
 // Dependencies
 const merge = require('lodash.merge');
@@ -94,7 +113,7 @@ class Queue extends Actor {
       console.debug('[QUEUE]', 'Current job:', this._state.current);
 
       // If there's work to do, do it
-      if (this._state.current && !this._state.current.status) {
+      if (this._state.current &amp;&amp; !this._state.current.status) {
         this._state.current.status = 'COMPUTING';
 
         // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
@@ -159,7 +178,7 @@ class Queue extends Actor {
       });
     }
 
-    for (let i = 0; i < this.settings.workers; i++) {
+    for (let i = 0; i &lt; this.settings.workers; i++) {
       const worker = (async () => {}).bind(this);
       this._workers.push(worker);
     }
@@ -231,3 +250,42 @@ class Queue extends Actor {
 }
 
 module.exports = Queue;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="CourtListener.html">CourtListener</a></li>
+      <li><a href="Jeeves.html">Jeeves</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

@@ -1,4 +1,23 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: services/jeeves.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: services/jeeves.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
 
 // Prepare transpilation
 require('@babel/register');
@@ -238,8 +257,8 @@ class Jeeves extends Hub {
 
      // Services
     // Optional Services
-    this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
-    this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
+    this.email = (this.settings.email &amp;&amp; this.settings.email.enable) ? new EmailService(this.settings.email) : null;
+    this.matrix = (this.settings.matrix &amp;&amp; this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
     this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
@@ -434,7 +453,7 @@ class Jeeves extends Hub {
     let result = [];
 
     // Recursively combine tokens
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = 0; i &lt; tokens.length; i++) {
       const rest = tokens.slice(0, i).concat(tokens.slice(i + 1));
       const combinations = this.combinationsOf(rest, prefix + tokens[i] + ' ');
       result = result.concat(combinations);
@@ -589,7 +608,7 @@ class Jeeves extends Hub {
   }
 
   async ff (count = 0) {
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i &lt; count; i++) {
       try {
         await this.tick();
       } catch (exception) {
@@ -917,7 +936,7 @@ class Jeeves extends Hub {
 
           // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
           const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-          for (let i = 0; i < options.length; i++) {
+          for (let i = 0; i &lt; options.length; i++) {
             const option = options[i];
             if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
             this.extractor.query({
@@ -975,7 +994,7 @@ class Jeeves extends Hub {
             });
             console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
 
-            if (extracted && extracted.content) {
+            if (extracted &amp;&amp; extracted.content) {
               console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
               try {
                 caseCards = JSON.parse(extracted.content).map((x) => {
@@ -1053,7 +1072,7 @@ class Jeeves extends Hub {
     // User Analytics
     const users = await this.db('users').select('id', 'username');
 
-    for (let i = 0; i < users.length; i++) {
+    for (let i = 0; i &lt; users.length; i++) {
       const user = users[i];
       const conversations = await this.db('conversations').select('id').where({ creator_id: user.id });
       const messages = await this.db('messages').select('id').where({ user_id: user.id });
@@ -1109,7 +1128,7 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[ETL]', 'Stats:', other, stats);
 
     const start = new Date();
-    for (let i = 0; i < chunk.length; i++) {
+    for (let i = 0; i &lt; chunk.length; i++) {
       const instance = chunk[i];
       console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
       // const nativeEmbedding = await this._generateEmbedding(`[novo/cases/${instance.id}] ${instance.title}`);
@@ -1241,7 +1260,7 @@ class Jeeves extends Hub {
 
   async prime () {
     console.debug('[NOVO]', '[PRIME]', 'Priming...');
-    for (let i = 0; i < this.settings.ollama.models.length; i++) {
+    for (let i = 0; i &lt; this.settings.ollama.models.length; i++) {
       console.debug('[NOVO]', '[PRIME]', 'Priming:', this.settings.ollama.models[i]);
       const prime = await fetch(`http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/generate`, {
         method: 'POST',
@@ -1269,7 +1288,7 @@ class Jeeves extends Hub {
 
     const elements = [];
 
-    for (let i = 0; i < cases.length; i++) {
+    for (let i = 0; i &lt; cases.length; i++) {
       const instance = cases[i];
       const element = { type: 'Case', content: instance };
       elements.push(element);
@@ -1301,7 +1320,7 @@ class Jeeves extends Hub {
     const tokens = this.combinationsOf(components);
 
     // Search for all tokens
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = 0; i &lt; tokens.length; i++) {
       const token = tokens[i];
       const results = await this.db('messages').where('content', 'like', `%${token}%`);
       console.debug('[JEEVES]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
@@ -1318,7 +1337,7 @@ class Jeeves extends Hub {
     // Result Constructor
     const elements = [];
 
-    for (let i = 0; i < conversations.data.length; i++) {
+    for (let i = 0; i &lt; conversations.data.length; i++) {
       const instance = conversations[i];
       const element = { type: 'Conversation', content: instance };
       elements.push(element);
@@ -1438,7 +1457,7 @@ class Jeeves extends Hub {
 
     // this.products = await this.stripe.enumerateProducts();
 
-    // if (this.settings.statutes.enable && this.statutes) {
+    // if (this.settings.statutes.enable &amp;&amp; this.statutes) {
     //   this.statutes.start().then((output) => {
     //     console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
     //   });
@@ -1861,7 +1880,7 @@ class Jeeves extends Hub {
       this._crawler = setInterval(async () => {
         const db = this.db;
         const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
-          this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
+          this.where('last_harvard_crawl', '&lt;', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
         }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
 
         // console.debug('[INGEST] Found uningested case:', unknown.title);
@@ -2181,7 +2200,7 @@ class Jeeves extends Hub {
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
         const resetLink = `${this.authority}/passwordreset/${resetToken}`;
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
+        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&amp;token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
 
         const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
 
@@ -2325,14 +2344,14 @@ class Jeeves extends Hub {
       /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
 
       // Data Updates
-      if (instance.courtlistener_id && this.settings.courtlistener.enable) {
+      if (instance.courtlistener_id &amp;&amp; this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
         if (title !== instance.title) updates.title = title;
       }
 
-      if (instance.pacer_case_id && this.settings.courtlistener.enable) {
+      if (instance.pacer_case_id &amp;&amp; this.settings.courtlistener.enable) {
         const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
         console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
         const title = record.case_name_full || record.case_name || instance.title;
@@ -2365,7 +2384,7 @@ class Jeeves extends Hub {
           const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
           this.http.broadcast(message);
 
-          if (results.cases && results.cases.length > 0) {
+          if (results.cases &amp;&amp; results.cases.length > 0) {
             const first = results.cases[0];
           }
         });
@@ -2913,9 +2932,9 @@ class Jeeves extends Hub {
   //function that creates the template to email invitations sendig
   createInvitationEmailContent(acceptLink, declineLink, imgSrc) {
     return `
-          <html>
-            <head>
-                <style>
+          &lt;html>
+            &lt;head>
+                &lt;style>
                     body {
                         font-family: Arial, sans-serif;
                         text-align: center;
@@ -2966,41 +2985,41 @@ class Jeeves extends Hub {
                   .content {
                       text-align: center;
                   }
-                </style>
-            </head>
+                &lt;/style>
+            &lt;/head>
 
-            <body>
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                    <tr>
-                        <td>
-                            <div class="container">
-                                <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
-                                    <tr>
-                                        <td class="content">
-                                            <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                                            <h3>Hello, You have been invited to join Novo.</h3>
-                                            <p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.</p>
-                                            <a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo</a>
-                                            <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                <div class="footer">
-                                    <p>For any inquiries, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </body>
+            &lt;body>
+                &lt;table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    &lt;tr>
+                        &lt;td>
+                            &lt;div class="container">
+                                &lt;table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                                    &lt;tr>
+                                        &lt;td class="content">
+                                            &lt;img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                                            &lt;h3>Hello, You have been invited to join Novo.&lt;/h3>
+                                            &lt;p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.&lt;/p>
+                                            &lt;a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo&lt;/a>
+                                            &lt;p>If you prefer not to receive future invitations, &lt;a href=${declineLink} class="decline">click here&lt;/a>.&lt;/p>
+                                        &lt;/td>
+                                    &lt;/tr>
+                                &lt;/table>
+                                &lt;div class="footer">
+                                    &lt;p>For any inquiries, feel free to contact us at &lt;a href="mailto:support@novo.com">support@novo.com&lt;/a>&lt;/p>
+                                &lt;/div>
+                            &lt;/div>
+                        &lt;/td>
+                    &lt;/tr>
+                &lt;/table>
+            &lt;/body>
 
-          </html>`;
+          &lt;/html>`;
   }
   createPasswordResetEmailContent(resetLink, imgSrc) {
     return `
-        <html>
-          <head>
-            <style>
+        &lt;html>
+          &lt;head>
+            &lt;style>
               body {
                 font-family: Arial, sans-serif;
                 text-align: center;
@@ -3036,33 +3055,33 @@ class Jeeves extends Hub {
                 margin-top: 30px;
                 font-size: 0.8em;
               }
-            </style>
-          </head>
-          <body>
-            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-              <tr>
-                <td>
-                  <div class="container">
-                    <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
-                      <tr>
-                        <td class="content">
-                          <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                          <h3>Password Reset Request</h3>
-                          <p>You have requested to reset your password. Please click the button below to set a new password.</p>
-                          <a href=${resetLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Reset Password</a>
-                          <p>If you did not request a password reset, please ignore this email.</p>
-                        </td>
-                      </tr>
-                    </table>
-                    <div class="footer">
-                      <p>If you have any issues or questions, please contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>`;
+            &lt;/style>
+          &lt;/head>
+          &lt;body>
+            &lt;table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              &lt;tr>
+                &lt;td>
+                  &lt;div class="container">
+                    &lt;table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
+                      &lt;tr>
+                        &lt;td class="content">
+                          &lt;img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
+                          &lt;h3>Password Reset Request&lt;/h3>
+                          &lt;p>You have requested to reset your password. Please click the button below to set a new password.&lt;/p>
+                          &lt;a href=${resetLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Reset Password&lt;/a>
+                          &lt;p>If you did not request a password reset, please ignore this email.&lt;/p>
+                        &lt;/td>
+                      &lt;/tr>
+                    &lt;/table>
+                    &lt;div class="footer">
+                      &lt;p>If you have any issues or questions, please contact us at &lt;a href="mailto:support@novo.com">support@novo.com&lt;/a>&lt;/p>
+                    &lt;/div>
+                  &lt;/div>
+                &lt;/td>
+              &lt;/tr>
+            &lt;/table>
+          &lt;/body>
+        &lt;/html>`;
   }
 
   /**
@@ -3086,7 +3105,7 @@ class Jeeves extends Hub {
 
     /* console.debug('workers:', this.workers);
 
-    for (let i = 0; i < this.workers.length; i++) {
+    for (let i = 0; i &lt; this.workers.length; i++) {
       await this.workers[i].stop();
     } */
 
@@ -3129,7 +3148,7 @@ class Jeeves extends Hub {
   }
 
   async _attachWorkers () {
-    for (let i = 0; i < this.settings.workers; i++) {
+    for (let i = 0; i &lt; this.settings.workers; i++) {
       const worker = new Worker();
       this.workers.push(worker);
     }
@@ -3713,7 +3732,7 @@ class Jeeves extends Hub {
       return this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
     }));
 
-    for (let i = 0; i < jurisdictions.length; i++) {
+    for (let i = 0; i &lt; jurisdictions.length; i++) {
       const link = await this.db('reporter_jurisdictions').where({ reporter_id: target.id, jurisdiction_id: jurisdictions[i].id }).first();
       if (link) continue;
       await this.db('reporter_jurisdictions').insert({
@@ -3795,7 +3814,7 @@ class Jeeves extends Hub {
 
     if (!room) return messages;
 
-    for (let i = 0; i < room.timeline.length; i++) {
+    for (let i = 0; i &lt; room.timeline.length; i++) {
       const event = room.timeline[i];
 
       if (event.getType() === 'm.room.message') {
@@ -3821,7 +3840,7 @@ class Jeeves extends Hub {
 
     const roomResult = await this.matrix.client.getJoinedRooms();
 
-    for (let i = 0; i < roomResult.joined_rooms.length; i++) {
+    for (let i = 0; i &lt; roomResult.joined_rooms.length; i++) {
       const room = roomResult.joined_rooms[i];
       const members = await this.matrix.client.getJoinedRoomMembers(room);
       console.log(`room ${room} has ${Object.keys(members.joined).length}`);
@@ -3922,7 +3941,7 @@ class Jeeves extends Hub {
     });
 
     // If we get a preferred response, use it.  Otherwise fall back to a generic response.
-    /* const text = (typeof openai !== 'undefined' && openai)
+    /* const text = (typeof openai !== 'undefined' &amp;&amp; openai)
       ? openai.completion?.choices[0].message.content.trim()
       : "I'm sorry, but something went wrong.  Try again later."
       ; */
@@ -3960,7 +3979,7 @@ class Jeeves extends Hub {
   }
 
   async _startWorkers () {
-    for (let i = 0; i < this.workers.length; i++) {
+    for (let i = 0; i &lt; this.workers.length; i++) {
       await this.workers[i].start();
     }
   }
@@ -4123,7 +4142,7 @@ class Jeeves extends Hub {
       this.trainer.search(request, 1).then(async (results) => {
         let response = [];
         console.debug('search results:', results.content);
-        for (let i = 0; i < results.content.length; i++) {
+        for (let i = 0; i &lt; results.content.length; i++) {
           const result = results.content[i];
           switch (result.metadata.type) {
             case 'document':
@@ -4202,7 +4221,7 @@ class Jeeves extends Hub {
     const results = [];
     const tokens = this._tokenizeTerm(request.query);
 
-    for (let i = 0; i < tokens.length; i++) {
+    for (let i = 0; i &lt; tokens.length; i++) {
       const token = tokens[i];
       const people = await this.db('people')
         .select('*')
@@ -4282,8 +4301,8 @@ class Jeeves extends Hub {
       }
     });
 
-    if (service.routes && service.routes.length) {
-      for (let i = 0; i < service.routes.length; i++) {
+    if (service.routes &amp;&amp; service.routes.length) {
+      for (let i = 0; i &lt; service.routes.length; i++) {
         const route = service.routes[i];
         this.http._addRoute(route.method, route.path, route.handler);
       }
@@ -4403,7 +4422,7 @@ class Jeeves extends Hub {
           });
         }), */
         this.db('jurisdictions').select('id', 'name').then(async (jurisdictions) => {
-          for (let i = 0; i < jurisdictions.length; i++) {
+          for (let i = 0; i &lt; jurisdictions.length; i++) {
             const element = jurisdictions[i];
             const actor = { name: `novo/jurisdictions/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/jurisdictions/${element.id}/name`, content: element.name };
@@ -4413,7 +4432,7 @@ class Jeeves extends Hub {
           }
         }),
         this.db('courts').select('id', 'name').then(async (courts) => {
-          for (let i = 0; i < courts.length; i++) {
+          for (let i = 0; i &lt; courts.length; i++) {
             const element = courts[i];
             const actor = { name: `novo/courts/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/courts/${element.id}/name`, content: element.name };
@@ -4423,7 +4442,7 @@ class Jeeves extends Hub {
           }
         }),
         this.db('reporters').select('id', 'name').then(async (reporters) => {
-          for (let i = 0; i < reporters.length; i++) {
+          for (let i = 0; i &lt; reporters.length; i++) {
             const element = reporters[i];
             const actor = { name: `novo/reporters/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/reporters/${element.id}/name`, content: element.name };
@@ -4433,7 +4452,7 @@ class Jeeves extends Hub {
           }
         }),
         this.db('cases').select('id', 'title', 'summary', 'decision_date', 'date_filed', 'date_argued', 'date_reargued', 'date_reargument_denied', 'date_blocked', 'date_last_filing', 'date_terminated', 'cause', 'nature_of_suit', 'jury_demand').orderByRaw('RAND()').limit(limit).then(async (cases) => {
-          for (let i = 0; i < cases.length; i++) {
+          for (let i = 0; i &lt; cases.length; i++) {
             const element = cases[i];
             const actor = { name: `novo/cases/${element.id}` }; // Novo reference ID (name)
             const title = { name: `novo/cases/${element.id}/title`, content: element.title };
@@ -4446,7 +4465,7 @@ class Jeeves extends Hub {
           }
         }),
         this.db('documents').select(['id', 'description', 'content']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
-          for (let i = 0; i < documents.length; i++) {
+          for (let i = 0; i &lt; documents.length; i++) {
             const element = documents[i];
             const actor = { name: `novo/documents/${element.id}` };
             // TODO: consider additional metadata fields
@@ -4478,7 +4497,7 @@ class Jeeves extends Hub {
 
     let cases = [];
 
-    for (let i = 0; i < results.length; i++) {
+    for (let i = 0; i &lt; results.length; i++) {
       cases = cases.concat(results[i]);
     }
 
@@ -4492,7 +4511,7 @@ class Jeeves extends Hub {
       }
 
       const parts = result.metadata.name.split('/');
-      if (parts.length < 3) {
+      if (parts.length &lt; 3) {
         console.debug('[JEEVES]', '[VECTOR]', 'Invalid parts:', parts);
         return null;
       }
@@ -4548,11 +4567,11 @@ class Jeeves extends Hub {
     if (req.headers.authorization) {
       const header = req.headers.authorization.split(' ');
 
-      if (header[0] == 'Bearer' && header[1]) {
+      if (header[0] == 'Bearer' &amp;&amp; header[1]) {
         const token = header[1];
         const parts = token.split('.');
 
-        if (parts && parts.length == 3) {
+        if (parts &amp;&amp; parts.length == 3) {
           const headers = parts[0];
           const payload = parts[1];
           const signature = parts[2];
@@ -4601,3 +4620,42 @@ class Jeeves extends Hub {
 }
 
 module.exports = Jeeves;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="CourtListener.html">CourtListener</a></li>
+      <li><a href="Jeeves.html">Jeeves</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>
