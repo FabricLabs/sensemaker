@@ -72,6 +72,23 @@ class Queue extends Actor {
     });
   }
 
+  _registerMethod (name, contract, context = {}) {
+    return this.registerMethod(name, contract, context);
+  }
+
+  /**
+   * Register a method with the queue.
+   * @param {String} name Name of the method to register.
+   * @param {Function} contract Function to execute when the method is called.
+   * @param {Object} context Context in which to execute the method.
+   * @returns {Function} The registered method.
+   */
+  registerMethod (name, contract, context = {}) {
+    if (this._methods[name]) return this._methods[name];
+    this._methods[name] = contract.bind(context);
+    return this._methods[name];
+  }
+
   // async _tick () {
   //   ++this.clock;
 
@@ -96,7 +113,6 @@ class Queue extends Actor {
   //         })
   //       ]).catch((exception) => {
   //         console.error('[QUEUE]', 'Job failed:', exception);
-  //         console.log('[NAHUEL] FALLO EL JOB, STATE CURRENT TIENE ESTO:', this._state.current);
   //         // TODO: implement retries here (decrement counter, reinsert job into queue)
   //         if(this._state.current.attempts > 0){
   //           await this._failJob(this._state.current);
@@ -134,11 +150,15 @@ class Queue extends Actor {
 
         // Handle job completion or timeout
         try {
+
           const result = await Promise.race([
             this._completeJob(this._state.current),
-            new Promise((resolve, reject) => {
+            new Promise((_, reject) => {
               setTimeout(() => {
                 console.error('[QUEUE]', 'Job timed out:', this._state.current);
+                if (this._state.current && this._state.current.attempts > 0) {
+                  this._failJob(this._state.current);
+                }
                 reject(new Error('Job timed out.'));
               }, this.interval);
             })
@@ -213,12 +233,6 @@ class Queue extends Actor {
     this.ticker = setInterval(this._tick.bind(this), this.interval);
   }
 
-  async _registerMethod(name, contract, context = {}) {
-    if (this._methods[name]) return this._methods[name];
-    this._methods[name] = contract.bind(context);
-    return this._methods[name];
-  }
-
   async _addJob(job) {
     if (!job.id) job = new Actor(job);
     if (this.state.jobs[job.id]) return this.state.jobs[job.id];
@@ -281,6 +295,7 @@ class Queue extends Actor {
     //we take the failed job and we add it to the queue again with 1 less retry attempt
     job.attempts--;
     console.debug('[QUEUE]', 'Retrying job:', job);
+    this._state.current = null;
     await this._addJob(job);
   }
 
