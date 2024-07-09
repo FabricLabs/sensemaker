@@ -393,6 +393,7 @@ class Jeeves extends Hub {
       socket: this.settings.redis
     });
 
+    // TODO: See if we can put this in its own file.
     knex.QueryBuilder.extend('paginate',
       function paginate({ perPage = 10,
                           currentPage = 1,
@@ -475,7 +476,11 @@ class Jeeves extends Hub {
       }
     );
 
+    // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
+    // QueryBuilder object, only the objects who cache with Redis should have the Redis database instance as an object.
     knex.QueryBuilder.extend('redis', this.redis);
+
+    // TODO: See if we can put this in its own file.
     knex.QueryBuilder.extend('cache', async function (qry) {
       try {
         let getHashKey = (query) => {
