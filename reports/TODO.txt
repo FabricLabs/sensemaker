@@ -62,6 +62,8 @@
 ./actions/uploadActions.js: // TODO: pagination
 ./actions/uploadActions.js: body: JSON.stringify({ query }) // TODO: filter search to user's files (at API level)
 ./actions/caseActions.js: // TODO: pagination
+./functions/IngestFile.js: // TODO: check for error
+./functions/IngestFile.js: // TODO: check for error
 ./routes/messages/create_message.js: // TODO: document why array only for Postgres
 ./routes/messages/create_message.js: // TODO: emit message
 ./routes/messages/create_message.js: // room: roomID // TODO: replace with a generic property (not specific to Matrix)
@@ -110,6 +112,7 @@
 ./services/jeeves.js: // TODO: use levelgraph instead of level?
 ./services/jeeves.js: // TODO: use bcryptjs instead of bcrypt?
 ./services/jeeves.js: // TODO: reduce to whole library import?
+./services/jeeves.js: // TODO: extract defaults to `settings/default.json`
 ./services/jeeves.js: // TODO: use path
 ./services/jeeves.js: // TODO: enable recursive Filesystem (directories)
 ./services/jeeves.js: // TODO: evaluate use of temperature

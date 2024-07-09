@@ -7,9 +7,6 @@ See `scripts/` for a list of available tools.
 ### Install
 See `INSTALL.md` for a complete install guide.
 
-## Principles
-1. Pull Requests should be the smallest possible set of changes implementing the desired feature.
-
 ## Overview
 The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
 
@@ -24,6 +21,16 @@ The project is primarily built in JavaScript, running Node.js on the server and 
   - PyTorch HTTP Client
 - Services: provided an HTTP API
   - PyTorch
+
+### Workflow
+1. Commit early, commit often
+2. Once a branch diverges, open a pull request (see also number 1)
+3. Regularly use `npm test` and `npm run report:todo`
+
+### Tools
+- Knex is used to manage database schemata, including migrations both forward and backward
+- Ollama is used to provide a standard API for interfacing with LLMs
+- Fabric is used for connectivity between instances
 
 ## Python Environment
 `source .env/bin/activate`
