@@ -47,7 +47,7 @@ class MattersList extends React.Component {
     };
 
     return (
-      <div >
+      <matterList onClick={this.props.closeSidebars}>
         <h4 style={{ marginBottom: '0' }}>
           <div>
             <Menu.Item as={Link} to="/matters/new">
@@ -72,7 +72,7 @@ class MattersList extends React.Component {
             </>
             )
           })}
-      </div>
+      </matterList>
     );
   }
 

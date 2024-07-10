@@ -594,16 +594,16 @@ class Dashboard extends React.Component {
             )} */}
             <div>
               {(this.props.auth.isAdmin) ? (
-                <Menu.Item as={Link} to="/settings/admin" id='adminItem'>
+                <Menu.Item as={Link} to="/settings/admin" id='adminItem' onClick={this.closeSidebars}>
                   <Icon name='key' size='large' />
                   <p className='icon-label'>Admin</p>
                 </Menu.Item>) : null}
               <div className='settings-menu-container'>
-                <Menu.Item as={Link} to="/settings" id='settingsItem'>
+                <Menu.Item as={Link} to="/settings" id='settingsItem' onClick={this.closeSidebars}>
                   <Icon name='cog' size='large' />
                   <p className='icon-label'>Settings</p>
                 </Menu.Item>
-                <Menu.Item as={Link} onClick={this.handleLogout} id='logoutItem'>
+                <Menu.Item as={Link} onClick={() => { this.handleLogout; this.closeSidebars }} id='logoutItem'>
                   <Icon name='log out' size='large' />
                   <p className='icon-label'>Log Out</p>
                 </Menu.Item>
@@ -659,6 +659,7 @@ class Dashboard extends React.Component {
                   conversations={this.props.conversations}
                   searchGlobal={this.props.searchGlobal}
                   search={this.props.search}
+                  closeSidebars={this.closeSidebars}
                 />
               </section>
             )}
@@ -667,6 +668,7 @@ class Dashboard extends React.Component {
                 <MattersList
                   matters={this.props.matters}
                   fetchMatters={this.props.fetchMatters}
+                  closeSidebars={this.closeSidebars}
                 />
               </section>
             )}
@@ -680,7 +682,7 @@ class Dashboard extends React.Component {
             </section>
           </Sidebar>
 
-          <Container fluid style={containerStyle} onClick={() => this.closeSidebars()}>
+          <Container fluid style={containerStyle} onClick={this.closeSidebars}>
             {this.state.debug ? (
               <div>
                 <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
