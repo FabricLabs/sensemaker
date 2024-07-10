@@ -28,6 +28,7 @@ module.exports = {
   files: {
     create: require('./files/create_file'),
     list: require('./files/list_files'),
+    listByUser: require('./files/list_user_files'),
     view: require('./files/view_file'),
     serve: require('./files/serve_file.js'),
     find: require('./files/find_file.js'),
@@ -132,4 +133,7 @@ module.exports = {
     listQueue: require('./redis/list_queue.js'),
     clearQueue: require('./redis/clear_queue.js'),
   },
+  uploads: {
+    listUploads: require('./uploads/get_uploads.js'),
+  }
 };

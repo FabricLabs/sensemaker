@@ -149,6 +149,7 @@ const {
   fetchFile,
   uploadFile,
   searchFile,
+  fetchUserFiles,
 } = require('../actions/fileActions');
 
 // ## Upload Actions
@@ -238,6 +239,7 @@ module.exports = {
   fetchFiles: fetchFiles,
   fetchFile: fetchFile,
   uploadFile: uploadFile,
+  fetchUserFiles: fetchUserFiles,
   fetchInquiry: fetchInquiry,
   fetchInquiries: fetchInquiries,
   deleteInquiry: deleteInquiry,

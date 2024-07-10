@@ -440,7 +440,7 @@ class Dashboard extends React.Component {
             </p>,
             helpMessageToastEmitter);
         }
-        this.props.fetchFiles();
+        this.props.fetchUserFiles(id);
       }
       if (action.type == 'IngestDocument' && isAdmin) {
         toast(
