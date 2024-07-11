@@ -830,7 +830,7 @@ class Jeeves extends Hub {
         const meta = `metadata:\n` +
           `  created: ${created}\n` +
           `  clock: ${this.clock}\n` +
-          (includeMatter) ? `  matter: ${JSON.stringify(request.matter || null)}\n` : '' +
+          (includeMatter) ? `  matter:\n      title: ${request.matter.title}\n      files: ${JSON.stringify(request.matter.files)}\n` : '' +
           // `  topics: ${searchterm.content || ''}\n` +
           // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
           // `  documents: null\n` +
@@ -855,6 +855,7 @@ class Jeeves extends Hub {
         if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
         if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
         if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
+        console.debug('[NOVO]', '[TIMEDREQUEST]', 'Request size', query.length);
 
         let messages = [];
 
