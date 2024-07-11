@@ -321,12 +321,13 @@ class Agent extends Service {
             }, this.settings.headers),
             body: JSON.stringify({
               model: this.settings.model,
-              keep_alive: -1,
+              // TODO: re-enable this when not using ChatGPT
+              /* keep_alive: -1,
               prompt: this.prompt,
               options: {
                 num_ctx: this.settings.constraints.tokens.max,
                 temperature: (this.settings.temperature) ? this.settings.temperature : 0,
-              },
+              }, */
               messages: sample,
               format: (request.format === 'json' || request.json) ? 'json' : undefined
             })
