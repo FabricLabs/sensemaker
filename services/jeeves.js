@@ -715,9 +715,19 @@ class Jeeves extends Hub {
       // TODO: prepare maximum token length
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
 
+      // Pipeline Booleans
+      let includeCases = true;
+      let includeMatter = false;
+
       // Get Matter, if relevant
       if (request.matter_id) {
+        includeCases = false;
+        includeMatter = true;
+
+        // Attach the whole Matter
         request.matter = await this.db('matters').where({ id: request.matter_id }).first();
+
+        // Get Matter's Files
         const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
         request.matter.files = await this.db('files')
           .whereIn('files.id', matterFiles.map((x) => x.file_id))
@@ -789,6 +799,7 @@ class Jeeves extends Hub {
         }
         // END EXPANDER
 
+        // Compose YAML Frontmatter
         // Case List
         const caseList = cases
           .concat(recently)
@@ -801,13 +812,13 @@ class Jeeves extends Hub {
         const meta = `metadata:\n` +
           `  created: ${created}\n` +
           `  clock: ${this.clock}\n` +
-          `  matter: ${JSON.stringify(request.matter || null)}\n` +
+          (includeMatter) ? `  matter: ${JSON.stringify(request.matter || null)}\n` : '' +
           // `  topics: ${searchterm.content || ''}\n` +
           // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
           // `  documents: null\n` +
-          `  cases:\n` + caseList + `\n` +
-          `  counts:\n` +
-          `    cases: ` + caseCount.count +
+          (includeCases) ? `  cases:\n` + caseList + `\n` : '' +
+          // `  counts:\n` +
+          // `    cases: ` + caseCount.count +
           `\n`;
 
         // Format Query Text

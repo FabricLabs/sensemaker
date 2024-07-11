@@ -688,7 +688,7 @@ class ChatBox extends React.Component {
               {/* this is the call for the conversation title rendering, that lets you edit the title of the conversation */}
               {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matters/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Button to={"/matters/" + actualConversation.matter_id} as={Link}><Icon name='left chevron' /> Back to Matter</Button></Header>
               )}
               {(this.props.documentInfo && !documentChat) && (
                 <Popup
