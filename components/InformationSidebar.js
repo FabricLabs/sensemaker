@@ -162,7 +162,7 @@ class InformationSidebar extends React.Component {
         <Icon name='close' size='big' onClick={() => this.handleClose()} className='feedback-close' />
         {visible ? (
           documentSection ?
-            ((documentInfo && documentInfo.fabric_id) ? (
+            ((documentInfo && (documentInfo.fabric_id || documentInfo.file_id)) ? (
               <InfoSidebarDocument documentInfo={documentInfo} documentSections={documentSections}/>
             ) : (
               <section className='info-sidebar center-elements-column'>
