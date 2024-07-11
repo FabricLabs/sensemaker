@@ -49,6 +49,20 @@ const fetchFiles = () => {
   };
 };
 
+//this will be used to look for the logged user's files
+const fetchUserFiles = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchFilesRequest());
+    const { token } = getState().auth;
+    try {
+      const files = await fetchFromAPI(`/files/user/${id}`, null, token);
+      dispatch(fetchFilesSuccess(files));
+    } catch (error) {
+      dispatch(fetchFilesFailure(error));
+    }
+  };
+};
+
 const fetchFile = (id) => {
   return async (dispatch, getState) => {
     dispatch(fetchFileRequest());
@@ -102,6 +116,7 @@ const uploadFile = (file) => {
 module.exports = {
   fetchFile,
   fetchFiles,
+  fetchUserFiles,
   uploadFile,
   FETCH_FILE_REQUEST,
   FETCH_FILE_SUCCESS,

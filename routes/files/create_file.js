@@ -118,11 +118,13 @@ async function http_create_file (req, res, next) {
           this.queue.addJob({
             method: 'IngestFile',
             params: [savedFile[0]],
+            attempts: 3,
           });
 
           /* this.queue.addJob({
             method: 'IngestDocument',
             params: [insertedDocument[0]],
+            attempts: 3,
           }); */
 
           res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });

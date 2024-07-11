@@ -1185,6 +1185,7 @@ class Jeeves extends Hub {
       const queueMessage = {
         job: job,
         type: 'completedJob',
+        status: result.status === 'COMPLETED'? result.status : 'FAILED',
       };
 
       const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
@@ -1988,8 +1989,12 @@ class Jeeves extends Hub {
     // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
+    this.http._addRoute('GET', '/files/user/:id', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
     this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
+
+    //Uploads
+    this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
 
     // Matters
     this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
@@ -2058,6 +2063,8 @@ class Jeeves extends Hub {
     //Redis clientside connections
 
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
+    this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
+
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));

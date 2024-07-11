@@ -149,6 +149,7 @@ const {
   fetchFile,
   uploadFile,
   searchFile,
+  fetchUserFiles,
 } = require('../actions/fileActions');
 
 // ## Upload Actions
@@ -203,6 +204,7 @@ const {
   syncRedisQueue,
   lastJobTaken,
   lastJobCompleted,
+  clearQueue,
 } = require('../actions/redisActions');
 
 module.exports = {
@@ -237,6 +239,7 @@ module.exports = {
   fetchFiles: fetchFiles,
   fetchFile: fetchFile,
   uploadFile: uploadFile,
+  fetchUserFiles: fetchUserFiles,
   fetchInquiry: fetchInquiry,
   fetchInquiries: fetchInquiries,
   deleteInquiry: deleteInquiry,
@@ -304,4 +307,5 @@ module.exports = {
   syncRedisQueue: syncRedisQueue,
   lastJobTaken: lastJobTaken,
   lastJobCompleted: lastJobCompleted,
+  clearQueue: clearQueue,
 };

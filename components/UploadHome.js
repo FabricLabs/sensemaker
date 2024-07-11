@@ -17,7 +17,8 @@ const {
   Label,
   List,
   Loader,
-  Icon
+  Icon,
+  Button
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
@@ -36,7 +37,7 @@ class UploadHome extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchUploads();
+    this.props.fetchUserFiles(this.props.auth.id);
   }
 
   componentDidUpdate (prevProps) {

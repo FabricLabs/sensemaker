@@ -3,7 +3,7 @@
 const React = require('react');
 
 const {
-  Label, Header, Table, Button, Icon
+  Label, Header, Table, Button, Icon, Modal
 } = require('semantic-ui-react');
 
 
@@ -24,7 +24,8 @@ class AdminServicesTab extends React.Component {
             messages: 0,
             courts: 0,
             cases: 0,
-            documents: 0
+            documents: 0,
+            deleteQueueModal: false,
           }
         },
         waitlistSignupCount: 0,
@@ -49,18 +50,48 @@ class AdminServicesTab extends React.Component {
   }
 
   componentDidUpdate() {
-    console.log(this.props.redis);
+    //console.log(this.props.redis);
   }
 
   handleResize = () => {
     this.setState({ windowWidth: window.innerWidth });
   };
 
+  clearRedisQueue = async () => {
+    await this.props.clearQueue();
+    await this.props.syncRedisQueue();
+    this.closeConfirmDeleteModal();
+  }
+
+  closeConfirmDeleteModal = () => {
+    this.setState({deleteQueueModal: false});
+  }
+
+  renderConfirmModal = () => {
+    return (
+      <Modal
+        size='mini'
+        open={this.state.deleteQueueModal}
+        onClose={this.closeConfirmDeleteModal}
+      >
+        <Modal.Header>Clear Redis queue</Modal.Header>
+        <Modal.Content>
+          <p>Are you sure you want to clear Redis queue? This could cause some file/documet Ingestion get lost.</p>
+        </Modal.Content>
+        <Modal.Actions>
+          <Button secondary onClick={this.closeConfirmDeleteModal}>No</Button>
+          <Button negative onClick={this.clearRedisQueue}>Yes, clear it</Button>
+        </Modal.Actions>
+      </Modal>
+    )
+  }
+
   render() {
+    const { queue, lastJobCompleted, lastJobTaken } = this.props.redis;
 
     return (
       <adminServicesTab>
-        <Header as='h4'>Services</Header>
+        <Header as='h3'>Services</Header>
         <Table celled striped>
           <Table.Header>
             <Table.Row>
@@ -103,7 +134,9 @@ class AdminServicesTab extends React.Component {
             </Table.Row>
           </Table.Body>
         </Table>
-        <Header as='h4'>Redis</Header>
+        <Header as='h3'>Redis
+          <Button icon size='small' onClick={()=> this.setState({deleteQueueModal: true})} style={{marginLeft: '2em'}}><Icon name='trash alternate outline' /></Button>
+        </Header>
         <Table celled striped>
           <Table.Header>
             <Table.Row>
@@ -116,21 +149,23 @@ class AdminServicesTab extends React.Component {
           <Table.Body>
             <Table.Row>
               <Table.Cell><Header as='h5'>Last job Taken</Header></Table.Cell>
-              <Table.Cell><Label>{this.props.redis.lastJobTaken ? this.props.redis.lastJobTaken.method : 'Empty'}</Label></Table.Cell>
-              <Table.Cell><Label>{this.props.redis.lastJobTaken ? this.props.redis.lastJobTaken.params : 'Empty'}</Label></Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>{lastJobTaken ? lastJobTaken.method : 'Empty'}</Label></Table.Cell>
+              <Table.Cell><Label>{lastJobTaken ? lastJobTaken.params : 'Empty'}</Label></Table.Cell>
+              <Table.Cell>{lastJobTaken?.status ? <Label color='blue'>{lastJobTaken.status}</Label> : ''}</Table.Cell>
             </Table.Row>
             <Table.Row>
               <Table.Cell><Header as='h5'>Last job Completed</Header></Table.Cell>
-              <Table.Cell><Label>{this.props.redis.lastJobCompleted ? this.props.redis.lastJobCompleted.method : 'Empty'}</Label></Table.Cell>
-              <Table.Cell><Label>{this.props.redis.lastJobCompleted ? this.props.redis.lastJobCompleted.params : 'Empty'}</Label></Table.Cell>
-              <Table.Cell></Table.Cell>
+              <Table.Cell><Label>{lastJobCompleted ? lastJobCompleted.method : 'Empty'}</Label></Table.Cell>
+              <Table.Cell><Label>{lastJobCompleted ? lastJobCompleted.params : 'Empty'}</Label></Table.Cell>
+              <Table.Cell>{lastJobCompleted?.status ?
+                <Label color={lastJobCompleted.status === 'COMPLETED' ? 'green' : 'red'}>{lastJobCompleted.status}</Label> : ''}
+              </Table.Cell>
             </Table.Row>
-            {(this.props.redis.queue?.length > 0) ? (
+            {(queue?.length > 0) ? (
               <Table.Row>
                 <Table.Cell><Header as='h5'>Queue</Header></Table.Cell>
-                <Table.Cell>{this.props.redis.queue?.map((instance) => (<div><Label style={{ margin: 'auto 0 0.3em 0' }}>{instance.method}</Label></div>))}</Table.Cell>
-                <Table.Cell>{this.props.redis.queue?.map((instance) => (<div><Label style={{ margin: 'auto 0 0.3em 0' }}>{instance.params[0]}</Label></div>))}</Table.Cell>
+                <Table.Cell>{queue?.map((instance) => (<div><Label style={{ margin: 'auto 0 0.3em 0' }}>{instance.method}</Label></div>))}</Table.Cell>
+                <Table.Cell>{queue?.map((instance) => (<div><Label style={{ margin: 'auto 0 0.3em 0' }}>{instance.params[0]}</Label></div>))}</Table.Cell>
                 <Table.Cell></Table.Cell>
               </Table.Row>
             ) : (
@@ -139,12 +174,12 @@ class AdminServicesTab extends React.Component {
                 <Table.Cell><Label>Empty</Label></Table.Cell>
                 <Table.Cell></Table.Cell>
                 <Table.Cell></Table.Cell>
-
               </Table.Row>
             )
             }
           </Table.Body>
         </Table>
+        {this.renderConfirmModal()}
       </adminServicesTab>
     )
   }
