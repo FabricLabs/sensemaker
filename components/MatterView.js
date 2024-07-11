@@ -217,7 +217,7 @@ class MatterView extends React.Component {
   };
 
   openDocument = (documentInfo) => {
-    this.props.documentInfoSidebar(documentInfo, this.props.matters.current.title);
+    this.props.documentInfoSidebar(documentInfo, null, this.props.matters.current.title);
   }
   render() {
     const { matters, jurisdictions, courts, matterConversations, conversations } = this.props;
@@ -230,7 +230,7 @@ class MatterView extends React.Component {
     return (
       <Segment textAlign='center'
         loading={matters.loading || jurisdictions.loading || courts.loading || conversations.loading}
-        style={{ maxHeight: '100%', display: 'flex', flexDirection: 'column', justifyItems: 'center', alignItems: 'center' }}>
+        style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <section className='matter-header'>
           {this.state.isEditMode ? (
             <Grid columns={2} style={{ marginTop: '-1em' }}>
@@ -481,7 +481,13 @@ class MatterView extends React.Component {
                           {matters.matterFiles.map(instance => {
                             return (
                               <Table.Row key={instance.id}>
-                                <Table.Cell><Link onClick={(e) => { e.stopPropagation(); this.openDocument(instance); }}>{instance.filename}</Link></Table.Cell>
+                                {/* if the file status is 'processing', the file is not yet in position to be served, so it wont let the user
+                                open it in the information sidebar */}
+                                {instance.status === 'processing' ? (
+                                  <Table.Cell>{instance.filename}</Table.Cell>
+                                ) : (
+                                  <Table.Cell><Link onClick={(e) => { e.stopPropagation(); this.openDocument(instance); }}>{instance.filename}</Link></Table.Cell>
+                                )}
                                 <Table.Cell>{new Date(instance.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell>{new Date(instance.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</Table.Cell>
                                 <Table.Cell textAlign="center">
@@ -497,15 +503,6 @@ class MatterView extends React.Component {
                                   />
                                 </Table.Cell>
                                 <Table.Cell textAlign="center">
-                                  {/* {instance.status !== 'ingested' ? (
-                                    <Popup content="Your File is being Ingested by the AI" trigger={
-                                      // <Icon name='circle notch' loading size='big'/>
-                                      <Progress percent={instance.status} indicating />
-                                  
-                                    } />
-                                  ) : (
-                                    <Icon name='check' color='green' size='big'/>
-                                  )} */}
                                   <Popup
                                     content={
                                       instance.status === 'processing' ? 'Your file is being Uploaded' :
@@ -609,13 +606,14 @@ class MatterView extends React.Component {
               </GridColumn>
             </GridRow>
             <GridRow>
-              <GridColumn textAlign='center'>
-                  <Button
-                    primary
-                    content="Start a new conversation"
-                    disabled={matters.matterFiles.some(file => file.status !== 'ingested')}
-                    onClick={() => this.props.navigateTo(this.props.id)}
-                  />
+              <GridColumn width={2} />
+              <GridColumn width={10} textAlign='center'>
+                <Button
+                  primary
+                  content="Start a new conversation"
+                  disabled={matters.matterFiles.some(file => file.status !== 'ingested')}
+                  onClick={() => this.props.navigateTo(this.props.id)}
+                />
               </GridColumn>
             </GridRow>
           </Grid>
