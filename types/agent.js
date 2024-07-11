@@ -315,10 +315,10 @@ class Agent extends Service {
 
           fetch(endpoint, {
             method: 'POST',
-            headers: {
+            headers: merge({
               'Accept': 'application/json',
               'Content-Type': 'application/json'
-            },
+            }, this.settings.headers),
             body: JSON.stringify({
               model: this.settings.model,
               keep_alive: -1,

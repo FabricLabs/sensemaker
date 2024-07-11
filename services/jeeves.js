@@ -830,7 +830,9 @@ class Jeeves extends Hub {
         const meta = `metadata:\n` +
           `  created: ${created}\n` +
           `  clock: ${this.clock}\n` +
-          (includeMatter) ? `  matter:\n      title: ${request.matter.title}\n      files: ${JSON.stringify(request.matter.files)}\n` : '' +
+          // TODO: use this new reduced metadata to reduce confusion / space consumed by metadata
+          // (includeMatter && request.matter) ? `  matter:\n      title: ${request.matter.title}\n      files: ${JSON.stringify(request.matter.files)}\n` : '' +
+          `  matter: ${JSON.stringify(request.matter)}\n` +
           // `  topics: ${searchterm.content || ''}\n` +
           // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
           // `  documents: null\n` +

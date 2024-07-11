@@ -8,6 +8,11 @@ const path = require('path');
 const prompt = path.join(__dirname, '../prompts/novo.txt');
 const baseline = fs.readFileSync(prompt, 'utf8');
 
+// Constants
+const {
+  OPENAI_API_KEY
+} = require('../constants');
+
 // Hosts
 // TODO: network DNS configuration
 const ALPHA = '10.8.0.50';
@@ -78,7 +83,7 @@ module.exports = {
     port: 11434,
     secure: false,
     temperature: 0
-  }
+  },
   /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),
@@ -201,4 +206,43 @@ module.exports = {
     port: 11434,
     secure: false
   }, */
+  'GPT-4': {
+    prompt: baseline.toString('utf8'),
+    model: 'gpt-4-0613',
+    host: 'api.openai.com',
+    port: 443,
+    secure: true,
+    temperature: 0,
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
+      // 'OpenAI-Organization': '',
+      // 'OpenAI-Project': ''
+    }
+  },
+  'GPT-4-turbo': {
+    prompt: baseline.toString('utf8'),
+    model: 'gpt-4-turbo-2024-04-09',
+    host: 'api.openai.com',
+    port: 443,
+    secure: true,
+    temperature: 0,
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
+      // 'OpenAI-Organization': '',
+      // 'OpenAI-Project': ''
+    }
+  },
+  'GPT-4o': {
+    prompt: baseline.toString('utf8'),
+    model: 'gpt-4o-2024-05-13',
+    host: 'api.openai.com',
+    port: 443,
+    secure: true,
+    temperature: 0,
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
+      // 'OpenAI-Organization': '',
+      // 'OpenAI-Project': ''
+    }
+  }
 };

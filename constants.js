@@ -59,6 +59,7 @@ const PER_PAGE_DEFAULT = 30;
 
 // ChatGPT
 const CHATGPT_MAX_TOKENS = AGENT_MAX_TOKENS;
+const OPENAI_API_KEY = 'replace with a valid OpenAI key';
 
 // Exports
 module.exports = {
@@ -101,6 +102,7 @@ module.exports = {
   BROWSER_DATABASE_TOKEN_TABLE,
   BRAND_NAME,
   CHATGPT_MAX_TOKENS,
+  OPENAI_API_KEY,
   AGENT_TEMPERATURE,
   USER_QUERY_TIMEOUT_MS,
   USER_HINT_TIME_MS,

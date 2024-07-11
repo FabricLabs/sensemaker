@@ -136,6 +136,8 @@
     "exclude": [
       "assets",
       "contracts",
+      "components",
+      "scripts",
       "tests"
     ],
     "report-dir": "./reports/coverage",
