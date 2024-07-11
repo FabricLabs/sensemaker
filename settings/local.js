@@ -145,12 +145,12 @@ module.exports = {
     enable: false,
     service: 'gmail',
     username: 'agent@trynovo.com',
-    password: 'generate app-specific password'
+    password: 'lobq mioh pimu usrr'
   },
   files: {
-    corpus: './media/storage/stores/sensemaker',
-    path: './media/storage/node/files',
-    userstore: './media/storage/uploads/users'
+    corpus: '/media/storage/stores/sensemaker',
+    path: '/media/storage/node/files',
+    userstore: '/media/storage/uploads/users'
   },
   gemini: {
     model: 'gemini-pro',
