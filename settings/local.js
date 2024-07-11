@@ -106,7 +106,7 @@ module.exports = {
     host: process.env.SQL_DB_HOST || '127.0.0.1',
     port: 3306,
     user: 'db_user_jeeves',
-    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
+    password: 'password',
     database: 'db_jeeves'
   },
   embeddings: {
@@ -148,9 +148,9 @@ module.exports = {
     password: 'generate app-specific password'
   },
   files: {
-    corpus: '/media/storage/stores/sensemaker',
-    path: '/media/storage/node/files',
-    userstore: '/media/storage/uploads/users'
+    corpus: './media/storage/stores/sensemaker',
+    path: './media/storage/node/files',
+    userstore: './media/storage/uploads/users'
   },
   gemini: {
     model: 'gemini-pro',
@@ -260,7 +260,7 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: process.env.OLLAMA_HOST || '127.0.0.1',
+    host: '10.8.0.33',
     port: 11434,
     secure: false,
     model: 'llama3', // default model

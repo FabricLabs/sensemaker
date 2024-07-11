@@ -141,11 +141,12 @@ class Queue extends Actor {
 
     if (this.settings.worker) {
       console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
-      if (!this._state.current) this._state.current = await this._takeJob();
+      this._state.current = await this._takeJob();
       console.debug('[QUEUE]', 'Current job:', this._state.current);
 
       // If there's work to do, do it
       if (this._state.current && !this._state.current.status) {
+        console.log('actual current queue: ', this._state.current)
         this._state.current.status = 'COMPUTING';
 
         // Handle job completion or timeout

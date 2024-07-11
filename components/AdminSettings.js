@@ -90,21 +90,24 @@ class AdminSettings extends React.Component {
         path = 'Overview';
         break;
       case 1:
-        path = 'Settings';
+        path = 'Announcements';
         break;
       case 2:
-        path = 'Users';
+        path = 'Settings';
         break;
       case 3:
-        path = 'Growth';
+        path = 'Users';
         break;
       case 4:
-        path = 'Conversations';
+        path = 'Growth';
         break;
       case 5:
-        path = 'Services';
+        path = 'Conversations';
         break;
       case 6:
+        path = 'Services';
+        break;
+      case 7:
         path = 'Design';
         break;      
       default:
