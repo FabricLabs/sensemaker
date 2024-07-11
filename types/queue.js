@@ -11,7 +11,7 @@ const Actor = require('@fabric/core/types/actor');
  * A `Queue` is a simple job queue for managing asynchronous tasks.
  */
 class Queue extends Actor {
-  constructor(settings = {}) {
+  constructor (settings = {}) {
     super(settings);
 
     this.settings = merge({
@@ -42,27 +42,27 @@ class Queue extends Actor {
     return this;
   }
 
-  set clock(value) {
+  set clock (value) {
     this._state.clock = value;
   }
 
-  get clock() {
+  get clock () {
     return this._state.clock;
   }
 
-  get addJob() {
+  get addJob () {
     return this._addJob.bind(this);
   }
 
-  get _clearQueue() {
+  get _clearQueue () {
     return this._clearQueue.bind(this);
   }
 
-  get interval() {
+  get interval () {
     return 1000 / this.settings.frequency; // ms
   }
 
-  get jobs() {
+  get jobs () {
     return new Promise(async (resolve, reject) => {
       if (this.redis) {
         this.redis.lRange(this.settings.collection, 0, -1).catch(reject).then(resolve);
@@ -136,7 +136,7 @@ class Queue extends Actor {
   //   console.debug('[QUEUE]', 'TICK', this.clock);
   // }
 
-  async _tick() {
+  async _tick () {
     ++this.clock;
 
     if (this.settings.worker) {
@@ -191,7 +191,7 @@ class Queue extends Actor {
   }
 
 
-  async start() {
+  async start () {
     await this._registerMethod('verify', async function (...params) {
       return true;
     });
@@ -233,7 +233,7 @@ class Queue extends Actor {
     this.ticker = setInterval(this._tick.bind(this), this.interval);
   }
 
-  async _addJob(job) {
+  async _addJob (job) {
     if (!job.id) job = new Actor(job);
     if (this.state.jobs[job.id]) return this.state.jobs[job.id];
 
@@ -249,7 +249,7 @@ class Queue extends Actor {
     return this._state.content.jobs[job.id];
   }
 
-  async _takeJob() {
+  async _takeJob () {
     const json = await this.redis.lPop(this.settings.collection);
     const job = JSON.parse(json);
     console.debug('[QUEUE]', 'Took job:', job);
@@ -266,7 +266,7 @@ class Queue extends Actor {
     return job;
   }
 
-  async _completeJob(job) {
+  async _completeJob (job) {
     if (this._methods[job.method]) {
       const result = await this._methods[job.method](...job.params);
       console.debug('[QUEUE]', 'Completed job:', job);
@@ -291,7 +291,7 @@ class Queue extends Actor {
   }
 
 
-  async _failJob(job) {
+  async _failJob (job) {
     //we take the failed job and we add it to the queue again with 1 less retry attempt
     job.attempts--;
     console.debug('[QUEUE]', 'Retrying job:', job);
@@ -299,23 +299,21 @@ class Queue extends Actor {
     await this._addJob(job);
   }
 
-async _clearQueue() {
-  try {
-    if (this.redis) {
-      await this.redis.del(this.settings.collection);
-      console.debug('[QUEUE]', 'Queue cleared in Redis');
+  async _clearQueue () {
+    try {
+      if (this.redis) {
+        await this.redis.del(this.settings.collection);
+        console.debug('[QUEUE]', 'Queue cleared in Redis');
+      }
+
+      this._state.content.jobs = {};
+      console.debug('[QUEUE]', 'Queue cleared in local state');
+    } catch (error) {
+      console.error('[QUEUE]', 'Failed to clear queue:', error);
+      throw error;
     }
-
-    this._state.content.jobs = {};
-    console.debug('[QUEUE]', 'Queue cleared in local state');
-  } catch (error) {
-    console.error('[QUEUE]', 'Failed to clear queue:', error);
-    throw error;
+    return this._state.content.jobs;
   }
-  return this._state.content.jobs;
 }
-
-}
-
 
 module.exports = Queue;
