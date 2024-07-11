@@ -464,18 +464,19 @@ class MatterView extends React.Component {
               <GridColumn >
                 <div className='col-center'>
                   <Header as='h2'>Files</Header>
-                  <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
-                    <Table textAlign='center' celled striped >
-                      <Table.Header>
-                        <Table.Row >
-                          <Table.HeaderCell>File Name</Table.HeaderCell>
-                          <Table.HeaderCell>Uploaded</Table.HeaderCell>
-                          <Table.HeaderCell>Modified</Table.HeaderCell>
-                          <Table.HeaderCell>Actions</Table.HeaderCell>
-                          <Table.HeaderCell style={{ minWidth: '100px' }}>Status</Table.HeaderCell>
-                        </Table.Row>
-                      </Table.Header>
-                      {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
+                  {(matters && matters.matterFiles && matters.matterFiles.length > 0) ? (
+                    <Segment style={{ maxHeight: '40vh', padding: '0', width: '100%' }} loading={matters.addingContext}>
+                    
+                      <Table textAlign='center' celled striped >
+                        <Table.Header>
+                          <Table.Row >
+                            <Table.HeaderCell>File Name</Table.HeaderCell>
+                            <Table.HeaderCell>Uploaded</Table.HeaderCell>
+                            <Table.HeaderCell>Modified</Table.HeaderCell>
+                            <Table.HeaderCell>Actions</Table.HeaderCell>
+                            <Table.HeaderCell style={{ minWidth: '100px' }}>Status</Table.HeaderCell>
+                          </Table.Row>
+                        </Table.Header>
                         <Table.Body >
                           {matters.matterFiles.map(instance => {
                             return (
@@ -500,7 +501,7 @@ class MatterView extends React.Component {
                                     <Popup content="Your File is being Ingested by the AI" trigger={
                                       // <Icon name='circle notch' loading size='big'/>
                                       <Progress percent={instance.status} indicating />
-
+                                  
                                     } />
                                   ) : (
                                     <Icon name='check' color='green' size='big'/>
@@ -523,22 +524,20 @@ class MatterView extends React.Component {
                                       />
                                     }
                                   />
-
+  
                                 </Table.Cell>
                               </Table.Row>
                             )
                           })}
                         </Table.Body>
-                      ) : (
-                        <Table.Body>
-                          <Table.Row>
-                            <Table.Cell />
-                          </Table.Row>
-                        </Table.Body>
-                      )
-                      }
-                    </Table>
-                  </Segment>
+                      </Table>
+                    </Segment>
+                    ) : (
+                      <Label>
+                        <Header as='h4' size='medium'>No files uploaded yet...</Header>
+                      </Label>
+                    )
+                    }
                 </div>
               </GridColumn>
             </GridRow>
