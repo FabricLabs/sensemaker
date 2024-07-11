@@ -102,6 +102,8 @@ const Conversations = require('../components/Conversations');
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
 const IngestFile = require('../functions/IngestFile');
+const KnexCacher = require('../functions/KnexCacher');
+const KnexPaginator = require('../functions/KnexPaginator');
 
 // Routes (Request Handlers)
 const ROUTES = require('../routes');
@@ -395,116 +397,14 @@ class Jeeves extends Hub {
     });
 
     // TODO: See if we can put this in its own file.
-    knex.QueryBuilder.extend('paginate',
-      function paginate({ perPage = 10,
-                          currentPage = 1,
-                          isFromStart = false,
-                          isLengthAware = false }) {
-        if (isNaN(perPage)) {
-          throw new Error('Paginate error: perPage must be a number.');
-        }
-    
-        if (isNaN(currentPage)) {
-          throw new Error('Paginate error: currentPage must be a number.');
-        }
-    
-        if (typeof isFromStart !== 'boolean') {
-          throw new Error('Paginate error: isFromStart must be a boolean.');
-        }
-    
-        if (typeof isLengthAware !== 'boolean') {
-          throw new Error('Paginate error: isLengthAware must be a boolean.');
-        }
-    
-        const shouldFetchTotals = isLengthAware || currentPage === 1 || isFromStart;
-        let pagination = {};
-        let countQuery = null;
-    
-        if (currentPage < 1) {
-          currentPage = 1;
-        }
-    
-        const offset = isFromStart ? 0 : (currentPage - 1) * perPage;
-        const limit = isFromStart ? perPage * currentPage : perPage;
-    
-        const postProcessResponse =
-          typeof this.client.config.postProcessResponse === 'function'
-            ? this.client.config.postProcessResponse
-            : function (key) {
-                return key;
-              };
-    
-        if (shouldFetchTotals) {
-          countQuery = new this.constructor(this.client)
-            .count('* as total')
-            .from(this.clone().offset(0).clearOrder().as('count__query__'))
-            .first()
-            .debug(this._debug);
-        }
-    
-        // This will paginate the data itself
-        this.offset(offset).limit(limit);
-    
-        let paginated = this.client.transaction(async (trx) => {
-          const result = await this.transacting(trx);
-    
-          if (shouldFetchTotals) {
-            const countResult = await countQuery.transacting(trx);
-            const total = +(countResult.TOTAL || countResult.total || 0);
-            const lastPage = Math.ceil(total / perPage);
-            pagination = {
-              total,
-              lastPage,
-              prevPage: currentPage > 1 ? currentPage - 1 : null,
-              nextPage: currentPage < lastPage ? currentPage + 1 : null,
-            };
-          }
-    
-          // Add pagination data to paginator object
-          pagination = postProcessResponse({
-            ...pagination,
-            perPage,
-            currentPage,
-            from: offset,
-            to: offset + result.length,
-          });
-          return { data: result, pagination };
-        });
-    
-        paginated.redis = this.redis;
-        paginated.cache = this.cache;
-        return paginated;
-      }
-    );
+    knex.QueryBuilder.extend('paginate', KnexPaginator);
 
     // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
     // QueryBuilder object, only the objects who cache with Redis should have the Redis database instance as an object.
     knex.QueryBuilder.extend('redis', this.redis);
 
     // TODO: See if we can put this in its own file.
-    knex.QueryBuilder.extend('cache', async function (qry) {
-      try {
-        let getHashKey = (query) => {
-          let retKey = '';
-          retKey = crypto.createHash('sha256').update(query).digest('hex');
-          return 'CACHE_ASIDE_' + retKey;
-        }
-
-        const fingerprint = getHashKey(qry);
-
-        let cachedData = await this.redis.get(fingerprint);
-        if (cachedData) {
-          return JSON.parse(cachedData);
-        }
-        else {
-          let data = await this;
-          this.redis.set(fingerprint, JSON.stringify(data), {NX: true});
-          return data;
-        }
-      } catch (e) {
-        throw new Error(e);
-      }
-    });
+    knex.QueryBuilder.extend('cache', KnexCacher);
 
     // Database connections
     this.db = knex({
