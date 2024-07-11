@@ -106,7 +106,7 @@ module.exports = {
     host: process.env.SQL_DB_HOST || '127.0.0.1',
     port: 3306,
     user: 'db_user_jeeves',
-    password: 'password',
+    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
   embeddings: {
@@ -260,7 +260,7 @@ module.exports = {
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
   ollama: {
-    host: '10.8.0.33',
+    host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: 11434,
     secure: false,
     model: 'llama3', // default model
