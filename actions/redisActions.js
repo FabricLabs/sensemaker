@@ -82,7 +82,7 @@ const clearQueue = () => {
     const { token } = getState().auth;
     try {
         const response = await fetch(`/redis/queue`, {
-          method: 'PATCH',
+          method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
