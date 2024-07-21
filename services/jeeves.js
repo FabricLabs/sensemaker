@@ -1030,7 +1030,7 @@ class Jeeves extends Hub {
 
         if (request.subject) {
           // Subject material provided
-          messages.unshift({ role: 'user', content: `Questions will be pertaining to ${request.subject}.` });
+          messages.unshift({ role: 'user', content: `Questions will be pertaining to "${request.subject}" as the subject of the inquiry.` });
         }
 
         if (request.matter_id) {
