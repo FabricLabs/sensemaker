@@ -1,5 +1,5 @@
 # Developers
-...should read "A CypherPunk's Manifesto" by Timothy May.
+...should read "A Cypherpunk's Manifesto" by Timothy May.
 
 ## Quick Start
 See `scripts/` for a list of available tools.
@@ -11,16 +11,20 @@ See `INSTALL.md` for a complete install guide.
 The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
 
 - Coordinator: the Node.js master process
-  - HTTPServer
-  - FabricNode
+  - HTTPServer — `@fabric/http`
+  - FabricNode — `@fabric/core`
   - LangChain
 - Agents: connect to external networks
-  - Fabric
-  - Matrix
-  - ChatGPT
+  - Fabric — `@fabric/core`
+  - Matrix — `@fabric/matrix`
+  - ChatGPT — `services/openai.js`
   - PyTorch HTTP Client
-- Services: provided an HTTP API
+- Services: provide an HTTP API
+  - Jeeves — `services/jeeves.js`
+  - Trainer - `services/trainer.js`
   - PyTorch
+
+LangChain is available through `services/trainer.js` which also handles all general "training" operations, including the generation of embeddings.
 
 ### Workflow
 1. Commit early, commit often
@@ -33,9 +37,7 @@ The project is primarily built in JavaScript, running Node.js on the server and 
 - Fabric is used for connectivity between instances
 
 ## Python Environment
-`source .env/bin/activate`
-
-See also `requirements.txt`
+Run `source .env/bin/activate` to enter the Python environment.  See also `requirements.txt` for dependencies.
 
 ## Tips
 - You can use `scripts/node.js` to quickly run the service without building: `node scripts/node.js`

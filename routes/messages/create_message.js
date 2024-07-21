@@ -95,14 +95,16 @@ module.exports = async function (req, res, next) {
         }
       }); */
 
+      const history = await this._getConversationMessages(conversation_id);
+      const messages = history.map((x) => {
+        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+      });
+
       if (isNew) {
-        const messages = await this._getConversationMessages(conversation_id);
-        this._summarizeMessagesToTitle(messages.map((x) => {
-          return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-        })).catch((error) => {
+        this._summarizeMessagesToTitle(messages).catch((error) => {
           console.error('[NOVO]', '[HTTP]', 'Error summarizing messages:', error);
         }).then(async (output) => {
-          console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
+          if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
           if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
@@ -113,6 +115,30 @@ module.exports = async function (req, res, next) {
           this.http.broadcast(message);
         });
       }
+
+      this._summarizeMessages(messages).catch((error) => {
+        console.error('[NOVO]', '[HTTP]', 'Error summarizing messages:', error);
+      }).then(async (output) => {
+        if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Summarized conversation:', output);
+        let summary = output?.content || 'broken content summary';
+        if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
+        if (summary) await this.db('conversations').update({ summary }).where({ id: conversation_id });
+
+        const conversation = { id: conversation_id, messages: messages, summary: summary };
+        const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
+
+        this.http.broadcast(message);
+      });
+    }).then(async () => {
+      // Sanity Function
+      console.debug('[JEEVES]', '[HTTP]', 'Finished processing message');
+      const basic = await this.handleTextRequest({
+        // conversation_id: conversation_id,
+        matter_id: matter_id,
+        query: content
+      });
+
+      console.debug('[JEEVES]', '[HTTP]', 'Got basic response:', basic);
     });
     // End Core Pipeline
 

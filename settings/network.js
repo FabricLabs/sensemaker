@@ -48,13 +48,14 @@ module.exports = {
     secure: false,
     temperature: 0
   }, */
-  balrog: {
+  /* balrog: {
     name: 'BALROG',
     prompt: baseline.toString('utf8'),
     model: 'llama3:70b',
     host: BALROG,
     port: 11434,
     secure: false,
+    fabric: false,
     temperature: 0
   },
   durinsbane: {
@@ -64,8 +65,9 @@ module.exports = {
     host: DURINSBANE,
     port: 11434,
     secure: false,
+    fabric: false,
     temperature: 0
-  },
+  }, */
   'llama3-70b-fp16': {
     name: 'GOTHMOG',
     prompt: baseline.toString('utf8'),
@@ -73,17 +75,19 @@ module.exports = {
     host: GOTHMOG,
     port: 11434,
     secure: false,
+    fabric: false,
     temperature: 0
   },
-  gemma: {
+  /* gemma: {
     name: 'GEMMA',
     prompt: baseline.toString('utf8'),
     model: 'gemma2',
     host: GOTHMOG,
     port: 11434,
     secure: false,
+    fabric: false,
     temperature: 0
-  },
+  }, */
   /* socrates: {
     name: 'SOCRATES',
     prompt: baseline.toString('utf8'),
@@ -206,12 +210,14 @@ module.exports = {
     port: 11434,
     secure: false
   }, */
-  'GPT-4': {
+  // OpenAI Services
+  /* 'GPT-4': {
     prompt: baseline.toString('utf8'),
     model: 'gpt-4-0613',
     host: 'api.openai.com',
     port: 443,
     secure: true,
+    fabric: false,
     temperature: 0,
     headers: {
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
@@ -225,20 +231,23 @@ module.exports = {
     host: 'api.openai.com',
     port: 443,
     secure: true,
+    fabric: false,
     temperature: 0,
     headers: {
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
       // 'OpenAI-Organization': '',
       // 'OpenAI-Project': ''
     }
-  },
+  }, */
   'GPT-4o': {
     prompt: baseline.toString('utf8'),
     model: 'gpt-4o-2024-05-13',
     host: 'api.openai.com',
     port: 443,
     secure: true,
+    fabric: false,
     temperature: 0,
+    openai: { enable: true },
     headers: {
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY || OPENAI_API_KEY}`,
       // 'OpenAI-Organization': '',

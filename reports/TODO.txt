@@ -10,20 +10,22 @@
 ./settings/network.js: /* TODO: enable hivemind */
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
-./types/queue.js: // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
-./types/queue.js: // TODO: implement retries here (decrement counter, reinsert job into queue)
+./types/queue.js: //       // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
+./types/queue.js: //         // TODO: implement retries here (decrement counter, reinsert job into queue)
 ./types/queue.js: // TODO: enable `notify-keyspace-events` on Redis server
 ./types/queue.js: // TODO: canonize this API
 ./types/queue.js: // TODO: reverse this logic to reject if !this.redis
 ./types/compiler.js: // TODO: load from:
 ./types/trainer.js: // text: document.content, // TODO: re-work storage, use document ID instead
 ./types/trainer.js: // TODO: check for `embedding` and fail if not present
+./types/trainer.js: // TODO: receive event in core service and correctly create blob, confirm ID matches
 ./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
 ./types/trainer.js: // process.exit(); // TODO: look at exit codes
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
 ./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
 ./types/agent.js: }); // TODO: remove this...
+./types/agent.js: if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 ./Dockerfile: # TODO: mount SSHFS / similar here
 ./CRAWLING.md: TODO: review instructions from CodingIT team
 ./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
@@ -73,6 +75,7 @@
 ./routes/products/list_products.js: // TODO: import auth token, load data
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
 ./routes/index.js: // view: require('./statutes/view_statute'), // TODO: create this
+./routes/uploads/get_uploads.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/conversations/get_conversations_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/conversations/get_conversations.js: // TODO: re-evaluate security of `is_admin` check
 ./routes/conversations/get_conversations.js: // TODO: update the conversation upon change (new user message, new agent message)
@@ -116,16 +119,26 @@
 ./services/jeeves.js: // TODO: use path
 ./services/jeeves.js: // TODO: enable recursive Filesystem (directories)
 ./services/jeeves.js: // TODO: evaluate use of temperature
+./services/jeeves.js: // TODO: See if we can put this in its own file.
+./services/jeeves.js: // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
+./services/jeeves.js: // TODO: See if we can put this in its own file.
 ./services/jeeves.js: // TODO: safe shutdown
 ./services/jeeves.js: // TODO: define Agent methods from `documentation`
 ./services/jeeves.js: // TODO: remove async, use local state instead
+./services/jeeves.js: // TODO: receive from message parameter
 ./services/jeeves.js: // TODO: assign `then` to allow async processing
 ./services/jeeves.js: // TODO: add `user_id` to request, assign to `creator`
 ./services/jeeves.js: // TODO: assign `then` to allow async processing
 ./services/jeeves.js: // TODO: prepare maximum token length
+./services/jeeves.js: // TODO: pass only chunk of document, to reduce payload size and increase relevancy
+./services/jeeves.js: // TODO: catch error
 ./services/jeeves.js: // TODO: convert limit here to constant
+./services/jeeves.js: // TODO: reduce matter metadata to only relevant fields, use summary fields to compress context
+./services/jeeves.js: // TODO: use this new reduced metadata to reduce confusion / space consumed by metadata
 ./services/jeeves.js: // TODO: Compressor
+./services/jeeves.js: // TODO: re-enable extractor for cards; file cards, case cards, jurisdiction cards, etc.
 ./services/jeeves.js: // TODO: reject any answers including case titles not found in our database
+./services/jeeves.js: // TODO: re-enable case cards, standardize to other card formats
 ./services/jeeves.js: // TODO: load from STATE file
 ./services/jeeves.js: // TODO: check for successful prime
 ./services/jeeves.js: courts: [], // TODO: implement

@@ -83,15 +83,16 @@ class Agent extends Service {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
       constraints: {
-        max_tokens: 4096,
+        max_tokens: AGENT_MAX_TOKENS,
         tokens: {
-          max: 4096
+          max: AGENT_MAX_TOKENS
         }
       },
       mistral: {
         authority: 'https://mistral.on.fabric.pub'
       },
       openai: {
+        enable: false,
         key: 'sk-1234567890abcdef1234567890abcdef',
         engine: 'davinci',
         temperature: AGENT_TEMPERATURE,
@@ -274,10 +275,9 @@ class Agent extends Service {
       console.debug('[AGENT]', 'Name:', this.settings.name);
       console.debug('[AGENT]', 'Host:', this.settings.host);
       console.debug('[AGENT]', 'Model:', this.settings.model);
-      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
-      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
+      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
+      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
       console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
-      if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
       if (!request.messages) request.messages = [];
 
       // Prepare messages
@@ -311,7 +311,7 @@ class Agent extends Service {
             { role: 'user', content: request.query }
           ]);
 
-          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
+          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
           fetch(endpoint, {
             method: 'POST',
@@ -321,13 +321,12 @@ class Agent extends Service {
             }, this.settings.headers),
             body: JSON.stringify({
               model: this.settings.model,
-              // TODO: re-enable this when not using ChatGPT
-              /* keep_alive: -1,
-              prompt: this.prompt,
-              options: {
+              keep_alive: (this.settings.keepalive) ? -1 : undefined,
+              prompt: (!this.settings.openai.enable) ? this.prompt : undefined,
+              options: (!this.settings.openai.enable) ? {
                 num_ctx: this.settings.constraints.tokens.max,
                 temperature: (this.settings.temperature) ? this.settings.temperature : 0,
-              }, */
+              } : undefined,
               messages: sample,
               format: (request.format === 'json' || request.json) ? 'json' : undefined
             })
@@ -335,7 +334,7 @@ class Agent extends Service {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
             return reject(exception);
           }).then(async (response) => {
-            console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
+            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
             if (!response) return reject(new Error('No response from agent.'));
 
             try {
@@ -478,49 +477,47 @@ class Agent extends Service {
   }
 
   start () {
-    return new Promise((resolve, reject) => {
-      this.fabric.start().then(async (node) => {
-        this.emit('debug', '[FABRIC]', 'Node:', node.id);
+    return new Promise(async (resolve, reject) => {
+      if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 
-        // Load default prompt.
-        if (!this.prompt) this.loadDefaultPrompt();
+      // Load default prompt.
+      if (!this.prompt) this.loadDefaultPrompt();
 
-        // Attach event handlers.
-        this.services.mistral.on('debug', (...msg) => {
-          console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
-        });
+      // Attach event handlers.
+      this.services.mistral.on('debug', (...msg) => {
+        console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
+      });
 
-        this.services.mistral.on('ready', () => {
-          console.log('[AGENT]', '[MISTRAL]', 'Ready.');
-        });
+      this.services.mistral.on('ready', () => {
+        console.log('[AGENT]', '[MISTRAL]', 'Ready.');
+      });
 
-        this.services.mistral.on('message', (msg) => {
-          console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
-        });
+      this.services.mistral.on('message', (msg) => {
+        console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
+      });
 
-        this.services.openai.on('debug', (...msg) => {
-          console.debug('[AGENT]', '[OPENAI]', '[DEBUG]', ...msg);
-        });
+      this.services.openai.on('debug', (...msg) => {
+        console.debug('[AGENT]', '[OPENAI]', '[DEBUG]', ...msg);
+      });
 
-        // Start Mistral.
-        // this.services.mistral.start();
+      // Start Mistral.
+      // this.services.mistral.start();
 
-        // Start OpenAI.
-        this.services.openai.start();
+      // Start OpenAI.
+      this.services.openai.start();
 
-        // Prime the model.
-        try {
-          // await this.prime();
-        } catch (exception) {
-          console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
-        }
+      // Prime the model.
+      try {
+        // await this.prime();
+      } catch (exception) {
+        console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
+      }
 
-        // Assert that Agent is ready.
-        this.emit('ready');
+      // Assert that Agent is ready.
+      this.emit('ready');
 
-        // Resolve with Agent.
-        resolve(this);
-      }).catch(reject);
+      // Resolve with Agent.
+      resolve(this);
     });
   }
 

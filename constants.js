@@ -15,7 +15,7 @@ const {
 } = require('@fabric/core/constants');
 
 // Sensemaker
-const AGENT_MAX_TOKENS = 4096;
+const AGENT_MAX_TOKENS = 8192;
 const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
@@ -24,6 +24,7 @@ const EMBEDDING_MODEL = 'mxbai-embed-large';
 // Jeeves
 const BRAND_NAME = 'Novo';
 const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
+const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_CONTRACTS = true;
@@ -74,6 +75,7 @@ module.exports = {
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
   EMBEDDING_MODEL,
+  ENABLE_CONTENT_TOPBAR,
   ENABLE_CONTRACTS,
   ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,

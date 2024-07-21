@@ -1,3 +1,8 @@
+/**
+ * # Jeeves Core
+ * This file contains the core logic for the Jeeves application.  It is the main entry point for the application, and contains the main class definition for the Jeeves service.
+ * @extends {Hub} Instance of Fabric Hub (`@fabric/hub`), the reference implementation of a Fabric Edge server.
+ */
 'use strict';
 
 // Prepare transpilation
@@ -28,7 +33,6 @@ const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
-
 const multer = require('multer');
 // const { ApolloServer, gql } = require('apollo-server-express');
 // TODO: use bcryptjs instead of bcrypt?
@@ -331,7 +335,7 @@ class Jeeves extends Hub {
     // Sensemaker
     this.sensemaker = new Agent({
       name: 'SENSEMAKER',
-      model: 'llama3',
+      model: this.settings.ollama.model,
       rules: this.settings.rules,
       host: this.settings.ollama.host,
       port: this.settings.ollama.port,
@@ -445,6 +449,12 @@ class Jeeves extends Hub {
     return definition.version;
   }
 
+  /**
+   * Extracts a list of possible combinations of a given array.
+   * @param {Array} tokens List of tokens to combine.
+   * @param {String} prefix Additional prefix to add to each combination.
+   * @returns {Array} List of possible combinations.
+   */
   combinationsOf (tokens, prefix = '') {
     if (!tokens.length) return prefix;
     if (tokens.length > 10) tokens = tokens.slice(0, 10);
@@ -496,13 +506,24 @@ class Jeeves extends Hub {
     return agent;
   }
 
+  /**
+   * Provides a function to estimate the number of tokens in a given input string.
+   * @param {String} input Input string to estimate.
+   * @returns {Number} Estimated number of tokens.
+   */
   estimateTokens (input) {
     const tokens = input.split(/\s+/g);
     const estimate = tokens.length * 4;
     return estimate;
   }
 
-  importantPhrases (input) {
+  /**
+   * Extracts a list of important phrases from a given input string.
+   * @param {String} input Input string to analyze.
+   * @param {Number} limit Maximum number of phrases to return.
+   * @returns {Array} List of important phrases in order of rank.
+   */
+  importantPhrases (input, limit = 5) {
     const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
     const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
 
@@ -513,6 +534,12 @@ class Jeeves extends Hub {
     return uniques;
   }
 
+  /**
+   * Extracts a list of important words from a given input string.
+   * @param {String} input Input string to analyze.
+   * @param {Number} limit Maximum number of words to return.
+   * @returns {Array} List of important words in order of rank.
+   */
   importantWords (input, limit = 5) {
     const tokens = input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
     const uniques = [...new Set(tokens)].filter((x) => x.length > 3);
@@ -529,10 +556,20 @@ class Jeeves extends Hub {
     return uniques.slice(0, limit);
   }
 
+  /**
+   * Extract a list of proper nouns from a given input string.
+   * @param {String} input Input string to analyze.
+   * @returns {Array} List of proper nouns.
+   */
   properNouns (input) {
     return this.uniqueWords(input).filter((word) => /^[A-Z][a-z]*$/.test(word));
   }
 
+  /**
+   * Extract a list of unique words from a given input string.
+   * @param {String} input Input string to analyze.
+   * @returns {Array} List of unique words.
+   */
   uniqueWords (input) {
     return [...new Set(this.words(input))].filter((x) => x.length > 3);
   }
@@ -545,6 +582,11 @@ class Jeeves extends Hub {
     return input.replace(/[^\w\s\']|_/g, '').split(/\s+/g);
   }
 
+  /**
+   * Sends a system-wide alert.
+   * @param {String} message Message to send in the alert.
+   * @returns {Boolean} Returns `true` if the alert sent, `false` otherwise.
+   */
   async alert (message) {
     if (this.email) {
       try {
@@ -560,8 +602,15 @@ class Jeeves extends Hub {
         console.error('Error sending alert email:', error);
       }
     }
+
+    return true;
   }
 
+  /**
+   * Generates an outline for a proposed document.
+   * @param {Object} request Request object.
+   * @returns {Object} Outline of the document.
+   */
   async generateDocumentOutline (request) {
     const message = `Generate an outline of a document for the following request:\n\`\`\`\n${JSON.stringify(request, null, '  ')}\n\`\`\`\`\n\nRespond using JSON.`;
     return new Promise((resolve, reject) => {
@@ -685,6 +734,89 @@ class Jeeves extends Hub {
   }
 
   /**
+   * Generate a response to a given request.
+   * @param {Object} request Request object.
+   * @param {String} request.query Query text.
+   * @param {String} [request.conversation_id] Unique identifier for the conversation.
+   * @returns {Promise} Resolves with the response to the request.
+   */
+  async handleTextRequest (request) {
+    return new Promise(async (resolve, reject) => {
+      const now = new Date();
+      const created = now.toISOString();
+
+      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
+      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial query:', request.query);
+      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial messages:', request.messages);
+      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial timeout:', request.timeout);
+
+      // Store user request
+      const localMessageIDs = await this.db('messages').insert({ conversation_id: request.conversation_id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
+      const responseID = localMessageIDs[0];
+      const responseName = `jeeves/messages/${responseID}`;
+      const responseObject = new Actor({ name: responseName });
+      if (this.settings.debug) console.debug('[JEEVES]', '[BASICREQUEST]', 'Created response placeholder message:', localMessageIDs);
+
+      // Prepare Metadata
+      let messages = [];
+
+      // Conversation Resume
+      if (request.conversation_id) {
+        console.debug('[NOVO]', '[BASICREQUEST]', 'Resuming conversation:', request.conversation_id);
+        // Resume conversation
+        const prev = await this._getConversationMessages(request.conversation_id);
+        messages = prev.map((x) => {
+          return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+        });
+      }
+
+      // Prompt
+      messages.unshift({
+        role: 'system',
+        content: this.settings.prompt
+      });
+
+      // Construct Metadata
+      const meta = `metadata:\n` +
+        `  created: ${created}\n` +
+        `  clock: ${this.clock}\n`;
+
+      // Format Query Text
+      const query = `---\n${meta}---\n${request.query}`;
+
+      // Send Query
+      this.sensemaker.query({ query: query, messages: messages }).catch((error) => {
+        console.debug('[NOVO]', '[BASICREQUEST]', 'Sensemaker error:', error);
+        reject(error);
+      }).then(async (response) => {
+        console.debug('[NOVO]', '[BASICREQUEST]', 'Response:', response);
+        // Update database with completed response
+        await this.db('messages').where({ id: responseID }).update({
+          status: 'ready',
+          content: response.content,
+          updated_at: this.db.fn.now()
+        });
+
+        resolve(merge({}, response, {
+          actor: { name: this.name },
+          object: { id: responseObject.id }, // Fabric ID
+          target: { id: `${this.authority}/messages/${responseID}` },
+          message_id: responseID
+        }));
+      });
+    });
+  }
+
+  async createConversationalMessage (message) {
+    // TODO: receive from message parameter
+    const localMessageIDs = await this.db('messages').insert({ conversation_id: message.conversation_id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
+    const responseID = localMessageIDs[0];
+    const responseName = `jeeves/messages/${responseID}`;
+    const responseObject = new Actor({ name: responseName });
+    return responseObject;
+  }
+
+  /**
    * Execute the default pipeline for an inbound request.
    * @param {Object} request Request object.
    * @param {Number} [timeout] How long to wait for a response.
@@ -721,11 +853,11 @@ class Jeeves extends Hub {
       if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Created response placeholder message:', responseMessage);
 
       // Create Request Message
-      const message = Message.fromVector(['TimedRequest', JSON.stringify({
+      /* const message = Message.fromVector(['TimedRequest', JSON.stringify({
         created: created,
         request: request,
         response_message_id: responseMessage[0]
-      })]);
+      })]); */
 
       // Notify workers
       this.emit('request', { id: inserted [0] });
@@ -739,18 +871,38 @@ class Jeeves extends Hub {
 
       // Get Matter, if relevant
       if (request.matter_id) {
+        console.trace('[NOVO]', '[PIPELINE]', 'Request has Matter ID:', request.matter_id);
         includeCases = false;
         includeMatter = true;
 
         // Attach the whole Matter
         request.matter = await this.db('matters').where({ id: request.matter_id }).first();
 
+        // Get Matter's Conversations
+        request.matter.conversations = await this.db('conversations').select(['title', 'created_at', 'updated_at', 'summary']).where({ matter_id: request.matter_id });
+
         // Get Matter's Files
+        // TODO: pass only chunk of document, to reduce payload size and increase relevancy
         const matterFiles = await this.db('matters_files').where({ matter_id: request.matter_id });
-        request.matter.files = await this.db('files')
+        const retrievedFiles = await this.db('files')
           .whereIn('files.id', matterFiles.map((x) => x.file_id))
           .innerJoin('embeddings', 'files.embedding_id', 'embeddings.id')
           .select('files.*', 'embeddings.content as embedding');
+
+        // Naive loop
+        let files = [];
+        for (const file of retrievedFiles) {
+          // TODO: catch error
+          const object = await this.retrieveFile(file.id)
+          files.push(object);
+        }
+
+        request.matter.files = files.map((x) => {
+          return {
+            filename: x.name,
+            content: x.content
+          };
+        });
       }
 
       // Action Model (Coordinator/Decider)
@@ -825,6 +977,9 @@ class Jeeves extends Hub {
           .map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`)
           .join('\n');
 
+        // TODO: reduce matter metadata to only relevant fields, use summary fields to compress context
+        console.debug('[NOVO]', '[TIMEDREQUEST]', '[META]', 'Matter:', request.matter);
+
         // Format Metadata
         const caseCount = await this.db('cases').count('id as count').first();
         const meta = `metadata:\n` +
@@ -879,6 +1034,8 @@ class Jeeves extends Hub {
         }
 
         if (request.matter_id) {
+          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Matter ID:', request.matter_id);
+          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Matter:', request.matter);
           messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${request.matter.title}:\n\n\`\`\`\n${JSON.stringify(request.matter)}\n\`\`\`` }]);
         }
 
@@ -933,13 +1090,6 @@ class Jeeves extends Hub {
         ]).catch((error) => {
           console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
         }).then(async (results) => {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[SETTLEMENT]', 'Results:', results);
-        });
-
-        // Handle Results and return
-        Promise.allSettled(networkPromises).catch((error) => {
-          console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
-        }).then(async (results) => {
           console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[DEBUG]', 'Results:', results);
           if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
           if (!results) {
@@ -949,10 +1099,11 @@ class Jeeves extends Hub {
 
           // Filter the options again by a direct query, seeking the cases mentioned by ID or exact name
           const options = results.filter((x) => x.status === 'fulfilled').map((x) => x.value);
-          for (let i = 0; i < options.length; i++) {
+          // TODO: re-enable extractor for cards; file cards, case cards, jurisdiction cards, etc.
+          /* for (let i = 0; i < options.length; i++) {
             const option = options[i];
             if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
-            this.extractor.query({
+            /* this.extractor.query({
               query: `What cases are mentioned in this message:\n\`\`\`\n${JSON.stringify(option, null, '  ')}\n\`\`\``,
               json: true
             }).catch((exception) => {
@@ -962,7 +1113,7 @@ class Jeeves extends Hub {
               // TODO: reject any answers including case titles not found in our database
               // problem: extractor may not extract useful case titles
             });
-          }
+          } */
 
           const agentList = options.map((x) => `- [${x.name}] ${x.content}`).join('\n');
           this.summarizer.query({
@@ -970,8 +1121,14 @@ class Jeeves extends Hub {
             query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
           }).catch((exception) => {
             console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+            return reject(exception);
           }).then(async (summarized) => {
             if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+            if (!summarized) {
+              console.trace('[NOVO]', '[TIMEDREQUEST]', 'No summarized response!', summarized);
+              return reject(new Error('No summarized response!'));
+            }
+
             try {
               const actor = new Actor({ content: summarized.content });
               const documentIDs = await this.db('documents').insert({
@@ -1001,7 +1158,9 @@ class Jeeves extends Hub {
               console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
             }
 
-            let caseCards = null;
+            // TODO: re-enable case cards, standardize to other card formats
+            // Also consider attaching cards to all Agent outputs, referencing any named Collection as a card type
+            /* let caseCards = null;
             const extracted = await this.extractor.query({
               query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
             });
@@ -1029,13 +1188,13 @@ class Jeeves extends Hub {
               } catch (exception) {
                 console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
               }
-            }
+            } */
 
             const end = new Date();
             console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
 
             const answer = merge({}, summarized, {
-              cards: caseCards
+              cards: [] || caseCards
             });
 
             resolve(answer);
@@ -1290,6 +1449,25 @@ class Jeeves extends Hub {
     }
   }
 
+  /**
+   * Retrieve a file by its database ID.
+   * @param {Number} id Database ID of the file.
+   * @returns {Object} File object.
+   */
+  async retrieveFile (id) {
+    const file = await this.db('files').where('id', id).first();
+    const content = fs.readFileSync(file.path);
+    // const actor = new Actor({ name: `jeeves/users/${file.creator}` });
+
+    return {
+      id: file.id,
+      name: file.name,
+      mimetype: file.type,
+      embedding_id: file.embedding_id,
+      content: content.toString('utf8')
+    };
+  }
+
   async search (request) {
     console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
     const redisResults = await this.trainer.search(request);
@@ -1396,8 +1574,8 @@ class Jeeves extends Hub {
     // Create all worker agents
     console.debug('[NOVO]', 'Creating network:', Object.keys(this.settings.agents));
     for (const [name, agent] of Object.entries(this.settings.agents)) {
-      const configuration = merge({}, agent, { name: name });
-      console.debug('[NOVO]', 'Creating network agent:', name, configuration.host, configuration.port, configuration.secure);
+      const configuration = merge({}, agent, { name: name, debug: this.settings.debug });
+      console.debug('[NOVO]', 'Creating network agent:', `[${(configuration.fabric) ? 'FABRIC' : (configuration.secure) ? 'HTTPS' : 'HTTP' }]`, name, configuration.host, configuration.port, configuration.secure);
       this.agents[name] = this.createAgent(configuration);
     }
 
@@ -1430,7 +1608,8 @@ class Jeeves extends Hub {
       password: this.settings.redis.password,
       socket: this.settings.redis
     });
-    function updateAPI(job, result) {
+
+    function updateAPI (job, result) {
       console.log(`Updating API for job ${job} with job ID: ${job.id} with result:`, result);
 
       const fileUploadMessage = {
@@ -4028,6 +4207,14 @@ class Jeeves extends Hub {
     }
   }
 
+  async _summarizeMessages (messages, max = 512) {
+    return new Promise((resolve, reject) => {
+      const query = `Summarize our conversation into a ${max}-character maximum as a paragraph.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
+      const request = { query: query, messages: messages };
+      this.sensemaker.query(request).catch(reject).then(resolve);
+    });
+  }
+
   async _summarizeMessagesToTitle (messages, max = 100) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
@@ -4089,7 +4276,7 @@ class Jeeves extends Hub {
     console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
 
     const mappedQueries = redisResults.content.map((result) => {
-      console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
+      if (this.settings.debug) console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
       return this.db('cases').where({ id: result.id }).first();
     });
     // const mappedResults = await Promise.all()
@@ -4548,7 +4735,7 @@ class Jeeves extends Hub {
     // if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
 
     const mapped = await Promise.all(redisResults.content.map((result) => {
-      console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
+      if (this.settings.debug) console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
       if (!result || !result.metadata || !result.metadata.name) {
         console.debug('[JEEVES]', '[VECTOR]', 'Invalid result (no "name" metadata):', result);
         return null;
