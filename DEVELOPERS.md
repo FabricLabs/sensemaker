@@ -2,7 +2,7 @@
 ...should read "A Cypherpunk's Manifesto" by Timothy May.
 
 ## Quick Start
-See `scripts/` for a list of available tools.
+See `scripts/` for a list of available tools, or `npm run docs` to run a local copy of the documentation.
 
 ### Install
 See `INSTALL.md` for a complete install guide.
@@ -16,24 +16,32 @@ Local settings should be provided by environment variables wherever possible, in
 - `SQL_DB_PASSWORD` — password for the SQL user
 - `OLLAMA_HOST` — HTTP host for Ollama server
 - `OLLAMA_PORT` — HTTP port for Ollama server
+- `REDIS_HOST` — host of the Redis server
+- `REDIS_PORT` — port of the Redis server
 - `OPENAI_API_KEY` — access token for OpenAI
 
-## Overview
-The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
+Settings can be configured locally through `settings/local.js` — care should be taken not to commit secrets; **again, prefer environment variables**.
 
-- Coordinator: the Node.js master process
+## Overview
+The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.  The client is transpiled using Webpack, and delivered as a complete bundle to the `assets/` directory.  This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port `3045` by default).
+
+### Breakdown
+- Coordinator — `scripts/node.js` the Node.js master process, managing:
+  - Jeeves Core — `services/jeeves.js`
+  - AI Agents — `types/agent.js`
+  - Trainer Agents — `types/trainer.js`
+  - Worker Agents — `types/worker.js`
   - HTTPServer — `@fabric/http`
   - FabricNode — `@fabric/core`
-  - LangChain
-- Agents: connect to external networks
+- AI Agents — connect to external resources, such as OpenAI, HuggingFace, or Ollama
   - Fabric — `@fabric/core`
   - Matrix — `@fabric/matrix`
   - ChatGPT — `services/openai.js`
-  - PyTorch HTTP Client
-- Services: provide an HTTP API
-  - Jeeves — `services/jeeves.js`
-  - Trainer - `services/trainer.js`
-  - PyTorch
+  - Python HTTP Server — for models unsupported by Ollama
+- Services — implement a common API using `@fabric/core/types/service`
+  - Jeeves — primary, single-core instance of the Coordinator
+  - Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings
+  - PyTorch — initial training tools used for gpt2 emulation
 
 LangChain is available through `services/trainer.js` which also handles all general "training" operations, including the generation of embeddings.
 
