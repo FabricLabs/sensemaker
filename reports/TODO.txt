@@ -3,9 +3,10 @@
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
-./settings/local.js: // TODO: is this necessary if we aren't loading the wallet?
 ./settings/local.js: // TODO: @chrisinajar
 ./settings/local.js: domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
+./settings/network.js.bak: // TODO: network DNS configuration
+./settings/network.js.bak: /* TODO: enable hivemind */
 ./settings/network.js: // TODO: network DNS configuration
 ./settings/network.js: /* TODO: enable hivemind */
 ./types/spa.js: // TODO: move CSS to inline from webpack

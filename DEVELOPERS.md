@@ -7,6 +7,17 @@ See `scripts/` for a list of available tools.
 ### Install
 See `INSTALL.md` for a complete install guide.
 
+### Configuration
+Local settings should be provided by environment variables wherever possible, including:
+
+- `SQL_DB_HOST` — host of the SQL server
+- `SQL_DB_PORT` — port of the SQL server
+- `SQL_DB_USERNAME` — username for the SQL user
+- `SQL_DB_PASSWORD` — password for the SQL user
+- `OLLAMA_HOST` — HTTP host for Ollama server
+- `OLLAMA_PORT` — HTTP port for Ollama server
+- `OPENAI_API_KEY` — access token for OpenAI
+
 ## Overview
 The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.
 

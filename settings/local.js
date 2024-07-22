@@ -1,4 +1,23 @@
+/**
+ * Provides the user's local settings.
+ */
 'use strict';
+
+// Dependencies
+const fs = require('fs');
+const path = require('path');
+const merge = require('lodash.merge');
+
+// Environment
+const Environment = require('@fabric/core/types/environment');
+const environment = new Environment();
+
+environment.start();
+
+// TODO: @chrisinajar
+// PROJECT: @fabric/core
+// Determine output of various inputs.
+// Output should be deterministic, HTML-encoded applications.
 
 // Constants
 const NAME = 'NOVO';
@@ -6,38 +25,6 @@ const VERSION = '1.0.0-RC2';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
-
-// Hosts
-const ALPHA = '10.8.0.50';
-const HIVEMIND = 'balrog'; // must be in /etc/hosts or otherise provided by local DNS
-const SOCRATES = 'socrates'; // must be in /etc/hosts or otherise provided by local DNS
-const YMIR = '10.8.0.3';
-const ODIN = '10.8.0.4';
-const THOR = '10.8.0.5';
-const TANGO = '10.8.0.30';
-const MANGO = '10.8.0.32';
-const FOXTROT = '10.8.0.31';
-const CLARITY = '10.8.0.34';
-const BALROG = '10.8.0.33';
-const GOTHMOG = '10.8.0.60';
-
-// Dependencies
-const fs = require('fs');
-const path = require('path');
-const merge = require('lodash.merge');
-
-// Fabric Types
-const Environment = require('@fabric/core/types/environment');
-const environment = new Environment();
-
-// Start Fabric environment
-// TODO: is this necessary if we aren't loading the wallet?
-environment.start();
-
-// TODO: @chrisinajar
-// PROJECT: @fabric/http
-// Determine output of various inputs.
-// Output should be deterministic, HTML-encoded applications.
 
 // Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
@@ -167,7 +154,7 @@ module.exports = {
   peers: [
     'localhost:7777'
   ],
-  prompt: betaPrompt.toString('utf8'),
+  prompt: novoPrompt.toString('utf8'),
   sandbox: {
     browser: {
       headless: true
@@ -272,7 +259,7 @@ module.exports = {
   },
   openai: {
     enable: true,
-    key: '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',
+    key: process.env.OPENAI_API_KEY || 'set to your own API key',
     model: 'gpt-4-turbo',
     temperature: 0
   },
