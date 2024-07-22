@@ -227,7 +227,7 @@ class Trainer extends Service {
         reject(exception);
       }).then(async (response) => {
         const json = await response.json();
-        console.debug('got embedding json:', json);
+        if (this.settings.debug) console.debug('[TRAINER]', endpoint, 'got embedding json:', json);
         const inserted = await this.db('embeddings').insert({
           fabric_id: actor.id,
           // text: document.content, // TODO: re-work storage, use document ID instead
@@ -235,7 +235,7 @@ class Trainer extends Service {
         });
 
         if (!inserted || !inserted.length) return reject(new Error('No embeddings inserted.'));
-        console.debug('[TRAINER]', 'Inserted:', inserted);
+        if (this.settings.debug) console.debug('[TRAINER]', 'Inserted:', inserted);
 
         // Old Embeddings (specific to Langchain)
         const element = new Document({ pageContent: document.content, metadata: document.metadata });
@@ -247,6 +247,14 @@ class Trainer extends Service {
         // TODO: check for `embedding` and fail if not present
         const object = { type: EMBEDDING_MODEL, content: json.embedding };
         console.debug('[TRAINER]', 'Ollama Object:', object);
+
+        // TODO: receive event in core service and correctly create blob, confirm ID matches
+        this.emit('TrainerDocument', {
+          id: actor.id,
+          metadata: document.metadata,
+          content: document.content
+        });
+
         resolve({ type: 'Embedding', content: object });
       });
     });
@@ -269,12 +277,12 @@ class Trainer extends Service {
     return new Promise(async (resolve, reject) => {
       /* const embedded = await this.embeddings.embedQuery(request.query);
       console.debug('Embedded query:', embedded); */
-      console.debug('[TRAINER]', 'Handling request:', request);
+      if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
       }).catch(reject).then((answer) => {
-        console.debug('[TRAINER]', 'Answer:', answer);
+        if (this.settings.debug) console.debug('[TRAINER]', 'Answer:', answer);
         if (!answer || !answer.text) return reject(new Error('No answer provided.'));
         resolve({
           type: 'TrainerQueryResponse',
@@ -304,13 +312,16 @@ class Trainer extends Service {
       filter = request.filter;
 
       this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
-        console.debug('[TRAINER]', 'results:', results.map((x) => {
+        const map = {};
+
+        results.forEach((x) => {
           const actor = new Actor({ content: x.pageContent });
-          return x.id; // Fabric ID
-        }));
+          map[actor.id] = { id: actor.id, content: x.pageContent };
+        });
+
         resolve({
           type: 'TrainerSearchResponse',
-          content: results
+          content: Object.values(map)
         });
       });
     });

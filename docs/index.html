@@ -36,35 +36,56 @@
     <section>
       <article>
         <h1>Developers</h1>
-        <p>...should read &quot;A CypherPunk's Manifesto&quot; by Timothy May.</p>
+        <p>...should read &quot;A Cypherpunk's Manifesto&quot; by Timothy May.</p>
         <h2>Quick Start</h2>
-        <p>See <code>scripts/</code> for a list of available tools.</p>
+        <p>See <code>scripts/</code> for a list of available tools, or <code>npm run docs</code> to run a local copy of the documentation.</p>
         <h3>Install</h3>
         <p>See <code>INSTALL.md</code> for a complete install guide.</p>
-        <h2>Overview</h2>
-        <p>The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.</p>
+        <h3>Configuration</h3>
+        <p>Local settings should be provided by environment variables wherever possible, including:</p>
         <ul>
-          <li>Coordinator: the Node.js master process
+          <li><code>SQL_DB_HOST</code> — host of the SQL server</li>
+          <li><code>SQL_DB_PORT</code> — port of the SQL server</li>
+          <li><code>SQL_DB_USERNAME</code> — username for the SQL user</li>
+          <li><code>SQL_DB_PASSWORD</code> — password for the SQL user</li>
+          <li><code>OLLAMA_HOST</code> — HTTP host for Ollama server</li>
+          <li><code>OLLAMA_PORT</code> — HTTP port for Ollama server</li>
+          <li><code>REDIS_HOST</code> — host of the Redis server</li>
+          <li><code>REDIS_PORT</code> — port of the Redis server</li>
+          <li><code>OPENAI_API_KEY</code> — access token for OpenAI</li>
+        </ul>
+        <p>Settings can be configured locally through <code>settings/local.js</code> — care should be taken not to commit secrets; <strong>again, prefer environment variables</strong>.</p>
+        <h2>Overview</h2>
+        <p>The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side. The client is transpiled using Webpack, and delivered as a complete bundle to the <code>assets/</code> directory. This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port <code>3045</code> by default).</p>
+        <h3>Breakdown</h3>
+        <ul>
+          <li>Coordinator — <code>scripts/node.js</code> the Node.js master process, managing:
             <ul>
-              <li>HTTPServer</li>
-              <li>FabricNode</li>
-              <li>LangChain</li>
+              <li>Jeeves Core — <code>services/jeeves.js</code></li>
+              <li>AI Agents — <code>types/agent.js</code></li>
+              <li>Trainer Agents — <code>types/trainer.js</code></li>
+              <li>Worker Agents — <code>types/worker.js</code></li>
+              <li>HTTPServer — <code>@fabric/http</code></li>
+              <li>FabricNode — <code>@fabric/core</code></li>
             </ul>
           </li>
-          <li>Agents: connect to external networks
+          <li>AI Agents — connect to external resources, such as OpenAI, HuggingFace, or Ollama
             <ul>
-              <li>Fabric</li>
-              <li>Matrix</li>
-              <li>ChatGPT</li>
-              <li>PyTorch HTTP Client</li>
+              <li>Fabric — <code>@fabric/core</code></li>
+              <li>Matrix — <code>@fabric/matrix</code></li>
+              <li>ChatGPT — <code>services/openai.js</code></li>
+              <li>Python HTTP Server — for models unsupported by Ollama</li>
             </ul>
           </li>
-          <li>Services: provided an HTTP API
+          <li>Services — implement a common API using <code>@fabric/core/types/service</code>
             <ul>
-              <li>PyTorch</li>
+              <li>Jeeves — primary, single-core instance of the Coordinator</li>
+              <li>Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings</li>
+              <li>PyTorch — initial training tools used for gpt2 emulation</li>
             </ul>
           </li>
         </ul>
+        <p>LangChain is available through <code>services/trainer.js</code> which also handles all general &quot;training&quot; operations, including the generation of embeddings.</p>
         <h3>Workflow</h3>
         <ol>
           <li>Commit early, commit often</li>
@@ -78,8 +99,7 @@
           <li>Fabric is used for connectivity between instances</li>
         </ul>
         <h2>Python Environment</h2>
-        <p><code>source .env/bin/activate</code></p>
-        <p>See also <code>requirements.txt</code></p>
+        <p>Run <code>source .env/bin/activate</code> to enter the Python environment. See also <code>requirements.txt</code> for dependencies.</p>
         <h2>Tips</h2>
         <ul>
           <li>You can use <code>scripts/node.js</code> to quickly run the service without building: <code>node scripts/node.js</code></li>
@@ -105,6 +125,12 @@
           <li>no double spacing (maximum one empty line)</li>
           <li>newline at EOF</li>
         </ul>
+        <h2>File/Document Ingestion</h2>
+        <p>When a file or document is uploaded, it's stored on the DDBB first.
+          Then, a Job is created for Redis to proccess, it's added to the queue and then taken assigned a status of 'COMPUTING'. - see <code>types/queue.js</code>.
+          The file would have a document created, related to it, and will be added to the job.
+          Once the job is taken from the queue it'll begin the ingestion and assign a status for that.
+          If the ingestion is completed without error, It's status are updated in the DDBB, and will also be available for the AI to proccess, broadcasting a notification to the user.</p>
       </article>
     </section>
 
