@@ -12,87 +12,126 @@ const {
   Segment,
   Label,
   List,
-  Loader
+  Loader,
+  Dropdown,
+  Input,
+  Form,
+  FormField
 } = require('semantic-ui-react');
 
 const formatDate = require('../contracts/formatDate');
 
 class CourtHome extends React.Component {
-  constructor (settings = {}) {
+  constructor(settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
       filteredCourts: [], // Initialize filtered courts state
-      searching: false // Boolean to show a spinner icon while fetching
+      searching: false, // Boolean to show a spinner icon while fetching
+      jurisdictionsOptions: null,
+      jurisdiction_id: null,
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchCourts();
+    this.props.fetchJurisdictions();
+  }
+
+  componentDidUpdate(prevProps) {
+    const { courts, jurisdictions } = this.props;
+    if (prevProps.courts != courts) {
+      if (!courts.loading && this.state.searching) {
+        this.setState({ filteredCourts: courts.results, searching: false });
+        console.log('court-results: ', courts.results);
+      }
+    }
+
+    if (prevProps.jurisdictions !== jurisdictions) {
+      if (jurisdictions.jurisdictions.length > 0) {
+        const options = jurisdictions.jurisdictions.map(instance => ({
+          key: instance.id,
+          value: instance.id,
+          text: instance.name
+        }));
+        options.sort((a, b) => a.text.localeCompare(b.text));
+        options.unshift({ key: 'any', value: null, text: 'Any' });
+        this.setState({ jurisdictionsOptions: options });
+      }
+    }
+  }
+
+  selectJurisdiction = (value) => {
+    const { searchQuery } = this.state;
+    this.setState({ jurisdiction_id: value, jurisdictionError: false });
+    if (searchQuery) {
+      this.handleSearchChange(searchQuery);
+    } else {
+      if (value === null) {
+        this.props.fetchCourts();
+      } else {
+        //once the jurisdiction is selected, it looks for the courts related to that jurisdiction
+        this.props.fetchCourtsByJurisdiction(value);
+      }
+    }
   }
 
   handleSearchChange = debounce((query) => {
     //console.debug('search change:', query);
-
-    this.setState({ searching: true });
-
-    fetch('/courts', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'SEARCH',
-      body: JSON.stringify({ query })
-    }).then(async (result) => {
-      const obj = await result.json();
-
-      console.log('fetch result: ', obj);
-
-      this.setState({
-        filteredCourts: obj.content,
-        searchQuery: query,
-      });
-    }).catch((error) => {
-      console.error('Error fetching data:', error);
-    }).finally(() => {
-      this.setState({ searching: false }); // Set searching to false after fetch is complete
-    });
+    const { jurisdiction_id } = this.state;
+    if (query) {
+      this.setState({ searching: true });
+      this.props.searchCourt(query, jurisdiction_id);
+    }
   }, 1000);
 
-  render () {
-    const { loading, error } = this.props;
-    const { filteredCourts, searchQuery, searching } = this.state;
+  render() {
+    const { loading, courts } = this.props;
+    const { filteredCourts, searchQuery, searching, jurisdictionsOptions } = this.state;
+
+    const displayCourts = searchQuery ? filteredCourts : courts;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment id='courts-home' className="fade-in" fluid style={{ maxHeight: '100%', minHeight: '100%' }}>
         <h1>Courts</h1>
-        <jeeves-search fluid placeholder='Find...' className='ui search'>
-          <div className='ui huge icon fluid input'>
-            <input
-              name='query'
-              autoComplete='off'
-              placeholder='Find...'
-              type='text'
-              tabIndex='0'
-              className='prompt'
-              //value={searchQuery}
-              onChange={(e) => {
-                const query = e.target.value;
-                this.setState({ searchQuery: query });
-                this.handleSearchChange(query); // Call the debounce function with the query
-              }}
+        <Form style={{ width: '100%', gap: '1em'}} className='col-center' size='big'>
+          <Input
+            style={{ width: '100%' }}
+            name='query'
+            autoComplete='off'
+            placeholder='Find...'
+            type='text'
+            tabIndex='0'
+            className='prompt'
+            icon='search'
+            iconPosition='right'
+            onChange={(e) => {
+              const query = e.target.value;
+              this.setState({ searchQuery: query });
+              this.handleSearchChange(query); // Call the debounce function with the query
+            }}
+          />
+          <FormField style={{ width: '50%' }}>
+            <label>Filter by jurisdiction</label>
+            <Dropdown
+              id='courts-filter'
+              fluid
+              placeholder='Any'
+              search
+              selection
+              options={jurisdictionsOptions}
+              value={this.state.jurisdiction_id}
+              onChange={(e, { value }) => this.selectJurisdiction(value)}
+              icon='filter'
             />
-
-            <i aria-hidden="true" className="search icon"></i>
-          </div>
-        </jeeves-search>
-        <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
-        {searching ? (
+          </FormField>
+        </Form>
+        <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
+          {searching || courts.loading ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :
-          searchQuery ? // if searching, goes this way
-            (filteredCourts && filteredCourts.courts && filteredCourts.courts.length > 0 ? (
-              filteredCourts.courts.map((instance) => (
+            (displayCourts && displayCourts.courts && displayCourts.courts.length > 0 ? (
+              displayCourts.courts.map((instance) => (
                 <List.Item as={Card} key={instance.id}>
                   <Card.Content>
                     <h3><Link to={"/courts/" + instance.slug}>{instance.short_name}</Link></h3>
@@ -104,30 +143,14 @@ class CourtHome extends React.Component {
                   </Card.Content>
                 </List.Item>
               ))
-              ) : (<p>No results found</p>)
-            ) : this.props.courts && this.props.courts.courts && this.props.courts.courts.length > 0 ? (
-              this.props.courts.courts.map((instance) => (
-                <List.Item as={Card} key={instance.id}>
-                  <Card.Content>
-                    <h3><Link to={"/courts/" + instance.slug}> {instance.short_name} </Link> </h3>
-                    <Label.Group basic>
-                      <Label icon="calendar">{formatDate(instance.decision_date)}</Label>
-                      <Label icon="calendar">{formatDate(instance.start_date)}</Label>
-                      <Label icon="calendar">{formatDate(instance.end_date)}</Label>
-                      <Label icon="law">{instance.court_name}</Label>
-                    </Label.Group>
-                    <p>{instance.content}</p>
-                  </Card.Content>
-                </List.Item>
-              ))
-            ) : (<p>No courts available</p>)
+            ) : (<p>No results found</p>))
           }
         </List>
       </Segment>
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }

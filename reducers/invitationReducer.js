@@ -55,7 +55,7 @@ function invitationReducer(state = initialState, action) {
         case CHECK_INVITATION_TOKEN_REQUEST:
             return { ...state, loading: true };
         case CHECK_INVITATION_TOKEN_SUCCESS:
-            return { ...state, invitationValid: true, loading: false };
+            return { ...state, invitationValid: true, loading: false, invitation: action.payload };
         case CHECK_INVITATION_TOKEN_FAILURE:
             return { ...state, error: action.payload, invitationValid: false, loading: false };
 

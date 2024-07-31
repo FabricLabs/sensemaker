@@ -11,6 +11,9 @@ const {
 // Local Constants
 const FAILURE_PROBABILTY = 0;
 
+// Defaults
+const defaults = require('../settings/local');
+
 // Dependencies
 const fs = require('fs');
 const merge = require('lodash.merge');
@@ -58,6 +61,9 @@ class Agent extends Service {
       type: 'Sensemaker',
       description: 'An artificial intelligence.',
       frequency: 1, // 1 Hz
+      host: defaults.ollama.host,
+      port: defaults.ollama.port,
+      secure: defaults.ollama.secure,
       database: {
         type: 'memory'
       },
@@ -68,7 +74,7 @@ class Agent extends Service {
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
-      model: 'gpt-4-1106-preview', // TODO: default to llama2
+      model: defaults.ollama.model,
       prompt: 'You are Sensemaker, an artificial intelligence.  You are a human-like robot who is trying to understand the world around you.  You are able to learn from your experiences and adapt to new situations.',
       rules: [
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
@@ -77,12 +83,16 @@ class Agent extends Service {
         tolerance: 0.5 * 1000 // tolerance in seconds
       },
       constraints: {
-        max_tokens: 4096
+        max_tokens: AGENT_MAX_TOKENS,
+        tokens: {
+          max: AGENT_MAX_TOKENS
+        }
       },
       mistral: {
         authority: 'https://mistral.on.fabric.pub'
       },
       openai: {
+        enable: false,
         key: 'sk-1234567890abcdef1234567890abcdef',
         engine: 'davinci',
         temperature: AGENT_TEMPERATURE,
@@ -205,6 +215,7 @@ class Agent extends Service {
   }
 
   get tools () {
+    if (!this.settings.tools) return [];
     return Object.values(this.settings.documentation.methods).filter((x) => {
       return (x.type == 'function');
     });
@@ -233,6 +244,26 @@ class Agent extends Service {
     }
   }
 
+  async prime () {
+    if (!this.settings.host) return { done: true };
+    return new Promise((resolve, reject) => {
+      console.debug('[AGENT]', `[${this.settings.name}]`, 'Priming:', this.settings.model);
+      fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ model: this.settings.model })
+      }).then(async (response) => {
+        return response.json();
+      }).then((json) => {
+        console.debug('[AGENT]', `[${this.settings.name}]`, 'Primed:', json);
+        resolve(json);
+      }).catch(reject);
+    });
+  }
+
   /**
    * Query the agent with some text.
    * @param {Object} request Request object.
@@ -241,51 +272,139 @@ class Agent extends Service {
    */
   async query (request) {
     return new Promise(async (resolve, reject) => {
-      if (this.settings.debug) console.debug('[AGENT]', 'Querying:', request);
+      console.debug('[AGENT]', 'Name:', this.settings.name);
+      console.debug('[AGENT]', 'Host:', this.settings.host);
+      console.debug('[AGENT]', 'Model:', this.settings.model);
+      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
+      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
+      console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
       if (!request.messages) request.messages = [];
 
-      // TODO: consider not concatenating the prompt
-      // If we don't concatenate the prompt, we can use the prompt as a "seed" for the conversation.
-      // Further, the prompt is sometimes duplicated with some upstream use...
-      const messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+      // Prepare messages
+      let messages = null;
+
+      // Ensure system message is first
+      if (!request.messages[0] || request.messages[0].role !== 'system') {
+        messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+      } else {
+        messages = [].concat(request.messages);
+      }
 
       // Check for local agent
       if (this.settings.host) {
         // Happy Path
-        if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+        const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
+
+        // Clean up extraneous appearance of "agent" role
+        messages = messages.map((x) => {
+          if (x.role === 'agent') x.role = 'assistant';
+          return x;
+        });
+
         let response = null;
+        let text = null;
         let base = null;
 
         try {
-          response = await fetch(`http://${this.settings.host}/v1/chat/completions`, {
+          const sample = messages.concat([
+            { role: 'user', content: request.query }
+          ]);
+
+          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
+
+          fetch(endpoint, {
             method: 'POST',
-            headers: {
+            headers: merge({
+              'Accept': 'application/json',
               'Content-Type': 'application/json'
-            },
+            }, this.settings.headers),
             body: JSON.stringify({
               model: this.settings.model,
-              prompt: this.prompt,
-              messages: messages
+              keep_alive: (this.settings.keepalive) ? -1 : undefined,
+              prompt: (!this.settings.openai.enable) ? this.prompt : undefined,
+              options: (!this.settings.openai.enable) ? {
+                num_ctx: this.settings.constraints.tokens.max,
+                temperature: (this.settings.temperature) ? this.settings.temperature : 0,
+              } : undefined,
+              messages: sample,
+              format: (request.format === 'json' || request.json) ? 'json' : undefined
             })
+          }).catch((exception) => {
+            console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
+            return reject(exception);
+          }).then(async (response) => {
+            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
+            if (!response) return reject(new Error('No response from agent.'));
+
+            try {
+              text = await response.text();
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
+              return reject(exception);
+            }
+
+            try {
+              base = JSON.parse(text);
+            } catch (exception) {
+              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
+              // console.debug('[AGENT]', 'Response body:', await response.text());
+              // console.debug('[AGENT]', 'Response body:', response.body.text());
+              // return reject(exception);
+              return resolve({
+                type: 'AgentResponse',
+                name: this.settings.name,
+                status: 'error',
+                query: request.query,
+                response: { content: text },
+                content: text,
+                messages: messages
+              }); // TODO: remove this...
+            }
+
+            // console.debug('messages:', messages);
+            console.debug('[!!!]', `[${this.settings.name.toLocaleUpperCase()}]`, 'base:', base);
+
+            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
+            if (!base) return reject(new Error('No response from agent.'));
+            if (base.error) return reject(new Error(base.error));
+            if (!base.choices) return reject(new Error('No choices in response.'));
+
+            if (request.requery) {
+              sample.push({ role: 'assistant', content: base.choices[0].message.content });
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
+              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
+              // Re-execute query with John Cena
+              return this.query({ query: `Are you sure about that?`, messages: sample });
+            }
+
+            this.emit('completion', base);
+            console.trace('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
+
+            return resolve({
+              type: 'AgentResponse',
+              name: this.settings.name,
+              status: 'success',
+              query: request.query,
+              response: base,
+              content: base.choices[0].message.content,
+              messages: messages
+            });
           });
-
-          base = await response.json();
-          if (this.settings.debug) console.debug('[AGENT]', '[QUERY]', 'Response:', base);
-
+        } catch (exception) {
+          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
           return resolve({
             type: 'AgentResponse',
             name: this.settings.name,
-            status: 'success',
+            status: 'error',
             query: request.query,
-            response: base,
-            content: base.choices[0].message.content,
-            messages: messages
+            response: null,
+            content: text,
           });
-        } catch (exception) {
-          console.error('[AGENT]', 'Could not fetch completions:', exception);
-          return reject(exception);
         }
       } else {
+        console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
+
         // Failure Path
         const responses = {
           alpha: null,
@@ -296,17 +415,20 @@ class Agent extends Service {
             messages:  messages.concat([
               { role: 'user', content: request.query }
             ]),
-            tools: this.tools
+            tools: (this.settings.tools) ? this.tools : undefined,
+            json: request.json
           }) : null,
           rag: null,
           sensemaker: null
         };
 
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
+
         // Wait for all responses to resolve or reject.
         await Promise.allSettled(Object.values(responses));
-        console.debug('[AGENT]', 'Prompt:', this.prompt);
-        console.debug('[AGENT]', 'Query:', request.query);
-        console.debug('[AGENT]', 'Responses:', responses);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Prompt:', this.prompt);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Query:', request.query);
+        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
 
         let response = '';
 
@@ -355,42 +477,47 @@ class Agent extends Service {
   }
 
   start () {
-    return new Promise((resolve, reject) => {
-      this.fabric.start().then((node) => {
-        this.emit('debug', '[FABRIC]', 'Node:', node.id);
+    return new Promise(async (resolve, reject) => {
+      if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 
-        // Load default prompt.
-        this.loadDefaultPrompt();
+      // Load default prompt.
+      if (!this.prompt) this.loadDefaultPrompt();
 
-        // Attach event handlers.
-        this.services.mistral.on('debug', (...msg) => {
-          console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
-        });
+      // Attach event handlers.
+      this.services.mistral.on('debug', (...msg) => {
+        console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
+      });
 
-        this.services.mistral.on('ready', () => {
-          console.log('[AGENT]', '[MISTRAL]', 'Ready.');
-        });
+      this.services.mistral.on('ready', () => {
+        console.log('[AGENT]', '[MISTRAL]', 'Ready.');
+      });
 
-        this.services.mistral.on('message', (msg) => {
-          console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
-        });
+      this.services.mistral.on('message', (msg) => {
+        console.log('[AGENT]', '[MISTRAL]', 'Message received:', msg);
+      });
 
-        this.services.openai.on('debug', (...msg) => {
-          console.debug('[AGENT]', '[OPENAI]', '[DEBUG]', ...msg);
-        });
+      this.services.openai.on('debug', (...msg) => {
+        console.debug('[AGENT]', '[OPENAI]', '[DEBUG]', ...msg);
+      });
 
-        // Start Mistral.
-        // this.services.mistral.start();
+      // Start Mistral.
+      // this.services.mistral.start();
 
-        // Start OpenAI.
-        this.services.openai.start();
+      // Start OpenAI.
+      this.services.openai.start();
 
-        // Assert that Agent is ready.
-        this.emit('ready');
+      // Prime the model.
+      try {
+        // await this.prime();
+      } catch (exception) {
+        console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not prime model:', exception);
+      }
 
-        // Resolve with Agent.
-        resolve(this);
-      }).catch(reject);
+      // Assert that Agent is ready.
+      this.emit('ready');
+
+      // Resolve with Agent.
+      resolve(this);
     });
   }
 

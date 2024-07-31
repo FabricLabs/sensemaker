@@ -15,6 +15,7 @@ const conversationReducer = require('../reducers/conversationReducer');
 const courtReducer = require('../reducers/courtReducer');
 const jurisdictionsReducer = require('../reducers/jurisdictionsReducer');
 const documentReducer = require('../reducers/documentReducer');
+const fileReducer = require('../reducers/fileReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
 const personReducer = require('../reducers/personReducer');
@@ -22,6 +23,12 @@ const opinionReducer = require('../reducers/opinionReducer');
 const judgeReducer = require('../reducers/judgeReducer');
 const volumeReducer = require('../reducers/volumeReducer');
 const mattersReducer = require('../reducers/mattersReducer');
+const usersReducer = require('../reducers/usersReducer');
+const searchReducer = require('../reducers/searchReducer');
+const feedbackReducer = require('../reducers/feedbackReducer');
+const reportersReducer = require('../reducers/reportersReducer');
+const helpReducer = require('../reducers/helpReducer');
+const redisReducer = require('../reducers/redisReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -33,6 +40,7 @@ const rootReducer = combineReducers({
   conversations: conversationReducer,
   courts: courtReducer,
   documents: documentReducer,
+  files: fileReducer,
   stats: adminReducer,
   people: personReducer,
   opinions: opinionReducer,
@@ -42,6 +50,12 @@ const rootReducer = combineReducers({
   invitation: invitationReducer,
   matters: mattersReducer,
   jurisdictions: jurisdictionsReducer,
+  users: usersReducer,
+  search: searchReducer,
+  feedback: feedbackReducer,
+  reporters: reportersReducer,
+  help: helpReducer,
+  redis: redisReducer,
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));

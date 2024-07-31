@@ -13,11 +13,20 @@
 <dt><a href="#Learner">Learner</a></dt>
 <dd><p>Basic neural network support.</p>
 </dd>
+<dt><a href="#Queue">Queue</a></dt>
+<dd><p>A <code>Queue</code> is a simple job queue for managing asynchronous tasks.</p>
+</dd>
 <dt><a href="#Site">Site</a></dt>
 <dd><p>Implements a full-capacity (Native + Edge nodes) for a Fabric Site.</p>
 </dd>
 <dt><a href="#SPA">SPA</a></dt>
 <dd><p>Fully-managed HTML application.</p>
+</dd>
+<dt><a href="#Trainer">Trainer</a></dt>
+<dd><p>Implements document ingestion.</p>
+</dd>
+<dt><a href="#Worker">Worker</a></dt>
+<dd><p>Worker service.</p>
 </dd>
 <dt><a href="#CourtListener">CourtListener</a> ⇐ <code>Service</code></dt>
 <dd><p>CourtListener is a service for interacting with the CourtListener database.</p>
@@ -45,6 +54,8 @@ The Agent service is responsible for managing an AI agent.  AI agents are self-c
 <a name="new_Agent_new"></a>
 
 ### new Agent([settings])
+Create an instance of an [Agent](#Agent).
+
 **Returns**: [<code>Agent</code>](#Agent) - Instance of the Agent.  
 
 | Param | Type | Description |
@@ -143,6 +154,26 @@ Write a buffer to memory.
 | address | <code>Number</code> | Address of the cell. |
 | value | <code>Buffer</code> | Data to write to memory. |
 
+<a name="Queue"></a>
+
+## Queue
+A `Queue` is a simple job queue for managing asynchronous tasks.
+
+**Kind**: global class  
+<a name="Queue+registerMethod"></a>
+
+### queue.registerMethod(name, contract, context) ⇒ <code>function</code>
+Register a method with the queue.
+
+**Kind**: instance method of [<code>Queue</code>](#Queue)  
+**Returns**: <code>function</code> - The registered method.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| name | <code>String</code> | Name of the method to register. |
+| contract | <code>function</code> | Function to execute when the method is called. |
+| context | <code>Object</code> | Context in which to execute the method. |
+
 <a name="Site"></a>
 
 ## Site
@@ -164,6 +195,61 @@ Creates an instance of the [Site](#Site), which provides general statistics cove
 
 ## SPA
 Fully-managed HTML application.
+
+**Kind**: global class  
+<a name="Trainer"></a>
+
+## Trainer
+Implements document ingestion.
+
+**Kind**: global class  
+
+* [Trainer](#Trainer)
+    * [.ingestDirectory(directory)](#Trainer+ingestDirectory) ⇒ <code>Promise</code>
+    * [.ingestDocument(document, type)](#Trainer+ingestDocument) ⇒ <code>Promise</code>
+    * [.search(request)](#Trainer+search) ⇒ <code>Promise</code>
+
+<a name="Trainer+ingestDirectory"></a>
+
+### trainer.ingestDirectory(directory) ⇒ <code>Promise</code>
+Ingest a directory of files.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| directory | <code>String</code> | Path to ingest. |
+
+<a name="Trainer+ingestDocument"></a>
+
+### trainer.ingestDocument(document, type) ⇒ <code>Promise</code>
+Ingest a well-formed document.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| document | <code>Object</code> |  | Well-formed document object. |
+| type | <code>String</code> | <code>text</code> | Name of the document type. |
+
+<a name="Trainer+search"></a>
+
+### trainer.search(request) ⇒ <code>Promise</code>
+Search the document store.
+
+**Kind**: instance method of [<code>Trainer</code>](#Trainer)  
+**Returns**: <code>Promise</code> - Resolves with the result of the operation.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Search object. |
+
+<a name="Worker"></a>
+
+## Worker
+Worker service.
 
 **Kind**: global class  
 <a name="CourtListener"></a>
@@ -190,8 +276,18 @@ once started by the user.  By default, earnings are enabled.
 
 * [Jeeves](#Jeeves) : <code>Object</code>
     * [new Jeeves([settings])](#new_Jeeves_new)
+    * [.combinationsOf(tokens, prefix)](#Jeeves+combinationsOf) ⇒ <code>Array</code>
     * [.createAgent(configuration)](#Jeeves+createAgent) ⇒ [<code>Agent</code>](#Agent)
+    * [.estimateTokens(input)](#Jeeves+estimateTokens) ⇒ <code>Number</code>
+    * [.importantPhrases(input, limit)](#Jeeves+importantPhrases) ⇒ <code>Array</code>
+    * [.importantWords(input, limit)](#Jeeves+importantWords) ⇒ <code>Array</code>
+    * [.properNouns(input)](#Jeeves+properNouns) ⇒ <code>Array</code>
+    * [.uniqueWords(input)](#Jeeves+uniqueWords) ⇒ <code>Array</code>
+    * [.alert(message)](#Jeeves+alert) ⇒ <code>Boolean</code>
+    * [.generateDocumentOutline(request)](#Jeeves+generateDocumentOutline) ⇒ <code>Object</code>
+    * [.handleTextRequest(request)](#Jeeves+handleTextRequest) ⇒ <code>Promise</code>
     * [.createTimedRequest(request, [timeout], [depth])](#Jeeves+createTimedRequest) ⇒ <code>Message</code>
+    * [.retrieveFile(id)](#Jeeves+retrieveFile) ⇒ <code>Object</code>
     * [.start()](#Jeeves+start) ⇒ <code>Promise</code>
     * [.stop()](#Jeeves+stop) ⇒ <code>Promise</code>
     * [._getRoomMessages()](#Jeeves+_getRoomMessages) ⇒ <code>Array</code>
@@ -209,6 +305,19 @@ Constructor for the Jeeves application.
 | [settings] | <code>Object</code> | <code>{}</code> | Map of configuration values. |
 | [settings.port] | <code>Number</code> | <code>7777</code> | Fabric messaging port. |
 
+<a name="Jeeves+combinationsOf"></a>
+
+### jeeves.combinationsOf(tokens, prefix) ⇒ <code>Array</code>
+Extracts a list of possible combinations of a given array.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Array</code> - List of possible combinations.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| tokens | <code>Array</code> | List of tokens to combine. |
+| prefix | <code>String</code> | Additional prefix to add to each combination. |
+
 <a name="Jeeves+createAgent"></a>
 
 ### jeeves.createAgent(configuration) ⇒ [<code>Agent</code>](#Agent)
@@ -221,6 +330,106 @@ Creates (and registers) a new [Agent](#Agent) instance.
 | --- | --- | --- |
 | configuration | <code>Object</code> | Settings for the [Agent](#Agent). |
 
+<a name="Jeeves+estimateTokens"></a>
+
+### jeeves.estimateTokens(input) ⇒ <code>Number</code>
+Provides a function to estimate the number of tokens in a given input string.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Number</code> - Estimated number of tokens.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to estimate. |
+
+<a name="Jeeves+importantPhrases"></a>
+
+### jeeves.importantPhrases(input, limit) ⇒ <code>Array</code>
+Extracts a list of important phrases from a given input string.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Array</code> - List of important phrases in order of rank.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| input | <code>String</code> |  | Input string to analyze. |
+| limit | <code>Number</code> | <code>5</code> | Maximum number of phrases to return. |
+
+<a name="Jeeves+importantWords"></a>
+
+### jeeves.importantWords(input, limit) ⇒ <code>Array</code>
+Extracts a list of important words from a given input string.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Array</code> - List of important words in order of rank.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| input | <code>String</code> |  | Input string to analyze. |
+| limit | <code>Number</code> | <code>5</code> | Maximum number of words to return. |
+
+<a name="Jeeves+properNouns"></a>
+
+### jeeves.properNouns(input) ⇒ <code>Array</code>
+Extract a list of proper nouns from a given input string.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Array</code> - List of proper nouns.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to analyze. |
+
+<a name="Jeeves+uniqueWords"></a>
+
+### jeeves.uniqueWords(input) ⇒ <code>Array</code>
+Extract a list of unique words from a given input string.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Array</code> - List of unique words.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to analyze. |
+
+<a name="Jeeves+alert"></a>
+
+### jeeves.alert(message) ⇒ <code>Boolean</code>
+Sends a system-wide alert.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Boolean</code> - Returns `true` if the alert sent, `false` otherwise.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>String</code> | Message to send in the alert. |
+
+<a name="Jeeves+generateDocumentOutline"></a>
+
+### jeeves.generateDocumentOutline(request) ⇒ <code>Object</code>
+Generates an outline for a proposed document.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Object</code> - Outline of the document.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Request object. |
+
+<a name="Jeeves+handleTextRequest"></a>
+
+### jeeves.handleTextRequest(request) ⇒ <code>Promise</code>
+Generate a response to a given request.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Promise</code> - Resolves with the response to the request.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Request object. |
+| request.query | <code>String</code> | Query text. |
+| [request.conversation_id] | <code>String</code> | Unique identifier for the conversation. |
+
 <a name="Jeeves+createTimedRequest"></a>
 
 ### jeeves.createTimedRequest(request, [timeout], [depth]) ⇒ <code>Message</code>
@@ -232,8 +441,20 @@ Execute the default pipeline for an inbound request.
 | Param | Type | Default | Description |
 | --- | --- | --- | --- |
 | request | <code>Object</code> |  | Request object. |
-| [timeout] | <code>Number</code> | <code>60000</code> | How long to wait for a response. |
+| [timeout] | <code>Number</code> |  | How long to wait for a response. |
 | [depth] | <code>Number</code> | <code>0</code> | How many times to recurse. |
+
+<a name="Jeeves+retrieveFile"></a>
+
+### jeeves.retrieveFile(id) ⇒ <code>Object</code>
+Retrieve a file by its database ID.
+
+**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
+**Returns**: <code>Object</code> - File object.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>Number</code> | Database ID of the file. |
 
 <a name="Jeeves+start"></a>
 

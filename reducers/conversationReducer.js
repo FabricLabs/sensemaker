@@ -19,6 +19,7 @@ const initialState = {
   conversations: [],
   matterConversations: [],
   loading: false,
+  editing: false,
   error: null,
   titleEditSuccess: false,
 };
@@ -44,11 +45,11 @@ function conversationReducer(state = initialState, action) {
     case FETCH_MATTER_CONVERSATIONS_FAILURE:
       return { ...state, loading: false, error: action.payload, matterConversations: [], };
     case EDIT_TITLE_REQUEST:
-      return { ...state, loading: true, error: null };
+      return { ...state, editing: true, error: null };
     case EDIT_TITLE_SUCCESS:
-      return { ...state, loading: false, titleEditSuccess: true,};
+      return { ...state, editing: false, titleEditSuccess: true,};
     case EDIT_TITLE_FAILURE:
-      return { ...state, loading: false, error: action.payload, titleEditSuccess: false };
+      return { ...state, editing: false, error: action.payload, titleEditSuccess: false };
     default:
       // console.warn('Unhandled action in conversation reducer:', action);
       return state;

@@ -7,20 +7,23 @@ const {
 } = require('react-router-dom');
 
 const {
-  Card,
   Header,
   Segment
 } = require('semantic-ui-react');
 
-const QueryForm = require('./QueryForm');
 const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
 
 class Conversation extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = {
       actualConversation: null,
+      recoveryFlag: false,
+      recovering: false,
+      file_fabric_id: null,
+      documentInfo: null,
+      documentSections: null,
     };
 
     this.messagesEndRef = React.createRef();
@@ -32,10 +35,16 @@ class Conversation extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    // Check if the conversation ID has changed
     if (this.props.id !== prevProps.id) {
-      this.props.resetChat();
+      this.setState({ recoveryFlag: true, recovering: false });
       this.fetchData(this.props.id);
+    }
+    //if the conversation is related to a document, it sets the document info.
+    if (this.props.documents !== prevProps.documents && this.props.documents.document) {
+      this.setState({documentInfo: this.props.documents.document});
+    }
+    if (this.props.documents !== prevProps.documents && this.props.documents.sections) {
+      this.setState({documentSections: this.props.documents.sections});
     }
   }
 
@@ -43,37 +52,29 @@ class Conversation extends React.Component {
     window.removeEventListener('resize', this.handleResize);
   }
 
-  fetchData(id) {
-    // Assuming you have a method to fetch a conversation by ID
+  fetchData = async (id) => {
+    await this.props.fetchConversations();
     const actual = this.props.conversations.find(conversation => conversation.id == id);
     this.setState({ actualConversation: actual });
-
+    await this.props.resetChat();
+    this.setState({ file_fabric_id: actual.file_fabric_id ? actual.file_fabric_id : null });
+    //if the conversation is related to a document, it fetchs for that document info
+    if (actual.file_fabric_id) {
+      await this.props.fetchDocument(actual.file_fabric_id);
+      await this.props.fetchDocumentSections(actual.file_fabric_id);
+    }else{
+      this.setState({documentInfo: null});
+    }
     // Fetch new conversation details and messages
-    this.props.getMessages({ conversation_id: id });
+    await this.props.getMessages({ conversation_id: id });
   }
 
-  // componentDidMount () {
-  //   const { id } = this.props;
-  //   const { message } = this.props.chat;
-
-  //   const actual = this.props.conversations.find(conversation => conversation.id == id);
-  //   this.setState({actualConversation: actual});
-
-  //   // this.props.fetchConversation(id);
-  //   this.props.getMessages({ conversation_id: id });
-  //   window.addEventListener('resize', this.handleResize);
-  // }
-
-  // componentWillUnmount () {
-  //   window.removeEventListener('resize', this.handleResize);
-
-  // }
   handleResize = () => {
     // Force a re-render when the window resizes
     this.forceUpdate();
   };
 
-  render () {
+  render() {
     const { id, chat, messages } = this.props;
 
     const componentStyle = {
@@ -91,23 +92,31 @@ class Conversation extends React.Component {
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
-           <ChatBox
-            {...this.props}
-            chat={chat} messages={messages}
-            messagesEndRef={this.messagesEndRef}
-            includeFeed={true}
-            placeholder={'Ask me anything...'}
-            previousChat={true}
-            conversationID={id}
-            actualConversation={this.state.actualConversation}
-          />
-       </fabric-component>
+        <ChatBox
+          {...this.props}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
+          chat={chat} messages={messages}
+          messagesEndRef={this.messagesEndRef}
+          includeFeed={true}
+          placeholder={'Ask me anything...'}
+          previousChat={true}
+          conversationID={id}
+          actualConversation={this.state.actualConversation}
+          documentInfo={this.state.documentInfo}
+          documentSections={this.state.documentSections}
+          documentInfoSidebar={this.props.documentInfoSidebar}
+          fetchData={this.fetchData}
+        />
+      </fabric-component>
 
     );
   }
 }
 
-function Chat (props) {
+function Chat(props) {
   const { id } = useParams();
   return <Conversation id={id} {...props} />;
 }

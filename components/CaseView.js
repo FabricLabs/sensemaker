@@ -26,15 +26,23 @@ const CaseChat = require('./CaseChat');
 const formatDate = require('../contracts/formatDate');
 
 class CaseView extends React.Component {
-  componentDidMount () {
+  componentDidMount() {
     const { id } = this.props;
     const { message } = this.props.cases;
-
+    this.props.resetChat();
     this.props.fetchCase(id);
-    console.log(this.props);
+
   }
 
-  render () {
+  componentDidUpdate(prevProps) {
+    if (prevProps.id !== this.props.id) {
+      this.props.resetChat();
+      this.props.fetchCase(this.props.id);
+    }
+
+  }
+
+  render() {
     const { id, loading, error, cases } = this.props;
 
     if (error) {
@@ -42,8 +50,8 @@ class CaseView extends React.Component {
     }
 
     return (
-      <fabric-container>
-        <Segment fluid loading={loading} className='case-info'>
+      <Segment className='col-center' style={{maxHeight: '97vh'}}>
+        <Segment fluid loading={this.props.cases.loading} className='case-info'>
           <Header as='h2'>{cases.current.short_name} ({cases.current.decision_date})</Header>
           <Header as='h3'>{cases.current.title}</Header>
           <Label.Group>
@@ -74,7 +82,8 @@ class CaseView extends React.Component {
             </code>
           </div>
         </Segment>
-        <Grid columns='equal' style={{marginRight: '0'}}>
+        <div style={{width: '100%'}}>
+        <Grid columns='equal'>
           <Grid.Row stretched>
             <Grid.Column>
               <Segment>
@@ -89,30 +98,35 @@ class CaseView extends React.Component {
             </Grid.Column>
           </Grid.Row>
         </Grid>
+        </div>
         <CaseChat
-            fetchConversations={this.props.fetchConversations}
-            getMessages={this.props.getMessages}
-            submitMessage={this.props.submitMessage}
-            regenAnswer={this.props.regenAnswer}
-            onMessageSuccess={this.props.onMessageSuccess}
-            resetChat={this.props.resetChat}
-            chat={this.props.chat}
-            includeFeed={true}
-            isSending={loading}
-            caseTitle={cases.current.title}
-            caseID={id}
-            getMessageInformation={this.props.getMessageInformation}
-          />
-      </fabric-container>
+          fetchConversations={this.props.fetchConversations}
+          getMessages={this.props.getMessages}
+          submitMessage={this.props.submitMessage}
+          regenAnswer={this.props.regenAnswer}
+          onMessageSuccess={this.props.onMessageSuccess}
+          resetChat={this.props.resetChat}
+          chat={this.props.chat}
+          includeFeed={true}
+          isSending={loading}
+          caseTitle={cases.current.title}
+          caseID={id}
+          getMessageInformation={this.props.getMessageInformation}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
+        />
+      </Segment>
     );
   }
 
-  toHTML () {
+  toHTML() {
     return ReactDOMServer.renderToString(this.render());
   }
 }
 
-function Chat (props) {
+function Chat(props) {
   const { id } = useParams();
   return <CaseView id={id} {...props} />;
 }

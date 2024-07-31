@@ -62,7 +62,7 @@ class PeopleHome extends React.Component {
     const { filteredPeople, searchQuery, searching } = this.state;
 
     return (
-      <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+      <Segment className="fade-in" fluid style={{ marginRight: '1em', maxHeight: '100%' }}>
         <h1>People</h1>
         <jeeves-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
@@ -83,7 +83,7 @@ class PeopleHome extends React.Component {
             <i aria-hidden="true" className="search icon"></i>
           </div>
         </jeeves-search>
-        <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
+        <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
         {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true
           ) :

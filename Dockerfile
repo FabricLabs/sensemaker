@@ -1,5 +1,9 @@
 FROM node:18.19.0-bookworm
+
+# Environment
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+
+# Dependencies
 RUN apt-get update
 RUN apt-get install -y g++ make python3
 RUN apt-get update && apt-get install gnupg wget -y && \
@@ -8,9 +12,23 @@ RUN apt-get update && apt-get install gnupg wget -y && \
   apt-get update && \
   apt-get install google-chrome-stable -y --no-install-recommends && \
   rm -rf /var/lib/apt/lists/*
+
+# Storage
+# TODO: mount SSHFS / similar here
+RUN mkdir -p /media/storage
 RUN mkdir -p /opt/app
+
+# Application
 WORKDIR /opt/app
 COPY . .
-RUN npm install
+
+## Build
+RUN npm run report:install
+RUN npm run build
+
+## Test
+RUN npm test
+
+## Run
 EXPOSE 7777
 CMD ["npm", "start"]

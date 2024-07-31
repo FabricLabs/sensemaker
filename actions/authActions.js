@@ -9,6 +9,8 @@ const {
 // Dependencies
 const fetch = require('cross-fetch');
 
+const createTimeoutPromise = require('../functions/createTimeoutPromise');
+
 // Action Types
 const LOGIN_REQUEST = 'LOGIN_REQUEST';
 const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
@@ -18,9 +20,9 @@ const REGISTER_REQUEST = 'REGISTER_REQUEST';
 const REGISTER_SUCCESS = 'REGISTER_SUCCESS';
 const REGISTER_FAILURE = 'REGISTER_FAILURE';
 
-const FULL_REGISTER_REQUEST = 'REGISTER_REQUEST';
-const FULL_REGISTER_SUCCESS = 'REGISTER_SUCCESS';
-const FULL_REGISTER_FAILURE = 'REGISTER_FAILURE';
+const FULL_REGISTER_REQUEST = 'FULL_REGISTER_REQUEST';
+const FULL_REGISTER_SUCCESS = 'FULL_REGISTER_SUCCESS';
+const FULL_REGISTER_FAILURE = 'FULL_REGISTER_FAILURE';
 
 const CHECK_USERNAME_AVAILABLE_REQUEST = 'CHECK_USERNAME_AVAILABLE_REQUEST';
 const CHECK_USERNAME_AVAILABLE_SUCCESS = 'CHECK_USERNAME_AVAILABLE_SUCCESS';
@@ -29,7 +31,6 @@ const CHECK_USERNAME_AVAILABLE_FAILURE = 'CHECK_USERNAME_AVAILABLE_FAILURE';
 const CHECK_EMAIL_AVAILABLE_REQUEST = 'CHECK_EMAIL_AVAILABLE_REQUEST';
 const CHECK_EMAIL_AVAILABLE_SUCCESS = 'CHECK_EMAIL_AVAILABLE_SUCCESS';
 const CHECK_EMAIL_AVAILABLE_FAILURE = 'CHECK_EMAIL_AVAILABLE_FAILURE';
-
 
 // Sync Action Creators
 const loginRequest = () => ({ type: LOGIN_REQUEST });
@@ -52,11 +53,10 @@ const checkEmailAvailableRequest = () => ({ type: CHECK_EMAIL_AVAILABLE_REQUEST 
 const checkEmailAvailableSuccess = () => ({ type: CHECK_EMAIL_AVAILABLE_SUCCESS });
 const checkEmailAvailableFailure = (error) => ({ type: CHECK_EMAIL_AVAILABLE_FAILURE, payload: error });
 
-
 const login = (username, password) => {
   return async dispatch => {
     dispatch(loginRequest());
-
+    //  IMPORTANT: NOW USERNAME CAN BE THE USER'S EMAIL
     try {
       const response = await fetch('/sessions', {
         method: 'POST',
@@ -123,7 +123,8 @@ const reLogin = (token) => {
         email: user.email,
         isAdmin: user.isAdmin,
         isBeta: user.isBeta,
-        isCompliant: user.isCompliant
+        isCompliant: user.isCompliant,
+        id: user.id
       }
 
       if (!response.ok) {
@@ -165,25 +166,26 @@ const register = (username, password) => {
   };
 };
 
-const fullRegister = (username, password, email,  firstName, lastName, firmName, firmSize) => {
-  return async dispatch => {
+const fullRegister = (username, password, email, firstName, lastName, firmName, firmSize) => {
+  return async (dispatch) => {
     dispatch(fullRegisterRequest());
-    try{
+    try {
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          reject(new Error('Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.'));
-        }, 15000);
-      });
+      //this creates a timeout promise of 15000 ms, which returns the string msg there.
+      const timeoutPromise = createTimeoutPromise(15000, 'Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
 
       const fetchPromise = fetch('/users/full', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password, email,  firstName, lastName, firmName, firmSize }),
+        body: JSON.stringify({ username, password, email, firstName, lastName, firmName, firmSize }),
       });
 
+      //promise.race runs the two promises, and returns the answer from the one that ends up first
+      //this means if the fetch goes well it will return with the answer, but if there are some network problems
+      //the timeout will end up first, and cuts, this is to stop the app to hang loading waiting for an api answer forever
+      
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (!response.ok) {
         const errorData = await response.json();
@@ -191,7 +193,7 @@ const fullRegister = (username, password, email,  firstName, lastName, firmName,
       }
 
       dispatch(fullRegisterSuccess(response));
-    }catch(error){
+    } catch (error) {
       dispatch(fullRegisterFailure(error.message));
     }
 

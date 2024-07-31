@@ -6,7 +6,7 @@ const Email = require('../services/email');
 async function main (settings = {}) {
   const email = new Email(settings);
   email.send({
-    from: 'agent@jeeves.dev',
+    from: 'agent@trynovo.com',
     to: 'eric@ericmartindale.com',
     subject: 'Test Message',
     text: 'This is a test message.'

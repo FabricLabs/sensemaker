@@ -3,27 +3,34 @@
 // Constants
 const RELEASE_NAME = '1.0.0-RC1';
 const RELEASE_DESCRIPTION = 'Exclusive access!';
-const MAX_RESPONSE_TIME_MS = 240000; // 4 minutes
+const MAX_RESPONSE_TIME_MS = 600000;
 
 // Fabric
 const GENESIS_HASH = '';
 const MAX_MEMORY_SIZE = 32 * 1024 * 1024; // 32 MB
+const SNAPSHOT_INTERVAL = 1000 * 60 * 10; // 10 minutes
 const {
   BITCOIN_NETWORK,
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
 // Sensemaker
-const AGENT_MAX_TOKENS = 4096;
+const AGENT_MAX_TOKENS = 8192;
 const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = true;
+const EMBEDDING_MODEL = 'mxbai-embed-large';
 
 // Jeeves
 const BRAND_NAME = 'Novo';
+const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
+const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
+const ENABLE_CONTRACTS = true;
+const ENABLE_FILES = true;
 const ENABLE_MATTERS = true;
+const ENABLE_UPLOADS = true;
 const ENABLE_CASE_SEARCH = true;
 const ENABLE_COURT_SEARCH = true;
 const ENABLE_JUDGE_SEARCH = false;
@@ -40,6 +47,7 @@ const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
 const USER_MENU_HOVER_TIME_MS = 1000;
 const USER_HINT_TIME_MS = 3000;
+const SYNC_EMBEDDINGS_COUNT = 100;
 const INTEGRITY_CHECK = false;
 
 // Browser
@@ -52,18 +60,24 @@ const PER_PAGE_DEFAULT = 30;
 
 // ChatGPT
 const CHATGPT_MAX_TOKENS = AGENT_MAX_TOKENS;
+const OPENAI_API_KEY = 'replace with a valid OpenAI key';
 
 // Exports
 module.exports = {
   GENESIS_HASH, // TODO: use a real genesis hash
   RELEASE_NAME, // TODO: use a real release name
   RELEASE_DESCRIPTION, // TODO: use a real release description
+  SNAPSHOT_INTERVAL, // 10 minutes for snapshot interval
   MAX_RESPONSE_TIME_MS, // 60 seconds for maximum response time
   BITCOIN_NETWORK, // Use mainnet for production
   FIXTURE_SEED, // Use a fixture seed for development
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  EMBEDDING_MODEL,
+  ENABLE_CONTENT_TOPBAR,
+  ENABLE_CONTRACTS,
+  ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_BILLING,
   ENABLE_LOGIN,
@@ -72,6 +86,7 @@ module.exports = {
   ENABLE_MATTERS,
   ENABLE_CASE_SEARCH,
   ENABLE_COURT_SEARCH,
+  ENABLE_FILES,
   ENABLE_JUDGE_SEARCH,
   ENABLE_OPINION_SEARCH,
   ENABLE_DOCUMENT_SEARCH,
@@ -79,6 +94,7 @@ module.exports = {
   ENABLE_JURISDICTION_SEARCH,
   ENABLE_REPORTER_SEARCH,
   ENABLE_STATUTE_SEARCH,
+  ENABLE_UPLOADS,
   ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
@@ -88,8 +104,10 @@ module.exports = {
   BROWSER_DATABASE_TOKEN_TABLE,
   BRAND_NAME,
   CHATGPT_MAX_TOKENS,
+  OPENAI_API_KEY,
   AGENT_TEMPERATURE,
   USER_QUERY_TIMEOUT_MS,
   USER_HINT_TIME_MS,
-  USER_MENU_HOVER_TIME_MS
+  USER_MENU_HOVER_TIME_MS,
+  SYNC_EMBEDDINGS_COUNT
 };

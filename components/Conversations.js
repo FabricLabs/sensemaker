@@ -24,7 +24,7 @@ const ChatBox = require('./ChatBox');
  * @param {Object} props Properties for the component.
  **/
 class Conversations extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props);
 
     this.messagesEndRef = React.createRef();
@@ -32,17 +32,18 @@ class Conversations extends React.Component {
     this.state = {
       currentPage: 1,
       windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
       editingID: null, // ID of the conversation being edited
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
     };
   }
 
-  componentDidMount () {
+  componentDidMount() {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount () {
+  componentWillUnmount() {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -51,7 +52,7 @@ class Conversations extends React.Component {
   }
 
   handleResize = () => {
-    this.setState({ windowWidth: window.innerWidth });
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
   }
 
   //handle when you click edit on a conversation title
@@ -97,7 +98,7 @@ class Conversations extends React.Component {
       } else {
         console.error('Title update Error:', error.message);
       }
-      this.setState({ editingID: null, editedTitle: '', editLoading: false});
+      this.setState({ editingID: null, editedTitle: '', editLoading: false });
     }
   };
 
@@ -106,9 +107,9 @@ class Conversations extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
-  render () {
+  render() {
     const { loading, error, conversations } = this.props;
-    const { currentPage, windowWidth, editLoading } = this.state;
+    const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
 
     if (loading) {
       return <div>Loading...</div>;
@@ -117,9 +118,8 @@ class Conversations extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
-
     // Calculate conversations for current page
-    const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
+    const itemsPerPage = windowHeight < 600 ? 11 : windowHeight < 769 ? 14 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
@@ -140,9 +140,11 @@ class Conversations extends React.Component {
     const conversationCount = conversations.length;
 
     return (
-      <Segment className='fade-in' fluid style={{ minHeight: '34em' }}>
-        <Button style={{ float: 'right' }} icon>New Conversation <Icon name='right chevron' /></Button>
-        <h2>Conversations</h2>
+      <Segment className='fade-in' fluid style={{ minHeight: '100%', maxHeight: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
+          <h2 style={{ marginTop: '0' }}>Conversations</h2>
+          <Button icon color='green'>New Conversation <Icon name='right chevron' /></Button>
+        </div>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
         {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
           <div key={conversation.id} className="conversationItem">
@@ -181,7 +183,7 @@ class Conversations extends React.Component {
                 </Form>
               ) : (
                 <div>
-                  <Link to={'/conversations/' + conversation.id}>
+                  <Link to={'/conversations/' + conversation.id} onClick={() => this.props.resetChat()}>
                     {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
                     {conversation.title}
                   </Link>
@@ -204,6 +206,10 @@ class Conversations extends React.Component {
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}
             placeholder={'Ask me anything...'}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
           />
 
         </div>}

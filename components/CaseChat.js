@@ -13,6 +13,7 @@ const ChatBox = require('./ChatBox');
 const {
   Feed,
   Header,
+  Segment
 } = require('semantic-ui-react');
 
 class CaseChat extends React.Component {
@@ -49,30 +50,37 @@ class CaseChat extends React.Component {
       top: '1em',
       left: 'calc(350px + 1em)',
       // height: 'calc(60vh - 3rem)', // Set a maximum height
-      height: windowHeight < 1200? 'calc(60vh - 2.5rem)' : 'calc(80vh - 2.5rem)',
+      //height: windowHeight < 1200? 'calc(60vh - 2.5rem)' : 'calc(80vh - 2.5rem)',
+    //  height: '30vh',
       bottom: '1em',
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: '0'
+      paddingBottom: '0',
+      width: '100%',
     } : {
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',
+      width: '100%',
 
     };
 
 
 
     return (
-      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
+      <Segment ref={this.messagesEndRef} style={componentStyle}>
           <ChatBox
             {...this.props}
             placeholder={'Ask me anything about this case...'}
             messagesEndRef={this.messagesEndRef}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
             />
-      </fabric-component>
+      </Segment>
     );
   }
 }

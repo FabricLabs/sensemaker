@@ -8,13 +8,12 @@ const {
 
 // Semantic UI
 const {
-  Link,
   Form,
   Button,
   Message,
   Header,
   Segment,
-  Label
+  Image
 } = require('semantic-ui-react');
 
 class SignUpForm extends React.Component {
@@ -41,41 +40,53 @@ class SignUpForm extends React.Component {
       usernameError: '',
       isEmailValid: false,
       emailError: '',
-
     };
   }
 
   componentDidMount = async () => {
-
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "Novo · Your Legal Assistant";
 
-    const { invitationToken, invitation, invitationError } = this.props;
-    this.setState({ loading: true });
-    try {
-      await this.props.checkInvitationToken(invitationToken);
-    } catch (error) {
-      this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
-    }
+    const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
+
+    if (!adminPanel) {
+      this.setState({ loading: true });
+      try {
+        await this.props.checkInvitationToken(invitationToken);
+      } catch (error) {
+        this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
+      }
+    } else {this.setState({loading :false, tokenError:false})}
+
   };
 
 
   componentDidUpdate(prevProps) {
-    if (prevProps.invitation !== this.props.invitation) {
-      const { invitation } = this.props;
-      if (invitation.invitationValid) {
-        this.setState({ loading: false, tokenError: false, errorContent: '' });
-      } else {
-        this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+    const {adminPanel} = this.props
+    if (!adminPanel) {
+      //it goes here when the invitation reducer changes
+      if (prevProps.invitation !== this.props.invitation) {
+        const { invitation } = this.props;
+        if (invitation.invitationValid) {
+          this.setState({ loading: false, tokenError: false, errorContent: '', emailError: null, email: this.props.invitation.invitation.target });
+          this.props.checkEmailAvailable(this.props.invitation.invitation.target);
+        } else {
+          this.setState({ loading: false, tokenError: true, errorContent: invitation.error });
+        }
       }
     }
+
+    //it goes here when the auth reducer changes
     if (prevProps.auth !== this.props.auth) {
       const { auth } = this.props;
+      //if the username is available and the username state is not empty
       if (auth.usernameAvailable && this.state.username) {
         this.setState({ isNewUserValid: true, usernameError: '' });
       } else {
         this.setState({ isNewUserValid: false, usernameError: 'Username already exists. Please choose a different one.' });
       }
+
+      //if the email is available and the username state is not empty
       if (auth.emailAvailable && this.state.email) {
         this.setState({ isEmailValid: true, emailError: '' });
       } else {
@@ -87,7 +98,9 @@ class SignUpForm extends React.Component {
         this.setState({ registering: false });
         if (auth.registerSuccess) {
           this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
-          this.props.acceptInvitation(this.props.invitationToken);
+          if (!adminPanel) {
+            this.props.acceptInvitation(this.props.invitationToken);
+          }
         } else {
           this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
         }
@@ -109,9 +122,9 @@ class SignUpForm extends React.Component {
       });
       if (event.target.name === 'username') {
         this.validateUsername(event.target.value);
-
       }
       if (event.target.name === 'email') {
+        //if previouse validations are OK, then it calls this api action
         this.props.checkEmailAvailable(event.target.value);
       }
     });
@@ -124,6 +137,8 @@ class SignUpForm extends React.Component {
     const { username, password, email, firstName, lastName, firmName, firmSize } = this.state;
 
     try {
+      //here we call the register api action, we set our state to registering
+      //until we have the answer from reducer in componentDidUpdate
       this.setState({ registering: true });
       //forced delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -150,6 +165,7 @@ class SignUpForm extends React.Component {
           usernameError: 'Username must have at least 3 characters.',
         });
       } else {
+        //if previouse validations are OK, then it calls this api action
         this.props.checkUsernameAvailable(value);
       }
     }
@@ -190,6 +206,7 @@ class SignUpForm extends React.Component {
       registerSuccess,
       registerError,
       registering,
+      adminPanel,
     } = this.state;
 
     //these next const are for the popup errors showed in the inputs
@@ -203,25 +220,36 @@ class SignUpForm extends React.Component {
       pointing: 'above',
     };
 
+    //the error message wont be shown if the username state or email state are still empty, those error will start
+    //showing once the user writes and invalid username or email
     const userErrorMsg = (isNewUserValid || !username) ? null : {
       content: usernameError,
       pointing: 'above',
     };
 
-    const emailErrorMsg = (isEmailValid || !email) ? null : {
+    const emailErrorMsg = (isEmailValid || !email || emailError === null) ? null : {
       content: emailError,
       pointing: 'above',
     };
 
-
     return (
-      <div className='fade-in signup-form'>
+      <div className={'fade-in signup-form'} >
+        {
+          !this.props.adminPanel &&
+          <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+          
+        }
         <Segment>
-          <Form  loading={loading} centered>
+          <Form id='signup-form' loading={loading} centered style={{width:'500px'}}>
             {(!tokenError && !registerSuccess) && (
               <section>
-                <Header as='h3' textAlign="center">Sign Up</Header>
-                <p>Complete your registration to access Novo.</p>
+                {
+                  !this.props.adminPanel &&
+                  <>
+                    <Header as='h3' textAlign="center">Sign Up</Header>
+                    <p>Complete your registration to access Novo.</p>
+                  </>
+                }
                 <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'
@@ -281,7 +309,7 @@ class SignUpForm extends React.Component {
                     label='Email'
                     type='email'
                     name='email'
-                    error={emailErrorMsg}
+                    error={emailError ? emailErrorMsg : null}
                     onChange={this.handleInputChange}
                     autoComplete="off"
                     value={email}
@@ -340,7 +368,7 @@ class SignUpForm extends React.Component {
                 <p>{errorContent}</p>
               </Message>
             )}
-            {registerSuccess && (
+            {registerSuccess && !this.props.adminPanel ? (
               <Message positive centered>
                 <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
                 <p>Your account has been successfully created. Thank you for registering with Novo.</p>
@@ -349,12 +377,12 @@ class SignUpForm extends React.Component {
                   <Button primary href="/sessions">Log In</Button>
                 </div>
               </Message>
+            ) : registerSuccess && this.props.adminPanel && (
+              <Message positive centered>
+                <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
+                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
+              </Message>
             )}
-            {/* <Message negative>
-              <Message.Header>Invitation Declined</Message.Header>
-              <p>We have registered that you declined our invitation. We will not send any further requests or communications.</p>
-              <p>Should you change your mind or have any questions in the future, please feel free to contact us.</p>
-            </Message> */}
           </Form>
         </Segment>
       </div>

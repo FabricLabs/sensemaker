@@ -78,21 +78,36 @@ class OpenAIService extends Service {
   }
 
   async _streamConversationRequest (request) {
-    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request);
+    if (this.settings.debug) console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', request.query, Object.keys(request));
+    console.debug('[AGENT]', '[RAG]', 'Streaming Conversation Request:', Object.keys(request));
     return new Promise(async (resolve, reject) => {
       const entropy = request.entropy || 0.0;
       const seed = new Actor({ name: `entropies/${entropy + ''}` });
       const message = (request.message_id) ? { id: request.message_id } : { id: seed.id };
+      const configuration = {
+        max_tokens: CHATGPT_MAX_TOKENS,
+        messages: request.messages,
+        model: this.settings.model,
+        stream: true,
+        temperature: this.settings.temperature,
+        tool_choice: request.tool_choice,
+        tools: request.tools
+      };
+
+      if (request.bias) {
+        configuration.logit_bias = request.bias;
+      }
+
+      if (request.json) {
+        configuration.response_format = 'json';
+      }
+
+      if (request.temperature) {
+        configuration.temperature = request.temperature;
+      }
 
       try {
-        const stream = this.openai.beta.chat.completions.stream({
-          max_tokens: CHATGPT_MAX_TOKENS,
-          messages: request.messages,
-          model: this.settings.model,
-          stream: true,
-          tool_choice: request.tool_choice,
-          tools: request.tools
-        });
+        const stream = this.openai.beta.chat.completions.stream(configuration);
 
         this.emit('MessageStart', {
           message_id: request.message_id,
@@ -108,7 +123,7 @@ class OpenAIService extends Service {
         });
 
         stream.on('finalChatCompletion', (completion) => {
-          console.debug('FINAL CHAT COMPLETION:', completion);
+          if (this.settings.debug) console.debug('[AGENT]', '[OPENAI]', 'FINAL CHAT COMPLETION:', completion);
           const choice = completion.choices[0];
           if (!choice) reject(new Error('No choices given.'));
 
@@ -139,9 +154,31 @@ class OpenAIService extends Service {
                         try {
                           const args = JSON.parse(toolcall.function.arguments);
                           console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Arguments:', args);
-                          const whitelist = ['127.0.0.1:3045'/* , 'trynovo.com', 'gamma.trynovo.com', 'jeeves.dev', 'beta.jeeves.dev', 'alpha.jeeves.dev' */];
-                          if (!whitelist.includes(args.host)) {
+                          const whitelist = [
+                            '127.0.0.1:3045',
+                            'trynovo.com',
+                            'jeeves.dev',
+                            'beta.jeeves.dev'
+                            /*, 'alpha.jeeves.dev' */
+                          ];
+
+                          const resourcePaths = [
+                            '/cases',
+                            '/documents',
+                            '/people',
+                            '/courts',
+                            '/judges',
+                            '/opinions',
+                            '/jurisdictions',
+                            '/reporters',
+                            '/statutes',
+                            '/volumes'
+                          ];
+
+                          if (!whitelist.includes(args.host?.toLowerCase())) {
                             console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Host not in whitelist:', args.host);
+                          } else if (!resourcePaths.includes(args.path?.toLowerCase())) {
+                            console.warn('[AGENT]', '[RAG]', '[SEARCH]', 'Path not in whitelist:', args.path);
                           } else {
                             // Execute Network Request
                             fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only
@@ -152,7 +189,7 @@ class OpenAIService extends Service {
                               },
                               body: JSON.stringify(args)
                             }).then(async (response) => {
-                              console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Response:', response);
+                              if (this.settings.debug) console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Response:', response);
                               // const obj = await response.json();
                               // console.debug('[AGENT]', '[RAG]', '[SEARCH]', 'Object:', obj);
 
@@ -169,7 +206,7 @@ class OpenAIService extends Service {
                               return this._streamConversationRequest({
                                 query: request.query,
                                 messages: messages
-                              }).then(resolve);
+                              }).then(resolve).catch(reject);
                             }).catch((exception) => {
                               console.error('[AGENT]', '[RAG]', '[SEARCH]', 'Exception in tool execution:', exception);
                             });

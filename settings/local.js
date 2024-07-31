@@ -1,6 +1,14 @@
+/**
+ * Provides the user's local settings.
+ */
 'use strict';
 
+// Dependencies
 const fs = require('fs');
+const path = require('path');
+const merge = require('lodash.merge');
+
+// Environment
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
@@ -11,49 +19,107 @@ environment.start();
 // Determine output of various inputs.
 // Output should be deterministic, HTML-encoded applications.
 
+// Constants
 const NAME = 'NOVO';
-const VERSION = '0.3.0';
+const VERSION = '1.0.0-RC2';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
-const path = require('path');
+// Prompts
 const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
-const prompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
+const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
+const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
+const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
+
+// Configurations
+const network = require('./network');
 
 /**
  * Provides the user's local settings.
  */
 module.exports = {
   alias: NAME,
-  domain: 'trynovo.com',
+  benchmark: false,
+  domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
   name: 'Novo',
   mode: 'production',
+  expander: true,
   crawl: false,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
+  temperature: 0,
+  trainer: {
+    enable: false,
+    hosts: ['localhost:7777'],
+    interval: 1000,
+    limit: 10
+  },
+  worker: true,
   workers: 8,
+  agents: merge({
+    local: {
+      name: 'LOCAL',
+      prompt: novoPrompt.toString('utf8'),
+      model: 'llama3',
+      host: 'localhost',
+      port: 11434,
+      secure: false,
+      temperature: 0
+    }
+  }, network, {}),
+  pipeline: {
+    enable: false,
+    consensus: ['socrates']
+  },
   fabric: {
     peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
-      { host: 'hub.fabric.pub', port: 443, secure: true },
+      // { host: 'hub.fabric.pub', port: 443, secure: true },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
       { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
-    search: false,
+    search: true,
     sync: false
   },
   db: {
     type: 'mysql',
-    host: 'localhost',
+    host: process.env.SQL_DB_HOST || '127.0.0.1',
     port: 3306,
     user: 'db_user_jeeves',
-    password: 'chahcieYishi1wuu',
+    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
     database: 'db_jeeves'
+  },
+  embeddings: {
+    enable: false
+  },
+  goals: {
+    'primary': {
+      'name': 'Primary Goal',
+      'description': 'The primary goal of the system is to provide a safe, secure, and reliable environment for the user to interact with the system.',
+      'status': 'active'
+    },
+    'secondary': {
+      'name': 'Secondary Goal',
+      'description': 'The secondary goal is to only deliver accurate information to the user.',
+      'status': 'active'
+    }
+  },
+  redis: {
+    name: 'novo',
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    username: 'default',
+    password: process.env.REDIS_CRED || null,
+    port: 6379,
+    hosts: [
+      'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
+    ]
   },
   http: {
     listen: true,
@@ -65,11 +131,13 @@ module.exports = {
     key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
-    username: 'agent@jeeves.dev',
-    password: 'generate app-specific password'
+    username: 'agent@trynovo.com',
+    password: 'lobq mioh pimu usrr'
   },
   files: {
-    path: '/media/storage/node/files'
+    corpus: '/media/storage/stores/sensemaker',
+    path: '/media/storage/node/files',
+    userstore: '/media/storage/uploads/users'
   },
   gemini: {
     model: 'gemini-pro',
@@ -81,12 +149,12 @@ module.exports = {
       private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
     }
   },
-  interval: 1000, // 1 Hz
+  interval: 600000, // 10 minutes (formerly 1 Hz)
   persistent: false,
   peers: [
     'localhost:7777'
   ],
-  prompt: prompt.toString('utf8'),
+  prompt: novoPrompt.toString('utf8'),
   sandbox: {
     browser: {
       headless: true
@@ -123,7 +191,7 @@ module.exports = {
     token: null
   },
   statutes: {
-    enable: false,
+    // enable: true,
     jurisdictions: [
       'Arkansas',
       'California',
@@ -139,7 +207,7 @@ module.exports = {
   courtlistener: {
     enable: false,
     type: 'postgresql',
-    host: 'lavendar.courtlistener.com',
+    host: 'localhost',
     database: 'courtlistener',
     username: 'django',
     password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
@@ -159,6 +227,11 @@ module.exports = {
   lightning: {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
+  linkedin: {
+    enable: true,
+    id: 'get from linkedin',
+    secret: 'get from linkedin'
+  },
   matrix: {
     enable: false,
     name: '@jeeves/core',
@@ -173,19 +246,21 @@ module.exports = {
     coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
     token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
   },
-  mysql: {
-    host: 'localhost',
-    port: 3306,
-    username: 'dbuser_jeeves_dev',
-    password: ''
+  ollama: {
+    host: process.env.OLLAMA_HOST || '127.0.0.1',
+    port: 11434,
+    secure: false,
+    model: 'llama3', // default model
+    models: ['llama3'], // models to "prime" (preload)
+    temperature: 0
   },
   pacer: {
     enable: true
   },
   openai: {
     enable: true,
-    key: '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',
-    model: 'gpt-4-1106-preview',
+    key: process.env.OPENAI_API_KEY || 'set to your own API key',
+    model: 'gpt-4-turbo',
     temperature: 0
   },
   twilio: {

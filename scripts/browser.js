@@ -22,128 +22,7 @@ const settings = {
 
 // Redux
 const store = require('../stores/redux');
-
-// ## Actions
-// Actions drive the application.  They are the only way to change the state.
-
-// ## Authentication (and Authorization) Actions
-const {
-  login,
-  reLogin,
-  register,
-  logout,
-  checkUsernameAvailable,
-  checkEmailAvailable,
-  fullRegister
-} = require('../actions/authActions');
-
-// ## Admin Actions
-const {
-  fetchAdminStats,
-  fetchAllConversationsFromAPI,
-  createInvitation
-} = require('../actions/adminActions');
-
-// ## Invitation Actions
-const {
-  fetchInvitation,
-  fetchInvitations,
-  sendInvitation,
-  reSendInvitation,
-  checkInvitationToken,
-  acceptInvitation,
-  declineInvitation,
-  deleteInvitation,
-} = require('../actions/invitationActions');
-
-// ## Inquiries Actions
-const {
-  fetchInquiry,
-  fetchInquiries,
-  deleteInquiry,
-  createInquiry
-} = require('../actions/inquiriesActions');
-
-// ## Case Actions
-const {
-  fetchCases,
-  fetchCase
-} = require('../actions/caseActions');
-
-// ## Courts Actions
-const {
-  fetchCourts,
-  fetchCourt
-} = require('../actions/courtActions');
-
-// ## Jurisdiction Actions
-const {
-  fetchJurisdictions,
-  fetchJurisdiction
-} = require('../actions/jurisdictionsActions');
-
-// ## Contract Actions
-const {
-  resetChat,
-  submitMessage,
-  regenAnswer,
-  getMessages,
-  getMessageInformation,
-} = require('../actions/chatActions');
-
-// ## Conversation Actions
-const {
-  fetchContract,
-  signContract
-} = require('../actions/contractActions');
-
-// ## Court Actions
-const {
-  fetchConversations,
-  fetchConversation,
-  fetchMatterConversations,
-  conversationTitleEdit,
-} = require('../actions/conversationActions');
-
-// ## Person Actions
-const {
-  fetchPeople,
-  fetchPerson
-} = require('../actions/personActions');
-
-// ## Judge Actions
-const {
-  fetchJudges,
-  fetchJudge
-} = require('../actions/judgeActions');
-
-// ## Opinion Actions
-const {
-  fetchOpinions,
-  fetchOpinion
-} = require('../actions/opinionActions');
-
-// ## Volume Actions
-const {
-  fetchVolumes,
-  fetchVolume
-} = require('../actions/volumeActions');
-
-// ## Document Actions
-const {
-  fetchDocuments,
-  fetchDocument
-} = require('../actions/documentActions');
-
-// ## Matters Actions
-const {
-  fetchMatters,
-  fetchMatter,
-  createMatter,
-  addContext,
-  removeFile,
-  editMatter,
-} = require('../actions/mattersActions');
+const actions = require('../actions');
 
 // ## Main Process
 async function main (input = {}) {
@@ -151,28 +30,10 @@ async function main (input = {}) {
 
   window.addEventListener('load', async () => {
     console.debug('[JEEVES]', 'Window loaded!');
-
+    // TODO: restore fabric-chat-bar
     // TODO: consider localforage
     // TODO: consider schema from Knex / MySQL
     // TODO: consider GraphQL to pass schema
-    // const request = indexedDB.open('JeevesDB', 1);
-
-    // request.onerror = function (event) {
-    //   console.error('Error opening IndexedDB:', event.target.errorCode);
-    // };
-
-    // request.onupgradeneeded = function (event) {
-    //   db = event.target.result;
-
-    //   if (!db.objectStoreNames.contains('tokens')) {
-    //     db.createObjectStore('tokens');
-    //   }
-    // };
-
-    // request.onsuccess = function (event) {
-    //   db = event.target.result;
-    // };
-
     // const chatbar = document.createElement('fabric-chat-bar');
     // chatbar.style = 'position: absolute; bottom: 1em;';
     // document.body.append(chatbar);
@@ -180,6 +41,7 @@ async function main (input = {}) {
 
   // ## React Application
   // ### Connect Actions (Redux)
+  // TODO: migrate this to `functions/mapStateToProps.js`
   const mapStateToProps = (state) => {
     return {
       auth: state.auth,
@@ -192,8 +54,10 @@ async function main (input = {}) {
       conversationsLoading: state.conversations.loading,
       courts: state.courts,
       documents: state.documents,
+      files: state.files,
       judges: state.judges,
       people: state.people,
+      reporters: state.reporters,
       opinions: state.opinions,
       error: state.auth.error,
       inquiries: state.inquiries,
@@ -205,70 +69,19 @@ async function main (input = {}) {
       token: state.auth.token,
       stats: state.stats,
       matters: state.matters,
-      jurisdictions: state.jurisdictions
+      jurisdictions: state.jurisdictions,
+      users: state.users,
+      search: state.search,
+      feedback: state.feedback,
+      help: state.help,
+      redis: state.redis,
     }
   };
 
-  const mapDispatchToProps = {
-    fetchCases: fetchCases,
-    fetchCase: fetchCase,
-    fetchContract: fetchContract,
-    signContract: signContract,
-    fetchConversation: fetchConversation,
-    fetchConversations: fetchConversations,
-    conversationTitleEdit: conversationTitleEdit,
-    fetchCourts: fetchCourts,
-    fetchCourt: fetchCourt,
-    fetchJurisdictions: fetchJurisdictions,
-    fetchJurisdiction: fetchJurisdiction,
-    fetchDocuments: fetchDocuments,
-    fetchDocument: fetchDocument,
-    fetchInquiry: fetchInquiry,
-    fetchInquiries: fetchInquiries,
-    deleteInquiry: deleteInquiry,
-    createInquiry: createInquiry,
-    fetchInvitation: fetchInvitation,
-    fetchInvitations: fetchInvitations,
-    sendInvitation: sendInvitation,
-    reSendInvitation: reSendInvitation,
-    checkInvitationToken: checkInvitationToken,
-    acceptInvitation: acceptInvitation,
-    declineInvitation: declineInvitation,
-    deleteInvitation: deleteInvitation,
-    fetchJudges: fetchJudges,
-    fetchJudge: fetchJudge,
-    fetchPeople: fetchPeople,
-    fetchPerson: fetchPerson,
-    fetchOpinions: fetchOpinions,
-    fetchOpinion: fetchOpinion,
-    fetchVolumes: fetchVolumes,
-    fetchVolume: fetchVolume,
-    fetchAdminStats: fetchAdminStats,
-    fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
-    login: login,
-    logout: logout,
-    reLogin: reLogin,
-    register: register,
-    fullRegister:fullRegister,
-    checkUsernameAvailable: checkUsernameAvailable,
-    checkEmailAvailable: checkEmailAvailable,
-    createInvitation: createInvitation,
-    resetChat: resetChat,
-    submitMessage: submitMessage,
-    regenAnswer: regenAnswer,
-    getMessages: getMessages,
-    getMessageInformation: getMessageInformation,
-    fetchMatters: fetchMatters,
-    fetchMatter: fetchMatter,
-    createMatter: createMatter,
-    addContext: addContext,
-    removeFile: removeFile,
-    fetchMatterConversations: fetchMatterConversations,
-    editMatter: editMatter,
-  };
-
   console.debug('[JEEVES]', 'Connecting UI...');
-  const ConnectedUI = connect(mapStateToProps, mapDispatchToProps)(JeevesUI);
+  const connector = connect(mapStateToProps, actions);
+  console.debug('[JEEVES]', 'Connector:', connector);
+  const ConnectedUI = connector(JeevesUI);
 
   // ## DOM Attachment
   // Render

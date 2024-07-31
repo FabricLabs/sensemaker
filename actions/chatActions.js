@@ -27,9 +27,9 @@ const getMessagesRequest = () => ({ type: GET_MESSAGES_REQUEST, isSending: true 
 const getMessagesSuccess = (messages) => ({ type: GET_MESSAGES_SUCCESS, payload: { messages }, isSending: false });
 const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: error, error: error, isSending: false });
 
-const getMessageInformationRequest = () => ({ type: GET_INFORMATION_REQUEST});
+const getMessageInformationRequest = () => ({ type: GET_INFORMATION_REQUEST });
 const getMessageInformationSuccess = (info) => ({ type: GET_INFORMATION_SUCCESS, payload: info });
-const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error});
+const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error });
 
 const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
 
@@ -40,15 +40,21 @@ const resetChat = (message) => {
   };
 }
 
-const submitMessage = (message, matter_id) => {
+const submitMessage = (message, matter_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
 
     const token = getState().auth.token;
 
     try {
-      console.log("en el actions",matter_id);
-      const requestBody = matter_id !== null ? { ...message, matter_id } : message;
+
+      let requestBody = { ...message };
+      if (matter_id !== null) {
+        requestBody.matter_id = matter_id;
+      }
+      if (file_fabric_id !== null) {
+        requestBody.file_fabric_id = file_fabric_id;
+      }
 
       const response = await fetch('/messages', {
         method: 'POST',
@@ -72,7 +78,7 @@ const submitMessage = (message, matter_id) => {
   };
 };
 
-const regenAnswer = (message) => {
+const regenAnswer = (message, matter_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
 
@@ -80,6 +86,19 @@ const regenAnswer = (message) => {
 
     message.temperature = 'extreme';
     message.regenerate = true;
+
+    // Start with the original message
+    let requestBody = { ...message };
+
+    // If matter_id is not null, add it to the requestBody
+    if (matter_id !== null) {
+      requestBody.matter_id = matter_id;
+    }
+
+    // If file_id is not null, add it to the requestBody
+    if (file_fabric_id !== null) {
+      requestBody.file_fabric_id = file_fabric_id;
+    }
 
     try {
       const response = await fetch(`/messages/${message.id}`, {
@@ -89,7 +108,7 @@ const regenAnswer = (message) => {
           'Content-Type': 'application/json',
           'X-Temperature': message.temperature
         },
-        body: JSON.stringify(message)
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -143,16 +162,15 @@ const getMessageInformation = (request) => {
     try {
       const state = getState();
       const token = state.auth.token;
-     // 'SEARCH', '/services/courtlistener/dockets'
+      // 'SEARCH', '/services/courtlistener/dockets'
       const response = await fetch('/services/courtlistener/dockets', {
         method: 'SEARCH',
         headers: {
-  //        'Authorization': `Bearer ${token}`,
+          //        'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
       });
-      console.log("la respuesta",response);
 
       if (!response.ok) {
         const error = await response.json();

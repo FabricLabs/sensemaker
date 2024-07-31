@@ -1,21 +1,62 @@
 # Developers
-...should read "A CypherPunk's Manifesto" by Timothy May.
+...should read "A Cypherpunk's Manifesto" by Timothy May.
 
-## Principles
-1. Pull Requests should be the smallest possible set of changes implementing the desired feature.
+## Quick Start
+See `scripts/` for a list of available tools, or `npm run docs` to run a local copy of the documentation.
+
+### Install
+See `INSTALL.md` for a complete install guide.
+
+### Configuration
+Local settings should be provided by environment variables wherever possible, including:
+
+- `SQL_DB_HOST` — host of the SQL server
+- `SQL_DB_PORT` — port of the SQL server
+- `SQL_DB_USERNAME` — username for the SQL user
+- `SQL_DB_PASSWORD` — password for the SQL user
+- `OLLAMA_HOST` — HTTP host for Ollama server
+- `OLLAMA_PORT` — HTTP port for Ollama server
+- `REDIS_HOST` — host of the Redis server
+- `REDIS_PORT` — port of the Redis server
+- `OPENAI_API_KEY` — access token for OpenAI
+
+Settings can be configured locally through `settings/local.js` — care should be taken not to commit secrets; **again, prefer environment variables**.
 
 ## Overview
-- Coordinator: the Node.js master process
-  - HTTPServer
-  - FabricNode
-  - LangChain
-- Agents: connect to external networks
-  - Fabric
-  - Matrix
-  - ChatGPT
-  - PyTorch HTTP Client
-- Services: provided an HTTP API
-  - PyTorch
+The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.  The client is transpiled using Webpack, and delivered as a complete bundle to the `assets/` directory.  This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port `3045` by default).
+
+### Breakdown
+- Coordinator — `scripts/node.js` the Node.js master process, managing:
+  - Jeeves Core — `services/jeeves.js`
+  - AI Agents — `types/agent.js`
+  - Trainer Agents — `types/trainer.js`
+  - Worker Agents — `types/worker.js`
+  - HTTPServer — `@fabric/http`
+  - FabricNode — `@fabric/core`
+- AI Agents — connect to external resources, such as OpenAI, HuggingFace, or Ollama
+  - Fabric — `@fabric/core`
+  - Matrix — `@fabric/matrix`
+  - ChatGPT — `services/openai.js`
+  - Python HTTP Server — for models unsupported by Ollama
+- Services — implement a common API using `@fabric/core/types/service`
+  - Jeeves — primary, single-core instance of the Coordinator
+  - Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings
+  - PyTorch — initial training tools used for gpt2 emulation
+
+LangChain is available through `services/trainer.js` which also handles all general "training" operations, including the generation of embeddings.
+
+### Workflow
+1. Commit early, commit often
+2. Once a branch diverges, open a pull request (see also number 1)
+3. Regularly use `npm test` and `npm run report:todo`
+
+### Tools
+- Knex is used to manage database schemata, including migrations both forward and backward
+- Ollama is used to provide a standard API for interfacing with LLMs
+- Fabric is used for connectivity between instances
+
+## Python Environment
+Run `source .env/bin/activate` to enter the Python environment.  See also `requirements.txt` for dependencies.
 
 ## Tips
 - You can use `scripts/node.js` to quickly run the service without building: `node scripts/node.js`
@@ -30,3 +71,18 @@ All other configuration options for your local node live in `settings/local.js` 
 - `email` — configures email settings
   - `enable` — boolean (true or false)
   - `host` — hostname for outbound email
+
+## Style
+- semicolon not optional
+- explicit over implicit (prefer clarity over brevity)
+- spaces after function names, not after calls
+- no double spacing (maximum one empty line)
+- newline at EOF
+
+
+## File/Document Ingestion
+When a file or document is uploaded, it's stored on the DDBB first.
+Then, a Job is created for Redis to proccess, it's added to the queue and then taken assigned a status of 'COMPUTING'. - see `types/queue.js`.
+The file would have a document created, related to it, and will be added to the job.
+Once the job is taken from the queue it'll begin the ingestion and assign a status for that.
+If the ingestion is completed without error, It's status are updated in the DDBB, and will also be available for the AI to proccess, broadcasting a notification to the user.

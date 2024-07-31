@@ -1,16 +1,7 @@
 'use strict';
 
 const React = require('react');
-const {
-  Link,
-  useParams
-} = require('react-router-dom');
-
-const {
-  Header,
-  Segment
-} = require('semantic-ui-react');
-
+const { useParams } = require('react-router-dom');
 const ChatBox = require('./ChatBox');
 
 class MatterNewChat extends React.Component {
@@ -21,8 +12,6 @@ class MatterNewChat extends React.Component {
   }
 
   componentDidMount () {
-    const { id } = this.props;
-    const { message } = this.props.chat;
 
     // this.props.fetchConversation(id);
     this.props.resetChat();
@@ -40,7 +29,7 @@ class MatterNewChat extends React.Component {
   };
 
   render () {
-    const { id, chat, messages, matterID, matters } = this.props;
+    const { chat, messages, matterID, matters } = this.props;
 
     const componentStyle = {
       display: 'absolute',
@@ -59,6 +48,10 @@ class MatterNewChat extends React.Component {
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
            <ChatBox
             {...this.props}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
             chat={chat} messages={messages}
             messagesEndRef={this.messagesEndRef}
             includeFeed={true}

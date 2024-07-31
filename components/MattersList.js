@@ -5,6 +5,7 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 const {
+  Button,
   Divider,
   Menu
 } = require('semantic-ui-react');
@@ -31,7 +32,7 @@ class MattersList extends React.Component {
   };
 
 
-  render() {
+  render () {
     const { matters } = this.props;
     const { loading } = this.state;
 
@@ -43,35 +44,35 @@ class MattersList extends React.Component {
       maxWidth: '92%',
       color: '#e4dfda',
       textAlign: 'left',
-    }
+    };
 
     return (
-      <div >
+      <matterList onClick={this.props.closeSidebars}>
         <h4 style={{ marginBottom: '0' }}>
           <div>
             <Menu.Item as={Link} to="/matters/new">
-              <Divider style={{ marginTop: '0', marginBottom: '1em' }} />
               <div style={{ display: 'flex' }}>
-                <p style={linkStyle}>
-                  + New Matter
-                </p>
+                <Button fluid inverted>
+                  <p style={linkStyle}>
+                    + New Matter
+                  </p>
+                </Button>
               </div>
-              <Divider style={{ marginTop: '1em', marginBottom: '0' }} />
             </Menu.Item>
           </div>
         </h4>
         {matters && matters.matters && matters.matters
           .map(instance => {
             return (<>
-              <Menu.Item as={Link} to={"/matter/" + instance.id} >
-                <Link to={"/matter/" + instance.id} style={linkStyle}>
+              <Menu.Item as={Link} to={"/matters/" + instance.id} >
+                <Link to={"/matters/" + instance.id} style={linkStyle}>
                   {instance.title}
                 </Link>
               </Menu.Item>
             </>
             )
           })}
-      </div>
+      </matterList>
     );
   }
 

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: types/spa.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: types/spa.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
+
+// Dependencies
+const crypto = require('crypto');
+
+// Types
+const FabricSPA = require('@fabric/http/types/spa');
+
+/**
+ * Fully-managed HTML application.
+ */
+class SPA extends FabricSPA {
+  _renderWith (html = '') {
+    const hash = crypto.createHash('sha256').update(html).digest('hex');
+
+    // TODO: move CSS to inline from webpack
+    return `&lt;!DOCTYPE html>
+&lt;html lang="${this.settings.language}"${(this.settings.offline) ? ' manifest="cache.manifest"' : ''}>
+  &lt;head>
+    &lt;script async src="https://www.googletagmanager.com/gtag/js?id=G-G4NJT3T2KL">&lt;/script>
+    &lt;script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-G4NJT3T2KL');
+    &lt;/script>
+    &lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8" charset="utf-8" />
+    &lt;meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    &lt;meta property="og:url" content="http://trynovo.com">
+    &lt;meta property="og:type" content="website">
+    &lt;meta property="og:title" content="Novo · Your Legal Assistant">
+    &lt;meta property="og:description" content="Draft impeccable arguments with Novo, the legal AI.">
+    &lt;meta property="og:image" content="https://trynovo.com/images/novo-cat-white.png">
+    &lt;title>${this.title || this.settings.title}&lt;/title>
+    &lt;!-- &lt;link rel="manifest" href="/manifest.json"> -->
+    &lt;link rel="stylesheet" type="text/css" href="/semantic.min.css" />
+    &lt;link rel="stylesheet" type="text/css" href="/styles/screen.css" />
+    &lt;link rel="stylesheet" type="text/css" href="/styles/styles.css" />
+    &lt;link rel="stylesheet" type="text/css" href="/styles/ReactToastify.css">
+    &lt;script src="/scripts/jquery-3.4.1.js">&lt;/script>
+    &lt;script src="/semantic.min.js">&lt;/script>
+    &lt;link rel="icon" href="/images/favicon.svg" />
+  &lt;/head>
+  &lt;body>
+    &lt;div data-hash="${hash}" id="application-target">${html}&lt;/div>
+    &lt;script src="/bundles/browser.min.js">&lt;/script>
+  &lt;/body>
+&lt;/html>`;
+  }
+}
+
+module.exports = SPA;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="CourtListener.html">CourtListener</a></li>
+      <li><a href="Jeeves.html">Jeeves</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

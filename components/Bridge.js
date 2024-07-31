@@ -12,6 +12,9 @@ const {
 // Fabric Types
 const Message = require('@fabric/core/types/message');
 
+/**
+ * Manages a WebSocket connection to a remote server.
+ */
 class Bridge extends React.Component {
   constructor (props) {
     super(props);
@@ -60,66 +63,9 @@ class Bridge extends React.Component {
     // TODO: re-evaluate multiple connections
     this.connections.push(this.ws);
 
-    this.ws.onopen = () => {
-      this.attempts = 1;
-
-      const now = Date.now();
-      const message = Message.fromVector(['Ping', now.toString()]);
-
-      this.ws.send(message.toBuffer());
-    };
-
-    this.ws.onmessage = async (msg) => {
-      // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
-      if (!msg.data || !msg.data.arrayBuffer) {
-        const warning = `Message does not provide an ArrayBuffer:`;
-        console.debug('[BRIDGE]', 'No arraybuffer:', warning, msg);
-        // this.emit('warning', `${warning} ${msg}`);
-        return;
-      }
-
-      const array = await msg.data.arrayBuffer();
-      const buffer = Buffer.from(array);
-      const message = Message.fromBuffer(buffer);
-
-      // TODO: refactor @fabric/core/types/message to support arbitrary message types
-      // This will remove the need to parse before evaluating this switch
-      switch (message.type) {
-        default:
-          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
-          break;
-        case 'GenericMessage':
-          try {
-            const chunk = JSON.parse(message.body);
-
-            switch (chunk.type) {
-              case 'MessageStart':
-                const selector = `[data-message-id="` + chunk.message_id + `"]`;
-
-                setTimeout(() => {
-                  const target = document.querySelector(selector);
-                }, 250);
-
-                this.addJob('MessageStart', chunk);
-                break;
-              case 'MessageChunk':
-                this.addJob('MessageChunk', chunk);
-                break;
-            }
-          } catch (exception) {
-            console.error('Could not process message:', exception);
-          }
-
-          break;
-      }
-
-      try {
-        const data = JSON.parse(msg.body);
-        this.setState({ data });
-      } catch (e) {
-        this.setState({ error: e });
-      }
-    };
+    // Attach Event Handlers
+    this.ws.onopen = this.onSocketOpen.bind(this);
+    this.ws.onmessage = this.onSocketMessage.bind(this);
 
     this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'Error:', error);
@@ -155,7 +101,7 @@ class Bridge extends React.Component {
         console.warn('[BRIDGE]', 'Unhandled Bridge job type:', job.type);
         break;
       case 'MessageChunk':
-       // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
+        // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
         break;
       case 'MessageEnd':
         console.debug('[BRIDGE]', 'MessageEnd:', job.data);
@@ -204,12 +150,79 @@ class Bridge extends React.Component {
   }
 
   subscribe (channel) {
-    const message = Message.fromVector(['Subscribe', channel]);
+    const message = Message.fromVector(['SUBSCRIBE', channel]);
     this.ws.send(message.toBuffer());
   }
 
   unsubscribe (channel) {
-    const message = Message.fromVector(['Unsubscribe', channel]);
+    const message = Message.fromVector(['UNSUBSCRIBE', channel]);
+    this.ws.send(message.toBuffer());
+  }
+
+  async onSocketMessage (msg) {
+    // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
+    if (!msg.data || !msg.data.arrayBuffer) {
+      const warning = `Message does not provide an ArrayBuffer:`;
+      console.debug('[BRIDGE]', 'No arraybuffer:', warning, msg);
+      // this.emit('warning', `${warning} ${msg}`);
+      return;
+    }
+
+    const array = await msg.data.arrayBuffer();
+    const buffer = Buffer.from(array);
+    const message = Message.fromBuffer(buffer);
+
+    // TODO: refactor @fabric/core/types/message to support arbitrary message types
+    // This will remove the need to parse before evaluating this switch
+    switch (message.type) {
+      default:
+        console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+        break;
+      case 'GenericMessage':
+        try {
+          const chunk = JSON.parse(message.body);
+
+          switch (chunk.type) {
+            case 'MessageStart':
+              const selector = `[data-message-id="` + chunk.message_id + `"]`;
+
+              setTimeout(() => {
+                const target = document.querySelector(selector);
+              }, 250);
+
+              this.addJob('MessageStart', chunk);
+              break;
+            case 'MessageChunk':
+              this.addJob('MessageChunk', chunk);
+              break;
+            case 'HelpMsgUser':
+            case 'HelpMsgAdmin':
+            case 'IngestFile':
+            case 'IngestDocument':
+            case 'takenJob':
+            case 'completedJob':
+              this.props.responseCapture(chunk);
+              break;
+          }
+        } catch (exception) {
+          console.error('Could not process message:', exception);
+        }
+
+        break;
+    }
+
+    try {
+      const data = JSON.parse(msg.body);
+      this.setState({ data });
+    } catch (e) {
+      this.setState({ error: e });
+    }
+  }
+
+  async onSocketOpen () {
+    this.attempts = 1;
+    const now = Date.now();
+    const message = Message.fromVector(['Ping', now.toString()]);
     this.ws.send(message.toBuffer());
   }
 }

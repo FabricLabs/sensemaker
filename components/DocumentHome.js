@@ -16,9 +16,12 @@ const {
   List,
   Loader,
   Icon,
+  Input,
   Form,
-  TextArea
+  TextArea,
+  Message
 } = require('semantic-ui-react');
+const DocumentUploader = require('./DocumentUploader');
 
 const formatDate = require('../contracts/formatDate');
 
@@ -36,41 +39,35 @@ class DocumentHome extends React.Component {
     this.props.fetchDocuments();
   }
 
+  componentDidUpdate(prevProps) {
+    const { documents } = this.props;
+    if (prevProps.documents != documents) {
+      if (!documents.loading && this.state.searching) {
+        this.setState({ filtereDocuments: documents.results, searching: false });
+      }
+    }
+  }
+
+
   handleSearchChange = debounce((query) => {
     //console.debug('search change:', query);
 
     this.setState({ searching: true });
-
-    fetch('/documents', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: 'SEARCH',
-      body: JSON.stringify({ query })
-    }).then(async (result) => {
-      const obj = await result.json();
-      console.log('fetch result: ', obj);
-
-      this.setState({
-        filteredDocuments: obj.content,
-        searchQuery: query,
-      });
-    }).catch((error) => {
-      console.error('Error fetching data:', error);
-    }).finally(() => {
-      this.setState({ searching: false }); // Set searching to false after fetch is complete
-    });
+    this.props.searchDocument(query);
   }, 1000);
 
   render() {
-    const { loading, error } = this.props;
+    const { loading, documents } = this.props;
     const { filteredDocuments, searchQuery, searching } = this.state;
+
+    const displayDocuments = searchQuery ? filteredDocuments : documents;
 
     return (
       <fabric-document-home>
-        <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
+        <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
+          <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
+          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
           <jeeves-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
@@ -90,50 +87,40 @@ class DocumentHome extends React.Component {
               <i aria-hidden="true" className="search icon"></i>
             </div>
           </jeeves-search>
-          <List as={Card.Group} doubling loading={loading} style={{ marginTop: "1em" }}>
-            {searching ? (
+          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
+            {(searching || documents.loading) ? (
               <Loader active inline="centered" /> // Display loading icon if searching is true
             ) :
-              searchQuery ? // if searching, goes this way
-                (filteredDocuments && filteredDocuments.documents && filteredDocuments.documents.length > 0 ? (
-                  filteredDocuments.documents.map((instance) => (
-                    <List.Item as={Card} key={instance.id}>
-                      <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}>{instance.short_name} (doc #{instance.id}) </Link></h3>
-                        <Label.Group basic>
-                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
-                          <p>{instance.description}</p>
-                        </Label.Group>
-                      </Card.Content>
-                    </List.Item>
-                  ))
-                ) : (<p>No results found</p>)
-                ) : this.props.documents && this.props.documents.documents && this.props.documents.documents.length > 0 ? (
-                  this.props.documents.documents.map((instance) => (
-                    <List.Item as={Card} key={instance.id}>
-                      <Card.Content>
-                        <h3><Link to={"/documents/" + instance.id}> (doc #{instance.id})</Link> </h3>
-                        <Label.Group basic>
-                          <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created}</Label>
-                          <p>{instance.description}</p>
-                        </Label.Group>
-                      </Card.Content>
-                    </List.Item>
-                  ))
-                ) : (<p>No documents available</p>)
+              (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
+                displayDocuments.documents.map((instance) => (
+                  <List.Item as={Card} key={instance.id}>
+                    <Card.Content>
+                      {(instance.title !== 'Untitled Document') ? (
+                        <h3><Link to={"/documents/" + instance.fabric_id}>{instance.title} (doc #{instance.fabric_id}) </Link></h3>
+                      ) : (
+                        <h3><Link to={"/documents/" + instance.fabric_id}>(doc #{instance.fabric_id}) </Link></h3>
+                      )}
+                      <Label.Group basic>
+                        {instance.ingestion_status === 'processing' &&
+                          <Message icon size='tiny'>
+                            <Icon name='circle notched' loading />
+                            <Message.Content>
+                              <Message.Header>Your document is being ingested by the AI</Message.Header>
+                            </Message.Content>
+                          </Message>
+                        }
+                        <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
+                        <p>{instance.description}</p>
+                      </Label.Group>
+                    </Card.Content>
+                  </List.Item>
+                ))
+              ) : (<p>No results found</p>)
+              )
             }
           </List>
         </Segment>
-        <Segment>
-          <Form>
-            <Form.Field>
-              <Header as='h3'>Draft Documents</Header>
-              <p>Start drafting a new document by telling me the details of your case.</p>
-              <Form.TextArea />
-              <Button icon='file'>Draft</Button>
-            </Form.Field>
-          </Form>
-        </Segment>
+
       </fabric-document-home>
     );
   }

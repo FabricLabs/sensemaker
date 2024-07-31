@@ -10,13 +10,7 @@ const React = require('react');
 const $ = require('jquery');
 const marked = require('marked');
 const hark = require('hark');
-
-const toRelativeTime = require('../functions/toRelativeTime');
-
-const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
-const InformationSidebar = require('./InformationSidebar');
-
-const { Link, useParams } = require('react-router-dom');
+const { Link, Navigate, useParams } = require('react-router-dom');
 
 // Semantic UI
 const {
@@ -29,7 +23,7 @@ const {
   GridColumn,
   Header,
   Icon,
-  Image,
+  Input,
   Message,
   Popup,
   Progress,
@@ -37,6 +31,14 @@ const {
 } = require('semantic-ui-react');
 
 const TextareaAutosize = require('react-textarea-autosize').default;
+
+// Functions
+const toRelativeTime = require('../functions/toRelativeTime');
+
+// Components
+const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
+// const InformationSidebar = require('./InformationSidebar');
+const Typewriter = require('./Typewriter');
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -57,14 +59,14 @@ class ChatBox extends React.Component {
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
       checkingMessageID: 0,//id from the message rating
-      informationSidebarOpen: false,
-      resetInformationSidebar: false,
       thumbsUpClicked: false,
       thumbsDownClicked: false,
       isTextareaFocused: false, //this is needed to work on the microphone icon color
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
+      startedChatting: false,
+
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -73,26 +75,34 @@ class ChatBox extends React.Component {
 
   componentDidMount() {
     $('#primary-query').focus();
-    this.props.resetChat();
+    //this.props.resetChat();
+    if (this.props.conversationID) {
+      this.startPolling(this.props.conversationID);
+    }
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     const { messages } = this.props.chat;
 
+    //here we store the last message from prevProps and current messages
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
+    if (this.props.conversationID)
+      if (this.props.conversationID !== prevProps.conversationID) {
+        this.stopPolling();
+        this.startPolling(this.props.conversationID);
+      }
 
     // we go this way if we have more messages than before or if the content of the last message
     // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
+      //if the previous last message is different than the current last message, we call the groupMessages function again
       (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
-
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
           this.setState({ generatingReponse: false });
           this.setState({ reGeneratingReponse: false });
@@ -100,23 +110,21 @@ class ChatBox extends React.Component {
 
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
-          if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
-            this.setState({ generatingReponse: true });
-          }
+          this.setState({ generatingReponse: true });
+
+          // if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
+          //   this.setState({ generatingReponse: true });
+          // }
         }
       }
       this.scrollToBottom();
     }
 
-    if (this.state.editLoading && !this.props.conversations.loading) {
-      this.setState({ editLoading: false });
-    }
   }
 
   componentWillUnmount() {
-    this.props.resetChat();
-    clearInterval(this.watcher); //ends de sync in case you switch to other component
 
+    this.stopPolling();
     this.setState({
       chat: {
         message: null,
@@ -129,6 +137,26 @@ class ChatBox extends React.Component {
 
     window.removeEventListener('resize', this.handleResize);
   }
+
+  //stops the watcher, important when we switch conversations
+  stopPolling = () => {
+    if (this.watcher) {
+      clearInterval(this.watcher);
+      this.watcher = null;
+    }
+  };
+
+  //starts the watchear again
+  startPolling = (id) => {
+    // Ensure any existing polling is stopped before starting a new one
+    this.stopPolling();
+
+    // Start polling for messages in the current conversation
+    this.watcher = setInterval(() => {
+      this.props.getMessages({ conversation_id: id });
+    }, 5000);
+  };
+
 
   //these 2 works for the microphone icon color, they are necessary
   handleTextareaFocus = () => {
@@ -185,7 +213,7 @@ class ChatBox extends React.Component {
 
   handleClick = (e) => {
     console.debug('clicked reset button', e);
-    this.props.resetChat();
+    // this.props.resetChat();
     this.setState({ message: null, chat: { message: null } });
   }
 
@@ -193,10 +221,12 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID, matterID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
     let dataToSubmit;
 
-    this.setState({ loading: true, previousFlag: true });
+    this.stopPolling();
+
+    this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
     this.props.getMessageInformation(query);
 
@@ -222,10 +252,14 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
-      matterID
+      effectiveMatterID,
+      fileFabricID
     ).then((output) => {
 
       // dispatch getMessages
@@ -241,91 +275,22 @@ class ChatBox extends React.Component {
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+    if (this.props.conversationID && this.props.fetchData) {
+      this.props.fetchData(this.props.conversationID);
+    }
   }
-
-  toggleInformationSidebar = () => {
-    this.setState(prevState => ({
-      informationSidebarOpen: !prevState.informationSidebarOpen
-    }));
-  };
-
-  messageInfo = (ID) => {
-    let newState = {
-      thumbsUpClicked: false,
-      thumbsDownClicked: false,
-      checkingMessageID: ID,
-      informationSidebarOpen: true
-    };
-
-    // if sidebar is open and checkingMessageID === actual clicked message,
-    // and none of thumbs was active, then closes sidebar (because it means you clicked "I"
-    // icon twice for the same message)
-    if (this.state.informationSidebarOpen && ID === this.state.checkingMessageID &&
-      !this.state.thumbsUpClicked && !this.state.thumbsDownClicked) {
-      newState.informationSidebarOpen = false;
-    }
-
-    this.setState(newState);
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-
-  };
-
-
-  // thumbs up handler
-  thumbsUp = (ID) => {
-    this.setState({ thumbsDownClicked: false });
-
-    // if thumbsUp was clicked for this message already, close sidebar
-    if (this.state.thumbsUpClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: true,
-        thumbsDownClicked: false,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-
-  };
-
-  // thumbs down handler
-  thumbsDown = (ID) => {
-    this.setState({ thumbsUpClicked: false });
-    // if thumbsDown was clicked for this message already, close sidebar
-    if (this.state.thumbsDownClicked && this.state.checkingMessageID === ID) {
-      this.setState({
-        informationSidebarOpen: false,
-        thumbsUpClicked: false,
-        thumbsDownClicked: false
-      });
-    } else {
-      //else, open (or keep open) sidebar, and fix states
-      this.setState({
-        thumbsUpClicked: false,
-        thumbsDownClicked: true,
-        checkingMessageID: ID,
-        informationSidebarOpen: true
-      });
-    }
-    this.setState(prevState => ({ resetInformationSidebar: !prevState.resetInformationSidebar }));
-  };
 
   regenerateAnswer = (event) => {
     event.preventDefault();
 
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID } = this.props;
+    const { caseTitle, caseID, matterID, documentChat } = this.props;
+
+    this.stopPolling();
 
     let dataToSubmit;
-    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, });
+    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, startedChatting: true });
 
     const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
@@ -357,8 +322,12 @@ class ChatBox extends React.Component {
         }
       }
     }
+
+    const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
+    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
+
     // dispatch submitMessage
-    this.props.regenAnswer(dataToSubmit).then((output) => {
+    this.props.regenAnswer(dataToSubmit, effectiveMatterID, fileFabricID).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -521,10 +490,10 @@ class ChatBox extends React.Component {
   conversationTitle = (title) => {
     if (this.state.editingTitle) {
       return (
-        <Form style={{ width: '90%', maxWidth:'600px' }}>
+        <Form style={{ width: '90%', maxWidth: '600px' }}>
           <div className='conversation-line' >
             <div className='conversation-line-input'>
-              <Form.Input
+              <Input
                 type="text"
                 maxLength={255}
                 value={this.state.editedTitle}
@@ -541,6 +510,7 @@ class ChatBox extends React.Component {
               style={{ cursor: 'pointer', color: 'grey' }}
               onClick={() => this.handleSaveEditing()}
               title='Save'
+              disabled={this.state.editLoading}
             />
             <Icon
               name='cancel'
@@ -548,6 +518,7 @@ class ChatBox extends React.Component {
               style={{ cursor: 'pointer', color: 'grey' }}
               onClick={this.handleCancelEditing}
               title='Cancel'
+              disabled={this.state.editLoading}
             />
           </div>
         </Form>
@@ -557,9 +528,9 @@ class ChatBox extends React.Component {
       return (
         <div style={{ display: 'flex' }}>
           {this.state.editedTitle ? (
-            <Header as="h2">{this.state.editedTitle}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{this.state.editedTitle}</Header>
           ) : (
-            <Header as="h2">{title}</Header>
+            <Header as="h2" style={{ marginBottom: '0.3em' }}>{title}</Header>
           )}
           <Icon
             name='edit'
@@ -568,7 +539,7 @@ class ChatBox extends React.Component {
             onClick={() => this.handleEditClick(title)}
             title='Edit Title'
             size='large'
-            style={{ marginLeft:'1em', cursor: 'pointer', color: 'grey' }}
+            style={{ marginLeft: '1em', cursor: 'pointer', color: 'grey' }}
           />
         </div>
       )
@@ -581,8 +552,11 @@ class ChatBox extends React.Component {
   };
 
   handleSaveEditing = async () => {
+    this.setState({ editLoading: true });
+    //forced delay
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     await this.props.conversationTitleEdit(this.props.conversationID, this.state.editedTitle);
-    this.setState({ editingTitle: false, editLoading: true });
+    this.setState({ editingTitle: false, editLoading: false });
   };
   handleCancelEditing = () => {
     // Reset editing state without saving
@@ -590,7 +564,9 @@ class ChatBox extends React.Component {
   };
 
   render() {
-    const { messages } = this.props.chat;
+    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+    const { messages, message } = this.props.chat;
+
     const {
       loading,
       generatingReponse,
@@ -598,8 +574,7 @@ class ChatBox extends React.Component {
       query,
       windowWidth,
       windowHeight,
-      informationSidebarOpen,
-      checkingMessageID
+      checkingMessageID,
     } = this.state;
 
     const {
@@ -613,6 +588,7 @@ class ChatBox extends React.Component {
       matterID,
       matterTitle,
       actualConversation,
+      documentChat
     } = this.props;
 
     //this is the style of the chat container with no messages on the chat
@@ -646,7 +622,6 @@ class ChatBox extends React.Component {
       minHeight: '5.5em',
       maxHeight: '14em',
       overflow: 'auto',
-      // marginBottom: 0,
       marginTop: 0,
     };
 
@@ -656,23 +631,18 @@ class ChatBox extends React.Component {
       boxShadow: 'none',
       paddingRight: '0.5em',
       paddingLeft: '0.5em',
-      // maxWidth: 'none'
     };
+
+    if (message?.conversation && !conversationID && !matterID && !caseID && !documentChat) {
+      return <Navigate to={`/conversations/${message.conversation}`} replace />;
+    }
 
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
-          <InformationSidebar
-            checkingMessageID={checkingMessageID}
-            visible={informationSidebarOpen}
-            toggleInformationSidebar={this.toggleInformationSidebar}
-            resetInformationSidebar={this.state.resetInformationSidebar}
-            thumbsUpClicked={this.state.thumbsUpClicked}
-            thumbsDownClicked={this.state.thumbsDownClicked}
-          />
           {/*Announcements from homepage */}
           {homePage && (announTitle || announBody) && messages.length == 0 && (
-            <Message info style={announcementStyle} className='slide-in'>
+            <Message info style={announcementStyle} className='slide-down'>
               <Message.Header>
                 <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle), }} />
               </Message.Header>
@@ -692,8 +662,6 @@ class ChatBox extends React.Component {
               )}
               <div>
                 <Feed.Extra text style={{ display: "flex" }}>
-                  {/* <Image src="/images/jeeves-brand.png" size="small" floated="left" /> */}
-                  {/* <div style={{ paddingTop: "2em" }}> */}
                   <div>
                     <p style={{ fontSize: '1.5em', fontFamily: 'AvGardd' }}><span style={{ fontSize: '1.5em' }}>Hello!</span><br />I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
                   </div>
@@ -710,22 +678,48 @@ class ChatBox extends React.Component {
             </Feed.Extra>
           )}
           {(conversationID && !actualConversation) && (
-            <Header as="h2" style={{ marginTop: '0.5rem' }}>Conversation #{conversationID}</Header>
+            <div className='conversation-title-container' >
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
+            </div>
           )}
+          {/* when we open a previous conversation, this is the title that shows */}
           {(conversationID && actualConversation) && (
-            <div className='link-back-matter' >
-              {/* <Header as="h2">{actualConversation.title}</Header> */}
-              {this.conversationTitle(this.state.editedTitle? this.state.editedTitle : actualConversation.title)}
+            <div className='conversation-title-container fade-in' >
+              {/* this is the call for the conversation title rendering, that lets you edit the title of the conversation */}
+              {this.conversationTitle(this.state.editedTitle ? this.state.editedTitle : actualConversation.title)}
               {actualConversation.matter_id && (
-                <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + actualConversation.matter_id}><Icon name='left chevron' /> Back to Matter</Link></Header>
+                <Header as="h3" style={{ marginTop: '0' }}><Button to={"/matters/" + actualConversation.matter_id} as={Link}><Icon name='left chevron' /> Back to Matter</Button></Header>
+              )}
+              {(this.props.documentInfo && !documentChat) && (
+                <Popup
+                  content="View related Document"
+                  trigger={
+                    <Icon
+                      name='file alternate'
+                      size='big'
+                      className='primary'
+                      primary
+                      onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, this.props.documentSections ? this.props.documentSections : null, null); }}
+                      style={{ cursor: "pointer" }}
+                    />
+                  }
+                />
               )}
             </div>
           )}
-          {/* style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}  */}
+          {/* this shows the matter title in the conversation title when we are on a new matter conversation */}
           {matterID && (
-            <div className='link-back-matter'>
-              <Header as="h2">{matterTitle}</Header>
-              <Header as="h3" style={{ marginTop: '0' }}><Link to={"/matter/" + matterID}><Icon name='left chevron' /> Back to Matter</Link></Header>
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>{matterTitle}</Header>
+              <Header as="h3" style={{ marginTop: '0' }}><Button to={"/matters/" + matterID} onClick={this.props.fetchConversations} as={Link}><Icon name='left chevron' /> Back to Matter</Button></Header>
+            </div>
+          )}
+          {/* when we start a new conversation for a document, the title is the filename */}
+          {documentChat && (
+            <div className='conversation-title-container'>
+              <Header as="h2" style={{ marginBottom: '0.3em' }}>
+                <Link onClick={(e) => { e.stopPropagation(); this.props.documentInfoSidebar(this.props.documentInfo, this.props.documentSections ? this.props.documentSections : null, null); }}>{this.props.documentInfo.filename || this.props.documentInfo.title}</Link>
+              </Header>
             </div>
           )}
           {/* The chat messages start rendering here */}
@@ -747,7 +741,7 @@ class ChatBox extends React.Component {
                     {/* Actual content of message */}
                     <Feed.Summary className='info-assistant-header'>
                       <Feed.User>
-                        {message.author || message.user_id}{" "}
+                        <a href={'/users/' + message.author}>{message.author || message.user_id}</a>{" "}
                       </Feed.User>
                       <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
                       {message.role === "assistant" && (
@@ -756,7 +750,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="More information"
                               trigger={
-                                <Button icon onClick={() => this.messageInfo(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.messageInfo(message.id); }}>
                                   <Icon
                                     name="info"
                                     color="blue"
@@ -789,12 +783,13 @@ class ChatBox extends React.Component {
                                 trigger={
                                   <Popup content='Copy to clipboard' trigger={
                                     <Button
-                                      onClick={() =>
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         this.copyToClipboard(
                                           message.id,
                                           marked.parse(message.content)
-                                        )
-                                      }
+                                        );
+                                      }}
                                       icon>
                                       <Icon name="clipboard outline" />
                                     </Button>
@@ -805,7 +800,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.thumbsDown(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsDown(message.id); }}>
                                   <Icon
                                     name="thumbs down outline"
                                     color="grey"
@@ -817,7 +812,7 @@ class ChatBox extends React.Component {
                             <Popup
                               content="Rate this message"
                               trigger={
-                                <Button icon onClick={() => this.thumbsUp(message.id)}>
+                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsUp(message.id); }}>
                                   <Icon
                                     name="thumbs up outline"
                                     color="grey"
@@ -832,8 +827,17 @@ class ChatBox extends React.Component {
                     </Feed.Summary>
                     <Feed.Extra text>
                       {message.status !== "computing" && (
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content || ""), }} />
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
                       )}
+                      {/* DO NOT DELETE THIS BLOCK */}
+                      {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
+                        // <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                        <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
+                      )}
+                      {message.status !== "computing" && (message.role !== "assistant" || !this.state.startedChatting) &&(
+                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                        // <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
+                      )} */}
                     </Feed.Extra>
                     <Feed.Extra text>
                       {generatingReponse &&
@@ -898,7 +902,7 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}
-          style={{ width: "99%" }} >
+          style={{ width: "95%" }} >
           <Form.Input>
             <TextareaAutosize
               id="primary-query"

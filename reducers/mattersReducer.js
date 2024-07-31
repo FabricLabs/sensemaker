@@ -17,6 +17,12 @@ const {
   REMOVE_FILE_REQUEST,
   REMOVE_FILE_SUCCESS,
   REMOVE_FILE_FAILURE,
+  FETCH_MATTER_FILES_REQUEST,
+  FETCH_MATTER_FILES_SUCCESS,
+  FETCH_MATTER_FILES_FAILURE,
+  FETCH_MATTER_NOTES_REQUEST,
+  FETCH_MATTER_NOTES_SUCCESS,
+  FETCH_MATTER_NOTES_FAILURE,
 } = require('../actions/mattersActions');
 
 
@@ -31,6 +37,9 @@ const initialState = {
   contextSuccess: false,
   editingSuccess: true,
   fileDeletion: false,
+  matterFiles: [],
+  matterNotes: [],
+  addingContext: false,
 };
 
 function mattersReducer(state = initialState, action) {
@@ -64,12 +73,12 @@ function mattersReducer(state = initialState, action) {
       console.debug('edit matter failure:', state, action);
       return { ...state, error: action.payload, editingSuccess: false, idCreated: null };
     case ADD_CONTEXT_REQUEST:
-      return { ...state, loading: true };
+      return { ...state, contextSuccess: false, addingContext: true };
     case ADD_CONTEXT_SUCCESS:
-      return { ...state, contextSuccess: true, error: null, loading: false };
+      return { ...state, contextSuccess: true, error: null, addingContext: false };
     case ADD_CONTEXT_FAILURE:
       console.debug('create matter failure:', state, action);
-      return { ...state, error: action.payload, contextSuccess: false, loading: false };
+      return { ...state, error: action.payload, contextSuccess: false, addingContext: false };
     case REMOVE_FILE_REQUEST:
       return { ...state, loading: true };
     case REMOVE_FILE_SUCCESS:
@@ -77,6 +86,20 @@ function mattersReducer(state = initialState, action) {
     case REMOVE_FILE_FAILURE:
       console.debug('Delete file from matter failure:', state, action);
       return { ...state, error: action.payload, fileDeletion: false, loading: false };
+    case FETCH_MATTER_FILES_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_MATTER_FILES_SUCCESS:
+      return { ...state, matterFiles: action.payload, error: null, loading: false };
+    case FETCH_MATTER_FILES_FAILURE:
+      console.debug('fetch files from matter failure:', state, action);
+      return { ...state, error: action.payload, matterFiles: [], loading: false };
+    case FETCH_MATTER_NOTES_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_MATTER_NOTES_SUCCESS:
+      return { ...state, matterNotes: action.payload, error: null, loading: false };
+    case FETCH_MATTER_NOTES_FAILURE:
+      console.debug('fetch notes from matter failure:', state, action);
+      return { ...state, error: action.payload, matterNotes: [], loading: false };
     default:
       return state;
   }

@@ -13,8 +13,6 @@ const {
   Menu,
 } = require('semantic-ui-react');
 
-// Components
-const ChatBox = require('./ChatBox');
 
 /**
  * The Jeeves UI.
@@ -151,7 +149,7 @@ class ConversationsList extends React.Component {
       maxWidth: '92%',
       color: '#e4dfda',
       textAlign: 'left',
-    }
+    };
 
     return (
       <div>
@@ -198,7 +196,7 @@ class ConversationsList extends React.Component {
                   </Form>
                 ) : (
                   <div>
-                    <Menu.Item as={Link} to={'/conversations/' + conversation.id}>
+                    <Menu.Item as={Link} to={'/conversations/' + conversation.id} onClick={() => this.props.resetChat()}>
                       <div style={{ display: 'flex' }}>
                         <Link to={'/conversations/' + conversation.id} style={linkStyle}>
                           {conversation.title}
@@ -224,16 +222,9 @@ class ConversationsList extends React.Component {
   }
 
   render() {
-    const { loading, error, conversations } = this.props;
+    const { conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
 
-    if (loading) {
-      return <div>Loading...</div>;
-    }
-
-    if (error) {
-      return <div>Error: {error}</div>;
-    }
 
     // Calculate conversations for current page
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;

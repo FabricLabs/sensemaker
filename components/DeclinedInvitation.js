@@ -14,6 +14,7 @@ const {
   Message,
   Header,
   Segment,
+  Image,
 } = require('semantic-ui-react');
 
 class DeclinedInvitation extends React.Component {
@@ -71,40 +72,43 @@ class DeclinedInvitation extends React.Component {
   render() {
     const { tokenError, errorContent, declined, cancelled, loading } = this.state;
     return (
-      <Segment className='fade-in' style={{ maxWidth: '500px' }} loading={loading}>
-        {(tokenError) && (
-          <Message negative>
-            <Message.Header style={{ marginBottom: '1rem' }}>Something went wrong.</Message.Header>
-            <p>{errorContent}</p>
-          </Message>
-        )}
-        {(!tokenError && !declined && !cancelled) && (
-          <Message>
-            <Message.Header style={{ marginBottom: '1rem' }}>Are you sure you want to decline?</Message.Header>
-            <p>
-              Please confirm your decision to decline the invitation.
-              By proceeding, you will not receive further communications regarding this invitation.
-              We respect your choice and thank you for your consideration.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-              <Button primary onClick={this.handleCancel}>Cancel</Button>
-              <Button grey onClick={this.declineInvitation}>Decline</Button>
-            </div>
-          </Message>
-        )}
-        {(!tokenError && declined) && (
-          <Message negative>
-            <Message.Header style={{ marginBottom: '1rem' }}>Invitation Declined</Message.Header>
-            <p>You have declined your invitation to Novo. If you change your mind you can sign up at trynovo.com. If you have any questions please contact <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
-          </Message>
-        )}
-        {(!tokenError && cancelled) && (
-          <Message positive>
-            <Message.Header style={{ marginBottom: '1rem' }}>Congratulations!</Message.Header>
-            <p>Your invitation remains active and can be used to register at any time. For assistance, contact us at <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
-          </Message>
-        )}
-      </Segment>
+      <div className='fade-in decline-invitation-form'>
+        <Image src="/images/novo-logo.svg" style={{ maxWidth: '400px', height: 'auto', marginBottom: '1em' }} />
+        <Segment className='fade-in' style={{ maxWidth: '500px' }} loading={loading}>
+          {(tokenError) && (
+            <Message negative>
+              <Message.Header style={{ marginBottom: '1rem' }}>Something went wrong.</Message.Header>
+              <p>{errorContent}</p>
+            </Message>
+          )}
+          {(!tokenError && !declined && !cancelled) && (
+            <Message>
+              <Message.Header style={{ marginBottom: '1rem' }}>Are you sure you want to decline?</Message.Header>
+              <p>
+                Please confirm your decision to decline the invitation.
+                By proceeding, you will not receive further communications regarding this invitation.
+                We respect your choice and thank you for your consideration.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                <Button primary onClick={this.handleCancel}>Cancel</Button>
+                <Button grey onClick={this.declineInvitation}>Decline</Button>
+              </div>
+            </Message>
+          )}
+          {(!tokenError && declined) && (
+            <Message negative>
+              <Message.Header style={{ marginBottom: '1rem' }}>Invitation Declined</Message.Header>
+              <p>You have declined your invitation to Novo. If you change your mind you can sign up at trynovo.com. If you have any questions please contact <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
+            </Message>
+          )}
+          {(!tokenError && cancelled) && (
+            <Message positive>
+              <Message.Header style={{ marginBottom: '1rem' }}>Congratulations!</Message.Header>
+              <p>Your invitation remains active and can be used to register at any time. For assistance, contact us at <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
+            </Message>
+          )}
+        </Segment>
+      </div>
     );
   }
 }
