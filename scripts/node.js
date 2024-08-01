@@ -4,26 +4,46 @@
 const settings = require('../settings/local');
 
 // Internal Service
-const Sensemaker = require('../services/sensemaker');
+const Jeeves = require('../services/jeeves');
 
+// Contracts
+const handleJeevesError = require('../contracts/handleJeevesError');
+const handleJeevesLog = require('../contracts/handleJeevesLog');
+const handleJeevesWarning = require('../contracts/handleJeevesWarning');
+
+// Main Function
 async function main (input = {}) {
   // Create Node
-  const sensemaker = new Sensemaker(input);
+  const start = new Date();
+  const jeeves = new Jeeves(input);
+
+  // Handlers
+  jeeves.on('error', handleJeevesError);
+  jeeves.on('log', handleJeevesLog);
+  jeeves.on('warning', handleJeevesWarning);
+  jeeves.on('debug', (...debug) => {
+    console.debug(`[${((new Date() - start) / 1000)}s]`, '[JEEVES]', '[DEBUG]', ...debug);
+  });
 
   // Start Node
   try {
-    await sensemaker.start();
+    await jeeves.start();
   } catch (exception) {
     console.error('Exception on start:', exception);
     process.exit();
   }
 
+  // Bind
+  process.on('SIGINT', jeeves.stop);
+  process.on('SIGTERM', jeeves.stop);
+
   // Return Node
-  return sensemaker;
+  return jeeves;
 }
 
+// Execute Main
 main(settings).catch((exception) => {
-  console.error('[SENSEMAKER]', exception);
+  console.error('[JEEVES]', exception);
 }).then((output) => {
-  console.log('[SENSEMAKER]', 'Started!  Agent ID:', output.id);
+  console.log('[JEEVES]', 'Started!  Agent ID:', output.id);
 });

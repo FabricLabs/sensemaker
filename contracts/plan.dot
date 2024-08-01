@@ -1,0 +1,70 @@
+digraph FabricPlan {
+  "@fabric/core"
+  "@fabric/core#v0.1.0"
+  "@fabric/http"
+  "@fabric/http#v0.1.0"
+  "@sensemaker/core"
+  "@jeeves/core"
+
+  // Workers
+  subgraph cluster_workers {
+    label = "Workers"
+    "@martindale"
+    "@melnex"
+    "@nahuelcodingit"
+  }
+
+  "@fabric/http" -> "@fabric/core" [label="depends"]
+  # "@fabric/http#v0.1.0" -> "@fabric/core#v0.1.0" [label="depends"]
+
+  # Core Fabric
+  "@fabric/core#v0.1.0" -> "@fabric/core" [label="depends"]
+  "@fabric/core#v0.1.0" -> "@fabric/http" [label="depends"]
+
+  # Sensemaker
+  "@sensemaker/core#v0.1.0" -> "@sensemaker/core" [label="depends"]
+  "@sensemaker/core#v0.1.0" -> "@fabric/core#v0.1.0" [label="depends"]
+  "@sensemaker/core#v0.1.0" -> "@fabric/http#v0.1.0" [label="depends"]
+
+  # Jeeves
+  "@jeeves/core" -> "@jeeves/ui" [label="depends"]
+  "@jeeves/core" -> "@sensemaker/core" [label="depends"]
+  "@jeeves/core#v0.1.0" -> "@jeeves/core" [label="depends"]
+  "@jeeves/core#v0.1.0" -> "@sensemaker/core#v0.1.0" [label="depends"]
+  "@jeeves/core#v0.1.0" -> "@fabric/core#v0.1.0" [label="depends"]
+  "@jeeves/core#v0.1.0" -> "@fabric/http#v0.1.0" [label="depends"]
+
+  // Fabric Core Team
+  {
+    "@martindale"
+    "@melnex"
+    "@chrisinajar"
+  } -> "@fabric/core"
+
+  // Jeeves Core Team
+  {
+    "@martindale"
+    "@Leviathn"
+    "@nahuelcodingit"
+  } -> "@jeeves/core"
+
+  subgraph cluster_gaols {
+    label = "Goals"
+    "Accuracy"
+    "Liveness"
+    "Users" -> "Revenue"
+  }
+
+  // Work
+  subgraph cluster_work {
+    label = "Work"
+    "@martindale" -> "CourtListener Ingestion" [label="works on"]
+    "@nahuelcodingit" -> "@jeeves/ui" [label="works on"]
+    "@jeeves/ui" -> "Users" [label="drives"]
+    "@jeeves/core"
+  }
+
+  // Assumptions
+  "@jeeves/core" -> "CourtListener Ingestion"
+  "CourtListener Ingestion" -> { "Liveness", "Accuracy" } -> "Users"
+}

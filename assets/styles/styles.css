@@ -1,0 +1,68 @@
+@font-face {
+  font-family: 'AvGardd';
+  src: url('/fonts/AVGARDD_2.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Avant Garde Book BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDN_2.woff') format('woff');
+  }
+
+  @font-face {
+  font-family: 'Avant Garde Demi BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDD_2.woff') format('woff');
+  }
+
+
+  @font-face {
+  font-family: 'Avant Garde Demi Oblique BT';
+  font-style: normal;
+  font-weight: normal;
+  src: url('AVGARDDO_2.woff') format('woff');
+  }
+
+body {
+  /* font-family: 'AvGardd', Arial, sans-serif; */
+  font-family: 'Avant Garde Book BT', Arial, sans-serif;
+}
+
+#countdown {
+  font-family: 'AvGardd', Arial, sans-serif;
+  font-size: 1.5rem;
+}
+
+.time-unit {
+  display: inline-block;
+  margin: 0 10px;
+  text-align: center;
+}
+
+.number {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.label {
+  display: block;
+  font-size: 1rem;
+}
+
+.coming-soon {
+  font-size: 2rem;
+}
+
+@media (min-width: 1440px) {
+  .number {
+    font-size: 4rem;
+  }
+
+  .label {
+    font-size: 2rem;
+  }
+}

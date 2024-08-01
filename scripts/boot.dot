@@ -1,0 +1,16 @@
+digraph Boot {
+  "START" -> "IS_STARTING" [label=" start(input)"]
+  "IS_STARTING" -> "LOADING_DATABASE" [label=" importDatabase(db)"]
+  "LOADING_DATABASE" -> "MEMORY_LOADED" [label=" notifyImportComplete(dbstate)"]
+  "MEMORY_LOADED" -> "CREATING_NODE" [label=" startNode(dbstate)"]
+  "CREATING_NODE" -> "VALIDATING_STATE" [label=" validateState(state)"]
+  "VALIDATING_STATE" -> "STATE_READY" [label=" notifyStateValid(state)"]
+  "STARTING_NETWORK" -> "SEARCHING_NETWORK" [label=" notifyCandidatePeer(peer)"]
+  "SEARCHING_NETWORK" -> "PEER_STATE" [label=" openSession(peer)"]
+
+  "PEER_STATE" -> "CREATING_NODE" [label=" validatePeerState(state)"]
+
+  "LOADING_DATABASE" -> "ERROR" [label=" error()"]
+  "CREATING_NODE" -> "ERROR" [label=" error()"]
+  "VALIDATING_STATE" -> "ERROR" [label=" error()"]
+}
