@@ -10,6 +10,7 @@
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
+    "jeeves": "node scripts/jeeves.js && http-server assets",
     "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
     "make:browser": "npm run build:browser",
     "make:coverage": "npm run coverage && c8 report --reporter html",
@@ -18,7 +19,7 @@
     "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
     "report:todo": "grep --exclude-dir=.git --exclude-dir=_book --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs -rEI \"TODO|FIXME\" . > reports/TODO.txt",
     "serve:docs": "fabric-http docs",
-    "start": "node scripts/node.js",
+    "start": "npm run build:browser && node scripts/node.js",
     "test": "mocha tests",
     "watch": "rollup -c -w"
   },
@@ -61,6 +62,7 @@
     "@portal/feed": "FabricLabs/portal-feed#feature/federation",
     "fast-json-patch": "3.1.0",
     "levelgraph": "3.0.0",
+    "llama-node": "^0.0.37",
     "lodash.merge": "4.6.2",
     "openai": "3.2.1"
   },
