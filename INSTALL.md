@@ -14,9 +14,9 @@ sudo mysql
 
 In the MySQL shell:
 ```
-CREATE DATABASE db_jeeves;
-CREATE USER 'db_user_jeeves'@'localhost' IDENTIFIED BY 'password';
-GRANT ALL PRIVILEGES ON db_jeeves.* TO 'db_user_jeeves'@'localhost';
+CREATE DATABASE db_sensemaker;
+CREATE USER 'db_user_sensemaker'@'localhost' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON db_sensemaker.* TO 'db_user_sensemaker'@'localhost';
 EXIT;
 ```
 
@@ -45,8 +45,8 @@ docker-compose up -d
 ssh-keygen -t ed25519
 cat ~/.ssh/id_25519.pub
 sudo apt install git libpixman-1-dev libcairo2-dev libsdl-pango-dev libgif-dev mysql-server
-git clone git@github.com:lttinc/jeeves.dev.git
-cd jeeves.dev
+git clone git@github.com:FabricLabs/sensemaker.git
+cd sensemaker
 ./scripts/install-ollama.sh
 ./scripts/install-models.sh
 ./scripts/nvm/install.sh
@@ -87,7 +87,7 @@ sudo mkdir -p /media/storage/node/files
 
 Setup
 ```bash
-git clone git@github.com:lttinc/jeeves.dev.git
-cd jeeves.dev
+git clone git@github.com:FabricLabs/sensemaker.git
+cd sensemaker
 PUPPETEER_SKIP_DOWNLOAD=true npm run report:install
 ```

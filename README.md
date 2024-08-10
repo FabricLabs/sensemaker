@@ -1,6 +1,6 @@
-[`jeeves.dev`][jeeves-dev]
-==========================
-source code for [`jeeves.dev`][jeeves-dev]
+sensemaker
+==========
+making sense of stuff.
 
 ## Quick Start
 From the repository root:
@@ -43,10 +43,10 @@ delivering that gained context via a simple, queryable API.
 
 ```html
 <h1>Digital Intelligence is Here.</h1>
-<p class="subtitle"><strong>Introducing <code>Jeeves</code></strong>, an organizer of information.</p>
+<p class="subtitle">Introducing <code>@sensemaker</code>, an organizer of information.</p>
 
 <h2>The Power of Intelligence</h2>
-<p><strong>code>Jeeves</code></strong> provides robust intelligence gathering services, <strong>accumulating</strong> and <em>understaning</em> information consumed from a set of configurable data streams to automatically construct new models and foster insight into complex systems.</p>
+<p><code>@sensemaker</code> provides robust intelligence gathering services, <strong>accumulating</strong> and <strong>organizing</strong> information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.</p>
 ```
 
 ## Training
