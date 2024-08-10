@@ -4,10 +4,6 @@ module.exports = {
   agents: {
     list: require('./agents/list_agents'),
   },
-  cases: {
-    list: require('./cases/get_cases'),
-    getCaseFile: require('./cases/get_cases_id_pdf.js'),
-  },
   documents: {
     create: require('./documents/create_document'),
     createSection: require('./documents/create_document_section.js'),
@@ -33,20 +29,6 @@ module.exports = {
     serve: require('./files/serve_file.js'),
     find: require('./files/find_file.js'),
   },
-  matters: {
-    create: require('./matters/create_matter'),
-    new: require('./matters/new_matter'),
-    view: require('./matters/matter_view'),
-    list: require('./matters/list_matters'),
-    addContext: require('./matters/add_context'),
-    removeFile: require('./matters/remove_file'),
-    removeNote: require('./matters/remove_note'),
-    newConversation: require('./matters/matter_new_chat'),
-    getConversations: require('./matters/get_conversations'),
-    edit: require('./matters/edit_matter'),
-    listFiles: require('./matters/list_matter_files'),
-    listNotes: require('./matters/list_matter_notes'),
-  },
   invitations: {
     createInvitations: require('./invitations/create_invitation'),
     getInvitations: require('./invitations/get_invitations'),
@@ -63,28 +45,9 @@ module.exports = {
   products: {
     list: require('./products/list_products'),
   },
-  reporters: {
-    search: require('./reporters/search_reporters'),
-    view: require('./reporters/view_reporter'),
-
-  },
-  jurisdictions: {
-    view: require('./jurisdictions/jurisdiction_view'),
-  },
-  courts: {
-    list: require('./courts/list_courts'),
-    listByJurisdiction: require('./courts/list_courts_by_jurisdiction.js'),
-    view: require('./courts/court_view'),
-    viewById: require('./courts/court_view_by_id'),
-    findCourt: require('./courts/find_court'),
-  },
   sessions: {
     create: require('./sessions/create_session'),
     get: require('./sessions/get_session'),
-  },
-  statutes: {
-    list: require('./statutes/list_statutes'),
-    // view: require('./statutes/view_statute'), // TODO: create this
   },
   users: {
     list: require('./users/list_users'),

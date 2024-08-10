@@ -8,7 +8,6 @@ const thunkMiddleware = require('redux-thunk').default;
 const adminReducer = require('../reducers/adminReducer');
 const authReducer = require('../reducers/authReducer');
 const bridgeReducer = require('../reducers/bridgeReducer');
-const caseReducer = require('../reducers/caseReducer');
 const chatReducer = require('../reducers/chatReducer');
 const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
@@ -17,7 +16,6 @@ const fileReducer = require('../reducers/fileReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
 const personReducer = require('../reducers/personReducer');
-const mattersReducer = require('../reducers/mattersReducer');
 const usersReducer = require('../reducers/usersReducer');
 const searchReducer = require('../reducers/searchReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
@@ -28,7 +26,6 @@ const redisReducer = require('../reducers/redisReducer');
 const rootReducer = combineReducers({
   auth: authReducer,
   bridge: bridgeReducer,
-  cases: caseReducer,
   chat: chatReducer,
   contracts: contractReducer,
   conversations: conversationReducer,
@@ -38,7 +35,6 @@ const rootReducer = combineReducers({
   people: personReducer,
   inquiries: inquiriesReducer,
   invitation: invitationReducer,
-  matters: mattersReducer,
   users: usersReducer,
   search: searchReducer,
   feedback: feedbackReducer,

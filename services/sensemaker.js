@@ -1775,37 +1775,8 @@ class Sensemaker extends Hub {
     // Uploads
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
 
-    // Matters
-    this.http._addRoute('GET', '/matters', ROUTES.matters.list.bind(this));
-    this.http._addRoute('POST', '/matters', ROUTES.matters.create.bind(this));
-    this.http._addRoute('GET', '/matters/new', ROUTES.matters.new.bind(this));
-    this.http._addRoute('GET', '/matters/:id', ROUTES.matters.view.bind(this));
-    this.http._addRoute('GET', '/conversations/new/:matterID', ROUTES.matters.newConversation.bind(this));
-    this.http._addRoute('GET', '/matters/files/:id', ROUTES.matters.listFiles.bind(this));
-    this.http._addRoute('GET', '/matters/notes/:id', ROUTES.matters.listNotes.bind(this));
-    this.http._addRoute('GET', '/matters/:matterID/conversations', ROUTES.matters.getConversations.bind(this)); //this one gets the list of a specific Matter's conversations
-    this.http._addRoute('PATCH', '/matters/context/:id', ROUTES.matters.addContext.bind(this));
-    this.http._addRoute('PATCH', '/matters/:id', ROUTES.matters.edit.bind(this))
-    this.http._addRoute('PATCH', '/matters/removefile/:idFile', ROUTES.matters.removeFile.bind(this));
-    this.http._addRoute('PATCH', '/matters/removenote/:idNote', ROUTES.matters.removeNote.bind(this));
-
     // Products
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
-
-    // Jurisdictions
-    this.http._addRoute('GET', '/jurisdictions/:id', ROUTES.jurisdictions.view.bind(this));
-
-    // Courts
-    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
-    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.view.bind(this));
-    this.http._addRoute('GET', '/courts/jurisdiction/:jurisdictionID', ROUTES.courts.listByJurisdiction.bind(this));
-    this.http._addRoute('GET', '/courts/id/:id', ROUTES.courts.viewById.bind(this));
-
-    // Statutes
-    this.http._addRoute('GET', '/statutes', ROUTES.statutes.list.bind(this));
-
-    // Reporters
-    this.http._addRoute('GET', '/reporters/:id', ROUTES.reporters.view.bind(this));
 
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
@@ -1817,7 +1788,6 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/documents/:fabricID', ROUTES.documents.edit.bind(this));
     this.http._addRoute('PATCH', '/documents/delete/:fabricID', ROUTES.documents.delete.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
-
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));

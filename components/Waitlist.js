@@ -132,7 +132,7 @@ class Waitlist extends React.Component {
                     <Header>Join the Waitlist!</Header>
                     <Form onSubmit={this.handleSubmit}>
                       <Form.Field>
-                        <p style={{ marginBottom: '2em' }}>Novo is currently in a closed beta, which means we’re inviting select firms to try it out early.</p>
+                        <p style={{ marginBottom: '2em' }}>{BRAND_NAME} is currently in a closed beta, which means we’re inviting a small number of friends to try it out early.</p>
                         <p style={{ marginBottom: '2em' }}>If you’d like to be one of these select few, enter your work email here and we’ll be in touch:</p>
                         <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                       </Form.Field>
