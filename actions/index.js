@@ -45,13 +45,6 @@ const {
   createInquiry
 } = require('../actions/inquiriesActions');
 
-// ## Case Actions
-const {
-  fetchCases,
-  fetchCase,
-  searchCase,
-} = require('../actions/caseActions');
-
 // ## Chat Actions
 const {
   resetChat,
@@ -162,9 +155,6 @@ const {
 } = require('../actions/redisActions');
 
 module.exports = {
-  fetchCases: fetchCases,
-  fetchCase: fetchCase,
-  searchCase: searchCase,
   fetchContract: fetchContract,
   signContract: signContract,
   fetchConversation: fetchConversation,

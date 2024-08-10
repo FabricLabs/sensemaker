@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Source: types/worker.js &middot; Docs</title>
+  <title>Source: services/chat.js &middot; Docs</title>
   <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
   <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
   <div id="main">
-    <h1 class="page-title">Source: types/worker.js</h1>
+    <h1 class="page-title">Source: services/chat.js</h1>
 
 
 
@@ -19,108 +19,94 @@
       <article>
         <pre class="prettyprint source linenums"><code>'use strict';
 
-// Dependencies
-const fetch = require('cross-fetch');
-
 // Fabric Types
-const Actor = require('@fabric/core/types/actor');
 const Service = require('@fabric/core/types/service');
 
-// Types
-const Queue = require('./queue');
+// Fabric HTTP
+const HTTPServer = require('@fabric/http/types/server');
+
+// Networks
+const Matrix = require('@fabric/matrix');
+
+// Integrations
+const OpenAI = require('./openai');
 
 /**
- * Worker service.
+ * Implements a chat coordinator.
  */
-class Worker extends Service {
+class Chat extends Service {
   constructor (settings = {}) {
     super(settings);
 
     this.settings = Object.assign({
-      authority: 'jeeves.dev',
-      frequency: 1, // Hz
+      http: {
+        interface: '0.0.0.0',
+        hostname: 'localhost',
+        port: 7778
+      },
+      matrix: {
+        alias: 'sensemaker',
+        homeserver: 'https://fabric.pub',
+        coordinator: '!pPjIUAOkwmgXeICrzT:fabric.pub',
+        trigger: '!',
+        username: 'sensemaker',
+        password: 'w0ppled00p'
+      },
       state: {
-        jobs: [],
-        objects: {}
+        status: 'PAUSED'
       }
     }, settings);
 
-    // Core Queue
-    this.queue = new Queue(this.settings);
+    // Core services
+    this.http = new HTTPServer(this.settings.http);
+    this.http.on('log', this._handleHTTPLog.bind(this));
 
-    // Heartbeat
-    this._timer = setInterval(() => {
-      // console.debug('...keepalive');
-    }, 5000);
+    this.matrix = new Matrix(this.settings.matrix);
 
-    // Local State
+    // Integrations
+    this.openai = new OpenAI(this.settings.openai);
+
     this._state = {
-      content: this.settings.state,
-      current: null,
-      stack: [],
-      types: {},
-      working: false
+      content: this.settings.state
     };
 
     return this;
   }
 
-  get jobStack () {
-    return this._state.stack;
-  }
-
-  addJob (job) {
-    this._state.stack.unshift(job);
-  }
-
-  register (type, method) {
-    this._state.types[type] = method;
-  }
-
-  _takeJob () {
-    if (this._state.working) return;
-    if (!this.jobStack.length) return;
-
-    this._state.working = true;
-
-    const job = this.jobStack.pop();
-    const method = this._state.types[job.type];
-
-    if (!method) {
-      this.emit('warning', 'Unhandled job type:', job.type);
-      return;
-    }
-
-    const work = method.apply(this.state, job.params);
-
-    work.then((output) => {
-      this._state.working = false;
-    });
-  }
-
   async start () {
-    this._ticker = setInterval(async () => {
-      // console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
-      await this._takeJob();
-    }, (1 / this.settings.frequency) * 1000);
+    this.matrix.on('debug', (msg) => {
+      console.debug('[SENSEMAKER:MATRIX]', 'Debug:', msg);
+    });
 
-    await this.queue.start();
+    this.matrix.on('error', (msg) => {
+      console.error('[SENSEMAKER:MATRIX]', 'Error:', msg);
+    });
 
-    this.commit();
+    this.matrix.on('log', (msg) => {
+      console.log('[SENSEMAKER:MATRIX]', 'Log:', msg);
+    });
+
+    await this.http.start();
+    await this.matrix.start();
+
+    await this.openai.start();
 
     return this;
   }
 
   async stop () {
-    // clearInterval(this._heart);
-    // clearInterval(this._timer);
-    // clearInterval(this._ticker);
-    this.process.exit();
-    return true;
+    await this.matrix.stop();
+    await this.http.stop();
+
+    return this;
+  }
+
+  _handleHTTPLog (message) {
+    this.emit('log', `HTTP Log: ${message}`);
   }
 }
 
-module.exports = Worker;
+module.exports = Chat;
 </code></pre>
       </article>
     </section>
