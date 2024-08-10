@@ -28,15 +28,17 @@
 <dt><a href="#Worker">Worker</a></dt>
 <dd><p>Worker service.</p>
 </dd>
-<dt><a href="#CourtListener">CourtListener</a> ⇐ <code>Service</code></dt>
-<dd><p>CourtListener is a service for interacting with the CourtListener database.</p>
+<dt><a href="#Chat">Chat</a></dt>
+<dd><p>Implements a chat coordinator.</p>
 </dd>
-<dt><a href="#Jeeves">Jeeves</a> : <code>Object</code></dt>
-<dd><p>Jeeves is a Fabric-powered application, capable of running autonomously
-once started by the user.  By default, earnings are enabled.</p>
+<dt><a href="#FabricService">FabricService</a></dt>
+<dd><p>Defines the Fabric interface for Sensemaker.</p>
 </dd>
 <dt><a href="#Mistral">Mistral</a> : <code><a href="#Mistral">Mistral</a></code></dt>
 <dd><p>HTTP-based Mistral client.</p>
+</dd>
+<dt><a href="#Sensemaker">Sensemaker</a> : <code>Object</code></dt>
+<dd><p>Sensemaker is the primary instance of the AI.</p>
 </dd>
 </dl>
 
@@ -252,242 +254,28 @@ Search the document store.
 Worker service.
 
 **Kind**: global class  
-<a name="CourtListener"></a>
+<a name="Chat"></a>
 
-## CourtListener ⇐ <code>Service</code>
-CourtListener is a service for interacting with the CourtListener database.
-
-**Kind**: global class  
-**Extends**: <code>Service</code>  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| [settings] | <code>Object</code> | Configuration for the service. |
-
-<a name="Jeeves"></a>
-
-## Jeeves : <code>Object</code>
-Jeeves is a Fabric-powered application, capable of running autonomously
-once started by the user.  By default, earnings are enabled.
+## Chat
+Implements a chat coordinator.
 
 **Kind**: global class  
-**Extends**: <code>Service</code>  
+<a name="FabricService"></a>
 
-* [Jeeves](#Jeeves) : <code>Object</code>
-    * [new Jeeves([settings])](#new_Jeeves_new)
-    * [.combinationsOf(tokens, prefix)](#Jeeves+combinationsOf) ⇒ <code>Array</code>
-    * [.createAgent(configuration)](#Jeeves+createAgent) ⇒ [<code>Agent</code>](#Agent)
-    * [.estimateTokens(input)](#Jeeves+estimateTokens) ⇒ <code>Number</code>
-    * [.importantPhrases(input, limit)](#Jeeves+importantPhrases) ⇒ <code>Array</code>
-    * [.importantWords(input, limit)](#Jeeves+importantWords) ⇒ <code>Array</code>
-    * [.properNouns(input)](#Jeeves+properNouns) ⇒ <code>Array</code>
-    * [.uniqueWords(input)](#Jeeves+uniqueWords) ⇒ <code>Array</code>
-    * [.alert(message)](#Jeeves+alert) ⇒ <code>Boolean</code>
-    * [.generateDocumentOutline(request)](#Jeeves+generateDocumentOutline) ⇒ <code>Object</code>
-    * [.handleTextRequest(request)](#Jeeves+handleTextRequest) ⇒ <code>Promise</code>
-    * [.createTimedRequest(request, [timeout], [depth])](#Jeeves+createTimedRequest) ⇒ <code>Message</code>
-    * [.retrieveFile(id)](#Jeeves+retrieveFile) ⇒ <code>Object</code>
-    * [.start()](#Jeeves+start) ⇒ <code>Promise</code>
-    * [.stop()](#Jeeves+stop) ⇒ <code>Promise</code>
-    * [._getRoomMessages()](#Jeeves+_getRoomMessages) ⇒ <code>Array</code>
-    * [._handleRequest(request)](#Jeeves+_handleRequest) ⇒ <code>JeevesResponse</code>
+## FabricService
+Defines the Fabric interface for Sensemaker.
 
-<a name="new_Jeeves_new"></a>
+**Kind**: global class  
+<a name="new_FabricService_new"></a>
 
-### new Jeeves([settings])
-Constructor for the Jeeves application.
+### new FabricService([settings])
+Create an instance of the service.
 
-**Returns**: [<code>Jeeves</code>](#Jeeves) - Resulting instance of Jeeves.  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| [settings] | <code>Object</code> | <code>{}</code> | Map of configuration values. |
-| [settings.port] | <code>Number</code> | <code>7777</code> | Fabric messaging port. |
-
-<a name="Jeeves+combinationsOf"></a>
-
-### jeeves.combinationsOf(tokens, prefix) ⇒ <code>Array</code>
-Extracts a list of possible combinations of a given array.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of possible combinations.  
+**Returns**: [<code>FabricService</code>](#FabricService) - A new instance of the service.  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| tokens | <code>Array</code> | List of tokens to combine. |
-| prefix | <code>String</code> | Additional prefix to add to each combination. |
-
-<a name="Jeeves+createAgent"></a>
-
-### jeeves.createAgent(configuration) ⇒ [<code>Agent</code>](#Agent)
-Creates (and registers) a new [Agent](#Agent) instance.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: [<code>Agent</code>](#Agent) - Instance of the [Agent](#Agent).  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| configuration | <code>Object</code> | Settings for the [Agent](#Agent). |
-
-<a name="Jeeves+estimateTokens"></a>
-
-### jeeves.estimateTokens(input) ⇒ <code>Number</code>
-Provides a function to estimate the number of tokens in a given input string.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Number</code> - Estimated number of tokens.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| input | <code>String</code> | Input string to estimate. |
-
-<a name="Jeeves+importantPhrases"></a>
-
-### jeeves.importantPhrases(input, limit) ⇒ <code>Array</code>
-Extracts a list of important phrases from a given input string.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of important phrases in order of rank.  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| input | <code>String</code> |  | Input string to analyze. |
-| limit | <code>Number</code> | <code>5</code> | Maximum number of phrases to return. |
-
-<a name="Jeeves+importantWords"></a>
-
-### jeeves.importantWords(input, limit) ⇒ <code>Array</code>
-Extracts a list of important words from a given input string.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of important words in order of rank.  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| input | <code>String</code> |  | Input string to analyze. |
-| limit | <code>Number</code> | <code>5</code> | Maximum number of words to return. |
-
-<a name="Jeeves+properNouns"></a>
-
-### jeeves.properNouns(input) ⇒ <code>Array</code>
-Extract a list of proper nouns from a given input string.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of proper nouns.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| input | <code>String</code> | Input string to analyze. |
-
-<a name="Jeeves+uniqueWords"></a>
-
-### jeeves.uniqueWords(input) ⇒ <code>Array</code>
-Extract a list of unique words from a given input string.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of unique words.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| input | <code>String</code> | Input string to analyze. |
-
-<a name="Jeeves+alert"></a>
-
-### jeeves.alert(message) ⇒ <code>Boolean</code>
-Sends a system-wide alert.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Boolean</code> - Returns `true` if the alert sent, `false` otherwise.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| message | <code>String</code> | Message to send in the alert. |
-
-<a name="Jeeves+generateDocumentOutline"></a>
-
-### jeeves.generateDocumentOutline(request) ⇒ <code>Object</code>
-Generates an outline for a proposed document.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Object</code> - Outline of the document.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| request | <code>Object</code> | Request object. |
-
-<a name="Jeeves+handleTextRequest"></a>
-
-### jeeves.handleTextRequest(request) ⇒ <code>Promise</code>
-Generate a response to a given request.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Promise</code> - Resolves with the response to the request.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| request | <code>Object</code> | Request object. |
-| request.query | <code>String</code> | Query text. |
-| [request.conversation_id] | <code>String</code> | Unique identifier for the conversation. |
-
-<a name="Jeeves+createTimedRequest"></a>
-
-### jeeves.createTimedRequest(request, [timeout], [depth]) ⇒ <code>Message</code>
-Execute the default pipeline for an inbound request.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Message</code> - Request as a Fabric [Message](Message).  
-
-| Param | Type | Default | Description |
-| --- | --- | --- | --- |
-| request | <code>Object</code> |  | Request object. |
-| [timeout] | <code>Number</code> |  | How long to wait for a response. |
-| [depth] | <code>Number</code> | <code>0</code> | How many times to recurse. |
-
-<a name="Jeeves+retrieveFile"></a>
-
-### jeeves.retrieveFile(id) ⇒ <code>Object</code>
-Retrieve a file by its database ID.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Object</code> - File object.  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| id | <code>Number</code> | Database ID of the file. |
-
-<a name="Jeeves+start"></a>
-
-### jeeves.start() ⇒ <code>Promise</code>
-Start the process.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Promise</code> - Resolves once the process has been started.  
-<a name="Jeeves+stop"></a>
-
-### jeeves.stop() ⇒ <code>Promise</code>
-Stop the process.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Promise</code> - Resolves once the process has been stopped.  
-<a name="Jeeves+_getRoomMessages"></a>
-
-### jeeves.\_getRoomMessages() ⇒ <code>Array</code>
-Retrieve a conversation's messages.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-**Returns**: <code>Array</code> - List of the conversation's messages.  
-<a name="Jeeves+_handleRequest"></a>
-
-### jeeves.\_handleRequest(request) ⇒ <code>JeevesResponse</code>
-Generate a response to a request.
-
-**Kind**: instance method of [<code>Jeeves</code>](#Jeeves)  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| request | <code>JeevesRequest</code> | The request. |
-| [request.room] | <code>String</code> | Matrix room to retrieve conversation history from. |
+| [settings] | <code>Object</code> | Settings for the service. |
 
 <a name="Mistral"></a>
 
@@ -505,4 +293,228 @@ HTTP-based Mistral client.
 | remote | <code>HTTPClient</code> | The Mistral remote. |
 | engine | <code>Object</code> | The Mistral engine. |
 | state | <code>Object</code> | The Mistral state. |
+
+<a name="Sensemaker"></a>
+
+## Sensemaker : <code>Object</code>
+Sensemaker is the primary instance of the AI.
+
+**Kind**: global class  
+**Extends**: <code>Service</code>  
+
+* [Sensemaker](#Sensemaker) : <code>Object</code>
+    * [new Sensemaker([settings])](#new_Sensemaker_new)
+    * [.combinationsOf(tokens, prefix)](#Sensemaker+combinationsOf) ⇒ <code>Array</code>
+    * [.createAgent(configuration)](#Sensemaker+createAgent) ⇒ [<code>Agent</code>](#Agent)
+    * [.estimateTokens(input)](#Sensemaker+estimateTokens) ⇒ <code>Number</code>
+    * [.importantPhrases(input, limit)](#Sensemaker+importantPhrases) ⇒ <code>Array</code>
+    * [.importantWords(input, limit)](#Sensemaker+importantWords) ⇒ <code>Array</code>
+    * [.properNouns(input)](#Sensemaker+properNouns) ⇒ <code>Array</code>
+    * [.uniqueWords(input)](#Sensemaker+uniqueWords) ⇒ <code>Array</code>
+    * [.alert(message)](#Sensemaker+alert) ⇒ <code>Boolean</code>
+    * [.generateDocumentOutline(request)](#Sensemaker+generateDocumentOutline) ⇒ <code>Object</code>
+    * [.handleTextRequest(request)](#Sensemaker+handleTextRequest) ⇒ <code>Promise</code>
+    * [.createTimedRequest(request, [timeout], [depth])](#Sensemaker+createTimedRequest) ⇒ <code>Message</code>
+    * [.retrieveFile(id)](#Sensemaker+retrieveFile) ⇒ <code>Object</code>
+    * [.start()](#Sensemaker+start) ⇒ <code>Promise</code>
+    * [.stop()](#Sensemaker+stop) ⇒ <code>Promise</code>
+    * [._getRoomMessages()](#Sensemaker+_getRoomMessages) ⇒ <code>Array</code>
+    * [._handleRequest(request)](#Sensemaker+_handleRequest) ⇒ <code>SensemakerResponse</code>
+
+<a name="new_Sensemaker_new"></a>
+
+### new Sensemaker([settings])
+Constructor for the Sensemaker instance.
+
+**Returns**: [<code>Sensemaker</code>](#Sensemaker) - Resulting instance of Sensemaker.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| [settings] | <code>Object</code> | <code>{}</code> | Map of configuration values. |
+| [settings.seed] | <code>Number</code> |  | 12 or 24 word mnemonic seed. |
+| [settings.port] | <code>Number</code> | <code>7777</code> | Fabric messaging port. |
+
+<a name="Sensemaker+combinationsOf"></a>
+
+### sensemaker.combinationsOf(tokens, prefix) ⇒ <code>Array</code>
+Extracts a list of possible combinations of a given array.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of possible combinations.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| tokens | <code>Array</code> | List of tokens to combine. |
+| prefix | <code>String</code> | Additional prefix to add to each combination. |
+
+<a name="Sensemaker+createAgent"></a>
+
+### sensemaker.createAgent(configuration) ⇒ [<code>Agent</code>](#Agent)
+Creates (and registers) a new [Agent](#Agent) instance.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: [<code>Agent</code>](#Agent) - Instance of the [Agent](#Agent).  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| configuration | <code>Object</code> | Settings for the [Agent](#Agent). |
+
+<a name="Sensemaker+estimateTokens"></a>
+
+### sensemaker.estimateTokens(input) ⇒ <code>Number</code>
+Provides a function to estimate the number of tokens in a given input string.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Number</code> - Estimated number of tokens.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to estimate. |
+
+<a name="Sensemaker+importantPhrases"></a>
+
+### sensemaker.importantPhrases(input, limit) ⇒ <code>Array</code>
+Extracts a list of important phrases from a given input string.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of important phrases in order of rank.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| input | <code>String</code> |  | Input string to analyze. |
+| limit | <code>Number</code> | <code>5</code> | Maximum number of phrases to return. |
+
+<a name="Sensemaker+importantWords"></a>
+
+### sensemaker.importantWords(input, limit) ⇒ <code>Array</code>
+Extracts a list of important words from a given input string.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of important words in order of rank.  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| input | <code>String</code> |  | Input string to analyze. |
+| limit | <code>Number</code> | <code>5</code> | Maximum number of words to return. |
+
+<a name="Sensemaker+properNouns"></a>
+
+### sensemaker.properNouns(input) ⇒ <code>Array</code>
+Extract a list of proper nouns from a given input string.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of proper nouns.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to analyze. |
+
+<a name="Sensemaker+uniqueWords"></a>
+
+### sensemaker.uniqueWords(input) ⇒ <code>Array</code>
+Extract a list of unique words from a given input string.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of unique words.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| input | <code>String</code> | Input string to analyze. |
+
+<a name="Sensemaker+alert"></a>
+
+### sensemaker.alert(message) ⇒ <code>Boolean</code>
+Sends a system-wide alert.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Boolean</code> - Returns `true` if the alert sent, `false` otherwise.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| message | <code>String</code> | Message to send in the alert. |
+
+<a name="Sensemaker+generateDocumentOutline"></a>
+
+### sensemaker.generateDocumentOutline(request) ⇒ <code>Object</code>
+Generates an outline for a proposed document.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Object</code> - Outline of the document.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Request object. |
+
+<a name="Sensemaker+handleTextRequest"></a>
+
+### sensemaker.handleTextRequest(request) ⇒ <code>Promise</code>
+Generate a response to a given request.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Promise</code> - Resolves with the response to the request.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>Object</code> | Request object. |
+| request.query | <code>String</code> | Query text. |
+| [request.conversation_id] | <code>String</code> | Unique identifier for the conversation. |
+
+<a name="Sensemaker+createTimedRequest"></a>
+
+### sensemaker.createTimedRequest(request, [timeout], [depth]) ⇒ <code>Message</code>
+Execute the default pipeline for an inbound request.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Message</code> - Request as a Fabric [Message](Message).  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| request | <code>Object</code> |  | Request object. |
+| [timeout] | <code>Number</code> |  | How long to wait for a response. |
+| [depth] | <code>Number</code> | <code>0</code> | How many times to recurse. |
+
+<a name="Sensemaker+retrieveFile"></a>
+
+### sensemaker.retrieveFile(id) ⇒ <code>Object</code>
+Retrieve a file by its database ID.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Object</code> - File object.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>Number</code> | Database ID of the file. |
+
+<a name="Sensemaker+start"></a>
+
+### sensemaker.start() ⇒ <code>Promise</code>
+Start the process.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Promise</code> - Resolves once the process has been started.  
+<a name="Sensemaker+stop"></a>
+
+### sensemaker.stop() ⇒ <code>Promise</code>
+Stop the process.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Promise</code> - Resolves once the process has been stopped.  
+<a name="Sensemaker+_getRoomMessages"></a>
+
+### sensemaker.\_getRoomMessages() ⇒ <code>Array</code>
+Retrieve a conversation's messages.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Array</code> - List of the conversation's messages.  
+<a name="Sensemaker+_handleRequest"></a>
+
+### sensemaker.\_handleRequest(request) ⇒ <code>SensemakerResponse</code>
+Generate a response to a request.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| request | <code>SensemakerRequest</code> | The request. |
+| [request.room] | <code>String</code> | Matrix room to retrieve conversation history from. |
 

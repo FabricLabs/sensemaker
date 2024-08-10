@@ -6,7 +6,8 @@ const { useLocation } = require('react-router-dom');
 
 const {
   Card,
-  Header
+  Header,
+  Segment
 } = require('semantic-ui-react');
 
 const QueryForm = require('./QueryForm');
@@ -27,7 +28,11 @@ class Home extends React.Component {
 
   render () {
     return (
-      <jeeves-home class='fade-in' style={{ marginRight: '1em' }}>
+      <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
+        <Segment fluid>
+          <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
+          <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
+        </Segment>
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
@@ -50,7 +55,7 @@ class Home extends React.Component {
             <Card.Content>Cite 10 interesting cases related to the <Dropdown value="the 4th" /> amendment.</Card.Content>
           </Card>
         </Card.Group> */}
-      </jeeves-home>
+      </sensemaker-home>
     );
   }
 }

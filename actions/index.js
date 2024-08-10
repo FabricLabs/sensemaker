@@ -52,22 +52,7 @@ const {
   searchCase,
 } = require('../actions/caseActions');
 
-// ## Courts Actions
-const {
-  fetchCourts,
-  fetchCourt,
-  fetchCourtById,
-  searchCourt,
-  fetchCourtsByJurisdiction,
-} = require('../actions/courtActions');
-
-// ## Jurisdiction Actions
-const {
-  fetchJurisdictions,
-  fetchJurisdiction
-} = require('../actions/jurisdictionsActions');
-
-// ## Contract Actions
+// ## Chat Actions
 const {
   resetChat,
   submitMessage,
@@ -76,20 +61,14 @@ const {
   getMessageInformation,
 } = require('../actions/chatActions');
 
-// ## Conversation Actions
+// ## Contract Actions
 const {
   fetchContracts,
   fetchContract,
   signContract
 } = require('../actions/contractActions');
 
-// ## Statute Actions
-const {
-  fetchStatutes,
-  fetchStatute
-} = require('../actions/statuteActions');
-
-// ## Court Actions
+// ## Conversation Actions
 const {
   fetchConversations,
   fetchConversation,
@@ -102,31 +81,6 @@ const {
   fetchPeople,
   fetchPerson
 } = require('../actions/personActions');
-
-// ## Reporter Actions
-const {
-  fetchReporters,
-  fetchReporter,
-  searchReporter,
-} = require('../actions/reportersActions');
-
-// ## Judge Actions
-const {
-  fetchJudges,
-  fetchJudge
-} = require('../actions/judgeActions');
-
-// ## Opinion Actions
-const {
-  fetchOpinions,
-  fetchOpinion
-} = require('../actions/opinionActions');
-
-// ## Volume Actions
-const {
-  fetchVolumes,
-  fetchVolume
-} = require('../actions/volumeActions');
 
 // ## Document Actions
 const {
@@ -216,15 +170,6 @@ module.exports = {
   fetchConversation: fetchConversation,
   fetchConversations: fetchConversations,
   conversationTitleEdit: conversationTitleEdit,
-  fetchStatutes: fetchStatutes,
-  fetchStatute: fetchStatute,
-  fetchCourts: fetchCourts,
-  fetchCourtsByJurisdiction: fetchCourtsByJurisdiction,
-  fetchCourt: fetchCourt,
-  fetchCourtById: fetchCourtById,
-  searchCourt: searchCourt,
-  fetchJurisdictions: fetchJurisdictions,
-  fetchJurisdiction: fetchJurisdiction,
   fetchDocuments: fetchDocuments,
   fetchDocument: fetchDocument,
   fetchDocumentSections: fetchDocumentSections,
@@ -252,20 +197,11 @@ module.exports = {
   acceptInvitation: acceptInvitation,
   declineInvitation: declineInvitation,
   deleteInvitation: deleteInvitation,
-  fetchJudges: fetchJudges,
-  fetchJudge: fetchJudge,
   fetchPeople: fetchPeople,
   fetchPerson: fetchPerson,
-  fetchOpinions: fetchOpinions,
-  fetchOpinion: fetchOpinion,
-  fetchReporters: fetchReporters,
-  fetchReporter: fetchReporter,
-  searchReporter: searchReporter,
   fetchUploads,
   fetchUpload,
   searchUploads,
-  fetchVolumes: fetchVolumes,
-  fetchVolume: fetchVolume,
   fetchAdminStats: fetchAdminStats,
   fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
   login: login,

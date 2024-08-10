@@ -50,7 +50,7 @@ class ChatBox extends React.Component {
       query: '',
       generatingReponse: false,
       reGeneratingReponse: false,
-      groupedMessages: (props.chat.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
+      groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,
@@ -122,8 +122,7 @@ class ChatBox extends React.Component {
 
   }
 
-  componentWillUnmount() {
-
+  componentWillUnmount () {
     this.stopPolling();
     this.setState({
       chat: {
@@ -523,8 +522,7 @@ class ChatBox extends React.Component {
           </div>
         </Form>
       )
-    }
-    else {
+    } else {
       return (
         <div style={{ display: 'flex' }}>
           {this.state.editedTitle ? (
@@ -546,7 +544,6 @@ class ChatBox extends React.Component {
     }
   }
 
-
   handleEditClick = (currentTitle) => {
     this.setState({ editingTitle: true, editedTitle: currentTitle });
   };
@@ -558,6 +555,7 @@ class ChatBox extends React.Component {
     await this.props.conversationTitleEdit(this.props.conversationID, this.state.editedTitle);
     this.setState({ editingTitle: false, editLoading: false });
   };
+
   handleCancelEditing = () => {
     // Reset editing state without saving
     this.setState({ editingTitle: false, editedTitle: '' });
@@ -583,7 +581,6 @@ class ChatBox extends React.Component {
       homePage,
       announTitle,
       announBody,
-      caseID,
       conversationID,
       matterID,
       matterTitle,
@@ -633,50 +630,13 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
     };
 
-    if (message?.conversation && !conversationID && !matterID && !caseID && !documentChat) {
+    if (message?.conversation && !conversationID && !matterID && !documentChat) {
       return <Navigate to={`/conversations/${message.conversation}`} replace />;
     }
 
     return (
       <section style={chatContainerStyle}>
         <Feed style={messagesContainerStyle} className="chat-feed">
-          {/*Announcements from homepage */}
-          {homePage && (announTitle || announBody) && messages.length == 0 && (
-            <Message info style={announcementStyle} className='slide-down'>
-              <Message.Header>
-                <span dangerouslySetInnerHTML={{ __html: marked.parse(announTitle), }} />
-              </Message.Header>
-              <Message.Content>
-                <span dangerouslySetInnerHTML={{ __html: marked.parse(announBody) }} />
-              </Message.Content>
-            </Message>
-          )}
-          {homePage && (
-            <div>
-              {ENABLE_BILLING && (
-                <div className='desktop-only'>
-                  <Segment style={{ margin: '1em 0 0 1em', textAlign: 'right', float: 'right', width: '20em' }}>
-                    <Progress value={100} total={100} color='blue' progress='ratio' />
-                  </Segment>
-                </div>
-              )}
-              <div>
-                <Feed.Extra text style={{ display: "flex" }}>
-                  <div>
-                    <p style={{ fontSize: '1.5em', fontFamily: 'AvGardd' }}><span style={{ fontSize: '1.5em' }}>Hello!</span><br />I'm <strong>{BRAND_NAME}</strong>, your legal research companion.</p>
-                  </div>
-                </Feed.Extra>
-                <Header style={{ marginTop: "0em", paddingBottom: "1em" }}>
-                  How can I help you today?
-                </Header>
-              </div>
-            </div>
-          )}
-          {caseID && (
-            <Feed.Extra text style={{ paddingBottom: "1.5rem", marginTop: '0.5rem' }}>
-              <Header>Can I help you with this case?</Header>
-            </Feed.Extra>
-          )}
           {(conversationID && !actualConversation) && (
             <div className='conversation-title-container' >
               <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
@@ -901,8 +861,7 @@ class ChatBox extends React.Component {
         <Form
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
-          loading={loading}
-          style={{ width: "95%" }} >
+          loading={loading}>
           <Form.Input>
             <TextareaAutosize
               id="primary-query"
@@ -935,47 +894,6 @@ class ChatBox extends React.Component {
             />
           </Form.Input>
         </Form>
-        {messages.length === 0 && homePage && (
-          <section className='desktop-only'>
-            <Container>
-              <Header as="h4" style={{ marginTop: '2em', marginBottom: '2em' }}>
-                You can try...
-              </Header>
-              <Grid columns='equal' className="home-dropdowns" onBlur={() => this.setState({ query: "" })}>
-                <GridColumn>
-                  <Dropdown
-                    size="big"
-                    placeholder="Find a case that..."
-                    selection
-                    text="Find a case that..."
-                    options={caseDropOptions}
-                    onChange={this.handleChangeDropdown}
-                  />
-                </GridColumn>
-                <GridColumn>
-                  <Dropdown
-                    size="big"
-                    placeholder="Draft a brief..."
-                    selection
-                    text="Draft a brief..."
-                    options={draftDropOptions}
-                    onChange={this.handleChangeDropdown}
-                  />
-                </GridColumn>
-                <GridColumn>
-                  <Dropdown
-                    size="big"
-                    placeholder="Outline a motion..."
-                    selection
-                    text="Outline a motion..."
-                    options={outlineDropOptions}
-                    onChange={this.handleChangeDropdown}
-                  />
-                </GridColumn>
-              </Grid>
-            </Container>
-          </section>
-        )}
       </section>
     );
   }

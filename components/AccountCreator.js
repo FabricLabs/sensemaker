@@ -13,7 +13,7 @@ const {
 } = require('semantic-ui-react');
 
 class AccountCreator extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.state = {
@@ -23,7 +23,7 @@ class AccountCreator extends React.Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     // If a new login request has been initiated or an error has occurred, stop loading
     if ((this.props.error === null && prevProps.error !== null) || (this.props.error && prevProps.error !== this.props.error)) {
       this.setState({ loading: false });
@@ -56,7 +56,7 @@ class AccountCreator extends React.Component {
     });
   };
 
-  render() {
+  render () {
     const { username, password, loading } = this.state;
     const { auth } = this.props; // Get the error from the props
 
@@ -69,12 +69,8 @@ class AccountCreator extends React.Component {
             <label>Username</label>
             <input placeholder="Username" name="username" autoComplete="username" value={username} onChange={this.handleUsernameChange} />
           </Form.Field>
-          <Form.Field>
-            <label>Password</label>
-            <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={password} onChange={this.handlePasswordChange} />
-          </Form.Field>
-          <Button fluid primary loading={loading} type="submit" size={this.props.size}>Create Login &raquo;</Button>
-          {auth.shortRegisterError && <Message error visible content={auth.shortRegisterError} style={{ clear: 'both' }} />} {/* Display error message if error state is not null */}
+          <Button fluid primary loading={loading} type="submit" size={this.props.size}>Create Account &raquo;</Button>
+          {auth?.shortRegisterError && <Message error visible content={auth?.shortRegisterError} style={{ clear: 'both' }} />} {/* Display error message if error state is not null */}
         </Form>
       </section>
     );

@@ -20,19 +20,15 @@ environment.start();
 // Output should be deterministic, HTML-encoded applications.
 
 // Constants
-const NAME = 'NOVO';
+const NAME = 'SENSEMAKER';
 const VERSION = '1.0.0-RC2';
 const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
 // Prompts
-const alphaTxtPath = path.join(__dirname, '../prompts/alpha.txt');
-const betaTxtPath = path.join(__dirname, '../prompts/novo.txt');
-const novoTxtPath = path.join(__dirname, '../prompts/novo.txt');
-const alphaPrompt = fs.readFileSync(alphaTxtPath, 'utf8');
-const betaPrompt = fs.readFileSync(betaTxtPath, 'utf8');
-const novoPrompt = fs.readFileSync(novoTxtPath, 'utf8');
+const promptPath = path.join(__dirname, '../prompts/sensemaker.txt');
+const basePrompt = fs.readFileSync(promptPath, 'utf8');
 
 // Configurations
 const network = require('./network');
@@ -43,7 +39,7 @@ const network = require('./network');
 module.exports = {
   alias: NAME,
   benchmark: false,
-  domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
+  domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
   name: 'Novo',
@@ -64,9 +60,9 @@ module.exports = {
   agents: merge({
     local: {
       name: 'LOCAL',
-      prompt: novoPrompt.toString('utf8'),
+      prompt: basePrompt.toString('utf8'),
       model: 'llama3',
-      host: 'localhost',
+      host: '127.0.0.1',
       port: 11434,
       secure: false,
       temperature: 0
@@ -125,7 +121,7 @@ module.exports = {
     listen: true,
     hostname: 'localhost',
     interface: '0.0.0.0',
-    port: 3045
+    port: 3040
   },
   email: {
     key: 'get from postmarkapp.com',
@@ -154,7 +150,7 @@ module.exports = {
   peers: [
     'localhost:7777'
   ],
-  prompt: novoPrompt.toString('utf8'),
+  prompt: basePrompt.toString('utf8'),
   sandbox: {
     browser: {
       headless: true

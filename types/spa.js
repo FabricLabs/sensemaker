@@ -1,3 +1,7 @@
+/**
+ * Defines the HTML document which will load the application.
+ * @file Fully-managed HTML application.
+ */
 'use strict';
 
 // Dependencies
@@ -17,22 +21,13 @@ class SPA extends FabricSPA {
     return `<!DOCTYPE html>
 <html lang="${this.settings.language}"${(this.settings.offline) ? ' manifest="cache.manifest"' : ''}>
   <head>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G4NJT3T2KL"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', 'G-G4NJT3T2KL');
-    </script>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" charset="utf-8" />
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta property="og:url" content="http://trynovo.com">
+    <meta property="og:url" content="http://sensemaker.io">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Novo · Your Legal Assistant">
     <meta property="og:description" content="Draft impeccable arguments with Novo, the legal AI.">
-    <meta property="og:image" content="https://trynovo.com/images/novo-cat-white.png">
+    <meta property="og:image" content="https://sensemaker.io/images/fabric-labs.png">
     <title>${this.title || this.settings.title}</title>
     <!-- <link rel="manifest" href="/manifest.json"> -->
     <link rel="stylesheet" type="text/css" href="/semantic.min.css" />

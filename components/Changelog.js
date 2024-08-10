@@ -10,7 +10,9 @@ class Changelog extends React.Component {
   render () {
     return (
       <div className="changelog">
-        <h1>Changelog</h1>
+        <h1>News</h1>
+        {/* TODO: put list of announcements here */}
+        <h2>Releases</h2>
         <ul>
           <li>1.0.0-RC1: Exclusive access!</li>
         </ul>

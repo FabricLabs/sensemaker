@@ -21,6 +21,8 @@ const {
   TextArea,
   Message
 } = require('semantic-ui-react');
+
+const ChatBox = require('./ChatBox');
 const DocumentUploader = require('./DocumentUploader');
 
 const formatDate = require('../contracts/formatDate');
@@ -119,8 +121,17 @@ class DocumentHome extends React.Component {
               )
             }
           </List>
+          <ChatBox
+            {...this.props}
+            messagesEndRef={this.messagesEndRef}
+            includeFeed={true}
+            placeholder={'Ask about these documents...'}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
+          />
         </Segment>
-
       </fabric-document-home>
     );
   }

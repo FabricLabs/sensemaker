@@ -18,16 +18,18 @@ const {
 const AGENT_MAX_TOKENS = 8192;
 const AGENT_TEMPERATURE = 0.5;
 const ENABLE_LOGIN = true;
-const ENABLE_REGISTRATION = true;
+const ENABLE_REGISTRATION = false;
 const EMBEDDING_MODEL = 'mxbai-embed-large';
 
 // Jeeves
 const BRAND_NAME = 'Novo';
-const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
+const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
 const ENABLE_CONTRACTS = true;
+const ENABLE_DOCUMENTS = true;
+const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_MATTERS = true;
 const ENABLE_UPLOADS = true;
@@ -79,6 +81,8 @@ module.exports = {
   ENABLE_CONTRACTS,
   ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
+  ENABLE_DOCUMENTS,
+  ENABLE_FEEDBACK_BUTTON,
   ENABLE_BILLING,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,

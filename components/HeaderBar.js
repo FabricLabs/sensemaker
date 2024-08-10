@@ -44,7 +44,7 @@ class HeaderBar extends React.Component {
   render () {
     return (
       <div>
-        <Link to='/' style={{ float: 'left' }}><Image src="/images/novo-logo.svg" style={{ margin: '0 1em 2em 1em', height: '2em' }} /></Link>
+        <Link to='/' style={{ float: 'left' }}><Icon name='globe' /></Link>
         <Button.Group floated='right'>
           <Button as={Link} to='/sessions'>Sign In</Button>
           <Button as={Link} to='/inquiries' primary>Try Now</Button>

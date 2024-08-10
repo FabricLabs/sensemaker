@@ -1,6 +1,6 @@
 /**
- * # Jeeves Core
- * This file contains the core logic for the Jeeves application.  It is the main entry point for the application, and contains the main class definition for the Jeeves service.
+ * # Sensemaker Core
+ * This file contains the main class definition for the Sensemaker service.
  * @extends {Hub} Instance of Fabric Hub (`@fabric/hub`), the reference implementation of a Fabric Edge server.
  */
 'use strict';
@@ -16,7 +16,6 @@ const {
   MAX_RESPONSE_TIME_MS,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
-  SEARCH_CASES_MAX_WORDS,
   USER_QUERY_TIMEOUT_MS,
   SYNC_EMBEDDINGS_COUNT
 } = require('../constants');
@@ -81,12 +80,8 @@ const Matrix = require('@fabric/matrix');
 const Fabric = require('./fabric');
 const EmailService = require('./email');
 const Gemini = require('./gemini');
-const PACER = require('./pacer');
-const Harvard = require('./harvard');
 const Mistral = require('./mistral');
 const OpenAI = require('./openai');
-const CourtListener = require('./courtlistener');
-// const WestLaw = require('./westlaw');
 const Stripe = require('./stripe');
 
 // Internal Types
@@ -98,11 +93,6 @@ const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
 const Queue = require('../types/queue');
 
-// Components
-const CaseHome = require('../components/CaseHome');
-const CaseView = require('../components/CaseView');
-const Conversations = require('../components/Conversations');
-
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
 const IngestFile = require('../functions/IngestFile');
@@ -113,17 +103,17 @@ const KnexPaginator = require('../functions/KnexPaginator');
 const ROUTES = require('../routes');
 
 /**
- * Jeeves is a Fabric-powered application, capable of running autonomously
- * once started by the user.  By default, earnings are enabled.
+ * Sensemaker is the primary instance of the AI.
  * @type {Object}
  * @extends {Service}
  */
-class Jeeves extends Hub {
+class Sensemaker extends Hub {
   /**
-   * Constructor for the Jeeves application.
+   * Constructor for the Sensemaker instance.
    * @param  {Object} [settings={}] Map of configuration values.
+   * @param  {Number} [settings.seed] 12 or 24 word mnemonic seed.
    * @param  {Number} [settings.port=7777] Fabric messaging port.
-   * @return {Jeeves} Resulting instance of Jeeves.
+   * @return {Sensemaker} Resulting instance of Sensemaker.
    */
   constructor (settings = {}) {
     super(settings);
@@ -137,7 +127,7 @@ class Jeeves extends Hub {
       port: 7777,
       precision: 8, // precision in bits for floating point compression
       persistent: true,
-      path: './logs/jeeves',
+      path: './logs/sensemaker',
       coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
       frequency: 0.01, // Hz (once every ~100 seconds)
       temperature: 0,
@@ -146,14 +136,14 @@ class Jeeves extends Hub {
       ],
       db: {
         host: 'localhost',
-        user: 'db_user_jeeves',
+        user: 'db_user_sensemaker',
         password: '',
-        database: 'db_jeeves'
+        database: 'db_sensemaker'
       },
       files: {
         corpus: './sensemaker',
-        path: './jeeves-files',
-        userstore: './jeeves-files/uploads/users'
+        path: './sensemaker-files',
+        userstore: './sensemaker-files/uploads/users'
       },
       http: {
         hostname: 'localhost',
@@ -171,31 +161,18 @@ class Jeeves extends Hub {
       agents: null,
       ollama: {},
       openai: {},
-      pacer: {},
-      harvard: {},
-      courtlistener: {},
-      statutes: {
-        jurisdictions: [
-          'Texas'
-        ]
-      },
       services: [
         'bitcoin',
-        'harvard',
         'matrix'
       ],
       state: {
         status: 'INITIALIZED',
         agents: {},
         collections: {
-          cases: {},
-          courts: {},
           documents: {},
           people: {}
         },
         counts: {
-          cases: 0,
-          courts: 0,
           documents: 0,
           people: 0
         },
@@ -203,20 +180,6 @@ class Jeeves extends Hub {
           bitcoin: {
             balance: 0
           },
-          courtlistener: {
-            cases: 0,
-            courts: 0,
-            documents: 0,
-            people: 0
-          },
-          harvard: {
-            counts: {
-              cases: 0,
-              courts: 0,
-              documents: 0,
-              people: 0
-            }
-          }
         }
       },
       crawlDelay: 2500,
@@ -237,8 +200,8 @@ class Jeeves extends Hub {
     this.audits = new Logger(this.settings);
     this.learner = new Learner(this.settings);
     this.trainer = new Trainer(this.settings);
-    this.coordinator = new Coordinator({ name: 'Jeeves', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'], agent: this.settings.ollama });
-    this.router = new Coordinator({ name: 'Novo', goals: this.settings.goals, actions: ['idle', 'search_cases', 'proceed'], agent: this.settings.ollama });
+    this.coordinator = new Coordinator({ name: 'Sensemaker', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
+    this.router = new Coordinator({ name: 'Router', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
@@ -248,13 +211,9 @@ class Jeeves extends Hub {
     this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
     // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
-    this.courtlistener = (this.settings.courtlistener.enable) ? new CourtListener(this.settings.courtlistener) : null;
-    // this.statutes = (this.settings.statutes.enable) ? new StatuteProvider(this.settings.statutes) : null;
 
     // Other Services
-    this.pacer = new PACER(this.settings.pacer);
     this.openai = new OpenAI(this.settings.openai);
-    this.harvard = new Harvard(this.settings.harvard);
     this.stripe = new Stripe(this.settings.stripe);
 
     // Collections
@@ -266,7 +225,7 @@ class Jeeves extends Hub {
 
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
-    this.fs = new Filesystem({ path: './stores/jeeves' });
+    this.fs = new Filesystem({ path: './stores/sensemaker' });
 
     // Fabric Setup
     this._rootKey = new Key({ xprv: this.settings.xprv });
@@ -299,15 +258,15 @@ class Jeeves extends Hub {
         Index: {
           route: '/',
           components: {
-            list: 'jeeves-index',
-            view: 'jeeves-index'
+            list: 'sensemaker-index',
+            view: 'sensemaker-index'
           }
         },
         Service: {
           route: '/services',
           components: {
-            list: 'jeeves-index',
-            view: 'jeeves-index'
+            list: 'sensemaker-index',
+            view: 'sensemaker-index'
           }
         }
       },
@@ -328,7 +287,7 @@ class Jeeves extends Hub {
     this.sources = {};
     this.workers = [];
     this.changes = new Logger({
-      name: 'jeeves',
+      name: 'sensemaker',
       path: './stores'
     });
 
@@ -344,7 +303,6 @@ class Jeeves extends Hub {
     });
 
     // Agent Collection
-    this.lennon = new Agent({ name: 'LENNON', rules: this.settings.rules, prompt: `You are LennonAI, designed to come up with a list of relevant citations of cases and statutes.  Use analytical reasoning to determine the best historical cases to cite, including text from the arguments and closing opinions.`, openai: this.settings.openai });
     this.alpha = new Agent({ name: 'ALPHA', host: null, prompt: this.settings.prompt, openai: this.settings.openai });
     this.beta = new Agent({ name: 'BETA', model: this.settings.ollama.model, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
     this.gamma = new Agent({ name: 'GAMMA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
@@ -363,18 +321,13 @@ class Jeeves extends Hub {
     // NOTE: these are tested with `llama3` but not other models
     this.outliner = new Agent({ name: 'OUTLINER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are OutlinerAI, an artificial intelligence (AI) designed to generate a list of section headers for a document to be written by other drafting AIs.  For each request, list all headings sequentially in an array, with each heading as an object containing `number`, `content` and `depth` properties.  Your responses should use the following template:\n```\n{\n  "type": "DocumentOutline",\n  "content": [\n    {\n      "number": 1,\n      "content": "Section 1",\n      "depth": 1\n    }\n  ]\n}\n```' });
     this.drafter = new Agent({ name: 'DRAFTER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are DrafterAI, an artificial intelligence (AI) designed to draft sections of documents for later composition into complete documents.  For each request, generate the highest quality, most accurate and compelling text for the request.  Do not pretext the generated content with any decoration or explanation, simply produce the content.  You only ever produce the desired section, not the entire document, and you should expect your response to be concatenated verbatim to other sections for the complete document.  Respond using Markdown.' });
-    this.citer = new Agent({ name: 'CITER', rules: this.settings.rules, prompt: 'You are CiterAI, designed to produce the correct legal citation for a specific case.  Respond using JSON.' });
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Novo database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
+    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
     this.usa = new Agent({ name: 'USA', model: this.settings.ollama.model, prompt: this.settings.prompt, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure });
     this.proofreader = new Agent({ name: 'PROOFREADER', prompt: 'You are ProofreaderAI, designed to correct the grammar and spelling of a given text.  Respond using Markdown.' });
 
     // Pipeline Datasources
     this.datasources = {
-      bitcoin: { name: 'Bitcoin' },
-      courtlistener: { name: 'CourtListener' },
-      harvard: { name: 'Harvard' },
-      pacer: { name: 'PACER' },
-      statutes: { name: 'Statutes' }
+      bitcoin: { name: 'Bitcoin' }
     };
 
     // Streaming
@@ -424,7 +377,7 @@ class Jeeves extends Hub {
         min: 8,
         max: 128,
         afterCreate: (conn, done) => {
-          // console.debug('[JEEVES]', '[DB]', 'Connection created.');
+          // console.debug('[SENSEMAKER:CORE]', '[DB]', 'Connection created.');
           done(null, conn);
         }
       }
@@ -434,7 +387,7 @@ class Jeeves extends Hub {
 
     // Stop case
     /* process.on('exit', async () => {
-      console.warn('Jeeves is shutting down...');
+      console.warn('Sensemaker is shutting down...');
       await this.stop();
     }); */
 
@@ -476,7 +429,7 @@ class Jeeves extends Hub {
   }
 
   commit () {
-    // console.debug('[JEEVES]', '[COMMIT]', 'Committing state:', this._state);
+    // console.debug('[SENSEMAKER:CORE]', '[COMMIT]', 'Committing state:', this._state);
     const commit = new Actor({
       type: 'Commit',
       object: {
@@ -484,7 +437,7 @@ class Jeeves extends Hub {
       }
     });
 
-    // console.warn('Jeeves is attempting a safe shutdown...');
+    // console.warn('Sensemaker is attempting a safe shutdown...');
     // TODO: safe shutdown
     this.emit('commit', commit);
 
@@ -593,8 +546,8 @@ class Jeeves extends Hub {
         // Alert Tech
         await this.email.send({
             from: 'agent@trynovo.com',
-            to: 'tech@jeeves.dev',
-            subject: `[ALERT] [JEEVES] Jeeves Alert`,
+            to: 'tech@sensemaker.dev',
+            subject: `[ALERT] [SENSEMAKER:CORE] Sensemaker Alert`,
             html: message
         });
         console.debug('Alert email sent successfully!');
@@ -616,14 +569,14 @@ class Jeeves extends Hub {
     return new Promise((resolve, reject) => {
       //nahuel: the only change i made in this is that actually the JSON.parse() wasnt calling response correctly
       this.outliner.query({ query: message }).then((response) => {
-        console.debug('[NOVO]', 'Generated Document Outline (1st Pass):', response);
+        console.debug('[SENSEMAKER:CORE]', 'Generated Document Outline (1st Pass):', response);
 
         let outline = null;
 
         try {
           outline = JSON.parse(response.content);
         } catch (exception) {
-          console.error('[NOVO]', 'First pass generated incorrect JSON:', outline);
+          console.error('[SENSEMAKER:CORE]', 'First pass generated incorrect JSON:', outline);
         }
 
         resolve(outline);
@@ -670,7 +623,7 @@ class Jeeves extends Hub {
   async beat () {
     const now = (new Date()).toISOString();
     const start = JSON.parse(JSON.stringify(this.clock));
-    console.debug('[JEEVES]', '[BEAT]', 'Start:', start);
+    console.debug('[SENSEMAKER:CORE]', '[BEAT]', 'Start:', start);
 
     // TODO: remove async, use local state instead
     // i.e., queue worker job
@@ -686,7 +639,7 @@ class Jeeves extends Hub {
     this.worker.addJob({
       type: 'ScanCourtListener',
       params: [
-        { query: 'Cases not yet synchronized with Jeeves.' }
+        { query: 'Cases not yet synchronized with Sensemaker.' }
       ]
     });
 
@@ -745,24 +698,24 @@ class Jeeves extends Hub {
       const now = new Date();
       const created = now.toISOString();
 
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial query:', request.query);
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial messages:', request.messages);
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial timeout:', request.timeout);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial messages:', request.messages);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial timeout:', request.timeout);
 
       // Store user request
       const localMessageIDs = await this.db('messages').insert({ conversation_id: request.conversation_id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
       const responseID = localMessageIDs[0];
-      const responseName = `jeeves/messages/${responseID}`;
+      const responseName = `sensemaker/messages/${responseID}`;
       const responseObject = new Actor({ name: responseName });
-      if (this.settings.debug) console.debug('[JEEVES]', '[BASICREQUEST]', 'Created response placeholder message:', localMessageIDs);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BASICREQUEST]', 'Created response placeholder message:', localMessageIDs);
 
       // Prepare Metadata
       let messages = [];
 
       // Conversation Resume
       if (request.conversation_id) {
-        console.debug('[NOVO]', '[BASICREQUEST]', 'Resuming conversation:', request.conversation_id);
+        console.debug('[SENSEMAKER:CORE]', '[BASICREQUEST]', 'Resuming conversation:', request.conversation_id);
         // Resume conversation
         const prev = await this._getConversationMessages(request.conversation_id);
         messages = prev.map((x) => {
@@ -786,10 +739,10 @@ class Jeeves extends Hub {
 
       // Send Query
       this.sensemaker.query({ query: query, messages: messages }).catch((error) => {
-        console.debug('[NOVO]', '[BASICREQUEST]', 'Sensemaker error:', error);
+        console.debug('[SENSEMAKER:CORE]', '[BASICREQUEST]', 'Sensemaker error:', error);
         reject(error);
       }).then(async (response) => {
-        console.debug('[NOVO]', '[BASICREQUEST]', 'Response:', response);
+        console.debug('[SENSEMAKER:CORE]', '[BASICREQUEST]', 'Response:', response);
         // Update database with completed response
         await this.db('messages').where({ id: responseID }).update({
           status: 'ready',
@@ -811,7 +764,7 @@ class Jeeves extends Hub {
     // TODO: receive from message parameter
     const localMessageIDs = await this.db('messages').insert({ conversation_id: message.conversation_id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
     const responseID = localMessageIDs[0];
-    const responseName = `jeeves/messages/${responseID}`;
+    const responseName = `sensemaker/messages/${responseID}`;
     const responseObject = new Actor({ name: responseName });
     return responseObject;
   }
@@ -828,10 +781,10 @@ class Jeeves extends Hub {
       const now = new Date();
       const created = now.toISOString();
 
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Handling request:', request);
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial query:', request.query);
-      if (this.settings.debug) console.trace('[NOVO]', '[PIPELINE]', 'Initial messages:', request.messages);
-      if (this.settings.debug) console.debug('[NOVO]', '[PIPELINE]', 'Initial timeout:', request.timeout);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
+      if (this.settings.debug) console.trace('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial messages:', request.messages);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial timeout:', request.timeout);
 
       // Add Request to Database
       // TODO: assign `then` to allow async processing
@@ -850,7 +803,7 @@ class Jeeves extends Hub {
         content: `${this.settings.name} is researching your question...`
       });
 
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Created response placeholder message:', responseMessage);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Created response placeholder message:', responseMessage);
 
       // Create Request Message
       /* const message = Message.fromVector(['TimedRequest', JSON.stringify({
@@ -863,7 +816,7 @@ class Jeeves extends Hub {
       this.emit('request', { id: inserted [0] });
 
       // TODO: prepare maximum token length
-      if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request:', request);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Request:', request);
 
       // Pipeline Booleans
       let includeCases = true;
@@ -871,7 +824,7 @@ class Jeeves extends Hub {
 
       // Get Matter, if relevant
       if (request.matter_id) {
-        console.trace('[NOVO]', '[PIPELINE]', 'Request has Matter ID:', request.matter_id);
+        console.trace('[SENSEMAKER:CORE]', '[PIPELINE]', 'Request has Matter ID:', request.matter_id);
         includeCases = false;
         includeMatter = true;
 
@@ -910,19 +863,17 @@ class Jeeves extends Hub {
 
       // Get the recommended action
       this.router.chooseAction({ action, request }).catch((error) => {
-        console.error('[NOVO]', '[PIPELINE]', 'Coordinator error:', error);
+        console.error('[SENSEMAKER:CORE]', '[PIPELINE]', 'Coordinator error:', error);
       }).then(async (decision) => {
-        console.debug('[NOVO]', '[PIPELINE]', 'Coordinator decision:', decision);
+        console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Coordinator decision:', decision);
         const action = decision?.action;
         switch (action) {
           default:
-            console.debug('[NOVO]', '[PIPELINE]', 'Unhandled action:', action);
+            console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Unhandled action:', action);
             break;
         }
 
         // RAG
-        const cases = await this._vectorSearchCases(request.query, 10);
-        // const recently = await this.db('cases').orderBy('created_at', 'desc').limit(5);
         const recently = [];
 
         // Variables
@@ -940,7 +891,7 @@ class Jeeves extends Hub {
           try {
             searchterm = await this.searcher.query({ query: `---\nquery:\n  ${request.query}\nmatter: ${JSON.stringify(request.matter || null)}\n---\nConsidering the metadata, what search term do you recommend?  Remember, return only the search term.`, tools: null, messages: request.messages });
             if (this.settings.debug) this.emit('debug', `Search Term: ${JSON.stringify(searchterm, null, '  ')}`);
-            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
+            console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Search Term content:', searchterm.content);
 
             if (!searchterm.content) searchterm.content = '';
 
@@ -959,29 +910,21 @@ class Jeeves extends Hub {
               searchterm.content = searchterm.content.substr(0, 50);
             }
 
-            console.debug('[NOVO]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
+            console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
 
             // Search for cases
             topical = await this._vectorSearchCases(searchterm.content);
           } catch (exception) {
-            console.error('[NOVO]', '[PIPELINE]', 'Search Exception:', exception);
+            console.error('[SENSEMAKER:CORE]', '[PIPELINE]', 'Search Exception:', exception);
           }
         }
         // END EXPANDER
 
         // Compose YAML Frontmatter
-        // Case List
-        const caseList = cases
-          .concat(recently)
-          .concat(topical)
-          .map((x) => `    - [novo/cases/${x.id}] "${x.title || 'undefined title'}" ${x.decision_date || ''} "${x.citation || 'undefined citation'}" ${x.harvard_case_law_court_name} ${JSON.stringify(x.summary || '')}`)
-          .join('\n');
-
         // TODO: reduce matter metadata to only relevant fields, use summary fields to compress context
-        console.debug('[NOVO]', '[TIMEDREQUEST]', '[META]', 'Matter:', request.matter);
+        console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[META]', 'Matter:', request.matter);
 
         // Format Metadata
-        const caseCount = await this.db('cases').count('id as count').first();
         const meta = `metadata:\n` +
           `  created: ${created}\n` +
           `  clock: ${this.clock}\n` +
@@ -991,9 +934,8 @@ class Jeeves extends Hub {
           // `  topics: ${searchterm.content || ''}\n` +
           // `  words: ${words.slice(0, 10).join(', ') + ''}\n` +
           // `  documents: null\n` +
-          (includeCases) ? `  cases:\n` + caseList + `\n` : '' +
           // `  counts:\n` +
-          // `    cases: ` + caseCount.count +
+          // `    documents: ` + documentCount.count +
           `\n`;
 
         // Format Query Text
@@ -1007,17 +949,17 @@ class Jeeves extends Hub {
         const requestTokenCount = this.estimateTokens(request.query);
         const estimatedCost = requestTokenCount * 0.0001;
 
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta:', meta);
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
-        console.debug('[NOVO]', '[TIMEDREQUEST]', 'Request size', query.length);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Meta:', meta);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Meta Token Count:', metaTokenCount);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Request Token Count:', requestTokenCount);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Available Tokens:', AGENT_MAX_TOKENS - metaTokenCount - requestTokenCount);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Estimated query embedding cost:', estimatedCost);
+        console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Request size', query.length);
 
         let messages = [];
 
         if (request.conversation_id) {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Resuming conversation:', request.conversation_id);
+          console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Resuming conversation:', request.conversation_id);
           // Resume conversation
           const prev = await this._getConversationMessages(request.conversation_id);
           messages = prev.map((x) => {
@@ -1034,12 +976,12 @@ class Jeeves extends Hub {
         }
 
         if (request.matter_id) {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Matter ID:', request.matter_id);
-          console.debug('[NOVO]', '[TIMEDREQUEST]', 'Matter:', request.matter);
+          console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Matter ID:', request.matter_id);
+          console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Matter:', request.matter);
           messages = messages.concat([{ role: 'user', content: `Questions will be pertaining to ${request.matter.title}:\n\n\`\`\`\n${JSON.stringify(request.matter)}\n\`\`\`` }]);
         }
 
-        if (this.settings.debug) console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Matter Messages:', messages);
 
         // Prompt
         messages.unshift({
@@ -1047,36 +989,36 @@ class Jeeves extends Hub {
           content: this.settings.prompt
         });
 
-        if (this.settings.debug) this.emit('debug', `[NOVO] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
-        if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
+        if (this.settings.debug) this.emit('debug', `[SENSEMAKER:CORE] [TIMEDREQUEST] Messages to evaluate: ${JSON.stringify(messages)}`);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Agents to test:', Object.keys(this.agents));
 
         // TODO: Compressor
         // Use a reliable high-context agent to compress the query
 
         /* this.rag.query({ query: `Generate a SQL query for the following user request:\n\`\`\`\n${request.query}\n\`\`\`\n\nRemember, only ever respond with a SQL query that can be executed by me to return the results.  Do not wrap it in Markdown or a code block, the response must be only the raw query.`, messages }).catch((exception) => {
-          console.error('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Exception:', exception);
+          console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[RAG]', 'Exception:', exception);
         }).then(async (ragged) => {
           console.debug('RAGGED:', ragged);
           let results = null;
           try {
             results = await this.db.raw(ragged.content);
           } catch (exception) {
-            console.error('[NOVO]', '[RAGGER]', 'Exception:', exception);
-            console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Messages to regenerate with:', messages);
+            console.error('[SENSEMAKER:CORE]', '[RAGGER]', 'Exception:', exception);
+            console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[RAG]', 'Messages to regenerate with:', messages);
             this.rag.query({ query: `Your query failed:\n\`\`\`\n${exception.message}\n\`\`\`\n\nTry again, making sure to only return a valid SQL query given the provided schema.`, messages }).catch((exception) => {
-              console.error('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Secondary Exception:', exception);
+              console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[RAG]', 'Secondary Exception:', exception);
             }).then((ultimate) => {
-              console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Ultimate:', ultimate);
+              console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[RAG]', 'Ultimate:', ultimate);
             });
           }
 
-          console.debug('[NOVO]', '[TIMEDREQUEST]', '[RAG]', 'Results:', results);
+          console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[RAG]', 'Results:', results);
         }); */
 
         // Initiate Network Query
         const networkPromises = Object.keys(this.agents).map((name) => {
-          // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
-          // console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
+          // console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent name:', name);
+          // console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'Agent:', this.agents[name]);
           return this.agents[name].query({ query, messages, /* requery: true */ });
         }).concat([
           // this.chatgpt.query({ query, messages, requery: true }),
@@ -1088,12 +1030,12 @@ class Jeeves extends Hub {
           Promise.allSettled(networkPromises),
           new Promise((resolve, reject) => setTimeout(reject, timeout, new Error('Timeout!')))
         ]).catch((error) => {
-          console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
+          console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Error:', error);
         }).then(async (results) => {
-          console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[DEBUG]', 'Results:', results);
-          if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
+          console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', '[DEBUG]', 'Results:', results);
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', '[RESOLVER]', 'Results:', results);
           if (!results) {
-            console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'No results!');
+            console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'No results!');
             return;
           }
 
@@ -1102,14 +1044,14 @@ class Jeeves extends Hub {
           // TODO: re-enable extractor for cards; file cards, case cards, jurisdiction cards, etc.
           /* for (let i = 0; i < options.length; i++) {
             const option = options[i];
-            if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'Option:', option);
             /* this.extractor.query({
               query: `What cases are mentioned in this message:\n\`\`\`\n${JSON.stringify(option, null, '  ')}\n\`\`\``,
               json: true
             }).catch((exception) => {
-              console.error('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extractor Exception:', exception);
+              console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'Extractor Exception:', exception);
             }).then((extracted) => {
-              console.debug('[NOVO]', '[TIMEDREQUEST]', '[NETWORK]', 'Extracted:', extracted);
+              console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', '[NETWORK]', 'Extracted:', extracted);
               // TODO: reject any answers including case titles not found in our database
               // problem: extractor may not extract useful case titles
             });
@@ -1120,12 +1062,12 @@ class Jeeves extends Hub {
             messages: messages,
             query: 'Answer the user query using the various answers provided by the agent network.  Use deductive logic and reasoning to verify the information contained in each, and respond as if their answers were already incorporated in your core knowledge.  The existence of the agent network, or their names, should not be revealed to the user.  Write your response as if they were elements of your own memory.\n\n```\nquery: ' + query + '\nagents:\n' + agentList + `\n\`\`\``,
           }).catch((exception) => {
-            console.error('[NOVO]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
+            console.error('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Summarizer Exception:', exception);
             return reject(exception);
           }).then(async (summarized) => {
-            if (this.settings.debug) console.debug('[NOVO]', '[TIMEDREQUEST]', 'Summarized:', summarized);
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Summarized:', summarized);
             if (!summarized) {
-              console.trace('[NOVO]', '[TIMEDREQUEST]', 'No summarized response!', summarized);
+              console.trace('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'No summarized response!', summarized);
               return reject(new Error('No summarized response!'));
             }
 
@@ -1149,13 +1091,13 @@ class Jeeves extends Hub {
                 updated_at: this.db.fn.now()
               });
 
-              console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
+              console.debug('[SENSEMAKER:CORE]', '[HTTP]', '[MESSAGE]', 'Updated message:', updated);
               this.emit('response', {
                 id: responseIDs[0],
                 content: summarized.content
               });
             } catch (exception) {
-              console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
+              console.error('[SENSEMAKER:CORE]', '[HTTP]', '[MESSAGE]', 'Error inserting response:', exception);
             }
 
             // TODO: re-enable case cards, standardize to other card formats
@@ -1164,10 +1106,10 @@ class Jeeves extends Hub {
             const extracted = await this.extractor.query({
               query: `$CONTENT\n\`\`\`\n${summarized.content}\n\`\`\``
             });
-            console.debug('[JEEVES]', '[HTTP]', 'Got extractor output:', extracted);
+            console.debug('[SENSEMAKER:CORE]', '[HTTP]', 'Got extractor output:', extracted);
 
             if (extracted && extracted.content) {
-              console.debug('[JEEVES]', '[EXTRACTOR]', 'Extracted:', extracted);
+              console.debug('[SENSEMAKER:CORE]', '[EXTRACTOR]', 'Extracted:', extracted);
               try {
                 caseCards = JSON.parse(extracted.content).map((x) => {
                   const actor = new Actor({ name: x });
@@ -1180,18 +1122,18 @@ class Jeeves extends Hub {
                   };
                 });
 
-                console.debug('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
+                console.debug('[SENSEMAKER:CORE]', '[HTTP]', '[MESSAGE]', 'Case Cards:', caseCards)
                 // Find each case in the database and reject if not found
                 const updated = await this.db('messages').where({ id: newMessage[0] }).update({
                   cards: JSON.stringify(caseCards.map((x) => x.content.id))
                 });
               } catch (exception) {
-                console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+                console.error('[SENSEMAKER:CORE]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
               }
             } */
 
             const end = new Date();
-            console.debug('[JEEVES]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
+            console.debug('[SENSEMAKER:CORE]', '[TIMEDREQUEST]', 'Duration:', (end.getTime() - now.getTime()) / 1000, 'seconds.');
 
             const answer = merge({}, summarized, {
               cards: [] || caseCards
@@ -1204,37 +1146,8 @@ class Jeeves extends Hub {
     });
   }
 
-  async findCaseByName (name) {
-    const instance = await this.db('cases').where('name', name).first();
-    console.debug('[JEEVES]', 'Found case by name:', instance);
-    return instance;
-  }
-
-  async findCourtByName (name) {
-    const court = await this.db('courts').where('name', name).first();
-    const result = await Promise.race([
-      new Promise(async (resolve, reject) => {
-        try {
-          const instance = await this.courtlistener.db('search_court').select('*').where('name', name).first();
-          console.debug('[NOVO]', '[COURT]', 'Found court by name:', instance);
-          resolve(instance);
-        } catch (exception) {
-          console.error('[NOVO]', '[COURT]', 'Error searching court:', exception);
-          reject(exception);
-        }
-      })
-    ]);
-
-    // console.debug('[JEEVES]', 'Found court by name:', court);
-    console.debug('[JEEVES]', 'Court search by name, results:', result);
-
-    return court;
-  }
-
   async _getState () {
     // WARNING: this loads the int32 for every entity in the database
-    const cases = await this.db('cases').select('id').from('cases');
-    const courts = await this.db('courts').select('id').from('courts');
     const conversations = await this.db('conversations').select('id').from('conversations');
     const documents = await this.db('documents').select('id').from('documents');
     const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
@@ -1254,17 +1167,9 @@ class Jeeves extends Hub {
     }
 
     const state = {
-      cases: {
-        total: cases.length,
-        // content: cases.map(x => x.id)
-      },
       conversations: {
         total: conversations.length,
         // content: conversations.map(x => x.id)
-      },
-      courts: {
-        total: courts.length,
-        // content: courts.map(x => x.id)
       },
       documents: {
         total: documents.length,
@@ -1294,50 +1199,31 @@ class Jeeves extends Hub {
   async processData (limit = 1000) {
     const now = new Date();
     const stats = { total: 0, processed: 0, unprocessed: 0 };
-    const other = await this._getUnprocessedCaseStats();
-    const chunk = await this._getUnprocessedCases(limit);
+    /* 
+    // const other = await this._getUnprocessedCaseStats();
+    // const chunk = await this._getUnprocessedCases(limit);
 
-    console.debug('[JEEVES]', '[ETL]', 'Stats:', other, stats);
+    console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Stats:', other, stats);
 
     const start = new Date();
     for (let i = 0; i < chunk.length; i++) {
       const instance = chunk[i];
-      console.debug('[JEEVES]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
-      // const nativeEmbedding = await this._generateEmbedding(`[novo/cases/${instance.id}] ${instance.title}`);
+      console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      // const nativeEmbedding = await this._generateEmbedding(`[sensemaker/cases/${instance.id}] ${instance.title}`);
       const titleEmbedding = await this._generateEmbedding(instance.title);
       await this.db('cases').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
       stats.processed++;
     }
 
-    console.debug('[JEEVES]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
-    console.debug('[JEEVES]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
-
+    console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    console.debug('[SENSEMAKER:CORE]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
+    */
     return this;
-  }
-
-  async _getUnprocessedCases (limit = 20) {
-    const cases = await this.db('cases').select('id', 'title', 'summary', 'title_embedding_id', 'body_embedding_id').where(function () {
-      this.whereNull('title_embedding_id')// .orWhereNull('body_embedding_id')
-    }).limit(limit);
-
-    return cases;
-  }
-
-  async _getUnprocessedCaseStats () {
-    const caseCount = await this.db('cases').count('id as count').first();
-    const withTitleEmbeddings = await this.db('cases').count('id as count').whereNotNull('title_embedding_id').first();
-    const missingTitleEmbeddings = await this.db('cases').count('id as count').whereNull('title_embedding_id').first();
-
-    return {
-      total: caseCount,
-      withTitleEmbeddings: withTitleEmbeddings,
-      missingTitleEmbeddings: missingTitleEmbeddings
-    };
   }
 
   async onJobCompleted (message) {
     const { job, result } = JSON.parse(message);
-    console.debug('[NOVO] Job completed:', job, result);
+    console.debug('[SENSEMAKER:CORE] Job completed:', job, result);
 
     //job.method gives the job type, like 'IngestFile'
     //job.params[0] will give us the file/document id
@@ -1381,11 +1267,11 @@ class Jeeves extends Hub {
             this.http.broadcast(messageDocument);
             break;
           default:
-            console.log('[NOVO] Unhandled complete Job Method: ', job.method);
+            console.log('[SENSEMAKER:CORE] Unhandled complete Job Method: ', job.method);
             break;
         }
       } catch (exception) {
-        console.error('[NOVO] Redis subscriber error:', exception);
+        console.error('[SENSEMAKER:CORE] Redis subscriber error:', exception);
       }
     }
   }
@@ -1404,7 +1290,7 @@ class Jeeves extends Hub {
   }
 
   async query (query) {
-    console.debug('[JEEVES]', '[QUERY]', 'Received query:', query);
+    console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Received query:', query);
     const collections = {
       courts: {}
     };
@@ -1416,7 +1302,7 @@ class Jeeves extends Hub {
       this._searchCourts(query)
     ]);
 
-    console.debug('[JEEVES]', '[QUERY]', 'Candidates:', candidates);
+    console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Candidates:', candidates);
 
     return candidates;
   }
@@ -1432,9 +1318,9 @@ class Jeeves extends Hub {
   }
 
   async prime () {
-    console.debug('[NOVO]', '[PRIME]', 'Priming...');
+    console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Priming...');
     for (let i = 0; i < this.settings.ollama.models.length; i++) {
-      console.debug('[NOVO]', '[PRIME]', 'Priming:', this.settings.ollama.models[i]);
+      console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Priming:', this.settings.ollama.models[i]);
       const prime = await fetch(`http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/generate`, {
         method: 'POST',
         headers: {
@@ -1445,7 +1331,7 @@ class Jeeves extends Hub {
       });
 
       // TODO: check for successful prime
-      console.debug('[NOVO]', '[PRIME]', 'Primed:', await prime.json());
+      console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
     }
   }
 
@@ -1457,7 +1343,7 @@ class Jeeves extends Hub {
   async retrieveFile (id) {
     const file = await this.db('files').where('id', id).first();
     const content = fs.readFileSync(file.path);
-    // const actor = new Actor({ name: `jeeves/users/${file.creator}` });
+    // const actor = new Actor({ name: `sensemaker/users/${file.creator}` });
 
     return {
       id: file.id,
@@ -1469,19 +1355,16 @@ class Jeeves extends Hub {
   }
 
   async search (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Received search request:', request);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Received search request:', request);
     const redisResults = await this.trainer.search(request);
-    console.debug('[JEEVES]', '[SEARCH]', 'Redis Results:', redisResults);
-
-    const cases = await this._searchCases(request);
-    // const courts = await this._searchCourts(request);
-    // const documents = await this._searchDocuments(request);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Redis Results:', redisResults);
+    const documents = await this._searchDocuments(request);
     // const people = await this._searchPeople(request);
 
     const elements = [];
 
-    for (let i = 0; i < cases.length; i++) {
-      const instance = cases[i];
+    for (let i = 0; i < documents.length; i++) {
+      const instance = documents[i];
       const element = { type: 'Case', content: instance };
       elements.push(element);
     }
@@ -1515,7 +1398,7 @@ class Jeeves extends Hub {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       const results = await this.db('messages').where('content', 'like', `%${token}%`);
-      console.debug('[JEEVES]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
+      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
     }
 
     const messages = await this.db('messages').select('id').where('content', 'like', `%${request.query}%`);
@@ -1524,7 +1407,7 @@ class Jeeves extends Hub {
       currentPage: 1
     });
 
-    console.debug('[JEEVES]', '[SEARCH]', '[CONVERSATIONS]', 'Found conversations:', conversations);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found conversations:', conversations);
 
     // Result Constructor
     const elements = [];
@@ -1569,13 +1452,17 @@ class Jeeves extends Hub {
    */
   async start () {
     const self = this;
+
+    // Load HTML document from disk to serve from memory
+    // TODO: add filesystem watcher for live updates (low priority)
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
 
     // Create all worker agents
-    console.debug('[NOVO]', 'Creating network:', Object.keys(this.settings.agents));
+    console.debug('[SENSEMAKER:CORE]', 'Creating network:', Object.keys(this.settings.agents));
+
     for (const [name, agent] of Object.entries(this.settings.agents)) {
       const configuration = merge({}, agent, { name: name, debug: this.settings.debug });
-      console.debug('[NOVO]', 'Creating network agent:', `[${(configuration.fabric) ? 'FABRIC' : (configuration.secure) ? 'HTTPS' : 'HTTP' }]`, name, configuration.host, configuration.port, configuration.secure);
+      console.debug('[SENSEMAKER:CORE]', 'Creating network agent:', `[${(configuration.fabric) ? 'FABRIC' : (configuration.secure) ? 'HTTPS' : 'HTTP' }]`, name, configuration.host, configuration.port, configuration.secure);
       this.agents[name] = this.createAgent(configuration);
     }
 
@@ -1583,7 +1470,7 @@ class Jeeves extends Hub {
     // TODO: define these with a map / loop
     // Document Ingest
     /* this.queue._registerMethod('IngestDocument', async (...params) => {
-      console.debug('[NOVO]', '[QUEUE]', 'Ingesting document...', params);
+      console.debug('[SENSEMAKER:CORE]', '[QUEUE]', 'Ingesting document...', params);
       const document = await this.db('documents').where('id', params[0]).first();
       const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
       return { status: 'COMPLETED', ingested };
@@ -1598,7 +1485,7 @@ class Jeeves extends Hub {
     try {
       await this.trainer.start();
     } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Trainer:', exception);
+      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Trainer:', exception);
       process.exit();
     }
 
@@ -1636,7 +1523,7 @@ class Jeeves extends Hub {
     try {
       await this.queue.start();
     } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis Queue:', exception);
+      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Redis Queue:', exception);
       process.exit();
     }
 
@@ -1644,19 +1531,19 @@ class Jeeves extends Hub {
     try {
       await this.coordinator.start();
     } catch (exception) {
-      console.error('[NOVO]', '[COORDINATOR]', 'Error starting Coordinator:', exception);
+      console.error('[SENSEMAKER:CORE]', '[COORDINATOR]', 'Error starting Coordinator:', exception);
     }
 
     // Redis Cache
     try {
       await this.redis.connect();
     } catch (exception) {
-      console.error('[JEEVES]', '[REDIS]', 'Error starting Redis Cache:', exception);
+      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Redis Cache:', exception);
       process.exit();
     }
 
     /* this.db.on('error', (...error) => {
-      console.error('[JEEVES]', '[DB]', '[ERROR]', ...error);
+      console.error('[SENSEMAKER:CORE]', '[DB]', '[ERROR]', ...error);
     }); */
 
     // Register Services
@@ -1676,101 +1563,20 @@ class Jeeves extends Hub {
 
     // if (this.settings.statutes.enable && this.statutes) {
     //   this.statutes.start().then((output) => {
-    //     console.debug('[JEEVES]', '[STATUTES]', 'Started:', output);
+    //     console.debug('[SENSEMAKER:CORE]', '[STATUTES]', 'Started:', output);
     //   });
     // }
 
     // Primary Worker
     // Job Types
-    this.worker.register('SearchCourts', async (...params) => {
-      console.debug('[WORKER]', 'Searching courts:', params);
-      return this._searchCourts(...params);
+    this.worker.register('ScanLocal', async (...params) => {
+      console.debug('[WORKER]', 'Scanning Local:', params);
+      const state = this.fs.sync();
+      console.debug('[WORKER]', 'Local State:', state);
     });
 
-    this.worker.register('DownloadMissingRECAPDocument', async (...params) => {
-      console.debug('[WORKER]', 'Downloading missing RECAP document:', params);
-      const target = await self.db('documents')
-        .where(function () {
-          this.where('pdf_acquired', 0).orWhereNull('pdf_acquired');
-        })
-        .whereNotNull('courtlistener_filepath_ia')
-        .where(self.db.raw('LENGTH(courtlistener_filepath_ia)'), '>', 0)
-        .first();
-
-      if (!target) {
-        console.debug('No target found!');
-        return;
-      };
-
-      const url = target.courtlistener_filepath_ia;
-      const doc = await fetch(url);
-      const blob = await doc.blob();
-      const buffer = await blob.arrayBuffer();
-      const body = Buffer.from(buffer);
-
-      try {
-        fs.writeFileSync(`stores/recap/${target.courtlistener_id}.pdf`, body);
-      } catch (exception) {
-        this.emit('error', `Worker could not write RECAP file: ${exception}`);
-        return;
-      }
-
-      try {
-        await self.db('documents').update({
-          pdf_acquired: true
-        }).where('courtlistener_id', target.courtlistener_id);
-      } catch (exception) {
-        this.emit('error', `Worker could not update database: ${params} ${exception}`);
-      }
-    });
-
-    this.worker.register('Ingest', async (...params) => {
-      console.debug('[WORKER]', 'Ingesting:', params);
-      try {
-        await self.db('cases').update({
-          last_harvard_crawl: this.db.raw('now()')
-        }).where('id', params[2].id);
-      } catch (exception) {
-        this.emit('error', `Worker could not update database: ${params} ${exception}`);
-      }
-
-      const doc = await fetch(params[0], {
-        headers: {
-          'Authorization': `Token ${this.settings.harvard.token}`
-        }
-      });
-
-      const blob = await doc.blob();
-      const buffer = await blob.arrayBuffer();
-      const body = Buffer.from(buffer);
-
-      try {
-        fs.writeFileSync(params[1], body);
-      } catch (exception) {
-        this.emit('error', `Worker could not write file ${params[1]} ${params[2]} ${exception}`);
-        return;
-      }
-
-      try {
-        await self.db('cases').update({
-          pdf_acquired: true
-        }).where('id', params[2].id);
-      } catch (exception) {
-        this.emit('error', `Worker could not update database: ${params} ${exception}`);
-      }
-
-      console.debug('Ingest complete:', params[1]);
-    });
-
-    this.worker.register('ScanCourtListener', async (...params) => {
-      console.debug('[WORKER]', 'Scanning CourtListener:', params);
-      // console.debug('SCANNING COURT LISTENER WITH PARAMS:', params);
-      /* try {
-        const dockets = await this.courtlistener.query('search_docket').select('*').limit(5);
-        console.debug('POSTGRES DOCKETS:', dockets.data);
-      } catch (exception) {
-        console.error('COURTLISTENER ERROR:', exception);
-      } */
+    this.worker.register('ScanRemotes', async (...params) => {
+      console.debug('[WORKER]', 'Scanning Remotes:', params);
     });
 
     // Worker Events
@@ -1793,10 +1599,9 @@ class Jeeves extends Hub {
     this.fabric.on('debug', this._handleFabricDebug.bind(this));
     this.fabric.on('log', (...log) => console.log(...log));
 
-    // Collect Jeeves-specific
+    // Collect Sensemaker-specific
     // Courts
     this.fabric.on('document', this._handleFabricDocument.bind(this));
-    this.fabric.on('court', this._handleFabricCourt.bind(this));
     this.fabric.on('person', this._handleFabricPerson.bind(this));
 
     // Matrix Events
@@ -1806,21 +1611,6 @@ class Jeeves extends Hub {
       this.matrix.on('error', this._handleMatrixError.bind(this));
     }
 
-    // PACER Events
-    this.pacer.on('debug', this._handlePACERDebug.bind(this));
-    this.pacer.on('court', this._handlePACERCourt.bind(this));
-
-    // Harvard Events
-    this.harvard.on('error', this._handleHarvardError.bind(this));
-    this.harvard.on('debug', this._handleHarvardDebug.bind(this));
-    this.harvard.on('warning', this._handleHarvardWarning.bind(this));
-    this.harvard.on('sync', this._handleHarvardSync.bind(this));
-    this.harvard.on('document', this._handleHarvardDocument.bind(this));
-    this.harvard.on('court', this._handleHarvardCourt.bind(this));
-    this.harvard.on('jurisdiction', this._handleHarvardJurisdiction.bind(this));
-    this.harvard.on('reporter', this._handleHarvardReporter.bind(this));
-    this.harvard.on('volume', this._handleHarvardVolume.bind(this));
-
     // OpenAI Events
     this.openai.on('error', this._handleOpenAIError.bind(this));
     this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
@@ -1828,173 +1618,14 @@ class Jeeves extends Hub {
     this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
     this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
 
-    // CourtListener Events
-    if (this.courtlistener) {
-      this.courtlistener.on('sync', (sync) => {
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[SYNC]', sync);
-      });
-
-      this.courtlistener.on('debug', (...debug) => {
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[DEBUG]', ...debug);
-      });
-
-      this.courtlistener.on('error', (...error) => {
-        console.error('[JEEVES]', '[COURTLISTENER]', '[ERROR]', ...error);
-      });
-
-      this.courtlistener.on('warning', (...warning) => {
-        console.warn('[JEEVES]', '[COURTLISTENER]', '[WARNING]', ...warning);
-      });
-
-      this.courtlistener.on('message', (message) => {
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[MESSAGE]', message);
-      });
-
-      this.courtlistener.on('document', this._handleCourtListenerDocument.bind(this));
-      this.courtlistener.on('court', async (court) => {
-        const actor = new Actor({ name: `courtlistener/courts/${court.id}` });
-        const target = await this.db('courts').where({ courtlistener_id: court.id }).first();
-        if (!target) {
-          await this.db('courts').insert({
-            fabric_id: actor.id,
-            slug: court.id,
-            start_date: court.start_date,
-            end_date: court.end_date,
-            courtlistener_id: court.id,
-            founded_date: court.start_date,
-            name: court.full_name,
-            short_name: court.short_name,
-            citation_string: court.citation_string,
-            jurisdiction: court.jurisdiction,
-            url: court.url
-          });
-        }
-      });
-
-      this.courtlistener.on('person', async (person) => {
-        const actor = new Actor({ name: `courtlistener/people/${person.id}` });
-        const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-        if (!target) {
-          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', '[PERSON]', 'No target found, inserting person:', person);
-          await this.db('people').insert({
-            fabric_id: actor.id,
-            courtlistener_id: person.id,
-            name_first: person.name_first,
-            name_middle: person.name_middle,
-            name_last: person.name_last,
-            name_suffix: person.name_suffix,
-            date_of_birth: person.date_dob,
-            date_of_death: person.date_dod,
-            birth_city: person.dob_city,
-            birth_state: person.dob_state,
-            death_city: person.dod_city,
-            death_state: person.dod_state
-          });
-        }
-      });
-
-      this.courtlistener.on('docket', this._handleCourtListenerDocket.bind(this));
-      this.courtlistener.on('opinioncluster', async (cluster) => {
-        const target = await this.db('opinions').where({ courtlistener_cluster_id: cluster.id }).first();
-
-        if (!target) {
-          await this.db('opinions').insert({
-            courtlistener_cluster_id: cluster.id,
-            scdb_id: (cluster.scdb_id) ? cluster.scdb_id : null,
-            date_created: cluster.date_created,
-            date_modified: cluster.date_modified,
-            date_filed: cluster.date_filed,
-            judges: cluster.judges,
-            case_name: cluster.case_name,
-            case_name_short: cluster.case_short,
-            case_name_full: cluster.case_name_full,
-            scdb_decision_direction: cluster.scdb_decision_direction,
-            scdb_votes_majority: cluster.scdb_votes_majority,
-            scdb_votes_minority: cluster.scdb_votes_minority,
-            source: cluster.source,
-            procedural_history: cluster.procedural_history,
-            attorneys: cluster.attorneys,
-            nature_of_suit: cluster.nature_of_suit,
-            posture: cluster.posture,
-            syllabus: cluster.syllabus,
-            precedential_status: cluster.precedential_status,
-            date_blocked: cluster.date_blocked,
-            blocked: cluster.blocked,
-            courtlistener_docket_id: cluster.docket_id,
-            date_filed_is_approximate: cluster.date_filed_is_approximate,
-            correction: cluster.correction,
-            cross_reference: cluster.cross_reference,
-            disposition: cluster.disposition,
-            filepath_json_harvard: cluster.filepath_json_harvard,
-            headnotes: cluster.headnotes,
-            history: cluster.history,
-            other_dates: cluster.other_dates,
-            summary: cluster.summary
-          });
-        }
-      });
-
-      this.courtlistener.on('opinion', async (opinion) => {
-        const actor = new Actor({ name: `courtlistener/opinions/${opinion.id}` });
-        const target = await this.db('opinions').where({ courtlistener_id: opinion.id }).first();
-
-        if (!target) {
-          await this.db('opinions').insert({
-            sha1: opinion.sha1,
-            date_created: opinion.date_created,
-            date_modified: opinion.date_modified,
-            courtlistener_id: opinion.id,
-            courtlistener_cluster_id: opinion.cluster_id,
-            courtlistener_download_url: opinion.download_url,
-            courtlistener_local_path: opinion.local_path,
-            plain_text: opinion.plain_text,
-            html: opinion.html,
-            html_lawbox: opinion.html_lawbox,
-            html_with_citations: opinion.html_with_citations,
-            extracted_by_ocr: opinion.extracted_by_ocr,
-            per_curiam: opinion.per_curiam,
-            page_count: opinion.page_count,
-            author_str: opinion.author_str,
-            joined_by_str: opinion.joined_by_str,
-            xml_harvard: opinion.xml_harvard,
-            html_anon_2020: opinion.html_anon_2020
-          });
-        }
-      });
-
-      this.courtlistener.on('person', async (person) => {
-        const actor = new Actor({ name: `courtlistener/people/${person.id}` });
-        const target = await this.db('people').where({ courtlistener_id: person.id }).first();
-        if (!target) {
-          await this.db('people').insert({
-            fabric_id: actor.id,
-            courtlistener_id: person.id,
-            name_first: person.name_first,
-            name_middle: person.name_middle,
-            name_last: person.name_last,
-            name_suffix: person.name_suffix,
-            date_of_birth: person.date_dob,
-            date_of_death: person.date_dod,
-            birth_city: person.dob_city,
-            birth_state: person.dob_state,
-            death_city: person.dod_city,
-            death_state: person.dod_state
-          });
-        }
-      });
-    }
-
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
-    this.extractor = new Agent({ name: 'ExtractorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseExtractorAI, designed extract a list of every case name in the input, and return it as a JSON array.  Use the most canonical, searchable, PACER-compatible format for each entry as possible, such that an exact text match could be returned from a database.  Only return the JSON string as your answer, without any Markdown wrapper.', openai: this.settings.openai });
-    this.validator = new Agent({ name: 'ValidatorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: 'You are CaseValidatorAI, designed to determine if any of the cases provided in the input are missing from the available databases.  You can use `$HTTP` to start your message to run an HTTP SEARCH against the local database, which will add a JSON list of results to the conversation.  For your final output, prefix it with `$RESPONSE`.', openai: this.settings.openai });
     this.summarizer = new Agent({ name: this.settings.name, listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: this.prompt, /* ...this.settings.gemini,  */openai: this.settings.openai });
 
     // ChatGPT
     this.chatgpt = new Agent({ name: 'GPT4', host: null, model: this.settings.openai.model, prompt: this.prompt, rules: this.settings.rules, openai: this.settings.openai });
 
     // RAG, Augmentor
-    const caseDef = await this.db.raw(`SHOW CREATE TABLE cases`);
     const documentDef = await this.db.raw(`SHOW CREATE TABLE documents`);
 
     // TODO: allow configurable whitelist
@@ -2005,19 +1636,16 @@ class Jeeves extends Hub {
       openai: this.settings.openai,
       prompt: 'You are AugmentorRAG, designed to create SQL queries which will return the most relevant results to the user\'s query.  You must not use any UPDATE or DELETE queries; ONLY use the SELECT command.  You can use JOIN to create a unified data view, but be sure that the user query and conversation history are considered carefully to generate the most relevant results.\n\n' +
         'Supported tables:\n' +
-        '  - cases\n' +
-        // '  - documents\n' +
+        '  - documents\n' +
         'Schema definitions:\n' +
         '```\n' +
-        caseDef[0][0]['Create Table'] + '\n' +
-        // documentDef[0][0]['Create Table'] + '\n' +
+        documentDef[0][0]['Create Table'] + '\n' +
         '```\n\n' +
         'Supported paths:\n' +
         '  - / (index, all object types)\n' +
-        '  - /cases (case database)\n' +
-        // '  - /documents (document database)\n' +
+        '  - /documents (document database)\n' +
         '\nOnly ever return a raw SQL query, to be executed by the caller.  Do not return any other content, such as Markdown or JSON.  Remember, your response will be executed directly by a SQL client, so ensure it is a valid query given the schema.\n' +
-        '\nFor example, if the user asks "How many cases are in the database?" you would respond with "SELECT count(id) as case_count FROM cases;" as an optimized query.'
+        '\nFor example, if the user asks "How many documents are in the database?" you would respond with "SELECT count(id) as document_count FROM documents;" as an optimized query.'
     });
 
     this.rag.on('debug', (...debug) => console.debug('[RAG]', ...debug));
@@ -2033,14 +1661,12 @@ class Jeeves extends Hub {
     await this.llama.start();
     await this.augmentor.start();
     await this.summarizer.start();
-    await this.extractor.start();
-    await this.validator.start();
     await this.rag.start();
 
     try {
       await this.prime();
     } catch (exception) {
-      console.error('[NOVO]', 'Error priming:', exception);
+      console.error('[SENSEMAKER:CORE]', 'Error priming:', exception);
     }
 
     // Start the logging service
@@ -2055,15 +1681,10 @@ class Jeeves extends Hub {
     if (this.email) await this.email.start();
     if (this.matrix) await this.matrix.start();
     // if (this.github) await this.github.start();
-    // if (this.discord) await this.discord.start();
+    if (this.discord) await this.discord.start();
 
     // Debug Services
     // await this.rag.start();
-
-    // Data Sources
-    if (this.settings.pacer.enable) await this.pacer.start();
-    if (this.settings.harvard.enable) await this.harvard.start();
-    if (this.settings.courtlistener.enable) await this.courtlistener.start();
 
     // AI Services
     // await this.rag.start();
@@ -2086,37 +1707,11 @@ class Jeeves extends Hub {
     // Worker
     await this.worker.start();
 
-    try {
-      const stats = await this.db('cases').count('id as count').first();
-      console.debug('[JEEVES]', 'Loaded', stats.count, 'cases.');
-    } catch (exception) {
-      console.error('[JEEVES]', 'Could not load cases:', exception);
-    }
-
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        const db = this.db;
-        const unknown = await this.db('cases').where('pdf_acquired', false).where(function () {
-          this.where('last_harvard_crawl', '<', db.raw('DATE_SUB(NOW(), INTERVAL 1 DAY)')).orWhereNull('last_harvard_crawl');
-        }).whereNotNull('harvard_case_law_id').whereNotNull('harvard_case_law_pdf').orderBy('decision_date', 'desc').first();
-
-        // console.debug('[INGEST] Found uningested case:', unknown.title);
-        if (!unknown || !unknown.harvard_case_law_pdf) return;
-
         /* this.worker.addJob({
-          type: 'Ingest',
-          params: [
-            unknown.harvard_case_law_pdf,
-            `stores/harvard/${unknown.harvard_case_law_id}.pdf`,
-            { id: unknown.id }
-          ]
-        }); */
-
-        /* this.worker.addJob({
-          type: 'ScanCourtListener',
-          params: [
-            { query: unknown.title }
-          ]
+          type: 'ScanRemotes',
+          params: []
         }); */
       }, this.settings.crawlDelay);
     }
@@ -2124,13 +1719,12 @@ class Jeeves extends Hub {
     this._slowcrawler = setInterval(async () => {
       // Sync Health First
       // const health = await this.checkHealth();
-      // console.debug('[JEEVES]', 'Health:', health);
+      // console.debug('[SENSEMAKER:CORE]', 'Health:', health);
 
-      /* this.worker.addJob({ type: 'DownloadMissingRECAPDocument', params: [] }); */
-      if (this.courtlistener) this.courtlistener.syncSamples();
+      /* this.worker.addJob({ type: 'DownloadMissingDocument', params: [] }); */
       if (this.settings.embeddings.enable) {
         /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
-          console.debug('[JEEVES]', 'Embedding sync complete:', output);
+          console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
         }); */
       }
     }, SNAPSHOT_INTERVAL); // 10 minutes
@@ -2149,12 +1743,6 @@ class Jeeves extends Hub {
       res.send();
     });
 
-    this.http._addRoute('HEAD', '/cases', async (req, res) => {
-      const count = await this.db('cases').count('id as count').first();
-      res.set('X-Count', count.count);
-      res.send();
-    });
-
     // API
     this.http._addRoute('POST', '/v1/chat/completions', this._handleChatCompletionRequest.bind(this));
 
@@ -2162,19 +1750,12 @@ class Jeeves extends Hub {
     // TODO: test each search endpoint
     // - [ ] /
     // - [ ] /documents
-    // - [ ] /cases
     // - [ ] /conversations
-    // - [ ] /courts
-    // - [ ] /jurisdictions
     // - [ ] /people
     this.http._addRoute('SEARCH', '/', this._handleGenericSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/documents', ROUTES.documents.search.bind(this));
-    this.http._addRoute('SEARCH', '/cases', this._handleCaseSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
-    this.http._addRoute('SEARCH', '/courts', this._handleCourtSearchRequest.bind(this));
-    this.http._addRoute('SEARCH', '/jurisdictions', this._handleJurisdictionSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
-    this.http._addRoute('SEARCH', '/reporters', ROUTES.reporters.search.bind(this));
 
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
@@ -2191,7 +1772,7 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
     this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
 
-    //Uploads
+    // Uploads
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
 
     // Matters
@@ -2259,10 +1840,8 @@ class Jeeves extends Hub {
     this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
 
     //Redis clientside connections
-
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
-
 
     // TODO: move all handlers to class methods
     this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
@@ -2333,16 +1912,6 @@ class Jeeves extends Hub {
     //endpoint to delete invitation from admin panel
     this.http._addRoute('PATCH', '/invitations/delete/:id', ROUTES.invitations.deleteInvitation.bind(this));
 
-    this.http._addRoute('GET', '/dockets', async (req, res) => {
-      const dockets = await this.courtlistener.paginateDockets();
-      res.send(dockets);
-    });
-
-    this.http._addRoute('GET', '/services/courtlistener/recapdocuments', async (req, res) => {
-      const documents = await this.courtlistener.paginateRecapDocuments();
-      res.send(documents);
-    });
-
     this.http._addRoute('POST', '/users', ROUTES.users.createUser.bind(this));
 
     this.http._addRoute('POST', '/users/full',ROUTES.users.createFullUser.bind(this));
@@ -2387,10 +1956,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('POST', '/passwordChange', ROUTES.account.changePassword.bind(this));
-
     this.http._addRoute('POST', '/usernameChange', ROUTES.account.changeUsername.bind(this));
-
-    //this is the function that generates a password reset token
     this.http._addRoute('POST', '/passwordReset', async (req, res, next) => {
       const { email } = req.body;
 
@@ -2512,18 +2078,17 @@ class Jeeves extends Hub {
       }
     });
 
-    //route to edit a conversation title
+    // TODO: check logic of PATCH, any other routes conflict?
+    // route to edit a conversation title
     this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
 
     this.http._addRoute('GET', '/statistics', async (req, res, next) => {
       const inquiries = await this.db('inquiries').select('id');
       const invitations = await this.db('invitations').select('id').from('invitations');
-      const uningested = await this.db('cases').select('id').where('pdf_acquired', false).whereNotNull('harvard_case_law_id').orderBy('decision_date', 'desc');
-      const ingestions = fs.readdirSync('./stores/harvard').filter((x) => x.endsWith('.pdf'));
       const stats = {
         ingestions: {
-          remaining: uningested.length,
-          complete: ingestions.length
+          remaining: 0,
+          complete: 0
         },
         inquiries: {
           total: inquiries.length
@@ -2536,118 +2101,8 @@ class Jeeves extends Hub {
       res.send(stats);
     });
 
-    this.http._addRoute('GET', '/cases', ROUTES.cases.list.bind(this));
-    this.http._addRoute('GET', '/cases/:id', async (req, res, next) => {
-      const origin = {};
-      const updates = {};
-      const instance = await this.db.select('id', 'title', 'short_name', 'created_at', 'decision_date', 'summary', 'harvard_case_law_id', 'harvard_case_law_pdf', 'harvard_case_law_court_name as court_name', 'harvard_case_law_court_name', 'courtlistener_id', 'pacer_case_id').from('cases').where({
-        id: req.params.id
-      }).first();
-
-      if (!instance) return res.status(404).json({ message: 'Case not found.' });
-      // if (!instance.courtlistener_id) return res.status(404).json({ message: 'Case not found.' });
-
-      this.secureEmbeddingsForCase(instance.id).then((output) => {
-        console.debug('Secure embeddings for case:', output);
-      }).catch((exception) => {
-        console.debug('Secure embeddings error:', exception);
-      });
-
-      if (this.settings.courtlistener.enable) {
-        this.courtlistener.search({ query: instance.title }).then((clr) => {
-          console.debug('[NOVO]', '[COURTLISTENER]', '[SEARCH]', 'Jeeves got results:', clr);
-        });
-      }
-
-      const canonicalTitle = `${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})`;
-
-      // Async Tasks
-      // Embeddings
-      /* const embeddedTitle = await */ this._generateEmbedding(instance.title);
-      /* const embeddedKey = await */ this._generateEmbedding(canonicalTitle);
-
-      // Data Updates
-      if (instance.courtlistener_id && this.settings.courtlistener.enable) {
-        const record = await this.courtlistener.db('search_docket').where({ id: instance.courtlistener_id }).first();
-        console.debug('[NOVO]', '[CASE:VIEW]', '[COURTLISTENER]', 'docket record:', record);
-        const title = record.case_name_full || record.case_name || instance.title;
-        if (title !== instance.title) updates.title = title;
-      }
-
-      if (instance.pacer_case_id && this.settings.courtlistener.enable) {
-        const record = await this.courtlistener.db('search_docket').where({ pacer_case_id: instance.pacer_case_id }).first();
-        console.debug('[NOVO]', '[CASE:VIEW]', 'PACER record:', record);
-        const title = record.case_name_full || record.case_name || instance.title;
-        if (title !== instance.title) updates.title = title;
-      }
-
-      if (instance.harvard_case_law_id) {
-        console.debug('[NOVO]', '[CASE:VIEW]', '[HARVARD]', 'Harvard record:', instance.harvard_case_law_id);
-        fetch(`https://api.case.law/v1/cases/${instance.harvard_case_law_id}`, {
-          // TODO: additional params (auth?)
-        }).catch((exception) => {
-          console.error('[NOVO]', '[CASE:VIEW]', 'FETCH FULL CASE ERROR:', exception);
-        }).then(async (output) => {
-          const target = await output.json();
-          console.debug('[NOVO]', '[CASE:VIEW]', '[HARVARD]', '[FULLCASE]', 'Got output:', target);
-          const message = Message.fromVector(['HarvardCase', JSON.stringify(target)]);
-          this.http.broadcast(message);
-        });
-      }
-
-      // Search Test
-      if (!instance.title) {
-        console.error('[JEEVES]', '[SEARCH]', 'Case has no title:', instance);
-      } else {
-        console.debug('[JEEVES]', '[SEARCH]', 'Searching for case backfill:', instance.title);
-        this.search({
-          query: instance.title
-        }).then((results) => {
-          console.debug('[JEEVES]', '[SEARCH]', 'Jeeves search results:', results);
-          const message = Message.fromVector(['SearchResults', JSON.stringify(results)]);
-          this.http.broadcast(message);
-
-          if (results.cases && results.cases.length > 0) {
-            const first = results.cases[0];
-          }
-        });
-      }
-
-      if (!instance.summary || instance.summary === 'false') {
-        const merged = Object.assign({}, instance, updates);
-        this._summarizeCaseToLength(merged).then(async (summary) => {
-          if (summary) updates.summary = summary;
-          if (Object.keys(updates).length > 0) {
-            console.debug('[NOVO]', '[CASE:VIEW]', 'UPDATING CASE:', updates, instance);
-            this.db('cases').update(updates).where('id', instance.id);
-          }
-        });
-      }
-
-      res.format({
-        json: async () => {
-          res.send(instance);
-        },
-        html: () => {
-          // TODO: provide state
-          // const page = new CaseView({});
-          // TODO: fix this hack
-          // const page = new CaseHome({}); // TODO: use CaseView
-          // const html = page.toHTML();
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/cases/:id/pdf', ROUTES.cases.getCaseFile.bind(this));
-
     this.http._addRoute('GET', '/conversations', ROUTES.conversations.getConversations.bind(this));
-
-    this.http._addRoute('GET', '/courts', ROUTES.courts.list.bind(this));
-    this.http._addRoute('GET', '/courts/:slug', ROUTES.courts.findCourt.bind(this));
-
     this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
-
     this.http._addRoute('GET', '/people/:fabricID', async (req, res, next) => {
       const person = await this.db.select(
         'id as dbid',
@@ -2675,75 +2130,7 @@ class Jeeves extends Hub {
     });
 
     this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
-
-    this.http._addRoute('GET', '/opinions', async (req, res, next) => {
-      const opinions = await this.db.select('id', 'date_filed', 'summary').from('opinions').orderBy('date_filed', 'desc');
-
-      res.format({
-        json: () => {
-          res.send(opinions);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      })
-    });
-
-    this.http._addRoute('GET', '/judges', async (req, res, next) => {
-      const judges = await this.db.select('id').from('judges').orderBy('name', 'asc');
-      res.format({
-        json: () => {
-          res.send(judges);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/jurisdictions', async (req, res, next) => {
-      const jurisdictions = await this.db.select('id','name','name_short','harvard_id').from('jurisdictions').orderBy('id', 'desc');
-      res.format({
-        json: () => {
-          res.send(jurisdictions);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/reporters', async (req, res, next) => {
-      const reporters = await this.db.select('*').from('reporters').orderBy('id', 'desc');
-      res.format({
-        json: () => {
-          res.send(reporters);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
-    this.http._addRoute('GET', '/volumes', async (req, res, next) => {
-      const volumes = await this.db.select('id').from('volumes').orderBy('id', 'desc');
-      res.format({
-        json: () => {
-          res.send(volumes);
-        },
-        html: () => {
-          // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-          return res.send(this.applicationString);
-        }
-      });
-    });
-
     this.http._addRoute('GET', '/messages', ROUTES.messages.getMessages.bind(this));
-
     this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
 
     this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
@@ -2798,17 +2185,14 @@ class Jeeves extends Hub {
       for (let [name, datasource] of Object.entries(this.datasources)) {
         let source = { name: datasource.name };
         switch (name) {
-          case 'courtlistener':
-            if (this.courtlistener) source.counts = await this.courtlistener.getCounts();
+          case 'discord':
+            if (this.pacer) source.counts = await this.discord.getCounts();
             break;
-          case 'harvard':
-            if (this.harvard) source.counts = await this.harvard.getCounts();
-            break;
-          case 'pacer':
-            if (this.pacer) source.counts = await this.pacer.getCounts();
+          case 'matrix':
+            if (this.pacer) source.counts = await this.discord.getCounts();
             break;
           default:
-            console.warn('[JEEVES]', 'Unhandled Datasource:', name);
+            console.warn('[SENSEMAKER:CORE]', 'Unhandled Datasource:', name);
             break;
         }
 
@@ -2846,6 +2230,7 @@ class Jeeves extends Hub {
       })
     });
 
+    // TODO: revert these routes
     this.http._addRoute('GET', '/settings/admin/Overview', ROUTES.adminSettings.overview.bind(this));
     this.http._addRoute('GET', '/settings/admin/Settings', ROUTES.adminSettings.settings.bind(this));
     this.http._addRoute('GET', '/settings/admin/Users', ROUTES.adminSettings.users.bind(this));
@@ -2853,7 +2238,6 @@ class Jeeves extends Hub {
     this.http._addRoute('GET', '/settings/admin/Conversations', ROUTES.adminSettings.conversations.bind(this));
     this.http._addRoute('GET', '/settings/admin/Services', ROUTES.adminSettings.services.bind(this));
     this.http._addRoute('GET', '/settings/admin/Design', ROUTES.adminSettings.design.bind(this));
-
 
     this.http._addRoute('PATCH', '/settings/compliance', async (req, res, next) => {
       let result = {};
@@ -2919,11 +2303,7 @@ class Jeeves extends Hub {
         file_fabric_id,
       } = req.body;
 
-      if (!regenerate) console.warn('[JEEVES]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');
-
-      if (case_id) {
-        subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
-      }
+      if (!regenerate) console.warn('[SENSEMAKER:CORE]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');
 
       const old_message = await this.db('messages').where({ id: req.params.id }).first();
       console.debug('old message:', old_message);
@@ -2996,45 +2376,6 @@ class Jeeves extends Hub {
         console.error('ERROR:', error);
         this.emit('error', `Failed to create message: ${error}`);
         return res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('SEARCH', '/services/courtlistener/people', async (req, res, next) => {
-      const request = req.body;
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[PEOPLE]', 'searching people:', request);
-
-      try {
-        const results = await this.courtlistener.search({
-          query: request.query,
-          model: 'jeeves-0.2.0-RC1'
-        });
-
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[PEOPLE]', 'search results:', results);
-
-        res.json(results);
-      } catch (error) {
-        console.error('Error searching CourtListener:', error);
-        res.status(500).json({ message: 'Internal server error.' });
-      }
-    });
-
-    this.http._addRoute('SEARCH', '/services/courtlistener/dockets', async (req, res, next) => {
-      if (!this.courtlistener) return res.send({ message: 'CourtListener is not available.' });
-      const request = req.body;
-      console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'searching dockets:', request);
-
-      try {
-        const results = await this.courtlistener.search({
-          query: request.query,
-          model: 'jeeves-0.2.0-RC1'
-        });
-
-        console.debug('[JEEVES]', '[COURTLISTENER]', '[DOCKETS]', 'search results:', results);
-
-        res.json(results);
-      } catch (error) {
-        console.error('Error searching CourtListener:', error);
-        res.status(500).json({ message: 'Internal server error.' });
       }
     });
 
@@ -3133,15 +2474,15 @@ class Jeeves extends Hub {
     await this.commit();
 
     // Emit log events
-    this.emit('log', '[JEEVES] Started!');
-    this.emit('debug', `[JEEVES] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
-    this.emit('debug', `[JEEVES] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
+    this.emit('log', '[SENSEMAKER:CORE] Started!');
+    this.emit('debug', `[SENSEMAKER:CORE] Services available: ${JSON.stringify(this._listServices(), null, '  ')}`);
+    this.emit('debug', `[SENSEMAKER:CORE] Services enabled: ${JSON.stringify(this.settings.services, null, '  ')}`);
 
     // Emit ready event
     this.emit('ready');
 
     // DEBUG
-    this.alert(`Jeeves started.  Agent ID: ${this.id}`);
+    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
 
     // Benchmarking
     if (this.settings.benchmark) {
@@ -3153,156 +2494,30 @@ class Jeeves extends Hub {
   }
 
   //function that creates the template to email invitations sendig
-  createInvitationEmailContent(acceptLink, declineLink, imgSrc) {
+  createInvitationEmailContent (acceptLink, declineLink, imgSrc) {
     return `
           <html>
-            <head>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        text-align: center;
-                    }
-
-                    .button {
-                        background-color: #1f487c;
-                        border: none;
-                        color: white;
-                        padding: 10px 20px;
-                        text-align: center;
-                        text-decoration: none;
-                        display: inline-block;
-                        font-size: 16px;
-                        font-weight: bold;
-                        margin: 4px 2px;
-                        cursor: pointer;
-                        border-radius: 8px;
-                        width: 150px;
-                    }
-
-                    .button:hover {
-                        background-color: #163d5c;
-                    }
-
-                    .decline {
-                        color: #ca392f;
-                        text-decoration: none;
-                        font-size: 14px;
-                        margin-top: 20px;
-                        display: inline-block;
-                    }
-
-                    .container {
-                        text-align: center;
-                        max-width: 500px;
-                        margin: 0 auto;
-                    }
-
-                    .footer {
-                        margin-top: 30px;
-                        font-size: 0.8em;
-                    }
-                    table {
-                      width: 100%;
-                  }
-
-                  .content {
-                      text-align: center;
-                  }
-                </style>
-            </head>
-
             <body>
-                <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                    <tr>
-                        <td>
-                            <div class="container">
-                                <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
-                                    <tr>
-                                        <td class="content">
-                                            <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                                            <h3>Hello, You have been invited to join Novo.</h3>
-                                            <p>We are pleased to extend an invitation for you to join Novo, your advanced legal assistant platform. Click on the link below to register and gain access to our services.</p>
-                                            <a href=${acceptLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Join Novo</a>
-                                            <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
-                                        </td>
-                                    </tr>
-                                </table>
-                                <div class="footer">
-                                    <p>For any inquiries, feel free to contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+              <div>
+                <h3>Hello, You have been invited to join Sensemaker.</h3>
+                <a href=${acceptLink} class="button" target="_blank">Join Sensemaker</a>
+                <p>If you prefer not to receive future invitations, <a href=${declineLink} class="decline">click here</a>.</p>
+              </div>
             </body>
-
           </html>`;
   }
-  createPasswordResetEmailContent(resetLink, imgSrc) {
+
+  createPasswordResetEmailContent (resetLink, imgSrc) {
     return `
         <html>
           <head>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                text-align: center;
-              }
-
-              .button {
-                background-color: #1f487c;
-                border: none;
-                color: white;
-                padding: 10px 20px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 16px;
-                font-weight: bold;
-                margin: 4px 2px;
-                cursor: pointer;
-                border-radius: 8px;
-                width: 150px;
-              }
-
-              .button:hover {
-                background-color: #163d5c;
-              }
-
-              .container {
-                text-align: center;
-                max-width: 500px;
-                margin: 0 auto;
-              }
-
-              .footer {
-                margin-top: 30px;
-                font-size: 0.8em;
-              }
-            </style>
-          </head>
-          <body>
-            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-              <tr>
-                <td>
-                  <div class="container">
-                    <table role="presentation" align="center" cellpadding="0" cellspacing="0" width="100%" style="max-width: 500px;">
-                      <tr>
-                        <td class="content">
-                          <img src=${imgSrc} alt="Novo Logo" style="max-width: 300px; height: auto;">
-                          <h3>Password Reset Request</h3>
-                          <p>You have requested to reset your password. Please click the button below to set a new password.</p>
-                          <a href=${resetLink} class="button" target="_blank" style="background-color: #1f487c; color: white; text-decoration: none;">Reset Password</a>
-                          <p>If you did not request a password reset, please ignore this email.</p>
-                        </td>
-                      </tr>
-                    </table>
-                    <div class="footer">
-                      <p>If you have any issues or questions, please contact us at <a href="mailto:support@novo.com">support@novo.com</a></p>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </table>
+            <body>
+              <div>
+                <h3>Password Reset Request</h3>
+                <p>You have requested to reset your password.  Please click the button below to set a new password.</p>
+                <a href=${resetLink} class="button" target="_blank">Reset Password</a>
+                <p>If you did not request a password reset, please ignore this email.</p>
+              </div>
           </body>
         </html>`;
   }
@@ -3379,17 +2594,17 @@ class Jeeves extends Hub {
 
   async _handleChatCompletionRequest (req, res, next) {
     const request = req.body;
-    console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion request:', request);
+    console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion request:', request);
     const network = Object.keys(this.agents).map((agent) => {
-      console.debug('[NOVO]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
+      console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
       return this.agents[agent].query(request);
     });
 
     Promise.race(network).catch((error) => {
-      console.error('[NOVO]', '[API]', '[CHAT]', 'Error:', error);
+      console.error('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Error:', error);
       res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
     }).then((results) => {
-      console.debug('[NOVO]', '[API]', '[CHAT]', 'Chat completion results:', results);
+      console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion results:', results);
       const object = {
         object: 'chat.completion',
         created: Date.now() / 1000,
@@ -3446,10 +2661,10 @@ class Jeeves extends Hub {
 
   async _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
-    console.debug('[JEEVES]', '[SEARCH]', 'Generic search request:', request);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Generic search request:', request);
 
     this.search(request).then((results) => {
-      console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
+      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
 
       res.setHeader('X-Fabric-Type', 'SearchResults');
       res.setHeader('X-Pagination', true);
@@ -3518,42 +2733,21 @@ class Jeeves extends Hub {
   }
 
   async _handleRAGQuery (query) {
-    console.debug('[JEEVES]', '[RAG]', 'Query:', query);
+    console.debug('[SENSEMAKER:CORE]', '[RAG]', 'Query:', query);
     const result = await this.fabric.search({
       query: query,
-      model: 'jeeves-0.2.0-RC1'
+      model: 'sensemaker-0.2.0-RC1'
     });
 
     return result;
   }
 
-  async _handleCaseSearchRequest (req, res, next) {
-    try {
-      const request = req.body;
-      const cases = await this._searchCases(request);
-      const result = {
-        cases: cases || []
-      };
-
-      return res.send({
-        type: 'SearchCasesResult',
-        content: result
-      });
-    } catch (exception) {
-      res.status(503);
-      return res.send({
-        type: 'SearchCasesError',
-        content: exception
-      });
-    }
-  }
-
   async _handleConversationSearchRequest (req, res, next) {
     const request = req.body;
-    console.debug('[JEEVES]', '[SEARCH]', 'Conversation search request:', request);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Conversation search request:', request);
 
     this.searchConversations(request).then((results) => {
-      console.debug('[JEEVES]', '[SEARCH]', 'Results:', results);
+      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
 
       res.setHeader('X-Fabric-Type', 'SearchResults');
       res.setHeader('X-Pagination', true);
@@ -3567,83 +2761,6 @@ class Jeeves extends Hub {
         results: results
       });
     });
-  }
-
-  async _handleCourtListenerDocument (actor) {
-    if (1 || this.settings.debug) console.debug('[NOVO]', '[COURTLISTENER]', '[DOCUMENT]', 'Received document:', actor);
-    const document = actor.content;
-    // TODO: store sample.id as fabric_id
-    const sample = new Actor({ name: `courtlistener/documents/${document.id}` });
-    const target = await this.db('documents').where({ courtlistener_id: document.id }).first();
-
-    if (!target) {
-      if (1 || this.settings.debug) console.debug('DOCUMENT NOT FOUND, INSERTING:', document);
-      // TODO: retrieve docket_entry_id etc.
-      // populate all subsequent data
-
-      await this.db('documents').insert({
-        sha1: document.sha1,
-        description: document.description,
-        file_size: document.file_size,
-        page_count: document.page_count,
-        date_created: document.date_created,
-        date_modified: document.date_modified,
-        date_uploaded: document.date_upload,
-        pacer_doc_id: document.pacer_doc_id,
-        is_available: document.is_available,
-        is_sealed: document.is_sealed,
-        courtlistener_id: document.id,
-        courtlistener_thumbnail: document.thumbnail,
-        courtlistener_filepath_local: document.filepath_local,
-        courtlistener_filepath_ia: document.filepath_ia,
-        courtlistener_ocr_status: document.ocr_status,
-        plain_text: document.plain_text
-      });
-    }
-  }
-
-  async _handleCourtSearchRequest (req, res, next) {
-    try {
-      const request = req.body;
-      const courts = await this._searchCourts(request);
-      const result = {
-        courts: courts || []
-      };
-
-      return res.send({
-        type: 'SearchCourtsResult',
-        content: result,
-        results: courts
-      });
-    } catch (exception) {
-      res.status(503);
-      return res.send({
-        type: 'SearchCourtsError',
-        content: exception
-      });
-    }
-  }
-
-  async _handleJurisdictionSearchRequest (req, res, next) {
-    try {
-      const request = req.body;
-      const jurisdictions = await this._searchJurisdictions(request);
-      const result = {
-        jurisdictions: jurisdictions || []
-      };
-
-      return res.send({
-        type: 'SearchJurisdictionsResult',
-        content: result,
-        results: jurisdictions
-      });
-    } catch (exception) {
-      res.status(503);
-      return res.send({
-        type: 'SearchJurisdictionsError',
-        content: exception
-      });
-    }
   }
 
   async _handleHealthRequest (req, res, next) {
@@ -3689,10 +2806,10 @@ class Jeeves extends Hub {
   }
 
   async _handleMatrixActivity (activity) {
-    console.debug('[JEEVES]', '[MATRIX]', 'Matrix activity:', activity);
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'Matrix activity:', activity);
     if (activity.actor == this.matrix.id) return;
     if (!activity.target) {
-      console.debug('[JEEVES]', '[MATRIX]', 'No target, ignoring.');
+      console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'No target, ignoring.');
       return;
     }
 
@@ -3757,25 +2874,6 @@ class Jeeves extends Hub {
     console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', `${inserted.length} documents inserted:`, inserted);
   }
 
-  async _handleFabricCourt (court) {
-    // console.debug('[FABRIC]', '[COURT]', court);
-    const target = await this.db('courts').where({ fabric_id: court.id }).first();
-    // console.debug('[FABRIC]', '[COURT]', '[TARGET]', target);
-    if (!target) {
-      const inserted = await this.db('courts').insert({
-        fabric_id: court.id,
-        slug: court.slug,
-        courtlistener_id: court.ids?.courtlistener,
-        founded_date: new Date(court.founded_date),
-        name: court.name,
-        short_name: court.short_name || court.name,
-        citation_string: court.citation_string
-      });
-
-      // console.debug('[FABRIC]', '[COURT]', '[INSERTED]', inserted);
-    }
-  }
-
   async _handleFabricPerson (person) {
     console.debug('[FABRIC]', '[PERSON]', person);
     const target = await this.db('people').where({ fabric_id: person.id }).first();
@@ -3795,195 +2893,6 @@ class Jeeves extends Hub {
 
       console.debug('[FABRIC]', '[PERSON]', '[INSERTED]', inserted);
     }
-  }
-
-  async _handleCourtListenerDocket (docket) {
-    const actor = new Actor({ name: `courtlistener/dockets/${docket.id}` });
-    const bestname = docket.case_name_full || docket.case_name_short || docket.case_name || docket.case_name_short;
-    const court = await this.db('courts').where({ courtlistener_id: docket.court_id }).first();
-    const instance = {
-      fabric_id: actor.id,
-      court_id: court.id,
-      pacer_case_id: docket.pacer_case_id,
-      courtlistener_id: docket.id,
-      title: bestname,
-      short_name: docket.case_name_short,
-      date_filed: docket.date_filed,
-      date_argued: docket.date_argued,
-      date_reargued: docket.date_reargued,
-      date_reargument_denied: docket.date_reargument_denied,
-      date_blocked: docket.date_blocked,
-      date_last_filing: docket.date_last_filing,
-      date_terminated: docket.date_terminated
-    };
-
-    // console.debug('[JEEVES]', '[COURTLISTENER]', 'Docket:', docket);
-    const target = await this.db('cases').where({ fabric_id: actor.id }).first();
-    // console.debug('[NOVO]', '[COURTLISTENER]', 'Docket Target Case:', target);
-
-    if (docket.pacer_case_id) {
-      if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'We have a PACER Case ID:', docket.pacer_case_id);
-      const pacer = await this.db('cases').where({ pacer_case_id: docket.pacer_case_id }).first();
-      if (!pacer) {
-        if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'No PACER case found, inserting:', instance);
-
-        if (instance.court_id) {
-          if (this.settings.debug) console.debug('[JEEVES]', '[COURTLISTENER]', 'Court ID for PACER case:', instance.court_id);
-          const court = await this.db('courts').where({ courtlistener_id: instance.court_id }).first();
-          console.debug('[JEEVES]', '[COURTLISTENER]', 'Court for PACER case:', court);
-          if (!court) {
-            console.debug('[JEEVES]', '[COURTLISTENER]', 'No court found, searching:', instance.court_id);
-
-            try {
-              const sample = await this.courtlistener.db('search_court').where({ id: instance.court_id }).first();
-              const matches = await this.courtlistener.db('search_court').where({ id: instance.court_id });
-              console.debug('[JEEVES]', '[COURTLISTENER]', 'Sample court:', sample);
-              console.debug('[JEEVES]', '[COURTLISTENER]', 'Matches:', matches);
-            } catch (exception) {
-              console.error('[JEEVES]', '[COURTLISTENER]', 'Failed to search for court:', exception);
-            }
-          }
-        }
-      }
-    }
-
-    if (!target) {
-      try {
-        // await this.db('cases').insert(instance);
-      } catch (exception) {
-        console.error('[JEEVES]', '[COURTLISTENER]', 'Failed to insert case:', exception);
-        console.error('[JEEVES]', '[COURTLISTENER]', 'Target was:', target);
-        console.error('[JEEVES]', '[COURTLISTENER]', 'Fabric ID was:', actor.id);
-      }
-    }
-  }
-
-  async _handleHarvardError (error) {
-    console.error('[JEEVES]', '[HARVARD]', '[ERROR]', error);
-  }
-
-  async _handleHarvardDebug (...params) {
-    console.debug('[JEEVES]', '[HARVARD]', '[DEBUG]', ...params);
-  }
-
-  async _handleHarvardWarning (warning) {
-    console.warn('[JEEVES]', '[HARVARD]', '[WARNING]', warning);
-  }
-
-  async _handleHarvardSync (sync) {
-    console.debug('[JEEVES]', '[HARVARD]', 'sync:', sync);
-  }
-
-  async _handleHarvardDocument (document) {
-    console.debug('[JEEVES]', '[HARVARD]', 'document:', document);
-  }
-
-  async _handleHarvardCourt (court) {
-    // console.debug('[JEEVES]', '[HARVARD]', 'court:', court);
-    const actor = new Actor({ name: `harvard/courts/${court.id}` });
-
-    // Look for target court, jurisdiction
-    let target = await this.db('courts').where({ harvard_id: court.id }).first();
-    let jurisdiction = await this.db('jurisdictions').where({ name_short: court.jurisdiction }).first();
-    // const remote = await this.harvard.syncCourtBySlug(court.slug);
-    if (!jurisdiction) {
-      console.debug('no jurisdiction:', court.jurisdiction);
-      const remote = await this.harvard.syncCourtBySlug(court.slug);
-      console.debug('got remote:', remote);
-    }
-
-    if (!target) {
-      await this.db('courts').insert({
-        fabric_id: actor.id,
-        harvard_id: court.id,
-        name: court.name || court.name_abbreviation,
-        short_name: court.name_abbreviation,
-        jurisdiction: court.jurisdiction,
-        jurisdiction_id: jurisdiction.id || null,
-        slug: court.slug
-      });
-
-      target = await this.db('courts').where({ harvard_id: court.id });
-    }
-
-    if (target.jurisdiction_id !== jurisdiction.id) {
-      await this.db('courts').where({ id: target.id }).update({ jurisdiction_id: jurisdiction.id });
-    }
-
-    /* if (court.name) {
-      const search = await this._searchCourtsByTerm(court.name);
-      console.debug('[JEEVES]', '[HARVARD]', 'Search Results:', search);
-    } */
-  }
-
-  async _handleHarvardJurisdiction (jurisdiction) {
-    if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'jurisdiction:', jurisdiction);
-    const actor = new Actor({ name: `harvard/jurisdictions/${jurisdiction.id}` });
-    const target = await this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
-
-    if (!target) {
-      await this.db('jurisdictions').insert({
-        fabric_id: actor.id,
-        harvard_id: jurisdiction.id,
-        name: jurisdiction.name_long,
-        name_short: jurisdiction.name
-      });
-    }
-  }
-
-  async _handleHarvardReporter (reporter) {
-    if (this.settings.debug) console.debug('[JEEVES]', '[HARVARD]', 'reporter:', reporter);
-    const actor = new Actor({ name: `harvard/reporters/${reporter.id}` });
-    let target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
-
-    if (!target) {
-      await this.db('reporters').insert({
-        fabric_id: actor.id,
-        harvard_id: reporter.id,
-        name: reporter.full_name,
-        name_short: reporter.short_name,
-        start_year: reporter.start_year,
-        end_year: reporter.end_year,
-        // jurisdiction: reporter.jurisdiction,
-        // slug: reporter.slug
-      });
-
-      target = await this.db('reporters').where({ harvard_id: reporter.id }).first();
-    }
-
-    const jurisdictions = await Promise.all(reporter.jurisdictions.map((jurisdiction) => {
-      return this.db('jurisdictions').where({ harvard_id: jurisdiction.id }).first();
-    }));
-
-    for (let i = 0; i < jurisdictions.length; i++) {
-      const link = await this.db('reporter_jurisdictions').where({ reporter_id: target.id, jurisdiction_id: jurisdictions[i].id }).first();
-      if (link) continue;
-      await this.db('reporter_jurisdictions').insert({
-        reporter_id: target.id,
-        jurisdiction_id: jurisdictions[i].id
-      });
-    }
-  }
-
-  async _handleHarvardVolume (volume) {
-    console.debug('[JEEVES]', '[HARVARD]', 'volume:', volume);
-    const actor = new Actor({ name: `harvard/volumes/${volume.id}` });
-    this.db('volumes').where({ harvard_id: volume.id }).first().then(async (target) => {
-      console.debug('[JEEVES]', '[HARVARD]', 'Found volume:', target);
-
-      if (!target) {
-        await this.db('volumes').insert({
-          fabric_id: actor.id,
-          harvard_id: volume.id,
-          title: volume.title,
-          start_year: volume.start_year,
-          end_year: volume.end_year,
-          harvard_pdf_url: volume.pdf_url
-        });
-      }
-    }).catch((exception) => {
-      console.error('[JEEVES]', '[HARVARD]', 'Failed to find volume:', exception);
-    });
   }
 
   async _handleOpenAIError (error) {
@@ -4071,26 +2980,26 @@ class Jeeves extends Hub {
         try {
           await this.matrix.client.invite(room, '@eric:fabric.pub');
         } catch (exception) {
-          console.warn('[JEEVES]', '[MATRIX]', 'Failed to invite admin to room:', room);
+          console.warn('[SENSEMAKER:CORE]', '[MATRIX]', 'Failed to invite admin to room:', room);
         }
       }
     }
 
-    this.emit('debug', '[JEEVES:CORE] Matrix connected and ready!');
+    this.emit('debug', '[SENSEMAKER:CORE] Matrix connected and ready!');
   }
 
   async _handleMatrixError (error) {
-    console.error('[JEEVES:CORE]', 'Matrix error:', error);
+    console.error('[SENSEMAKER:CORE]', 'Matrix error:', error);
   }
 
   /**
    * Generate a response to a request.
-   * @param {JeevesRequest} request The request.
+   * @param {SensemakerRequest} request The request.
    * @param {String} [request.room] Matrix room to retrieve conversation history from.
-   * @returns {JeevesResponse}
+   * @returns {SensemakerResponse}
    */
   async _handleRequest (request) {
-    this.emit('debug', `[JEEVES:CORE] Handling request: ${JSON.stringify(request)}`);
+    this.emit('debug', `[SENSEMAKER:CORE] Handling request: ${JSON.stringify(request)}`);
 
     let messages = [];
 
@@ -4123,7 +3032,7 @@ class Jeeves extends Hub {
 
     // Moderator
     // Fact-checks and summarizes outputs into a single coherent result.
-    const moderator = new Actor({ name: '@jeeves/moderator' });
+    const moderator = new Actor({ name: '@sensemaker/moderator' });
     const agents = {};
     // moderator.summarize();
 
@@ -4145,7 +3054,7 @@ class Jeeves extends Hub {
       conversation_id: request.conversation_id,
       user_id: 1,
       status: 'computing',
-      content: 'Jeeves is researching your question...'
+      content: 'Sensemaker is researching your question...'
     });
 
     // Generate Response
@@ -4180,27 +3089,6 @@ class Jeeves extends Hub {
     };
   }
 
-  async _handlePACERDebug (...params) {
-    console.debug('[JEEVES]', '[PACER]', '[DEBUG]', ...params);
-  }
-
-  async _handlePACERCourt (court) {
-    // console.debug('[JEEVES]', '[PACER]', 'court:', court);
-    const actor = new Actor({ name: `pacer/courts/${court.id}` });
-    const target = await this.db('courts').where({ pacer_id: court.id }).first();
-
-    if (!target) {
-      await this.db('courts').insert({
-        fabric_id: actor.id,
-        pacer_id: court.id,
-        name: court.title,
-        short_name: court.title,
-        jurisdiction: court.court_name,
-        slug: `pacer-${court.id}`
-      });
-    }
-  }
-
   async _startWorkers () {
     for (let i = 0; i < this.workers.length; i++) {
       await this.workers[i].start();
@@ -4220,32 +3108,6 @@ class Jeeves extends Hub {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
       this.sensemaker.query(request).catch(reject).then(resolve);
-    });
-  }
-
-  async _summarizeCaseToLength (instance, max = 2048) {
-    return new Promise(async (resolve, reject) => {
-      const query = `Summarize the following case into a paragraph of text with a ${max}-character maximum:`
-      + ` ${instance.title} (${instance.decision_date}, ${instance.harvard_case_law_court_name})\n\nDo not use quotation marks,`
-      + ` and if you are unable to generate an accurate summary, return only "false".\n\n`
-      + `Additional information:\n`
-      + `  PACER Case ID: ${instance.pacer_case_id}`
-      + `  Object:\n`
-      + `    \`\`\`\n${JSON.stringify(instance, null, '  ').split('\n').join('\n    ')}\n    \`\`\``;
-
-      console.debug('Case to summarize:', instance);
-
-      if (instance.harvard_case_law_id) {
-        const element = await this.harvard.getCaseByID(instance.harvard_case_law_id);
-        console.debug('[NOVO]', '[SUMMARIZER]', 'Harvard case:', element);
-      }
-
-      const request = { query };
-
-      this.createTimedRequest(request).catch(reject).then((output) => {
-        // console.debug('got summarized case:', output);
-        resolve(output.content);
-      });
     });
   }
 
@@ -4270,99 +3132,9 @@ class Jeeves extends Hub {
     };
   }
 
-  async _searchCases (request) {
-    console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request, 10);
-    console.debug('[JEEVES]', '[SEARCH]', '[CASES]', 'Redis Results:', redisResults);
-
-    const mappedQueries = redisResults.content.map((result) => {
-      if (this.settings.debug) console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Mapping result:', result);
-      return this.db('cases').where({ id: result.id }).first();
-    });
-    // const mappedResults = await Promise.all()
-
-    // TODO: multiple case search sources
-    // Retrieve Harvard's suggestions
-    const result = await fetch(`https://api.case.law/v1/cases/?search=${request.query}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': (this.settings.harvard.token) ? `Bearer ${this.settings.harvard.token}` : undefined
-      }
-    });
-
-    const harvard = await result.json();
-    const ids = harvard.results.map(x => x.id);
-    const harvardCases = await this.db('cases').select('id', 'title', 'short_name', 'harvard_case_law_court_name as court_name', 'decision_date').whereIn('harvard_case_law_id', ids).orderBy('decision_date', 'desc');
-
-    if (this.courtlistener) {
-      const courtListenerResults = await this.courtlistener.search({
-        query: request.query,
-        model: 'jeeves-0.2.0-RC1'
-      });
-
-      console.debug('[JEEVES]', '[SEARCH]', 'CourtListener dockets:', courtListenerResults.dockets);
-      // TODO: concat into results
-    }
-
-    // TODO: queue crawl jobs for missing cases
-    const cases = [].concat(harvardCases);
-
-    console.debug('[NOVO]', '[SEARCH]', '[CASES]', 'Final cases:', cases);
-
-    return cases;
-  }
-
-  async _searchCourts (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching courts:', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
-
-    let response = [];
-
-    try {
-      if(request.jurisdiction_id){
-        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`).where('jurisdiction_id', request.jurisdiction_id);
-      } else {
-        response = await this.db('courts').select('*').where('name', 'like', `%${request.query}%`);
-      }
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
-    }
-
-    return response;
-
-    // This search down there wasnt working, replaced it for a local search for the moment
-
-    // const tokens = this._tokenizeTerm(request.query);
-    // const promises = tokens.map((token) => {
-    //   return new Promise((resolve, reject) => {
-    //     this._searchHarvardCourts({ query: token }).then(resolve).catch(reject);
-    //   });
-    // });
-
-    // const candidates = await Promise.allSettled([
-    //   (new Promise((resolve, reject) => {
-    //     setTimeout(reject, 15000, new Error('Timeout!'));
-    //   })),
-    //   promises[0] // first token only
-    //   // TODO: Harvard search
-    //   // TODO: CourtListener search
-    // ]);
-
-    // console.debug('candidates:', candidates);
-    // const results = candidates.filter((x) => (x.status === 'fulfilled'));
-
-    // return results;
-  }
-
-  async _searchCourtsByTerm (term) {
-    if (!term) throw new Error('No term provided.');
-    return this._searchCourts({ query: term });
-  }
-
   async _searchDocuments (request) {
     return new Promise((resolve, reject) => {
-      console.debug('[JEEVES]', '[SEARCH]', 'Searching documents:', request);
+      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching documents:', request);
       if (!request) throw new Error('No request provided.');
       if (!request.query) throw new Error('No query provided.');
 
@@ -4398,54 +3170,13 @@ class Jeeves extends Hub {
       /* try {
         // response = await this.db('documents ').select('*').where('content', 'like', `%${request.query}%`).orWhere('title', 'like', `%${request.query}%`).andWhere('deleted', '=', 0);;
       } catch (exception) {
-        console.error('[JEEVES]', '[SEARCH]', 'Failed to search documents :', exception);
+        console.error('[SENSEMAKER:CORE]', '[SEARCH]', 'Failed to search documents :', exception);
       } */
     });
   }
 
-  async _searchHarvardCourts (request) {
-    return new Promise((resolve, reject) => {
-      fetch(`https://api.case.law/v1/courts/?search=${request.query}`).then((response) => {
-        const object = response.json();
-        resolve(object.results);
-      }).catch(reject);
-    });
-  }
-
-  async _searchJurisdictions (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching jurisdictions:', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
-
-    let response = [];
-
-    try {
-      response = await this.db('jurisdictions').select('*').where('name', 'like', `%${request.query}%`);
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search jurisdictions:', exception);
-    }
-
-    return response;
-  }
-
-  async _searchReporters (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching reporters:', request);
-    if (!request) throw new Error('No request provided.');
-    if (!request.query) throw new Error('No query provided.');
-
-    let response = [];
-
-    try {
-      response = await this.db('reporters').select('*').where('name', 'like', `%${request.query}%`);
-    } catch (exception) {
-      console.error('[JEEVES]', '[SEARCH]', 'Failed to search reporters:', exception);
-    }
-
-    return response;
-  }
-
   async _searchPeople (request) {
-    console.debug('[JEEVES]', '[SEARCH]', 'Searching people:', request);
+    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching people:', request);
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
@@ -4545,27 +3276,11 @@ class Jeeves extends Hub {
   }
 
   async _runFixtures () {
-    // if (this.statutes) {
-    //   const STATUTE_FIXTURE = await this.statutes.search({
-    //     query: 'Texas'
-    //   });
-    //   console.debug('STATUTE_FIXTURE:', STATUTE_FIXTURE);
-    // }
-
     const FABRIC_FIXTURE = await this.fabric.search({
       query: 'North\nCarolina',
-      model: 'jeeves-0.2.0-RC1'
+      model: 'sensemaker-0.2.0-RC1'
     });
     console.debug('FABRIC FIXTURE:', FABRIC_FIXTURE);
-
-    // Test the CourtListener database
-    if (this.courtlistener) {
-      const COURT_LISTENER_FIXTURE = await this.courtlistener.search({
-        query: 'North\nCarolina',
-        model: 'jeeves-0.2.0-RC1'
-      });
-      console.debug('COURT LISTENER FIXTURE:', COURT_LISTENER_FIXTURE);
-    }
 
     // Simulate Network
     const summarizerQuery = 'List 3 interesting cases in North Carolina throughout history.';
@@ -4608,7 +3323,7 @@ class Jeeves extends Hub {
 
     if (!randomCases) {
       const sourced = await this.db('cases').select('id', 'fabric_id', 'title').whereNotNull('harvard_case_law_id').orderByRaw('RAND()').first();
-      randomCases = { content: `[${sourced.fabric_id}] [jeeves/cases/${sourced.id}] ${sourced.title}` };
+      randomCases = { content: `[${sourced.fabric_id}] [sensemaker/cases/${sourced.id}] ${sourced.title}` };
     }
 
     console.debug('GOT RANDOM CASES:', randomCases);
@@ -4640,7 +3355,7 @@ class Jeeves extends Hub {
   }
 
   async _syncEmbeddings (limit = 100) {
-    console.debug('[JEEVES]', '[VECTOR]', `Syncing ${limit} embeddings...`);
+    console.debug('[SENSEMAKER:CORE]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
         /* new Promise((resolve, reject) => {
@@ -4652,113 +3367,18 @@ class Jeeves extends Hub {
             resolve(files);
           });
         }), */
-        this.db('jurisdictions').select('id', 'name').then(async (jurisdictions) => {
-          for (let i = 0; i < jurisdictions.length; i++) {
-            const element = jurisdictions[i];
-            const actor = { name: `novo/jurisdictions/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/jurisdictions/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
-            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[JURISDICTIONS]', 'Ingested:', embedding);
-          }
-        }),
-        this.db('courts').select('id', 'name').then(async (courts) => {
-          for (let i = 0; i < courts.length; i++) {
-            const element = courts[i];
-            const actor = { name: `novo/courts/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/courts/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
-            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[COURTS]', 'Ingested:', embedding);
-          }
-        }),
-        this.db('reporters').select('id', 'name').then(async (reporters) => {
-          for (let i = 0; i < reporters.length; i++) {
-            const element = reporters[i];
-            const actor = { name: `novo/reporters/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/reporters/${element.id}/name`, content: element.name };
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
-            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[REPORTERS]', 'Ingested:', embedding);
-          }
-        }),
-        this.db('cases').select('id', 'title', 'summary', 'decision_date', 'date_filed', 'date_argued', 'date_reargued', 'date_reargument_denied', 'date_blocked', 'date_last_filing', 'date_terminated', 'cause', 'nature_of_suit', 'jury_demand').orderByRaw('RAND()').limit(limit).then(async (cases) => {
-          for (let i = 0; i < cases.length; i++) {
-            const element = cases[i];
-            const actor = { name: `novo/cases/${element.id}` }; // Novo reference ID (name)
-            const title = { name: `novo/cases/${element.id}/title`, content: element.title };
-            const whole = { name: `novo/cases/${element.id}`, content: element };
-            // TODO: process PDF here
-            const reference = await this.trainer.ingestDocument({ content: JSON.stringify(actor), metadata: actor }, 'actor');
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(title), metadata: title }, 'title');
-            const megabody = await this.trainer.ingestDocument({ content: JSON.stringify(whole), metadata: whole }, 'case');
-            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[CASES]', 'Ingested:', megabody);
-          }
-        }),
         this.db('documents').select(['id', 'description', 'content']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
           for (let i = 0; i < documents.length; i++) {
             const element = documents[i];
-            const actor = { name: `novo/documents/${element.id}` };
+            const actor = { name: `sensemaker/documents/${element.id}` };
             // TODO: consider additional metadata fields
-            const document = { name: `novo/documents/${element.id}`, content: element };
+            const document = { name: `sensemaker/documents/${element.id}`, content: element };
             const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document }, 'document');
-            if (this.settings.verbosity > 4) console.debug('[JEEVES]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
+            if (this.settings.verbosity > 4) console.debug('[SENSEMAKER:CORE]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
           }
         })
       ]).catch(reject).then(resolve);
     });
-  }
-
-  async _vectorSearchCases (query = '', limit = 100) {
-    const words = await this.wordTokens(query);
-    const uniques = [...new Set(words)];
-
-    console.debug('[JEEVES]', '[VECTOR]', 'Searching for cases with words:', query);
-    console.debug('[JEEVES]', '[VECTOR]', `Reduced ${words.length} words to ${uniques.length} uniques.`);
-
-    const redisResults = await this.trainer.search({ query: query, filter: { type: 'case' }}, limit);
-    console.debug('[NOVO]', '[VECTOR]', 'Redis Results:', redisResults.content.map((x) => {
-      const actor = new Actor({ content: x.pageContent });
-      return actor.id;
-    }));
-
-    const results = await Promise.all(uniques.map((word) => {
-      return this.db('cases').select('id', 'title').where('title', 'like', `%${query}%`).limit(10);
-    }));
-
-    let cases = [];
-
-    for (let i = 0; i < results.length; i++) {
-      cases = cases.concat(results[i]);
-    }
-
-    // if (cases.length > SEARCH_CASES_MAX_WORDS) cases = cases.slice(0, SEARCH_CASES_MAX_WORDS);
-
-    const mapped = await Promise.all(redisResults.content.map((result) => {
-      if (this.settings.debug) console.debug('[JEEVES]', '[VECTOR]', 'Mapping result:', result);
-      if (!result || !result.metadata || !result.metadata.name) {
-        console.debug('[JEEVES]', '[VECTOR]', 'Invalid result (no "name" metadata):', result);
-        return null;
-      }
-
-      const parts = result.metadata.name.split('/');
-      if (parts.length < 3) {
-        console.debug('[JEEVES]', '[VECTOR]', 'Invalid parts:', parts);
-        return null;
-      }
-
-      switch (parts[1]) {
-        default:
-          console.debug('[NOVO]', '[VECTOR]', 'Unknown type:', parts[1]);
-          break;
-        case 'cases':
-          return this.db('cases').select('id', 'title').where('id', parts[2]).first();
-      }
-    }));
-
-    console.debug('[JEEVES]', '[VECTOR]', 'Mapped Results:', mapped);
-
-    return cases;
   }
 
   _handleServiceMessage (source, message) {
@@ -4766,7 +3386,7 @@ class Jeeves extends Hub {
   }
 
   _handleTrustedLog (message) {
-    this.emit('log', `[types/jeeves] Trusted Source emitted log: ${message}`);
+    this.emit('log', `[types/sensemaker] Trusted Source emitted log: ${message}`);
   }
 
   _handleTrustedMessage (message) {
@@ -4774,15 +3394,15 @@ class Jeeves extends Hub {
   }
 
   _handleTrustedWarning (message) {
-    this.emit('warning', `[types/jeeves] Trusted Source emitted warning: ${message}`);
+    this.emit('warning', `[types/sensemaker] Trusted Source emitted warning: ${message}`);
   }
 
   _handleTrustedError (message) {
-    this.emit('error', `[types/jeeves] Trusted Source emitted error: ${message}`);
+    this.emit('error', `[types/sensemaker] Trusted Source emitted error: ${message}`);
   }
 
   _handleTrustedReady (message) {
-    this.emit('log', `[types/jeeves] Trusted Source emitted ready: ${message}`);
+    this.emit('log', `[types/sensemaker] Trusted Source emitted ready: ${message}`);
   }
 
   _listServices () {
@@ -4850,4 +3470,4 @@ class Jeeves extends Hub {
   }
 }
 
-module.exports = Jeeves;
+module.exports = Sensemaker;

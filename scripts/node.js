@@ -4,46 +4,46 @@
 const settings = require('../settings/local');
 
 // Internal Service
-const Jeeves = require('../services/jeeves');
+const Sensemaker = require('../services/sensemaker');
 
 // Contracts
-const handleJeevesError = require('../contracts/handleJeevesError');
-const handleJeevesLog = require('../contracts/handleJeevesLog');
-const handleJeevesWarning = require('../contracts/handleJeevesWarning');
+const handleSensemakerError = require('../contracts/handleSensemakerError');
+const handleSensemakerLog = require('../contracts/handleSensemakerLog');
+const handleSensemakerWarning = require('../contracts/handleSensemakerWarning');
 
 // Main Function
 async function main (input = {}) {
   // Create Node
   const start = new Date();
-  const jeeves = new Jeeves(input);
+  const sensemaker = new Sensemaker(input);
 
   // Handlers
-  jeeves.on('error', handleJeevesError);
-  jeeves.on('log', handleJeevesLog);
-  jeeves.on('warning', handleJeevesWarning);
-  jeeves.on('debug', (...debug) => {
-    console.debug(`[${((new Date() - start) / 1000)}s]`, '[JEEVES]', '[DEBUG]', ...debug);
+  sensemaker.on('error', handleSensemakerError);
+  sensemaker.on('log', handleSensemakerLog);
+  sensemaker.on('warning', handleSensemakerWarning);
+  sensemaker.on('debug', (...debug) => {
+    console.debug(`[${((new Date() - start) / 1000)}s]`, '[SENSEMAKER]', '[DEBUG]', ...debug);
   });
 
   // Start Node
   try {
-    await jeeves.start();
+    await sensemaker.start();
   } catch (exception) {
     console.error('Exception on start:', exception);
     process.exit();
   }
 
   // Bind
-  process.on('SIGINT', jeeves.stop);
-  process.on('SIGTERM', jeeves.stop);
+  process.on('SIGINT', sensemaker.stop);
+  process.on('SIGTERM', sensemaker.stop);
 
   // Return Node
-  return jeeves;
+  return sensemaker;
 }
 
 // Execute Main
 main(settings).catch((exception) => {
-  console.error('[JEEVES]', exception);
+  console.error('[SENSEMAKER]', exception);
 }).then((output) => {
-  console.log('[JEEVES]', 'Started!  Agent ID:', output.id);
+  console.log('[SENSEMAKER]', 'Started!  Agent ID:', output.id);
 });

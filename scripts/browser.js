@@ -9,11 +9,14 @@ const React = require('react');
 const ReactDOM = require('react-dom/client');
 const { Provider, connect } = require('react-redux');
 
+// Fabric Components
+// const FabricChatBar = require('@fabric/http/components/FabricChatBar');
+
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
 
 // Components
-const JeevesUI = require('../components/JeevesUI');
+const SensemakerUI = require('../components/SensemakerUI');
 
 // Settings
 const settings = {
@@ -26,12 +29,14 @@ const actions = require('../actions');
 
 // ## Main Process
 async function main (input = {}) {
-  console.log('[JEEVES:BROWSER] main() executing...');
+  console.log('[SENSEMAKER:BROWSER] main() executing...');
 
-  customElements.define('fabric-chat-bar', FabricChatBar);
+  // ### Custom HTML Elements
+  // customElements.define('fabric-chat-bar', FabricChatBar);
 
+  // ### Event Listeners
   window.addEventListener('load', async () => {
-    console.debug('[JEEVES]', 'Window loaded!');
+    console.debug('[SENSEMAKER]', 'Window loaded!');
     // TODO: restore fabric-chat-bar
     // TODO: consider localforage
     // TODO: consider schema from Knex / MySQL
@@ -41,8 +46,8 @@ async function main (input = {}) {
     // document.body.append(chatbar);
   });
 
-  // ## React Application
-  // ### Connect Actions (Redux)
+  // ### React Application
+  // #### Connect Actions (Redux)
   // TODO: migrate this to `functions/mapStateToProps.js`
   const mapStateToProps = (state) => {
     return {
@@ -80,17 +85,16 @@ async function main (input = {}) {
     }
   };
 
-  console.debug('[JEEVES]', 'Connecting UI...');
+  console.debug('[SENSEMAKER]', 'Connecting UI...');
   const connector = connect(mapStateToProps, actions);
-  console.debug('[JEEVES]', 'Connector:', connector);
-  const ConnectedUI = connector(JeevesUI);
+  const ConnectedUI = connector(SensemakerUI);
 
-  // ## DOM Attachment
+  // ### DOM Attachment
   // Render
   const container = document.getElementById('application-target');
   const root = ReactDOM.createRoot(container);
 
-  console.debug('[JEEVES]', 'Rendering UI...');
+  console.debug('[SENSEMAKER]', 'Rendering UI...');
   root.render(
     <Provider store={store}>
       <ConnectedUI />
@@ -112,9 +116,7 @@ async function main (input = {}) {
 
 // Run Main Process
 main(settings).catch((exception) => {
-  console.error('[JEEVES:BROWSER] Main Process Exception:', exception);
+  console.error('[SENSEMAKER:BROWSER] Main Process Exception:', exception);
 }).then((output) => {
-  console.log('[JEEVES:BROWSER] Main Process Output:', output);
+  console.log('[SENSEMAKER:BROWSER] Main Process Output:', output);
 });
-
-// module.exports = main;

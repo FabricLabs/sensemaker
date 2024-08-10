@@ -7,7 +7,15 @@ const Service = require('@fabric/core/types/service');
 // Fabric HTTP
 const Remote = require('@fabric/http/types/remote');
 
+/**
+ * Defines the Fabric interface for Sensemaker.
+ */
 class FabricService extends Service {
+  /**
+   * Create an instance of the service.
+   * @param {Object} [settings] Settings for the service.
+   * @returns {FabricService} A new instance of the service.
+   */
   constructor (settings = {}) {
     super(settings);
 
@@ -15,18 +23,17 @@ class FabricService extends Service {
     this.settings = Object.assign({
       name: 'Fabric',
       remotes: [
+        { host: 'sensemaker.io', port: 443, secure: true },
         { host: 'hub.fabric.pub', port: 443, secure: true },
         { host: 'beta.jeeves.dev', port: 443, secure: true }
       ],
       state: {
         status: 'INITIALIZED',
         collections: {
-          courts: {},
           documents: {},
           people: {}
         },
         counts: {
-          courts: 0,
           documents: 0,
           people: 0
         }
@@ -88,14 +95,6 @@ class FabricService extends Service {
         // results = results.concat(index.results);
       } catch (exception) {
         console.error('[FABRIC] Could not search index:', exception);
-      }
-
-      try {
-        const response = await remote._SEARCH('/services/courtlistener/dockets', request);
-        console.debug('[FABRIC] Search results (CourtListener cases):', response);
-        // results = results.concat(response.results);
-      } catch (exception) {
-
       }
     }
 

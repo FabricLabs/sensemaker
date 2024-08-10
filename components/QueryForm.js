@@ -16,7 +16,6 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-
 class Chat extends React.Component {
   constructor (props) {
     super(props);
@@ -94,7 +93,7 @@ class Chat extends React.Component {
 
     const VERTICAL_MARGIN = '2.5';
 
-    const componentStyle = messages.length>0 ? {
+    const componentStyle = messages.length > 0 ? {
       display: 'absolute',
       left: 'calc(350px + 1em)',
       height: `calc(100vh - ${VERTICAL_MARGIN}rem)`, // Set a maximum height
@@ -104,10 +103,11 @@ class Chat extends React.Component {
       flexDirection: 'column',
       paddingBottom: '0'
     } : {
-      height: `calc(100vh - ${VERTICAL_MARGIN}rem)`,
+      // height: `calc(100vh - ${VERTICAL_MARGIN}rem)`,
+      height: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: '0'
+      paddingBottom: '1em'
     };
 
     return (

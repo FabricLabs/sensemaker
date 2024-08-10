@@ -21,8 +21,14 @@ const {
   Button
 } = require('semantic-ui-react');
 
+const ChatBox = require('./ChatBox');
+
+// Contracts
 const formatDate = require('../contracts/formatDate');
 
+/**
+ * Component for the main Uploads page.
+ */
 class UploadHome extends React.Component {
   constructor (settings = {}) {
     super(settings);
@@ -103,6 +109,16 @@ class UploadHome extends React.Component {
             : (<p>No results found</p>))
           }
         </List>
+        <ChatBox
+            {...this.props}
+            messagesEndRef={this.messagesEndRef}
+            includeFeed={true}
+            placeholder={'Ask about these files...'}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
+          />
       </Segment>
     );
   }

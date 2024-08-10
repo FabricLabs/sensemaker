@@ -9,7 +9,8 @@ const { Link } = require('react-router-dom');
 const {
   Icon,
   Menu,
-  Label
+  Label,
+  Popup
 } = require('semantic-ui-react');
 
 // Components
@@ -26,16 +27,8 @@ const {
   ENABLE_MATTERS,
   ENABLE_UPLOADS,
   ENABLE_FILES,
-  ENABLE_CASE_SEARCH,
-  ENABLE_COURT_SEARCH,
-  ENABLE_JUDGE_SEARCH,
-  ENABLE_OPINION_SEARCH,
   ENABLE_DOCUMENT_SEARCH,
   ENABLE_PERSON_SEARCH,
-  ENABLE_JURISDICTION_SEARCH,
-  ENABLE_REPORTER_SEARCH,
-  ENABLE_STATUTE_SEARCH,
-  ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY,
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS
@@ -81,49 +74,9 @@ class LibraryList extends React.Component {
           <Menu.Item as={Link} to='/conversations' onClick={() => this.props.resetChat()}>
             <div><Icon name='comment alternate' /> {!this.state.sidebarCollapsed && 'Conversations'}</div>
           </Menu.Item>
-          {USER_IS_BETA && ENABLE_CASE_SEARCH && (
-            <Menu.Item as={Link} to='/cases'>
-              <div><Icon name='briefcase' /> {!this.state.sidebarCollapsed && 'Cases'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
           {USER_IS_BETA && ENABLE_DOCUMENT_SEARCH && (
             <Menu.Item as={Link} to='/documents'>
               <div><Icon name='file outline alternate' /> {!this.state.sidebarCollapsed && 'Documents'} <div style={{ float: 'right' }}><Label size='mini' color='blue'><code>beta</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_JURISDICTION_SEARCH && (
-            <Menu.Item as={Link} to='/jurisdictions'>
-              <div><Icon name='globe' /> {!this.state.sidebarCollapsed && 'Jurisdictions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_STATUTE_SEARCH && (
-            <Menu.Item as={Link} to='/statutes'>
-              <div><Icon name='law' /> {!this.state.sidebarCollapsed && 'Statutes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_COURT_SEARCH && (
-            <Menu.Item as={Link} to='/courts'>
-              <div><Icon name='university' /> {!this.state.sidebarCollapsed && 'Courts'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_REPORTER_SEARCH && (
-            <Menu.Item as={Link} to='/reporters'>
-              <div><Icon name='newspaper outline' /> {!this.state.sidebarCollapsed && 'Reporters'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_VOLUME_SEARCH && (
-            <Menu.Item as={Link} to='/volumes'>
-              <div><Icon name='book' /> {!this.state.sidebarCollapsed && 'Volumes'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_JUDGE_SEARCH && (
-            <Menu.Item as={Link} to='/judges'>
-              <div><Icon name='user' /> {!this.state.sidebarCollapsed && 'Judges'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
-            </Menu.Item>
-          )}
-          {USER_IS_ALPHA && ENABLE_OPINION_SEARCH && (
-            <Menu.Item as={Link} to='/opinions'>
-              <div><Icon name='balance scale' /> {!this.state.sidebarCollapsed && 'Opinions'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
             </Menu.Item>
           )}
           {USER_IS_ALPHA && ENABLE_PERSON_SEARCH && (
@@ -141,12 +94,20 @@ class LibraryList extends React.Component {
               <div><Icon name='upload' /> {!this.state.sidebarCollapsed && 'Uploads'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
             </Menu.Item>
           )}
-          <ConversationsList
-            resetChat={this.props.resetChat}
-            fetchConversations={this.props.fetchConversations}
-            auth={this.props.auth}
-            conversations={this.props.conversations}
-          />
+          {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+            <Popup
+              mouseEnterDelay={USER_HINT_TIME_MS}
+              position='right center'
+              trigger={(
+                <Menu.Item as={Link} to='/matters' onClick={() => this.handleMenuItemClick('matters')} className='expand-menu'>
+                  <div><Icon name='gavel' /> {!this.state.sidebarCollapsed && 'Matters'} <div style={{ float: 'right' }}><Label size='mini'><code>alpha</code></Label> <Label size='mini' color='green'>New!</Label></div></div>
+                </Menu.Item>
+              )}>
+              <Popup.Content>
+                <p>Upload notes, files, and more to give context to a matter</p>
+              </Popup.Content>
+            </Popup>
+          )}
         </section>
       </div>
     );

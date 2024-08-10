@@ -23,9 +23,6 @@ class LoginPage extends React.Component {
         <HeaderBar />
         <Grid width='100%'>
           <Grid.Column mobile={16} tablet={8} computer={8}>
-            <Image src='/images/novo-licking-paw.svg' size='medium' />
-          </Grid.Column>
-          <Grid.Column mobile={16} tablet={8} computer={8}>
             <Card fluid>
               <Card.Content>
                 <Card.Header as='h2'>Log In</Card.Header>

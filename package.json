@@ -1,5 +1,5 @@
 {
-  "name": "@jeeves/core",
+  "name": "sensemaker",
   "version": "0.2.0-dev",
   "description": "crawl and aggregate data.",
   "main": "scripts/main.js",
@@ -51,12 +51,12 @@
     "social network",
     "social"
   ],
-  "author": "Legal Tools & Technology, Inc.",
+  "author": "Fabric Labs",
   "license": "UNLICENSED",
   "bugs": {
-    "url": "https://github.com/lttinc/jeeves.dev/issues"
+    "url": "https://github.com/FabricLabs/sensemaker/issues"
   },
-  "homepage": "https://trynovo.com",
+  "homepage": "https://sensemaker.io",
   "dependencies": {
     "@babel/register": "7.22.5",
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",

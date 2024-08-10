@@ -221,6 +221,16 @@ class Conversations extends React.Component {
           ellipsisItem={(windowWidth > 480) ? undefined : null}
           boundaryRange={(windowWidth > 480) ? 1 : 0}
         /> : null}
+        <ChatBox
+          {...this.props}
+          messagesEndRef={this.messagesEndRef}
+          includeFeed={true}
+          placeholder={'Ask about these conversations...'}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
+        />
       </Segment>
     );
   }

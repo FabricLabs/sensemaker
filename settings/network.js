@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Baseline Prompt
-const prompt = path.join(__dirname, '../prompts/novo.txt');
+const prompt = path.join(__dirname, '../prompts/sensemaker.txt');
 const baseline = fs.readFileSync(prompt, 'utf8');
 
 // Constants
@@ -34,7 +34,7 @@ module.exports = {
     name: 'LOCAL',
     prompt: baseline.toString('utf8'),
     model: 'llama3',
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 11434,
     secure: false,
     temperature: 0
@@ -68,7 +68,7 @@ module.exports = {
     fabric: false,
     temperature: 0
   }, */
-  'llama3-70b-fp16': {
+  /* 'llama3-70b-fp16': {
     name: 'GOTHMOG',
     prompt: baseline.toString('utf8'),
     model: 'llama3:70b-instruct-fp16',
@@ -77,7 +77,7 @@ module.exports = {
     secure: false,
     fabric: false,
     temperature: 0
-  },
+  }, */
   /* gemma: {
     name: 'GEMMA',
     prompt: baseline.toString('utf8'),
@@ -239,7 +239,7 @@ module.exports = {
       // 'OpenAI-Project': ''
     }
   }, */
-  'GPT-4o': {
+  /* 'GPT-4o': {
     prompt: baseline.toString('utf8'),
     model: 'gpt-4o-2024-05-13',
     host: 'api.openai.com',
@@ -253,5 +253,5 @@ module.exports = {
       // 'OpenAI-Organization': '',
       // 'OpenAI-Project': ''
     }
-  }
+  } */
 };

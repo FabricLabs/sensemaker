@@ -162,8 +162,7 @@ const getMessageInformation = (request) => {
     try {
       const state = getState();
       const token = state.auth.token;
-      // 'SEARCH', '/services/courtlistener/dockets'
-      const response = await fetch('/services/courtlistener/dockets', {
+      const response = await fetch('/documents', {
         method: 'SEARCH',
         headers: {
           //        'Authorization': `Bearer ${token}`,

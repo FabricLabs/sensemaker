@@ -1,7 +1,9 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 
+// Components
 const {
   Button,
   Card,
@@ -15,7 +17,7 @@ const QueryCounter = require('./QueryCounter');
 const PasswordChangeModal = require('./SettingsPasswordModal');
 const UserChangeModal = require('./SettingsUserModal');
 
-class JeevesUserSettings extends React.Component {
+class SensemakerUserSettings extends React.Component {
   constructor(props) {
     super(props);
 
@@ -25,6 +27,13 @@ class JeevesUserSettings extends React.Component {
       isPasswordModalOpen: false,
       isUserModalOpen: false,
     };
+  }
+
+  destroySession = () => {
+    console.debug('destroying session...');
+    this.setState({ loading: true });
+    this.props.logout();
+    window.location.replace('/');
   }
 
   // Toggle the modal
@@ -45,10 +54,10 @@ class JeevesUserSettings extends React.Component {
     const { username, email } = this.state;
 
     return (
-      <jeeves-user-settings class='fade-in'>
+      <sensemaker-user-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }} textAlign='center'>
           <Header as='h1' textAlign='center'>Settings</Header>
-          <container className='settings-container' >
+          <container className='settings-container'>
             <Header as='h2'>Account</Header>
             <Table>
               <Table.Header>
@@ -102,6 +111,17 @@ class JeevesUserSettings extends React.Component {
               </Card>
             </div>
           </container>
+          <container className='settings-container'>
+            <div className='security-actions'>
+              <Header as='h2'>Security</Header>
+              <Card>
+                <Card.Content>
+                  <Header as='h4'>Session</Header>
+                  <Button onClick={this.destroySession} color='red' icon='cancel'>Log Out</Button>
+                </Card.Content>
+              </Card>
+            </div>
+          </container>
         </Segment>
         <PasswordChangeModal
           token={this.props.auth.token}
@@ -116,10 +136,9 @@ class JeevesUserSettings extends React.Component {
           toggleUserModal={this.toggleUserModal}
           logout={this.props.logout}
         />
-
-      </jeeves-user-settings>
+      </sensemaker-user-settings>
     );
   }
 };
 
-module.exports = JeevesUserSettings;
+module.exports = SensemakerUserSettings;

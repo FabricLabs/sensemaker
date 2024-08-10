@@ -4,11 +4,10 @@
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
 ./settings/local.js: // TODO: @chrisinajar
-./settings/local.js: domain: 'trynovo.com', // TODO: implement network-wide document search, use `novo` as canonical domain
-./settings/network.js.bak: // TODO: network DNS configuration
-./settings/network.js.bak: /* TODO: enable hivemind */
+./settings/local.js: domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
 ./settings/network.js: // TODO: network DNS configuration
 ./settings/network.js: /* TODO: enable hivemind */
+./migrations/boot.js: const patches = []; // TODO: get from state
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
 ./types/queue.js: //       // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
@@ -17,6 +16,8 @@
 ./types/queue.js: // TODO: canonize this API
 ./types/queue.js: // TODO: reverse this logic to reject if !this.redis
 ./types/compiler.js: // TODO: load from:
+./types/agent.js.bak: // stop: ['\n'] // TODO: eliminate need for stop tokens
+./types/agent.js.bak: // TODO: consider making this a FabricMessageID
 ./types/trainer.js: // text: document.content, // TODO: re-work storage, use document ID instead
 ./types/trainer.js: // TODO: check for `embedding` and fail if not present
 ./types/trainer.js: // TODO: receive event in core service and correctly create blob, confirm ID matches
@@ -33,6 +34,7 @@
 ./components/Bridge.js: // TODO: re-evaluate multiple connections
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
 ./components/Bridge.js: // TODO: refactor @fabric/core/types/message to support arbitrary message types
+./components/Sensemaker.js.bak: // TODO: inherit from @fabric/http/types/component
 ./components/Jeeves.js: // TODO: inherit from @fabric/http/types/component
 ./components/AdminSettings.js: //TODO: add history push to different tabs
 ./components/AdminSettings.js: // TODO: add users to admin settings
@@ -47,6 +49,7 @@
 ./components/Dashboard.js: {/* END TODO */}
 ./components/Collection.js: // TODO: assign endpoint to search
 ./components/Collection.js: // TODO: generalize collection contents into cards
+./components/Jeeves.js.bak: // TODO: inherit from @fabric/http/types/component
 ./scripts/setup.sh: # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
 ./scripts/trainer.js: // TODO: import these from constants file
 ./scripts/trainer.js: // TODO: filter documents by embedding status (only process documents lacking embeddings)
@@ -113,94 +116,64 @@
 ./routes/matters/matter_view.js: // TODO: pagination
 ./routes/invitations/create_invitation.js: // TODO: serve from assets (@nplayer89)
 ./services/gemini.js: // TODO: import from prompts/sensemaker.txt
-./services/jeeves.js: // TODO: use levelgraph instead of level?
-./services/jeeves.js: // TODO: use bcryptjs instead of bcrypt?
-./services/jeeves.js: // TODO: reduce to whole library import?
-./services/jeeves.js: // TODO: extract defaults to `settings/default.json`
-./services/jeeves.js: // TODO: use path
-./services/jeeves.js: // TODO: enable recursive Filesystem (directories)
-./services/jeeves.js: // TODO: evaluate use of temperature
-./services/jeeves.js: // TODO: See if we can put this in its own file.
-./services/jeeves.js: // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
-./services/jeeves.js: // TODO: See if we can put this in its own file.
-./services/jeeves.js: // TODO: safe shutdown
-./services/jeeves.js: // TODO: define Agent methods from `documentation`
-./services/jeeves.js: // TODO: remove async, use local state instead
-./services/jeeves.js: // TODO: receive from message parameter
-./services/jeeves.js: // TODO: assign `then` to allow async processing
-./services/jeeves.js: // TODO: add `user_id` to request, assign to `creator`
-./services/jeeves.js: // TODO: assign `then` to allow async processing
-./services/jeeves.js: // TODO: prepare maximum token length
-./services/jeeves.js: // TODO: pass only chunk of document, to reduce payload size and increase relevancy
-./services/jeeves.js: // TODO: catch error
-./services/jeeves.js: // TODO: convert limit here to constant
-./services/jeeves.js: // TODO: reduce matter metadata to only relevant fields, use summary fields to compress context
-./services/jeeves.js: // TODO: use this new reduced metadata to reduce confusion / space consumed by metadata
-./services/jeeves.js: // TODO: Compressor
-./services/jeeves.js: // TODO: re-enable extractor for cards; file cards, case cards, jurisdiction cards, etc.
-./services/jeeves.js: // TODO: reject any answers including case titles not found in our database
-./services/jeeves.js: // TODO: re-enable case cards, standardize to other card formats
-./services/jeeves.js: // TODO: load from STATE file
-./services/jeeves.js: // TODO: check for successful prime
-./services/jeeves.js: courts: [], // TODO: implement
-./services/jeeves.js: documents: [], // TODO: implement
-./services/jeeves.js: people: [], // TODO: implement
-./services/jeeves.js: // TODO: define these with a map / loop
-./services/jeeves.js: // TODO: allow configurable whitelist
-./services/jeeves.js: // TODO: remove
-./services/jeeves.js: // TODO: test each search endpoint
-./services/jeeves.js: // TODO: switch to PATCH `/users/:username`
-./services/jeeves.js: // TODO: move all handlers to class methods
-./services/jeeves.js: // TODO: render page for accepting invitation
-./services/jeeves.js: // TODO: change to /sessions
-./services/jeeves.js: // TODO: change this route from `/sessionRestore` to use authMiddleware?
-./services/jeeves.js: // TODO: additional params (auth?)
-./services/jeeves.js: // TODO: provide state
-./services/jeeves.js: // TODO: fix this hack
-./services/jeeves.js: // const page = new CaseHome({}); // TODO: use CaseView
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./services/jeeves.js: // TODO: check token
-./services/jeeves.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
-./services/jeeves.js: // TODO: update message graph; consider requests, responses
-./services/jeeves.js: //             user_id: 1 // TODO: real user ID
-./services/jeeves.js: // TODO: troubleshoot why this is necessary (use `why()` above)
-./services/jeeves.js: // TODO: check token
-./services/jeeves.js: // TODO: store sample.id as fabric_id
-./services/jeeves.js: // TODO: retrieve docket_entry_id etc.
-./services/jeeves.js: room: roomID // TODO: replace with a generic property (not specific to Matrix)
-./services/jeeves.js: // TODO: fix @fabric/core/types/message to allow custom message types
-./services/jeeves.js: // TODO: fix @fabric/core/types/message to allow custom message types
-./services/jeeves.js: // TODO: multiple case search sources
-./services/jeeves.js: // TODO: concat into results
-./services/jeeves.js: // TODO: queue crawl jobs for missing cases
-./services/jeeves.js: //   // TODO: Harvard search
-./services/jeeves.js: //   // TODO: CourtListener search
-./services/jeeves.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
-./services/jeeves.js: // TODO: process PDF here
-./services/jeeves.js: // TODO: consider additional metadata fields
-./services/jeeves.js: // TODO: direct store to graph database
 ./services/fabric.js: // TODO: validate documents
 ./services/fabric.js: // TODO: decide inner Fabric state vs. standard document content
+./services/sensemaker.js: // TODO: use levelgraph instead of level?
+./services/sensemaker.js: // TODO: use bcryptjs instead of bcrypt?
+./services/sensemaker.js: // TODO: reduce to whole library import?
+./services/sensemaker.js: // TODO: extract defaults to `settings/default.json`
+./services/sensemaker.js: // TODO: use path
+./services/sensemaker.js: // TODO: enable recursive Filesystem (directories)
+./services/sensemaker.js: // TODO: evaluate use of temperature
+./services/sensemaker.js: // TODO: See if we can put this in its own file.
+./services/sensemaker.js: // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
+./services/sensemaker.js: // TODO: See if we can put this in its own file.
+./services/sensemaker.js: // TODO: safe shutdown
+./services/sensemaker.js: // TODO: define Agent methods from `documentation`
+./services/sensemaker.js: // TODO: remove async, use local state instead
+./services/sensemaker.js: // TODO: receive from message parameter
+./services/sensemaker.js: // TODO: assign `then` to allow async processing
+./services/sensemaker.js: // TODO: add `user_id` to request, assign to `creator`
+./services/sensemaker.js: // TODO: assign `then` to allow async processing
+./services/sensemaker.js: // TODO: prepare maximum token length
+./services/sensemaker.js: // TODO: pass only chunk of document, to reduce payload size and increase relevancy
+./services/sensemaker.js: // TODO: catch error
+./services/sensemaker.js: // TODO: convert limit here to constant
+./services/sensemaker.js: // TODO: reduce matter metadata to only relevant fields, use summary fields to compress context
+./services/sensemaker.js: // TODO: use this new reduced metadata to reduce confusion / space consumed by metadata
+./services/sensemaker.js: // TODO: Compressor
+./services/sensemaker.js: // TODO: re-enable extractor for cards; file cards, case cards, jurisdiction cards, etc.
+./services/sensemaker.js: // TODO: reject any answers including case titles not found in our database
+./services/sensemaker.js: // TODO: re-enable case cards, standardize to other card formats
+./services/sensemaker.js: // TODO: load from STATE file
+./services/sensemaker.js: // TODO: check for successful prime
+./services/sensemaker.js: courts: [], // TODO: implement
+./services/sensemaker.js: documents: [], // TODO: implement
+./services/sensemaker.js: people: [], // TODO: implement
+./services/sensemaker.js: // TODO: add filesystem watcher for live updates (low priority)
+./services/sensemaker.js: // TODO: define these with a map / loop
+./services/sensemaker.js: // TODO: allow configurable whitelist
+./services/sensemaker.js: // TODO: remove
+./services/sensemaker.js: // TODO: test each search endpoint
+./services/sensemaker.js: // TODO: switch to PATCH `/users/:username`
+./services/sensemaker.js: // TODO: move all handlers to class methods
+./services/sensemaker.js: // TODO: render page for accepting invitation
+./services/sensemaker.js: // TODO: change to /sessions
+./services/sensemaker.js: // TODO: change this route from `/sessionRestore` to use authMiddleware?
+./services/sensemaker.js: // TODO: check logic of PATCH, any other routes conflict?
+./services/sensemaker.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./services/sensemaker.js: // TODO: revert these routes
+./services/sensemaker.js: // TODO: check token
+./services/sensemaker.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
+./services/sensemaker.js: // TODO: update message graph; consider requests, responses
+./services/sensemaker.js: //             user_id: 1 // TODO: real user ID
+./services/sensemaker.js: // TODO: troubleshoot why this is necessary (use `why()` above)
+./services/sensemaker.js: // TODO: check token
+./services/sensemaker.js: room: roomID // TODO: replace with a generic property (not specific to Matrix)
+./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
+./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
+./services/sensemaker.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
+./services/sensemaker.js: // TODO: consider additional metadata fields
+./services/sensemaker.js: // TODO: direct store to graph database
 ./services/openai.js: const messages = request.messages; // TODO: pull higher in logic?
 ./services/openai.js: fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only
-./services/courtlistener.js: // TODO: these should be async streams
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/courtlistener.js: // TODO: this should be a stream
-./services/harvard.js: // TODO: these should be async streams
-./services/harvard.js: // TODO: this should be a stream
-./services/harvard.js: // TODO: this should be a stream
-./services/harvard.js: // TODO: this should be a stream
-./services/harvard.js: // TODO: this should be a stream
-./services/harvard.js: // TODO: this should be a stream

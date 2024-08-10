@@ -8,6 +8,7 @@ const {
 const React = require('react');
 const { Link } = require('react-router-dom');
 
+// Components
 // Semantic UI
 const {
   Button,
@@ -17,6 +18,7 @@ const {
   Label
 } = require('semantic-ui-react');
 
+// Local Components
 const HeaderBar = require('./HeaderBar');
 
 // Strings
@@ -44,7 +46,6 @@ class FrontPage extends React.Component {
       <div>
         <HeaderBar />
         <section>
-          <Image src="/images/favicon.svg" style={{ float: 'right', height: '17em', transform: 'scaleX(-1)' }} className='desktop-only' />
           <Header as='h1' style={{ fontSize: '10em' }}>{BRAND_NAME} <Label circular size='big' color='blue' style={{ position: 'relative', left: '-30px', verticalAlign: 'baseline' }}>beta</Label></Header>
           <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
           <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>

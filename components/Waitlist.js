@@ -41,7 +41,7 @@ class Waitlist extends React.Component {
     $('input[name=email]').focus();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.inquiries !== this.props.inquiries) {
       const { inquiries } = this.props;
 
@@ -105,7 +105,7 @@ class Waitlist extends React.Component {
     $('#login-form').slideDown();
   }
 
-  render() {
+  render () {
     const { email, error, joined } = this.state;
 
     return (
@@ -146,9 +146,6 @@ class Waitlist extends React.Component {
                 )}
               </Card.Content>
             </Card>
-          </Grid.Column>
-          <Grid.Column mobile={16} tablet={8} computer={8}>
-            <Image src='/images/novo-playing-with-ball.svg' size='medium' />
           </Grid.Column>
         </Grid>
       </div>

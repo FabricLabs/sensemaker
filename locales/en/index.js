@@ -4,11 +4,11 @@
 const LOCALE = 'en';
 
 // Branding
-const BRAND_NAME = 'Novo';
-const BRAND_TAGLINE = 'Draft Impeccable Legal Documents, Faster'
+const BRAND_NAME = 'sensemaker';
+const BRAND_TAGLINE = 'order from chaos.';
 
 // Pitch (CTA, Front Page, etc.)
-const PITCH_CTA_TEXT = 'Transform your practice with the most advanced legal AI.';
+const PITCH_CTA_TEXT = 'Powerful tools for sensemaking.';
 
 // Export to developer-land
 module.exports = {
