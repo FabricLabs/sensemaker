@@ -1,4 +1,4 @@
-./constants.js: const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
+./constants.js: const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 ./constants.js: const ENABLE_BILLING = false; // TODO: enable billing
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
@@ -43,8 +43,9 @@
 ./components/InformationSidebar.js: // TODO: implement message->case API
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/ContractHome.js: // TODO: implement this.applicationString
+./components/Changelog.js: {/* TODO: put list of announcements here */}
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
-./components/Dashboard.js: * TODO: Add routes for judges, opinions, documents, people, reporters, jurisdictions, and volumes
+./components/Dashboard.js: * TODO: Add routes for documents, people, and settings
 ./components/Dashboard.js: {/* TODO: fix these routes */}
 ./components/Dashboard.js: {/* END TODO */}
 ./components/Collection.js: // TODO: assign endpoint to search
