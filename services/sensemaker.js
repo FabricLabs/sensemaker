@@ -347,11 +347,13 @@ class Sensemaker extends Hub {
       content: this.settings.state
     };
 
-    this.redis = createClient({
-      username: this.settings.redis.username,
-      password: this.settings.redis.password,
-      socket: this.settings.redis
-    });
+    if (this.settings.redis) {
+      this.redis = createClient({
+        username: this.settings.redis.username,
+        password: this.settings.redis.password,
+        socket: this.settings.redis
+      });
+    }
 
     // TODO: See if we can put this in its own file.
     knex.QueryBuilder.extend('paginate', KnexPaginator);

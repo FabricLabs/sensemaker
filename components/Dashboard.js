@@ -47,11 +47,6 @@ const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
 const LibraryList = require('./LibraryList');
-const MattersHome = require('./MattersHome');
-const MattersNew = require('./MattersNew');
-const MattersList = require('./MattersList');
-const MatterNewChat = require('./MatterNewChat');
-const MatterView = require('./MatterView');
 const UploadHome = require('./UploadHome');
 const UserView = require('./UserView');
 const Changelog = require('./Changelog');
@@ -81,7 +76,6 @@ class Dashboard extends React.Component {
         progress: 0,
         isLoading: true,
         isLoggingOut: false,
-        openMatters: false,
         openLibrary: true,
         openConversations: false,
         openSectionBar: false,
@@ -353,7 +347,6 @@ class Dashboard extends React.Component {
   //this is the handler that sets which section is opened in the section bar in the left
   handleMenuItemClick = (menu) => {
     const newState = {
-      openMatters: false,
       openLibrary: false,
       openConversations: false,
     };
@@ -363,15 +356,6 @@ class Dashboard extends React.Component {
       case 'home':
         this.setState({ openSectionBar: false });
         this.props.resetChat();
-        break;
-      case 'matters':
-        if (this.state.openMatters && this.state.openSectionBar) {
-          this.setState({ openSectionBar: false });
-        } else {
-          newState.openMatters = true;
-          this.setState({ openSectionBar: true });
-          this.props.resetChat();
-        }
         break;
       case 'conversations':
         if (this.state.openConversations && this.state.openSectionBar) {
@@ -493,7 +477,6 @@ class Dashboard extends React.Component {
       matterTitle,
       informationSidebarOpen,
       openLibrary,
-      openMatters,
     } = this.state;
 
     // const sidebarStyle = this.state.sidebarCollapsed ? { width: 'auto', position: 'relative' } : {position: 'relative'};
@@ -663,15 +646,6 @@ class Dashboard extends React.Component {
                 />
               </section>
             )}
-            {this.state.openMatters && (
-              <section className='fade-in'>
-                <MattersList
-                  matters={this.props.matters}
-                  fetchMatters={this.props.fetchMatters}
-                  closeSidebars={this.closeSidebars}
-                />
-              </section>
-            )}
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
@@ -726,10 +700,6 @@ class Dashboard extends React.Component {
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
-                <Route path="/matters" element={<MattersHome {...this.props} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} />} />
-                <Route path="/matters/new" element={<MattersNew fetchCourts={this.props.fetchCourts} fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} matters={this.props.matters} createMatter={this.props.createMatter} />} />
-                <Route path="/matters/:id" element={<MatterView fetchCourtsByJurisdiction={this.props.fetchCourtsByJurisdiction} fetchCourt={this.props.fetchCourt} fetchJurisdiction={this.props.fetchJurisdiction} fetchJurisdictions={this.props.fetchJurisdictions} jurisdictions={this.props.jurisdictions} courts={this.props.courts} fetchCourtById={this.props.fetchCourtById} matters={this.props.matters} fetchMatter={this.props.fetchMatter} fetchMatterConversations={this.props.fetchMatterConversations} matterConversations={this.props.matterConversations} addContext={this.props.addContext} removeFile={this.props.removeFile} removeNote={this.props.removeNote} editMatter={this.props.editMatter} conversations={this.props.conversations} fetchMatterFiles={this.props.fetchMatterFiles} fetchMatterNotes={this.props.fetchMatterNotes} auth={this.props.auth} documentInfoSidebar={this.documentInfoSidebar} files={this.props.files} />} />
-                <Route path="/conversations/new/:matterID" element={<MatterNewChat {...this.props} />} />
                 <Route path="/uploads" element={<UploadHome {...this.props} />} />
                 <Route path="/users/:username" element={<UserView {...this.props} />} />
                 {/* TODO: fix these routes */}
