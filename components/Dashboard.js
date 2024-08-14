@@ -521,7 +521,7 @@ class Dashboard extends React.Component {
                       <p className='icon-label'>Chat</p>
                     </div>
                     <div className='expand-icon'>
-                      <Icon name={(openSectionBar && openMatters) ? 'left chevron' : 'right chevron'} size='small' />
+                      <Icon name={(openSectionBar) ? 'left chevron' : 'right chevron'} size='small' />
                     </div>
                   </Menu.Item>
                 )}>
