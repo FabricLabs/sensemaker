@@ -1,6 +1,8 @@
-sensemaker
-==========
+`SENSEMAKER`
+============
 making sense of stuff.
+
+**`SENSEMAKER`** provides robust intelligence gathering services, accumulating and organizing information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.
 
 ## Quick Start
 From the repository root:
@@ -8,17 +10,9 @@ From the repository root:
 npm i # install dependencies
 npm start # run node
 ```
-A basic web interface should now be provided at http://localhost:3045
+A basic web interface should now be provided at http://localhost:3040
 
 Enjoy!
-
-## Configuring
-Settings may be provided by modifying `settings/local.js`
-
-```yaml
-alias: Network alias.  Used when connecting to peers.
-seed: Seed phrase.
-```
 
 ## Architecture
 ```
@@ -33,20 +27,12 @@ seed: Seed phrase.
 ├── types — Core types
 ```
 
-## Sensemaker
-Sensemaker is the original intelligence gathering platform around which Jeeves is based.
+## Configuring
+Settings may be provided by modifying `settings/local.js`
 
-**General Purpose:** provide a common library for consuming data from various 
-remote APIs, caching that data in a local database, stitching that information
-together to extrapolate additional context for previously sparse data, and 
-delivering that gained context via a simple, queryable API.
-
-```html
-<h1>Digital Intelligence is Here.</h1>
-<p class="subtitle">Introducing <code>@sensemaker</code>, an organizer of information.</p>
-
-<h2>The Power of Intelligence</h2>
-<p><code>@sensemaker</code> provides robust intelligence gathering services, <strong>accumulating</strong> and <strong>organizing</strong> information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.</p>
+```yaml
+alias: Network alias.  Used when connecting to peers.
+seed: Seed phrase.
 ```
 
 ## Training
@@ -57,5 +43,3 @@ Run `scripts/scraper.js` to ingest initial data.  Sensemaker will regularly craw
 See the `./stores` directory.
 
 Please note that embedding the entire file contents as a single sequence might not be practical or efficient for large files, depending on the available memory and the model's maximum sequence length. You may need to split the content into smaller chunks or use more advanced techniques like windowing or dynamic batching.
-
-[jeeves-dev]: https://jeeves.dev

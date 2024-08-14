@@ -1,4 +1,4 @@
-// # The Jeeves Browser Script
+// # Browser
 // This file runs in the browser, and is responsible for rendering the UI.
 
 // ## Overview

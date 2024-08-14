@@ -42,7 +42,7 @@ module.exports = {
   domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
   moniker: NAME,
   release: 'beta',
-  name: 'Novo',
+  name: 'Sensemaker',
   mode: 'production',
   expander: true,
   crawl: false,
@@ -73,7 +73,7 @@ module.exports = {
     consensus: ['socrates']
   },
   fabric: {
-    peers: ['hub.fabric.pub:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
+    peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
       // { host: 'hub.fabric.pub', port: 443, secure: true },

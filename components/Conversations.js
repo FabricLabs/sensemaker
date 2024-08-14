@@ -20,7 +20,7 @@ const {
 const ChatBox = require('./ChatBox');
 
 /**
- * The Jeeves UI.
+ * The Conversations UI.
  * @param {Object} props Properties for the component.
  **/
 class Conversations extends React.Component {
@@ -39,11 +39,11 @@ class Conversations extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -107,7 +107,7 @@ class Conversations extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
-  render() {
+  render () {
     const { loading, error, conversations } = this.props;
     const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
 

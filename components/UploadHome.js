@@ -71,7 +71,7 @@ class UploadHome extends React.Component {
         <Button color='green' floated='right' as={Link} to='/uploads#new'>Upload File &raquo;</Button>
         <h1>Files</h1>
         <p><strong>{totalUploads}</strong> files.</p>
-        <jeeves-search fluid placeholder='Find...' className='ui search'>
+        <fabric-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input
               name='query'
@@ -89,7 +89,7 @@ class UploadHome extends React.Component {
             />
             <i aria-hidden="true" className="search icon"></i>
           </div>
-        </jeeves-search>
+        </fabric-search>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em' }}>
           {(searching || files.loading) ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true

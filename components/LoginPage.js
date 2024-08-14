@@ -19,7 +19,7 @@ class LoginPage extends React.Component {
     const { login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
-      <jeeves-login-page class="fade-in">
+      <sensemaker-login-page class="fade-in">
         <HeaderBar />
         <Grid width='100%'>
           <Grid.Column mobile={16} tablet={8} computer={8}>
@@ -31,7 +31,7 @@ class LoginPage extends React.Component {
             </Card>
           </Grid.Column>
         </Grid>
-      </jeeves-login-page>
+      </sensemaker-login-page>
     );
   }
 }

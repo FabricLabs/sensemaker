@@ -57,12 +57,12 @@ class LibraryList extends React.Component {
       <div>
         {/* {(USER_IS_ALPHA || USER_IS_ADMIN) && (
           <Menu.Item>
-            <jeeves-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
+            <fabric-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
               <div className="ui icon fluid input">
                 <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
                 <i aria-hidden="true" className="search icon"></i>
               </div>
-            </jeeves-search>
+            </fabric-search>
           </Menu.Item>
         )} */}
         {(USER_IS_ALPHA || USER_IS_ADMIN) && (

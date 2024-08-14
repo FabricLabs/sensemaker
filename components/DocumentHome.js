@@ -70,7 +70,7 @@ class DocumentHome extends React.Component {
           <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
           <h1>Documents</h1>
           <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
-          <jeeves-search fluid placeholder='Find...' className='ui search'>
+          <fabric-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
               <input
                 name='query'
@@ -88,7 +88,7 @@ class DocumentHome extends React.Component {
               />
               <i aria-hidden="true" className="search icon"></i>
             </div>
-          </jeeves-search>
+          </fabric-search>
           <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
             {(searching || documents.loading) ? (
               <Loader active inline="centered" /> // Display loading icon if searching is true

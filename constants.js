@@ -17,12 +17,12 @@ const {
 // Sensemaker
 const AGENT_MAX_TOKENS = 8192;
 const AGENT_TEMPERATURE = 0.5;
+const BRAND_NAME = 'Sensemaker';
 const ENABLE_LOGIN = true;
 const ENABLE_REGISTRATION = false;
 const EMBEDDING_MODEL = 'mxbai-embed-large';
 
-// Jeeves
-const BRAND_NAME = 'Novo';
+// Features
 const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
@@ -33,16 +33,8 @@ const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_MATTERS = true;
 const ENABLE_UPLOADS = true;
-const ENABLE_CASE_SEARCH = true;
-const ENABLE_COURT_SEARCH = true;
-const ENABLE_JUDGE_SEARCH = false;
-const ENABLE_OPINION_SEARCH = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
-const ENABLE_JURISDICTION_SEARCH = true;
-const ENABLE_REPORTER_SEARCH = false;
-const ENABLE_STATUTE_SEARCH = false;
-const ENABLE_VOLUME_SEARCH = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
 const SEARCH_CASES_MAX_WORDS = 20;
@@ -53,7 +45,7 @@ const SYNC_EMBEDDINGS_COUNT = 100;
 const INTEGRITY_CHECK = false;
 
 // Browser
-const BROWSER_DATABASE_NAME = 'jeeves';
+const BROWSER_DATABASE_NAME = 'sensemaker';
 const BROWSER_DATABASE_TOKEN_TABLE = 'tokens';
 
 // Records
@@ -88,18 +80,10 @@ module.exports = {
   ENABLE_REGISTRATION,
   ENABLE_CHAT,
   ENABLE_MATTERS,
-  ENABLE_CASE_SEARCH,
-  ENABLE_COURT_SEARCH,
   ENABLE_FILES,
-  ENABLE_JUDGE_SEARCH,
-  ENABLE_OPINION_SEARCH,
   ENABLE_DOCUMENT_SEARCH,
   ENABLE_PERSON_SEARCH,
-  ENABLE_JURISDICTION_SEARCH,
-  ENABLE_REPORTER_SEARCH,
-  ENABLE_STATUTE_SEARCH,
   ENABLE_UPLOADS,
-  ENABLE_VOLUME_SEARCH,
   ENABLE_LIBRARY,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
