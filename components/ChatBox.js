@@ -52,7 +52,6 @@ class ChatBox extends React.Component {
       reGeneratingReponse: false,
       groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
-      //specific flag to use when you come from a previous conversation wich last submitted message was from user, to not show "jeeves is generationg reponse..."
       previousFlag: false,
       connectionProblem: false,
       copiedStatus: {},

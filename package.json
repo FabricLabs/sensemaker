@@ -10,7 +10,6 @@
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
-    "jeeves": "node scripts/jeeves.js && http-server assets",
     "make:api": "jsdoc2md --configure jsdoc.json --files types/*.js services/*.js README.md > API.md",
     "make:browser": "npm run build:browser",
     "make:coverage": "npm run coverage && c8 report --reporter html",
