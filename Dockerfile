@@ -23,7 +23,7 @@ WORKDIR /opt/app
 COPY . .
 
 ## Build
-RUN npm run report:install
+RUN npm install
 RUN npm run build
 
 ## Test
@@ -31,4 +31,5 @@ RUN npm test
 
 ## Run
 EXPOSE 7777
+EXPOSE 3040
 CMD ["npm", "start"]

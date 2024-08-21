@@ -5,7 +5,6 @@
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
 ./settings/local.js: // TODO: @chrisinajar
 ./settings/local.js: domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
-./settings/network.js: // TODO: network DNS configuration
 ./settings/network.js: /* TODO: enable hivemind */
 ./migrations/boot.js: const patches = []; // TODO: get from state
 ./types/spa.js: // TODO: move CSS to inline from webpack
@@ -29,7 +28,6 @@
 ./types/agent.js: }); // TODO: remove this...
 ./types/agent.js: if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 ./Dockerfile: # TODO: mount SSHFS / similar here
-./CRAWLING.md: TODO: review instructions from CodingIT team
 ./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/Bridge.js: // TODO: re-evaluate multiple connections
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
@@ -77,9 +75,7 @@
 ./routes/messages/create_message.js: // TODO: restore response tracking
 ./routes/messages/create_message.js: // TODO: store request ID
 ./routes/messages/create_message.js: // TODO: restore titling
-./routes/products/list_products.js: // TODO: import auth token, load data
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
-./routes/index.js: // view: require('./statutes/view_statute'), // TODO: create this
 ./routes/uploads/get_uploads.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/conversations/get_conversations_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/conversations/get_conversations.js: // TODO: re-evaluate security of `is_admin` check
