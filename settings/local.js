@@ -92,6 +92,15 @@ module.exports = {
     password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
     database: 'db_jeeves'
   },
+  discord: {
+    enable: true,
+    app: {
+      id: 'get from discord',
+      secret: 'get from discord'
+    },
+    coordinator: 'get from discord', // #sensemaker on Fabric Discord
+    token: 'get from discord'
+  },
   embeddings: {
     enable: false
   },

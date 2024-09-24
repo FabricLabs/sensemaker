@@ -316,10 +316,8 @@ class Trainer extends Service {
           return;
         }
 
-        console.debug('[TRAINER]', 'Terms of Use:', terms.toString('utf8'));
-
         // Store Documents
-        // NOVO Web Application
+        // Web Application
         // const spa = await this.ui.load();
         // console.debug('[TRAINER]', 'SPA:', spa);
 
@@ -348,21 +346,20 @@ class Trainer extends Service {
 
       // Start Services
       // Redis
-      console.debug('[NOVO]', '[TRAINER]', 'Starting Redis...');
-      console.debug('[NOVO]', '[TRAINER]', 'Redis:', this.settings.redis);
+      console.debug('[SENSEMAKER]', '[TRAINER]', 'Starting Redis...');
 
       this.redis.on('connect', async () => {
-        console.debug('[NOVO]', '[TRAINER]', 'Redis connected.');
+        console.debug('[SENSEMAKER]', '[TRAINER]', 'Redis connected.');
         const allDocs = await this.ingestReferences();
-        console.debug('[NOVO]', '[TRAINER]', 'Ingested references:', allDocs);
+        // console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references:', allDocs);
 
         this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
           redisClient: this.redis,
           indexName: this.settings.redis.name || 'novo-embeddings'
         });
 
-        // console.debug('[NOVO]', '[TRAINER]', 'Embeddings:', this.embeddings);
-        console.debug('[NOVO]', '[TRAINER]', 'Ingested references!');
+        // console.debug('[SENSEMAKER]', '[TRAINER]', 'Embeddings:', this.embeddings);
+        console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references!');
 
         /* try {
           const docs = await this.loader.load();

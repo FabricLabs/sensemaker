@@ -7,6 +7,7 @@
     "build": "npm run build:browser",
     "build:browser": "node scripts/build.js",
     "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
+    "cli": "node scripts/cli.js",
     "coverage": "c8 npm test",
     "dev": "npm run build && npx concurrently \"npm run watch\" \"npm start\"",
     "docs": "npm run make:docs && npm run serve:docs",
@@ -59,6 +60,7 @@
   "dependencies": {
     "@babel/register": "7.22.5",
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
+    "@fabric/discord": "FabricLabs/fabric-discord#feature/v0.1.0-RC1",
     "@fabric/http": "FabricLabs/fabric-http#feature/v0.1.0-RC1",
     "@fabric/hub": "FabricLabs/hub.fabric.pub#feature/v0.1.0-RC1",
     "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",

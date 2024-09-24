@@ -64,7 +64,7 @@ const Filesystem = require('@fabric/core/types/filesystem');
 // Sources
 // const Bitcoin = require('@fabric/core/services/bitcoin');
 // const WebHooks = require('@fabric/webhooks');
-// const Discord = require('@fabric/discord');
+const Discord = require('@fabric/discord');
 // const Ethereum = require('@fabric/ethereum');
 // const GitHub = require('@fabric/github');
 const Matrix = require('@fabric/matrix');
@@ -210,7 +210,7 @@ class Sensemaker extends Hub {
     this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
     this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
-    // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
+    this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
 
     // Other Services
     this.openai = new OpenAI(this.settings.openai);
@@ -1333,7 +1333,7 @@ class Sensemaker extends Hub {
       });
 
       // TODO: check for successful prime
-      console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
+      // console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
     }
   }
 
@@ -1508,15 +1508,15 @@ class Sensemaker extends Hub {
         conversation_id: 'conversation_id',
         help_role: 'help_role',
       }
+
       fileUploadMessage.type = 'FileUploadMsg';
-      
+
       //here we broadcast the message, telling 'Bridge.js' which role sent a message
       const message = Message.fromVector([fileUploadMessage.type, JSON.stringify(fileUploadMessage)]);
       this.http.broadcast(message);
     }
 
     redisSubscriber.connect().then(() => {
-      console.log('Connected to Redis for subscribing');
       redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
       redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
     });
@@ -1551,7 +1551,7 @@ class Sensemaker extends Hub {
     // Register Services
     // await this._registerService('webhooks', WebHooks);
     // await this._registerService('bitcoin', Bitcoin);
-    // await this._registerService('discord', Discord);
+    await this._registerService('discord', Discord);
     // await this._registerService('ethereum', Ethereum);
     // await this._registerService('github', GitHub);
     // await this._registerService('matrix', Matrix);
@@ -1611,6 +1611,14 @@ class Sensemaker extends Hub {
       this.matrix.on('activity', this._handleMatrixActivity.bind(this));
       this.matrix.on('ready', this._handleMatrixReady.bind(this));
       this.matrix.on('error', this._handleMatrixError.bind(this));
+    }
+
+    if (this.discord) {
+      this.discord.on('activity', this._handleDiscordActivity.bind(this));
+      this.discord.on('ready', this._handleDiscordReady.bind(this));
+      this.discord.on('error', this._handleDiscordError.bind(this));
+      this.discord.on('log', this._handleDiscordLog.bind(this));
+      this.discord.on('debug', this._handleDiscordDebug.bind(this));
     }
 
     // OpenAI Events
@@ -1683,7 +1691,13 @@ class Sensemaker extends Hub {
     if (this.email) await this.email.start();
     if (this.matrix) await this.matrix.start();
     // if (this.github) await this.github.start();
-    if (this.discord) await this.discord.start();
+    if (this.discord) {
+      try {
+        await this.discord.start();
+      } catch (exception) {
+        console.error('[SENSEMAKER:CORE]', '[DISCORD]', 'Error starting Discord:', exception);
+      }
+    }
 
     // Debug Services
     // await this.rag.start();
@@ -2161,7 +2175,7 @@ class Sensemaker extends Hub {
             if (this.pacer) source.counts = await this.discord.getCounts();
             break;
           case 'matrix':
-            if (this.pacer) source.counts = await this.discord.getCounts();
+            if (this.pacer) source.counts = await this.matrix.getCounts();
             break;
           default:
             console.warn('[SENSEMAKER:CORE]', 'Unhandled Datasource:', name);
@@ -2733,6 +2747,30 @@ class Sensemaker extends Hub {
         results: results
       });
     });
+  }
+
+  async _handleDiscordActivity (activity) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity);
+  }
+
+  async _handleDiscordError (error) {
+    console.error('[SENSEMAKER:CORE]', '[DISCORD]', 'Error:', error);
+  }
+
+  async _handleDiscordMessage (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message:', message);
+  }
+
+  async _handleDiscordLog (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Log Event:', message);
+  }
+
+  async _handleDiscordDebug (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Debug Event:', message);
+  }
+
+  async _handleDiscordReady (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Ready:', message);
   }
 
   async _handleHealthRequest (req, res, next) {

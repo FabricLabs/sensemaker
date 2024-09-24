@@ -4,7 +4,7 @@ const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
 module.exports = async function (req, res, next) {
-  console.debug('[NOVO]', '[HTTP]', 'Handling inbound message:', req.body);
+  console.debug('[SENSEMAKER]', '[HTTP]', 'Handling inbound message:', req.body);
 
   let isNew = false;
   let subject = null;
@@ -75,7 +75,7 @@ module.exports = async function (req, res, next) {
       /* this.extractor.query({
         query: `$CONTENT\n\`\`\`\n${request.content}\n\`\`\``
       }).then(async (extracted) => {
-        console.debug('[NOVO]', '[HTTP]', 'Got extractor output:', extracted.content);
+        console.debug('[SENSEMAKER]', '[HTTP]', 'Got extractor output:', extracted.content);
         if (extracted && extracted.content) {
           try {
             const caseCards = JSON.parse(extracted.content).map((x) => {
@@ -102,7 +102,7 @@ module.exports = async function (req, res, next) {
 
       if (isNew) {
         this._summarizeMessagesToTitle(messages).catch((error) => {
-          console.error('[NOVO]', '[HTTP]', 'Error summarizing messages:', error);
+          console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
         }).then(async (output) => {
           if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
@@ -117,7 +117,7 @@ module.exports = async function (req, res, next) {
       }
 
       this._summarizeMessages(messages).catch((error) => {
-        console.error('[NOVO]', '[HTTP]', 'Error summarizing messages:', error);
+        console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
       }).then(async (output) => {
         if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Summarized conversation:', output);
         let summary = output?.content || 'broken content summary';

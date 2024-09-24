@@ -7,9 +7,8 @@ exports.seed = async function (knex) {
   await knex('conversations').del();
   await knex('users').del();
   await knex('users').insert([
-    { id: 1, username: 'Jeeves', email: 'jeeves@jeeves.dev' },
-    { id: 2, username: 'Administrator', email: 'admin@jeeves.dev', is_admin: true },
-    { id: 3, username: 'martindale', email: 'eric@jeeves.dev', is_admin: true, password: '$2b$10$p39AvbqtRbCyhfwtj5z78eE8TFafZVVW1s5SoEegIlCBIyoGGlIUW', salt: '$2b$10$p39AvbqtRbCyhfwtj5z78e' },
-    { id: 4, username: 'Wry', email: 'johnny@jeeves.dev', is_admin: true, password: '$2b$10$TICJ5X5S11W.JTTEtS26ZOzewbGGZi3aYyfXajpNxiXoT.R9FBmxq', salt: '$2b$10$TICJ5X5S11W.JTTEtS26ZO' }
+    { id: 1, username: 'sensemaker', email: 'agent@sensemaker.io' },
+    { id: 2, username: 'Administrator', email: 'admin@sensemaker.io', is_admin: true },
+    { id: 3, username: 'martindale', email: 'eric@ericmartindale.com', is_admin: true, password: '$2b$10$p39AvbqtRbCyhfwtj5z78eE8TFafZVVW1s5SoEegIlCBIyoGGlIUW', salt: '$2b$10$p39AvbqtRbCyhfwtj5z78e' },
   ]);
 };
