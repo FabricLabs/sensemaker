@@ -38,8 +38,9 @@ const network = require('./network');
  */
 module.exports = {
   alias: NAME,
+  authority: 'localhost:3040',
   benchmark: false,
-  domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
+  domain: 'sensemaker.io', // TODO: implement network-wide document search
   moniker: NAME,
   release: 'beta',
   name: 'Sensemaker',
@@ -76,10 +77,10 @@ module.exports = {
     peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
-      // { host: 'hub.fabric.pub', port: 443, secure: true },
+      { host: 'hub.fabric.pub', port: 443, secure: true, collections: ['documents'] },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
       // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
-      { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
     ],
     search: true,
     sync: false
@@ -136,8 +137,8 @@ module.exports = {
     key: 'get from postmarkapp.com',
     enable: false,
     service: 'gmail',
-    username: 'agent@trynovo.com',
-    password: 'lobq mioh pimu usrr'
+    username: 'sensemaker@localhost',
+    password: 'application-specific-password'
   },
   files: {
     corpus: '/media/storage/stores/sensemaker',
@@ -146,12 +147,12 @@ module.exports = {
   },
   gemini: {
     model: 'gemini-pro',
-    token: 'AIzaSyC2lGAZznayOAvs8dzAtqzpsS2rtcmruEk'
+    token: 'get from gemini'
   },
   stripe: {
     token: {
-      public: 'pk_test_51NLE0lHoVtrEXpIkwVlVukGcEwKXQz7qHqQ80FWg1YAPL1MmYl3HEifAcW1g4Frb70De1l7ENwh5aSPLnmF4Nl0y00A3AcE0bD',
-      private: 'sk_test_51NLE0lHoVtrEXpIkP64o3ezEJgRolvx7R2c2zcijECKHwJ2NLT8GBNEoMDHLkEAJlNaA4o26aOU6n5JRNmxWRSSR00GVf6yvc8'
+      public: 'get from stripe',
+      private: 'get from stripe'
     }
   },
   interval: 600000, // 10 minutes (formerly 1 Hz)
@@ -168,14 +169,12 @@ module.exports = {
   services: [
     'bitcoin',
     // 'discord',
-    // 'ethereum',
     'github',
     'matrix',
-    // 'shyft',
-    // 'twilio'
+    'twilio'
   ],
   site: {
-    title: 'Novo &middot; Your Legal Assistant'
+    title: 'sensemaker &middot; digital intelligence',
   },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {
@@ -195,36 +194,10 @@ module.exports = {
     ],
     token: null
   },
-  statutes: {
-    // enable: true,
-    jurisdictions: [
-      'Arkansas',
-      'California',
-      'Colorado',
-      'Florida',
-      'NewJersey',
-      'NewYork',
-      'Ohio',
-      'Pennsylvania',
-      'Texas'
-    ]
-  },
-  courtlistener: {
-    enable: false,
-    type: 'postgresql',
-    host: 'localhost',
-    database: 'courtlistener',
-    username: 'django',
-    password: 'QLgIPaLyQRmaHBbxIoYzRPvlVkZbYESswOtLTZzm'
-  },
   google: {
     ai: {
       token: 'get from google'
     }
-  },
-  harvard: {
-    enable: true,
-    token: '83bb54f6f8f622c4b928cbdba657048007e60449'
   },
   huggingface: {
     token: 'add your huggingface token here'
@@ -239,8 +212,8 @@ module.exports = {
   },
   matrix: {
     enable: false,
-    name: '@jeeves/core',
-    handle: '@jeeves:fabric.pub',
+    name: '@sensemaker/core',
+    handle: '@sensemaker:fabric.pub',
     connect: true,
     constraints: {
       sync: {
@@ -248,8 +221,8 @@ module.exports = {
       }
     },
     homeserver: 'https://fabric.pub',
-    coordinator: '!MGbAhkzIzcRYgyaDUa:fabric.pub',
-    token: 'syt_amVldmVz_RftFycWpngMbLYTORHii_1uS5Dp'
+    coordinator: '!CcnochnehZgASDIexN:fabric.pub',
+    token: 'get from matrix'
   },
   ollama: {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
@@ -258,9 +231,6 @@ module.exports = {
     model: 'llama3', // default model
     models: ['llama3'], // models to "prime" (preload)
     temperature: 0
-  },
-  pacer: {
-    enable: true
   },
   openai: {
     enable: true,

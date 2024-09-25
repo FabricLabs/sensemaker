@@ -7,6 +7,7 @@ const ReactDOMServer = require('react-dom/server');
 // Semantic UI
 const { Link } = require('react-router-dom');
 const {
+  Card,
   Label,
   Segment,
   Pagination,
@@ -18,6 +19,9 @@ const {
 
 // Components
 const ChatBox = require('./ChatBox');
+
+// Functions
+const toRelativeTime = require('../functions/toRelativeTime');
 
 /**
  * The Conversations UI.
@@ -118,6 +122,7 @@ class Conversations extends React.Component {
     if (error) {
       return <div>Error: {error}</div>;
     }
+
     // Calculate conversations for current page
     const itemsPerPage = windowHeight < 600 ? 11 : windowHeight < 769 ? 14 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -142,65 +147,119 @@ class Conversations extends React.Component {
     return (
       <Segment className='fade-in' fluid style={{ minHeight: '100%', maxHeight: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
-          <h2 style={{ marginTop: '0' }}>Conversations</h2>
+          <h2 style={{ marginTop: '0' }}>Chat</h2>
           <Button icon color='green'>New Conversation <Icon name='right chevron' /></Button>
         </div>
         <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
-        {(currentConversations && currentConversations.length) ? currentConversations.map(conversation => (
-          <div key={conversation.id} className="conversationItem">
-            <h4 style={{ marginBottom: '0.5em' }}>
-              {this.state.editingID === conversation.id ? (
-                <Form>
-                  <div className='conversation-line'>
-                    <div className='conversation-line-input'>
-                      <Form.Input
-                        type="text"
-                        maxLength={255}
-                        value={this.state.editedTitle}
-                        onChange={(e) => this.setState({ editedTitle: e.target.value })}
-                        autoFocus
-                        fluid
-                        loading={editLoading}
-                      />
-                    </div>
-                    <Icon
-                      name='check'
-                      className='saveIcon'
-                      style={{ cursor: 'pointer', color: 'grey' }}
-                      onClick={() => this.handleSaveEditing(conversation.id)}
-                      size='big'
-                      title='Save'
-                    />
-                    <Icon
-                      name='cancel'
-                      className='cancelIcon'
-                      style={{ cursor: 'pointer', color: 'grey' }}
-                      onClick={this.handleCancelEditing}
-                      size='big'
-                      title='Cancel'
-                    />
-                  </div>
-                </Form>
-              ) : (
-                <div>
-                  <Link to={'/conversations/' + conversation.id} onClick={() => this.props.resetChat()}>
-                    {new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}{": "}
-                    {conversation.title}
-                  </Link>
-                  <Icon
-                    name='edit'
-                    className='editIcon'
-                    onClick={() => this.handleEditClick(conversation.id, conversation.title)}
-                    title='Edit'
-                  />
-                </div>
-              )}
-            </h4>
-            <Divider style={{ marginTop: '0.3em', marginBottom: '0.5em' }} />
-          </div>
-        )) : <div ref={this.messagesEndRef} style={componentStyle}>
+
+        <Divider />
+
+        <div className='desktop-only'>
+          <h3>People</h3>
+          <Card.Group centered>
+            <Card>
+              <Card.Content>
+                <Label as='a' color='red' ribbon='right'>Demo</Label>
+                <Card.Header>John Doe</Card.Header>
+                <Card.Meta>Joined in 2021</Card.Meta>
+                <Card.Description>John is a software engineer living in San Francisco.</Card.Description>
+              </Card.Content>
+            </Card>
+            <Card>
+              <Card.Content>
+                <Label as='a' color='red' ribbon='right'>Demo</Label>
+                <Card.Header>Jane Doe</Card.Header>
+                <Card.Meta>Joined in 2021</Card.Meta>
+                <Card.Description>Jane is a software engineer living in San Francisco.</Card.Description>
+              </Card.Content>
+            </Card>
+            <Card>
+              <Card.Content>
+                <Label as='a' color='red' ribbon='right'>Demo</Label>
+                <Card.Header>John Doe</Card.Header>
+                <Card.Meta>Joined in 2021</Card.Meta>
+                <Card.Description>John is a software engineer living in San Francisco.</Card.Description>
+              </Card.Content>
+            </Card>
+          </Card.Group>
+        </div>
+        <Divider />
+        <h3>History</h3>
+        <ChatBox
+          {...this.props}
+          messagesEndRef={this.messagesEndRef}
+          includeAttachments={false}
+          includeFeed={true}
+          placeholder={'Ask about these conversations...'}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
+          style={{ margin: '0' }}
+        />
+        {(currentConversations && currentConversations.length) ? (
+          <Card.Group style={{ marginTop: '1em' }}>
+            {currentConversations.map(conversation => {
+              return (
+                <Card key={conversation.id} fluid className='conversationItem' style={{ marginTop: '1em' }}>
+                  <Card.Content extra>
+                    <abbr className='relative-time' title={new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>
+                  </Card.Content>
+                  <Card.Content>
+                    {this.state.editingID === conversation.id ? (
+                      <Form>
+                        <div className='conversation-line'>
+                          <div className='conversation-line-input'>
+                            <Form.Input
+                              type="text"
+                              maxLength={255}
+                              value={this.state.editedTitle}
+                              onChange={(e) => this.setState({ editedTitle: e.target.value })}
+                              autoFocus
+                              fluid
+                              loading={editLoading}
+                            />
+                          </div>
+                          <Icon
+                            name='check'
+                            className='saveIcon'
+                            style={{ cursor: 'pointer', color: 'grey' }}
+                            onClick={() => this.handleSaveEditing(conversation.id)}
+                            size='big'
+                            title='Save'
+                          />
+                          <Icon
+                            name='cancel'
+                            className='cancelIcon'
+                            style={{ cursor: 'pointer', color: 'grey' }}
+                            onClick={this.handleCancelEditing}
+                            size='big'
+                            title='Cancel'
+                          />
+                        </div>
+                      </Form>
+                    ) : (
+                      <Card.Header>
+                        <Link to={'/conversations/' + conversation.id} as='h4' onClick={() => this.props.resetChat()}>{conversation.title}</Link>
+                        <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
+                      </Card.Header>
+                    )}
+                  </Card.Content>
+                </Card>
+              );
+            })}
+          </Card.Group>
+        ) : <div ref={this.messagesEndRef} style={componentStyle}>
           {/* <div style={{marginBottom: '2em'}}>We haven't had any conversations yet.</div> */}
           {/* <Button as={Link} to='/conversations/new' primary>Ask a Question</Button> */}
+          {(conversations.length > itemsPerPage) ? <Pagination
+            size='tiny'
+            activePage={currentPage}
+            totalPages={Math.ceil(conversations.length / itemsPerPage)}
+            onPageChange={this.handlePaginationChange}
+            ellipsisItem={(windowWidth > 480) ? undefined : null}
+            boundaryRange={(windowWidth > 480) ? 1 : 0}
+          /> : null}
           <ChatBox
             {...this.props}
             messagesEndRef={this.messagesEndRef}
@@ -211,8 +270,8 @@ class Conversations extends React.Component {
             thumbsUp={this.props.thumbsUp}
             thumbsDown={this.props.thumbsDown}
           />
-
         </div>}
+
         {(conversations.length > itemsPerPage) ? <Pagination
           size='tiny'
           activePage={currentPage}
@@ -221,16 +280,6 @@ class Conversations extends React.Component {
           ellipsisItem={(windowWidth > 480) ? undefined : null}
           boundaryRange={(windowWidth > 480) ? 1 : 0}
         /> : null}
-        <ChatBox
-          {...this.props}
-          messagesEndRef={this.messagesEndRef}
-          includeFeed={true}
-          placeholder={'Ask about these conversations...'}
-          resetInformationSidebar={this.props.resetInformationSidebar}
-          messageInfo={this.props.messageInfo}
-          thumbsUp={this.props.thumbsUp}
-          thumbsDown={this.props.thumbsDown}
-        />
       </Segment>
     );
   }

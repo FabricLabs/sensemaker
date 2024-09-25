@@ -73,6 +73,11 @@ const login = (username, password) => {
 
       const session = await response.json();
 
+      // Assign to cookie
+      document.cookie = `token=${session.token}; path=/;`;
+      console.debug('Token assigned to cookie:', session.token);
+      console.debug*('Session:', session);
+
       // Here we create the database and store the session
       const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
 
@@ -103,16 +108,15 @@ const login = (username, password) => {
   };
 };
 
-
 const reLogin = (token) => {
   return async dispatch => {
     dispatch(loginRequest());
     try {
-      const response = await fetch('/sessionRestore', {
+      const response = await fetch('/sessions/current', {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
@@ -124,6 +128,7 @@ const reLogin = (token) => {
         isAdmin: user.isAdmin,
         isBeta: user.isBeta,
         isCompliant: user.isCompliant,
+        user_discord: user.user_discord,
         id: user.id
       }
 
@@ -169,11 +174,10 @@ const register = (username, password) => {
 const fullRegister = (username, password, email, firstName, lastName, firmName, firmSize) => {
   return async (dispatch) => {
     dispatch(fullRegisterRequest());
+
     try {
-
       //this creates a timeout promise of 15000 ms, which returns the string msg there.
-      const timeoutPromise = createTimeoutPromise(15000, 'Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@novo.com.');
-
+      const timeoutPromise = createTimeoutPromise(15000, 'Registration could not be completed due to a timeout error. Please check your network connection and try again. For ongoing issues, contact our support team at support@sensemaker.io.');
       const fetchPromise = fetch('/users/full', {
         method: 'POST',
         headers: {
@@ -185,7 +189,7 @@ const fullRegister = (username, password, email, firstName, lastName, firmName, 
       //promise.race runs the two promises, and returns the answer from the one that ends up first
       //this means if the fetch goes well it will return with the answer, but if there are some network problems
       //the timeout will end up first, and cuts, this is to stop the app to hang loading waiting for an api answer forever
-      
+
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (!response.ok) {
         const errorData = await response.json();
@@ -196,7 +200,6 @@ const fullRegister = (username, password, email, firstName, lastName, firmName, 
     } catch (error) {
       dispatch(fullRegisterFailure(error.message));
     }
-
   }
 }
 
@@ -216,10 +219,12 @@ const logout = () => {
 
       deleteRequest.onsuccess = function (event) {
         console.log('The token has been removed from IndexedDB');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'; // write over cookie
       };
 
       deleteRequest.onerror = function (event) {
         console.error("IndexedDB delete error:", event.target.errorCode);
+        alert('Something went wrong while securely erasing your session. Please try again.');
       };
     };
   }

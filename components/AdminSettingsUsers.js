@@ -8,6 +8,7 @@ const {
   Message,
   Header,
   Segment,
+  Statistic,
   Input,
   Modal,
   Popup,
@@ -20,8 +21,7 @@ const EmailEditModal = require('./AdminSettingsEmailModal');
 //const { email } = require('../settings/local');
 
 class AdminUsers extends React.Component {
-
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       searchQuery: '',
@@ -36,11 +36,11 @@ class AdminUsers extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchUsers();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.users !== this.props.users) {
       if (this.state.reseting && !this.props.users.loading && (this.props.users.error || this.props.users.passwordReseted)) {
         this.setState({ reseting: false });
@@ -48,7 +48,7 @@ class AdminUsers extends React.Component {
     }
   };
 
-  formatDateTime(dateTimeStr) {
+  formatDateTime (dateTimeStr) {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateTimeStr).toLocaleString('en-US', options);
   }
@@ -116,8 +116,8 @@ class AdminUsers extends React.Component {
     )
   }
 
-  render() {
-    const { users } = this.props;
+  render () {
+    const { users, stats } = this.props;
     const {
       searchQuery,
       userIdEditing,
@@ -127,11 +127,25 @@ class AdminUsers extends React.Component {
       usernameEditModal
     } = this.state;
 
+    const inquiriesTotal = stats?.inquiries?.total ?? 0;
+    // const invitationsTotal = stats?.invitations?.total ?? 0;
+    const usersTotal = stats?.users?.total ?? 0;
 
     return (
       <section className='fade-in users-section'>
         <div className='users-section-head'>
           <Header as='h3'>Users</Header>
+          <Header as='h4'>Metrics</Header>
+          <div>
+            <Statistic>
+              <Statistic.Value>{usersTotal}</Statistic.Value>
+              <Statistic.Label>Users</Statistic.Label>
+            </Statistic>
+            <Statistic>
+              <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+              <Statistic.Label>Waitlisted</Statistic.Label>
+            </Statistic>
+          </div>
           <div>
             <Button
               icon='redo'

@@ -41,8 +41,8 @@ class Home extends React.Component {
           regenAnswer={this.props.regenAnswer}
           resetChat={this.props.resetChat}
           chat={this.props.chat}
-          placeholder="Ask me anything..."
-          includeFeed={true}
+          placeholder='Ask me anything...'
+          includeFeed={false}
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
           messageInfo={this.props.messageInfo}

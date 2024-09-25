@@ -5,7 +5,7 @@ const settings = require('../settings/local');
 const { app, protocol, BrowserWindow } = require('electron');
 const path = require('path');
 
-const Sensemaker = require('../services/jeeves');
+const Sensemaker = require('../services/sensemaker');
 
 function createInstance () {
   const sensemaker = new Sensemaker(settings);

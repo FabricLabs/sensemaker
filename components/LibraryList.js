@@ -48,7 +48,7 @@ class LibraryList extends React.Component {
     return this;
   }
 
-  render() {
+  render () {
     const USER_IS_ADMIN = this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth.isAlpha || this.props.auth.isAdmin || false;
     const USER_IS_BETA = this.props.auth.isBeta || this.props.auth.isAlpha || this.props.auth.isAdmin || false;

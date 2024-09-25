@@ -57,6 +57,18 @@ body {
   font-size: 2rem;
 }
 
+.left.floated {
+  float: left;
+}
+
+.right.floated {
+  float: left;
+}
+
+#input-control-form {
+  /* margin-top: 1em; */
+}
+
 @media (min-width: 1440px) {
   .number {
     font-size: 4rem;

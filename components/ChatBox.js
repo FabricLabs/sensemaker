@@ -2,6 +2,7 @@
 
 const {
   BRAND_NAME,
+  ALLOWED_UPLOAD_TYPES,
   ENABLE_BILLING
 } = require('../constants');
 
@@ -72,7 +73,7 @@ class ChatBox extends React.Component {
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     $('#primary-query').focus();
     //this.props.resetChat();
     if (this.props.conversationID) {
@@ -81,7 +82,7 @@ class ChatBox extends React.Component {
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     const { messages } = this.props.chat;
 
     //here we store the last message from prevProps and current messages
@@ -543,8 +544,30 @@ class ChatBox extends React.Component {
     }
   }
 
+  handleAttachmentIntent = (value) => {
+    console.debug('attaching file:', value);
+    this.setState({ attachingFile: true });
+    document.querySelector('#input-control-form input[type="file"]').click();
+  };
+
   handleEditClick = (currentTitle) => {
     this.setState({ editingTitle: true, editedTitle: currentTitle });
+  };
+
+  handleFileChange = async (e) => {
+    console.debug('handling file change:', e.target.files);
+    const files = e.target.files;
+    this.setState({ formatError: false });
+
+    if (files.length > 0) {
+      const file = files[0]; // Take only the first file
+      if (this.isValidFileType(file.type)) {
+        console.debug('File:', file.name, file.size, file.type); // Debugging log
+        this.setState({ file: file, formatError: false, attachmentExists: true });
+      } else {
+        this.setState({ formatError: true, file: null });
+      }
+    }
   };
 
   handleSaveEditing = async () => {
@@ -560,7 +583,24 @@ class ChatBox extends React.Component {
     this.setState({ editingTitle: false, editedTitle: '' });
   };
 
-  render() {
+  handleUpload = async () => {
+    this.setState({
+      uploading: true,
+      fileExists: false,
+      file_id: null,
+      formatError: false,
+      errorMsg: '',
+      uploadSuccess: false,
+    });
+
+    await this.props.uploadFile(this.state.file);
+  }
+
+  isValidFileType (fileType) {
+    return ALLOWED_UPLOAD_TYPES.includes(fileType);
+  }
+
+  render () {
     const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
     const { messages, message } = this.props.chat;
 
@@ -594,8 +634,8 @@ class ChatBox extends React.Component {
       flexDirection: 'column',
       alignItems: 'left',
       transition: 'height 1s',
-      width: '100%',
-    }
+      width: '100%'
+    };
 
     //when there are messages on the chat, it fits 98% of the parent height
     //and we put normally justify-content space-between, wich pushes the prompt bar to bottom
@@ -611,9 +651,9 @@ class ChatBox extends React.Component {
 
     const messagesContainerStyle = {
       overflowY: 'auto',
-      transition: 'height 1s',
-      marginBottom: '0'
-    }
+      transition: 'height 1s'
+    };
+
     const announcementStyle = {
       minHeight: '5.5em',
       maxHeight: '14em',
@@ -635,7 +675,7 @@ class ChatBox extends React.Component {
 
     return (
       <section style={chatContainerStyle}>
-        <Feed style={messagesContainerStyle} className="chat-feed">
+        {this.props.includeFeed && (<Feed style={messagesContainerStyle} className="chat-feed">
           {(conversationID && !actualConversation) && (
             <div className='conversation-title-container' >
               <Header as="h2" style={{ marginBottom: '0.3em' }}>Conversation #{conversationID}</Header>
@@ -682,186 +722,190 @@ class ChatBox extends React.Component {
             </div>
           )}
           {/* The chat messages start rendering here */}
-          {this.props.includeFeed &&
-            messages &&
-            messages.length > 0 &&
-            this.state.groupedMessages.map((group, groupIndex) => {
-              let message;
-              //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
-              if (group.messages[0].role === "assistant" && group.messages.length > 1) {
-                //this is the active answer the user selected to read
-                message = group.messages[group.activeMessageIndex];
-              } else {
-                message = group.messages[0];
-              }
-              return (
-                <Feed.Event key={message.id} data-message-id={message.id}>
-                  <Feed.Content>
-                    {/* Actual content of message */}
-                    <Feed.Summary className='info-assistant-header'>
-                      <Feed.User>
-                        <a href={'/users/' + message.author}>{message.author || message.user_id}</a>{" "}
-                      </Feed.User>
-                      <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
-                      {message.role === "assistant" && (
-                        <div className="controls info-icon">
-                          <Button.Group basic size='mini'>
-                            <Popup
-                              content="More information"
-                              trigger={
-                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.messageInfo(message.id); }}>
-                                  <Icon
-                                    name="info"
-                                    color="blue"
-                                    style={{ cursor: "pointer", marginLeft: "0.5rem" }}
-                                  />
-                                </Button>
-                              }
-                            />
-                            {/* the regenerate answer button only shows in the last answer */}
-                            {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                              message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
-                                <Popup
-                                  content="Regenerate this answer"
-                                  trigger={
-                                    <Button icon onClick={this.regenerateAnswer}>
-                                      <Icon
-                                        name="redo"
-                                        color="grey"
-                                        style={{ cursor: "pointer", marginLeft: "1rem" }}
-                                      />
-                                    </Button>
-                                  }
+          {(messages && messages.length > 0) ? this.state.groupedMessages.map((group, groupIndex) => {
+            let message;
+            //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
+            if (group.messages[0].role === "assistant" && group.messages.length > 1) {
+              //this is the active answer the user selected to read
+              message = group.messages[group.activeMessageIndex];
+            } else {
+              message = group.messages[0];
+            }
+            return (
+              <Feed.Event key={message.id} data-message-id={message.id}>
+                <Feed.Content>
+                  {/* Actual content of message */}
+                  <Feed.Summary className='info-assistant-header'>
+                    <Feed.User>
+                      <a href={'/users/' + message.author}>{message.author || message.user_id}</a>{" "}
+                    </Feed.User>
+                    <Feed.Date as='abbr' title={message.updated_at} class='relative'>{toRelativeTime(message.updated_at)}</Feed.Date>
+                    {message.role === "assistant" && (
+                      <div className="controls info-icon">
+                        <Button.Group basic size='mini'>
+                          <Popup
+                            content="More information"
+                            trigger={
+                              <Button icon onClick={(e) => { e.stopPropagation(); this.props.messageInfo(message.id); }}>
+                                <Icon
+                                  name="info"
+                                  color="blue"
+                                  style={{ cursor: "pointer", marginLeft: "0.5rem" }}
                                 />
-                              )}
-                            {message.role === "assistant" && (
+                              </Button>
+                            }
+                          />
+                          {/* the regenerate answer button only shows in the last answer */}
+                          {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                            message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
                               <Popup
-                                content="Copied to clipboard"
-                                on="click"
-                                open={this.state.copiedStatus[message.id] || false}
+                                content="Regenerate this answer"
                                 trigger={
-                                  <Popup content='Copy to clipboard' trigger={
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        this.copyToClipboard(
-                                          message.id,
-                                          marked.parse(message.content)
-                                        );
-                                      }}
-                                      icon>
-                                      <Icon name="clipboard outline" />
-                                    </Button>
-                                  } />
+                                  <Button icon onClick={this.regenerateAnswer}>
+                                    <Icon
+                                      name="redo"
+                                      color="grey"
+                                      style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                    />
+                                  </Button>
                                 }
                               />
                             )}
+                          {message.role === "assistant" && (
                             <Popup
-                              content="Rate this message"
+                              content="Copied to clipboard"
+                              on="click"
+                              open={this.state.copiedStatus[message.id] || false}
                               trigger={
-                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsDown(message.id); }}>
-                                  <Icon
-                                    name="thumbs down outline"
-                                    color="grey"
-                                    style={{ cursor: "pointer", marginLeft: "1rem" }}
-                                  />
-                                </Button>
+                                <Popup content='Copy to clipboard' trigger={
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      this.copyToClipboard(
+                                        message.id,
+                                        marked.parse(message.content)
+                                      );
+                                    }}
+                                    icon>
+                                    <Icon name="clipboard outline" />
+                                  </Button>
+                                } />
                               }
                             />
-                            <Popup
-                              content="Rate this message"
-                              trigger={
-                                <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsUp(message.id); }}>
-                                  <Icon
-                                    name="thumbs up outline"
-                                    color="grey"
-                                    style={{ cursor: "pointer", marginLeft: "0.1rem" }}
-                                  />
-                                </Button>
-                              }
-                            />
-                          </Button.Group>
+                          )}
+                          <Popup
+                            content="Rate this message"
+                            trigger={
+                              <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsDown(message.id); }}>
+                                <Icon
+                                  name="thumbs down outline"
+                                  color="grey"
+                                  style={{ cursor: "pointer", marginLeft: "1rem" }}
+                                />
+                              </Button>
+                            }
+                          />
+                          <Popup
+                            content="Rate this message"
+                            trigger={
+                              <Button icon onClick={(e) => { e.stopPropagation(); this.props.thumbsUp(message.id); }}>
+                                <Icon
+                                  name="thumbs up outline"
+                                  color="grey"
+                                  style={{ cursor: "pointer", marginLeft: "0.1rem" }}
+                                />
+                              </Button>
+                            }
+                          />
+                        </Button.Group>
+                      </div>
+                    )}
+                  </Feed.Summary>
+                  <Feed.Extra text>
+                    {message.status !== "computing" && (
+                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                    )}
+                    {/* DO NOT DELETE THIS BLOCK */}
+                    {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
+                      // <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                      <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
+                    )}
+                    {message.status !== "computing" && (message.role !== "assistant" || !this.state.startedChatting) &&(
+                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
+                      // <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
+                    )} */}
+                  </Feed.Extra>
+                  <Feed.Extra text>
+                    {generatingReponse &&
+                      message.id === messages[messages.length - 1].id &&
+                      !reGeneratingReponse && (
+                        <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                          <Icon name="spinner" loading />
+                          {BRAND_NAME} is generating a response...
+                        </Header>
+                      )}
+                    {reGeneratingReponse &&
+                      group ===
+                      this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
+                        <Header
+                          size="small"
+                          style={{ fontSize: "1em", marginTop: "1.5em" }}
+                        >
+                          <Icon name="spinner" loading /> Novo is trying again...
+                        </Header>
+                      )}
+                    <div className="answer-controls" text>
+                      {/* Answers Navigation Controls */}
+                      {group.messages.length > 1 && (
+                        <div className="answer-navigation">
+                          <Button
+                            icon="angle left"
+                            size="tiny"
+                            style={controlsStyle}
+                            basic
+                            onClick={() =>
+                              this.navigateMessage(groupIndex, -1)
+                            }
+                            disabled={group.activeMessageIndex === 0}
+                          />
+                          <span
+                            style={{ fontWeight: "bold", color: "grey" }}
+                          >{`${group.activeMessageIndex + 1} / ${group.messages.length
+                            }`}</span>
+                          <Button
+                            icon="angle right"
+                            size="tiny"
+                            style={controlsStyle}
+                            basic
+                            onClick={() =>
+                              this.navigateMessage(groupIndex, 1)
+                            }
+                            disabled={
+                              group.activeMessageIndex ===
+                              group.messages.length - 1
+                            }
+                          />
                         </div>
                       )}
-                    </Feed.Summary>
-                    <Feed.Extra text>
-                      {message.status !== "computing" && (
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
-                      )}
-                      {/* DO NOT DELETE THIS BLOCK */}
-                      {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
-                        // <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
-                        <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
-                      )}
-                      {message.status !== "computing" && (message.role !== "assistant" || !this.state.startedChatting) &&(
-                        <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://trynovo.com', AUTHORITY) || ""), }} />
-                        // <Typewriter text={message.content?.replace('https://trynovo.com', AUTHORITY) || ""} />
-                      )} */}
-                    </Feed.Extra>
-                    <Feed.Extra text>
-                      {generatingReponse &&
-                        message.id === messages[messages.length - 1].id &&
-                        !reGeneratingReponse && (
-                          <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
-                            <Icon name="spinner" loading />
-                            {BRAND_NAME} is generating a response...
-                          </Header>
-                        )}
-                      {reGeneratingReponse &&
-                        group ===
-                        this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
-                          <Header
-                            size="small"
-                            style={{ fontSize: "1em", marginTop: "1.5em" }}
-                          >
-                            <Icon name="spinner" loading /> Novo is trying again...
-                          </Header>
-                        )}
-                      <div className="answer-controls" text>
-                        {/* Answers Navigation Controls */}
-                        {group.messages.length > 1 && (
-                          <div className="answer-navigation">
-                            <Button
-                              icon="angle left"
-                              size="tiny"
-                              style={controlsStyle}
-                              basic
-                              onClick={() =>
-                                this.navigateMessage(groupIndex, -1)
-                              }
-                              disabled={group.activeMessageIndex === 0}
-                            />
-                            <span
-                              style={{ fontWeight: "bold", color: "grey" }}
-                            >{`${group.activeMessageIndex + 1} / ${group.messages.length
-                              }`}</span>
-                            <Button
-                              icon="angle right"
-                              size="tiny"
-                              style={controlsStyle}
-                              basic
-                              onClick={() =>
-                                this.navigateMessage(groupIndex, 1)
-                              }
-                              disabled={
-                                group.activeMessageIndex ===
-                                group.messages.length - 1
-                              }
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </Feed.Extra>
-                  </Feed.Content>
-                </Feed.Event>
-              );
-            })}
-        </Feed>
+                    </div>
+                  </Feed.Extra>
+                </Feed.Content>
+              </Feed.Event>
+            );
+          }) : (<p>No messages yet!</p>)}
+        </Feed>)}
         <Form
+          id='input-control-form'
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}>
           <Form.Input>
+            {this.props.includeAttachments && (
+              <div class='ui huge left attached icon button' onClick={this.handleAttachmentIntent}>
+                <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
+                <Icon name='paperclip' color='grey' style={{ color: this.state.isTextareaFocused ? 'grey' : 'grey', cursor: 'pointer' }} />
+              </div>
+            )}
             <TextareaAutosize
               id="primary-query"
               className="prompt-bar"
@@ -881,7 +925,7 @@ class ChatBox extends React.Component {
               }}
               onFocus={this.handleTextareaFocus}
               onBlur={this.handleTextareaBlur}
-              style={{ resize: "none", zIndex: '1' }}
+              style={{ resize: "none", zIndex: '1', borderRadius: '0 5px 5px 0' }}
             />
             <Icon
               name="microphone icon"

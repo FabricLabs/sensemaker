@@ -29,7 +29,6 @@ function adminReducer(state = initialState, action) {
       return { ...state, ...action.payload, loading: false };
     case FETCH_ADMIN_STATS_FAILURE:
       console.debug('fetch admin stats failure:', state, action);
-
       return { ...state, error: action.payload, loading: false };
     case FETCH_SYNC_STATS_REQUEST:
       return { ...state }; // reset state
@@ -38,7 +37,6 @@ function adminReducer(state = initialState, action) {
     case FETCH_SYNC_STATS_FAILURE:
       console.debug('fetch sync stats failure:', state, action);
       return { ...state, error: action.payload, loading: false };
-
     case EDIT_USERNAME_REQUEST:
       return { ...state, }; // reset state
     case EDIT_USERNAME_SUCCESS:
@@ -46,7 +44,6 @@ function adminReducer(state = initialState, action) {
     case EDIT_USERNAME_FAILURE:
       console.debug('edit username failure:', state, action);
       return { ...state, error: action.payload, loading: false, userEditSuccess: false };
-
     case EDIT_EMAIL_REQUEST:
       return { ...state, }; // reset state
     case EDIT_EMAIL_SUCCESS:

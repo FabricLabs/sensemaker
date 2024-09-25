@@ -291,6 +291,7 @@ class Agent extends Service {
    */
   async query (request) {
     return new Promise(async (resolve, reject) => {
+      // console.debug('[AGENT]', 'Request:', request);
       console.debug('[AGENT]', 'Name:', this.settings.name);
       console.debug('[AGENT]', 'Host:', this.settings.host);
       console.debug('[AGENT]', 'Model:', this.settings.model);

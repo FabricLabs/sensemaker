@@ -7,8 +7,8 @@ exports.seed = async function (knex) {
   await knex('conversations').del();
   await knex('users').del();
   await knex('users').insert([
-    { id: 1, username: 'sensemaker', email: 'agent@sensemaker.io' },
-    { id: 2, username: 'Administrator', email: 'admin@sensemaker.io', is_admin: true },
+    { id: 1, username: 'sensemaker', email: 'sensemaker@localhost' },
+    { id: 2, username: 'Administrator', email: 'root@localhost', is_admin: true },
     { id: 3, username: 'martindale', email: 'eric@ericmartindale.com', is_admin: true, password: '$2b$10$p39AvbqtRbCyhfwtj5z78eE8TFafZVVW1s5SoEegIlCBIyoGGlIUW', salt: '$2b$10$p39AvbqtRbCyhfwtj5z78e' },
   ]);
 };

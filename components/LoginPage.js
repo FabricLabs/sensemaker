@@ -20,8 +20,8 @@ class LoginPage extends React.Component {
 
     return (
       <sensemaker-login-page class="fade-in">
-        <HeaderBar />
-        <Grid width='100%'>
+        <HeaderBar showBrand={true} />
+        <Grid centered width='100%'>
           <Grid.Column mobile={16} tablet={8} computer={8}>
             <Card fluid>
               <Card.Content>

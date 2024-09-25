@@ -32,13 +32,6 @@ module.exports = {
     secure: false,
     temperature: 0
   }, */
-  /* beta: {
-    prompt: novoPrompt.toString('utf8'),
-    model: 'llama2',
-    host: 'ollama.jeeves.dev',
-    port: 11434,
-    secure: false
-  }, */
   /* 'llama3-70b-fp16': {
     name: 'GOTHMOG',
     prompt: baseline.toString('utf8'),

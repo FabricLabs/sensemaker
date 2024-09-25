@@ -158,7 +158,7 @@ class SensemakerUI extends React.Component {
     const { modalLogOut, loggedOut } = this.state;
     return (
       <sensemaker-ui id={this.id} class="fabric-site">
-        <fabric-container id="react-application"></fabric-container>
+        <fabric-container id="react-application">{/* TODO: render string here */}</fabric-container>
         <fabric-react-component id='sensemaker-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
           {(this.props.auth && this.props.auth.loading) ? (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -270,8 +270,12 @@ class SensemakerUI extends React.Component {
     return ReactDOMServer.renderToString(this.render());
   }
 
-  toHTML () {
+  toHTMLFragment () {
     return this._toHTML();
+  }
+
+  toHTML () {
+    return this.applicationString;
   }
 }
 

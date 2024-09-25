@@ -13,13 +13,12 @@ const {
   Menu,
 } = require('semantic-ui-react');
 
-
 /**
- * The Jeeves UI.
+ * Conversation sidebar component.
  * @param {Object} props Properties for the component.
  **/
 class ConversationsList extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.messagesEndRef = React.createRef();
@@ -34,11 +33,11 @@ class ConversationsList extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchConversations();
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -56,7 +55,6 @@ class ConversationsList extends React.Component {
   };
 
   handleSaveEditing = async (conversationID) => {
-
     const { editedTitle } = this.state;
 
     this.setState({ editLoading: true });
@@ -140,7 +138,6 @@ class ConversationsList extends React.Component {
   }
 
   renderConversationsSection = (title, conversations) => {
-
     const linkStyle = {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -221,19 +218,20 @@ class ConversationsList extends React.Component {
     );
   }
 
-  render() {
+  render () {
+    const USER_IS_ADMIN = this.props.auth.isAdmin || false;
+    const USER_IS_ALPHA = this.props.auth.isAlpha || this.props.auth.isAdmin || false;
+    const USER_IS_BETA = this.props.auth.isBeta || this.props.auth.isAlpha || this.props.auth.isAdmin || false;
+
     const { conversations } = this.props;
     const { currentPage, windowWidth, editLoading } = this.state;
-
 
     // Calculate conversations for current page
     const itemsPerPage = windowWidth < 480 ? 10 : windowWidth < 768 ? 15 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
-
     const conversationCount = conversations.length;
-
     const linkStyle = {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
@@ -241,15 +239,26 @@ class ConversationsList extends React.Component {
       display: 'block',
       maxWidth: '100%',
       color: '#e4dfda',
-    }
+    };
 
     const groupedConversations = this.groupConversationsByDate();
 
     return (
       <div>
+        {(USER_IS_ALPHA || USER_IS_ADMIN) && (
+          <Menu.Item>
+            <fabric-search fluid placeholder='Find...' className="ui search" title='Search is disabled.'>
+              <div className="ui icon fluid input">
+                <input autoComplete="off" placeholder="Find..." type="text" tabIndex="0" className="prompt" value={this.state.search} onChange={this.handleSearchChange} />
+                <i aria-hidden="true" className="search icon"></i>
+              </div>
+            </fabric-search>
+          </Menu.Item>
+        )}
         <h4 style={{ marginBottom: '0' }}>
           <div>
-            <Menu.Item as={Link} to="/" onClick={() => this.props.resetChat()}>
+            {/* TODO: double check that this works as intended */}
+            <Menu.Item as={Link} to='/' onClick={this.props.closeSidebars}>
               <div style={{ display: 'flex' }}>
                 <p style={linkStyle}>
                   <Icon name='add' /> New Conversation

@@ -61,13 +61,13 @@ module.exports = async function (req, res, next) {
       matter_id: matter_id,
       query: content
     }).catch((exception) => {
-      console.error('[JEEVES]', '[HTTP]', 'Error creating timed request:', exception);
+      console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
-      console.debug('[JEEVES]', '[HTTP]', 'Created timed request:', request);
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Created timed request:', request);
       // TODO: emit message
 
       if (!request || !request.content) {
-        console.debug('[JEEVES]', '[HTTP]', 'No request content:', request);
+        console.debug('[SENSEMAKER]', '[HTTP]', 'No request content:', request);
         return;
       }
 
@@ -90,7 +90,7 @@ module.exports = async function (req, res, next) {
               cards: JSON.stringify(caseCards.map((x) => x.content.id))
             });
           } catch (exception) {
-            console.error('[JEEVES]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
+            console.error('[SENSEMAKER]', '[HTTP]', '[MESSAGE]', 'Error updating cards:', exception);
           }
         }
       }); */
@@ -104,7 +104,7 @@ module.exports = async function (req, res, next) {
         this._summarizeMessagesToTitle(messages).catch((error) => {
           console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
         }).then(async (output) => {
-          if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Got title output:', output);
+          if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
           if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
@@ -119,7 +119,7 @@ module.exports = async function (req, res, next) {
       this._summarizeMessages(messages).catch((error) => {
         console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
       }).then(async (output) => {
-        if (this.settings.debug) console.debug('[JEEVES]', '[HTTP]', 'Summarized conversation:', output);
+        if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Summarized conversation:', output);
         let summary = output?.content || 'broken content summary';
         if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
         if (summary) await this.db('conversations').update({ summary }).where({ id: conversation_id });
@@ -131,21 +131,21 @@ module.exports = async function (req, res, next) {
       });
     }).then(async () => {
       // Sanity Function
-      console.debug('[JEEVES]', '[HTTP]', 'Finished processing message');
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Finished processing message');
       const basic = await this.handleTextRequest({
         // conversation_id: conversation_id,
         matter_id: matter_id,
         query: content
       });
 
-      console.debug('[JEEVES]', '[HTTP]', 'Got basic response:', basic);
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Got basic response:', basic);
     });
     // End Core Pipeline
 
     // pre-release pipeline
     /* const inserted = await this.db('requests').insert({
       message_id: newMessage[0],
-      content: 'Jeeves is thinking...'
+      content: 'SENSEMAKER is thinking...'
     });
 
     this._handleRequest({
@@ -156,7 +156,7 @@ module.exports = async function (req, res, next) {
       // room: roomID // TODO: replace with a generic property (not specific to Matrix)
       // target: activity.target // candidate 1
     }).then(async (output) => {
-      console.debug('[JEEVES]', '[HTTP]', 'Got request output:', output);
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Got request output:', output);
     */
 
       // TODO: restore response tracking

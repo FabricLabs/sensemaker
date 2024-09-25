@@ -26,6 +26,7 @@ const initialState = {
   isAuthenticated: false,
   isBeta: false,
   isCompliant: false,
+  user_discord: null,
   token: null,
   error: null,
   id: null,
@@ -37,15 +38,14 @@ const initialState = {
   checking: false,
   shortRegisterError: null,
   shortRegisterSuccess: false,
-
 };
 
-function authReducer(state = initialState, action) {
+function authReducer (state = initialState, action) {
   switch (action.type) {
     case LOGIN_REQUEST:
       return { ...state, isAuthenticated: false, token: null, error: null, loading: true }; // reset state
     case LOGIN_SUCCESS:
-      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, token: action.payload.token, id: action.payload.id, loading: false };
+      return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, user_discord: action.payload.user_discord, token: action.payload.token, id: action.payload.id, loading: false };
     case LOGIN_FAILURE:
       console.debug('login failure:', state, action);
       return { ...state, isAuthenticated: false, token: null, error: action.payload, loading: false };

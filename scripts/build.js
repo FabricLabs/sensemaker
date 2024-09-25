@@ -16,11 +16,11 @@ const settings = require('../settings/local');
 const Compiler = require('../types/compiler');
 
 // Components
-const JeevesUI = require('../components/JeevesUI');
+const SensemakerUI = require('../components/SensemakerUI');
 
 // Program Body
 async function main (input = {}) {
-  const site = new JeevesUI(input);
+  const site = new SensemakerUI(input);
   const compiler = new Compiler({
     document: site,
     webpack: {

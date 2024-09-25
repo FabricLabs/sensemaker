@@ -48,24 +48,18 @@ async function main (input = {}) {
 
   // ### React Application
   // #### Connect Actions (Redux)
-  // TODO: migrate this to `functions/mapStateToProps.js`
+  // TODO: migrate this to `functions/mapStateToProps.js`?
   const mapStateToProps = (state) => {
     return {
       auth: state.auth,
       chat: state.chat,
-      cases: state.cases,
       contracts: state.contracts,
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
-      matterConversations: state.conversations.matterConversations,
       conversationsLoading: state.conversations.loading,
-      courts: state.courts,
       documents: state.documents,
       files: state.files,
-      judges: state.judges,
       people: state.people,
-      reporters: state.reporters,
-      opinions: state.opinions,
       error: state.auth.error,
       inquiries: state.inquiries,
       invitation: state.invitation,
@@ -75,8 +69,6 @@ async function main (input = {}) {
       isSending: state.chat.isSending,
       token: state.auth.token,
       stats: state.stats,
-      matters: state.matters,
-      jurisdictions: state.jurisdictions,
       users: state.users,
       search: state.search,
       feedback: state.feedback,
@@ -91,6 +83,7 @@ async function main (input = {}) {
 
   // ### DOM Attachment
   // Render
+  // TODO: render to `fabric-application-target`?
   const container = document.getElementById('application-target');
   const root = ReactDOM.createRoot(container);
 

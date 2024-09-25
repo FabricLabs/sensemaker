@@ -34,11 +34,15 @@ const {
   USER_MENU_HOVER_TIME_MS
 } = require('../constants');
 
+// TODO: migrate this to constants.js
+const ENABLE_NETWORK = true;
+
 // Components
 const Home = require('./Home');
 const ContractHome = require('./ContractHome');
+const NetworkHome = require('./NetworkHome');
 const Library = require('./Library');
-const DocumentDrafter = require('./DocumentDrafter');
+const DocumentDrafter = require('./DocumentDrafter'); // TODO: remove
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const DocumentNewChat = require('./DocumentNewChat');
@@ -61,6 +65,9 @@ const HelpBox = require('./HelpBox');
 // Fabric Bridge
 const Bridge = require('./Bridge');
 
+/**
+ * The main dashboard component.
+ */
 class Dashboard extends React.Component {
   constructor(props) {
     super(props);
@@ -117,7 +124,7 @@ class Dashboard extends React.Component {
     return (<Navigate to='/settings' />);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     const { location, params, navigate } = this.props;
     const { isAdmin } = this.props.auth;
     // this.startProgress();
@@ -147,7 +154,7 @@ class Dashboard extends React.Component {
   //   }
   // }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { help } = this.props;
     if (prevProps.help != help) {
       if (help.conversations && help.conversations.length > 0) {
@@ -386,10 +393,10 @@ class Dashboard extends React.Component {
     // Set the new state
     this.setState(newState);
   };
+
   closeHelpBox = () => {
     this.setState({ helpBoxOpen: false });
   }
-
 
   responseCapture = (action) => {
     const { id, isAdmin } = this.props.auth;
@@ -405,23 +412,16 @@ class Dashboard extends React.Component {
         sound.play().catch((error) => { console.error('Failed to play sound: ', error); });
         toast('You have a message from an assistant!', helpMessageToastEmitter);
       }
+
       if (action.type == 'IngestFile') {
         if (action.completed) {
-          toast(
-            <p>
-              Your file <b>{action.filename}</b> has been Ingested!.
-            </p>,
-            helpMessageToastEmitter);
+          toast(<p>Your file <b>{action.filename}</b> has been ingested! </p>, helpMessageToastEmitter);
         }
         this.props.fetchUserFiles(id);
       }
+
       if (action.type == 'IngestDocument' && isAdmin) {
-        toast(
-          <p>
-            Your document {action.title} has been Ingested, you can check it
-            <b><a href={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/documents/${action.fabric_id}`}> Here</a></b>
-          </p>,
-          helpMessageToastEmitter);
+        toast(<p>Your document "{action.title}"" has been ingested!  You can check it <a href={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/documents/${action.fabric_id}`}>Here</a></p>, helpMessageToastEmitter);
       }
     }
 
@@ -441,6 +441,7 @@ class Dashboard extends React.Component {
         this.props.syncRedisQueue();
       }
     }
+
     if (action.type == 'completedJob') {
       action.job.status = action.status;
       this.props.lastJobCompleted(action.job);
@@ -511,7 +512,7 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              <Popup
+              {/* <Popup
                 mouseEnterDelay={USER_HINT_TIME_MS}
                 position='right center'
                 trigger={(
@@ -526,9 +527,18 @@ class Dashboard extends React.Component {
                   </Menu.Item>
                 )}>
                 <Popup.Content>
-                  <p>Upload notes, files, and more to give context to a matter</p>
+                  <p></p>
                 </Popup.Content>
-              </Popup>
+              </Popup> */}
+              <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
+                <div className='col-center'>
+                  <Icon name='comment alternate' size='large' />
+                  <p className='icon-label'>Chat</p>
+                </div>
+                <div className='expand-icon'>
+                  {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
+                </div>
+              </Menu.Item>
               {ENABLE_CONVERSATION_SIDEBAR && (
                 <Menu.Item as={Link} to="/conversations" onClick={() => this.handleMenuItemClick('conversations')}>
                   <Icon name='comment alternate outline' size='large' />
@@ -536,15 +546,21 @@ class Dashboard extends React.Component {
                 </Menu.Item>
               )}
               {ENABLE_UPLOADS && (
-                <Menu.Item as={Link} to='/uploads'>
+                <Menu.Item as={Link} to='/uploads' onClick={this.closeSidebars}>
                   <Icon name='upload' size='large'/>
                   <p className='icon-label'>Uploads</p>
                 </Menu.Item>
               )}
               {ENABLE_DOCUMENTS && (
-                <Menu.Item as={Link} to='/documents'>
+                <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
                   <Icon name='book' size='large'/>
                   <p className='icon-label'>Library</p>
+                </Menu.Item>
+              )}
+              {ENABLE_NETWORK && USER_IS_ADMIN && (
+                <Menu.Item as={Link} to='/peers' onClick={this.closeSidebars}>
+                  <Icon name='globe' size='large'/>
+                  <p className='icon-label'>Network</p>
                 </Menu.Item>
               )}
               {/* <Menu.Item onClick={() => { this.handleMenuItemClick('library'); this.props.fetchConversations(); }} className='expand-menu'>
@@ -571,7 +587,7 @@ class Dashboard extends React.Component {
             )} */}
             <div>
               {ENABLE_CHANGELOG && (
-                <Menu.Item as={Link} to='/updates'>
+                <Menu.Item as={Link} to='/updates' onClick={this.closeSidebars}>
                   <Icon name='announcement' size='large' />
                   <p className='icon-label'>News</p>
                 </Menu.Item>
@@ -597,21 +613,21 @@ class Dashboard extends React.Component {
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
           <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div className='collapse-sidebar-arrow'>
-              <Icon name='caret left' size='large' white style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
+              <Icon name='caret left' size='large' white className='fade-in' style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
             </div>
             <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }}
               onClick={() => { this.setState({ openSectionBar: false }); this.props.resetChat() }}>
               <Header className='dashboard-header'>
                 <div>
-                  {/* <div>
+                  <div>
                     <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
                         <p>Send us an email: <a href="mailto:support@sensemaker.io">support@sensemaker.io</a></p>
                       </Popup.Content>
                     </Popup>
-                    <Image src="/images/novo-text-white.svg" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} />
-                  </div> */}
+                    {/* <Image src="/images/sensemaker-icon.png" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} /> */}
+                  </div>
                   <div style={{ marginTop: '0.5em' }}>
                     <Popup trigger={<Icon name='circle' color='green' size='tiny' />}>
                       <Popup.Content>disconnected</Popup.Content>
@@ -686,7 +702,7 @@ class Dashboard extends React.Component {
                   />
                 } />
                 <Route path='/settings/library' element={<Library />} />
-                <Route path="/updates" element={<Changelog />} />
+                <Route path="/updates" element={<Changelog {...this.props} />} />
                 <Route path="/workspaces" element={<Workspaces />} />
                 {/**
                  * TODO: Add routes for documents, people, and settings
@@ -716,6 +732,7 @@ class Dashboard extends React.Component {
                 {/* END TODO */}
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
+                <Route path="/peers" element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
@@ -785,7 +802,7 @@ class Dashboard extends React.Component {
   }
 }
 
-function dashboard(props) {
+function dashboard (props) {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();

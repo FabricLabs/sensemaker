@@ -4,9 +4,8 @@
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
 ./settings/local.js: // TODO: @chrisinajar
-./settings/local.js: domain: 'sensemaker.io', // TODO: implement network-wide document search, use `novo` as canonical domain
+./settings/local.js: domain: 'sensemaker.io', // TODO: implement network-wide document search
 ./settings/network.js: /* TODO: enable hivemind */
-./migrations/boot.js: const patches = []; // TODO: get from state
 ./types/spa.js: // TODO: move CSS to inline from webpack
 ./types/scraper.js: // TODO: rename to process or work
 ./types/queue.js: //       // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
@@ -22,24 +21,27 @@
 ./types/trainer.js: // TODO: receive event in core service and correctly create blob, confirm ID matches
 ./types/trainer.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
 ./types/trainer.js: // process.exit(); // TODO: look at exit codes
+./types/cli.js: mode: 'rpc', // TODO: change name of mode to `rest`?
+./types/cli.js: // TODO: clean up workaround (from https://github.com/chjj/blessed/issues/109)
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
 ./types/agent.js: console.debug('[!!!]', '[TODO]', '[PROMETHEUS]', 'Trigger Prometheus here!');
 ./types/agent.js: }); // TODO: remove this...
 ./types/agent.js: if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 ./Dockerfile: # TODO: mount SSHFS / similar here
+./contracts/boot.js: const patches = []; // TODO: get from state
 ./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/Bridge.js: // TODO: re-evaluate multiple connections
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
 ./components/Bridge.js: // TODO: refactor @fabric/core/types/message to support arbitrary message types
 ./components/Sensemaker.js.bak: // TODO: inherit from @fabric/http/types/component
-./components/Jeeves.js: // TODO: inherit from @fabric/http/types/component
 ./components/AdminSettings.js: //TODO: add history push to different tabs
 ./components/AdminSettings.js: // TODO: add users to admin settings
 ./components/AdminSettings.js: // TODO: add pagination to users
 ./components/Splash.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/InformationSidebar.js: // TODO: implement message->case API
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
+./components/Sensemaker.js: // TODO: inherit from @fabric/http/types/component
 ./components/ContractHome.js: // TODO: implement this.applicationString
 ./components/Changelog.js: {/* TODO: put list of announcements here */}
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
@@ -77,6 +79,8 @@
 ./routes/messages/create_message.js: // TODO: restore titling
 ./routes/jurisdictions/jurisdiction_view.js: // TODO: pagination
 ./routes/uploads/get_uploads.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
+./routes/sessions/create_session.js: // TODO: sign token
+./routes/sessions/create_session.js: // TODO: validate token after signing
 ./routes/conversations/get_conversations_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/conversations/get_conversations.js: // TODO: re-evaluate security of `is_admin` check
 ./routes/conversations/get_conversations.js: // TODO: update the conversation upon change (new user message, new agent message)
@@ -121,6 +125,8 @@
 ./services/sensemaker.js: // TODO: extract defaults to `settings/default.json`
 ./services/sensemaker.js: // TODO: use path
 ./services/sensemaker.js: // TODO: enable recursive Filesystem (directories)
+./services/sensemaker.js: // TODO: use Fabric Resources; routes and components will be defined there
+./services/sensemaker.js: // TODO: check for vulnerabilities, easy setup
 ./services/sensemaker.js: // TODO: evaluate use of temperature
 ./services/sensemaker.js: // TODO: See if we can put this in its own file.
 ./services/sensemaker.js: // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
@@ -156,7 +162,7 @@
 ./services/sensemaker.js: // TODO: move all handlers to class methods
 ./services/sensemaker.js: // TODO: render page for accepting invitation
 ./services/sensemaker.js: // TODO: change to /sessions
-./services/sensemaker.js: // TODO: change this route from `/sessionRestore` to use authMiddleware?
+./services/sensemaker.js: // TODO: replace image below
 ./services/sensemaker.js: // TODO: check logic of PATCH, any other routes conflict?
 ./services/sensemaker.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/sensemaker.js: // TODO: revert these routes
@@ -166,11 +172,18 @@
 ./services/sensemaker.js: //             user_id: 1 // TODO: real user ID
 ./services/sensemaker.js: // TODO: troubleshoot why this is necessary (use `why()` above)
 ./services/sensemaker.js: // TODO: check token
+./services/sensemaker.js: // TODO: add reactions
+./services/sensemaker.js: // TODO: show error message in client
+./services/sensemaker.js: // TODO: halt on !req.user.id
+./services/sensemaker.js: // TODO: revoke token on Discord
+./services/sensemaker.js: // TODO: flash disconnected message
 ./services/sensemaker.js: room: roomID // TODO: replace with a generic property (not specific to Matrix)
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
 ./services/sensemaker.js: // TODO: consider additional metadata fields
 ./services/sensemaker.js: // TODO: direct store to graph database
+./services/sensemaker.js: const headers = parts[0]; // TODO: check headers
+./services/sensemaker.js: const signature = parts[2]; // TODO: check signature
 ./services/openai.js: const messages = request.messages; // TODO: pull higher in logic?
 ./services/openai.js: fetch(`http://${args.host}${args.path}`, { // TODO: switch to HTTPS first/only

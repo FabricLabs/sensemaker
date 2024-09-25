@@ -25,8 +25,8 @@ class SPA extends FabricSPA {
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta property="og:url" content="http://sensemaker.io">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Novo · Your Legal Assistant">
-    <meta property="og:description" content="Draft impeccable arguments with Novo, the legal AI.">
+    <meta property="og:title" content="sensemaker · digital intelligence">
+    <meta property="og:description" content="Sensemaker is a robust AI-powered intelligence platform — making sense of a digital world.">
     <meta property="og:image" content="https://sensemaker.io/images/fabric-labs.png">
     <title>${this.title || this.settings.title}</title>
     <!-- <link rel="manifest" href="/manifest.json"> -->
@@ -36,7 +36,7 @@ class SPA extends FabricSPA {
     <link rel="stylesheet" type="text/css" href="/styles/ReactToastify.css">
     <script src="/scripts/jquery-3.4.1.js"></script>
     <script src="/semantic.min.js"></script>
-    <link rel="icon" href="/images/favicon.svg" />
+    <link rel="icon" href="/images/sensemaker-icon.png" />
   </head>
   <body>
     <div data-hash="${hash}" id="application-target">${html}</div>

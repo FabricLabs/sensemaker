@@ -30,24 +30,28 @@ const {
 } = require('../locales/en');
 
 class HeaderBar extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.state = {
       email: '',
       error: null,
       loading: false,
-      joined: false
+      joined: false,
+      showBrand: true
     };
   }
 
   render () {
+    const { showBrand } = this.props;
+
     return (
       <div>
-        <Link to='/' style={{ float: 'left' }}><Icon name='globe' /></Link>
+        {(showBrand) && <Link to='/' style={{ float: 'left' }}><Icon name='eye' size='huge' /> <span>{BRAND_NAME}</span></Link>}
         <Button.Group floated='right'>
-          <Button as={Link} to='/sessions'>Sign In</Button>
-          <Button as={Link} to='/inquiries' primary>Try Now</Button>
+          <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
+          <Button.Or />
+          <Button as={Link} to='/inquiries' primary>Apply &raquo;</Button>
         </Button.Group>
         <br style={{ clear: 'both' }} />
       </div>

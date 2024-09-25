@@ -22,7 +22,7 @@ const {
 } = require('semantic-ui-react');
 
 class DocumentUploader extends React.Component {
-  constructor(settings = {}) {
+  constructor (settings = {}) {
     super(settings);
     this.state = {
       file: null,
@@ -35,7 +35,7 @@ class DocumentUploader extends React.Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { files, drafterSection } = this.props;
     if (files !== prevProps.files && this.state.uploading && !files.loading) {
       if (files.fileUploaded) {
@@ -79,28 +79,22 @@ class DocumentUploader extends React.Component {
       errorMsg: '',
       uploadSuccess: false,
     });
+
     await this.props.uploadFile(this.state.file);
   }
 
-  isValidFileType(fileType) {
+  isValidFileType (fileType) {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
 
-  render() {
+  render () {
     const { files } = this.props;
     return (
       <Form className='documents-upload-form'>
         <Form.Field>
           <div style={{ maxWidth: '500px', gap: '0.5em', display: 'flex' }}>
             <Input type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} style={{ cursor: 'pointer' }} />
-            <Button
-              icon='upload'
-              disabled={!this.state.file}
-              onClick={() => this.handleUpload()}
-              loading={files.loading}
-            >
-              Upload
-            </Button>
+            <Button icon='upload' disabled={!this.state.file} onClick={() => this.handleUpload()} loading={files.loading}>Upload</Button>
           </div>
         </Form.Field>
         {this.state.formatError &&
@@ -117,19 +111,13 @@ class DocumentUploader extends React.Component {
           <Form.Field>
             {this.props.drafterSection ? (
               <Message positive>
-                <Message.Content>
-                  Document attached successfully!
-                </Message.Content>
+                <Message.Content>Document attached successfully!</Message.Content>
               </Message>
             ) : (
               <Message positive>
                 <Message.Header>Document uploaded successfully!</Message.Header>
-                <Message.Content>
-                  Novo is processing your Document, you will be able to start conversations about this conversation as soon the ingestion is complete.
-                </Message.Content>
-                <Message.Content>
-                  You will receive a notification when the process is complete. You can check your document <b><Link to={'/documents/' + files.fabric_id}>Here</Link></b>
-                </Message.Content>
+                <Message.Content>Sensemaker is processing your upload; you will be able to start conversations about this upload as soon as ingestion is complete.</Message.Content>
+                <Message.Content>You will receive a notification when the process is complete. You can check your document <b><Link to={'/documents/' + files.fabric_id}>Here</Link></b></Message.Content>
               </Message>
             )}
           </Form.Field>
@@ -138,7 +126,7 @@ class DocumentUploader extends React.Component {
     );
   }
 
-  toHTML() {
+  toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
 }

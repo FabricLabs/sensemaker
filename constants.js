@@ -23,6 +23,14 @@ const ENABLE_REGISTRATION = false;
 const EMBEDDING_MODEL = 'mxbai-embed-large';
 
 // Features
+const ALLOWED_UPLOAD_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/tiff',
+  'image/bmp',
+  'application/pdf',
+];
+
 const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
@@ -32,7 +40,7 @@ const ENABLE_DOCUMENTS = true;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_MATTERS = true;
-const ENABLE_UPLOADS = true;
+const ENABLE_UPLOADS = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_LIBRARY = true;
@@ -68,6 +76,7 @@ module.exports = {
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  ALLOWED_UPLOAD_TYPES,
   EMBEDDING_MODEL,
   ENABLE_CONTENT_TOPBAR,
   ENABLE_CONTRACTS,

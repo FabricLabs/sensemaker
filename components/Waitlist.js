@@ -111,7 +111,7 @@ class Waitlist extends React.Component {
     return (
       <div>
         <HeaderBar />
-        <Grid width='100%'>
+        <Grid centered width='100%'>
           <Grid.Column mobile={16} tablet={8} computer={8}>
             <Card fluid style={{ textAlign: 'left' }}>
               <Card.Content>
@@ -132,8 +132,8 @@ class Waitlist extends React.Component {
                     <Header>Join the Waitlist!</Header>
                     <Form onSubmit={this.handleSubmit}>
                       <Form.Field>
-                        <p style={{ marginBottom: '2em' }}>{BRAND_NAME} is currently in a closed beta, which means we’re inviting a small number of friends to try it out early.</p>
-                        <p style={{ marginBottom: '2em' }}>If you’d like to be one of these select few, enter your work email here and we’ll be in touch:</p>
+                        <p>{BRAND_NAME} is currently in a closed beta, which means we're inviting a small number of friends to try it out early.</p>
+                        <p style={{ marginBottom: '2em' }}>If you'd like to be one of the select few, enter your email here and we'll be in touch:</p>
                         <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                       </Form.Field>
                       <div>

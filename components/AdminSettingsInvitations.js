@@ -32,11 +32,11 @@ class AdminInvitations extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchInvitations();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       const { sendingInvitationID } = this.state;
@@ -49,7 +49,6 @@ class AdminInvitations extends React.Component {
   };
 
   delayedFetchInvitations = async () => {
-
     if (this.props.invitation.invitationSent) {
       this.setState({ sent: true });
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -62,12 +61,10 @@ class AdminInvitations extends React.Component {
   }
 
   reSendInvite = async (ID) => {
-
     this.setState({ sendingInvitationID: ID }); // Set the sending invitation ID
 
     try {
       await this.props.reSendInvitation(ID);
-
     } catch (error) {
       console.log(error);
       this.setState({ errorSending: true });

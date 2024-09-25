@@ -28,7 +28,7 @@ const DocumentUploader = require('./DocumentUploader');
 const formatDate = require('../contracts/formatDate');
 
 class DocumentHome extends React.Component {
-  constructor(settings = {}) {
+  constructor (settings = {}) {
     super(settings);
     this.state = {
       searchQuery: '', // Initialize search query state
@@ -37,11 +37,11 @@ class DocumentHome extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchDocuments();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const { documents } = this.props;
     if (prevProps.documents != documents) {
       if (!documents.loading && this.state.searching) {
@@ -52,23 +52,23 @@ class DocumentHome extends React.Component {
 
 
   handleSearchChange = debounce((query) => {
-    //console.debug('search change:', query);
-
+    // console.debug('search change:', query);
     this.setState({ searching: true });
+    // TODO: change to `searchDocuments`
     this.props.searchDocument(query);
   }, 1000);
 
-  render() {
+  render () {
     const { loading, documents } = this.props;
     const { filteredDocuments, searchQuery, searching } = this.state;
-
     const displayDocuments = searchQuery ? filteredDocuments : documents;
 
     return (
       <fabric-document-home>
-        <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
-          <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button>
-          <h1>Documents</h1>
+        <Segment className='fade-in' fluid style={{ maxHeight: '100%' }}>
+          {/* <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button> */}
+          <h1>Library</h1>
+          <p>Search, upload, and manage files.</p>
           <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
           <fabric-search fluid placeholder='Find...' className='ui search'>
             <div className='ui huge icon fluid input'>
@@ -86,45 +86,41 @@ class DocumentHome extends React.Component {
                   this.handleSearchChange(query); // Call the debounce function with the query
                 }}
               />
-              <i aria-hidden="true" className="search icon"></i>
+              <i aria-hidden='true' className="search icon"></i>
             </div>
           </fabric-search>
-          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: "1em" }}>
+          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em' }}>
             {(searching || documents.loading) ? (
-              <Loader active inline="centered" /> // Display loading icon if searching is true
-            ) :
-              (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
-                displayDocuments.documents.map((instance) => (
-                  <List.Item as={Card} key={instance.id}>
-                    <Card.Content>
-                      {(instance.title !== 'Untitled Document') ? (
-                        <h3><Link to={"/documents/" + instance.fabric_id}>{instance.title} (doc #{instance.fabric_id}) </Link></h3>
-                      ) : (
-                        <h3><Link to={"/documents/" + instance.fabric_id}>(doc #{instance.fabric_id}) </Link></h3>
-                      )}
+              <Loader active inline='centered' /> // Display loading icon if searching is true
+            ) : (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
+              displayDocuments.documents.slice(0, 11).map((instance) => (
+                <List.Item as={Card} key={instance.id} loading={(instance.ingestion_status === 'processing')}>
+                  <Card.Content loading={(instance.ingestion_status === 'processing')}>
+                    <h3><Link to={'/documents/' + instance.fabric_id}>{instance.title}</Link></h3>
+                    {(instance.ingestion_status === 'processing') ? <Message icon size='tiny'>
+                      <Icon name='circle notched' loading />
+                      <Message.Content>
+                        <Message.Header>Your document is being ingested by the AI</Message.Header>
+                      </Message.Content>
+                    </Message> : <div>
                       <Label.Group basic>
-                        {instance.ingestion_status === 'processing' &&
-                          <Message icon size='tiny'>
-                            <Icon name='circle notched' loading />
-                            <Message.Content>
-                              <Message.Header>Your document is being ingested by the AI</Message.Header>
-                            </Message.Content>
-                          </Message>
-                        }
-                        <Label title='Creation date'><Icon name='calendar alternate outline' /> {instance.created_at}</Label>
-                        <p>{instance.description}</p>
+                        <Label title='Creation date'><Icon name='calendar alternate outline' /> <abbr className='relative-time' title={instance.created_at}>{instance.created_at}</abbr></Label>
                       </Label.Group>
-                    </Card.Content>
-                  </List.Item>
-                ))
-              ) : (<p>No results found</p>)
-              )
-            }
+                      <p title={instance.summary || instance.description}>{instance.description}</p>
+                    </div>}
+                  </Card.Content>
+                  <Button.Group attached='bottom'>
+                    <Button as={Link} to={'/documents/' + instance.fabric_id}><Icon name='linkify' /></Button>
+                    <Button as={Link} to={'/documents/' + instance.fabric_id + '#pin'}><Icon name='thumbtack' /></Button>
+                  </Button.Group>
+                </List.Item>
+              ))) : (<p>No results found</p>)
+            )}
           </List>
           <ChatBox
             {...this.props}
             messagesEndRef={this.messagesEndRef}
-            includeFeed={true}
+            includeFeed={false}
             placeholder={'Ask about these documents...'}
             resetInformationSidebar={this.props.resetInformationSidebar}
             messageInfo={this.props.messageInfo}

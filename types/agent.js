@@ -308,7 +308,7 @@ class Agent extends Service {
 
         try {
           const sample = messages.concat([
-            { role: 'user', content: request.query }
+            { role: 'user', username: request.username, content: request.query }
           ]);
 
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);

@@ -81,16 +81,13 @@ const Collection = require('@fabric/core/types/collection');
 const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
-// const Bitcoin = require('@fabric/core/services/bitcoin');
+const Bitcoin = require('@fabric/core/services/bitcoin');
 // const WebHooks = require('@fabric/webhooks');
-// const Discord = require('@fabric/discord');
-// const Ethereum = require('@fabric/ethereum');
+const Discord = require('@fabric/discord');
 // const GitHub = require('@fabric/github');
 const Matrix = require('@fabric/matrix');
-// const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
-// const GitHub = require('@fabric/github');
 
 // Providers
 // const { StatuteProvider } = require('../libraries/statute-scraper');
@@ -229,7 +226,7 @@ class Sensemaker extends Hub {
     this.email = (this.settings.email &amp;&amp; this.settings.email.enable) ? new EmailService(this.settings.email) : null;
     this.matrix = (this.settings.matrix &amp;&amp; this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
-    // this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
+    this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
 
     // Other Services
     this.openai = new OpenAI(this.settings.openai);
@@ -266,6 +263,7 @@ class Sensemaker extends Hub {
       middlewares: {
         userIdentifier: this._userMiddleware.bind(this)
       },
+      // TODO: use Fabric Resources; routes and components will be defined there
       resources: {
         Document: {
           route: '/documents',
@@ -293,11 +291,11 @@ class Sensemaker extends Hub {
     });
 
     // File Uploads
+    // TODO: check for vulnerabilities, easy setup
     this.uploader = new multer({ dest: this.settings.files.path });
 
     // TODO: evaluate use of temperature
     this.openai.settings.temperature = this.settings.temperature;
-    this.apollo = null;
 
     // Internals
     this.agents = {};
@@ -751,9 +749,11 @@ class Sensemaker extends Hub {
       });
 
       // Construct Metadata
-      const meta = `metadata:\n` +
-        `  created: ${created}\n` +
-        `  clock: ${this.clock}\n`;
+      const meta = `` +
+        `clock: ${this.clock}\n` +
+        `created: ${created}\n`/* +
+        `creator:` +
+        `  name: ${request.username}\n` */;
 
       // Format Query Text
       const query = `---\n${meta}---\n${request.query}`;
@@ -1352,7 +1352,7 @@ class Sensemaker extends Hub {
       });
 
       // TODO: check for successful prime
-      console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
+      // console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
     }
   }
 
@@ -1527,15 +1527,15 @@ class Sensemaker extends Hub {
         conversation_id: 'conversation_id',
         help_role: 'help_role',
       }
+
       fileUploadMessage.type = 'FileUploadMsg';
-      
+
       //here we broadcast the message, telling 'Bridge.js' which role sent a message
       const message = Message.fromVector([fileUploadMessage.type, JSON.stringify(fileUploadMessage)]);
       this.http.broadcast(message);
     }
 
     redisSubscriber.connect().then(() => {
-      console.log('Connected to Redis for subscribing');
       redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
       redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
     });
@@ -1569,15 +1569,12 @@ class Sensemaker extends Hub {
 
     // Register Services
     // await this._registerService('webhooks', WebHooks);
-    // await this._registerService('bitcoin', Bitcoin);
+    await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
-    // await this._registerService('ethereum', Ethereum);
     // await this._registerService('github', GitHub);
-    // await this._registerService('matrix', Matrix);
+    await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);
-    // await this._registerService('shyft', Shyft);
-    // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
     // this.products = await this.stripe.enumerateProducts();
@@ -1630,6 +1627,14 @@ class Sensemaker extends Hub {
       this.matrix.on('activity', this._handleMatrixActivity.bind(this));
       this.matrix.on('ready', this._handleMatrixReady.bind(this));
       this.matrix.on('error', this._handleMatrixError.bind(this));
+    }
+
+    if (this.discord) {
+      this.discord.on('activity', this._handleDiscordActivity.bind(this));
+      this.discord.on('ready', this._handleDiscordReady.bind(this));
+      this.discord.on('error', this._handleDiscordError.bind(this));
+      this.discord.on('log', this._handleDiscordLog.bind(this));
+      this.discord.on('debug', this._handleDiscordDebug.bind(this));
     }
 
     // OpenAI Events
@@ -1702,7 +1707,13 @@ class Sensemaker extends Hub {
     if (this.email) await this.email.start();
     if (this.matrix) await this.matrix.start();
     // if (this.github) await this.github.start();
-    if (this.discord) await this.discord.start();
+    if (this.discord) {
+      try {
+        await this.discord.start();
+      } catch (exception) {
+        console.error('[SENSEMAKER:CORE]', '[DISCORD]', 'Error starting Discord:', exception);
+      }
+    }
 
     // Debug Services
     // await this.rag.start();
@@ -1819,6 +1830,7 @@ class Sensemaker extends Hub {
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+    this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
@@ -1912,7 +1924,7 @@ class Sensemaker extends Hub {
 
     //endpoint to check if the email is available
     this.http._addRoute('POST', '/users/email/:id', ROUTES.users.checkExistingEmail.bind(this));
-    this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
+    this.http._addRoute('GET', '/sessions', ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
@@ -2180,7 +2192,7 @@ class Sensemaker extends Hub {
             if (this.pacer) source.counts = await this.discord.getCounts();
             break;
           case 'matrix':
-            if (this.pacer) source.counts = await this.discord.getCounts();
+            if (this.pacer) source.counts = await this.matrix.getCounts();
             break;
           default:
             console.warn('[SENSEMAKER:CORE]', 'Unhandled Datasource:', name);
@@ -2752,6 +2764,207 @@ class Sensemaker extends Hub {
         results: results
       });
     });
+  }
+
+  async _handleDiscordActivity (activity) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity);
+    if (activity.actor == this.discord.id) return;
+    if (activity.target.type === 'dm') {
+      let conversationID = null;
+      let userID = null;
+      let log = null;
+
+      // Create (or Restore) User
+      let id = null;
+      const identity = await this.db('identities').where({ source: 'discord', content: activity.actor.ref }).first();
+      if (!identity) {
+        const actor = new Actor({ name: `discord/users/${activity.actor.ref}` });
+        const ids = await this.db('identities').insert({
+          fabric_id: actor.id,
+          source: 'discord',
+          content: activity.actor.ref
+        });
+
+        id = ids[0];
+      } else {
+        id = identity.id;
+      }
+
+      const retrieved = await this.db('users').where({ discord_id: activity.actor.ref }).first();
+      if (!retrieved) {
+        const newUser = await this.db('users').insert({
+          discord_id: activity.actor.ref,
+          fabric_id: activity.actor.id,
+          username: activity.actor.username
+        });
+        userID = newUser[0];
+      } else {
+        userID = retrieved.id;
+      }
+
+      // Create (or Restore) Conversation
+      const resumed = await this.db('conversations').where({ fabric_id: activity.target.id }).first();
+      if (!resumed) {
+        const newConversation = await this.db('conversations').insert({
+          creator_id: userID,
+          discord_id: activity.actor.ref,
+          fabric_id: activity.target.id,
+          title: activity.target.username,
+          log: JSON.stringify([])
+        });
+
+        conversationID = newConversation[0];
+      } else {
+        conversationID = resumed.id;
+        log = JSON.parse(resumed.log);
+      }
+
+      const computingIcon = '⌛';
+      const completedIcon = '✅';
+
+      const inserted = await this.db('messages').insert({
+        conversation_id: conversationID,
+        content: activity.object.content,
+        user_id: userID
+      });
+
+      log.push(inserted[0]);
+
+      await this.db('conversations').where({ id: conversationID }).update({
+        // updated_at: new Date().toISOString(),
+        log: JSON.stringify(log),
+        title: `Discord Chat with ${activity.actor.username}`
+      });
+
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message inserted:', inserted);
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Conversation ID:', conversationID);
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'User ID:', userID);
+
+      // TODO: add reactions
+      const request = this.handleTextRequest({
+        conversation_id: conversationID,
+        query: activity.object.content,
+        platform: 'discord',
+        username: activity.actor.username
+      }).then((response) => {
+        console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Response:', response);
+        this.discord._sendToChannel(activity.target.ref, response.content);
+      });
+
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Request:', request);
+    }
+  }
+
+  async _handleDiscordAuthorizeRequest (req, res, next) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'auth request...', req.user, req.params, req.query);
+    if (req.query.code) {
+      let newFlow = false; // Flag for new user flow
+      let id = null; // Identity
+
+      const code = req.query.code;
+      const token = await this.discord.exchangeCodeForToken(code);
+
+      if (!token.access_token) {
+        // TODO: show error message in client
+        return res.redirect('/settings');
+      }
+
+      this.discord.getTokenUser(token.access_token).then(async (response) => {
+        console.debug('got profile:', response);
+        // Create Identity
+        const identity = await this.db('identities').where({ source: 'discord', content: response.id }).first();
+        if (!identity) {
+          const actor = new Actor({ name: `discord/users/${response.id}` });
+          const ids = await this.db('identities').insert({
+            fabric_id: actor.id,
+            user_id: req.user.id,
+            source: 'discord',
+            content: response.id
+          });
+
+          id = ids[0];
+        } else {
+          id = identity.id;
+        }
+
+        if (!req.user.id) {
+          newFlow = true;
+
+          const existingUser = await this.db('users').where({ discord_id: response.id }).first();
+          if (!existingUser) {
+            // Create
+            const uids = await this.db('users').insert({
+              username: `${response.username} (Discord)`,
+              discord_id: response.id,
+            });
+
+            req.user.id = uids[0];
+          } else {
+            console.debug('existing user! id:', existingUser.id);
+            req.user.id = existingUser.id;
+          }
+
+          const session = await fetch(`http://${this.settings.authority}/sessions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              token: token.access_token
+            })
+          });
+
+          console.debug('session:', await session.json());
+        }
+
+        const cids = await this.db('credentials').insert({
+          content: token.access_token,
+          type: token.type,
+          expires_in: token.expires_in,
+          scope: token.scope,
+          refresh_token: token.refresh_token,
+          user_id: req.user.id
+        });
+
+        // Redirect User
+        if (newFlow) {
+          await this.db('users').where({ id: req.user.id }).update({
+            // TODO: restore automatic naming for new accounts
+            // username: `${response.global_name} (Discord)`,
+            discord_id: response.id,
+            discord_token_id: cids[0]
+          });
+
+          return res.redirect('/');
+        } else {
+          return res.redirect('/settings');
+        }
+      });
+    } else {
+      // Redirect User to Discord
+      const link = this.discord.generateAuthorizeLink();
+      return res.redirect(link);
+    }
+  }
+
+  async _handleDiscordError (error) {
+    console.error('[SENSEMAKER:CORE]', '[DISCORD]', 'Error:', error);
+  }
+
+  async _handleDiscordMessage (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message:', message);
+  }
+
+  async _handleDiscordLog (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Log Event:', message);
+  }
+
+  async _handleDiscordDebug (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Debug Event:', message);
+  }
+
+  async _handleDiscordReady (message) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Ready:', message);
   }
 
   async _handleHealthRequest (req, res, next) {
@@ -3401,33 +3614,60 @@ class Sensemaker extends Hub {
   }
 
   _userMiddleware (req, res, next) {
-    // const ephemera = new Key();
+    // Initialize user object (null id = anonymous)
     req.user = {
       id: null
     };
 
-    if (req.headers.authorization) {
+    // const ephemera = new Key();
+    let token = null;
+
+    if (req.headers.cookie) {
+      console.debug('got cookie:', req.headers.cookie);
+      // has cookie, parse it
+      req.cookies = req.headers.cookie
+        .split(';')
+        .map((x) => x.trim().split(/=(.+)/))
+        .reduce((acc, curr) => {
+          acc[curr[0]] = curr[1];
+          return acc;
+        }, {});
+
+      token = req.cookies['token'];
+      console.debug('got token from cookie:', token);
+    }
+
+    // no cookie, has authorization header
+    if (!token &amp;&amp; req.headers.authorization) {
+      console.debug('found authorization header:', req.headers.authorization);
       const header = req.headers.authorization.split(' ');
-
       if (header[0] == 'Bearer' &amp;&amp; header[1]) {
-        const token = header[1];
-        const parts = token.split('.');
+        token = header[1];
+      }
+    }
 
-        if (parts &amp;&amp; parts.length == 3) {
-          const headers = parts[0];
-          const payload = parts[1];
-          const signature = parts[2];
-          const inner = Token.base64UrlDecode(payload);
+    // read token
+    if (token) {
+      const parts = token.split('.');
+      console.debug('token parts:', parts);
 
-          try {
-            const obj = JSON.parse(inner);
-            if (this.settings.audit) this.emit('debug', `[AUTH] Bearer Token: ${JSON.stringify(obj)}`);
-            req.user.id = obj.sub;
-            req.user.role = obj.role || 'asserted';
-            req.user.state = obj.state || {};
-          } catch (exception) {
-            console.error('Invalid Bearer Token:', inner)
-          }
+      if (parts &amp;&amp; parts.length == 3) {
+        // Named parts
+        const headers = parts[0]; // TODO: check headers
+        const payload = parts[1];
+        const signature = parts[2]; // TODO: check signature
+
+        // Decode the payload
+        const inner = Token.base64UrlDecode(payload);
+
+        try {
+          const obj = JSON.parse(inner);
+          if (this.settings.audit) this.emit('debug', `[AUTH] Bearer Token: ${JSON.stringify(obj)}`);
+          req.user.id = obj.sub;
+          req.user.role = obj.role || 'asserted';
+          req.user.state = obj.state || {};
+        } catch (exception) {
+          console.error('Invalid Bearer Token:', inner)
         }
       }
     }

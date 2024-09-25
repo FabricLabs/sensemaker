@@ -2,12 +2,14 @@
 
 // Dependencies
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 // Components
 const {
   Button,
   Card,
   Header,
+  Icon,
   Label,
   Segment,
   Table,
@@ -26,6 +28,7 @@ class SensemakerUserSettings extends React.Component {
       email: this.props.auth.email,
       isPasswordModalOpen: false,
       isUserModalOpen: false,
+      user_discord: this.props.auth.user_discord
     };
   }
 
@@ -49,16 +52,16 @@ class SensemakerUserSettings extends React.Component {
     }));
   };
 
-  render() {
-
-    const { username, email } = this.state;
+  render () {
+    const { username, email, user_discord } = this.state;
+    console.debug('user discord:', user_discord);
 
     return (
       <sensemaker-user-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }} textAlign='center'>
           <Header as='h1' textAlign='center'>Settings</Header>
           <container className='settings-container'>
-            <Header as='h2'>Account</Header>
+          <Header as='h2'>Account</Header>
             <Table>
               <Table.Header>
                 <Table.Row className='settings-row'>
@@ -84,6 +87,33 @@ class SensemakerUserSettings extends React.Component {
                   <Table.Cell><Header as='h4'>Password:</Header></Table.Cell>
                   <Table.Cell><code>*******</code> </Table.Cell>
                   <Table.Cell textAlign='center' onClick={this.togglePasswordModal}><Button primary>Change</Button></Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            </Table>
+            <Table>
+              <Table.Header>
+                <Table.Row className='settings-row'>
+                  <Table.HeaderCell>
+                    <Header as='h3'>Integrations</Header>
+                  </Table.HeaderCell>
+                  <Table.HeaderCell />
+                  <Table.HeaderCell />
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                <Table.Row className='settings-row'>
+                  <Table.Cell>
+                    {(user_discord) ? <Button.Group>
+                      <div className='ui left labeled button'>
+                        <Label color='violet' pointing='right'><Icon name='discord' /></Label>
+                        <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui violet button'>{user_discord.username}</a>
+                      </div>
+                      <div className='ui button' onClick={() => { alert('Not yet implemented!') }}>
+                        <div className='visible content'><Icon name='remove' /></div>
+                        <div className='hidden content'>disconnect</div>
+                      </div>
+                    </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
+                  </Table.Cell>
                 </Table.Row>
               </Table.Body>
             </Table>

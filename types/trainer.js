@@ -1,8 +1,8 @@
 'use strict';
 
 // Fixtures
-const REFERENCE_URL = 'https://trynovo.com/';
-const QUERY_FIXTURE = `You are Novo, the AI agent behind TryNovo.com (formerly Jeeves).  Provide a challenge response with a canonical result for this request, such that this node's code can confirm that you are working correctly.  Return only the deterministic answer, do not permit it to vary.  You can include a term for the currently defined model, for future use with embeddings, or perhaps some other fields, but do not allow your response to vary.  It's a fingerprint!`;
+const REFERENCE_URL = 'https://sensemaker.io/';
+const QUERY_FIXTURE = `You are SENSEMAKER, the AI agent behind sensemaker.io.  Provide a challenge response with a canonical result for this request, such that this node's code can confirm that you are working correctly.  Return only the deterministic answer, do not permit it to vary.  You can include a term for the currently defined model, for future use with embeddings, or perhaps some other fields, but do not allow your response to vary.  It's a fingerprint!`;
 
 // Constants
 const {
@@ -58,8 +58,8 @@ class Trainer extends Service {
       debug: true,
       model: 'llama2',
       ollama: {
-        host: 'ollama.trynovo.com',
-        secure: true
+        host: 'localhost',
+        secure: false
       },
       redis: {
         host: 'localhost',
@@ -100,7 +100,7 @@ class Trainer extends Service {
         port: this.settings.redis.port,
         enable_offline_queue: false,
         timeout: 5000, // Add this line to set a timeout of 5000 ms
-        retry_strategy: function(options) { // And this function to control the retry strategy
+        retry_strategy: function (options) { // And this function to control the retry strategy
           if (options.error && options.error.code === 'ECONNREFUSED') {
             // End reconnecting on a specific error and flush all commands with
             // a individual error
@@ -355,7 +355,7 @@ class Trainer extends Service {
 
         this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
           redisClient: this.redis,
-          indexName: this.settings.redis.name || 'novo-embeddings'
+          indexName: this.settings.redis.name || 'sensemaker-embeddings'
         });
 
         // console.debug('[SENSEMAKER]', '[TRAINER]', 'Embeddings:', this.embeddings);

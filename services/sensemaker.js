@@ -1,6 +1,7 @@
 /**
  * # Sensemaker Core
- * This file contains the main class definition for the Sensemaker service.
+ * This file contains the main class definition for the Sensemaker service.  
+ * Methods prefixed by `_` are considered private and should not be called directly.
  * @extends {Hub} Instance of Fabric Hub (`@fabric/hub`), the reference implementation of a Fabric Edge server.
  */
 'use strict';
@@ -62,16 +63,13 @@ const Collection = require('@fabric/core/types/collection');
 const Filesystem = require('@fabric/core/types/filesystem');
 
 // Sources
-// const Bitcoin = require('@fabric/core/services/bitcoin');
+const Bitcoin = require('@fabric/core/services/bitcoin');
 // const WebHooks = require('@fabric/webhooks');
 const Discord = require('@fabric/discord');
-// const Ethereum = require('@fabric/ethereum');
 // const GitHub = require('@fabric/github');
 const Matrix = require('@fabric/matrix');
-// const Shyft = require('@fabric/shyft');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
-// const GitHub = require('@fabric/github');
 
 // Providers
 // const { StatuteProvider } = require('../libraries/statute-scraper');
@@ -247,6 +245,7 @@ class Sensemaker extends Hub {
       middlewares: {
         userIdentifier: this._userMiddleware.bind(this)
       },
+      // TODO: use Fabric Resources; routes and components will be defined there
       resources: {
         Document: {
           route: '/documents',
@@ -274,11 +273,11 @@ class Sensemaker extends Hub {
     });
 
     // File Uploads
+    // TODO: check for vulnerabilities, easy setup
     this.uploader = new multer({ dest: this.settings.files.path });
 
     // TODO: evaluate use of temperature
     this.openai.settings.temperature = this.settings.temperature;
-    this.apollo = null;
 
     // Internals
     this.agents = {};
@@ -304,7 +303,7 @@ class Sensemaker extends Hub {
 
     // Agent Collection
     this.alpha = new Agent({ name: 'ALPHA', host: null, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.beta = new Agent({ name: 'BETA', model: this.settings.ollama.model, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
+    // this.beta = new Agent({ name: 'BETA', model: this.settings.ollama.model, host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt, openai: this.settings.openai });
     this.gamma = new Agent({ name: 'GAMMA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.delta = new Agent({ name: 'DELTA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
 
@@ -314,7 +313,7 @@ class Sensemaker extends Hub {
     // Well-known Models
     this.llama = new Agent({ name: 'LLAMA', model: 'llama3', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
     this.mistral = new Agent({ name: 'MISTRAL', model: 'mistral', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
-    this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
+    // this.mixtral = new Agent({ name: 'MIXTRAL', model: 'mixtral', host: 'ollama.trynovo.com', port: 443, secure: true, prompt: this.settings.prompt });
     this.gemma = new Agent({ name: 'GEMMA', model: 'gemma', host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt });
 
     // Custom Models
@@ -547,8 +546,8 @@ class Sensemaker extends Hub {
       try {
         // Alert Tech
         await this.email.send({
-            from: 'agent@trynovo.com',
-            to: 'tech@sensemaker.dev',
+            from: 'agent@sensemaker.io',
+            to: 'tech@sensemaker.io',
             subject: `[ALERT] [SENSEMAKER:CORE] Sensemaker Alert`,
             html: message
         });
@@ -721,7 +720,7 @@ class Sensemaker extends Hub {
         // Resume conversation
         const prev = await this._getConversationMessages(request.conversation_id);
         messages = prev.map((x) => {
-          return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+          return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
         });
       }
 
@@ -732,9 +731,11 @@ class Sensemaker extends Hub {
       });
 
       // Construct Metadata
-      const meta = `metadata:\n` +
-        `  created: ${created}\n` +
-        `  clock: ${this.clock}\n`;
+      const meta = `` +
+        `clock: ${this.clock}\n` +
+        `created: ${created}\n`/* +
+        `creator:` +
+        `  name: ${request.username}\n` */;
 
       // Format Query Text
       const query = `---\n${meta}---\n${request.query}`;
@@ -1550,15 +1551,12 @@ class Sensemaker extends Hub {
 
     // Register Services
     // await this._registerService('webhooks', WebHooks);
-    // await this._registerService('bitcoin', Bitcoin);
-    await this._registerService('discord', Discord);
-    // await this._registerService('ethereum', Ethereum);
+    await this._registerService('bitcoin', Bitcoin);
+    // await this._registerService('discord', Discord);
     // await this._registerService('github', GitHub);
-    // await this._registerService('matrix', Matrix);
+    await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);
-    // await this._registerService('shyft', Shyft);
-    // await this._registerService('github', GitHub);
     // await this._registerService('pricefeed', Prices);
 
     // this.products = await this.stripe.enumerateProducts();
@@ -1667,7 +1665,7 @@ class Sensemaker extends Hub {
     // Load models
     await this.searcher.start()
     await this.alpha.start();
-    await this.beta.start();
+    // await this.beta.start();
     await this.llama.start();
     await this.augmentor.start();
     await this.summarizer.start();
@@ -1814,6 +1812,8 @@ class Sensemaker extends Hub {
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+    this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
+    this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
@@ -1907,7 +1907,7 @@ class Sensemaker extends Hub {
 
     //endpoint to check if the email is available
     this.http._addRoute('POST', '/users/email/:id', ROUTES.users.checkExistingEmail.bind(this));
-    this.http._addRoute('GET', '/sessions',ROUTES.sessions.get.bind(this));
+    this.http._addRoute('GET', '/sessions', ROUTES.sessions.get.bind(this));
 
     // TODO: change to /sessions
     this.http._addRoute('GET', '/sessions/new', async (req, res, next) => {
@@ -1919,20 +1919,28 @@ class Sensemaker extends Hub {
     });
 
     this.http._addRoute('POST', '/sessions', ROUTES.sessions.create.bind(this));
-
-    // TODO: change this route from `/sessionRestore` to use authMiddleware?
-    this.http._addRoute('GET', '/sessionRestore', async (req, res, next) => {
+    this.http._addRoute('GET', '/sessions/current', async (req, res, next) => {
+      let identity = null;
       try {
         const user = await this.db('users').where('id', req.user.id).first();
         if (!user) {
           return res.status(401).json({ message: 'Invalid session.' });
         }
+
+        if (user.discord_id) {
+          identity = await this.db('identities').where('user_id', req.user.id).where('type', 'DiscordUsername').first();
+        }
+
         return res.json({
           username: user.username,
           email: user.email,
           isAdmin: user.is_admin,
           isBeta: user.is_beta,
           isCompliant: user.is_compliant,
+          user_discord: (identity) ? {
+            id: user.discord_id,
+            username: identity.content,
+          } : undefined,
           id: user.id
         });
       } catch (error) {
@@ -1951,7 +1959,7 @@ class Sensemaker extends Hub {
         const existingUser = await this.db('users').where('email', email).first();
         if (!existingUser) {
           return res.status(409).json({
-            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@novo.com '
+            message: 'This email you entered is not assigned to a registered user. Please check and try again or contact client services on support@sensemaker.io'
           });
         }
 
@@ -1975,13 +1983,12 @@ class Sensemaker extends Hub {
         //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
         const resetLink = `${this.authority}/passwordreset/${resetToken}`;
-        const imgSrc = "https://firebasestorage.googleapis.com/v0/b/imagen-beae6.appspot.com/o/novo-logo-.png?alt=media&token=7ee367b3-6f3d-4a06-afa2-6ef4a14b321b";
-
-        const htmlContent =this.createPasswordResetEmailContent(resetLink,imgSrc);
+        const imgSrc = "https://sensemaker.io/images/sensemaker-icon.png";
+        const htmlContent = this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {
           await this.email.send({
-            from: 'agent@trynovo.com',
+            from: 'agent@sensemaker.io',
             to: email,
             subject: 'Password Reset',
             html: htmlContent
@@ -1993,7 +2000,7 @@ class Sensemaker extends Hub {
         } catch (error) {
           console.error('Error sending email', error);
           return res.status(500).json({
-            message: 'Email could not be sent. Please try again later or contact client services on support@novo.com.'
+            message: 'Email could not be sent. Please try again later or contact client services on support@sensemaker.io'
           });
         }
       } catch (error) {
@@ -2594,8 +2601,8 @@ class Sensemaker extends Hub {
       const object = {
         object: 'chat.completion',
         created: Date.now() / 1000,
-        model: request.model || 'novo',
-        system_fingerprint: 'net_novo',
+        model: request.model || 'sensemaker',
+        system_fingerprint: 'net_sensemaker',
         choices: [
           {
             index: 0,
@@ -2751,6 +2758,215 @@ class Sensemaker extends Hub {
 
   async _handleDiscordActivity (activity) {
     console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity);
+    if (activity.actor == this.discord.id) return;
+
+    // Handle DMs
+    if (activity.target.type === 'dm') {
+      let conversationID = null;
+      let userID = null;
+      let log = [];
+
+      // Create (or Restore) Identities
+      let id = null;
+      const identity = await this.db('identities').where({ source: 'discord', content: activity.actor.ref }).first();
+      if (!identity) {
+        const actor = new Actor({ name: `discord/users/${activity.actor.ref}` });
+        const ids = await this.db('identities').insert({
+          fabric_id: actor.id,
+          source: 'discord',
+          content: activity.actor.ref
+        });
+
+        const duser = await this.db('identities').insert({
+          fabric_id: actor.id,
+          source: 'discord',
+          content: activity.actor.username
+        });
+
+        id = ids[0];
+      } else {
+        id = identity.id;
+      }
+
+      const retrieved = await this.db('users').where({ discord_id: activity.actor.ref }).first();
+      if (!retrieved) {
+        const newUser = await this.db('users').insert({
+          discord_id: activity.actor.ref,
+          fabric_id: activity.actor.id,
+          username: activity.actor.username
+        });
+
+        userID = newUser[0];
+      } else {
+        userID = retrieved.id;
+      }
+
+      // Create (or Restore) Conversation
+      const resumed = await this.db('conversations').where({ fabric_id: activity.target.id }).first();
+      if (!resumed) {
+        const newConversation = await this.db('conversations').insert({
+          creator_id: userID,
+          discord_id: activity.actor.ref,
+          fabric_id: activity.target.id,
+          title: activity.target.username,
+          log: JSON.stringify([])
+        });
+
+        conversationID = newConversation[0];
+        log = [];
+      } else {
+        conversationID = resumed.id;
+        log = resumed.log;
+      }
+
+      // TODO: add reactions
+      const computingIcon = '⌛';
+      const completedIcon = '✅';
+
+      const inserted = await this.db('messages').insert({
+        conversation_id: conversationID,
+        content: activity.object.content,
+        user_id: userID
+      });
+
+      log.push(inserted[0]);
+
+      await this.db('conversations').where({ id: conversationID }).update({
+        // updated_at: new Date().toISOString(),
+        log: JSON.stringify(log),
+        title: `Discord Chat with ${activity.actor.username}`
+      });
+
+      const request = this.handleTextRequest({
+        conversation_id: conversationID,
+        query: activity.object.content,
+        platform: 'discord',
+        username: activity.actor.username
+      }).then((response) => {
+        console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Response:', response);
+        this.discord._sendToChannel(activity.target.ref, response.content);
+      });
+
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Request:', request);
+    }
+  }
+
+  async _handleDiscordAuthorizeRequest (req, res, next) {
+    if (req.query.code) {
+      let newFlow = false; // Flag for new user flow
+      let id = null; // Identity
+
+      const code = req.query.code;
+      const token = await this.discord.exchangeCodeForToken(code);
+
+      if (!token.access_token) {
+        // TODO: show error message in client
+        return res.redirect('/settings');
+      }
+
+      this.discord.getTokenUser(token.access_token).then(async (response) => {
+        // Create Identity
+        const identity = await this.db('identities').where({ source: 'discord', content: response.id }).first();
+        if (!identity) {
+          const actor = new Actor({ name: `discord/users/${response.id}` });
+          const ids = await this.db('identities').insert({
+            type: 'DiscordUserSnowflake',
+            fabric_id: actor.id,
+            user_id: req.user.id,
+            source: 'discord',
+            content: response.id
+          });
+
+          const duser = await this.db('identities').insert({
+            type: 'DiscordUsername',
+            fabric_id: actor.id,
+            user_id: req.user.id,
+            source: 'discord',
+            content: response.username
+          });
+
+          id = ids[0];
+        } else {
+          id = identity.id;
+        }
+
+        const known = await this.db('users').where({ discord_id: response.id }).first();
+        if (!known && req.user && req.user.id) {
+          await this.db('users').where({ id: req.user.id }).update({
+            discord_id: response.id
+          });
+        }
+
+        if (!req.user.id) {
+          newFlow = true;
+
+          const existingUser = await this.db('users').where({ discord_id: response.id }).first();
+          if (!existingUser) {
+            // Create
+            const uids = await this.db('users').insert({
+              username: `${response.username} (Discord)`,
+              discord_id: response.id,
+            });
+
+            req.user.id = uids[0];
+          } else {
+            req.user.id = existingUser.id;
+          }
+
+          const session = await fetch(`http://${this.settings.authority}/sessions`, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              token: token.access_token
+            })
+          });
+
+          // Set session cookie
+          const sessionResult = await session.json();
+          res.cookie('token', sessionResult.token/* , { httpOnly: true } */);
+        }
+
+        const cids = await this.db('credentials').insert({
+          content: token.access_token,
+          type: token.type,
+          expires_in: token.expires_in,
+          scope: token.scope,
+          refresh_token: token.refresh_token,
+          user_id: req.user.id
+        });
+
+        // Redirect User
+        if (newFlow) {
+          await this.db('users').where({ id: req.user.id }).update({
+            discord_id: response.id,
+            discord_token_id: cids[0]
+          });
+
+          return res.redirect('/');
+        } else {
+          return res.redirect('/settings');
+        }
+      });
+    } else {
+      // Redirect User to Discord
+      const link = this.discord.generateAuthorizeLink();
+      return res.redirect(link);
+    }
+  }
+
+  async _handleDiscordRevokeRequest (req, res, next) {
+    // TODO: halt on !req.user.id
+    // TODO: revoke token on Discord
+    await this.db('users').where({ id: req.user.id }).update({
+      discord_id: null,
+      discord_token_id: null
+    });
+
+    // TODO: flash disconnected message
+    return res.redirect('/settings');
   }
 
   async _handleDiscordError (error) {
@@ -2972,7 +3188,7 @@ class Sensemaker extends Hub {
   }
 
   async _getConversationMessages (conversationID) {
-    const messages = await this.db('messages').where({ conversation_id: conversationID, status: 'ready' });
+    const messages = await this.db('messages').where({ conversation_id: conversationID, status: 'ready' }).innerJoin('users', 'messages.user_id', 'users.id').select('messages.*', 'users.username');
     return messages;
   }
 
@@ -3420,33 +3636,59 @@ class Sensemaker extends Hub {
   }
 
   _userMiddleware (req, res, next) {
-    // const ephemera = new Key();
+    // Initialize user object (null id = anonymous)
     req.user = {
       id: null
     };
 
-    if (req.headers.authorization) {
+    // TODO: use response signing (`X-Fabric-HTTP-Signature`, etc.)
+    // const ephemera = new Key();
+    let token = null;
+
+    // Does the request have a cookie?
+    if (req.headers.cookie) {
+      // has cookie, parse it
+      req.cookies = req.headers.cookie
+        .split(';')
+        .map((x) => x.trim().split(/=(.+)/))
+        .reduce((acc, curr) => {
+          acc[curr[0]] = curr[1];
+          return acc;
+        }, {});
+
+      token = req.cookies['token'];
+    }
+
+    // no cookie, has authorization header
+    if (!token && req.headers.authorization) {
+      console.debug('found authorization header:', req.headers.authorization);
       const header = req.headers.authorization.split(' ');
-
       if (header[0] == 'Bearer' && header[1]) {
-        const token = header[1];
-        const parts = token.split('.');
+        token = header[1];
+      }
+    }
 
-        if (parts && parts.length == 3) {
-          const headers = parts[0];
-          const payload = parts[1];
-          const signature = parts[2];
-          const inner = Token.base64UrlDecode(payload);
+    // read token
+    if (token) {
+      const parts = token.split('.');
 
-          try {
-            const obj = JSON.parse(inner);
-            if (this.settings.audit) this.emit('debug', `[AUTH] Bearer Token: ${JSON.stringify(obj)}`);
-            req.user.id = obj.sub;
-            req.user.role = obj.role || 'asserted';
-            req.user.state = obj.state || {};
-          } catch (exception) {
-            console.error('Invalid Bearer Token:', inner)
-          }
+      if (parts && parts.length == 3) {
+        // Named parts
+        const headers = parts[0]; // TODO: check headers
+        const payload = parts[1];
+        const signature = parts[2]; // TODO: check signature
+
+        // Decode the payload
+        const inner = Token.base64UrlDecode(payload);
+
+        try {
+          const obj = JSON.parse(inner);
+          if (this.settings.audit) this.emit('debug', `[AUTH] Bearer Token: ${JSON.stringify(obj)}`);
+          req.user.id = obj.sub;
+          req.user.role = obj.role || 'asserted';
+          req.user.state = obj.state || {};
+        } catch (exception) {
+          console.error('Invalid Bearer Token:', inner)
         }
       }
     }

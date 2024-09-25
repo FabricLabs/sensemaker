@@ -69,7 +69,7 @@ class UploadHome extends React.Component {
     return (
       <Segment className="fade-in" fluid style={{ maxHeight: '100%' }}>
         <Button color='green' floated='right' as={Link} to='/uploads#new'>Upload File &raquo;</Button>
-        <h1>Files</h1>
+        <h1>Uploads</h1>
         <p><strong>{totalUploads}</strong> files.</p>
         <fabric-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
