@@ -669,6 +669,15 @@ class ChatBox extends React.Component {
       paddingLeft: '0.5em',
     };
 
+    const inputStyle = {
+      resize: 'none',
+      zIndex: '1'
+    };
+
+    if (this.props.includeAttachments) {
+      inputStyle.borderRadius = '0 5px 5px 0';
+    }
+
     if (message?.conversation && !conversationID && !matterID && !documentChat) {
       return <Navigate to={`/conversations/${message.conversation}`} replace />;
     }
@@ -925,7 +934,7 @@ class ChatBox extends React.Component {
               }}
               onFocus={this.handleTextareaFocus}
               onBlur={this.handleTextareaBlur}
-              style={{ resize: "none", zIndex: '1', borderRadius: '0 5px 5px 0' }}
+              style={inputStyle}
             />
             <Icon
               name="microphone icon"

@@ -89,7 +89,7 @@ class DocumentHome extends React.Component {
               <i aria-hidden='true' className="search icon"></i>
             </div>
           </fabric-search>
-          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em' }}>
+          <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em', marginBottom: '1em' }}>
             {(searching || documents.loading) ? (
               <Loader active inline='centered' /> // Display loading icon if searching is true
             ) : (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (

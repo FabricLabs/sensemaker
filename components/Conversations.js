@@ -198,7 +198,7 @@ class Conversations extends React.Component {
           style={{ margin: '0' }}
         />
         {(currentConversations && currentConversations.length) ? (
-          <Card.Group style={{ marginTop: '1em' }}>
+          <Card.Group style={{ marginTop: '1em', marginBottom: '1em' }}>
             {currentConversations.map(conversation => {
               return (
                 <Card key={conversation.id} fluid className='conversationItem' style={{ marginTop: '1em' }}>

@@ -75,8 +75,6 @@ const login = (username, password) => {
 
       // Assign to cookie
       document.cookie = `token=${session.token}; path=/;`;
-      console.debug('Token assigned to cookie:', session.token);
-      console.debug*('Session:', session);
 
       // Here we create the database and store the session
       const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);

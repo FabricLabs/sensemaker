@@ -208,7 +208,7 @@ class Sensemaker extends Hub {
     this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
     this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
-    this.discord = (this.settings.discord.enable) ? new Discord(this.settings.discord) : null;
+    this.discord = (this.settings.discord.enable) ? new Discord(merge({}, this.settings.discord, { authority: this.settings.authority })) : null;
 
     // Other Services
     this.openai = new OpenAI(this.settings.openai);
@@ -3671,7 +3671,6 @@ class Sensemaker extends Hub {
     // read token
     if (token) {
       const parts = token.split('.');
-
       if (parts && parts.length == 3) {
         // Named parts
         const headers = parts[0]; // TODO: check headers

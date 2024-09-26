@@ -42,6 +42,7 @@ class Home extends React.Component {
           resetChat={this.props.resetChat}
           chat={this.props.chat}
           placeholder='Ask me anything...'
+          includeAttachments={true}
           includeFeed={false}
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
