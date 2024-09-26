@@ -292,7 +292,7 @@
 .ui.primary.loading.loading.loading.loading .input > i.icon:after,
 .ui.primary.loading.loading.loading.loading > i.icon:after,
 .ui.primary.loader.loader.loader:after {
-  color: #2185D0;
+  color: #336699;
 }
 .ui.inverted.primary.elastic.loader:before,
 .ui.inverted.primary.elastic.loading.loading.loading:not(.segment):not(.segments):not(.card):before,
@@ -861,6 +861,12 @@
             transform: rotate(360deg);
   }
 }
+
+
+/*******************************
+         Theme Overrides
+*******************************/
+
 
 
 /*******************************

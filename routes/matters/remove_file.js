@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res) {
-  console.debug('[NOVO]', 'Deleting file from matter...');
+  console.debug('[SENSEMAKER]', 'Deleting file from matter...');
   try {
     const file = await this.db('matters_files').select('file_id').where('id', req.params.idFile).first();
     const updateMatter = await this.db('matters_files')
@@ -26,7 +26,7 @@ module.exports = async function (req, res) {
       message: 'File deleted successfully!'
     });
   } catch (exception) {
-    console.debug('[NOVO]', 'Error deleting file in matter:', exception);
+    console.debug('[SENSEMAKER]', 'Error deleting file in matter:', exception);
     res.status(503);
     return res.send({
       type: 'ContextMatterError',

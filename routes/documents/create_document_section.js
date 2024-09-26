@@ -34,7 +34,7 @@ module.exports = async function (req, res, next) {
   //}
 
   const obj = merge({}, req.body, { created: (new Date()).toISOString() });
-  console.debug('[NOVO]', '[HTTP]', 'Creating document section:', obj);
+  console.debug('[SENSEMAKER]', '[HTTP]', 'Creating document section:', obj);
 
   // TODO: parse JSON, return to object before creating Actor
   const actor = new Actor(obj);

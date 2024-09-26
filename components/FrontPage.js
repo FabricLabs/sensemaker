@@ -46,10 +46,10 @@ class FrontPage extends React.Component {
       <div>
         <HeaderBar showBrand={false} />
         <section>
-          <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME} <Label circular size='big' color='blue' style={{ position: 'relative', left: '-30px', verticalAlign: 'baseline' }}>next</Label></Header>
+          <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
           <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
           <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <Button as={Link} to='/inquiries' primary size='huge' labelPosition='right' icon>Try Now <Icon name='right chevron' /></Button>
+          <Button as={Link} to='/inquiries' primary size='huge' labelPosition='right' icon>Join the Waitlist <Icon name='right chevron' /></Button>
         </section>
       </div>
     );

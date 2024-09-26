@@ -167,7 +167,7 @@ a.ui.nag {
 -------------- */
 
 .ui.primary.nag {
-  background-color: #2185D0;
+  background-color: #336699;
 }
 .ui.inverted.primary.nag {
   background-color: #54C8FF;
@@ -286,6 +286,12 @@ a.ui.nag {
 .ui.nags:not(.fixed):not(.overlay) .nag:only-child {
   border-radius: 0.28571429rem;
 }
+
+
+/*******************************
+         Theme Overrides
+*******************************/
+
 
 
 /*******************************

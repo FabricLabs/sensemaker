@@ -11,22 +11,22 @@ module.exports = async function (req, res, next) {
   }
   // ATTENTION: this allows the user to set any fields on the document, including 'status' and 'owner'
   const obj = merge({}, content, { created: (new Date()).toISOString() });
-  console.debug('[NOVO]', '[HTTP]', 'Creating new document:', obj);
+  console.debug('[SENSEMAKER]', '[HTTP]', 'Creating new document:', obj);
 
   this.generateDocumentOutline({
     type: type, // TODO: allow configuration of document type
     parameters: obj
   }).catch((exception) => {
-    console.error('[NOVO]', '[HTTP]', 'Error generating document outline:', exception);
+    console.error('[SENSEMAKER]', '[HTTP]', 'Error generating document outline:', exception);
     return res.status(500).json({ status: 'error', message: 'Error generating document outline.' });
   }).then(async (output) => {
-    console.debug('[NOVO]', '[HTTP]', 'Generated document outline:', output);
+    console.debug('[SENSEMAKER]', '[HTTP]', 'Generated document outline:', output);
     if (!output || !output.content) {
       return res.status(500).json({ status: 'error', message: 'Error retrieving document outline.' });
     }
 
     const outline = output.content;
-    console.debug('[NOVO]', '[HTTP]', 'Parsed document outline:', outline);
+    console.debug('[SENSEMAKER]', '[HTTP]', 'Parsed document outline:', outline);
 
     // TODO: parse JSON, return to object before creating Actor
     const actor = new Actor(obj);
@@ -70,24 +70,24 @@ module.exports = async function (req, res, next) {
           }
         });
 
-        console.debug('[NOVO]', '[HTTP]', 'Generated document section:', generated);
+        console.debug('[SENSEMAKER]', '[HTTP]', 'Generated document section:', generated);
 
         try {
           await this.db('document_sections').where({ id: insertedSection[0] }).update({ content: generated.content });
         } catch (exception) {
-          console.error('[NOVO]', '[HTTP]', `Could not update content for section ${section.number} of document ID ${documentId}:`, exception);
+          console.error('[SENSEMAKER]', '[HTTP]', `Could not update content for section ${section.number} of document ID ${documentId}:`, exception);
         }
 
         // Append section to document body
         document.content += generated.content + '\n';
       } catch (exception) {
-        console.error('[NOVO]', '[HTTP]', `Could not generate content for section ${section.number} of document ID ${documentId}:`, exception);
+        console.error('[SENSEMAKER]', '[HTTP]', `Could not generate content for section ${section.number} of document ID ${documentId}:`, exception);
       }
     }
 
-    console.debug('[NOVO]', '[HTTP]', 'Created document:', document);
+    console.debug('[SENSEMAKER]', '[HTTP]', 'Created document:', document);
     const proof = await this.proofreader.query({ query: `Your response is a refined, corrected, and well-cited version of the following document:\n\`\`\`\n${document.content}\n\`\`\`` });
-    console.debug('[NOVO]', '[HTTP]', 'Proofread document:', proof);
+    console.debug('[SENSEMAKER]', '[HTTP]', 'Proofread document:', proof);
 
     return res.redirect(`/documents/${actor.id}`);
   });

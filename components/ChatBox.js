@@ -432,57 +432,57 @@ class ChatBox extends React.Component {
   }
 
   handleMicrophoneClick = () => {
-    console.debug('[NOVO]', 'Microphone click');
+    console.debug('[SENSEMAKER]', 'Microphone click');
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        console.debug('[NOVO]', 'Got audio stream:', stream);
+        console.debug('[SENSEMAKER]', 'Got audio stream:', stream);
 
         const recorder = new MediaRecorder(stream);
         const speaker = hark(stream, {});
         const chunks = [];
 
         speaker.on('silence', () => {
-          console.debug('[NOVO]', 'Silence detected');
+          console.debug('[SENSEMAKER]', 'Silence detected');
         });
 
         speaker.on('speaking', () => {
-          console.debug('[NOVO]', 'Speaking detected');
+          console.debug('[SENSEMAKER]', 'Speaking detected');
         });
 
         speaker.on('stopped_speaking', () => {
-          console.debug('[NOVO]', 'Speaking stopped');
-          console.debug('[NOVO]', 'All chunks:', chunks);
+          console.debug('[SENSEMAKER]', 'Speaking stopped');
+          console.debug('[SENSEMAKER]', 'All chunks:', chunks);
 
           const blob = new Blob(chunks, { type: 'audio/webm' });
           const reader = new FileReader();
 
           reader.onload = function () {
-            console.debug('[NOVO]', 'Reader loaded:', reader.result);
+            console.debug('[SENSEMAKER]', 'Reader loaded:', reader.result);
             const recognition = new webkitSpeechRecognition();
 
             recognition.onresult = function (event) {
-              console.debug('[NOVO]', 'Transcribed text:', event.results[0][0].transcript);
+              console.debug('[SENSEMAKER]', 'Transcribed text:', event.results[0][0].transcript);
             };
 
             recognition.onnomatch = (event) => {
-              console.debug('[NOVO]', 'No match:', event);
+              console.debug('[SENSEMAKER]', 'No match:', event);
             }
 
             recognition.start();
-            console.debug('[NOVO]', 'Recognition started...', recognition);
+            console.debug('[SENSEMAKER]', 'Recognition started...', recognition);
           }
 
           reader.readAsDataURL(blob);
-          console.debug('[NOVO]', 'Reader is reading...', blob);
+          console.debug('[SENSEMAKER]', 'Reader is reading...', blob);
         });
 
         recorder.ondataavailable = (e) => {
-          // console.debug('[NOVO]', 'Audio Chunk:', e.data);
+          // console.debug('[SENSEMAKER]', 'Audio Chunk:', e.data);
           chunks.push(e.data);
         };
 
         recorder.start(1000);
-        console.debug('[NOVO]', 'Recorder started:', recorder);
+        console.debug('[SENSEMAKER]', 'Recorder started:', recorder);
       }).catch((err) => {
         console.error(`The following getUserMedia error occurred: ${err}`);
       });

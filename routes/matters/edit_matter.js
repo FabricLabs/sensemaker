@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res) {
-  console.debug('[NOVO]', 'Adding context to matter...');
+  console.debug('[SENSEMAKER]', 'Adding context to matter...');
   try {
     const { title, description, plaintiff, defendant, representing, jurisdiction_id, court_id } = req.body;
     const update = await this.db('matters')
@@ -20,7 +20,7 @@ module.exports = async function (req, res) {
       message: 'Matter edited successfully!'
     });
   } catch (exception) {
-    console.debug('[NOVO]', 'Error editing matter:', exception);
+    console.debug('[SENSEMAKER]', 'Error editing matter:', exception);
     res.status(503);
     return res.send({
       type: 'ContextMatterError',

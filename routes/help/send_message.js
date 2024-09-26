@@ -60,7 +60,7 @@ module.exports = async function (req, res) {
       conversation_id: conversation_id,
     });
   } catch (exception) {
-    console.debug('[NOVO]', 'Error sending Help message:', exception);
+    console.debug('[SENSEMAKER]', 'Error sending Help message:', exception);
     res.status(503);
     return res.send({
       type: 'SendHelpMessageError',

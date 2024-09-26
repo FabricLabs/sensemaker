@@ -97,10 +97,10 @@ class DocumentDrafter extends React.Component {
           }
         } else {
           if (attemptsCounter < 5) {
-            console.log('[NOVO] Failed to create document outline, attempt: ', attemptsCounter, ' Trying again');
+            console.log('[SENSEMAKER] Failed to create document outline, attempt: ', attemptsCounter, ' Trying again');
             this.createOutline(documentType, context);
           } else {
-            console.log('[NOVO] Failed to create document outline, attempt: ', attemptsCounter, ' Start the process again');
+            console.log('[SENSEMAKER] Failed to create document outline, attempt: ', attemptsCounter, ' Start the process again');
             this.setState({ outlineLoading: false, creationError: true, attemptsCounter: 0 });
           }
         }

@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res) {
-  console.debug('[NOVO]', 'Adding context to matter...');
+  console.debug('[SENSEMAKER]', 'Adding context to matter...');
   try {
     const { note, filename, file_id } = req.body;
     if(note){
@@ -22,7 +22,7 @@ module.exports = async function (req, res) {
       message: 'Context added successfully!'
     });
   } catch (exception) {
-    console.debug('[NOVO]', 'Error editing matter:', exception);
+    console.debug('[SENSEMAKER]', 'Error editing matter:', exception);
     res.status(503);
     return res.send({
       type: 'ContextMatterError',

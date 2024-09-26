@@ -61,8 +61,8 @@ class DocumentView extends React.Component {
       this.props.fetchDocumentSections(fabricID);
     }
     if (prevProps.documents != documents) {
-      console.log("[NOVO] Document:", this.props.documents.document);
-      console.log("[NOVO] Sections:", this.props.documents.sections);
+      console.log("[SENSEMAKER] Document:", this.props.documents.document);
+      console.log("[SENSEMAKER] Sections:", this.props.documents.sections);
       if (!documents.creating) {
         if (documents.creationSuccess) {
           // == //

@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = async function (req, res) {
-  console.debug('[NOVO]', 'Creating feedback...');
+  console.debug('[SENSEMAKER]', 'Creating feedback...');
   try {
     const { comment, conversation_id, relates_to } = req.body;
     const insert = await this.db('feedback').insert({
@@ -15,7 +15,7 @@ module.exports = async function (req, res) {
       message: 'Feedback successfully sent',
     });
   } catch (exception) {
-    console.debug('[NOVO]', 'Error creating feedback:', exception);
+    console.debug('[SENSEMAKER]', 'Error creating feedback:', exception);
     res.status(503);
     return res.send({
       type: 'CreateFeedbackError',
