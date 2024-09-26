@@ -82,7 +82,7 @@
 
 .ui.modal > .header {
   display: block;
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   background: #FFFFFF;
   margin: 0;
   padding: 1.25rem 1.5rem;
@@ -758,12 +758,6 @@
 .ui.inverted.fullscreen.modal > .close {
   color: #FFFFFF;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

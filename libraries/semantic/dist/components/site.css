@@ -13,7 +13,7 @@
              Page
 *******************************/
 
-@import url('https://fonts.googleapis.com/css2?family=AvGardd:ital,wght@0,400%3B0,700%3B1,400%3B1,700&subset=latin&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400%3B0,700%3B1,400%3B1,700&subset=latin&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Baskerville:ital,wght@0,400%3B0,700%3B1,400%3B1,700&subset=latin&display=swap');
 html,
 body {
@@ -27,8 +27,8 @@ body {
   padding: 0;
   overflow-x: hidden;
   min-width: 320px;
-  background: #3A3A3A;
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  background: #FFFFFF;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 1.4285em;
   color: rgba(0, 0, 0, 0.87);
@@ -44,7 +44,7 @@ h2,
 h3,
 h4,
 h5 {
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   line-height: 1.28571429em;
   margin: calc(2rem - 0.1428571428571429em) 0 1rem;
   font-weight: bold;
@@ -194,12 +194,6 @@ body .ui.inverted:not(.dimmer)::-webkit-scrollbar-thumb:window-inactive {
 body .ui.inverted:not(.dimmer)::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.35);
 }
-
-
-/*******************************
-        Global Overrides
-*******************************/
-
 
 
 /*******************************

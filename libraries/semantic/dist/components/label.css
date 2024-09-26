@@ -664,36 +664,36 @@ a.ui.basic.label:hover {
 
 .ui.primary.labels .label,
 .ui.ui.ui.primary.label {
-  background-color: #336699;
-  border-color: #336699;
+  background-color: #2185D0;
+  border-color: #2185D0;
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* Link */
 .ui.primary.labels a.label:hover,
 a.ui.ui.ui.primary.label:hover {
-  background-color: #28598a;
-  border-color: #28598a;
+  background-color: #1678c2;
+  border-color: #1678c2;
   color: #FFFFFF;
 }
 
 /* Ribbon */
 .ui.ui.ui.primary.ribbon.label {
-  border-color: #264c73;
+  border-color: #1a69a4;
 }
 
 /* Basic */
 .ui.basic.labels .primary.label,
 .ui.ui.ui.basic.primary.label {
   background: none #FFFFFF;
-  border-color: #336699;
-  color: #336699;
+  border-color: #2185D0;
+  color: #2185D0;
 }
 .ui.basic.labels a.primary.label:hover,
 a.ui.ui.ui.basic.primary.label:hover {
   background: none #FFFFFF;
-  border-color: #28598a;
-  color: #28598a;
+  border-color: #1678c2;
+  color: #1678c2;
 }
 
 /* Inverted */
@@ -2123,12 +2123,6 @@ a.ui.ui.ui.inverted.basic.black.label:hover {
 .ui.massive.label {
   font-size: 1.71428571rem;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

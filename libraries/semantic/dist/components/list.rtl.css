@@ -171,7 +171,7 @@ ol.ui.list ol li,
 .ui.list > .item .header {
   display: block;
   margin: 0;
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   font-weight: bold;
   color: rgba(0, 0, 0, 0.87);
 }
@@ -962,12 +962,6 @@ ol.ui.suffixed.list li:before,
 .ui.massive.horizontal.list > .item {
   font-size: 1.71428571rem;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

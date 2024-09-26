@@ -156,10 +156,9 @@ class Conversations extends React.Component {
 
         <div className='desktop-only'>
           <h3>People</h3>
-          <Card.Group centered>
+          <Card.Group>
             <Card>
               <Card.Content>
-                <Label as='a' color='red' ribbon='right'>Demo</Label>
                 <Card.Header>John Doe</Card.Header>
                 <Card.Meta>Joined in 2021</Card.Meta>
                 <Card.Description>John is a software engineer living in San Francisco.</Card.Description>
@@ -167,7 +166,6 @@ class Conversations extends React.Component {
             </Card>
             <Card>
               <Card.Content>
-                <Label as='a' color='red' ribbon='right'>Demo</Label>
                 <Card.Header>Jane Doe</Card.Header>
                 <Card.Meta>Joined in 2021</Card.Meta>
                 <Card.Description>Jane is a software engineer living in San Francisco.</Card.Description>
@@ -175,7 +173,6 @@ class Conversations extends React.Component {
             </Card>
             <Card>
               <Card.Content>
-                <Label as='a' color='red' ribbon='right'>Demo</Label>
                 <Card.Header>John Doe</Card.Header>
                 <Card.Meta>Joined in 2021</Card.Meta>
                 <Card.Description>John is a software engineer living in San Francisco.</Card.Description>

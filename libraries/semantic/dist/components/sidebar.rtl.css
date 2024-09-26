@@ -142,7 +142,7 @@ body.pushable.dimmed {
   background: inherit;
 }
 body.pushable > .pusher {
-  background: #3A3A3A;
+  background: #FFFFFF;
 }
 
 /*--------------
@@ -614,12 +614,6 @@ body.pushable > .pusher {
   -webkit-transform: scale(0.75);
           transform: scale(0.75);
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

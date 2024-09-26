@@ -353,6 +353,11 @@ class ChatBox extends React.Component {
         currentGroup.push(message);
         // If the next message is not from an assistant, push the current group to groupedMessages
         if (!messages[index + 1] || messages[index + 1].role !== 'assistant') {
+          if (!this.state) {
+            console.debug('undefined state');
+            return;
+          }
+
           // Find the corresponding group in the previous state
           const prevGroup = this.state.groupedMessages.find(g => g.messages[0].id === currentGroup[0].id);
           let activeMessageIndex = currentGroup.length - 1; // last message is active by default

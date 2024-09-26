@@ -265,7 +265,7 @@
 
 /* Standard */
 .ui.primary.slider .inner .track-fill {
-  background-color: #336699;
+  background-color: #2185D0;
 }
 .ui.primary.inverted.slider .inner .track-fill {
   background-color: #54C8FF;
@@ -273,11 +273,11 @@
 
 /* Basic */
 .ui.primary.slider.basic .inner .thumb {
-  background-color: #336699;
+  background-color: #2185D0;
 }
 .ui.primary.slider.basic .inner .thumb:hover,
 .ui.primary.slider.basic:focus .inner .thumb {
-  background-color: #28598a;
+  background-color: #1678c2;
 }
 
 /* Basic Inverted */
@@ -793,12 +793,6 @@
 .ui.big.labeled.vertical.slider > .labels .halftick.label:after {
   width: 1.25em;
 }
-
-
-/*******************************
-        Slider Overrides
-*******************************/
-
 
 
 /*******************************

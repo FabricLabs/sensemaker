@@ -100,7 +100,7 @@
 
 /* Text Container */
 .ui.text.container {
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   max-width: 700px;
   line-height: 1.5;
   font-size: 1.14285714rem;
@@ -127,16 +127,9 @@
 }
 .ui.justified.container {
   text-align: justify;
-  -webkit-hyphens: auto;
-      -ms-hyphens: auto;
-          hyphens: auto;
+  -ms-hyphens: auto;
+      hyphens: auto;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

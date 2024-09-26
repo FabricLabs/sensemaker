@@ -1320,9 +1320,8 @@
 .ui.grid > .justified.column.column,
 .ui.grid > .row > .justified.column.column {
   text-align: justify;
-  -webkit-hyphens: auto;
-      -ms-hyphens: auto;
-          hyphens: auto;
+  -ms-hyphens: auto;
+      hyphens: auto;
 }
 
 /*----------------------
@@ -1332,7 +1331,7 @@
 .ui.grid > .primary.row,
 .ui.grid > .primary.column,
 .ui.grid > .row > .primary.column {
-  background-color: #336699;
+  background-color: #2185D0;
   color: #FFFFFF;
 }
 .ui.grid > .secondary.row,
@@ -2075,12 +2074,6 @@
 .ui[class*="very compact"][class*="very relaxed"].celled.grid > .row > .column {
   padding: 0.5em;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************

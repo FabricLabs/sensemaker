@@ -100,7 +100,7 @@
 .ui.form input[type="text"],
 .ui.form input[type="file"],
 .ui.form input[type="url"] {
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   margin: 0;
   outline: none;
   -webkit-appearance: none;
@@ -135,7 +135,7 @@
   -webkit-transition: color 0.1s ease, border-color 0.1s ease;
   transition: color 0.1s ease, border-color 0.1s ease;
   font-size: 1em;
-  font-family: 'AvGardd', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   line-height: 1.2857;
   resize: vertical;
 }
@@ -1790,12 +1790,6 @@
 .ui.massive.form .field .dropdown .menu > .item {
   font-size: 1.71428571rem;
 }
-
-
-/*******************************
-         Theme Overrides
-*******************************/
-
 
 
 /*******************************
