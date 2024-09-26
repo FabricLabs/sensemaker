@@ -181,7 +181,7 @@ class Conversations extends React.Component {
           </Card.Group>
         </div>
         <Divider />
-        <h3>History</h3>
+        <h3>Conversations</h3>
         <ChatBox
           {...this.props}
           messagesEndRef={this.messagesEndRef}
@@ -237,6 +237,7 @@ class Conversations extends React.Component {
                       </Form>
                     ) : (
                       <Card.Header>
+                        <a href={'/conversations/' + conversation.id} className='ui right floated icon button'>Resume <Icon name='right chevron' /></a>
                         <Link to={'/conversations/' + conversation.id} as='h4' onClick={() => this.props.resetChat()}>{conversation.title}</Link>
                         <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                       </Card.Header>

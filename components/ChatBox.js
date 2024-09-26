@@ -260,7 +260,6 @@ class ChatBox extends React.Component {
       effectiveMatterID,
       fileFabricID
     ).then((output) => {
-
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 

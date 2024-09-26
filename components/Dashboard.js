@@ -620,7 +620,7 @@ class Dashboard extends React.Component {
               <Header className='dashboard-header'>
                 <div>
                   <div>
-                    <Popup trigger={<Icon name='help' size='tiny' className='dashboard-help' />}>
+                    <Popup trigger={<Icon name='help' className='dashboard-help' />}>
                       <Popup.Header>Need Help?</Popup.Header>
                       <Popup.Content>
                         <p>Send us an email: <a href="mailto:support@sensemaker.io">support@sensemaker.io</a></p>
@@ -628,7 +628,7 @@ class Dashboard extends React.Component {
                     </Popup>
                     {/* <Image src="/images/sensemaker-icon.png" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} /> */}
                   </div>
-                  <div style={{ marginTop: '0.5em' }}>
+                  <div>
                     <Popup trigger={<Icon name='circle' color='green' size='tiny' />}>
                       <Popup.Content>disconnected</Popup.Content>
                     </Popup>
