@@ -110,7 +110,7 @@ class Waitlist extends React.Component {
 
     return (
       <div>
-        <HeaderBar />
+        <HeaderBar showBrand={true} />
         <Grid centered width='100%'>
           <Grid.Column mobile={16} tablet={8} computer={8}>
             <Card fluid style={{ textAlign: 'left' }}>

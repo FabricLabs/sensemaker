@@ -1978,12 +1978,9 @@ class Sensemaker extends Hub {
           user_id: existingUser.id,
           token: resetToken,
         });
-        //Flag for Eric
-        //We have to change the resetLink when it goes to the server so it redirects to the right hostname
-        //We have to upload the image somwhere so it can be open in the email browser, right now its in a firebasestoreage i use to test
 
         const resetLink = `${this.authority}/passwordreset/${resetToken}`;
-        const imgSrc = "https://sensemaker.io/images/sensemaker-icon.png";
+        const imgSrc = 'https://sensemaker.io/images/sensemaker-icon.png';
         const htmlContent = this.createPasswordResetEmailContent(resetLink,imgSrc);
 
         try {

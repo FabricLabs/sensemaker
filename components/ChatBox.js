@@ -901,7 +901,7 @@ class ChatBox extends React.Component {
                 </Feed.Content>
               </Feed.Event>
             );
-          }) : (<p>No messages yet!</p>)}
+          }) : null}
         </Feed>)}
         <Form
           id='input-control-form'

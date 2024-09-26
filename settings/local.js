@@ -38,7 +38,7 @@ const network = require('./network');
  */
 module.exports = {
   alias: NAME,
-  authority: 'localhost:3040',
+  authority: 'sensemaker.io',
   benchmark: false,
   domain: 'sensemaker.io', // TODO: implement network-wide document search
   moniker: NAME,

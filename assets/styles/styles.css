@@ -20,16 +20,16 @@
   }
 
 
-  @font-face {
+@font-face {
   font-family: 'Avant Garde Demi Oblique BT';
   font-style: normal;
   font-weight: normal;
   src: url('AVGARDDO_2.woff') format('woff');
-  }
+}
 
 body {
   /* font-family: 'AvGardd', Arial, sans-serif; */
-  font-family: 'Avant Garde Book BT', Arial, sans-serif;
+  /* font-family: 'Avant Garde Book BT', Arial, sans-serif; */
 }
 
 #countdown {
@@ -67,6 +67,12 @@ body {
 
 #input-control-form {
   /* margin-top: 1em; */
+}
+
+.brand {
+  font-size: 2em;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 @media (min-width: 1440px) {

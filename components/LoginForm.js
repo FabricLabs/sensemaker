@@ -84,9 +84,6 @@ class LoginForm extends React.Component {
             <a href='/services/discord/authorize' className='ui fluid violet right labeled icon button'><span><Icon name='discord alt' /></span> Discord <Icon name='right chevron' /></a>
             {/* <Button as={Link} to='/' fluid icon labelPosition='left' size='small'><Icon name='left chevron' />Back to the Waitlist</Button> */}
           </Button.Group>
-          <Button.Group vertical centered fluid>
-            <a href='/' className={'ui fluid primary icon button' + this.props.size}><Icon name='left chevron' /> Back to Home</a>
-          </Button.Group>
           <p style={{ marginTop: '2em' }}>Forgot your password?  <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a></p>
           {error && <Message error visible content={error} style={{ clear: 'both', marginTop: '1em' }} />} {/* Display error message if error state is not null */}
         </Form>
