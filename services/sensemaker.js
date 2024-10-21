@@ -731,14 +731,15 @@ class Sensemaker extends Hub {
       });
 
       // Construct Metadata
-      const meta = `` +
+      const meta = `# This YAML frontmatter should be considered context for the following user message.\n` +
         `clock: ${this.clock}\n` +
         `created: ${created}\n`/* +
         `creator:` +
         `  name: ${request.username}\n` */;
 
       // Format Query Text
-      const query = `---\n${meta}---\n${request.query}`;
+      // const query = `---\n${meta}---\n${request.query}`;
+      const { query } = request;
 
       // Send Query
       this.sensemaker.query({ query: query, messages: messages }).catch((error) => {
@@ -915,8 +916,8 @@ class Sensemaker extends Hub {
 
             console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Final Search Term:', searchterm.content);
 
-            // Search for cases
-            topical = await this._vectorSearchCases(searchterm.content);
+            // Search for Documents
+            topical = await this._vectorSearchDocuments(searchterm.content);
           } catch (exception) {
             console.error('[SENSEMAKER:CORE]', '[PIPELINE]', 'Search Exception:', exception);
           }
@@ -1598,10 +1599,9 @@ class Sensemaker extends Hub {
     // this.fabric.on('warning', (...warning) => console.warn(...warning));
     this.fabric.on('debug', this._handleFabricDebug.bind(this));
     this.fabric.on('log', (...log) => console.log(...log));
-
-    // Collect Sensemaker-specific
-    // Courts
+    this.fabric.on('activity', this._handleFabricActivity.bind(this));
     this.fabric.on('document', this._handleFabricDocument.bind(this));
+    this.fabric.on('message', this._handleFabricMessage.bind(this));
     this.fabric.on('person', this._handleFabricPerson.bind(this));
 
     // Matrix Events
@@ -2851,7 +2851,6 @@ class Sensemaker extends Hub {
   async _handleDiscordAuthorizeRequest (req, res, next) {
     if (req.query.code) {
       let newFlow = false; // Flag for new user flow
-      let id = null; // Identity
 
       const code = req.query.code;
       const token = await this.discord.exchangeCodeForToken(code);
@@ -3036,12 +3035,84 @@ class Sensemaker extends Hub {
       return;
     }
 
-    const roomID = activity.target.split('/')[2];
+    const roomID = activity.target.path.split('/')[2];
     const computingIcon = '⌛';
     const completedIcon = '✅';
 
+    let userID = null;
+    let conversationID = null;
     let computingReaction = null;
     let completedReaction = null;
+    let log = [];
+
+    // Create (or Restore) Identities
+    let id = null;
+    const identity = await this.db('identities').where({ source: 'matrix', content: activity.actor.ref }).first();
+    if (!identity) {
+      const actor = new Actor({ name: `matrix/users/${activity.actor.ref}` });
+      const ids = await this.db('identities').insert({
+        fabric_id: actor.id,
+        source: 'matrix',
+        content: activity.actor.ref
+      });
+
+      const duser = await this.db('identities').insert({
+        fabric_id: actor.id,
+        source: 'matrix',
+        content: activity.actor.username
+      });
+
+
+      id = ids[0];
+    } else {
+      id = identity.id;
+    }
+
+    const retrieved = await this.db('users').where({ matrix_id: activity.actor.ref }).first();
+    if (!retrieved) {
+      const newUser = await this.db('users').insert({
+        matrix_id: activity.actor.ref,
+        fabric_id: activity.actor.id,
+        username: activity.actor.username
+      });
+
+      userID = newUser[0];
+    } else {
+      userID = retrieved.id;
+    }
+
+    // Create (or Restore) Conversation
+    const resumed = await this.db('conversations').where({ fabric_id: activity.target.id }).first();
+    if (!resumed) {
+      const newConversation = await this.db('conversations').insert({
+        creator_id: userID,
+        discord_id: activity.actor.ref,
+        fabric_id: activity.target.id,
+        title: activity.target.username,
+        log: JSON.stringify([])
+      });
+
+      conversationID = newConversation[0];
+      log = [];
+    } else {
+      conversationID = resumed.id;
+      log = resumed.log;
+    }
+
+    // TODO: handle error
+    const inserted = await this.db('messages').insert({
+      conversation_id: conversationID,
+      content: activity.object.content,
+      user_id: userID
+    });
+
+    log.push(inserted[0]);
+
+    await this.db('conversations').where({ id: conversationID }).update({
+      // updated_at: new Date().toISOString(),
+      log: JSON.stringify(log),
+      title: `Matrix Chat with ${activity.actor.username}`
+    });
 
     const reactions = await this.matrix._getReactions(activity.object.id);
     if (!reactions.filter((x) => (x.key == computingIcon)).length) {
@@ -3052,31 +3123,33 @@ class Sensemaker extends Hub {
       }
     }
 
-    const response = await this._handleRequest({
-      actor: activity.actor,
-      input: activity.object.content,
-      room: roomID // TODO: replace with a generic property (not specific to Matrix)
-      // target: activity.target // candidate 1
+    this.handleTextRequest({
+      conversation_id: conversationID,
+      query: activity.object.content,
+      platform: 'matrix',
+      // username: activity.actor.username
+    }).then(async (response) => {
+      const proposal = { object: response.content };
+      this.matrix._send(proposal, roomID);
+
+      if (computingReaction) await this.matrix._redact(computingReaction.object.id);
+
+      // Set reactions to reflect completed status
+      const latestReactions = await this.matrix._getReactions(activity.object.id);
+      if (!latestReactions.filter((x) => (x.key === completedIcon)).length) {
+        try {
+          completedReaction = await this.matrix._react(activity.object.id, completedIcon);
+        } catch (exception) {
+
+        }
+      }
     });
 
-    await this.matrix._send({
-      object: response.object
-    }, roomID);
-
-    if (computingReaction) await this.matrix._redact(computingReaction.object.id);
-
-    // Set reactions to reflect completed status
-    const latestReactions = await this.matrix._getReactions(activity.object.id);
-
-    if (!latestReactions.filter((x) => (x.key === completedIcon)).length) {
-      try {
-        completedReaction = await this.matrix._react(activity.object.id, completedIcon);
-      } catch (exception) {
-
-      }
-    }
-
     return true;
+  }
+
+  async _handleFabricActivity (activity) {
+    console.debug('[FABRIC]', '[ACTIVITY]', activity);
   }
 
   async _handleFabricDebug (...props) {
@@ -3095,6 +3168,10 @@ class Sensemaker extends Hub {
       created_at: document.created_at
     });
     console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', `${inserted.length} documents inserted:`, inserted);
+  }
+
+  async _handleFabricMessage (activity) {
+    console.debug('[FABRIC]', '[ACTIVITY]', activity);
   }
 
   async _handleFabricPerson (person) {
@@ -3658,7 +3735,7 @@ class Sensemaker extends Hub {
 
     // no cookie, has authorization header
     if (!token && req.headers.authorization) {
-      console.debug('found authorization header:', req.headers.authorization);
+      if (this.settings.debug) console.debug('found authorization header:', req.headers.authorization);
       const header = req.headers.authorization.split(' ');
       if (header[0] == 'Bearer' && header[1]) {
         token = header[1];

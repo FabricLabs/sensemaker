@@ -135,17 +135,20 @@ class AdminUsers extends React.Component {
       <section className='fade-in users-section'>
         <div className='users-section-head'>
           <Header as='h3'>Users</Header>
-          <Header as='h4'>Metrics</Header>
           <div>
-            <Statistic>
-              <Statistic.Value>{usersTotal}</Statistic.Value>
-              <Statistic.Label>Users</Statistic.Label>
-            </Statistic>
-            <Statistic>
-              <Statistic.Value>{inquiriesTotal}</Statistic.Value>
-              <Statistic.Label>Waitlisted</Statistic.Label>
-            </Statistic>
+            <Header as='h4'>Metrics</Header>
+            <div>
+              <Statistic>
+                <Statistic.Value>{usersTotal}</Statistic.Value>
+                <Statistic.Label>Users</Statistic.Label>
+              </Statistic>
+              <Statistic>
+                <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+                <Statistic.Label>Waitlisted</Statistic.Label>
+              </Statistic>
+            </div>
           </div>
+          <br style={{ clear: 'both' }} />
           <div>
             <Button
               icon='redo'

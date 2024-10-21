@@ -56,7 +56,8 @@ module.exports = async function (req, res, next) {
     });
 
     // Core Pipeline
-    this.createTimedRequest({
+    // this.createTimedRequest({
+    this.handleTextRequest({
       conversation_id: conversation_id,
       matter_id: matter_id,
       query: content

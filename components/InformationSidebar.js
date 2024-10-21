@@ -264,10 +264,12 @@ class InformationSidebar extends React.Component {
                 </div>) : (
                   <div className='info-sidebar'>
                     <p>{this.props.checkingMessageID}</p>
-                    <Header>Cases Sourced</Header>
+                    <Header inverted>Message Detail</Header>
                     {
-                      // TODO: implement message->case API
-                      // All cases retuned by the search against the message ID (inline = true)
+                      // TODO: implement message->data API
+                      // All data returned by the search against the message ID (inline = true)
+                      // HTTP/1.1 SEARCH /messages/:id
+                      // TODO: Standardize `SEARCH` as a verb on all Resources, to return a list of document metadata and links to referenced documents
                     }
                     <fabric-search-results>
                       <div id='fabric-search-results'></div> {/* This div is required for the component to work */}
