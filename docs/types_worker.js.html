@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: types/worker.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: types/worker.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
+
+// Dependencies
+const fetch = require('cross-fetch');
+
+// Fabric Types
+const Actor = require('@fabric/core/types/actor');
+const Service = require('@fabric/core/types/service');
+
+// Types
+const Queue = require('./queue');
+
+/**
+ * Worker service.
+ */
+class Worker extends Service {
+  constructor (settings = {}) {
+    super(settings);
+
+    this.settings = Object.assign({
+      authority: 'jeeves.dev',
+      frequency: 1, // Hz
+      state: {
+        jobs: [],
+        objects: {}
+      }
+    }, settings);
+
+    // Core Queue
+    this.queue = new Queue(this.settings);
+
+    // Heartbeat
+    this._timer = setInterval(() => {
+      // console.debug('...keepalive');
+    }, 5000);
+
+    // Local State
+    this._state = {
+      content: this.settings.state,
+      current: null,
+      stack: [],
+      types: {},
+      working: false
+    };
+
+    return this;
+  }
+
+  get jobStack () {
+    return this._state.stack;
+  }
+
+  addJob (job) {
+    this._state.stack.unshift(job);
+  }
+
+  register (type, method) {
+    this._state.types[type] = method;
+  }
+
+  _takeJob () {
+    if (this._state.working) return;
+    if (!this.jobStack.length) return;
+
+    this._state.working = true;
+
+    const job = this.jobStack.pop();
+    const method = this._state.types[job.type];
+
+    if (!method) {
+      this.emit('warning', 'Unhandled job type:', job.type);
+      return;
+    }
+
+    const work = method.apply(this.state, job.params);
+
+    work.then((output) => {
+      this._state.working = false;
+    });
+  }
+
+  async start () {
+    this._ticker = setInterval(async () => {
+      // console.debug(`[${this.settings.frequency}hz]`, 'jobs to process:', this.jobStack);
+      await this._takeJob();
+    }, (1 / this.settings.frequency) * 1000);
+
+    await this.queue.start();
+
+    this.commit();
+
+    return this;
+  }
+
+  async stop () {
+    // clearInterval(this._heart);
+    // clearInterval(this._timer);
+    // clearInterval(this._ticker);
+    this.process.exit();
+    return true;
+  }
+}
+
+module.exports = Worker;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Chat.html">Chat</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

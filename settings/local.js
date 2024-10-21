@@ -1,34 +1,181 @@
+/**
+ * Provides the user's local settings.
+ */
 'use strict';
 
+// Dependencies
+const fs = require('fs');
+const path = require('path');
+const merge = require('lodash.merge');
+
+// Environment
 const Environment = require('@fabric/core/types/environment');
 const environment = new Environment();
 
 environment.start();
 
+// TODO: @chrisinajar
+// PROJECT: @fabric/core
+// Determine output of various inputs.
+// Output should be deterministic, HTML-encoded applications.
+
+// Constants
+const NAME = 'SENSEMAKER';
+const VERSION = '1.0.0-RC2';
+const {
+  FIXTURE_SEED
+} = require('@fabric/core/constants');
+
+// Prompts
+const promptPath = path.join(__dirname, '../prompts/sensemaker.txt');
+const basePrompt = fs.readFileSync(promptPath, 'utf8');
+
+// Configurations
+const network = require('./network');
+
+/**
+ * Provides the user's local settings.
+ */
 module.exports = {
-  name: 'sensemaker',
-  debug: environment.readVariable('DEBUG') || false,
-  seed:  environment.readVariable('FABRIC_SEED'),
+  alias: NAME,
+  authority: 'sensemaker.io',
+  benchmark: false,
+  domain: 'sensemaker.io', // TODO: implement network-wide document search
+  moniker: NAME,
+  release: 'beta',
+  name: 'Sensemaker',
+  mode: 'production',
+  expander: true,
+  crawl: false,
+  debug: false, // environment.readVariable('DEBUG') || false,
+  seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
+  temperature: 0,
+  trainer: {
+    enable: false,
+    hosts: ['localhost:7777'],
+    interval: 1000,
+    limit: 10
+  },
+  worker: true,
+  workers: 8,
+  agents: merge({
+    local: {
+      name: 'LOCAL',
+      prompt: basePrompt.toString('utf8'),
+      model: 'llama3',
+      host: '127.0.0.1',
+      port: 11434,
+      secure: false,
+      temperature: 0
+    }
+  }, network, {}),
+  pipeline: {
+    enable: false,
+    consensus: ['socrates']
+  },
+  fabric: {
+    peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
+    listen: false,
+    remotes: [
+      { host: 'hub.fabric.pub', port: 443, secure: true, collections: ['documents'] },
+      { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
+      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+    ],
+    search: true,
+    sync: false
+  },
+  db: {
+    type: 'mysql',
+    host: process.env.SQL_DB_HOST || '127.0.0.1',
+    port: 3306,
+    user: 'db_user_jeeves',
+    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
+    database: 'db_jeeves'
+  },
+  discord: {
+    enable: true,
+    app: {
+      id: 'get from discord',
+      secret: 'get from discord'
+    },
+    coordinator: 'get from discord', // #sensemaker on Fabric Discord
+    token: 'get from discord'
+  },
+  embeddings: {
+    enable: false
+  },
+  goals: {
+    'primary': {
+      'name': 'Primary Goal',
+      'description': 'The primary goal of the system is to provide a safe, secure, and reliable environment for the user to interact with the system.',
+      'status': 'active'
+    },
+    'secondary': {
+      'name': 'Secondary Goal',
+      'description': 'The secondary goal is to only deliver accurate information to the user.',
+      'status': 'active'
+    }
+  },
+  redis: {
+    name: 'novo',
+    host: process.env.REDIS_HOST || '127.0.0.1',
+    username: 'default',
+    password: process.env.REDIS_CRED || null,
+    port: 6379,
+    hosts: [
+      'redis://default:5IX80CXcIAMJoSwwe1CXaMEiPWaKTx4F@redis-14560.c100.us-east-1-4.ec2.cloud.redislabs.com:14560'
+    ]
+  },
   http: {
     listen: true,
     hostname: 'localhost',
     interface: '0.0.0.0',
-    port: 9999
+    port: 3040
   },
-  interval: 1000, // 1 Hz
+  email: {
+    key: 'get from postmarkapp.com',
+    enable: false,
+    service: 'gmail',
+    username: 'sensemaker@localhost',
+    password: 'application-specific-password'
+  },
+  files: {
+    corpus: '/media/storage/stores/sensemaker',
+    path: '/media/storage/node/files',
+    userstore: '/media/storage/uploads/users'
+  },
+  gemini: {
+    model: 'gemini-pro',
+    token: 'get from gemini'
+  },
+  stripe: {
+    token: {
+      public: 'get from stripe',
+      private: 'get from stripe'
+    }
+  },
+  interval: 600000, // 10 minutes (formerly 1 Hz)
   persistent: false,
   peers: [
     'localhost:7777'
   ],
+  prompt: basePrompt.toString('utf8'),
+  sandbox: {
+    browser: {
+      headless: true
+    }
+  },
   services: [
     'bitcoin',
     // 'discord',
-    // 'ethereum',
     'github',
     'matrix',
-    // 'shyft',
-    // 'twilio'
+    'twilio'
   ],
+  site: {
+    title: 'sensemaker &middot; digital intelligence',
+  },
   triggers: {
     'chief2ieshu2ig1kohquahngooQuoob3': {
       method: '_notifyHoneyPotMonitor'
@@ -47,36 +194,49 @@ module.exports = {
     ],
     token: null
   },
-  discord: {
-    alerts: [
-      '504047881427091472'
-    ],
-    app: {
-      id: '898417891215564851',
-      key: '27a59063c0d577e11099dd4668fca31ec25fdd57f4e158350c35d7d411be377a'
-    },
-    auth: {
-      id: 'your_discord_auth_id_here',
-      secret: 'your_discord_auth_secret_here'
-    },
-    token: 'your_discord_auth_token_here'
+  google: {
+    ai: {
+      token: 'get from google'
+    }
   },
-  ethereum: {
-    interval: 12000
+  huggingface: {
+    token: 'add your huggingface token here'
   },
   lightning: {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
+  linkedin: {
+    enable: true,
+    id: 'get from linkedin',
+    secret: 'get from linkedin'
+  },
   matrix: {
+    enable: false,
     name: '@sensemaker/core',
-    handle: 'sensemaker',
+    handle: '@sensemaker:fabric.pub',
     connect: true,
-    homeserver: 'https://grove.chat',
+    constraints: {
+      sync: {
+        limit: 20
+      }
+    },
+    homeserver: 'https://fabric.pub',
     coordinator: '!CcnochnehZgASDIexN:fabric.pub',
-    password: 'YOUR_MATRIX_PASSWORD_HERE'
+    token: 'get from matrix'
+  },
+  ollama: {
+    host: process.env.OLLAMA_HOST || '127.0.0.1',
+    port: 11434,
+    secure: false,
+    model: 'llama3', // default model
+    models: ['llama3'], // models to "prime" (preload)
+    temperature: 0
   },
   openai: {
-    key: 'GET FROM OPENAI'
+    enable: true,
+    key: process.env.OPENAI_API_KEY || 'set to your own API key',
+    model: 'gpt-4-turbo',
+    temperature: 0
   },
   twilio: {
     sid: 'add your twilio sid here',
@@ -99,9 +259,7 @@ module.exports = {
       'martindale'
     ]
   },
-  shyft: {
-    name: 'TYPHOON',
-    interval: 5000
-  },
-  verbosity: 2
-}
+  verbosity: 2,
+  verify: false,
+  version: VERSION
+};

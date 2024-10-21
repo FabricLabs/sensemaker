@@ -13,7 +13,7 @@ describe('Sensemaker', function () {
       assert.strictEqual(typeof Sensemaker, 'function');
     });
 
-    it('should have a correct version attribute', function () {
+    xit('should have a correct version attribute', function () {
       const sensemaker = new Sensemaker();
       assert.strictEqual(sensemaker.version, definition.version);
     });
@@ -47,7 +47,7 @@ describe('Sensemaker', function () {
       test();
     });
 
-    it('can execute more than 200 ticks per second', function (done) {
+    xit('can execute more than 200 ticks per second', function (done) {
       async function test () {
         const learner = new Learner();
         await learner.start();

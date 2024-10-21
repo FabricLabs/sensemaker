@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: types/site.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: types/site.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code> 'use strict';
+
+// Fabric Types
+const FabricSite = require('@fabric/http/types/site');
+
+// Internal Types
+const SPA = require('./spa');
+
+/**
+ * Implements a full-capacity (Native + Edge nodes) for a Fabric Site.
+ */
+class Site extends FabricSite {
+  /**
+   * Creates an instance of the {@link Site}, which provides general statistics covering a target Fabric node.
+   * @param {Object} [settings] Configuration values for the {@link Site}.
+   * @returns {Site} Instance of the {@link Site}.  Call `render(state)` to derive a new DOM element.
+   */
+  constructor (settings = {}) {
+    // Adopt Fabric semantics
+    super(settings);
+
+    // Define local settings
+    this.settings = Object.assign({
+      handle: 'fabric-site',
+      authority: 'http://localhost:9332/services/fabric', // loopback service
+      fabric: {
+        alias: '@sites/default'
+      },
+      state: {
+        title: 'Default Site'
+      },
+      spa: null
+    }, this.settings, settings);
+
+    // Set local state
+    this._state = {
+      content: this.settings.state,
+      status: 'PAUSED'
+    };
+
+    // Fabric Components
+    this.spa = new SPA(this.settings);
+    // this.bridge = new Bridge();
+
+    // Ensure chainability
+    return this;
+  }
+}
+
+module.exports = Site;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Chat.html">Chat</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Class: Queue &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Class: Queue</h1>
+
+
+
+
+    <section>
+
+      <header>
+
+        <h2><span class="attribs"><span class="type-signature"></span></span>Queue<span class="signature">()</span><span class="type-signature"></span></h2>
+
+        <div class="class-description">A `Queue` is a simple job queue for managing asynchronous tasks.</div>
+
+
+      </header>
+
+      <article>
+        <div class="container-overview">
+
+
+
+
+          <h2>Constructor</h2>
+
+
+
+          <h4 class="name" id="Queue"><span class="type-signature"></span>new Queue<span class="signature">()</span><span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="types_queue.js.html">types/queue.js</a>, <a href="types_queue.js.html#line13">line 13</a>
+                </li>
+              </ul>
+            </dd>
+
+
+
+
+
+
+
+          </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+
+        <h4 class="name" id="registerMethod"><span class="type-signature"></span>registerMethod<span class="signature">(name, contract, context)</span><span class="type-signature"> &rarr; {function}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Register a method with the queue.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>name</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">String</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Name of the method to register.</td>
+            </tr>
+
+
+
+            <tr>
+
+              <td class="name"><code>contract</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">function</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Function to execute when the method is called.</td>
+            </tr>
+
+
+
+            <tr>
+
+              <td class="name"><code>context</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">Object</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Context in which to execute the method.</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_queue.js.html">types/queue.js</a>, <a href="types_queue.js.html#line86">line 86</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          The registered method.
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">function</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </article>
+
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Chat.html">Chat</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

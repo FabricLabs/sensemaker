@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Class: Agent &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Class: Agent</h1>
+
+
+
+
+    <section>
+
+      <header>
+
+        <h2><span class="attribs"><span class="type-signature"></span></span>Agent<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Agent.html">Agent</a>}</span></h2>
+
+        <div class="class-description">The Agent service is responsible for managing an AI agent. AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.</div>
+
+
+      </header>
+
+      <article>
+        <div class="container-overview">
+
+
+
+
+          <h2>Constructor</h2>
+
+
+
+          <h4 class="name" id="Agent"><span class="type-signature"></span>new Agent<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Agent.html">Agent</a>}</span></h4>
+
+
+
+
+
+
+          <div class="description">
+            Create an instance of an <a href="Agent.html">Agent</a>.
+          </div>
+
+
+
+
+
+
+
+
+
+          <h5>Parameters:</h5>
+
+
+          <table class="params">
+            <thead>
+              <tr>
+
+                <th>Name</th>
+
+
+                <th>Type</th>
+
+
+                <th>Attributes</th>
+
+
+
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+
+              <tr>
+
+                <td class="name"><code>settings</code></td>
+
+
+                <td class="type">
+
+
+                  <span class="param-type">Object</span>
+
+
+
+                </td>
+
+
+                <td class="attributes">
+
+                  &lt;optional><br>
+
+
+
+
+
+                </td>
+
+
+
+
+                <td class="description last">Settings for the Agent.
+                  <h6>Properties</h6>
+
+
+                  <table class="params">
+                    <thead>
+                      <tr>
+
+                        <th>Name</th>
+
+
+                        <th>Type</th>
+
+
+                        <th>Attributes</th>
+
+
+
+
+                        <th class="last">Description</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+
+
+                      <tr>
+
+                        <td class="name"><code>name</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">String</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The name of the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>type</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">String</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The type of the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>description</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">String</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The description of the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>frequency</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Number</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The frequency at which the agent operates.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>database</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Object</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The database settings for the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>fabric</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Object</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The Fabric settings for the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>parameters</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">Object</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The parameters for the agent.</td>
+                      </tr>
+
+
+
+                      <tr>
+
+                        <td class="name"><code>model</code></td>
+
+
+                        <td class="type">
+
+
+                          <span class="param-type">String</span>
+
+
+
+                        </td>
+
+
+                        <td class="attributes">
+
+                          &lt;optional><br>
+
+
+
+
+
+                        </td>
+
+
+
+
+                        <td class="description last">The model for the agent.</td>
+                      </tr>
+
+
+                    </tbody>
+                  </table>
+
+                </td>
+              </tr>
+
+
+            </tbody>
+          </table>
+
+
+
+
+
+
+          <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="types_agent.js.html">types/agent.js</a>, <a href="types_agent.js.html#line32">line 32</a>
+                </li>
+              </ul>
+            </dd>
+
+
+
+
+
+
+
+          </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <h5>Returns:</h5>
+
+
+          <div class="param-desc">
+            Instance of the Agent.
+          </div>
+
+
+
+          <dl>
+            <dt>
+              Type
+            </dt>
+            <dd>
+
+              <span class="param-type"><a href="Agent.html">Agent</a></span>
+
+
+            </dd>
+          </dl>
+
+
+
+
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+
+        <h4 class="name" id="query"><span class="type-signature">(async) </span>query<span class="signature">(request)</span><span class="type-signature"> &rarr; {AgentResponse}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Query the agent with some text.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>request</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">Object</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Request object.
+                <h6>Properties</h6>
+
+
+                <table class="params">
+                  <thead>
+                    <tr>
+
+                      <th>Name</th>
+
+
+                      <th>Type</th>
+
+
+
+
+
+                      <th class="last">Description</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+
+                    <tr>
+
+                      <td class="name"><code>query</code></td>
+
+
+                      <td class="type">
+
+
+                        <span class="param-type">String</span>
+
+
+
+                      </td>
+
+
+
+
+
+                      <td class="description last">The query to send to the agent.</td>
+                    </tr>
+
+
+                  </tbody>
+                </table>
+
+              </td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_agent.js.html">types/agent.js</a>, <a href="types_agent.js.html#line273">line 273</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Response object.
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">AgentResponse</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </article>
+
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Chat.html">Chat</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>

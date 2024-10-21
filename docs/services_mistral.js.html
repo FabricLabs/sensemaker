@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: services/mistral.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: services/mistral.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
+
+// Constants
+const {
+  RELEASE_NAME,
+  AGENT_MAX_TOKENS
+} = require('../constants');
+
+// Dependencies
+const fetch = require('cross-fetch');
+
+// Types
+const Peer = require('@fabric/core/types/peer');
+const Service = require('@fabric/core/types/service');
+const HTTPClient = require('@fabric/http/types/client');
+
+/**
+ * HTTP-based Mistral client.
+ * @type {Mistral}
+ * @extends Service
+ * @property {Object} settings
+ * @property {Peer} fabric The Fabric Core peer.
+ * @property {HTTPClient} remote The Mistral remote.
+ * @property {Object} engine The Mistral engine.
+ * @property {Object} state The Mistral state.
+ */
+class Mistral extends Service {
+  constructor (settings = {}) {
+    super(settings);
+
+    this.settings = Object.assign({
+      name: 'mistral',
+      description: 'A service for interacting with a Mistral-based AI.',
+      authority: 'https://api.mistral.ai',
+      // model: '',
+      version: RELEASE_NAME
+    }, settings);
+
+    this.fabric = new Peer({
+      name: 'Fabric Core',
+      host: 'localhost',
+      port: 7777
+    });
+
+    return this;
+  }
+
+  async _streamConversationRequest (request) {
+    return new Promise(async (resolve, reject) => {
+      const entropy = request.entropy || 0.0;
+      const seed = new Actor({ name: `entropies/${entropy + ''}` });
+      const message = (request.message_id) ? { id: request.message_id } : { id: seed.id };
+
+      const result = await fetch(`${this.settings.authority}/v1/completions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          max_tokens: AGENT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model
+        })
+      });
+
+      console.debug('[MISTRAL] COMPLETION RESULT:', result);
+
+      // Notify the message is complete
+      this.emit('MessageEnd', message);
+      resolve(message);
+    });
+  }
+
+  async query (request) {
+    return new Promise(async (resolve, reject) => {
+      const result = await fetch(`${this.settings.authority}/v1/completions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          max_tokens: AGENT_MAX_TOKENS,
+          messages: request.messages,
+          model: this.settings.model
+        })
+      });
+
+      const object = await result.json();
+      console.debug('[MISTRAL]', 'RESULT:', object);
+
+      resolve(object);
+    });
+  }
+
+  async start () {
+    // await super.start();
+
+    this.fabric.on('debug', (...msg) => {
+      console.debug('[MISTRAL]', '[DEBUG]', ...msg);
+    });
+
+    // Once Fabric is ready, start Mistral.
+    this.fabric.on('ready', () => {
+      console.log('[MISTRAL] Fabric Core is ready.');
+
+      // Assert that Mistral is ready.
+      this.emit('ready');
+    });
+
+    // Start Fabric Core.
+    this.fabric.start();
+
+    return this;
+  }
+
+  async stop () {
+    super.stop();
+
+    return this;
+  }
+}
+
+module.exports = Mistral;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Chat.html">Chat</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="Learner.html">Learner</a></li>
+      <li><a href="Mistral.html">Mistral</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>
