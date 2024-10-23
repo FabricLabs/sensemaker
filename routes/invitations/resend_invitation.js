@@ -29,7 +29,7 @@ module.exports = function (req, res) {
         await this.email.send({
           from: 'agent@trynovo.com',
           to: invitation.target,
-          subject: 'Invitation to join Novo',
+          subject: 'Your Invitation to Sensemaker',
           html: htmlContent
         });
     

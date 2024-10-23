@@ -727,6 +727,7 @@ class Sensemaker extends Hub {
       // Prompt
       messages.unshift({
         role: 'system',
+        username: 'SENSEMAKER',
         content: this.settings.prompt
       });
 
@@ -2826,8 +2827,10 @@ class Sensemaker extends Hub {
         user_id: userID
       });
 
+      // Attach inserted message to log
       log.push(inserted[0]);
 
+      // Update conversation
       await this.db('conversations').where({ id: conversationID }).update({
         // updated_at: new Date().toISOString(),
         log: JSON.stringify(log),

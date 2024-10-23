@@ -864,7 +864,7 @@ class ChatBox extends React.Component {
                           size="small"
                           style={{ fontSize: "1em", marginTop: "1.5em" }}
                         >
-                          <Icon name="spinner" loading /> Novo is trying again...
+                          <Icon name="spinner" loading /> Trying again...
                         </Header>
                       )}
                     <div className="answer-controls" text>

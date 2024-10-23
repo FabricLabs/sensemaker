@@ -442,9 +442,7 @@ class MatterView extends React.Component {
                 <Header as='h2'>Context
                   <Popup trigger={<Icon name='info circle' size='small' style={{ margin: '0 0  0.2em 0.5em', color: '#336699' }} />}>
                     <Popup.Content>
-                      <p>You can add one additional note or one file about this Matter
-                        to enhance the information available. This will enable Novo
-                        to generate more accurate and relevant answers based on the extended details provided.</p>
+                      <p>You can add an additional note or attach a file to this collection.  This will help Sensemaker generate more accurate and relevant answers based on the extended details provided.</p>
                     </Popup.Content>
                   </Popup>
                 </Header>

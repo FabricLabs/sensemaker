@@ -2,20 +2,20 @@
 const faqOptions = [
   {
     id: 1,
-    title: "What can I do with Novo?",
+    title: "What can I do with Sensemaker?",
     content:
-      '<br>**Draft Legal Documents [Motions, Briefs, Demand Letters, etc] and Research arbitrary information about the law.',
+      '<br>**Ask general questions.',
   },
   {
     id: 2,
-    title: "What is a Matter?",
+    title: "Who is John Galt?",
     content:
-      '<br>**Matters is the repository for all documents, context, and conversations associated with particular cases intiated by a particular attorney or user.',
+      '<br>**Ask about a person.',
   }, {
     id: 3,
-    title: "What cases can I find in Novo?",
+    title: "Where can I buy Cruz Dark?",
     content:
-      '<br>**All cases in the United States, From all federal and state courts that are at the appellate level or above.',
+      '<br>**Ask about a product or place.',
   },
 ];
 

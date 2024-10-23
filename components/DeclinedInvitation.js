@@ -33,7 +33,7 @@ class DeclinedInvitation extends React.Component {
   componentDidMount = async () => {
 
     //NOTE: I DON'T LIKE THIS TITLE SETTING
-    document.title = "Novo · Your Legal Assistant";
+    document.title = "sensemaker · digital intelligence";
 
     const { invitationToken } = this.props;
     this.setState({ loading: true });
@@ -98,7 +98,7 @@ class DeclinedInvitation extends React.Component {
           {(!tokenError && declined) && (
             <Message negative>
               <Message.Header style={{ marginBottom: '1rem' }}>Invitation Declined</Message.Header>
-              <p>You have declined your invitation to Novo. If you change your mind you can sign up at trynovo.com. If you have any questions please contact <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
+              <p>You have declined your invitation to Sensemaker. If you change your mind you can sign up at trynovo.com. If you have any questions please contact <a href="mailto:support@trynovo.com">support@trynovo.com</a>.</p>
             </Message>
           )}
           {(!tokenError && cancelled) && (

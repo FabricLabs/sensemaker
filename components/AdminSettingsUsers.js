@@ -1,7 +1,6 @@
 'use strict';
 
 const React = require('react');
-
 const {
   Button,
   Table,
@@ -11,8 +10,7 @@ const {
   Statistic,
   Input,
   Modal,
-  Popup,
-
+  Popup
 } = require('semantic-ui-react');
 const store = require('../stores/redux');
 
@@ -133,8 +131,7 @@ class AdminUsers extends React.Component {
 
     return (
       <section className='fade-in users-section'>
-        <div className='users-section-head'>
-          <Header as='h3'>Users</Header>
+        <div>
           <div>
             <Header as='h4'>Metrics</Header>
             <div>
@@ -148,28 +145,29 @@ class AdminUsers extends React.Component {
               </Statistic>
             </div>
           </div>
-          <br style={{ clear: 'both' }} />
-          <div>
-            <Button
-              icon='redo'
-              title='Update users'
-              size='medium'
-              onClick={this.reloadUsers}
-              basic
-              style={{ border: 'none', backgroundColor: 'transparent', boxShadow: 'none' }}
-            />
-            <Input
-              icon='search'
-              placeholder='Find by email/username'
-              name='searchQuery'
-              onChange={this.handleInputChange}
-              style={{ marginLeft: '20px' }}>
-            </Input>
-          </div>
         </div>
         <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }} loading={this.props.users.loading}>
           <Table celled striped>
-            <Table.Header>
+            <Table.Header style={{ tableLayout: 'fixed' }}>
+              <Table.Row>
+                <Table.HeaderCell colSpan='7'>
+                  <Button
+                    icon='redo'
+                    title='Update users'
+                    size='medium'
+                    onClick={this.reloadUsers}
+                    basic
+                    style={{ border: 'none', backgroundColor: 'transparent', boxShadow: 'none' }}
+                  />
+                  <Input
+                    icon='search'
+                    placeholder='Find by email/username'
+                    name='searchQuery'
+                    onChange={this.handleInputChange}
+                    style={{ marginLeft: '20px' }}>
+                  </Input>
+                </Table.HeaderCell>
+              </Table.Row>
               <Table.Row>
                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={2}>Username</Table.HeaderCell>

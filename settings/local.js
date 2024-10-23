@@ -74,13 +74,12 @@ module.exports = {
     consensus: ['socrates']
   },
   fabric: {
-    peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
+    peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'sensemaker.io:7777', 'beta.jeeves.dev:7777', 'trynovo.com:7777'],
     listen: false,
     remotes: [
       { host: 'hub.fabric.pub', port: 443, secure: true, collections: ['documents'] },
       { host: 'beta.jeeves.dev', port: 443, secure: true, collections: ['documents', 'courts'] },
-      // { host: 'gamma.trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] },
-      // { host: 'trynovo.com', port: 443, secure: true, collections: ['documents', 'courts'] }
+      { host: 'sensemaker.io', port: 443, secure: true, collections: ['documents'] }
     ],
     search: true,
     sync: false
@@ -118,7 +117,7 @@ module.exports = {
     }
   },
   redis: {
-    name: 'novo',
+    name: 'sensemaker',
     host: process.env.REDIS_HOST || '127.0.0.1',
     username: 'default',
     password: process.env.REDIS_CRED || null,
@@ -211,7 +210,7 @@ module.exports = {
     secret: 'get from linkedin'
   },
   matrix: {
-    enable: false,
+    enable: true,
     name: '@sensemaker/core',
     handle: '@sensemaker:fabric.pub',
     connect: true,
@@ -228,8 +227,8 @@ module.exports = {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: 11434,
     secure: false,
-    model: 'llama3', // default model
-    models: ['llama3'], // models to "prime" (preload)
+    model: 'llama3.2', // default model
+    models: ['llama3.2'], // models to "prime" (preload)
     temperature: 0
   },
   openai: {

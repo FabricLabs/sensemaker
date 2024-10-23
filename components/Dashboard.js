@@ -72,6 +72,7 @@ class Dashboard extends React.Component {
   constructor(props) {
     super(props);
 
+    // Initial Settings and Defaults
     this.settings = Object.assign({
       debug: false,
       state: {

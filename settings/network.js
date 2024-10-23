@@ -17,12 +17,21 @@ module.exports = {
   local: {
     name: 'LOCAL',
     prompt: baseline.toString('utf8'),
-    model: 'llama3',
+    model: 'llama3.2',
     host: '127.0.0.1',
     port: 11434,
     secure: false,
     temperature: 0
   },
+  sensemaker: {
+    name: 'SENSEMAKER',
+    prompt: baseline.toString('utf8'),
+    model: 'llama3.2',
+    host: 'sensemaker.io',
+    port: 443,
+    secure: true,
+    temperature: 0
+  }
   /* alpha: {
     name: 'ALPHA',
     prompt: baseline.toString('utf8'),

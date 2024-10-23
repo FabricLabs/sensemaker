@@ -890,12 +890,6 @@ fabric-motd {
   margin-top: 2em;
 }
 
-.users-section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 /* Conversations CSS */
 .conversationItem div .editIcon {
   display: none !important;

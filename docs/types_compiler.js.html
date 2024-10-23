@@ -63,7 +63,7 @@ class Compiler extends HTTPCompiler {
       // 1. webpack.config.js (local)
       // 2. @fabric/http/webpack.config
       webpack: {
-        mode: 'production',
+        mode: 'development',
         entry: path.resolve('./scripts/browser.js'),
         experiments: {
           asyncWebAssembly: true

@@ -266,7 +266,7 @@ class DocumentDrafter extends React.Component {
           <section style={{ marginTop: '1rem', width: '50%' }} className='col-center'>
             <div>
               <Header as='h2' textAlign='center'>Describe Your Document</Header>
-              <p style={{ textAlign: 'center' }}>Tell Novo about your document.</p>
+              <p style={{ textAlign: 'center' }}>Tell me about your document.</p>
               <p style={{ textAlign: 'center' }}>Type: <b>{documentType}</b></p>
             </div>
             <Form style={{ width: '100%', marginTop: '1rem' }}>

@@ -45,7 +45,7 @@ class SignUpForm extends React.Component {
 
   componentDidMount = async () => {
     //NOTE: I DON'T LIKE THIS TITLE SETTING
-    document.title = "Novo · Your Legal Assistant";
+    document.title = "sensemaker · getting started";
 
     const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
 
@@ -247,7 +247,7 @@ class SignUpForm extends React.Component {
                   !this.props.adminPanel &&
                   <>
                     <Header as='h3' textAlign="center">Sign Up</Header>
-                    <p>Complete your registration to access Novo.</p>
+                    <p>Complete your registration to access Sensemaker.</p>
                   </>
                 }
                 <Form.Group className='signup-form-group'>
@@ -371,7 +371,7 @@ class SignUpForm extends React.Component {
             {registerSuccess && !this.props.adminPanel ? (
               <Message positive centered>
                 <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
-                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
+                <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
                 <p>Please log in to access your account and start utilizing our services.</p>
                 <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
                   <Button primary href="/sessions">Log In</Button>
@@ -380,7 +380,7 @@ class SignUpForm extends React.Component {
             ) : registerSuccess && this.props.adminPanel && (
               <Message positive centered>
                 <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
-                <p>Your account has been successfully created. Thank you for registering with Novo.</p>
+                <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
               </Message>
             )}
           </Form>
