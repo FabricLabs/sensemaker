@@ -25,13 +25,17 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_ALERTS,
   ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
+  ENABLE_TASKS,
   ENABLE_UPLOADS,
+  ENABLE_WALLET,
   USER_HINT_TIME_MS,
-  USER_MENU_HOVER_TIME_MS
+  USER_MENU_HOVER_TIME_MS,
+  ENABLE_PERSON_SEARCH
 } = require('../constants');
 
 // TODO: migrate this to constants.js
@@ -513,6 +517,14 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
+              {ENABLE_TASKS && (
+                <Menu.Item as={Link} to='/tasks' onClick={() => this.handleMenuItemClick('tasks')} className='expand-menu'>
+                  <div className='col-center'>
+                    <Icon name='tasks' size='large' />
+                    <p className='icon-label'>Tasks</p>
+                  </div>
+                </Menu.Item>
+              )}
               {/* <Popup
                 mouseEnterDelay={USER_HINT_TIME_MS}
                 position='right center'
@@ -552,6 +564,12 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Uploads</p>
                 </Menu.Item>
               )}
+              {ENABLE_PERSON_SEARCH && (
+                <Menu.Item as={Link} to='/people' onClick={this.closeSidebars}>
+                  <Icon name='users' size='large'/>
+                  <p className='icon-label'>People</p>
+                </Menu.Item>
+              )}
               {ENABLE_DOCUMENTS && (
                 <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
                   <Icon name='book' size='large'/>
@@ -564,21 +582,14 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Network</p>
                 </Menu.Item>
               )}
-              {/* <Menu.Item onClick={() => { this.handleMenuItemClick('library'); this.props.fetchConversations(); }} className='expand-menu'>
-                <div className='col-center'>
-                  <Icon name='book' size='large' />
-                  <p className='icon-label'>Library</p>
-                </div>
-                <div className='expand-icon'>
-                  <Icon name={(openSectionBar && openLibrary) ? 'left chevron' : 'right chevron'} size='small' />
-                </div>
-              </Menu.Item> */}
-              {/* USER_IS_ADMIN && (
-                <Menu.Item as='a' onClick={() => this.handleMenuItemClick('library')}>
-                <Icon name='lab' size='large' />
-                <p className='icon-label'>Lab</p>
-              </Menu.Item>
-              ) */}
+              {ENABLE_ALERTS && (
+                <Menu.Item as={Link} to='/alerts' onClick={() => this.handleMenuItemClick('alerts')} className='expand-menu'>
+                  <div className='col-center'>
+                    <Icon name='bell' size='large' />
+                    <p className='icon-label'>Alerts</p>
+                  </div>
+                </Menu.Item>
+              )}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             {/* {!this.state.openSectionBar && (
@@ -598,6 +609,14 @@ class Dashboard extends React.Component {
                   <Icon name='key' size='large' />
                   <p className='icon-label'>Admin</p>
                 </Menu.Item>) : null}
+              {ENABLE_WALLET && (
+                <Menu.Item as={Link} to='/wallets' onClick={() => this.handleMenuItemClick('wallets')} className='expand-menu'>
+                  <div className='col-center'>
+                    <Icon name='bitcoin' size='large' />
+                    <p className='icon-label'>Wallet</p>
+                  </div>
+                </Menu.Item>
+              )}
               <div className='settings-menu-container'>
                 <Menu.Item as={Link} to="/settings" id='settingsItem' onClick={this.closeSidebars}>
                   <Icon name='cog' size='large' />

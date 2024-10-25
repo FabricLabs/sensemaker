@@ -31,6 +31,7 @@ const ALLOWED_UPLOAD_TYPES = [
   'application/pdf',
 ];
 
+const ENABLE_ALERTS = false;
 const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONVERSATION_SIDEBAR = false;
@@ -45,6 +46,8 @@ const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_CHAT = true;
+const ENABLE_TASKS = false;
+const ENABLE_WALLET = false;
 const SEARCH_CASES_MAX_WORDS = 20;
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
 const USER_MENU_HOVER_TIME_MS = 1000;
@@ -78,6 +81,7 @@ module.exports = {
   INTEGRITY_CHECK,
   ALLOWED_UPLOAD_TYPES,
   EMBEDDING_MODEL,
+  ENABLE_ALERTS,
   ENABLE_CONTENT_TOPBAR,
   ENABLE_CONTRACTS,
   ENABLE_CHANGELOG,
@@ -94,6 +98,8 @@ module.exports = {
   ENABLE_PERSON_SEARCH,
   ENABLE_UPLOADS,
   ENABLE_LIBRARY,
+  ENABLE_TASKS,
+  ENABLE_WALLET,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   SEARCH_CASES_MAX_WORDS,

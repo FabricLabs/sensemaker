@@ -4,7 +4,7 @@ const PER_PAGE_LIMIT = require('../../constants');
 
 module.exports = function (req, res, next) {
   res.format({
-    json:async () => {
+    json: async () => {
       const page = req.query.page || 1;
       const people = await this.db.select(
         'id as dbid',
