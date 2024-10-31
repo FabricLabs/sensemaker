@@ -35,15 +35,21 @@
 ./components/Bridge.js: // TODO: faster!  converting ArrayBuffer to buffer etc. is slow (~4x)
 ./components/Bridge.js: // TODO: refactor @fabric/core/types/message to support arbitrary message types
 ./components/Sensemaker.js.bak: // TODO: inherit from @fabric/http/types/component
+./components/SensemakerUI.js: <fabric-container id="react-application">{/* TODO: render string here */}</fabric-container>
 ./components/AdminSettings.js: //TODO: add history push to different tabs
 ./components/AdminSettings.js: // TODO: add users to admin settings
 ./components/AdminSettings.js: // TODO: add pagination to users
+./components/ConversationsList.js: {/* TODO: double check that this works as intended */}
 ./components/Splash.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
-./components/InformationSidebar.js: // TODO: implement message->case API
+./components/InformationSidebar.js: // TODO: implement message->data API
+./components/InformationSidebar.js: // TODO: Standardize `SEARCH` as a verb on all Resources, to return a list of document metadata and links to referenced documents
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/Sensemaker.js: // TODO: inherit from @fabric/http/types/component
 ./components/ContractHome.js: // TODO: implement this.applicationString
-./components/Changelog.js: {/* TODO: put list of announcements here */}
+./components/DocumentHome.js: // TODO: change to `searchDocuments`
+./components/Changelog.js: {/* TODO: populate from GitHub releases */}
+./components/Dashboard.js: // TODO: migrate this to constants.js
+./components/Dashboard.js: const DocumentDrafter = require('./DocumentDrafter'); // TODO: remove
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
 ./components/Dashboard.js: * TODO: Add routes for documents, people, and settings
 ./components/Dashboard.js: {/* TODO: fix these routes */}
@@ -63,7 +69,8 @@
 ./scripts/browser.js: // TODO: consider localforage
 ./scripts/browser.js: // TODO: consider schema from Knex / MySQL
 ./scripts/browser.js: // TODO: consider GraphQL to pass schema
-./scripts/browser.js: // TODO: migrate this to `functions/mapStateToProps.js`
+./scripts/browser.js: // TODO: migrate this to `functions/mapStateToProps.js`?
+./scripts/browser.js: // TODO: render to `fabric-application-target`?
 ./actions/usersActions.js: // TODO: pagination
 ./actions/bridgeActions.js: // TODO: get bridge instance
 ./actions/uploadActions.js: // TODO: pagination
@@ -162,7 +169,6 @@
 ./services/sensemaker.js: // TODO: move all handlers to class methods
 ./services/sensemaker.js: // TODO: render page for accepting invitation
 ./services/sensemaker.js: // TODO: change to /sessions
-./services/sensemaker.js: // TODO: replace image below
 ./services/sensemaker.js: // TODO: check logic of PATCH, any other routes conflict?
 ./services/sensemaker.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./services/sensemaker.js: // TODO: revert these routes
@@ -177,12 +183,13 @@
 ./services/sensemaker.js: // TODO: halt on !req.user.id
 ./services/sensemaker.js: // TODO: revoke token on Discord
 ./services/sensemaker.js: // TODO: flash disconnected message
-./services/sensemaker.js: room: roomID // TODO: replace with a generic property (not specific to Matrix)
+./services/sensemaker.js: // TODO: handle error
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: Promise.allSettled([agentAlpha.start(), agentBeta.start(), agentGamma.start()]);
 ./services/sensemaker.js: // TODO: consider additional metadata fields
 ./services/sensemaker.js: // TODO: direct store to graph database
+./services/sensemaker.js: // TODO: use response signing (`X-Fabric-HTTP-Signature`, etc.)
 ./services/sensemaker.js: const headers = parts[0]; // TODO: check headers
 ./services/sensemaker.js: const signature = parts[2]; // TODO: check signature
 ./services/openai.js: const messages = request.messages; // TODO: pull higher in logic?
