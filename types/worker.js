@@ -18,7 +18,7 @@ class Worker extends Service {
     super(settings);
 
     this.settings = Object.assign({
-      authority: 'jeeves.dev',
+      authority: 'sensemaker.io',
       frequency: 1, // Hz
       state: {
         jobs: [],

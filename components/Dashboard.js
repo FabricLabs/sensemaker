@@ -517,7 +517,7 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && (
+              {ENABLE_TASKS && USER_IS_ALPHA && (
                 <Menu.Item as={Link} to='/tasks' onClick={() => this.handleMenuItemClick('tasks')} className='expand-menu'>
                   <div className='col-center'>
                     <Icon name='tasks' size='large' />
@@ -570,7 +570,7 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>People</p>
                 </Menu.Item>
               )}
-              {ENABLE_DOCUMENTS && (
+              {ENABLE_DOCUMENTS && USER_IS_ALPHA && (
                 <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
                   <Icon name='book' size='large'/>
                   <p className='icon-label'>Library</p>
@@ -629,7 +629,6 @@ class Dashboard extends React.Component {
               </div>
             </div>
           </Sidebar>
-
           {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
           <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div className='collapse-sidebar-arrow'>
@@ -759,7 +758,6 @@ class Dashboard extends React.Component {
             )}
           </Container>
         </div>
-
         {ENABLE_FEEDBACK_BUTTON && (
           <div>
             <div id='feedback-button'>
@@ -780,7 +778,6 @@ class Dashboard extends React.Component {
                 onClick={() => this.toggleHelpBox()}
               />)}
           </div>
-
           {/* <FeedbackBox
             open={this.state.helpBoxOpen}
             toggleHelpBox={this.toggleHelpBox}
@@ -801,7 +798,6 @@ class Dashboard extends React.Component {
           />
           </div>
         )}
-
         <InformationSidebar
           visible={informationSidebarOpen}
           toggleInformationSidebar={this.toggleInformationSidebar}
@@ -815,7 +811,6 @@ class Dashboard extends React.Component {
           matterTitle={matterTitle}
           onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
         />
-
         <ToastContainer />
       </sensemaker-dashboard>
     );

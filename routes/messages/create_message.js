@@ -9,12 +9,13 @@ module.exports = async function (req, res, next) {
   let isNew = false;
   let subject = null;
   let {
-    case_id,
     conversation_id,
     content,
+    context,
     matter_id,
     file_fabric_id
   } = req.body;
+
   console.log('fabric id', file_fabric_id);
   if (!conversation_id) {
     isNew = true;
@@ -36,12 +37,8 @@ module.exports = async function (req, res, next) {
     conversation_id = created[0];
   }
 
-  if (case_id) {
-    try {
-      subject = await this.db('cases').select('id', 'title', 'harvard_case_law_court_name as court_name', 'decision_date').where('id', case_id).first();
-    } catch (exception) {
-      this.emit('warning', `Could not find case ID: ${case_id}`);
-    }
+  if (context) {
+    subject = context;
   }
 
   try {
@@ -60,7 +57,8 @@ module.exports = async function (req, res, next) {
     this.handleTextRequest({
       conversation_id: conversation_id,
       matter_id: matter_id,
-      query: content
+      query: content,
+      context: context
     }).catch((exception) => {
       console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {

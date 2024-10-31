@@ -23,11 +23,12 @@ const {
 
 // Strings
 // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
-const {
+/* const {
   BRAND_NAME,
   BRAND_TAGLINE,
   PITCH_CTA_TEXT
-} = require('../locales/en');
+} = require('../locales/en'); */
+const BRAND_NAME = 'SENSEMAKER';
 
 class HeaderBar extends React.Component {
   constructor (props) {

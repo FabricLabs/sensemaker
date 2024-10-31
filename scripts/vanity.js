@@ -5,7 +5,7 @@ const randomBytes = require('randombytes');
 
 const desiredString = '1Love'; // put your desired vanity address prefix here
 
-async function generateVanityAddress() {
+async function generateVanityAddress () {
   let address = '';
 
   while (!address.startsWith(desiredString)) {
@@ -21,6 +21,6 @@ async function generateVanityAddress() {
 generateVanityAddress().then(({ address, privateKey }) => {
   console.log('Vanity address found: ', address);
   console.log('Private key: ', privateKey);
-}).catch((err) => {
-  console.error(err);
+}).catch((error) => {
+  console.error('[VANITYGEN]', '[ERROR]', error);
 });

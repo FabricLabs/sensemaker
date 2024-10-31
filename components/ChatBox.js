@@ -49,6 +49,7 @@ class ChatBox extends React.Component {
 
     this.state = {
       query: '',
+      context: null,
       generatingReponse: false,
       reGeneratingReponse: false,
       groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
@@ -65,8 +66,7 @@ class ChatBox extends React.Component {
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
-      startedChatting: false,
-
+      startedChatting: false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -220,40 +220,33 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { caseTitle, caseID, matterID, documentChat } = this.props;
-    let dataToSubmit;
+    const { matterID, documentChat } = this.props;
 
     this.stopPolling();
-
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
     this.props.getMessageInformation(query);
 
-    //if we have caseID its beacause we are on a specific case chat
-    if (caseID) {
+    let dataToSubmit;
+
+    //if we don't have previous chat it means this is a new conversation
+    if (!this.props.previousChat) {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
-        case: caseTitle + '_' + caseID,
-      }
+        context: this.props.context
+      };
     } else {
-      //if we don't have previous chat it means this is a new conversation
-      if (!this.props.previousChat) {
-        dataToSubmit = {
-          conversation_id: message?.conversation,
-          content: query,
-        }
-      } else {
-        //else, we are in a previous one and we already have a conversationID for this
-        dataToSubmit = {
-          conversation_id: this.props.conversationID,
-          content: query,
-        }
-      }
+      //else, we are in a previous one and we already have a conversationID for this
+      dataToSubmit = {
+        conversation_id: this.props.conversationID,
+        content: query,
+      };
     }
 
     const effectiveMatterID = matterID || this.props.actualConversation ? matterID || this.props.actualConversation.matter_id : null;
     const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
+
     // dispatch submitMessage
     this.props.submitMessage(
       dataToSubmit,
@@ -273,6 +266,7 @@ class ChatBox extends React.Component {
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+
     if (this.props.conversationID && this.props.fetchData) {
       this.props.fetchData(this.props.conversationID);
     }
@@ -284,16 +278,15 @@ class ChatBox extends React.Component {
     const { groupedMessages } = this.state;
     const { message } = this.props.chat;
     const { caseTitle, caseID, matterID, documentChat } = this.props;
+    const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
     this.stopPolling();
-
-    let dataToSubmit;
     this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, startedChatting: true });
-
-    const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
+
+    let dataToSubmit;
 
     //if we have caseID its beacause we are on a specific case chat
     if (caseID) {
@@ -919,6 +912,7 @@ class ChatBox extends React.Component {
                 <Icon name='paperclip' color='grey' style={{ color: this.state.isTextareaFocused ? 'grey' : 'grey', cursor: 'pointer' }} />
               </div>
             )}
+            <input hidden name='context' value={JSON.stringify(this.props.context, null, '  ')} />
             <TextareaAutosize
               id="primary-query"
               className="prompt-bar"

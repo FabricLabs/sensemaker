@@ -45,8 +45,7 @@ class NetworkHome extends React.Component {
 
     return (
       <Segment loading={network.loading} style={{ maxHeight: '100%', height: '97vh' }}>
-        <Header as='h1'>Network</Header>
-
+        <Header as='h1'>NETWORK</Header>
         <Card>
           <Card.Content>
             <Card.Header>Status</Card.Header>
@@ -56,9 +55,7 @@ class NetworkHome extends React.Component {
             </Card.Description>
           </Card.Content>
         </Card>
-
         <Divider />
-
         <Header as='h2'>Local</Header>
         <Table>
           <Table.Header>

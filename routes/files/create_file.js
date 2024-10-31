@@ -52,19 +52,18 @@ async function http_create_file (req, res, next) {
       type: mimeType,
       status: 'processing', // initial status
     });
-
+    const insertedFile = await this.db('files').where({ id: savedFile[0] }).first();
     const queueMessage = {
       type: 'IngestFile',
       param_id: savedFile[0],
       creator: req.user.id,
-    }
+    };
 
     const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+
+    // TODO: don't broadcast files.  This is a security risk.
+    // Broadcast the File
     this.http.broadcast(messageFile);
-
-
-
-    const insertedFile = await this.db('files').where({ id: savedFile[0] }).first();
 
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });

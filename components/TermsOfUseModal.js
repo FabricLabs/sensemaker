@@ -28,7 +28,7 @@ class TermsOfUseModal extends React.Component {
       <Modal defaultOpen={true}>
         <Modal.Header>Getting Started</Modal.Header>
         <Modal.Content>
-          <p>Using Jeeves requires agreeing to the Terms of Use ("the terms").  If you agree to the terms, click "I Agree" below.</p>
+          <p>Using Sensemaker requires agreeing to the Terms of Use ("the terms").  If you agree to the terms, click "I Agree" below.</p>
           <TermsOfUse {...this.props} auth={this.props.auth} />
         </Modal.Content>
         <Modal.Actions>

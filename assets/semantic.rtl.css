@@ -833,7 +833,7 @@ template {
              Page
 *******************************/
 
-/* @import (css) url('@{googleProtocol}fonts.googleapis.com/css2?family=Baskerville:@{googleFontSizes}&subset=@{googleSubset}&display=@{googleFontDisplay}'); */
+/* @import (css) url('@{fontPath}/Arvo.woff2'); */
 
 html,
 body {

@@ -27,7 +27,7 @@ The project is primarily built in JavaScript, running Node.js on the server and 
 
 ### Breakdown
 - Coordinator — `scripts/node.js` the Node.js master process, managing:
-  - Jeeves Core — `services/jeeves.js`
+  - Sensemaker Core — `services/sensemaker.js`
   - AI Agents — `types/agent.js`
   - Trainer Agents — `types/trainer.js`
   - Worker Agents — `types/worker.js`
@@ -39,7 +39,7 @@ The project is primarily built in JavaScript, running Node.js on the server and 
   - ChatGPT — `services/openai.js`
   - Python HTTP Server — for models unsupported by Ollama
 - Services — implement a common API using `@fabric/core/types/service`
-  - Jeeves — primary, single-core instance of the Coordinator
+  - Sensemaker — primary, single-core instance of the coordinator
   - Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings
   - PyTorch — initial training tools used for gpt2 emulation
 

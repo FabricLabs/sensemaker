@@ -92,6 +92,9 @@ module.exports = {
     design: require('./admin-settings/design.js')
 
   },
+  peers: {
+    list: require('./peers/list_peers.js')
+  },
   redis: {
     listQueue: require('./redis/list_queue.js'),
     clearQueue: require('./redis/clear_queue.js'),

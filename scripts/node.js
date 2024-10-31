@@ -7,9 +7,9 @@ const settings = require('../settings/local');
 const Sensemaker = require('../services/sensemaker');
 
 // Contracts
-const handleSensemakerError = require('../contracts/handleSensemakerError');
-const handleSensemakerLog = require('../contracts/handleSensemakerLog');
-const handleSensemakerWarning = require('../contracts/handleSensemakerWarning');
+const handleSensemakerError = require('../functions/handleSensemakerError');
+const handleSensemakerLog = require('../functions/handleSensemakerLog');
+const handleSensemakerWarning = require('../functions/handleSensemakerWarning');
 
 // Main Function
 async function main (input = {}) {

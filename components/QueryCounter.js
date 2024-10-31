@@ -9,7 +9,8 @@ const {
   Header,
   Image,
   Label,
-  Progress
+  Progress,
+  Segment
 } = require('semantic-ui-react');
 
 class QueryCounter extends React.Component {
@@ -23,9 +24,13 @@ class QueryCounter extends React.Component {
     const used = 0;
 
     return (
-      <jeeves-plan-selection>
-        <Progress percent={this.state.percent} label={max + ' requests remaining'} />
-      </jeeves-plan-selection>
+      <sensemaker-query-counter style={{ width: '16em', ...this.props.style }}>
+        <Segment>
+          <jeeves-plan-selection>
+            <Progress percent={this.state.percent} data-value={{used}} data-total={{max}} />
+          </jeeves-plan-selection>
+        </Segment>
+      </sensemaker-query-counter>
     );
   }
 }

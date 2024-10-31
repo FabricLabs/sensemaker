@@ -10,6 +10,7 @@ const {
   Segment
 } = require('semantic-ui-react');
 
+const MenuBar = require('./MenuBar');
 const QueryForm = require('./QueryForm');
 
 class Home extends React.Component {
@@ -29,7 +30,7 @@ class Home extends React.Component {
   render () {
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
-        <Segment fluid>
+        <Segment fluid style={{ clear: 'both' }}>
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
           <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
         </Segment>
@@ -50,12 +51,6 @@ class Home extends React.Component {
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
         />
-        {/* <Header as='h4'>You can try&hellip;</Header>
-        <Card.Group>
-          <Card>
-            <Card.Content>Cite 10 interesting cases related to the <Dropdown value="the 4th" /> amendment.</Card.Content>
-          </Card>
-        </Card.Group> */}
       </sensemaker-home>
     );
   }

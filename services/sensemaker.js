@@ -724,6 +724,13 @@ class Sensemaker extends Hub {
         });
       }
 
+      if (request.context) {
+        messages.unshift({
+          role: 'user',
+          content: `---\n${JSON.stringify(request.context, null, '  ')}\n---`
+        });
+      }
+
       // Prompt
       messages.unshift({
         role: 'system',
@@ -1777,6 +1784,9 @@ class Sensemaker extends Hub {
 
     // Agents
     this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
+
+    // Peers
+    this.http._addRoute('GET', '/peers', ROUTES.peers.list.bind(this));
 
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
@@ -3277,8 +3287,12 @@ class Sensemaker extends Hub {
 
     for (let i = 0; i < roomResult.joined_rooms.length; i++) {
       const room = roomResult.joined_rooms[i];
+      const details = await this.matrix._getRoomDetail(room);
       const members = await this.matrix.client.getJoinedRoomMembers(room);
-      console.log(`room ${room} has ${Object.keys(members.joined).length}`);
+
+      console.debug(`room ${room} has ${Object.keys(members.joined).length}`);
+      // console.debug('room details:', details);
+
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
         try {
           await this.matrix.client.invite(room, '@eric:fabric.pub');
