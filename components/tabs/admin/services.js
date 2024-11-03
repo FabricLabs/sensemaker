@@ -13,8 +13,8 @@ class AdminServicesTab extends React.Component {
 
     this.settings = Object.assign({
       state: {
-        alias: 'JEEVES',
-        name: 'jeeves',
+        alias: 'SENSEMAKER',
+        name: 'sensemaker',
         statistics: {
           counts: {
             waitlist: 0,
@@ -115,13 +115,13 @@ class AdminServicesTab extends React.Component {
               <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>@jeeves/core</Table.Cell>
-              <Table.Cell><Label>started (implicit)</Label></Table.Cell>
+              <Table.Cell>MySQL</Table.Cell>
+              <Table.Cell><Label>unknown</Label></Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell></Table.Cell>
             </Table.Row>
             <Table.Row>
-              <Table.Cell>MySQL</Table.Cell>
+              <Table.Cell>Redis</Table.Cell>
               <Table.Cell><Label>unknown</Label></Table.Cell>
               <Table.Cell></Table.Cell>
               <Table.Cell></Table.Cell>

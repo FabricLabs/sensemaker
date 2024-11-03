@@ -27,7 +27,7 @@ module.exports = function (req, res, next) {
         ).orderBy('created_at', 'asc').paginate({ perPage, currentPage: page });
         res.send(users.data);
       } catch (exception) {
-        console.error('[JEEVES]', '[ROUTES]', '[USERS:LIST]', 'exception:', exception);
+        console.error('[SENSEMAKER]', '[ROUTES]', '[USERS:LIST]', 'exception:', exception);
         res.status(503);
         return res.send({
           type: 'Fetch users',

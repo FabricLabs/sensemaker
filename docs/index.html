@@ -61,7 +61,7 @@
         <ul>
           <li>Coordinator — <code>scripts/node.js</code> the Node.js master process, managing:
             <ul>
-              <li>Jeeves Core — <code>services/jeeves.js</code></li>
+              <li>Sensemaker — <code>services/sensemaker.js</code> implements Fabric Service</li>
               <li>AI Agents — <code>types/agent.js</code></li>
               <li>Trainer Agents — <code>types/trainer.js</code></li>
               <li>Worker Agents — <code>types/worker.js</code></li>
@@ -73,13 +73,12 @@
             <ul>
               <li>Fabric — <code>@fabric/core</code></li>
               <li>Matrix — <code>@fabric/matrix</code></li>
-              <li>ChatGPT — <code>services/openai.js</code></li>
               <li>Python HTTP Server — for models unsupported by Ollama</li>
             </ul>
           </li>
           <li>Services — implement a common API using <code>@fabric/core/types/service</code>
             <ul>
-              <li>Jeeves — primary, single-core instance of the Coordinator</li>
+              <li>Sensemaker — primary, single-core instance of the Coordinator</li>
               <li>Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings</li>
               <li>PyTorch — initial training tools used for gpt2 emulation</li>
             </ul>
@@ -244,9 +243,8 @@
       <li><a href="Chat.html">Chat</a></li>
       <li><a href="Clock.html">Clock</a></li>
       <li><a href="Compiler.html">Compiler</a></li>
-      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="FabricNetwork.html">FabricNetwork</a></li>
       <li><a href="Learner.html">Learner</a></li>
-      <li><a href="Mistral.html">Mistral</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>

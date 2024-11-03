@@ -44,7 +44,7 @@ class Collection extends React.Component {
     return (
       <Segment className="fade-in" fluid style={{ marginRight: '1em' }}>
         {(name) ? <h1>{name}</h1> : null}
-        <jeeves-search fluid placeholder='Find...' className='ui search'>
+        <fabric-search fluid placeholder='Find...' className='ui search'>
           <div className='ui huge icon fluid input'>
             <input
               name='query'
@@ -62,7 +62,7 @@ class Collection extends React.Component {
             />
             <i aria-hidden="true" className="search icon"></i>
           </div>
-        </jeeves-search>
+        </fabric-search>
         <List as={Card.Group} doubling centered loading={loading} style={{ marginTop: '1em' }}>
           {searching ? (
             <Loader active inline="centered" /> // Display loading icon if searching is true

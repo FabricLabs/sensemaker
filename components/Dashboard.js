@@ -4,9 +4,8 @@
 const React = require('react');
 const { Link, Navigate, Route, Routes, Switch, useLocation, useParams, useNavigate } = require('react-router-dom');
 const { ToastContainer, toast, Slide } = require('react-toastify');
-const { helpMessageToastEmitter, helpMessageSound } = require('../functions/toastifyProps.js')
-
 // const LoadingBar = require('react-top-loading-bar');
+const { helpMessageToastEmitter, helpMessageSound } = require('../functions/toastifyProps.js');
 
 // Semantic UI
 const {
@@ -47,7 +46,6 @@ const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const DocumentNewChat = require('./DocumentNewChat');
 const PeopleHome = require('./PeopleHome');
-const Workspaces = require('./Workspaces');
 const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
 const LibraryList = require('./LibraryList');
@@ -677,8 +675,6 @@ class Dashboard extends React.Component {
                 <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
                 <strong><code>isCompliant</code>:</strong> <span>{(this.props.isCompliant) ? 'yes' : 'no'}</span><br />
                 <strong><code>auth</code>:</strong> <code>{(this.props.auth) ? JSON.stringify(this.props.auth, null, '  ') : 'undefined'}</code>
-                {/* <strong><code>state.auth.isAdmin</code></strong> <span>{this.state.auth.isAdmin}</span>
-                <strong><code>state.auth.isCompliant</code></strong> <span>{this.state.auth.isCompliant}</span> */}
               </div>
             ) : null}
             {this.state.isLoading ? null : (
@@ -703,12 +699,6 @@ class Dashboard extends React.Component {
                 } />
                 <Route path='/settings/library' element={<Library />} />
                 <Route path="/updates" element={<Changelog {...this.props} />} />
-                <Route path="/workspaces" element={<Workspaces />} />
-                {/**
-                 * TODO: Add routes for documents, people, and settings
-                 * - [ ] Documents
-                 * - [ ] People
-                 */}
                 <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} />
                 <Route path="/documents/draft" element={<DocumentDrafter {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/documents/:fabricID" element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />

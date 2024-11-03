@@ -89,9 +89,9 @@ module.exports = {
     type: 'mysql',
     host: process.env.SQL_DB_HOST || '127.0.0.1',
     port: 3306,
-    user: 'db_user_jeeves',
-    password: process.env.SQL_DB_CRED || 'chahcieYishi1wuu',
-    database: 'db_jeeves'
+    user: 'your_sql_user',
+    password: process.env.SQL_DB_CRED || 'your sql password',
+    database: 'db_sensemaker'
   },
   discord: {
     enable: true,

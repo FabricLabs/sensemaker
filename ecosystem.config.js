@@ -1,9 +1,9 @@
 module.exports = {
   apps: [
     {
-      name: 'jeeves',
+      name: 'sensemaker',
       script: 'scripts/node.js',
-      instances: 2, // Number of instances to run
+      instances: 1, // Number of instances to run
       exec_mode: 'cluster', // Use cluster mode for better performance
       watch: false, // Enable file watch and auto-restart
       max_restarts: 10, // Maximum restarts within 1 minute

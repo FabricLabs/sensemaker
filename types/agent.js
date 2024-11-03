@@ -23,8 +23,8 @@ const Peer = require('@fabric/core/types/peer');
 const Service = require('@fabric/core/types/service');
 
 // Sensemaker Services
-const Mistral = require('../services/mistral');
-const OpenAIService = require('../services/openai');
+// const Mistral = require('../services/mistral');
+// const OpenAIService = require('../services/openai');
 
 /**
  * The Agent service is responsible for managing an AI agent.  AI agents are self-contained actors which emit messages to a subscriber, which may be a human or another AI agent.
@@ -169,8 +169,8 @@ class Agent extends Service {
 
     // Services
     this.services = {
-      mistral: new Mistral(this.settings.mistral),
-      openai: new OpenAIService(this.settings.openai)
+      // mistral: new Mistral(this.settings.mistral),
+      // openai: new OpenAIService(this.settings.openai)
     };
 
     // Memory
@@ -484,7 +484,8 @@ class Agent extends Service {
       if (!this.prompt) this.loadDefaultPrompt();
 
       // Attach event handlers.
-      this.services.mistral.on('debug', (...msg) => {
+      // TODO: use Fabric's Service API to define and start all services.
+      /* this.services.mistral.on('debug', (...msg) => {
         console.debug('[AGENT]', '[MISTRAL]', '[DEBUG]', ...msg);
       });
 
@@ -498,13 +499,13 @@ class Agent extends Service {
 
       this.services.openai.on('debug', (...msg) => {
         console.debug('[AGENT]', '[OPENAI]', '[DEBUG]', ...msg);
-      });
+      }); */
 
       // Start Mistral.
       // this.services.mistral.start();
 
       // Start OpenAI.
-      this.services.openai.start();
+      // this.services.openai.start();
 
       // Prime the model.
       try {

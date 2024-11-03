@@ -8,8 +8,8 @@ const merge = require('lodash.merge');
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
-// Jeeves
-const Jeeves = require('../services/jeeves');
+// Sensemaker
+const Sensemaker = require('../services/sensemaker');
 
 // Settings
 const settings = merge({}, require('../settings/local'), {
@@ -22,17 +22,17 @@ const settings = merge({}, require('../settings/local'), {
 // Main Program
 async function main (input = {}) {
   const actor = new Actor(input)
-  const jeeves = new Jeeves(input);
+  const sensemaker = new Sensemaker(input);
   const redis = createClient(input.redis);
 
-  // Start Jeeves
-  await jeeves.start();
+  // Start Sensemaker
+  await sensemaker.start();
 
   redis.on('message', (channel, message) => {
     console.log('[REDIS]', 'Received message:', message);
   });
 
-  return { id: actor.id, jeeves: jeeves };
+  return { id: actor.id, sensemaker: sensemaker };
 }
 
 // Execute Program

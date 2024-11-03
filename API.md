@@ -31,11 +31,8 @@
 <dt><a href="#Chat">Chat</a></dt>
 <dd><p>Implements a chat coordinator.</p>
 </dd>
-<dt><a href="#FabricService">FabricService</a></dt>
+<dt><a href="#FabricNetwork">FabricNetwork</a></dt>
 <dd><p>Defines the Fabric interface for Sensemaker.</p>
-</dd>
-<dt><a href="#Mistral">Mistral</a> : <code><a href="#Mistral">Mistral</a></code></dt>
-<dd><p>HTTP-based Mistral client.</p>
 </dd>
 <dt><a href="#Sensemaker">Sensemaker</a> : <code>Object</code></dt>
 <dd><p>Sensemaker is the primary instance of the AI.</p>
@@ -260,39 +257,22 @@ Worker service.
 Implements a chat coordinator.
 
 **Kind**: global class  
-<a name="FabricService"></a>
+<a name="FabricNetwork"></a>
 
-## FabricService
+## FabricNetwork
 Defines the Fabric interface for Sensemaker.
 
 **Kind**: global class  
-<a name="new_FabricService_new"></a>
+<a name="new_FabricNetwork_new"></a>
 
-### new FabricService([settings])
+### new FabricNetwork([settings])
 Create an instance of the service.
 
-**Returns**: [<code>FabricService</code>](#FabricService) - A new instance of the service.  
+**Returns**: <code>FabricService</code> - A new instance of the service.  
 
 | Param | Type | Description |
 | --- | --- | --- |
 | [settings] | <code>Object</code> | Settings for the service. |
-
-<a name="Mistral"></a>
-
-## Mistral : [<code>Mistral</code>](#Mistral)
-HTTP-based Mistral client.
-
-**Kind**: global class  
-**Extends**: <code>Service</code>  
-**Properties**
-
-| Name | Type | Description |
-| --- | --- | --- |
-| settings | <code>Object</code> |  |
-| fabric | <code>Peer</code> | The Fabric Core peer. |
-| remote | <code>HTTPClient</code> | The Mistral remote. |
-| engine | <code>Object</code> | The Mistral engine. |
-| state | <code>Object</code> | The Mistral state. |
 
 <a name="Sensemaker"></a>
 

@@ -23,9 +23,9 @@ class QueryCounter extends React.Component {
     const used = 0;
 
     return (
-      <jeeves-plan-selection>
+      <sensemaker-query-counter>
         <Progress percent={this.state.percent} label={max + ' requests remaining'} />
-      </jeeves-plan-selection>
+      </sensemaker-query-counter>
     );
   }
 }

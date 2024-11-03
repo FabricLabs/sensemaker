@@ -3,14 +3,15 @@
 // Dependencies
 const React = require('react');
 
+// Components
+const withNavigate = require('../components/Navigate');
+
 // Semantic UI
 const {
   Header,
   Segment,
   Tab,
 } = require('semantic-ui-react');
-
-const withNavigate = require('../components/Navigate');
 
 // Components
 const AnnouncementCreator = require('./AnnouncementCreator');
@@ -30,8 +31,8 @@ class AdminSettings extends React.Component {
 
     this.settings = Object.assign({
       state: {
-        alias: 'JEEVES',
-        name: 'jeeves',
+        alias: 'SENSEMAKER',
+        name: 'sensemaker',
         statistics: {
           counts: {
             waitlist: 0,
@@ -178,13 +179,13 @@ class AdminSettings extends React.Component {
     ];
 
     return (
-      <jeeves-admin-settings class='fade-in'style={{ height: '100%' }}>
+      <sensemaker-admin-settings class='fade-in'style={{ height: '100%' }}>
         <Segment fluid style={{ height: '100%', overflowX: 'hidden'}}>
           <Header as='h2'>Admin</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Tab panes={panes} activeIndex={activeIndex} onTabChange={this.handleTabChange}/>
         </Segment>
-      </jeeves-admin-settings>
+      </sensemaker-admin-settings>
     );
   }
 }

@@ -95,7 +95,7 @@ class ChatBox extends React.Component {
       }
 
     // we go this way if we have more messages than before or if the content of the last message
-    // changed, this happens when the last message from assistant changes from "jeeves is researching..." to the actual answer
+    // changed, this happens when the last message from assistant changes from "Agent is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
       //if the previous last message is different than the current last message, we call the groupMessages function again
       (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {

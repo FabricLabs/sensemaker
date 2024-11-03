@@ -10,7 +10,6 @@ const mimeTypes = require('mime-types');
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
-
 async function http_create_file (req, res, next) {
   // TODO: refactor to use chaining instead of try/catch
   try {
@@ -38,7 +37,7 @@ async function http_create_file (req, res, next) {
     //   return;
     // }
 
-    // TODO: standardize the file upload logic into Jeeves (folder to look for, folder to move to, etc.)
+    // TODO: standardize the file upload logic into core (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
     const destination = path.join(userDir, safeFilename);

@@ -3,14 +3,14 @@
 const MAX_RECORD_COUNT = process.env.MAX_RECORD_COUNT || 500;
 
 const settings = require('../settings/local');
-const Jeeves = require('../services/jeeves');
+const Sensemaker = require('../services/sensemaker');
 
 async function main (settings = {}) {
-  const jeeves = new Jeeves(settings);
-  await jeeves.processData(MAX_RECORD_COUNT);
+  const sensemaker = new Sensemaker(settings);
+  await sensemaker.processData(MAX_RECORD_COUNT);
 
   return {
-    id: jeeves.id
+    id: sensemaker.id
   };
 }
 

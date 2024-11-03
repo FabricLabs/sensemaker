@@ -96,9 +96,9 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
-const Gemini = require('./gemini');
-const Mistral = require('./mistral');
-const OpenAI = require('./openai');
+// const Gemini = require('./gemini');
+// const Mistral = require('./mistral');
+// const OpenAI = require('./openai');
 const Stripe = require('./stripe');
 
 // Internal Types
@@ -230,7 +230,7 @@ class Sensemaker extends Hub {
     this.discord = (this.settings.discord.enable) ? new Discord(merge({}, this.settings.discord, { authority: this.settings.authority })) : null;
 
     // Other Services
-    this.openai = new OpenAI(this.settings.openai);
+    // this.openai = new OpenAI(this.settings.openai);
     this.stripe = new Stripe(this.settings.stripe);
 
     // Collections
@@ -296,7 +296,7 @@ class Sensemaker extends Hub {
     this.uploader = new multer({ dest: this.settings.files.path });
 
     // TODO: evaluate use of temperature
-    this.openai.settings.temperature = this.settings.temperature;
+    // this.openai.settings.temperature = this.settings.temperature;
 
     // Internals
     this.agents = {};
@@ -743,6 +743,21 @@ class Sensemaker extends Hub {
         });
       }
 
+      if (request.context) {
+        messages.unshift({
+          role: 'user',
+          content: `${JSON.stringify(request.context, null, '  ')}\n`
+        });
+      }
+
+      // User Context
+      messages.unshift({
+        role: 'user',
+        content: `${JSON.stringify({
+          username: request.username || 'anonymous',
+        }, null, '  ')}\n`
+      });
+
       // Prompt
       messages.unshift({
         role: 'system',
@@ -759,6 +774,12 @@ class Sensemaker extends Hub {
       // Format Query Text
       // const query = `---\n${meta}---\n${request.query}`;
       const { query } = request;
+
+      // Trainer Response
+      const trained = await this.trainer.query({ query: query, messages: messages });
+      console.debug('trained response:', trained);
+
+      // messages.unshift(trained)
 
       // Send Query
       this.sensemaker.query({ query: query, messages: messages }).catch((error) => {
@@ -1626,6 +1647,7 @@ class Sensemaker extends Hub {
     // Matrix Events
     if (this.matrix) {
       this.matrix.on('activity', this._handleMatrixActivity.bind(this));
+      this.matrix.on('replay', this._handleMatrixReplay.bind(this));
       this.matrix.on('ready', this._handleMatrixReady.bind(this));
       this.matrix.on('error', this._handleMatrixError.bind(this));
     }
@@ -1639,11 +1661,13 @@ class Sensemaker extends Hub {
     }
 
     // OpenAI Events
-    this.openai.on('error', this._handleOpenAIError.bind(this));
-    this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
-    this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
-    this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
-    this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
+    if (this.openai) {
+      this.openai.on('error', this._handleOpenAIError.bind(this));
+      this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
+      this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
+      this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
+      this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
+    }
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
@@ -1721,7 +1745,7 @@ class Sensemaker extends Hub {
 
     // AI Services
     // await this.rag.start();
-    await this.openai.start();
+    // await this.openai.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
@@ -2853,6 +2877,10 @@ class Sensemaker extends Hub {
         title: `Discord Chat with ${activity.actor.username}`
       });
 
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message inserted:', inserted);
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Conversation ID:', conversationID);
+      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'User ID:', userID);
+
       const request = this.handleTextRequest({
         conversation_id: conversationID,
         query: activity.object.content,
@@ -2868,6 +2896,7 @@ class Sensemaker extends Hub {
   }
 
   async _handleDiscordAuthorizeRequest (req, res, next) {
+    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'auth request...', req.user, req.params, req.query);
     if (req.query.code) {
       let newFlow = false; // Flag for new user flow
 
@@ -2876,6 +2905,7 @@ class Sensemaker extends Hub {
 
       if (!token.access_token) {
         // TODO: show error message in client
+        console.debug('Discord did not provide an access token for code:', code, token);
         return res.redirect('/settings');
       }
 
@@ -3067,6 +3097,8 @@ class Sensemaker extends Hub {
     // Create (or Restore) Identities
     let id = null;
     const identity = await this.db('identities').where({ source: 'matrix', content: activity.actor.ref }).first();
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'Existing Identity:', identity);
+
     if (!identity) {
       const actor = new Actor({ name: `matrix/users/${activity.actor.ref}` });
       const ids = await this.db('identities').insert({
@@ -3081,11 +3113,14 @@ class Sensemaker extends Hub {
         content: activity.actor.username
       });
 
+      console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'Created Identity:', duser);
 
       id = ids[0];
     } else {
       id = identity.id;
     }
+
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'ID:', id);
 
     const retrieved = await this.db('users').where({ matrix_id: activity.actor.ref }).first();
     if (!retrieved) {
@@ -3099,6 +3134,9 @@ class Sensemaker extends Hub {
     } else {
       userID = retrieved.id;
     }
+
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'Existing User:', retrieved);
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'User ID:', userID);
 
     // Create (or Restore) Conversation
     const resumed = await this.db('conversations').where({ fabric_id: activity.target.id }).first();
@@ -3165,6 +3203,11 @@ class Sensemaker extends Hub {
     });
 
     return true;
+  }
+
+  async _handleMatrixReplay (activity) {
+    console.debug('[SENSEMAKER:CORE]', '[MATRIX]', 'Replay:', activity);
+    // const conversation = await this.db('conversations').where({ fabric_id: activity.target.id }).first();
   }
 
   async _handleFabricActivity (activity) {
@@ -3458,7 +3501,9 @@ class Sensemaker extends Hub {
       if (!request.query) throw new Error('No query provided.');
 
       // Specify filter
-      request.filter = { type: 'document' };
+      // request.filter = '@type:document';
+      request.filter = ['"@type: document"'];
+      // request.filter = (doc) => doc.type === 'document';
 
       // Use vector search
       this.trainer.search(request, 1).then(async (results) => {
@@ -3830,9 +3875,8 @@ module.exports = Sensemaker;
       <li><a href="Chat.html">Chat</a></li>
       <li><a href="Clock.html">Clock</a></li>
       <li><a href="Compiler.html">Compiler</a></li>
-      <li><a href="FabricService.html">FabricService</a></li>
+      <li><a href="FabricNetwork.html">FabricNetwork</a></li>
       <li><a href="Learner.html">Learner</a></li>
-      <li><a href="Mistral.html">Mistral</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>

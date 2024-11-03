@@ -12,8 +12,8 @@ class AdminDesign extends React.Component {
 
     this.settings = Object.assign({
       state: {
-        alias: 'JEEVES',
-        name: 'jeeves',
+        alias: 'SENSEMAKER',
+        name: 'sensemaker',
         statistics: {
           counts: {
             waitlist: 0,

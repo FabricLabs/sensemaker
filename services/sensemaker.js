@@ -77,9 +77,9 @@ const Matrix = require('@fabric/matrix');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
-const Gemini = require('./gemini');
-const Mistral = require('./mistral');
-const OpenAI = require('./openai');
+// const Gemini = require('./gemini');
+// const Mistral = require('./mistral');
+// const OpenAI = require('./openai');
 const Stripe = require('./stripe');
 
 // Internal Types
@@ -211,7 +211,7 @@ class Sensemaker extends Hub {
     this.discord = (this.settings.discord.enable) ? new Discord(merge({}, this.settings.discord, { authority: this.settings.authority })) : null;
 
     // Other Services
-    this.openai = new OpenAI(this.settings.openai);
+    // this.openai = new OpenAI(this.settings.openai);
     this.stripe = new Stripe(this.settings.stripe);
 
     // Collections
@@ -277,7 +277,7 @@ class Sensemaker extends Hub {
     this.uploader = new multer({ dest: this.settings.files.path });
 
     // TODO: evaluate use of temperature
-    this.openai.settings.temperature = this.settings.temperature;
+    // this.openai.settings.temperature = this.settings.temperature;
 
     // Internals
     this.agents = {};
@@ -723,6 +723,21 @@ class Sensemaker extends Hub {
           return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
         });
       }
+
+      if (request.context) {
+        messages.unshift({
+          role: 'user',
+          content: `${JSON.stringify(request.context, null, '  ')}\n`
+        });
+      }
+
+      // User Context
+      messages.unshift({
+        role: 'user',
+        content: `${JSON.stringify({
+          username: request.username || 'anonymous',
+        }, null, '  ')}\n`
+      });
 
       // Prompt
       messages.unshift({
@@ -1620,11 +1635,13 @@ class Sensemaker extends Hub {
     }
 
     // OpenAI Events
-    this.openai.on('error', this._handleOpenAIError.bind(this));
-    this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
-    this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
-    this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
-    this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
+    if (this.openai) {
+      this.openai.on('error', this._handleOpenAIError.bind(this));
+      this.openai.on('MessageStart', this._handleOpenAIMessageStart.bind(this));
+      this.openai.on('MessageChunk', this._handleOpenAIMessageChunk.bind(this));
+      this.openai.on('MessageEnd', this._handleOpenAIMessageEnd.bind(this));
+      this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
+    }
 
     // Retrieval Augmentation Generator (RAG)
     this.augmentor = new Agent({ name: 'AugmentorAI', listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, openai: this.settings.openai, prompt: 'You are AugmentorAI, designed to augment any input as a prompt with additional information, using a YAML header to denote specific properties, such as collection names.' });
@@ -1702,7 +1719,7 @@ class Sensemaker extends Hub {
 
     // AI Services
     // await this.rag.start();
-    await this.openai.start();
+    // await this.openai.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
