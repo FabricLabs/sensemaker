@@ -1,24 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" charset="utf-8" />
   <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>@fabric/http</title>
-  <!-- <link rel="manifest" href="/manifest.json"> -->
-  <link rel="stylesheet" type="text/css" href="/styles/semantic.css" />
+  <meta property="og:url" content="http://sensemaker.io">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="sensemaker · digital intelligence">
+  <meta property="og:description" content="Sensemaker is a robust AI-powered intelligence platform — making sense of a digital world.">
+  <meta property="og:image" content="https://sensemaker.io/images/fabric-labs.png">
+  <title>sensemaker &middot; digital intelligence</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" type="text/css" href="/semantic.min.css" />
   <link rel="stylesheet" type="text/css" href="/styles/screen.css" />
+  <link rel="stylesheet" type="text/css" href="/styles/ReactToastify.css">
   <script src="/scripts/jquery-3.4.1.js"></script>
-  <script src="/scripts/semantic.js"></script>
-  <script src="/bundles/browser.js"></script>
+  <script src="/semantic.min.js"></script>
+  <link rel="icon" href="/images/sensemaker-icon.png" />
 </head>
-<body data-bind="9c6293d60937d962210d14a4566ea9bec35bca5e785647a26f8488d1e1478e2b" data-hash="9c6293d60937d962210d14a4566ea9bec35bca5e785647a26f8488d1e1478e2b">
-  <fabric-site>
-    <fabric-card class="ui card">
-      <fabric-card-content class="content">
-        <h1>@sensemaker</h1>
-        <p><code>alpha</code></p>
-      </fabric-card-content>
-    </fabric-card>
-  </fabric-site>
+<body>
+  <div data-hash="7395b99eef199740998179cb8b0ec16ebfa325690bbb3bfa57daa3675f75acc3" id="application-target">
+    <sensemaker-interface class="fabric-site">
+      <fabric-container id="react-application"></fabric-container>
+      <fabric-react-component id="sensemaker-application" style="height:100vh;display:flex;flex-direction:column">
+        <div style="height:100vh;display:flex;flex-direction:column;justify-content:center">
+          <div class="ui huge active centered inline loader"></div>
+        </div>
+      </fabric-react-component>
+    </sensemaker-interface>
+  </div>
+  <script src="/bundles/browser.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Source: types/compiler.js &middot; Docs</title>
+  <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+  <div id="main">
+    <h1 class="page-title">Source: types/compiler.js</h1>
+
+
+
+
+    <section>
+      <article>
+        <pre class="prettyprint source linenums"><code>'use strict';
+
+// Dependencies
+const path = require('path');
+const merge = require('lodash.merge');
+const webpack = require('webpack');
+const { JSDOM } = require('jsdom');
+
+const dom = new JSDOM();
+
+// Browser Polyfills
+global.document = dom.window.document;
+global.window = dom.window;
+global.HTMLElement = dom.HTMLElement;
+
+// Fabric Types
+// const Service = require('@fabric/core/types/service');
+const HTTPCompiler = require('@fabric/http/types/compiler');
+const HTTPComponent = require('@fabric/http/types/component');
+
+// Types
+const HTTPSite = require('./site');
+
+/**
+ * Builder for {@link Fabric}-based applications.
+ */
+class Compiler extends HTTPCompiler {
+  /**
+   * Create an instance of the compiler.
+   * @param {Object} [settings] Map of settings.
+   * @param {HTTPComponent} [settings.document] Document to use.
+   */
+  constructor (settings = {}) {
+    super(settings);
+
+    this.settings = merge({
+      document: settings.document || new HTTPComponent(settings),
+      site: {
+        name: 'Default Fabric Application'
+      },
+      state: {
+        title: settings.title || 'Fabric HTTP Document'
+      },
+      // TODO: load from:
+      // 1. webpack.config.js (local)
+      // 2. @fabric/http/webpack.config
+      webpack: {
+        mode: 'production',
+        entry: path.resolve('./scripts/browser.js'),
+        experiments: {
+          asyncWebAssembly: true
+        },
+        resolve: {
+          fallback: {
+            crypto: require.resolve('crypto-browserify'),
+            stream: require.resolve('stream-browserify'),
+            querystring: require.resolve('querystring-es3'),
+            path: require.resolve('path-browserify'),
+            assert: require.resolve('assert-browserify'),
+            util: require.resolve('node-util'),
+            fs: require.resolve('browserify-fs')
+          },
+          symlinks: false
+        },
+        target: 'node',
+        output: {
+          path: path.resolve('./assets/bundles'),
+          filename: 'browser.min.js',
+          clean: {
+            dry: true
+          }
+        },
+        module: {
+          rules: [
+            {
+              test: /\.(js|jsx)$/,
+              exclude: /node_modules/,
+              use: {
+                loader: 'babel-loader',
+                options: {
+                  presets: ['@babel/preset-env', '@babel/preset-react']
+                }
+              }
+            },
+            {
+              test: /\.css$/,
+              use: ['style-loader', 'css-loader']
+            }
+          ]
+        },
+        plugins: [
+          new webpack.DefinePlugin({
+            'process.env': JSON.stringify(process.env)
+          }),
+          new webpack.ProvidePlugin({
+            Buffer: ['buffer', 'Buffer'],
+          })
+        ],
+        watch: false
+      }
+    }, settings);
+
+    this.component = this.settings.document || null;
+    this.site = new HTTPSite(this.settings.site);
+
+    this._state = {
+      content: this.settings.state
+    };
+
+    this.packer = webpack(this.settings.webpack);
+
+    return this;
+  }
+}
+
+module.exports = Compiler;
+</code></pre>
+      </article>
+    </section>
+
+
+
+  </div>
+  <nav>
+    <h2><a href="index.html">Home</a></h2>
+    <h3>Classes</h3>
+    <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="Compiler.html">Compiler</a></li>
+      <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
+      <li><a href="Sensemaker.html">Sensemaker</a></li>
+      <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
+    </ul>
+  </nav>
+  <br class="clear" />
+  <footer>
+    <a href="https://github.com/FabricLabs/sensemaker">git://</a> &middot; <a href="https://grove.chat/#/room/#sensemaker:fabric.pub">Community</a>
+  </footer>
+  <script src="scripts/prettify/prettify.js"> </script>
+  <script src="scripts/prettify/lang-css.js"> </script>
+  <script type="text/javascript">
+    prettyPrint();
+  </script>
+  <script src="scripts/linenumber.js"></script>
+</body>
+
+</html>
