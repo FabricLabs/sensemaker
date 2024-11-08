@@ -1,25 +1,55 @@
-sensemaker
-==========
-
+`SENSEMAKER`
+============
 making sense of stuff.
 
-**General Purpose:** provide a common library for consuming data from various 
-remote APIs, caching that data in a local database, stitching that information
-together to extrapolate additional context for previously sparse data, and 
-delivering that gained context via a simple, queryable API.
-
-```html
-<h1>Digital Intelligence is Here.</h1>
-<p class="subtitle">Introducing <code>@sensemaker</code>, an organizer of information.</p>
-
-<h2>The Power of Intelligence</h2>
-<p><code>@sensemaker</code> provides robust intelligence gathering services, <strong>accumulating</strong> and <strong>organizing</strong> information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.</p>
-```
+**`SENSEMAKER`** provides robust intelligence gathering services, accumulating and organizing information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.
 
 ## Quick Start
+From the repository root:
 ```
 npm i # install dependencies
 npm start # run node
 ```
+A basic web interface should now be provided at http://localhost:3040
 
-A basic web interface should now be provided at http://localhost
+**Important!**  
+Your username and password will be displayed in the logs **for the first boot only**.  This is your administrative account, with full access to managing your node.
+
+Enjoy!
+
+## Configuring
+Settings may be provided by modifying `settings/local.js`
+
+```yaml
+alias: Network alias.  Used when connecting to peers.
+seed: Seed phrase.
+```
+
+## Architecture
+### Fabric
+Sensemaker searches [the Fabric Network][fabric-pub] to aggregate information from a variety of sources.
+
+### Project Structure
+The repository is configured as follows:
+```
+.
+├── API.md — auto-generated documentation
+├── actions — Redux actions
+├── components — React components
+├── reducers — state reducers
+├── scripts — useful tools & utilities
+│   └── browser.js — browser script
+│   └── node.js — server script
+├── services — standalone services
+│   └── sensemaker.js — node implementation
+└── types — Core types
+    └── agent.js — agent implementation
+```
+
+## Network
+- `@fabric/core`
+- `@fabric/http`
+- `@fabric/hub`
+
+[fabric-pub]: https://fabric.pub
+[fabric-hub]: https://hub.fabric.pub

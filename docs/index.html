@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="utf-8">
-  <title>@sensemaker/core &middot; Docs</title>
+  <title>Home &middot; Docs</title>
   <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
   <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
   <div id="main">
-    <h1 class="page-title">@sensemaker/core</h1>
+    <h1 class="page-title">Home</h1>
 
 
 
@@ -36,11 +36,194 @@
     <section>
       <article>
         <h1>Developers</h1>
-        <p>...should read &quot;A CypherPunk's Manifesto&quot; by Timothy May.</p>
+        <p>...should read &quot;A Cypherpunk's Manifesto&quot; by Timothy May.</p>
+        <h2>Quick Start</h2>
+        <p>See <code>scripts/</code> for a list of available tools, or <code>npm run docs</code> to run a local copy of the documentation.</p>
+        <h3>Install</h3>
+        <p>See <code>INSTALL.md</code> for a complete install guide.</p>
+        <h3>Configuration</h3>
+        <p>Local settings should be provided by environment variables wherever possible, including:</p>
+        <ul>
+          <li><code>SQL_DB_HOST</code> — host of the SQL server</li>
+          <li><code>SQL_DB_PORT</code> — port of the SQL server</li>
+          <li><code>SQL_DB_USERNAME</code> — username for the SQL user</li>
+          <li><code>SQL_DB_PASSWORD</code> — password for the SQL user</li>
+          <li><code>OLLAMA_HOST</code> — HTTP host for Ollama server</li>
+          <li><code>OLLAMA_PORT</code> — HTTP port for Ollama server</li>
+          <li><code>REDIS_HOST</code> — host of the Redis server</li>
+          <li><code>REDIS_PORT</code> — port of the Redis server</li>
+        </ul>
+        <p>Settings can be configured locally through <code>settings/local.js</code> — care should be taken not to commit secrets; <strong>again, prefer environment variables</strong>.</p>
+        <h2>Overview</h2>
+        <p>The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side. The client is transpiled using Webpack, and delivered as a complete bundle to the <code>assets/</code> directory. This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port <code>3045</code> by default).</p>
+        <h3>Breakdown</h3>
+        <ul>
+          <li>Coordinator — <code>scripts/node.js</code> the Node.js master process, managing:
+            <ul>
+              <li>Sensemaker — <code>services/sensemaker.js</code> implements Fabric Service</li>
+              <li>AI Agents — <code>types/agent.js</code></li>
+              <li>Trainer Agents — <code>types/trainer.js</code></li>
+              <li>Worker Agents — <code>types/worker.js</code></li>
+              <li>HTTPServer — <code>@fabric/http</code></li>
+              <li>FabricNode — <code>@fabric/core</code></li>
+            </ul>
+          </li>
+          <li>AI Agents — connect to external resources, such as OpenAI, HuggingFace, or Ollama
+            <ul>
+              <li>Fabric — <code>@fabric/core</code></li>
+              <li>Matrix — <code>@fabric/matrix</code></li>
+              <li>Python HTTP Server — for models unsupported by Ollama</li>
+            </ul>
+          </li>
+          <li>Services — implement a common API using <code>@fabric/core/types/service</code>
+            <ul>
+              <li>Sensemaker — primary, single-core instance of the Coordinator</li>
+              <li>Trainer - utilizes LangChain, etc. to generate, store, and retrieve embeddings</li>
+              <li>PyTorch — initial training tools used for gpt2 emulation</li>
+            </ul>
+          </li>
+        </ul>
+        <p>LangChain is available through <code>services/trainer.js</code> which also handles all general &quot;training&quot; operations, including the generation of embeddings.</p>
+        <h3>Workflow</h3>
+        <ol>
+          <li>Commit early, commit often</li>
+          <li>Once a branch diverges, open a pull request (see also number 1)</li>
+          <li>Regularly use <code>npm test</code> and <code>npm run report:todo</code></li>
+        </ol>
+        <h3>Tools</h3>
+        <ul>
+          <li>Knex is used to manage database schemata, including migrations both forward and backward</li>
+          <li>Ollama is used to provide a standard API for interfacing with LLMs</li>
+          <li>Fabric is used for connectivity between instances</li>
+        </ul>
+        <h2>Python Environment</h2>
+        <p>Run <code>source .env/bin/activate</code> to enter the Python environment. See also <code>requirements.txt</code> for dependencies.</p>
+        <h2>Tips</h2>
+        <ul>
+          <li>You can use <code>scripts/node.js</code> to quickly run the service without building: <code>node scripts/node.js</code></li>
+          <li>Use <code>nodemon</code> to monitor for changes: <code>nodemon scripts/node.js</code></li>
+          <li>Re-build UI when necessary: <code>npm run build</code></li>
+          <li>Re-build semantic styling (CSS) when necessary: <code>npm run build:semantic</code></li>
+        </ul>
+        <p>You can pass <code>webpack</code> configuration options in <code>types/compiler.js</code> to tweak various settings, such as live reloading.</p>
+        <p>All other configuration options for your local node live in <code>settings/local.js</code> — some important settings include:</p>
+        <ul>
+          <li><code>email</code> — configures email settings
+            <ul>
+              <li><code>enable</code> — boolean (true or false)</li>
+              <li><code>host</code> — hostname for outbound email</li>
+            </ul>
+          </li>
+        </ul>
+        <h2>Style</h2>
+        <ul>
+          <li>semicolon not optional</li>
+          <li>explicit over implicit (prefer clarity over brevity)</li>
+          <li>spaces after function names, not after calls</li>
+          <li>no double spacing (maximum one empty line)</li>
+          <li>newline at EOF</li>
+        </ul>
       </article>
     </section>
 
 
+
+
+
+
+
+
+
+    <section>
+
+      <header>
+
+        <h2>types/spa.js</h2>
+
+
+      </header>
+
+      <article>
+        <div class="container-overview">
+
+
+          <div class="description">Fully-managed HTML application.</div>
+
+
+
+
+
+          <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="types_spa.js.html">types/spa.js</a>, <a href="types_spa.js.html#line1">line 1</a>
+                </li>
+              </ul>
+            </dd>
+
+
+
+
+
+
+
+          </dl>
+
+
+
+
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      </article>
+
+    </section>
 
 
 
@@ -49,8 +232,17 @@
     <h2><a href="index.html">Home</a></h2>
     <h3>Classes</h3>
     <ul>
+      <li><a href="Agent.html">Agent</a></li>
+      <li><a href="Bundler.html">Bundler</a></li>
+      <li><a href="Clock.html">Clock</a></li>
+      <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Queue.html">Queue</a></li>
+      <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
       <li><a href="Service.html">Service</a></li>
+      <li><a href="Site.html">Site</a></li>
+      <li><a href="Trainer.html">Trainer</a></li>
+      <li><a href="Worker.html">Worker</a></li>
     </ul>
   </nav>
   <br class="clear" />

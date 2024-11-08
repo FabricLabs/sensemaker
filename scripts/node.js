@@ -3,17 +3,26 @@
 // Settings
 const settings = require('../settings/local');
 
-// Fabric Types
-const Node = require('@fabric/core/types/node');
-
 // Internal Service
 const Sensemaker = require('../services/sensemaker');
 
+// Contracts
+const handleSensemakerError = require('../functions/handleSensemakerError');
+const handleSensemakerLog = require('../functions/handleSensemakerLog');
+const handleSensemakerWarning = require('../functions/handleSensemakerWarning');
+
+// Main Function
 async function main (input = {}) {
   // Create Node
-  const sensemaker = new Node({
-    service: Sensemaker,
-    settings: input
+  const start = new Date();
+  const sensemaker = new Sensemaker(input);
+
+  // Handlers
+  sensemaker.on('error', handleSensemakerError);
+  sensemaker.on('log', handleSensemakerLog);
+  sensemaker.on('warning', handleSensemakerWarning);
+  sensemaker.on('debug', (...debug) => {
+    console.debug(`[${((new Date() - start) / 1000)}s]`, '[SENSEMAKER]', '[DEBUG]', ...debug);
   });
 
   // Start Node
@@ -24,10 +33,15 @@ async function main (input = {}) {
     process.exit();
   }
 
+  // Bind
+  process.on('SIGINT', sensemaker.stop);
+  process.on('SIGTERM', sensemaker.stop);
+
   // Return Node
   return sensemaker;
 }
 
+// Execute Main
 main(settings).catch((exception) => {
   console.error('[SENSEMAKER]', exception);
 }).then((output) => {
