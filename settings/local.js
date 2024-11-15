@@ -62,7 +62,7 @@ module.exports = {
     local: {
       name: 'LOCAL',
       prompt: basePrompt.toString('utf8'),
-      model: 'llama3',
+      model: 'llama3.2',
       host: '127.0.0.1',
       port: 11434,
       secure: false,
@@ -71,7 +71,7 @@ module.exports = {
   }, network, {}),
   pipeline: {
     enable: false,
-    consensus: ['socrates']
+    consensus: ['local']
   },
   fabric: {
     enable: true,

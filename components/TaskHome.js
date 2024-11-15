@@ -7,6 +7,7 @@ const { Link } = require('react-router-dom');
 const {
   Button,
   Card,
+  Form,
   Segment,
   Header,
   Label,
@@ -28,7 +29,7 @@ class TaskHome extends React.Component {
   }
 
   componentDidMount () {
-    // this.props.fetchPeers();
+    this.props.fetchTasks();
   }
 
   componentDidUpdate (prevProps) {
@@ -58,6 +59,17 @@ class TaskHome extends React.Component {
         </Card>
         <Divider />
         <Header as='h2'>Local</Header>
+        <Form fluid>
+          <Form.Group inline>
+            <Form.Field>
+              <label>Task</label>
+              <Input type='text' name='task' placeholder='e.g., do the laundry, etc.' />
+            </Form.Field>
+            <Form.Field>
+              <Button primary content='Create Task' />
+            </Form.Field>
+          </Form.Group>
+        </Form>
         <Table>
           <Table.Header>
             <Table.Row>

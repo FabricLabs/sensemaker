@@ -26,9 +26,11 @@ module.exports = {
     create: require('./announcements/create_announcement')
   },
   conversations: {
-    getConversations: require('./conversations/get_conversations'),
+    list: require('./conversations/list_conversations'),
+    view: require('./conversations/view_conversation'),
+    getConversations: require('./conversations/list_conversations'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),
-    getConversationsByID: require('./conversations/get_conversations_by_id')
+    getConversationsByID: require('./conversations/view_conversation')
   },
   documents: {
     create: require('./documents/create_document'),

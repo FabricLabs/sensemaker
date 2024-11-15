@@ -10,8 +10,7 @@ const {
   UPLOAD_FILE_FAILURE,
   SEARCH_FILE_REQUEST,
   SEARCH_FILE_SUCCESS,
-  SEARCH_FILE_FAILURE,
-
+  SEARCH_FILE_FAILURE
 } = require('../actions/fileActions');
 
 const initialState = {

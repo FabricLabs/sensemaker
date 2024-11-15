@@ -555,8 +555,9 @@ class ChatBox extends React.Component {
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
       if (this.isValidFileType(file.type)) {
-        console.debug('File:', file.name, file.size, file.type); // Debugging log
+        console.debug('File selected:', file.name, file.size, file.type); // Debugging log
         this.setState({ file: file, formatError: false, attachmentExists: true });
+        this.handleUpload();
       } else {
         this.setState({ formatError: true, file: null });
       }

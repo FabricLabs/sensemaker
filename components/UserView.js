@@ -22,7 +22,7 @@ class UserView extends React.Component {
     return (
       <div>
         <div>
-          <Button onClick={() => { history.back(); }} icon><Icon name='left chevron' /> Back</Button>
+          <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
         </div>
         <Grid columns={2}>
           <Grid.Column width={4}>

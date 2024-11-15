@@ -8,7 +8,6 @@
  * http://opensource.org/licenses/MIT
  *
  */
-@import url('https://fonts.googleapis.com/css2?family=Arvo:ital,wght@0,400%3B0,700%3B1,400%3B1,700&subset=latin&display=swap');
 /*!
  * # Fomantic-UI 2.8.8 - Reset
  * http://github.com/fomantic/Fomantic-UI/
@@ -832,6 +831,44 @@ template {
 /*******************************
              Page
 *******************************/
+
+/* @import (css) url('@{googleProtocol}fonts.googleapis.com/css2?family=@{googleFontRequest}'); */
+
+@font-face {
+  font-family: 'Arvo';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/tDbN2oWUg0MKqSIg75Tv3PjyjA.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Arvo';
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/tDbO2oWUg0MKqSIoVLH68dr_pgL0Gw.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Arvo';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/tDbD2oWUg0MKqScQ7Z7o_vo.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Arvo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(/fonts/tDbM2oWUg0MKoZw1-LPK89D4hAA.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 html,
 body {
