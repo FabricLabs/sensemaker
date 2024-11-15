@@ -14,7 +14,6 @@ const sendFeedbackRequest = () => ({ type: SEND_FEEDBACK_REQUEST });
 const sendFeedbackSuccess = () => ({ type: SEND_FEEDBACK_SUCCESS });
 const sendFeedbackFailure = (error) => ({ type: SEND_FEEDBACK_FAILURE, payload: error });
 
-
 // Thunk action creator
 const sendFeedback = (comment) => {
   return async (dispatch, getState) => {

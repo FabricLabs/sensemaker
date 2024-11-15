@@ -117,6 +117,13 @@ const {
   searchGlobal,
 } = require('../actions/searchActions');
 
+// ## Task Actions
+const {
+  createTask,
+  fetchTasks,
+  fetchTask
+} = require('../actions/taskActions');
+
 // ## Feedback Actions
 const {
   sendFeedback,
@@ -165,6 +172,7 @@ module.exports = {
   fetchInquiries: fetchInquiries,
   deleteInquiry: deleteInquiry,
   createInquiry: createInquiry,
+  createTask: createTask,
   fetchInvitation: fetchInvitation,
   fetchInvitations: fetchInvitations,
   sendInvitation: sendInvitation,
@@ -175,6 +183,8 @@ module.exports = {
   deleteInvitation: deleteInvitation,
   fetchPeople: fetchPeople,
   fetchPerson: fetchPerson,
+  fetchTask: fetchTask,
+  fetchTasks: fetchTasks,
   fetchUploads,
   fetchUpload,
   searchUploads,

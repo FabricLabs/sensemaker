@@ -4,6 +4,11 @@ making sense of stuff.
 
 **`SENSEMAKER`** provides robust intelligence gathering services, accumulating and organizing information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.
 
+## Requirements
+- Node 18.19 (use `scripts/nvm/install.sh`)
+- MySQL 8.3
+- Redis Stack 7.2
+
 ## Quick Start
 From the repository root:
 ```
@@ -18,17 +23,17 @@ Your username and password will be displayed in the logs **for the first boot on
 Enjoy!
 
 ## Configuring
-Settings may be provided by modifying `settings/local.js`
+Settings may be provided by modifying `settings/local.js` with any of the following properties:
 
 ```yaml
 alias: Network alias.  Used when connecting to peers.
+fabric: Fabric configuration.
 seed: Seed phrase.
 ```
 
 ## Architecture
 ### Fabric
 Sensemaker searches [the Fabric Network][fabric-pub] to aggregate information from a variety of sources.
-
 ### Project Structure
 The repository is configured as follows:
 ```

@@ -5,9 +5,10 @@ const settings = require('../settings/local');
 const { app, protocol, BrowserWindow } = require('electron');
 const path = require('path');
 
+// Sensemaker
 const Sensemaker = require('../services/sensemaker');
 
-function createInstance () {
+async function createInstance () {
   const sensemaker = new Sensemaker(settings);
   const window = new BrowserWindow({
     width: 800,
@@ -29,9 +30,12 @@ function createInstance () {
     console.log('[DESKTOP] Sensemaker is ready.');
   });
 
-  sensemaker.start();
-
-  window.loadFile('assets/index.html');
+  sensemaker.start().catch((exception) => {
+    console.error('Exception:', exception);
+  }).then((instance) => {
+    console.debug('Sensemaker started.  Configuration ID:', instance.id);
+    window.loadFile('assets/index.html');
+  });
 
   return {
     sensemaker,

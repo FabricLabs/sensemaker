@@ -2,7 +2,7 @@
 
 // Dependencies
 const React = require('react');
-const { useLocation } = require('react-router-dom');
+const { Link, useLocation } = require('react-router-dom');
 
 const {
   Card,
@@ -13,6 +13,11 @@ const {
 const QueryForm = require('./QueryForm');
 
 class Home extends React.Component {
+  componentDidMount () {
+    // Retrieve Conversations
+    this.props.fetchConversations();
+  }
+
   componentDidUpdate (prevProps) {
     if (this.props.location?.key !== prevProps.location?.key) {
       // console.debug('[!!!]', 'location changed:', this.props.location, '!==', prevProps.location);
@@ -27,6 +32,8 @@ class Home extends React.Component {
   }
 
   render () {
+    const { conversations } = this.props;
+
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
         <Segment fluid>
@@ -49,7 +56,28 @@ class Home extends React.Component {
           messageInfo={this.props.messageInfo}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
+          uploadDocument={this.props.uploadDocument}
+          uploadFile={this.props.uploadFile}
         />
+        {(conversations && conversations.length) ? (
+          <Segment fluid>
+            <h3>Recently</h3>
+            <Card.Group fluid>
+              <Card as={Link} to={'/conversations/' + conversations[0].slug}>
+                <Card.Content>
+                  <Card.Header>{conversations[0].title}</Card.Header>
+                  <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
+                </Card.Content>
+              </Card>
+              <Card as={Link} to='/conversations'>
+                <Card.Content>
+                  <Card.Header>Explore History &raquo;</Card.Header>
+                  <Card.Description></Card.Description>
+                </Card.Content>
+              </Card>
+            </Card.Group>
+          </Segment>
+        ) : null}
       </sensemaker-home>
     );
   }

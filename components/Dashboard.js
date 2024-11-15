@@ -643,6 +643,7 @@ class Dashboard extends React.Component {
                 <Route path="/" element={
                   <Home
                     auth={this.props.auth}
+                    conversations={this.props.conversations}
                     fetchConversations={this.props.fetchConversations}
                     getMessages={this.props.getMessages}
                     submitMessage={this.props.submitMessage}
@@ -655,11 +656,13 @@ class Dashboard extends React.Component {
                     messageInfo={this.messageInfo}
                     thumbsUp={this.thumbsUp}
                     thumbsDown={this.thumbsDown}
+                    uploadFile={this.props.uploadFile}
+                    uploadDocument={this.props.uploadDocument}
                   />
                 } />
                 <Route path='/settings/library' element={<Library />} />
                 <Route path="/updates" element={<Changelog {...this.props} />} />
-                <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} />
+                <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} />
                 <Route path="/documents/:fabricID" element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />

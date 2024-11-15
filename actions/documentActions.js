@@ -161,19 +161,16 @@ const uploadDocument = (file) => {
       });
 
       const fileCreation = await Promise.race([timeoutPromise, fetchPromise]);
-
       if (!fileCreation.ok) {
         const errorData = await fileCreation.json();
         throw new Error(errorData.message || 'Server error');
       }
 
       const fileAnswer = await fileCreation.json();
-
       dispatch(uploadDocumentSuccess(fileAnswer.fabric_id));
     } catch (error) {
       dispatch(uploadDocumentFailure(error.message));
     }
-
   }
 }
 

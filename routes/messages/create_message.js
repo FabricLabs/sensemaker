@@ -14,10 +14,9 @@ module.exports = async function (req, res, next) {
     context,
     file_fabric_id
   } = req.body;
-  console.log('fabric id', file_fabric_id);
+
   if (!conversation_id) {
     isNew = true;
-
     const now = new Date();
     const name = `Conversation Started ${now.toISOString()}`;
     /* const room = await this.matrix.client.createRoom({ name: name }); */
@@ -32,6 +31,10 @@ module.exports = async function (req, res, next) {
     // TODO: document why array only for Postgres
     // all others return the numeric id (Postgres returns an array with a numeric element)
     conversation_id = created[0];
+
+    // TODO: ensure no LocalConversation is shared externally
+    const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${conversation_id}`, created: now });
+    await this.db('conversations').update({ fabric_id: actor.id }).where({ id: conversation_id });
   }
 
   try {

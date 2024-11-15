@@ -104,10 +104,10 @@ class Bridge extends React.Component {
         // console.debug('[BRIDGE]', 'MessageChunk:', job.data);
         break;
       case 'MessageEnd':
-        console.debug('[BRIDGE]', 'MessageEnd:', job.data);
+        // console.debug('[BRIDGE]', 'MessageEnd:', job.data);
         break;
       case 'MessageStart':
-        console.debug('[BRIDGE]', 'MessageStart:', job.data);
+        // console.debug('[BRIDGE]', 'MessageStart:', job.data);
         break;
     }
   }
