@@ -2,7 +2,7 @@
 
 const fetch = require('node-fetch');
 
-async function fetchFromAPI (path, params = {},token = null) {
+async function fetchFromAPI (path, params = {}, token = null) {
   const response = await fetch(path, {
     method: 'GET',
     headers: {
@@ -13,6 +13,19 @@ async function fetchFromAPI (path, params = {},token = null) {
   });
 
   return await response.json();
+}
+
+async function fetchResource (path = document.path) {
+  const response = await fetch(path, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': (token) ? `Bearer ${token}` : undefined
+    }
+  });
+
+  return response.json();
 }
 
 async function patchAPI (path, params, token = null) {
@@ -47,6 +60,7 @@ async function postAPI (path, params, token = null) {
 
 module.exports = {
   fetchFromAPI,
+  fetchResource,
   patchAPI,
   postAPI
 };

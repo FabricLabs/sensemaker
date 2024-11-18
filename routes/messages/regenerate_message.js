@@ -23,7 +23,7 @@ module.exports = async function (req, res, next) {
   // confirm acceptance of new answer
 
   try {
-    const conversation = await this.db('conversations').where({ id: conversation_id }).first();
+    const conversation = await this.db('conversations').where({ fabric_id: conversation_id }).first();
     if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
 
     const newRequest = await this.db('requests').insert({
@@ -71,7 +71,7 @@ module.exports = async function (req, res, next) {
     await this.db('conversations').update({
       log: JSON.stringify(conversation.log)
     }).where({
-      id: conversation_id
+      fabric_id: conversation_id
     });
 
     return res.json({

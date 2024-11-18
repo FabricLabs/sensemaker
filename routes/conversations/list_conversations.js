@@ -1,5 +1,7 @@
 'use strict';
 
+const Actor = require('@fabric/core/types/actor');
+
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
@@ -13,6 +15,15 @@ module.exports = function (req, res, next) {
         // TODO: update the conversation upon change (new user message, new agent message)
         // TODO: sort conversations by updated_at (below line)
         // const conversations = await this.db.select('id', 'title', 'created_at').from('conversations').orderBy('updated_at', 'desc');
+      }
+
+      for (let i = 0; i < results.length; i++) {
+        const conversation = results[i];
+        if (!conversation.fabric_id) {
+          // TODO: ensure no LocalConversation is shared externally
+          const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${conversation.id}`, created: conversation.created_at });
+          await this.db('conversations').update({ fabric_id: actor.id }).where({ id: conversation.id });
+        }
       }
 
       res.send(results);

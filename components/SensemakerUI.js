@@ -206,6 +206,7 @@ class SensemakerUI extends React.Component {
                   auth={this.props.auth}
                   onLogoutSuccess={this.handleLogout}
                   onMessageSuccess={this.handleMessageSuccess}
+                  createTask={this.props.createTask}
                   fetchContract={this.props.fetchContract}
                   fetchConversation={this.props.fetchConversation}
                   fetchConversations={this.props.fetchConversations}

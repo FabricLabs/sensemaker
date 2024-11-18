@@ -5,9 +5,12 @@ const Message = require('@fabric/core/types/message');
 
 module.exports = async function (req, res, next) {
   console.debug('[SENSEMAKER]', '[HTTP]', 'Handling inbound message:', req.body);
+  const now = new Date();
 
   let isNew = false;
-  let subject = null;
+  let localMessageID = null;
+  let localConversationID = null;
+  let fabricID = null;
   let {
     conversation_id,
     content,
@@ -17,7 +20,6 @@ module.exports = async function (req, res, next) {
 
   if (!conversation_id) {
     isNew = true;
-    const now = new Date();
     const name = `Conversation Started ${now.toISOString()}`;
     /* const room = await this.matrix.client.createRoom({ name: name }); */
     const created = await this.db('conversations').insert({
@@ -28,30 +30,47 @@ module.exports = async function (req, res, next) {
       // matrix_room_id: room.room_id
     });
 
-    // TODO: document why array only for Postgres
-    // all others return the numeric id (Postgres returns an array with a numeric element)
-    conversation_id = created[0];
+    localConversationID = created[0];
 
     // TODO: ensure no LocalConversation is shared externally
-    const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${conversation_id}`, created: now });
-    await this.db('conversations').update({ fabric_id: actor.id }).where({ id: conversation_id });
+    const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${localConversationID}`, created: now });
+    await this.db('conversations').update({ fabric_id: actor.id }).where({ id: localConversationID });
+
+    fabricID = actor.id;
   }
 
   try {
-    const conversation = await this.db('conversations').where({ id: conversation_id }).first();
-    if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
+    const conversation = await this.db('conversations').where({ fabric_id: fabricID }).first();
+    if (!conversation) throw new Error(`No such Conversation: ${fabricID}`);
 
     // User Message
     const newMessage = await this.db('messages').insert({
       content: content,
-      conversation_id: conversation_id,
+      conversation_id: localConversationID,
       user_id: req.user.id
+    });
+
+    localMessageID = newMessage[0];
+
+    // Prepare Response
+    if (!conversation.log) conversation.log = [];
+    if (typeof conversation.log == 'string') {
+      conversation.log = JSON.parse(conversation.log);
+    }
+
+    // Attach new message to the conversation
+    conversation.log.push(localMessageID);
+
+    await this.db('conversations').update({
+      log: JSON.stringify(conversation.log)
+    }).where({
+      id: localConversationID
     });
 
     // Core Pipeline
     // this.createTimedRequest({
     this.handleTextRequest({
-      conversation_id: conversation_id,
+      conversation_id: fabricID,
       context: {
         ...context,
         user_id: req.user.id,
@@ -69,7 +88,7 @@ module.exports = async function (req, res, next) {
         return;
       }
 
-      const history = await this._getConversationMessages(conversation_id);
+      const history = await this._getConversationMessages(conversation.id);
       const messages = history.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
       });
@@ -81,11 +100,9 @@ module.exports = async function (req, res, next) {
           if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
-          if (title) await this.db('conversations').update({ title }).where({ id: conversation_id });
-
-          const conversation = { id: conversation_id, messages: messages, title: title };
-          const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
-
+          if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
+          const msg = { id: fabricID, messages: messages, title: title };
+          const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
           this.http.broadcast(message);
         });
       }
@@ -96,44 +113,22 @@ module.exports = async function (req, res, next) {
         if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Summarized conversation:', output);
         let summary = output?.content || 'broken content summary';
         if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
-        if (summary) await this.db('conversations').update({ summary }).where({ id: conversation_id });
-
-        const conversation = { id: conversation_id, messages: messages, summary: summary };
-        const message = Message.fromVector(['Conversation', JSON.stringify(conversation)]);
-
+        if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
+        const msg = { id: fabricID, messages: messages, summary: summary };
+        const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
         this.http.broadcast(message);
       });
     }).then(async () => {
-      // Sanity Function
       console.debug('[SENSEMAKER]', '[HTTP]', 'Finished processing message');
-      /* const basic = await this.handleTextRequest({
-        // conversation_id: conversation_id,
-        query: content
-      });
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Got basic response:', basic); */
     });
     // End Core Pipeline
 
-    // Prepare Response
-    if (!conversation.log) conversation.log = [];
-    if (typeof conversation.log == 'string') {
-      conversation.log = JSON.parse(conversation.log);
-    }
-
-    // Attach new message to the conversation
-    conversation.log.push(newMessage[0]);
-
-    await this.db('conversations').update({
-      log: JSON.stringify(conversation.log)
-    }).where({
-      id: conversation_id
-    });
-
+    const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
     return res.json({
       message: 'Message sent.',
       object: {
-        id: newMessage[0],
-        conversation: conversation_id,
+        id: localMessage.id,
+        conversation: localConversationID,
         // cards: request.cards
       }
     });

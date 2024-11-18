@@ -68,6 +68,7 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
+      tasks: state.tasks,
       token: state.auth.token,
       stats: state.stats,
       users: state.users,

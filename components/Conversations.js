@@ -223,8 +223,8 @@ class Conversations extends React.Component {
                       </Form>
                     ) : (
                       <Card.Header>
-                        <Link to={'/conversations/' + conversation.id} className='ui right floated icon blue button'>Resume <Icon name='right chevron' /></Link>
-                        <Link to={'/conversations/' + conversation.id} as='h4' title={conversation.summary} onClick={() => this.props.resetChat()}>{conversation.title}</Link>
+                        <Link to={'/conversations/' + conversation.slug} className='ui right floated icon blue button'>Resume <Icon name='right chevron' /></Link>
+                        <Link to={'/conversations/' + conversation.slug} as='h4' title={conversation.summary} onClick={() => this.props.resetChat()}>{conversation.title}</Link>
                         <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                       </Card.Header>
                     )}

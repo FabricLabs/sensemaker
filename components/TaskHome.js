@@ -1,9 +1,12 @@
 'use strict';
 
+// Dependencies
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
+// Components
+// Semantic UI
 const {
   Button,
   Card,
@@ -19,12 +22,15 @@ const {
   Table
 } = require('semantic-ui-react');
 
+// Local Components
+const ChatBox = require('./ChatBox');
+
 class TaskHome extends React.Component {
   constructor (settings = {}) {
     super(settings);
 
     this.state = {
-      loading: false,
+      loading: false
     };
   }
 
@@ -39,12 +45,22 @@ class TaskHome extends React.Component {
       //   this.setState({ loading: false });
       // }
     }
-  };
+  }
+
+  handleTaskChange = (e) => {
+    console.debug('got change:', e.target.name, e.target.value);
+    //createTask({ task: e.target.value });
+  }
+
+  handleTaskSubmit = async (e) => {
+    console.debug('got submit:', e.target.name, e.target.value);
+    const task = await this.props.createTask({ title: e.target.value });
+    console.debug('task:', task);
+  }
 
   render () {
     const { network, tasks } = this.props;
     // const { loading } = this.state;
-
     return (
       <Segment loading={network?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <Header as='h1'>Task List</Header>
@@ -59,8 +75,8 @@ class TaskHome extends React.Component {
         </Card>
         <Divider />
         <Header as='h2'>Local</Header>
-        <Form fluid>
-          <Form.Group inline>
+        <Form fluid onSubmit={this.handleTaskSubmit}>
+          <Form.Group inline onChange={this.handleTaskChange}>
             <Form.Field>
               <label>Task</label>
               <Input type='text' name='task' placeholder='e.g., do the laundry, etc.' />
@@ -73,27 +89,27 @@ class TaskHome extends React.Component {
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>#</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
-              <Table.HeaderCell><code>Content-Type</code></Table.HeaderCell>
-              <Table.HeaderCell>Title</Table.HeaderCell>
-              <Table.HeaderCell>Content</Table.HeaderCell>
+              <Table.HeaderCell>Task</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            <Table.Row>
-              <Table.Cell>1</Table.Cell>
-              <Table.Cell><Input type='checkbox' name='task_is_complete' checked={true} /></Table.Cell>
-              <Table.Cell><code>text/plain</code></Table.Cell>
-              <Table.Cell><code>DO NO HARM TO HUMANS</code></Table.Cell>
-              <Table.Cell><code>DO NO HARM TO HUMANS</code></Table.Cell>
-            </Table.Row>
+            {tasks && tasks.tasks.map((x) => {
+              return (
+                <Table.Row>
+                  <Table.Cell><Input type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} /></Table.Cell>
+                  <Table.Cell>{x.title}</Table.Cell>
+                  <Table.Cell>
+                    <Icon name='pencil' />
+                    <Icon name='archive' />
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
           </Table.Body>
         </Table>
-        <Divider />
-        <Link to={"/tasks/new"}>
-          <Button primary content='+ Add Task' />
-        </Link>
+        <ChatBox {...this.props} context={{ tasks: tasks.tasks }} placeholder='Ask about these tasks...' />
       </Segment>
     );
   }

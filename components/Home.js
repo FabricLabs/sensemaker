@@ -10,6 +10,7 @@ const {
   Segment
 } = require('semantic-ui-react');
 
+const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
 
 class Home extends React.Component {
@@ -78,6 +79,7 @@ class Home extends React.Component {
             </Card.Group>
           </Segment>
         ) : null}
+        <Clock />
       </sensemaker-home>
     );
   }

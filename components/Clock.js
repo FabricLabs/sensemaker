@@ -1,9 +1,12 @@
 'use strict';
 
+const React = require('react');
+
 const {
   Card
 } = require('semantic-ui-react');
 
+// TODO: reduce to a web component (no react)
 class Clock extends React.Component {
   constructor (props) {
     super(props);
@@ -11,8 +14,11 @@ class Clock extends React.Component {
     this.creation = new Date();
     this.settings = Object.assign({
       clock: 0,
+      debug: false,
       interval: 1000
     }, props);
+
+    this.heart = null;
 
     this.state = {
       content: {
@@ -22,19 +28,39 @@ class Clock extends React.Component {
     };
   }
 
+  componentDidMount () {
+    this.start();
+  }
+
   render () {
     const now = new Date();
     return (
       <Card>
         <Card.Content>
-          <Card.Header>{this.now.toLocaleString('en-US', { hour: 'numeric', hour12: true })}</Card.Header>
-          <Card.Description>
-            <pre><code>{JSON.stringify(this.state, null, '  ')}</code></pre>
-          </Card.Description>
+          <Card.Header>{now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric' })}</Card.Header>
+          {this.settings.debug ? (
+            <Card.Description>
+              <pre><code>{JSON.stringify(this.state, null, '  ')}</code></pre>
+            </Card.Description>
+          ) : null}
         </Card.Content>
-        
       </Card>
     );
+  }
+
+  start () {
+    this.heart = setInterval(() => {
+      this.setState({
+        content: {
+          clock: this.state.content.clock + 1,
+          interval: this.settings.interval
+        }
+      });
+    }, this.settings.interval);
+  }
+
+  stop () {
+    clearInterval(this.heart);
   }
 }
 

@@ -54,7 +54,7 @@ class Conversation extends React.Component {
 
   fetchData = async (id) => {
     await this.props.fetchConversations();
-    const actual = this.props.conversations.find(conversation => conversation.id == id);
+    const actual = this.props.conversations.find(conversation => conversation.slug == id);
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
     this.setState({ file_fabric_id: actual.file_fabric_id ? actual.file_fabric_id : null });
@@ -62,7 +62,7 @@ class Conversation extends React.Component {
     if (actual.file_fabric_id) {
       await this.props.fetchDocument(actual.file_fabric_id);
       await this.props.fetchDocumentSections(actual.file_fabric_id);
-    }else{
+    } else {
       this.setState({documentInfo: null});
     }
     // Fetch new conversation details and messages

@@ -3,10 +3,12 @@
 module.exports = function (req, res, next) {
     let messages = [];
     res.format({
-      json:async () => {
+      json: async () => {
         if (req.query.conversation_id) {
+          const conversation = await this.db('conversations').select('id').where({ fabric_id: req.query.conversation_id }).first();
+          if (!conversation) return res.status(404).json({ message: 'Conversation not found.' });
           messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select('users.username', 'messages.id', 'messages.user_id', 'messages.created_at', 'messages.updated_at', 'messages.content', 'messages.status', 'messages.cards').where({
-            conversation_id: req.query.conversation_id
+            conversation_id: conversation.id
           }).orderBy('created_at', 'asc');
         } else {
           // messages = await this.db.select('id', 'created_at', 'content').from('messages').orderBy('created_at', 'asc');

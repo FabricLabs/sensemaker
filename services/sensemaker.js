@@ -271,8 +271,10 @@ class Sensemaker extends Hub {
           }
         }
       },
+      // TODO: replace with Resource definitions
       routes: [
-        { method: 'GET', route: '/tasks', handler: ROUTES.tasks.list }
+        // { method: 'GET', route: '/tasks', handler: ROUTES.tasks.list },
+        // { method: 'POST', route: '/tasks', handler: ROUTES.tasks.create }
       ],
       sessions: false
     });
@@ -653,17 +655,12 @@ class Sensemaker extends Hub {
     return new Promise(async (resolve, reject) => {
       const now = new Date();
       const created = now.toISOString();
+      let conversation = null;
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial messages:', request.messages);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial timeout:', request.timeout);
-
-      // Store user request
-      const localMessageIDs = await this.db('messages').insert({ conversation_id: request.conversation_id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
-      const responseID = localMessageIDs[0];
-      const responseName = `sensemaker/messages/${responseID}`;
-      const responseObject = new Actor({ name: responseName });
 
       // Prepare Metadata
       let messages = [];
@@ -673,11 +670,18 @@ class Sensemaker extends Hub {
       if (request.conversation_id) {
         console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Resuming conversation:', request.conversation_id);
         // Resume conversation
-        const prev = await this._getConversationMessages(request.conversation_id);
+        conversation = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+        const prev = await this._getConversationMessages(conversation.id);
         messages = prev.map((x) => {
           return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
         });
       }
+
+      // Store user request
+      const localMessageIDs = await this.db('messages').insert({ conversation_id: conversation.id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
+      const responseID = localMessageIDs[0];
+      const responseName = `sensemaker/messages/${responseID}`;
+      const responseObject = new Actor({ name: responseName });
 
       if (request.context) {
         // Recent Conversations
@@ -1394,6 +1398,11 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/documents/delete/:fabricID', ROUTES.documents.delete.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
+    // Tasks
+    this.http._addRoute('POST', '/tasks', ROUTES.tasks.create.bind(this));
+    this.http._addRoute('GET', '/tasks', ROUTES.tasks.list.bind(this));
+    this.http._addRoute('GET', '/tasks/:id', ROUTES.tasks.view.bind(this));
+
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
     this.http._addRoute('GET', '/users/:username', ROUTES.users.view.bind(this));
@@ -1418,8 +1427,8 @@ class Sensemaker extends Hub {
 
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
-    this.http._addRoute('POST', '/inquiries', this._handleInquiryCreateRequest.bind(this));
-    this.http._addRoute('GET', '/inquiries', this._handleInquiryListRequest.bind(this));
+    this.http._addRoute('POST', '/inquiries', ROUTES.inquiries.create.bind(this));
+    this.http._addRoute('GET', '/inquiries', ROUTES.inquiries.list.bind(this));
 
     //endpoint to delete inquiry from admin panel
     // TODO: change to DELETE
@@ -1489,7 +1498,7 @@ class Sensemaker extends Hub {
     // route to edit a conversation title
     this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
     this.http._addRoute('GET', '/statistics', ROUTES.statistics.list.bind(this));
-    this.http._addRoute('GET', '/conversations', ROUTES.conversations.getConversations.bind(this));
+    this.http._addRoute('GET', '/conversations', ROUTES.conversations.list.bind(this));
     this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
     this.http._addRoute('GET', '/people/:fabricID', ROUTES.people.view.bind(this));
     this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
@@ -1725,58 +1734,6 @@ class Sensemaker extends Hub {
         results: results
       });
     });
-  }
-
-  async _handleInquiryListRequest (req, res, next) {
-    res.format({
-      json: async () => {
-        if (!req.user || !req.user.state || !req.user.state.roles.includes('admin')) return res.status(401).json({ message: 'Unauthorized.' });
-
-        try {
-          const inquiries = await this.db('inquiries')
-            .select('*')
-            .orderBy('created_at', 'desc');
-          res.send(inquiries);
-        } catch (error) {
-          console.error('Error fetching inquiries:', error);
-          res.status(500).json({ message: 'Internal server error.' });
-        }
-      },
-      html: () => {
-        return res.send(this.applicationString);
-      }
-    });
-  }
-
-  async _handleInquiryCreateRequest (req, res, next) {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required.' });
-    }
-
-    try {
-      // Check if the email already exists in the waitlist
-      const existingInquiry = await this.db('inquiries').where('email', email).first();
-      if (existingInquiry) {
-        return res.status(409).json({ message: "You're already on the waitlist!" });
-      }
-
-      //checks if there is an user with that email already
-      const existingEmailUser = await this.db('users').where('email', email).first();
-      if (existingEmailUser) {
-        return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
-      }
-
-      // Insert the new user into the database
-      const newInquiry = await this.db('inquiries').insert({
-        email: email
-      });
-
-      return res.json({ message: "You've been added to the waitlist!" });
-    } catch (error) {
-      return res.status(500).json({ message: 'Internal server error.  Try again later.' });
-    }
   }
 
   async _handleRAGQuery (query) {
