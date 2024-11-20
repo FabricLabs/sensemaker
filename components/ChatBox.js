@@ -539,7 +539,7 @@ class ChatBox extends React.Component {
 
   handleAttachmentIntent = (value) => {
     console.debug('attaching file:', value);
-    this.setState({ attachingFile: true });
+    this.setState({ attachingFile: true, loading: true });
     document.querySelector('#input-control-form input[type="file"]').click();
   };
 
@@ -587,7 +587,15 @@ class ChatBox extends React.Component {
       uploadSuccess: false,
     });
 
-    await this.props.uploadFile(this.state.file);
+    console.debug('Uploading:', this.state.file);
+
+    try {
+      await this.props.uploadDocument(this.state.file);
+    } catch (exception) {
+      console.debug('Upload error:', exception);
+    }
+
+    console.debug('Upload complete:', this.props.uploadedDocument);
   }
 
   isValidFileType (fileType) {
@@ -892,7 +900,7 @@ class ChatBox extends React.Component {
           loading={loading}>
           <Form.Input>
             {this.props.includeAttachments && (
-              <Button size="huge" left attached icon onClick={this.handleAttachmentIntent}>
+              <Button size="huge" left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
                 <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
                 <Icon name='paperclip' color='grey' style={{ color: this.state.isTextareaFocused ? 'grey' : 'grey', cursor: 'pointer' }} />
               </Button>

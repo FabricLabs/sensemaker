@@ -47,22 +47,25 @@ class TaskHome extends React.Component {
     }
   }
 
-  handleTaskChange = (e) => {
-    console.debug('got change:', e.target.name, e.target.value);
-    //createTask({ task: e.target.value });
+  handleTaskChange = (e, { name, value }) => {
+    // console.debug('got change:', value);
+    this.setState({ [name]: value });
   }
 
   handleTaskSubmit = async (e) => {
     console.debug('got submit:', e.target.name, e.target.value);
-    const task = await this.props.createTask({ title: e.target.value });
+    this.setState({ loading: true })
+    const task = await this.props.createTask({ title: this.state.title });
     console.debug('task:', task);
+    this.setState({ title: '', loading: false });
+    this.props.fetchTasks();
   }
 
   render () {
     const { network, tasks } = this.props;
     // const { loading } = this.state;
     return (
-      <Segment loading={network?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
+      <Segment className='fade-in' loading={network?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <Header as='h1'>Task List</Header>
         <Card>
           <Card.Content>
@@ -76,10 +79,10 @@ class TaskHome extends React.Component {
         <Divider />
         <Header as='h2'>Local</Header>
         <Form fluid onSubmit={this.handleTaskSubmit}>
-          <Form.Group inline onChange={this.handleTaskChange}>
+          <Form.Group inline onChange={this.handleTaskChange} loading={this.state.loading}>
             <Form.Field>
               <label>Task</label>
-              <Input type='text' name='task' placeholder='e.g., do the laundry, etc.' />
+              <Input type='text' name='title' placeholder='e.g., do the laundry, etc.' />
             </Form.Field>
             <Form.Field>
               <Button primary content='Create Task' />

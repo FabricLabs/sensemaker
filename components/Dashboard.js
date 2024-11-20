@@ -45,6 +45,7 @@ const {
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
   ENABLE_NETWORK,
+  ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_UPLOADS,
   USER_HINT_TIME_MS,
@@ -63,6 +64,7 @@ const PeopleHome = require('./PeopleHome');
 const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
 const LibraryList = require('./LibraryList');
+const SourceHome = require('./SourceHome');
 const TaskHome = require('./TaskHome');
 const TaskView = require('./TaskView');
 const UploadHome = require('./UploadHome');
@@ -548,6 +550,12 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Network</p>
                 </Menu.Item>
               )}
+              {ENABLE_SOURCES && USER_IS_ADMIN && (
+                <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
+                  <Icon name='globe' size='large'/>
+                  <p className='icon-label'>Sources</p>
+                </Menu.Item>
+              )}
             </div>
             <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
             <div>
@@ -669,6 +677,7 @@ class Dashboard extends React.Component {
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path="/sources" element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} {...this.props} />} />
                 <Route path="/tasks" element={<TaskHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
                 <Route path="/tasks/:id" element={<TaskView task={this.props.task} />} />
                 <Route path="/uploads" element={<UploadHome {...this.props} />} />

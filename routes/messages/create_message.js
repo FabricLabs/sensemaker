@@ -10,7 +10,7 @@ module.exports = async function (req, res, next) {
   let isNew = false;
   let localMessageID = null;
   let localConversationID = null;
-  let fabricID = null;
+  let fabricConversationID = null;
   let {
     conversation_id,
     content,
@@ -34,14 +34,13 @@ module.exports = async function (req, res, next) {
 
     // TODO: ensure no LocalConversation is shared externally
     const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${localConversationID}`, created: now });
-    await this.db('conversations').update({ fabric_id: actor.id }).where({ id: localConversationID });
-
-    fabricID = actor.id;
+    fabricConversationID = actor.id;
+    await this.db('conversations').update({ fabric_id: fabricConversationID }).where({ id: localConversationID });
   }
 
   try {
-    const conversation = await this.db('conversations').where({ fabric_id: fabricID }).first();
-    if (!conversation) throw new Error(`No such Conversation: ${fabricID}`);
+    const conversation = await this.db('conversations').where({ fabric_id: fabricConversationID }).first();
+    if (!conversation) throw new Error(`No such Conversation: ${fabricConversationID}`);
 
     // User Message
     const newMessage = await this.db('messages').insert({
@@ -70,7 +69,7 @@ module.exports = async function (req, res, next) {
     // Core Pipeline
     // this.createTimedRequest({
     this.handleTextRequest({
-      conversation_id: fabricID,
+      conversation_id: fabricConversationID,
       context: {
         ...context,
         user_id: req.user.id,
@@ -101,7 +100,7 @@ module.exports = async function (req, res, next) {
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
           if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
-          const msg = { id: fabricID, messages: messages, title: title };
+          const msg = { id: fabricConversationID, messages: messages, title: title };
           const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
           this.http.broadcast(message);
         });
@@ -114,7 +113,7 @@ module.exports = async function (req, res, next) {
         let summary = output?.content || 'broken content summary';
         if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
         if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
-        const msg = { id: fabricID, messages: messages, summary: summary };
+        const msg = { id: fabricConversationID, messages: messages, summary: summary };
         const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
         this.http.broadcast(message);
       });
@@ -124,11 +123,13 @@ module.exports = async function (req, res, next) {
     // End Core Pipeline
 
     const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
+    await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });
+
     return res.json({
       message: 'Message sent.',
       object: {
         id: localMessage.id,
-        conversation: localConversationID,
+        conversation: fabricConversationID,
         // cards: request.cards
       }
     });

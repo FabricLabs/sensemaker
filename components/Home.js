@@ -5,6 +5,7 @@ const React = require('react');
 const { Link, useLocation } = require('react-router-dom');
 
 const {
+  Button,
   Card,
   Header,
   Segment
@@ -34,7 +35,6 @@ class Home extends React.Component {
 
   render () {
     const { conversations } = this.props;
-
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
         <Segment fluid>
@@ -64,12 +64,17 @@ class Home extends React.Component {
           <Segment fluid>
             <h3>Recently</h3>
             <Card.Group fluid>
-              <Card as={Link} to={'/conversations/' + conversations[0].slug}>
-                <Card.Content>
-                  <Card.Header>{conversations[0].title}</Card.Header>
-                  <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
-                </Card.Content>
-              </Card>
+              {conversations.slice(0, 2).map((conversation, index) => (
+                <Card as={Link} to={'/conversations/' + conversation.slug}>
+                  <Card.Content>
+                    <Card.Header>{conversation.title}</Card.Header>
+                    <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversation.summary}</Card.Description>
+                  </Card.Content>
+                  <Button.Group attached='bottom'>
+                    <Button as={Link} to={'/conversations/' + conversation.slug}>Resume &raquo;</Button>
+                  </Button.Group>
+                </Card>
+              ))}
               <Card as={Link} to='/conversations'>
                 <Card.Content>
                   <Card.Header>Explore History &raquo;</Card.Header>
@@ -79,7 +84,7 @@ class Home extends React.Component {
             </Card.Group>
           </Segment>
         ) : null}
-        <Clock />
+        <Clock style={{ position: 'fixed', bottom: '1em', right: '1em' }} />
       </sensemaker-home>
     );
   }

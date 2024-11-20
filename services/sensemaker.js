@@ -19,7 +19,8 @@ const {
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   USER_QUERY_TIMEOUT_MS,
-  SYNC_EMBEDDINGS_COUNT
+  SYNC_EMBEDDINGS_COUNT,
+  ENABLE_SOURCES
 } = require('../constants');
 
 // Dependencies
@@ -1130,9 +1131,9 @@ class Sensemaker extends Hub {
       socket: this.settings.redis
     });
 
+    // TODO: investigate Redis jobs / task queue for completeness
     function updateAPI (job, result) {
       console.log(`Updating API for job ${job} with job ID: ${job.id} with result:`, result);
-
       const fileUploadMessage = {
         sender: 'req.user.id',
         creator: true,

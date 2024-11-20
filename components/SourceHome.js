@@ -12,8 +12,11 @@ const {
 // Fabric Types
 const Actor = require('@fabric/core/types/actor');
 
+// Local Components
+const ChatBox = require('./ChatBox');
+
 // TODO: reduce to a web component (no react)
-class Clock extends React.Component {
+class SourceHome extends React.Component {
   constructor (props) {
     super(props);
 
@@ -56,21 +59,19 @@ class Clock extends React.Component {
 
   render () {
     const now = new Date();
+    const { sources } = this.props;
     return (
-      <div compact style={this.style} {...this.props}>
-        <Header><code>{now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric' })}</code></Header>
-        {this.settings.debug ? (
-          <div>
-            <pre><code>{JSON.stringify(this.state, null, '  ')}</code></pre>
-          </div>
-        ) : null}
-      </div>
+      <Segment className='fade-in' loading={sources?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
+        <Header as='h1'>Sources</Header>
+        <p>Remote data sources can be added to improve coverage.</p>
+        <ChatBox {...this.props} context={{ sources: sources?.current }} placeholder='Ask about these sources...' />
+      </Segment>
     );
   }
 
   start () {
     this._state.content.status = 'STARTING';
-    this.heart = setInterval(this.tick.bind(this), this.settings.interval);
+    // this.heart = setInterval(this.tick.bind(this), this.settings.interval);
     this._state.content.status = 'STARTED';
     this.commit();
   }
@@ -81,20 +82,6 @@ class Clock extends React.Component {
     this._state.content.status = 'STOPPED';
     this.commit();
   }
-
-  tick () {
-    const parent = this.commit();
-    this.setState({
-      parent: parent.id,
-      content: {
-        clock: this.state.content.clock + 1,
-        interval: this.settings.interval
-      }
-    });
-
-    const tick = this.commit();
-    return { id: tick.id };
-  }
 }
 
-module.exports = Clock;
+module.exports = SourceHome;

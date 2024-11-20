@@ -1,7 +1,7 @@
 'use strict';
 
 const always = [
-  { id: 1, type: 'Task', mime: 'text/plain', title: 'DO NO HARM TO HUMANS', description: 'DO NO HARM TO HUMANS' }
+  { id: 1, type: 'Task', mime: 'text/plain', title: 'DO NO HARM TO HUMANS', description: 'DO NO HARM TO HUMANS', completed_at: true }
 ];
 
 module.exports = async function (req, res, next) {

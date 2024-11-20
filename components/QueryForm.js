@@ -29,7 +29,7 @@ class Chat extends React.Component {
     this.fetchAnnouncement = this.fetchAnnouncement.bind(this);
   }
 
-  componentDidMount() {
+  componentDidMount () {
     $('#primary-query').focus();
     this.props.resetChat();
 
@@ -64,7 +64,6 @@ class Chat extends React.Component {
       }
 
       const announcement = await response.json();
-
       const today = new Date();
       const expirationDate = announcement.expiration_date ? new Date(announcement.expiration_date) : null;
       const createdAt = new Date(announcement.created_at);
@@ -90,9 +89,7 @@ class Chat extends React.Component {
   render () {
     const {announTitle, announBody} = this.state;
     const { messages } = this.props.chat;
-
     const VERTICAL_MARGIN = '2.5';
-
     const componentStyle = messages.length > 0 ? {
       display: 'absolute',
       left: 'calc(350px + 1em)',
