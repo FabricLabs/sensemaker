@@ -76,7 +76,9 @@ async function main (input = {}) {
       feedback: state.feedback,
       help: state.help,
       redis: state.redis,
-    }
+      keys: state.keys,
+      wallet: state.wallet
+    };
   };
 
   console.debug('[SENSEMAKER]', 'Connecting UI...');

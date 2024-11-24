@@ -65,8 +65,7 @@ class ChatBox extends React.Component {
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
-      startedChatting: false,
-
+      startedChatting: false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);

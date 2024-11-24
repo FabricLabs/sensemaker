@@ -22,6 +22,7 @@ const tasksReducer = require('../reducers/tasksReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
 const helpReducer = require('../reducers/helpReducer');
 const redisReducer = require('../reducers/redisReducer');
+const walletReducer = require('../reducers/walletReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -42,7 +43,8 @@ const rootReducer = combineReducers({
   help: helpReducer,
   redis: redisReducer,
   tasks: tasksReducer,
-  users: accountsReducer
+  users: accountsReducer,
+  wallet: walletReducer
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));

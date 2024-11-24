@@ -31,7 +31,7 @@ const os = require('os');
 // External Dependencies
 const { createClient } = require('redis');
 const fetch = require('cross-fetch');
-const debounce = require('lodash.debounce');
+// const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
@@ -70,9 +70,7 @@ const Discord = require('@fabric/discord');
 const Matrix = require('@fabric/matrix');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
-
-// Providers
-// const { StatuteProvider } = require('../libraries/statute-scraper');
+const StarCitizen = require('@rsi/star-citizen');
 
 // Services
 const Fabric = require('./fabric');
@@ -216,6 +214,7 @@ class Sensemaker extends Hub {
     // Other Services
     // this.openai = new OpenAI(this.settings.openai);
     this.stripe = new Stripe(this.settings.stripe);
+    this.rsi = new StarCitizen(this.settings.rsi);
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -697,11 +696,32 @@ class Sensemaker extends Hub {
           }
         }
 
-        // Raw Context
+        const localContext = { ...request.context, created: created, owner: this.id };
+        const contextCall = new Actor(localContext);
+        messages.unshift({
+          role: 'assistant',
+          tool_calls: [{
+            id: contextCall.id,
+            type: 'function',
+            function: {
+              name: 'get_current_context',
+              arguments: JSON.stringify({})
+            }
+          }]
+        });
+
         messages.unshift({
           role: 'tool',
+          tool_call_id: contextCall.id,
+          name: 'get_current_context',
+          content: `${JSON.stringify(localContext, null, '  ')}\n`
+        })
+
+        // Raw Context
+        /* messages.unshift({
+          role: 'tool',
           content: `${JSON.stringify(request.context, null, '  ')}\n`
-        });
+        }); */
       }
 
       // User Context
@@ -730,6 +750,7 @@ class Sensemaker extends Hub {
         console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Sensemaker error:', error);
         reject(error);
       }).then(async (response) => {
+        if (!response) return reject(new Error('No response from Sensemaker.'));
         if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
         // Update database with completed response
         await this.db('messages').where({ id: responseID }).update({
@@ -1283,6 +1304,7 @@ class Sensemaker extends Hub {
     if (this.fabric) await this.fabric.start();
     if (this.email) await this.email.start();
     if (this.matrix) await this.matrix.start();
+    if (this.rsi) await this.rsi.start();
     // if (this.github) await this.github.start();
     if (this.discord) {
       try {
@@ -1399,6 +1421,11 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/documents/delete/:fabricID', ROUTES.documents.delete.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
+    // Wallet
+    this.http._addRoute('POST', '/keys', ROUTES.keys.create.bind(this));
+    this.http._addRoute('GET', '/keys', ROUTES.keys.list.bind(this));
+    // this.http._addRoute('GET', '/keys/:id', ROUTES.keys.view.bind(this));
+
     // Tasks
     this.http._addRoute('POST', '/tasks', ROUTES.tasks.create.bind(this));
     this.http._addRoute('GET', '/tasks', ROUTES.tasks.list.bind(this));
@@ -1415,6 +1442,8 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
+    this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
+    this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));

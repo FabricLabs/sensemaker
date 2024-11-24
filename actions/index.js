@@ -147,7 +147,18 @@ const {
   clearQueue,
 } = require('../actions/redisActions');
 
+// ## Wallet Actions
+const {
+  fetchKey,
+  fetchKeys,
+  createKey,
+} = require('../actions/walletActions');
+
+// ## Export
 module.exports = {
+  fetchKey,
+  fetchKeys,
+  createKey,
   fetchContract: fetchContract,
   signContract: signContract,
   fetchConversation: fetchConversation,

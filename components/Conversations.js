@@ -112,7 +112,7 @@ class Conversations extends React.Component {
   };
 
   render () {
-    const { loading, error, conversations } = this.props;
+    const { loading, error, conversations, users } = this.props;
     const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
 
     if (loading) {
@@ -161,6 +161,15 @@ class Conversations extends React.Component {
                 <Card.Description></Card.Description>
               </Card.Content>
             </Card>
+            {users && users.users.slice(0, 2).map(user => {
+              <Card key={user.id} as={Link} to={`/users/${user.username}`}>
+                <Card.Content>
+                  <Card.Header>{user.username}</Card.Header>
+                  <Card.Meta>Joined in {new Date(user.created_at).getFullYear()}</Card.Meta>
+                  <Card.Description></Card.Description>
+                </Card.Content>
+              </Card>
+            })}
           </Card.Group>
         </div>
         <Divider />

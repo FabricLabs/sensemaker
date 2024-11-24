@@ -63,6 +63,10 @@ class DocumentHome extends React.Component {
     this.props.searchDocument(query);
   }, 1000);
 
+  toggleCreateDocumentModal = () => {
+    console.debug('creating document modal...');
+  }
+
   render () {
     const { loading, documents } = this.props;
     const { filteredDocuments, searchQuery, searching } = this.state;
@@ -70,8 +74,12 @@ class DocumentHome extends React.Component {
     return (
       <fabric-document-home>
         <Segment className='fade-in' fluid style={{ maxHeight: '100%' }}>
-          {/* <Button color='green' floated='right' as={Link} to='/documents/draft'>Create Document &raquo;</Button> */}
-          <h1>Library</h1>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
+            <h1 style={{ marginTop: '0' }}>Library</h1>
+            <Button.Group>
+              <Button icon color='green' onClick={this.toggleCreateDocumentModal.bind(this)}>Create Document <Icon name='add' /></Button>
+            </Button.Group>
+          </div>
           <p>Search, upload, and manage files.</p>
           <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
           {(displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (

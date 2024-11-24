@@ -36,6 +36,8 @@ module.exports = async function (req, res, next) {
     const actor = new Actor({ type: 'LocalConversation', name: `sensemaker/conversations/${localConversationID}`, created: now });
     fabricConversationID = actor.id;
     await this.db('conversations').update({ fabric_id: fabricConversationID }).where({ id: localConversationID });
+  } else {
+    fabricConversationID = conversation_id;
   }
 
   try {

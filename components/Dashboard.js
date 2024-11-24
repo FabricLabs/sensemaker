@@ -41,13 +41,13 @@ const {
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
   ENABLE_CHANGELOG,
-  ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
   ENABLE_NETWORK,
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_UPLOADS,
+  ENABLE_WALLET,
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS
 } = require('../constants');
@@ -69,6 +69,7 @@ const TaskHome = require('./TaskHome');
 const TaskView = require('./TaskView');
 const UploadHome = require('./UploadHome');
 const UserView = require('./UserView');
+const WalletHome = require('./WalletHome.js');
 const Changelog = require('./Changelog');
 const Room = require('./Room');
 const Settings = require('./Settings');
@@ -159,15 +160,6 @@ class Dashboard extends React.Component {
       this.props.syncRedisQueue();
     }
   }
-
-  // componentDidUpdate(prevProps) {
-  //   const {help} = this.props;
-  //   if (prevProps.help != help) {
-  //     if(help.conversation && help.conversations.length > 0){
-
-  //     }
-  //   }
-  // }
 
   componentDidUpdate (prevProps) {
     const { help } = this.props;
@@ -472,8 +464,8 @@ class Dashboard extends React.Component {
   render () {
     // const {location, params, navigate} = this.props;
     const USER_IS_ADMIN = this.props.auth && this.props.auth.isAdmin || false;
-    const USER_IS_ALPHA = this.props.auth && this.props.auth.isAlpha || false;
-    const USER_IS_BETA = this.props.auth && this.props.auth.isBeta || false;
+    const USER_IS_ALPHA = this.props.auth && this.props.auth.isAlpha || this.props.auth.isAdmin || false;
+    const USER_IS_BETA = this.props.auth && this.props.auth.isBeta || this.props.auth.isAdmin || false;
 
     // const USER_IS_ADMIN = true;
     // const USER_IS_ALPHA = true;
@@ -523,7 +515,7 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && USER_IS_ADMIN && (
+              {ENABLE_TASKS && USER_IS_ALPHA && (
                 <Menu.Item as={Link} to='/tasks' onClick={this.closeSidebars}>
                   <Icon name='tasks' size='large'/>
                   <p className='icon-label'>Tasks</p>
@@ -538,7 +530,7 @@ class Dashboard extends React.Component {
                   {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
                 </div>
               </Menu.Item>
-              {ENABLE_DOCUMENTS && (
+              {ENABLE_DOCUMENTS && (USER_IS_ALPHA || USER_IS_ADMIN) && (
                 <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
                   <Icon name='book' size='large'/>
                   <p className='icon-label'>Library</p>
@@ -554,6 +546,12 @@ class Dashboard extends React.Component {
                 <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
                   <p className='icon-label'>Sources</p>
+                </Menu.Item>
+              )}
+              {ENABLE_WALLET && USER_IS_ADMIN && (
+                <Menu.Item as={Link} to='/keys' onClick={this.closeSidebars}>
+                  <Icon name='bitcoin' size='large' />
+                  <p className='icon-label'>Wallet</p>
                 </Menu.Item>
               )}
             </div>
@@ -676,7 +674,7 @@ class Dashboard extends React.Component {
                 <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
-                <Route path="/conversations" element={<Conversations conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path="/conversations" element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path="/sources" element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} {...this.props} />} />
                 <Route path="/tasks" element={<TaskHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
                 <Route path="/tasks/:id" element={<TaskView task={this.props.task} />} />
@@ -696,6 +694,7 @@ class Dashboard extends React.Component {
                 {/* END TODO */}
                 <Route path="/settings/admin" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
                 <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
+                <Route path="/keys" element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
                 <Route path="/peers" element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
                 <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />

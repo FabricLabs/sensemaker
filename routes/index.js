@@ -74,6 +74,10 @@ module.exports = {
     declineInvitation: require('./invitations/decline_invitation'),
     deleteInvitation: require('./invitations/delete_invitation')
   },
+  keys: {
+    list: require('./keys/list_keys'),
+    create: require('./keys/create_key')
+  },
   messages: {
     list: require('./messages/list_messages'),
     create: require('./messages/create_message'),
