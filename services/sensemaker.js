@@ -686,7 +686,7 @@ class Sensemaker extends Hub {
       const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: now });
 
       if (request.user_id) {
-        requestor = await this.db('users').select('fabrid_id, as id', 'username', 'created_at').where({ id: request.context.user_id }).first();
+        requestor = await this.db('users').select('fabric_id, as id', 'username', 'created_at').where({ id: request.context.user_id }).first();
         request.username = requestor.username;
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
         const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
