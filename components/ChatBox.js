@@ -45,7 +45,9 @@ class ChatBox extends React.Component {
   constructor(props) {
     super(props);
 
-    this.settings = Object.assign({}, props);
+    this.settings = Object.assign({
+      takeFocus: false
+    }, props);
 
     this.state = {
       query: '',
@@ -65,7 +67,8 @@ class ChatBox extends React.Component {
       editedTitle: '',
       editLoading: false,
       editingTitle: false,
-      startedChatting: false
+      startedChatting: false,
+      takeFocus: this.settings.takeFocus || this.props.takeFocus || false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -73,7 +76,8 @@ class ChatBox extends React.Component {
   }
 
   componentDidMount () {
-    $('#primary-query').focus();
+    if (this.props.takeFocus) $('#primary-query').focus();
+
     //this.props.resetChat();
     if (this.props.conversationID) {
       this.startPolling(this.props.conversationID);
@@ -284,29 +288,19 @@ class ChatBox extends React.Component {
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
 
-    //if we have caseID its beacause we are on a specific case chat
-    if (caseID) {
+    //if we don't have previous chat it means this is a new conversation
+    if (!this.props.previousChat) {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: messageRegen.content,
-        case: caseTitle + '_' + caseID,
         id: messageRegen.id
       }
+      //else, we are in a previous one and we already have a conversationID for this
     } else {
-      //if we don't have previous chat it means this is a new conversation
-      if (!this.props.previousChat) {
-        dataToSubmit = {
-          conversation_id: message?.conversation,
-          content: messageRegen.content,
-          id: messageRegen.id
-        }
-        //else, we are in a previous one and we already have a conversationID for this
-      } else {
-        dataToSubmit = {
-          conversation_id: this.props.conversationID,
-          content: messageRegen.content,
-          id: messageRegen.id
-        }
+      dataToSubmit = {
+        conversation_id: this.props.conversationID,
+        content: messageRegen.content,
+        id: messageRegen.id
       }
     }
 
@@ -722,6 +716,7 @@ class ChatBox extends React.Component {
           {/* The chat messages start rendering here */}
           {(messages && messages.length > 0) ? this.state.groupedMessages.map((group, groupIndex) => {
             let message;
+
             //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
             if (group.messages[0].role === "assistant" && group.messages.length > 1) {
               //this is the active answer the user selected to read
@@ -729,6 +724,7 @@ class ChatBox extends React.Component {
             } else {
               message = group.messages[0];
             }
+
             return (
               <Feed.Event key={message.id} data-message-id={message.id}>
                 <Feed.Content>

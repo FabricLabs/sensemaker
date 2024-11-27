@@ -121,6 +121,7 @@ class Chat extends React.Component {
             messagesEndRef={this.messagesEndRef}
             homePage={true}
             size='large'
+            takeFocus={this.props.takeFocus}
           />
       </fabric-component>
     );

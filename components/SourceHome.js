@@ -6,7 +6,8 @@ const React = require('react');
 // Semantic UI
 const {
   Header,
-  Segment
+  Segment,
+  Table
 } = require('semantic-ui-react');
 
 // Fabric Types
@@ -64,6 +65,28 @@ class SourceHome extends React.Component {
       <Segment className='fade-in' loading={sources?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <Header as='h1'>Sources</Header>
         <p>Remote data sources can be added to improve coverage.</p>
+        <Table>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Source</Table.HeaderCell>
+              <Table.HeaderCell>URL</Table.HeaderCell>
+              <Table.HeaderCell>Actions</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {sources?.current?.map((source, index) => {
+              return (
+                <Table.Row key={index}>
+                  <Table.Cell>{source.name}</Table.Cell>
+                  <Table.Cell>{source.url}</Table.Cell>
+                  <Table.Cell>
+                    <a href={source.url} target='_blank'>View</a>
+                  </Table.Cell>
+                </Table.Row>
+              );
+            })}
+          </Table.Body>
+        </Table>
         <ChatBox {...this.props} context={{ sources: sources?.current }} placeholder='Ask about these sources...' />
       </Segment>
     );

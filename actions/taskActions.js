@@ -69,9 +69,10 @@ const createTask = (task) => {
       const fetchPromise = fetch('/tasks', {
         method: 'POST',
         headers: {
+          'Authorization': (token) ? `Bearer ${token}` : undefined,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({ ...task }),
       });
 
       const timeoutPromise = new Promise((_, reject) => {
@@ -91,7 +92,7 @@ const createTask = (task) => {
       dispatch(createTaskFailure(error));
     }
   };
-}
+};
 
 module.exports = {
   fetchTask,

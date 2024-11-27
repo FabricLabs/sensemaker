@@ -4,23 +4,25 @@ const Actor = require('@fabric/core/types/actor');
 
 module.exports = async function (req, res, next) {
   const now = new Date();
-  const { task } = req.body;
+  const { title, description } = req.body;
 
-  if (!task) {
-    return res.status(400).json({ message: 'Task is required.' });
+  if (!title) {
+    return res.status(400).json({ message: 'Task title is required.' });
   }
+
+  console.debug('request user:', req.user);
 
   const creator = await this.db('users').where('id', req.user.id).first();
   const content = {
     created: now.toISOString(),
-    title: task,
+    title: title,
     creator: creator.fabric_id,
     owner: creator.fabric_id
   };
 
   const actor = new Actor(content);
   const inserted = await this.db('tasks').insert({
-    title: task,
+    title: title,
     fabric_id: actor.id,
     creator: req.user.id,
     owner: req.user.id

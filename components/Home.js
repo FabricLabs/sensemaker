@@ -55,6 +55,7 @@ class Home extends React.Component {
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
           messageInfo={this.props.messageInfo}
+          takeFocus={true}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
           uploadDocument={this.props.uploadDocument}

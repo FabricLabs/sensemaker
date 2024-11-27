@@ -1,0 +1,17 @@
+{
+  "status": "STOPPED",
+  "agents": {},
+  "collections": {
+    "documents": {},
+    "people": {}
+  },
+  "counts": {
+    "documents": 0,
+    "people": 0
+  },
+  "services": {
+    "bitcoin": {
+      "balance": 0
+    }
+  }
+}

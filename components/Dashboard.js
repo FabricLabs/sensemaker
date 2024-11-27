@@ -530,12 +530,6 @@ class Dashboard extends React.Component {
                   {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
                 </div>
               </Menu.Item>
-              {ENABLE_DOCUMENTS && (USER_IS_ALPHA || USER_IS_ADMIN) && (
-                <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
-                  <Icon name='book' size='large'/>
-                  <p className='icon-label'>Library</p>
-                </Menu.Item>
-              )}
               {ENABLE_NETWORK && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/peers' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
@@ -552,6 +546,12 @@ class Dashboard extends React.Component {
                 <Menu.Item as={Link} to='/keys' onClick={this.closeSidebars}>
                   <Icon name='bitcoin' size='large' />
                   <p className='icon-label'>Wallet</p>
+                </Menu.Item>
+              )}
+              {ENABLE_DOCUMENTS && (USER_IS_ALPHA || USER_IS_ADMIN) && (
+                <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
+                  <Icon name='book' size='large'/>
+                  <p className='icon-label'>Library</p>
                 </Menu.Item>
               )}
             </div>

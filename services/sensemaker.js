@@ -656,6 +656,7 @@ class Sensemaker extends Hub {
       const now = new Date();
       const created = now.toISOString();
       let conversation = null;
+      let requestor = null;
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
@@ -682,22 +683,32 @@ class Sensemaker extends Hub {
       const responseID = localMessageIDs[0];
       const responseName = `sensemaker/messages/${responseID}`;
       const responseObject = new Actor({ name: responseName });
+      const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: now });
+
+      if (request.user_id) {
+        requestor = await this.db('users').select('fabrid_id, as id', 'username', 'created_at').where({ id: request.context.user_id }).first();
+        request.username = requestor.username;
+        const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
+        const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
+        priorConversations = recentConversations;
+        if (conversationStats.total > 20) {
+          priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
+        }
+      }
 
       if (request.context) {
         // Recent Conversations
-        if (request.context.user_id) {
-          const requestor = await this.db('users').select('username').where({ id: request.context.user_id }).first();
-          request.username = requestor.username;
-          const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
-          const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
-          priorConversations = recentConversations;
-          if (conversationStats.total > 20) {
-            priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
-          }
-        }
 
         const localContext = { ...request.context, created: created, owner: this.id };
         const contextCall = new Actor(localContext);
+
+        messages.unshift({
+          role: 'tool',
+          tool_call_id: contextCall.id,
+          name: 'get_current_context',
+          content: `${JSON.stringify(localContext, null, '  ')}\n`
+        })
+
         messages.unshift({
           role: 'assistant',
           tool_calls: [{
@@ -710,13 +721,6 @@ class Sensemaker extends Hub {
           }]
         });
 
-        messages.unshift({
-          role: 'tool',
-          tool_call_id: contextCall.id,
-          name: 'get_current_context',
-          content: `${JSON.stringify(localContext, null, '  ')}\n`
-        })
-
         // Raw Context
         /* messages.unshift({
           role: 'tool',
@@ -725,13 +729,29 @@ class Sensemaker extends Hub {
       }
 
       // User Context
-      messages.unshift({
-        role: 'tool',
-        content: `${JSON.stringify({
-          username: request.username || 'anonymous',
-          history: priorConversations
-        }, null, '  ')}\n`
-      });
+      if (requestor) {
+        const userContext = { user: requestor, created: created, owner: this.id };
+        const userCall = new Actor(userContext);
+
+        messages.unshift({
+          role: 'tool',
+          tool_call_id: userCall.id,
+          name: 'get_user_context',
+          content: `${JSON.stringify(localContext, null, '  ')}\n`
+        });
+
+        messages.unshift({
+          role: 'assistant',
+          tool_calls: [{
+            id: userCall.id,
+            type: 'function',
+            function: {
+              name: 'get_user_context',
+              arguments: JSON.stringify({})
+            }
+          }]
+        });
+      }
 
       // Prompt
       messages.unshift({

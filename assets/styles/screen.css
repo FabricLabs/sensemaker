@@ -1,3 +1,11 @@
+/**
+  * @license
+  * Sensemaker v0.2.0
+  * (c) 2021 Fabric Labs
+  * License: MIT
+  */
+
+/* Core Styles */
 :root {
   --primary-color: #336699;
   --sidebar-black: rgb(27, 28, 29);
@@ -1025,4 +1033,8 @@ fabric-motd {
 #document-editor #section-content {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
   width: '100%';
+}
+
+.splash-page section {
+  margin-bottom: 4em;
 }

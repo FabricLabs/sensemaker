@@ -4,7 +4,6 @@ const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
 module.exports = async function (req, res, next) {
-  console.debug('[SENSEMAKER]', '[HTTP]', 'Handling inbound message:', req.body);
   const now = new Date();
 
   let isNew = false;
@@ -44,6 +43,8 @@ module.exports = async function (req, res, next) {
     const conversation = await this.db('conversations').where({ fabric_id: fabricConversationID }).first();
     if (!conversation) throw new Error(`No such Conversation: ${fabricConversationID}`);
 
+    localConversationID = conversation.id;
+
     // User Message
     const newMessage = await this.db('messages').insert({
       content: content,
@@ -77,7 +78,8 @@ module.exports = async function (req, res, next) {
         user_id: req.user.id,
         username: req.user.username
       },
-      query: content
+      query: content,
+      user_id: req.user.id
     }).catch((exception) => {
       console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
