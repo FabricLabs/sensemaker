@@ -51,8 +51,8 @@ class ChatBox extends React.Component {
 
     this.state = {
       query: '',
-      generatingReponse: false,
-      reGeneratingReponse: false,
+      generatingResponse: false,
+      reGeneratingResponse: false,
       groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       previousFlag: false,
@@ -107,16 +107,16 @@ class ChatBox extends React.Component {
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
-          this.setState({ generatingReponse: false });
-          this.setState({ reGeneratingReponse: false });
+          this.setState({ generatingResponse: false });
+          this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
 
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
-          this.setState({ generatingReponse: true });
+          this.setState({ generatingResponse: true });
 
           // if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
-          //   this.setState({ generatingReponse: true });
+          //   this.setState({ generatingResponse: true });
           // }
         }
       }
@@ -281,7 +281,7 @@ class ChatBox extends React.Component {
     this.stopPolling();
 
     let dataToSubmit;
-    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, startedChatting: true });
+    this.setState({ reGeneratingResponse: true, loading: true, previousFlag: true, startedChatting: true });
 
     const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
@@ -601,8 +601,8 @@ class ChatBox extends React.Component {
 
     const {
       loading,
-      generatingReponse,
-      reGeneratingReponse,
+      generatingResponse,
+      reGeneratingResponse,
       query,
       windowWidth,
       windowHeight,
@@ -751,7 +751,7 @@ class ChatBox extends React.Component {
                           />
                           {/* the regenerate answer button only shows in the last answer */}
                           {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                            message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
+                            message.role === "assistant" && !reGeneratingResponse && !generatingResponse && (
                               <Popup
                                 content="Regenerate this answer"
                                 trigger={
@@ -830,15 +830,15 @@ class ChatBox extends React.Component {
                     )} */}
                   </Feed.Extra>
                   <Feed.Extra text>
-                    {generatingReponse &&
+                    {generatingResponse &&
                       message.id === messages[messages.length - 1].id &&
-                      !reGeneratingReponse && (
+                      !reGeneratingResponse && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
                           {BRAND_NAME} is generating a response...
                         </Header>
                       )}
-                    {reGeneratingReponse &&
+                    {reGeneratingResponse &&
                       group ===
                       this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
                         <Header

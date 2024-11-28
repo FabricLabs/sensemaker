@@ -686,7 +686,7 @@ class Sensemaker extends Hub {
       const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: now });
 
       if (request.user_id) {
-        requestor = await this.db('users').select('fabric_id, as id', 'username', 'created_at').where({ id: request.context.user_id }).first();
+        requestor = await this.db('users').select('username', 'created_at').where({ id: request.context.user_id }).first();
         request.username = requestor.username;
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
         const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
@@ -697,15 +697,13 @@ class Sensemaker extends Hub {
       }
 
       if (request.context) {
-        // Recent Conversations
-
         const localContext = { ...request.context, created: created, owner: this.id };
         const contextCall = new Actor(localContext);
 
         messages.unshift({
           role: 'tool',
           tool_call_id: contextCall.id,
-          name: 'get_current_context',
+          name: 'get_provided_context',
           content: `${JSON.stringify(localContext, null, '  ')}\n`
         })
 
@@ -715,7 +713,7 @@ class Sensemaker extends Hub {
             id: contextCall.id,
             type: 'function',
             function: {
-              name: 'get_current_context',
+              name: 'get_provided_context',
               arguments: JSON.stringify({})
             }
           }]
@@ -737,7 +735,7 @@ class Sensemaker extends Hub {
           role: 'tool',
           tool_call_id: userCall.id,
           name: 'get_user_context',
-          content: `${JSON.stringify(localContext, null, '  ')}\n`
+          content: `${JSON.stringify(userContext, null, '  ')}\n`
         });
 
         messages.unshift({

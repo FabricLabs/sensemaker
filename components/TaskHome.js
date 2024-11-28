@@ -64,10 +64,10 @@ class TaskHome extends React.Component {
     // const { loading } = this.state;
     return (
       <Segment className='fade-in' loading={network?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
-        <Header as='h1'>Task List</Header>
+        <h2>Tasks</h2>
         <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
         <p>To get started, create a task below.</p>
-        <Form fluid onSubmit={this.handleTaskSubmit}>
+        <Form large fluid onSubmit={this.handleTaskSubmit}>
           <Form.Group inline onChange={this.handleTaskInputChange} loading={this.state.loading}>
             <Form.Field>
               <label>Task</label>

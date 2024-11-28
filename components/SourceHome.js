@@ -63,7 +63,7 @@ class SourceHome extends React.Component {
     const { sources } = this.props;
     return (
       <Segment className='fade-in' loading={sources?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
-        <Header as='h1'>Sources</Header>
+        <h2>Sources</h2>
         <p>Remote data sources can be added to improve coverage.</p>
         <Table>
           <Table.Header>
