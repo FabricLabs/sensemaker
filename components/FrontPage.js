@@ -39,26 +39,18 @@ class FrontPage extends React.Component {
 
   render () {
     return (
-      <sensemaker-front-page class='splash-page'>
-        <HeaderBar showBrand={false} showButtons={true} />
+      <sensemaker-front-page class='splash-page fade-in'>
+        <HeaderBar showBrand={false} showButtons={false} />
         <section>
           <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
           <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <Button as={Link} to='/sessions' color='black' size='huge' labelPosition='right' icon>Get Started <Icon name='right chevron' /></Button>
+          <p style={{ fontSize: '1.2em', marginBottom: '2em' }}>{PITCH_CTA_TEXT}</p>
+          <Button.Group floated='right' size='huge'>
+            <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
+            <Button.Or />
+            <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button>
+          </Button.Group>
         </section>
-        <secton>
-          <Header as='h2'>Local Intelligence</Header>
-          <p>Keep your data local, manage your costs, and ensure reliability with Sensemaker's offline-first design.</p>
-        </secton>
-        <secton>
-          <Header as='h2'>Network Analysis</Header>
-          <p>Consume data streams from a variety of sources, including a robust peer-to-peer network of other users.</p>
-        </secton>
-        <secton>
-          <Header as='h2'>Earn for Insights</Header>
-          <p>Get rewarded for valuable contributions to the network.</p>
-        </secton>
       </sensemaker-front-page>
     );
   }

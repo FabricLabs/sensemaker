@@ -1035,6 +1035,10 @@ fabric-motd {
   width: '100%';
 }
 
+.splash-page .buttons {
+  margin-top: 2em;
+}
+
 .splash-page section {
   margin-bottom: 4em;
 }
