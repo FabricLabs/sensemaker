@@ -1,6 +1,6 @@
 const sinon = require('sinon');
 const { expect } = require('chai');
-const handler = require('../routes/conversations/get_conversations'); 
+const handler = require('../routes/conversations/list_conversations');
 
 describe('Get Messages', () => {
   let req, res, next, dbStub;

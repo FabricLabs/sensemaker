@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 const sinon = require('sinon');
-const handler = require('../routes/messages/get_messages');
+const handler = require('../routes/messages/list_messages');
 
 describe('Get Messages Tests', () => {
   let req, res, next, dbStub;
