@@ -51,6 +51,14 @@ class FrontPage extends React.Component {
           <Header as='h2'>Local Intelligence</Header>
           <p>Keep your data local, manage your costs, and ensure reliability with Sensemaker's offline-first design.</p>
         </secton>
+        <secton>
+          <Header as='h2'>Network Analysis</Header>
+          <p>Consume data streams from a variety of sources, including a robust peer-to-peer network of other users.</p>
+        </secton>
+        <secton>
+          <Header as='h2'>Earn for Insights</Header>
+          <p>Get rewarded for valuable contributions to the network.</p>
+        </secton>
       </sensemaker-front-page>
     );
   }

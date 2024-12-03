@@ -81,6 +81,7 @@ module.exports = {
   messages: {
     list: require('./messages/list_messages'),
     create: require('./messages/create_message'),
+    createCompletion: require('./messages/create_completion'),
     getMessages: require('./messages/list_messages'),
     regenerate: require('./messages/regenerate_message'),
   },

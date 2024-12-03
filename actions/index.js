@@ -56,6 +56,7 @@ const {
 const {
   resetChat,
   submitMessage,
+  fetchResponse,
   regenAnswer,
   getMessages,
   getMessageInformation,
@@ -194,6 +195,7 @@ module.exports = {
   deleteInvitation: deleteInvitation,
   fetchPeople: fetchPeople,
   fetchPerson: fetchPerson,
+  fetchResponse: fetchResponse,
   fetchTask: fetchTask,
   fetchTasks: fetchTasks,
   fetchUploads,

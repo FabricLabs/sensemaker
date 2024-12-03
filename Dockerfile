@@ -1,4 +1,4 @@
-FROM node:18.19.0-bookworm
+FROM node:18.19.1-bookworm
 
 # Environment
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true

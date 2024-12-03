@@ -555,6 +555,27 @@ class Sensemaker extends Hub {
     return true;
   }
 
+  async generateBlock () {
+    return new Promise(async (resolve, reject) => {
+      // Sync Health First
+      const health = await this.checkHealth();
+      /* this.worker.addJob({ type: 'DownloadMissingDocument', params: [] }); */
+      if (this.settings.embeddings.enable) {
+        /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
+          console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
+        }); */
+      }
+
+      const commit = this.commit();
+      const object = {
+        commit: commit
+      };
+
+      const block = new Actor(object);
+      resolve(block);
+    });
+  }
+
   async tick () {
     const now = (new Date()).toISOString();
     this._lastTick = JSON.parse(JSON.stringify(this.clock || 0));
@@ -1332,9 +1353,6 @@ class Sensemaker extends Hub {
       }
     }
 
-    // Debug Services
-    // await this.rag.start();
-
     // AI Services
     // await this.rag.start();
     // await this.openai.start();
@@ -1365,18 +1383,7 @@ class Sensemaker extends Hub {
       }, this.settings.crawlDelay);
     }
 
-    this._slowcrawler = setInterval(async () => {
-      // Sync Health First
-      // const health = await this.checkHealth();
-      // console.debug('[SENSEMAKER:CORE]', 'Health:', health);
-
-      /* this.worker.addJob({ type: 'DownloadMissingDocument', params: [] }); */
-      if (this.settings.embeddings.enable) {
-        /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
-          console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
-        }); */
-      }
-    }, SNAPSHOT_INTERVAL); // 10 minutes
+    this._slowcrawler = setInterval(this.generateBlock.bind(this), SNAPSHOT_INTERVAL); // 10 minutes
 
     // Add Defined Routes
     this._addAllRoutes();
@@ -1398,7 +1405,7 @@ class Sensemaker extends Hub {
     });
 
     // API
-    this.http._addRoute('POST', '/v1/chat/completions', this._handleChatCompletionRequest.bind(this));
+    this.http._addRoute('POST', '/v1/chat/completions', ROUTES.messages.createCompletion.bind(this));
 
     // Search
     // TODO: test each search endpoint
@@ -1462,6 +1469,8 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
     this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
+    this.http._addRoute('GET', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
+    this.http._addRoute('POST', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
@@ -1694,48 +1703,6 @@ class Sensemaker extends Hub {
       const worker = new Worker();
       this.workers.push(worker);
     }
-  }
-
-  async _handleChatCompletionRequest (req, res, next) {
-    const request = req.body;
-    console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion request:', request);
-    const network = Object.keys(this.agents).map((agent) => {
-      console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Sending request to agent:', agent, this.agents[agent]);
-      return this.agents[agent].query(request);
-    });
-
-    Promise.race(network).catch((error) => {
-      console.error('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Error:', error);
-      res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
-    }).then((results) => {
-      console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion results:', results);
-      const object = {
-        object: 'chat.completion',
-        created: Date.now() / 1000,
-        model: request.model || 'sensemaker',
-        system_fingerprint: 'net_sensemaker',
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: 'assistant',
-              content: results.content
-            },
-            finish_reason: 'stop'
-          }
-        ],
-        usage: {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0
-        }
-      }
-
-      const actor = new Actor(object);
-      const output = merge({}, object, { id: actor.id });
-
-      res.json(output);
-    });
   }
 
   async _handleFeedbackRequest (req, res, next) {

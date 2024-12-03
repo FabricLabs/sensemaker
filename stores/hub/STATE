@@ -13,5 +13,7 @@
     "bitcoin": {
       "balance": 0
     }
-  }
+  },
+  "players": {},
+  "vehicles": {}
 }
