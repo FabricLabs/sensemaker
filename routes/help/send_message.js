@@ -3,7 +3,6 @@
 const Message = require('@fabric/core/types/message');
 const Token = require('@fabric/core/types/token'); // fabric tokens
 
-
 module.exports = async function (req, res) {
 
   try {

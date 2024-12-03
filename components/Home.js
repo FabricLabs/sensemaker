@@ -2,17 +2,24 @@
 
 // Dependencies
 const React = require('react');
-const { useLocation } = require('react-router-dom');
+const { Link, useLocation } = require('react-router-dom');
 
 const {
+  Button,
   Card,
   Header,
   Segment
 } = require('semantic-ui-react');
 
+const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
 
 class Home extends React.Component {
+  componentDidMount () {
+    // Retrieve Conversations
+    this.props.fetchConversations();
+  }
+
   componentDidUpdate (prevProps) {
     if (this.props.location?.key !== prevProps.location?.key) {
       // console.debug('[!!!]', 'location changed:', this.props.location, '!==', prevProps.location);
@@ -27,6 +34,7 @@ class Home extends React.Component {
   }
 
   render () {
+    const { conversations } = this.props;
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
         <Segment fluid>
@@ -47,9 +55,37 @@ class Home extends React.Component {
           getMessageInformation={this.props.getMessageInformation}
           resetInformationSidebar={this.props.resetInformationSidebar}
           messageInfo={this.props.messageInfo}
+          takeFocus={true}
           thumbsUp={this.props.thumbsUp}
           thumbsDown={this.props.thumbsDown}
+          uploadDocument={this.props.uploadDocument}
+          uploadFile={this.props.uploadFile}
         />
+        {(conversations && conversations.length) ? (
+          <Segment fluid>
+            <h3>Recently</h3>
+            <Card.Group fluid>
+              {conversations.slice(0, 2).map((conversation, index) => (
+                <Card as={Link} to={'/conversations/' + conversation.slug}>
+                  <Card.Content>
+                    <Card.Header>{conversation.title}</Card.Header>
+                    <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversation.summary}</Card.Description>
+                  </Card.Content>
+                  <Button.Group attached='bottom'>
+                    <Button as={Link} to={'/conversations/' + conversation.slug}>Resume &raquo;</Button>
+                  </Button.Group>
+                </Card>
+              ))}
+              <Card as={Link} to='/conversations'>
+                <Card.Content>
+                  <Card.Header>Explore History &raquo;</Card.Header>
+                  <Card.Description></Card.Description>
+                </Card.Content>
+              </Card>
+            </Card.Group>
+          </Segment>
+        ) : null}
+        <Clock style={{ position: 'fixed', bottom: '1em', right: '1em' }} />
       </sensemaker-home>
     );
   }

@@ -206,9 +206,11 @@ class SensemakerUI extends React.Component {
                   auth={this.props.auth}
                   onLogoutSuccess={this.handleLogout}
                   onMessageSuccess={this.handleMessageSuccess}
+                  createTask={this.props.createTask}
                   fetchContract={this.props.fetchContract}
                   fetchConversation={this.props.fetchConversation}
                   fetchConversations={this.props.fetchConversations}
+                  fetchTasks={this.props.fetchTasks}
                   fetchAdminStats={this.props.fetchAdminStats}
                   handleConversationSubmit={this.handleConversationSubmit}
                   register={this.props.register}
@@ -218,6 +220,8 @@ class SensemakerUI extends React.Component {
                   conversations={this.props.conversations}
                   conversation={this.props.conversation}
                   chat={this.props.chat}
+                  uploadDocument={this.props.uploadDocument}
+                  uploadFile={this.props.uploadFile}
                   isAdmin={this.props.auth && this.props.auth.isAdmin}
                   isCompliant={this.props.auth && this.props.auth.isCompliant}
                   {...this.props}
@@ -234,8 +238,7 @@ class SensemakerUI extends React.Component {
                       <Header as='h4'>Are you sure you want to log out?</Header>
                     ) : (
                       <Header as='h5' className='center aligned'>You have been logged out.<br /><br />Returning to the home page...</Header>
-                    )
-                    }
+                    )}
                   </Modal.Description>
                 </Modal.Content>
                 <Modal.Actions>

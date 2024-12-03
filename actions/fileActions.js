@@ -20,8 +20,6 @@ const UPLOAD_FILE_REQUEST = 'UPLOAD_FILE_REQUEST';
 const UPLOAD_FILE_SUCCESS = 'UPLOAD_FILE_SUCCESS';
 const UPLOAD_FILE_FAILURE = 'UPLOAD_FILE_FAILURE';
 
-
-
 // Action creators
 const fetchFilesRequest = () => ({ type: FETCH_FILES_REQUEST, loading: true });
 const fetchFilesSuccess = (files) => ({ type: FETCH_FILES_SUCCESS, payload: files, loading: false });

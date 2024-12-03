@@ -11,6 +11,10 @@ const GET_MESSAGES_REQUEST = 'GET_MESSAGES_REQUEST';
 const GET_MESSAGES_SUCCESS = 'GET_MESSAGES_SUCCESS';
 const GET_MESSAGES_FAILURE = 'GET_MESSAGES_FAILURE';
 
+const FETCH_RESPONSE_REQUEST = 'FETCH_RESPONSE_REQUEST';
+const FETCH_RESPONSE_SUCCESS = 'FETCH_RESPONSE_SUCCESS';
+const FETCH_RESPONSE_FAILURE = 'FETCH_RESPONSE_FAILURE';
+
 const GET_INFORMATION_REQUEST = 'GET_INFORMATION_REQUEST';
 const GET_INFORMATION_SUCCESS = 'GET_INFORMATION_SUCCESS';
 const GET_INFORMATION_FAILURE = 'GET_INFORMATION_FAILURE';
@@ -43,11 +47,9 @@ const resetChat = (message) => {
 const submitMessage = (message, collection_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
-
     const token = getState().auth.token;
 
     try {
-
       let requestBody = { ...message };
       if (file_fabric_id !== null) {
         requestBody.file_fabric_id = file_fabric_id;
@@ -75,10 +77,38 @@ const submitMessage = (message, collection_id = null, file_fabric_id = null) => 
   };
 };
 
+const fetchResponse = (message) => {
+  return async (dispatch, getState) => {
+    dispatch(messageRequest());
+    const token = getState().auth.token;
+
+    try {
+      let requestBody = { ...message };
+      const response = await fetch('/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      dispatch(messageSuccess(result));
+    } catch (error) {
+      dispatch(messageFailure(error.message));
+    }
+  };
+};
+
 const regenAnswer = (message, collection_id = null, file_fabric_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
-
     const token = getState().auth.token;
 
     message.temperature = 'extreme';
@@ -178,6 +208,7 @@ const getMessageInformation = (request) => {
 module.exports = {
   resetChat,
   submitMessage,
+  fetchResponse,
   getMessages,
   regenAnswer,
   getMessageInformation,
@@ -187,6 +218,9 @@ module.exports = {
   GET_MESSAGES_REQUEST,
   GET_MESSAGES_SUCCESS,
   GET_MESSAGES_FAILURE,
+  FETCH_RESPONSE_REQUEST,
+  FETCH_RESPONSE_SUCCESS,
+  FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS
 };

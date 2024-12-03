@@ -24,6 +24,11 @@ Settings can be configured locally through `settings/local.js` — care should b
 ## Overview
 The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side.  The client is transpiled using Webpack, and delivered as a complete bundle to the `assets/` directory.  This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port `3045` by default).
 
+### Build Process
+Running `npm start` will compile the UI using `scripts/build.js` to the `assets/` directory.  You can serve this directory from any standard web server, but you will need to route HTTP requests with the `Accept: application/json` header to the backend server (port 3045) in addition to WebSockets if you want real-time functionality.
+
+You can run the node without compiling the UI using `scripts/node.js` — this can aide in accelerating server-side development.
+
 ### Breakdown
 - Coordinator — `scripts/node.js` the Node.js master process, managing:
   - Sensemaker — `services/sensemaker.js` implements Fabric Service
@@ -53,8 +58,8 @@ LangChain is available through `services/trainer.js` which also handles all gene
 - Ollama is used to provide a standard API for interfacing with LLMs
 - Fabric is used for connectivity between instances
 
-## Python Environment
-Run `source .env/bin/activate` to enter the Python environment.  See also `requirements.txt` for dependencies.
+## Design & CSS
+We use a custom Semantic UI theme, located in `libraries/semantic` — you can modify the theme and recompile the CSS styles using the `npm run build:semantic` command.
 
 ## Tips
 - You can use `scripts/node.js` to quickly run the service without building: `node scripts/node.js`

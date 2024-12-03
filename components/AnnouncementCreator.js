@@ -40,13 +40,13 @@ class AnnouncementCreator extends React.Component {
     };
 
   }
-  componentDidMount () {    
+  componentDidMount () {
     window.addEventListener('resize', this.handleResize);
   }
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     // If a new login request has been initiated or an error has occurred, stop loading
     if ((this.props.error === null && prevProps.error !== null) || (this.props.error && prevProps.error !== this.props.error)) {
       this.setState({ loading: false });
@@ -96,8 +96,7 @@ class AnnouncementCreator extends React.Component {
       this.setState({ expirationDate: dateString });
     }
   }
-  
-  
+
   handleModalClose = () => {
     this.setState({
       modalOpen: false,
@@ -251,7 +250,7 @@ class AnnouncementCreator extends React.Component {
     )
   }
 
-  render() {
+  render () {
     const {
       title,
       body,

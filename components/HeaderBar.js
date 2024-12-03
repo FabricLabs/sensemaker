@@ -52,7 +52,7 @@ class HeaderBar extends React.Component {
           <Button.Group floated='right'>
             <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
             <Button.Or />
-            <Button as={Link} to='/inquiries' primary>Apply &raquo;</Button>
+            <Button as={Link} to='/inquiries' color='black'>Apply &raquo;</Button>
           </Button.Group>
         )}
         <br style={{ clear: 'both' }} />

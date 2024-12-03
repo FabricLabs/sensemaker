@@ -18,9 +18,11 @@ const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
 const personReducer = require('../reducers/personReducer');
 const searchReducer = require('../reducers/searchReducer');
+const tasksReducer = require('../reducers/tasksReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
 const helpReducer = require('../reducers/helpReducer');
 const redisReducer = require('../reducers/redisReducer');
+const walletReducer = require('../reducers/walletReducer');
 
 // Root
 const rootReducer = combineReducers({
@@ -40,7 +42,9 @@ const rootReducer = combineReducers({
   feedback: feedbackReducer,
   help: helpReducer,
   redis: redisReducer,
-  users: accountsReducer
+  tasks: tasksReducer,
+  users: accountsReducer,
+  wallet: walletReducer
 });
 
 module.exports = createStore(rootReducer, applyMiddleware(thunkMiddleware));

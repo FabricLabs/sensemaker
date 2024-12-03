@@ -66,10 +66,6 @@ class AdminOverviewTab extends React.Component {
       <adminOverviewTab>
         <Header as='h4'>Metrics</Header>
         <Statistic>
-          <Statistic.Value>???</Statistic.Value>
-          <Statistic.Label><abbr title="0 of 0 comments were positive">Accuracy</abbr></Statistic.Label>
-        </Statistic>
-        <Statistic>
           <Statistic.Value>{usersTotal}</Statistic.Value>
           <Statistic.Label>Users</Statistic.Label>
         </Statistic>

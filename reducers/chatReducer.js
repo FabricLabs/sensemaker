@@ -8,6 +8,9 @@ const {
   GET_MESSAGES_REQUEST,
   GET_MESSAGES_SUCCESS,
   GET_MESSAGES_FAILURE,
+  FETCH_RESPONSE_REQUEST,
+  FETCH_RESPONSE_SUCCESS,
+  FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS
 } = require('../actions/chatActions');
@@ -51,6 +54,23 @@ function chatReducer (state = initialState, action) {
         messages: action.payload.messages,
         isSending: false,
         loading: false
+      };
+    case FETCH_RESPONSE_REQUEST:
+      return {
+        ...state,
+        isSending: true
+      };
+    case FETCH_RESPONSE_SUCCESS:
+      return {
+        ...state,
+        isSending: false,
+        response: action.payload
+      };
+    case FETCH_RESPONSE_FAILURE:
+      return {
+        ...state,
+        error: action.payload,
+        isSending: false
       };
     case RESET_CHAT_STATE:
     case RESET_CHAT_SUCCESS:

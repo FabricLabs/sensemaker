@@ -45,12 +45,14 @@ class ChatBox extends React.Component {
   constructor(props) {
     super(props);
 
-    this.settings = Object.assign({}, props);
+    this.settings = Object.assign({
+      takeFocus: false
+    }, props);
 
     this.state = {
       query: '',
-      generatingReponse: false,
-      reGeneratingReponse: false,
+      generatingResponse: false,
+      reGeneratingResponse: false,
       groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
       currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       previousFlag: false,
@@ -66,7 +68,7 @@ class ChatBox extends React.Component {
       editLoading: false,
       editingTitle: false,
       startedChatting: false,
-
+      takeFocus: this.settings.takeFocus || this.props.takeFocus || false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -74,7 +76,8 @@ class ChatBox extends React.Component {
   }
 
   componentDidMount () {
-    $('#primary-query').focus();
+    if (this.props.takeFocus) $('#primary-query').focus();
+
     //this.props.resetChat();
     if (this.props.conversationID) {
       this.startPolling(this.props.conversationID);
@@ -104,16 +107,16 @@ class ChatBox extends React.Component {
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
-          this.setState({ generatingReponse: false });
-          this.setState({ reGeneratingReponse: false });
+          this.setState({ generatingResponse: false });
+          this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
 
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
-          this.setState({ generatingReponse: true });
+          this.setState({ generatingResponse: true });
 
           // if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
-          //   this.setState({ generatingReponse: true });
+          //   this.setState({ generatingResponse: true });
           // }
         }
       }
@@ -278,36 +281,26 @@ class ChatBox extends React.Component {
     this.stopPolling();
 
     let dataToSubmit;
-    this.setState({ reGeneratingReponse: true, loading: true, previousFlag: true, startedChatting: true });
+    this.setState({ reGeneratingResponse: true, loading: true, previousFlag: true, startedChatting: true });
 
     const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
 
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
 
-    //if we have caseID its beacause we are on a specific case chat
-    if (caseID) {
+    //if we don't have previous chat it means this is a new conversation
+    if (!this.props.previousChat) {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: messageRegen.content,
-        case: caseTitle + '_' + caseID,
         id: messageRegen.id
       }
+      //else, we are in a previous one and we already have a conversationID for this
     } else {
-      //if we don't have previous chat it means this is a new conversation
-      if (!this.props.previousChat) {
-        dataToSubmit = {
-          conversation_id: message?.conversation,
-          content: messageRegen.content,
-          id: messageRegen.id
-        }
-        //else, we are in a previous one and we already have a conversationID for this
-      } else {
-        dataToSubmit = {
-          conversation_id: this.props.conversationID,
-          content: messageRegen.content,
-          id: messageRegen.id
-        }
+      dataToSubmit = {
+        conversation_id: this.props.conversationID,
+        content: messageRegen.content,
+        id: messageRegen.id
       }
     }
 
@@ -539,7 +532,7 @@ class ChatBox extends React.Component {
 
   handleAttachmentIntent = (value) => {
     console.debug('attaching file:', value);
-    this.setState({ attachingFile: true });
+    this.setState({ attachingFile: true, loading: true });
     document.querySelector('#input-control-form input[type="file"]').click();
   };
 
@@ -555,8 +548,9 @@ class ChatBox extends React.Component {
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
       if (this.isValidFileType(file.type)) {
-        console.debug('File:', file.name, file.size, file.type); // Debugging log
+        console.debug('File selected:', file.name, file.size, file.type); // Debugging log
         this.setState({ file: file, formatError: false, attachmentExists: true });
+        this.handleUpload();
       } else {
         this.setState({ formatError: true, file: null });
       }
@@ -586,7 +580,15 @@ class ChatBox extends React.Component {
       uploadSuccess: false,
     });
 
-    await this.props.uploadFile(this.state.file);
+    console.debug('Uploading:', this.state.file);
+
+    try {
+      await this.props.uploadDocument(this.state.file);
+    } catch (exception) {
+      console.debug('Upload error:', exception);
+    }
+
+    console.debug('Upload complete:', this.props.uploadedDocument);
   }
 
   isValidFileType (fileType) {
@@ -599,8 +601,8 @@ class ChatBox extends React.Component {
 
     const {
       loading,
-      generatingReponse,
-      reGeneratingReponse,
+      generatingResponse,
+      reGeneratingResponse,
       query,
       windowWidth,
       windowHeight,
@@ -714,6 +716,7 @@ class ChatBox extends React.Component {
           {/* The chat messages start rendering here */}
           {(messages && messages.length > 0) ? this.state.groupedMessages.map((group, groupIndex) => {
             let message;
+
             //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
             if (group.messages[0].role === "assistant" && group.messages.length > 1) {
               //this is the active answer the user selected to read
@@ -721,6 +724,7 @@ class ChatBox extends React.Component {
             } else {
               message = group.messages[0];
             }
+
             return (
               <Feed.Event key={message.id} data-message-id={message.id}>
                 <Feed.Content>
@@ -747,7 +751,7 @@ class ChatBox extends React.Component {
                           />
                           {/* the regenerate answer button only shows in the last answer */}
                           {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                            message.role === "assistant" && !reGeneratingReponse && !generatingReponse && (
+                            message.role === "assistant" && !reGeneratingResponse && !generatingResponse && (
                               <Popup
                                 content="Regenerate this answer"
                                 trigger={
@@ -826,15 +830,15 @@ class ChatBox extends React.Component {
                     )} */}
                   </Feed.Extra>
                   <Feed.Extra text>
-                    {generatingReponse &&
+                    {generatingResponse &&
                       message.id === messages[messages.length - 1].id &&
-                      !reGeneratingReponse && (
+                      !reGeneratingResponse && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
                           {BRAND_NAME} is generating a response...
                         </Header>
                       )}
-                    {reGeneratingReponse &&
+                    {reGeneratingResponse &&
                       group ===
                       this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
                         <Header
@@ -891,7 +895,7 @@ class ChatBox extends React.Component {
           loading={loading}>
           <Form.Input>
             {this.props.includeAttachments && (
-              <Button size="huge" left attached icon onClick={this.handleAttachmentIntent}>
+              <Button size="huge" left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
                 <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
                 <Icon name='paperclip' color='grey' style={{ color: this.state.isTextareaFocused ? 'grey' : 'grey', cursor: 'pointer' }} />
               </Button>

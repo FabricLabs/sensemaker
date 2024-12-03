@@ -33,17 +33,23 @@ class FrontPage extends React.Component {
       loading: false,
       joined: false
     };
+
+    return this;
   }
 
   render () {
     return (
-      <sensemaker-front-page>
-        <HeaderBar showBrand={false} showButtons={true} />
+      <sensemaker-front-page class='splash-page fade-in'>
+        <HeaderBar showBrand={false} showButtons={false} />
         <section>
           <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
           <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.2em', marginBottom: '1em' }}>{PITCH_CTA_TEXT}</p>
-          <Button as={Link} to='/sessions' primary size='huge' labelPosition='right' icon>Get Started <Icon name='right chevron' /></Button>
+          <p style={{ fontSize: '1.2em', marginBottom: '2em' }}>{PITCH_CTA_TEXT}</p>
+          <Button.Group floated='right' size='huge'>
+            <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
+            <Button.Or />
+            <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button>
+          </Button.Group>
         </section>
       </sensemaker-front-page>
     );

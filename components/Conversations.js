@@ -112,7 +112,7 @@ class Conversations extends React.Component {
   };
 
   render () {
-    const { loading, error, conversations } = this.props;
+    const { loading, error, conversations, users } = this.props;
     const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
 
     if (loading) {
@@ -161,6 +161,15 @@ class Conversations extends React.Component {
                 <Card.Description></Card.Description>
               </Card.Content>
             </Card>
+            {users && users.users.slice(0, 2).map(user => {
+              <Card key={user.id} as={Link} to={`/users/${user.username}`}>
+                <Card.Content>
+                  <Card.Header>{user.username}</Card.Header>
+                  <Card.Meta>Joined in {new Date(user.created_at).getFullYear()}</Card.Meta>
+                  <Card.Description></Card.Description>
+                </Card.Content>
+              </Card>
+            })}
           </Card.Group>
         </div>
         <Divider />
@@ -223,8 +232,8 @@ class Conversations extends React.Component {
                       </Form>
                     ) : (
                       <Card.Header>
-                        <Link to={'/conversations/' + conversation.id} className='ui right floated icon blue button'>Resume <Icon name='right chevron' /></Link>
-                        <Link to={'/conversations/' + conversation.id} as='h4' title={conversation.summary} onClick={() => this.props.resetChat()}>{conversation.title}</Link>
+                        <Link to={'/conversations/' + conversation.slug} className='ui right floated icon blue button'>Resume <Icon name='right chevron' /></Link>
+                        <Link to={'/conversations/' + conversation.slug} as='h4' title={conversation.summary} onClick={() => this.props.resetChat()}>{conversation.title}</Link>
                         <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                       </Card.Header>
                     )}

@@ -26,9 +26,10 @@ module.exports = {
     create: require('./announcements/create_announcement')
   },
   conversations: {
-    getConversations: require('./conversations/get_conversations'),
+    list: require('./conversations/list_conversations'),
+    view: require('./conversations/view_conversation'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),
-    getConversationsByID: require('./conversations/get_conversations_by_id')
+    getConversationsByID: require('./conversations/view_conversation')
   },
   documents: {
     create: require('./documents/create_document'),
@@ -60,7 +61,9 @@ module.exports = {
     setMessagesRead: require('./help/set_messages_read')
   },
   inquiries: {
-    delete: require('./inquiries/delete_inquiry')
+    create: require('./inquiries/create_inquiry'),
+    delete: require('./inquiries/delete_inquiry'),
+    list: require('./inquiries/list_inquiries')
   },
   invitations: {
     createInvitations: require('./invitations/create_invitation'),
@@ -71,9 +74,15 @@ module.exports = {
     declineInvitation: require('./invitations/decline_invitation'),
     deleteInvitation: require('./invitations/delete_invitation')
   },
+  keys: {
+    list: require('./keys/list_keys'),
+    create: require('./keys/create_key')
+  },
   messages: {
+    list: require('./messages/list_messages'),
     create: require('./messages/create_message'),
-    getMessages: require('./messages/get_messages'),
+    createCompletion: require('./messages/create_completion'),
+    getMessages: require('./messages/list_messages'),
     regenerate: require('./messages/regenerate_message'),
   },
   people: {
@@ -106,7 +115,9 @@ module.exports = {
     sync: require('./statistics/sync_statistics')
   },
   tasks: {
-    list: require('./tasks/list_tasks')
+    create: require('./tasks/create_task'),
+    list: require('./tasks/list_tasks'),
+    view: require('./tasks/view_task')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')

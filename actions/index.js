@@ -56,6 +56,7 @@ const {
 const {
   resetChat,
   submitMessage,
+  fetchResponse,
   regenAnswer,
   getMessages,
   getMessageInformation,
@@ -117,6 +118,13 @@ const {
   searchGlobal,
 } = require('../actions/searchActions');
 
+// ## Task Actions
+const {
+  createTask,
+  fetchTasks,
+  fetchTask
+} = require('../actions/taskActions');
+
 // ## Feedback Actions
 const {
   sendFeedback,
@@ -140,7 +148,18 @@ const {
   clearQueue,
 } = require('../actions/redisActions');
 
+// ## Wallet Actions
+const {
+  fetchKey,
+  fetchKeys,
+  createKey,
+} = require('../actions/walletActions');
+
+// ## Export
 module.exports = {
+  fetchKey,
+  fetchKeys,
+  createKey,
   fetchContract: fetchContract,
   signContract: signContract,
   fetchConversation: fetchConversation,
@@ -165,6 +184,7 @@ module.exports = {
   fetchInquiries: fetchInquiries,
   deleteInquiry: deleteInquiry,
   createInquiry: createInquiry,
+  createTask: createTask,
   fetchInvitation: fetchInvitation,
   fetchInvitations: fetchInvitations,
   sendInvitation: sendInvitation,
@@ -175,6 +195,9 @@ module.exports = {
   deleteInvitation: deleteInvitation,
   fetchPeople: fetchPeople,
   fetchPerson: fetchPerson,
+  fetchResponse: fetchResponse,
+  fetchTask: fetchTask,
+  fetchTasks: fetchTasks,
   fetchUploads,
   fetchUpload,
   searchUploads,
