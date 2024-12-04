@@ -778,32 +778,36 @@ class Sensemaker extends Hub {
         content: this.settings.prompt
       });
 
-      // Trainer Response
-      this.trainer.query({ query: request.query, messages: messages }).then((trained) => {
-        console.debug('trained response:', trained);
-        // messages.unshift(trained);
-      });
-
-      // Send Query
-      this.sensemaker.query({ query: request.query, messages: messages }).catch((error) => {
-        console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Sensemaker error:', error);
+      Promise.allSettled([
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error('Timeout'));
+          }, request.timeout || USER_QUERY_TIMEOUT_MS);
+        }),
+        this.trainer.query({ query: request.query, messages: messages }),
+        this.sensemaker.query({ query: request.query, messages: messages })
+      ]).catch((error) => {
+        console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
-      }).then(async (response) => {
-        if (!response) return reject(new Error('No response from Sensemaker.'));
-        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
-        // Update database with completed response
-        await this.db('messages').where({ id: responseID }).update({
-          status: 'ready',
-          content: response.content,
-          updated_at: this.db.fn.now()
-        });
+      }).then(async (responses) => {
+        if (!responses) return reject(new Error('No responses from network.'));
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Responses:', responses);
+        const settled = responses.filter((x) => x.status === 'fulfilled');
+        this.sensemaker.query({ query: `---\nnetwork: ${JSON.stringify(settled)}\n---\n${request.query}` }).then(async (summary) => {
+          // Update database with completed response
+          await this.db('messages').where({ id: responseID }).update({
+            status: 'ready',
+            content: summary.content,
+            updated_at: this.db.fn.now()
+          });
 
-        resolve(merge({}, response, {
-          actor: { name: this.name },
-          object: { id: responseObject.id }, // Fabric ID
-          target: { id: `${this.authority}/messages/${responseID}` },
-          message_id: responseID // TODO: deprecate in favor of `object`
-        }));
+          resolve(merge({}, summary, {
+            actor: { name: this.name },
+            object: { id: responseObject.id }, // Fabric ID
+            target: { id: `${this.authority}/messages/${responseID}` },
+            message_id: responseID // TODO: deprecate in favor of `object`
+          }));
+        });
       });
     });
   }
@@ -1439,6 +1443,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
 
     // Products
+    this.http._addRoute('GET', '/features', ROUTES.products.listFeatures.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Documents

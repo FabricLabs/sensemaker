@@ -6,7 +6,7 @@ module.exports = {
     changeUsername: require('./account/change_username'),
     resetPassword: require('./account/reset_password'),
     checkResetToken: require('./account/check_reset_token'),
-    restorePassword: require('./account/restore_password'),
+    restorePassword: require('./account/restore_password')
   },
   admin: {
     overview: require('./admin/overview'),
@@ -83,7 +83,7 @@ module.exports = {
     create: require('./messages/create_message'),
     createCompletion: require('./messages/create_completion'),
     getMessages: require('./messages/list_messages'),
-    regenerate: require('./messages/regenerate_message'),
+    regenerate: require('./messages/regenerate_message')
   },
   people: {
     list: require('./people/get_people'),
@@ -91,6 +91,7 @@ module.exports = {
   },
   products: {
     list: require('./products/list_products'),
+    listFeatures: require('./products/list_features')
   },
   redis: {
     listQueue: require('./redis/list_queue'),

@@ -160,7 +160,6 @@
 }
 
 /* HELP CHAT CSS */
-
 #help-box {
   position: fixed;
   bottom: 80px;
@@ -1014,10 +1013,25 @@ fabric-motd {
   width: '100%';
 }
 
+.brand span.brand {
+  font-size: 1.5em;
+}
+
 .splash-page .buttons {
   margin-top: 2em;
 }
 
-.splash-page section {
+.splash-page section:not(.lead) {
+  font-size: 1.1em;
   margin-bottom: 4em;
+  clear: both;
+}
+
+.ui.video.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
 }
