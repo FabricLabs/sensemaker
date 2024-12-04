@@ -106,9 +106,6 @@ class SensemakerUserSettings extends React.Component {
                         <Label color='blue' pointing='right'><Icon name='discord' /></Label>
                         <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
                       </div>
-                      <div className='ui button' onClick={() => { alert('Not yet implemented!') }}>
-                        <div className='hidden content'>disconnect</div>
-                      </div>
                       <Icon name='remove' />
                     </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
                   </Table.Cell>
