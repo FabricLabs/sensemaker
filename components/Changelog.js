@@ -55,8 +55,8 @@ class Changelog extends React.Component {
         {/* TODO: populate from GitHub releases */}
         <h2>Releases</h2>
         <ul>
-          <li>1.0.0-RC2: Improved support for tasking, simplified UI, reduced attack surface.</li>
-          <li>1.0.0-RC2: Exclusive access!</li>
+          <li>0.2.0-RC2: Improved support for tasking, simplified UI, reduced attack surface.</li>
+          <li>0.2.0-RC1: Exclusive access!</li>
         </ul>
       </div>
     );

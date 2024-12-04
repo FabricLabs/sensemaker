@@ -128,11 +128,11 @@ class Waitlist extends React.Component {
                         {error && <Message error visible content={error} className="fade-in" />}
                         <Form.Field>
                           <p>{BRAND_NAME} is currently closed to the public.</p>
-                          <p style={{ marginBottom: '2em' }}>If you'd like to join the waitlist, enter your email here:</p>
                           <Input required placeholder="Your email address" name="email" value={email} onChange={this.handleChange} type='email' />
                         </Form.Field>
                         <div>
                           <Button fluid color='green' loading={this.state.loading} type="submit" className='right labeled icon'>Join the Waitlist <Icon name='right chevron' /></Button>
+                          <p style={{ marginTop: '1em' }}>Already have an account?  <Link to='/sessions'>Sign In &raquo;</Link></p>
                           <Divider />
                           <Button as={Link} to='/' fluid icon labelPosition='left' size='small' color='black'><Icon name='left chevron' />Return Home</Button>
                         </div>

@@ -89,7 +89,7 @@ class AdminUsers extends React.Component {
   }
 
   renderConfirmResetModal = () => {
-    const { users } = this.props;
+    const { accounts, users } = this.props;
     const { confirmResetOpen, emailReseting } = this.state;
     return (
       <Modal

@@ -100,6 +100,7 @@ class Conversation extends React.Component {
           documentSections={this.state.documentSections}
           documentInfoSidebar={this.props.documentInfoSidebar}
           fetchData={this.fetchData}
+          takeFocus={true}
         />
       </fabric-component>
 

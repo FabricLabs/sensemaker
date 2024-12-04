@@ -144,6 +144,7 @@ const getMessages = (params = {}) => {
     const state = getState();
     const token = state.auth.token;
 
+    // TODO: re-evaluate this... is this safe?
     if (!params.conversation_id) params.conversation_id = state.chat.message.conversation;
 
     try {

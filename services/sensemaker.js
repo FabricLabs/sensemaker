@@ -710,7 +710,7 @@ class Sensemaker extends Hub {
         requestor = await this.db('users').select('username', 'created_at').where({ id: request.context.user_id }).first();
         request.username = requestor.username;
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
-        const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
+        const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
         priorConversations = recentConversations;
         if (conversationStats.total > 20) {
           priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
@@ -792,21 +792,28 @@ class Sensemaker extends Hub {
       }).then(async (responses) => {
         if (!responses) return reject(new Error('No responses from network.'));
         if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Responses:', responses);
-        const settled = responses.filter((x) => x.status === 'fulfilled');
-        this.sensemaker.query({ query: `---\nnetwork: ${JSON.stringify(settled)}\n---\n${request.query}` }).then(async (summary) => {
+        // Final Summary (actual answer)
+        // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
+        // TODO: finalize WebSocket implementation
+        // Filter and process responses
+        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => x.value.content);
+        this.sensemaker.query({ query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\n---\n${request.query}` }).then(async (summary) => {
           // Update database with completed response
-          await this.db('messages').where({ id: responseID }).update({
+          this.db('messages').where({ id: responseID }).update({
             status: 'ready',
             content: summary.content,
             updated_at: this.db.fn.now()
+          }).catch((error) => {
+            console.error('could not update message:', error);
+            reject(error);
+          }).then(() => {
+            resolve(merge({}, summary, {
+              actor: { name: this.name },
+              object: { id: responseObject.id }, // Fabric ID
+              target: { id: `${this.authority}/messages/${responseID}` },
+              message_id: responseID // TODO: deprecate in favor of `object`
+            }));
           });
-
-          resolve(merge({}, summary, {
-            actor: { name: this.name },
-            object: { id: responseObject.id }, // Fabric ID
-            target: { id: `${this.authority}/messages/${responseID}` },
-            message_id: responseID // TODO: deprecate in favor of `object`
-          }));
         });
       });
     });
@@ -2499,7 +2506,8 @@ class Sensemaker extends Hub {
               response.push(file);
               break;
             default:
-              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result.metadata.type);
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result?.metadata?.type);
+              response.push({ content: result.content, metadata: { type: 'unknown', id: null }, object: result });
               break;
           }
         }

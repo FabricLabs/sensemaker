@@ -73,7 +73,10 @@ class SourceHome extends React.Component {
             <Icon name='discord' /> Discord
           </Button>
         </div>
-        <Table>
+        <div>
+          <Button floated='right' onClick={this.props.addPeer} labelPosition='right'>Add Source <Icon name='add' /></Button>
+        </div>
+        <Table style={{ clear: 'both' }}>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Source</Table.HeaderCell>
@@ -97,7 +100,7 @@ class SourceHome extends React.Component {
         </Table>
         <ChatBox {...this.props} context={{ sources: sources?.current }} placeholder='Ask about these sources...' />
         <div>
-          <Button floated='right' onClick={this.props.addPeer}>Add Peer <Icon name='add' /></Button>
+          <Button floated='right' onClick={this.props.addPeer} labelPosition='right'>Add Peer <Icon name='add' /></Button>
           <Header as='h2'>Peers</Header>
         </div>
         <Table>
