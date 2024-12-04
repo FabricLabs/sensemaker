@@ -815,31 +815,10 @@ fabric-motd {
 
 .settings-container {
   margin-top: 2em;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
 }
 
 .settings-container .ui.table {
   width: 40%;
-}
-
-.subscription-container {
-  margin-top: 1em;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 2em;
-}
-
-.subscription-container div {
-  padding-right: 2em;
-  padding-left: 2em;
-
 }
 
 .ui.card.info-file-card {

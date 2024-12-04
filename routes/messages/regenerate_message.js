@@ -7,8 +7,7 @@ module.exports = async function (req, res, next) {
     conversation_id,
     content,
     messageID,
-    regenerate,
-    file_fabric_id,
+    regenerate
   } = req.body;
 
   if (!regenerate) console.warn('[SENSEMAKER:CORE]', '[WARNING]', 'PATCH /messages/:id called without `regenerate` flag.  This is a destructive operation.');

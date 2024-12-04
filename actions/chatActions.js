@@ -44,17 +44,13 @@ const resetChat = (message) => {
   };
 }
 
-const submitMessage = (message, collection_id = null, file_fabric_id = null) => {
+const submitMessage = (message, collection_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
     const token = getState().auth.token;
 
     try {
       let requestBody = { ...message };
-      if (file_fabric_id !== null) {
-        requestBody.file_fabric_id = file_fabric_id;
-      }
-
       const response = await fetch('/messages', {
         method: 'POST',
         headers: {
@@ -106,7 +102,7 @@ const fetchResponse = (message) => {
   };
 };
 
-const regenAnswer = (message, collection_id = null, file_fabric_id = null) => {
+const regenAnswer = (message, collection_id = null) => {
   return async (dispatch, getState) => {
     dispatch(messageRequest());
     const token = getState().auth.token;
@@ -116,10 +112,6 @@ const regenAnswer = (message, collection_id = null, file_fabric_id = null) => {
 
     // Start with the original message
     let requestBody = { ...message };
-    // If file_id is not null, add it to the requestBody
-    if (file_fabric_id !== null) {
-      requestBody.file_fabric_id = file_fabric_id;
-    }
 
     try {
       const response = await fetch(`/messages/${message.id}`, {

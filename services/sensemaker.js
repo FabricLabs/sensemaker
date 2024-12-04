@@ -1168,7 +1168,6 @@ class Sensemaker extends Hub {
 
     // Graph
     await this.graph.start();
-
     await this.graph.addActor({ name: 'sensemaker' });
     await this.graph.addActor({ name: 'terms-of-use' });
     await this.graph.addActor({ name: 'agents' });
@@ -1269,6 +1268,9 @@ class Sensemaker extends Hub {
 
     this.worker.register('ScanRemotes', async (...params) => {
       console.debug('[WORKER]', 'Scanning Remotes:', params);
+      if (this.discord) {
+        this.discord.syncAllChannels();
+      }
     });
 
     // Worker Events
@@ -1376,10 +1378,10 @@ class Sensemaker extends Hub {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        /* this.worker.addJob({
+        this.worker.addJob({
           type: 'ScanRemotes',
           params: []
-        }); */
+        });
       }, this.settings.crawlDelay);
     }
 
@@ -1892,6 +1894,7 @@ class Sensemaker extends Hub {
       }
 
       this.discord.getTokenUser(token.access_token).then(async (response) => {
+        let id = null;
         // Create Identity
         const identity = await this.db('identities').where({ source: 'discord', content: response.id }).first();
         if (!identity) {
