@@ -100,6 +100,13 @@ module.exports = {
   reviews: {
     create: require('./reviews/create_review')
   },
+  services: {
+    rsi: {
+      activities: {
+        create: require('./services/rsi/create_activity')
+      }
+    }
+  },
   sessions: {
     create: require('./sessions/create_session'),
     get: require('./sessions/get_session'),
