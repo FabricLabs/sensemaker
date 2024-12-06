@@ -20,7 +20,6 @@ const {
 } = require('semantic-ui-react');
 
 const { createTask } = require('../actions/taskActions');
-const CreateTaskModal = require('./CreateTaskModal');
 
 class TaskView extends React.Component {
   constructor (settings = {}) {

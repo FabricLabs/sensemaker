@@ -159,6 +159,14 @@ class SensemakerUI extends React.Component {
     dbRequest.onerror = function(event) {
       console.error("IndexedDB error:", event.target.errorCode);
     };
+
+    // Video Background
+    // document.querySelector('.ui.video').video();
+    const graph = document.createElement('script');
+    graph.src = '/scripts/animation.js';
+    document.body.appendChild(graph);
+
+    console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
   }
 
   render () {
@@ -166,9 +174,10 @@ class SensemakerUI extends React.Component {
     const { login, error } = this.props;
 
     return (
-      <sensemaker-interface id={this.id} class="fabric-site">
-        <fabric-container id="react-application">{/* TODO: render string here */}</fabric-container>
-        <fabric-react-component id="sensemaker-application" style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <sensemaker-interface id={this.id} class='fabric-site body'>
+        <canvas id='video-background' className='ui video background' />
+        <fabric-container id='react-application'>{/* TODO: render string here */}</fabric-container>
+        <fabric-react-component id='sensemaker-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
           {(!this.props.auth || this.props.auth.loading) ? (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Loader active inline="centered" size='huge' />

@@ -559,7 +559,11 @@ class Sensemaker extends Hub {
     return new Promise(async (resolve, reject) => {
       // Sync Health First
       const health = await this.checkHealth();
-      /* this.worker.addJob({ type: 'DownloadMissingDocument', params: [] }); */
+      // Jobs
+      // TODO: move to a different method... generateBlock should only snapshot existing state
+      // Scan Remotes
+      this.worker.addJob({ type: 'ScanRemotes', params: [] });
+
       if (this.settings.embeddings.enable) {
         /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
           console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
@@ -710,7 +714,7 @@ class Sensemaker extends Hub {
         requestor = await this.db('users').select('username', 'created_at').where({ id: request.context.user_id }).first();
         request.username = requestor.username;
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
-        const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
+        const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
         priorConversations = recentConversations;
         if (conversationStats.total > 20) {
           priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
@@ -778,32 +782,43 @@ class Sensemaker extends Hub {
         content: this.settings.prompt
       });
 
-      // Trainer Response
-      this.trainer.query({ query: request.query, messages: messages }).then((trained) => {
-        console.debug('trained response:', trained);
-        // messages.unshift(trained);
-      });
-
-      // Send Query
-      this.sensemaker.query({ query: request.query, messages: messages }).catch((error) => {
-        console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Sensemaker error:', error);
+      Promise.allSettled([
+        new Promise((resolve, reject) => {
+          setTimeout(() => {
+            reject(new Error('Timeout'));
+          }, request.timeout || USER_QUERY_TIMEOUT_MS);
+        }),
+        this.trainer.query({ query: request.query, messages: messages }),
+        this.sensemaker.query({ query: request.query, messages: messages })
+      ]).catch((error) => {
+        console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
-      }).then(async (response) => {
-        if (!response) return reject(new Error('No response from Sensemaker.'));
-        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
-        // Update database with completed response
-        await this.db('messages').where({ id: responseID }).update({
-          status: 'ready',
-          content: response.content,
-          updated_at: this.db.fn.now()
+      }).then(async (responses) => {
+        if (!responses) return reject(new Error('No responses from network.'));
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Responses:', responses);
+        // Final Summary (actual answer)
+        // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
+        // TODO: finalize WebSocket implementation
+        // Filter and process responses
+        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => x.value.content);
+        this.sensemaker.query({ query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\n---\n${request.query}` }).then(async (summary) => {
+          // Update database with completed response
+          this.db('messages').where({ id: responseID }).update({
+            status: 'ready',
+            content: summary.content,
+            updated_at: this.db.fn.now()
+          }).catch((error) => {
+            console.error('could not update message:', error);
+            reject(error);
+          }).then(() => {
+            resolve(merge({}, summary, {
+              actor: { name: this.name },
+              object: { id: responseObject.id }, // Fabric ID
+              target: { id: `${this.authority}/messages/${responseID}` },
+              message_id: responseID // TODO: deprecate in favor of `object`
+            }));
+          });
         });
-
-        resolve(merge({}, response, {
-          actor: { name: this.name },
-          object: { id: responseObject.id }, // Fabric ID
-          target: { id: `${this.authority}/messages/${responseID}` },
-          message_id: responseID // TODO: deprecate in favor of `object`
-        }));
       });
     });
   }
@@ -1168,7 +1183,6 @@ class Sensemaker extends Hub {
 
     // Graph
     await this.graph.start();
-
     await this.graph.addActor({ name: 'sensemaker' });
     await this.graph.addActor({ name: 'terms-of-use' });
     await this.graph.addActor({ name: 'agents' });
@@ -1269,6 +1283,14 @@ class Sensemaker extends Hub {
 
     this.worker.register('ScanRemotes', async (...params) => {
       console.debug('[WORKER]', 'Scanning Remotes:', params);
+      if (this.discord) {
+        this.discord.syncAllChannels();
+        const channels = await this.discord._listChannels();
+        for (let i = 0; i < channels.length; i++) {
+          const channel = channels[i];
+          const members = await this.discord.listChannelMembers(channel.id);
+        }
+      }
     });
 
     // Worker Events
@@ -1376,10 +1398,10 @@ class Sensemaker extends Hub {
 
     if (this.settings.crawl) {
       this._crawler = setInterval(async () => {
-        /* this.worker.addJob({
+        this.worker.addJob({
           type: 'ScanRemotes',
           params: []
-        }); */
+        });
       }, this.settings.crawlDelay);
     }
 
@@ -1437,6 +1459,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
 
     // Products
+    this.http._addRoute('GET', '/features', ROUTES.products.listFeatures.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
     // Documents
@@ -1470,7 +1493,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
     this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
-    this.http._addRoute('POST', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
+    this.http._addRoute('POST', '/services/star-citizen/activities', ROUTES.services.rsi.activities.create.bind(this));
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
@@ -1782,6 +1805,76 @@ class Sensemaker extends Hub {
     });
   }
 
+  async _ensureDiscordUser (object) {
+    // Create (or Restore) Identities
+    let userID = null;
+    let id = null;
+
+    const identity = await this.db('identities').where({ source: 'discord', content: object.ref }).first();
+    if (!identity) {
+      const actor = new Actor({ name: `discord/users/${object.ref}` });
+      const ids = await this.db('identities').insert({
+        fabric_id: actor.id,
+        source: 'discord',
+        content: object.ref
+      });
+
+      const duser = await this.db('identities').insert({
+        fabric_id: actor.id,
+        source: 'discord',
+        content: object.username
+      });
+
+      id = ids[0];
+    } else {
+      id = identity.id;
+    }
+
+    const retrieved = await this.db('users').where({ discord_id: object.ref }).first();
+    if (!retrieved) {
+      const newUser = await this.db('users').insert({
+        discord_id: object.ref,
+        fabric_id: object.id,
+        username: object.username
+      });
+
+      userID = newUser[0];
+    } else {
+      userID = retrieved.id;
+    }
+
+    return {
+      id: userID
+    };
+  }
+
+  async _ensureDiscordChannel (target) {
+    let conversationID = null;
+    let log = null;
+
+    // Create (or Restore) Conversation
+    const resumed = await this.db('conversations').where({ fabric_id: target.id }).first();
+    if (!resumed) {
+      const newConversation = await this.db('conversations').insert({
+        creator_id: userID,
+        discord_id: target.ref,
+        fabric_id: target.id,
+        title: target.username,
+        log: JSON.stringify([])
+      });
+
+      conversationID = newConversation[0];
+      log = [];
+    } else {
+      conversationID = resumed.id;
+      log = resumed.log;
+    }
+
+    return {
+      id: conversationID
+    };
+  }
+
   async _handleDiscordActivity (activity) {
     console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity);
     if (activity.actor == this.discord.id) return;
@@ -1832,9 +1925,9 @@ class Sensemaker extends Hub {
       if (!resumed) {
         const newConversation = await this.db('conversations').insert({
           creator_id: userID,
-          discord_id: activity.actor.ref,
+          discord_id: activity.target.ref,
           fabric_id: activity.target.id,
-          title: activity.target.username,
+          title: activity.target.name,
           log: JSON.stringify([])
         });
 
@@ -1892,6 +1985,7 @@ class Sensemaker extends Hub {
       }
 
       this.discord.getTokenUser(token.access_token).then(async (response) => {
+        let id = null;
         // Create Identity
         const identity = await this.db('identities').where({ source: 'discord', content: response.id }).first();
         if (!identity) {
@@ -2116,7 +2210,7 @@ class Sensemaker extends Hub {
     if (!resumed) {
       const newConversation = await this.db('conversations').insert({
         creator_id: userID,
-        discord_id: activity.actor.ref,
+        matrix_id: activity.target.ref,
         fabric_id: activity.target.id,
         title: activity.target.username,
         log: JSON.stringify([])
@@ -2491,7 +2585,8 @@ class Sensemaker extends Hub {
               response.push(file);
               break;
             default:
-              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result.metadata.type);
+              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result?.metadata?.type);
+              response.push({ content: result.content, metadata: { type: 'unknown', id: null }, object: result });
               break;
           }
         }

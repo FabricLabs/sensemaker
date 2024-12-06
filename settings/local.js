@@ -236,6 +236,11 @@ module.exports = {
     model: 'gpt-4-turbo',
     temperature: 0
   },
+  rsi: {
+    http: {
+      enable: false
+    }
+  },
   twilio: {
     sid: 'add your twilio sid here',
     token: 'add your twilio token here',

@@ -29,6 +29,7 @@ const {
 
 // Components
 const AccountCreator = require('./AccountCreator');
+const FeaturesHome = require('./FeaturesHome');
 const FrontPage = require('./FrontPage');
 const ResetPasswordForm = require('./ResetPasswordForm');
 const SignUpForm = require('./SignUpForm');
@@ -49,6 +50,7 @@ class Splash extends React.Component {
           <Routes>
             <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
             <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+            <Route path="/features" element={<FeaturesHome />} />
             <Route path="/sessions" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
           </Routes>
@@ -57,8 +59,9 @@ class Splash extends React.Component {
         right now i made this route apart, probably splash component needs a rebuild later */}
         <section style={{ display: 'flex', justifyContent: 'center' }}>
           <Routes>
-            <Route path="/passwordreset/:resetToken" element={<ResetPasswordForm />} />
-            <Route path="/signup/:invitationToken"
+            {/* TODO: fix these routes */}
+            <Route path="/services/passwords/:resetToken" element={<ResetPasswordForm />} />
+            <Route path="/services/invitations/:invitationToken"
               element={
                 <SignUpForm
                   checkInvitationToken={this.props.checkInvitationToken}
@@ -70,7 +73,7 @@ class Splash extends React.Component {
                   acceptInvitation={this.props.acceptInvitation}
                 />}
             />
-            <Route path="/signup/decline/:invitationToken"
+            <Route path="/services/invitations/decline/:invitationToken"
               element={
                 <DeclinedInvitation
                   checkInvitationToken={this.props.checkInvitationToken}

@@ -2,10 +2,13 @@
 
 // Dependencies
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 // Semantic UI
 const {
+  Button,
   Header,
+  Icon,
   Segment,
   Table
 } = require('semantic-ui-react');
@@ -60,12 +63,20 @@ class SourceHome extends React.Component {
 
   render () {
     const now = new Date();
-    const { sources } = this.props;
+    const { network, sources } = this.props;
     return (
       <Segment className='fade-in' loading={sources?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <h2>Sources</h2>
         <p>Remote data sources can be added to improve coverage.</p>
-        <Table>
+        <div>
+          <Button color='blue' as={Link} to='/services/discord/authorize'>
+            <Icon name='discord' /> Discord
+          </Button>
+        </div>
+        <div>
+          <Button floated='right' onClick={this.props.addPeer} labelPosition='right'>Add Source <Icon name='add' /></Button>
+        </div>
+        <Table style={{ clear: 'both' }}>
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Source</Table.HeaderCell>
@@ -88,6 +99,35 @@ class SourceHome extends React.Component {
           </Table.Body>
         </Table>
         <ChatBox {...this.props} context={{ sources: sources?.current }} placeholder='Ask about these sources...' />
+        <div>
+          <Button floated='right' onClick={this.props.addPeer} labelPosition='right'>Add Peer <Icon name='add' /></Button>
+          <Header as='h2'>Peers</Header>
+        </div>
+        <Table>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Peer</Table.HeaderCell>
+              <Table.HeaderCell>Address</Table.HeaderCell>
+              <Table.HeaderCell>Port</Table.HeaderCell>
+              <Table.HeaderCell>Protocol</Table.HeaderCell>
+              <Table.HeaderCell>Connected</Table.HeaderCell>
+              <Table.HeaderCell>Controls</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {network && network.peers && network.peers
+              .map(instance => {
+                return (<Table.Row>
+                  <Table.Cell><Link to={"/peers/" + instance.id}>{instance.title}</Link></Table.Cell>
+                  <Table.Cell>{instance.address}</Table.Cell>
+                  <Table.Cell>{instance.port}</Table.Cell>
+                  <Table.Cell>{instance.protocol}</Table.Cell>
+                  <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
+                  <Table.Cell><Button><Icon name='stop' /></Button></Table.Cell>
+                </Table.Row>)
+              })}
+          </Table.Body>
+        </Table>
       </Segment>
     );
   }

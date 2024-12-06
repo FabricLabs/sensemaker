@@ -83,7 +83,7 @@ class LoginForm extends React.Component {
           </Form.Field>
           <div>
             <Button fluid primary color='green' icon labelPosition='right' loading={loading} type="submit" size={this.props.size}>Log In <Icon name='right chevron' /></Button>
-            {ENABLE_DISCORD_LOGIN && (<a href='/services/discord/authorize' className='ui fluid violet right labeled icon button'><span><Icon name='discord alt' /></span> Discord <Icon name='right chevron' /></a>)}
+            {ENABLE_DISCORD_LOGIN && (<a href='/services/discord/authorize' className='ui fluid blue right labeled icon button'><span><Icon name='discord alt' /></span> Discord <Icon name='right chevron' /></a>)}
             <Divider />
             <Button as={Link} to='/' fluid icon labelPosition='left' size='small' color='black'><Icon name='left chevron' />Return Home</Button>
           </div>

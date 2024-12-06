@@ -82,17 +82,18 @@ class ChatBox extends React.Component {
     if (this.props.conversationID) {
       this.startPolling(this.props.conversationID);
     }
+
     window.addEventListener('resize', this.handleResize);
   }
 
   componentDidUpdate (prevProps, prevState) {
     const { messages } = this.props.chat;
-
     //here we store the last message from prevProps and current messages
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
     if (this.props.conversationID)
       if (this.props.conversationID !== prevProps.conversationID) {
+        // TODO: when available, use WebSocket instead of polling
         this.stopPolling();
         this.startPolling(this.props.conversationID);
       }
@@ -110,11 +111,9 @@ class ChatBox extends React.Component {
           this.setState({ generatingResponse: false });
           this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
-
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           this.setState({ generatingResponse: true });
-
           // if (!this.props.previousChat || (this.state.previousFlag && this.props.previousChat)) {
           //   this.setState({ generatingResponse: true });
           // }
@@ -122,7 +121,6 @@ class ChatBox extends React.Component {
       }
       this.scrollToBottom();
     }
-
   }
 
   componentWillUnmount () {
@@ -246,13 +244,10 @@ class ChatBox extends React.Component {
       }
     }
 
-    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
+    console.debug('submitting:', message);
+
     // dispatch submitMessage
-    this.props.submitMessage(
-      dataToSubmit,
-      null,
-      fileFabricID
-    ).then((output) => {
+    this.props.submitMessage(dataToSubmit).then((output) => {
       // dispatch getMessages
       this.props.getMessages({ conversation_id: message?.conversation });
 
@@ -750,7 +745,7 @@ class ChatBox extends React.Component {
                             }
                           />
                           {/* the regenerate answer button only shows in the last answer */}
-                          {group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                          {/* group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
                             message.role === "assistant" && !reGeneratingResponse && !generatingResponse && (
                               <Popup
                                 content="Regenerate this answer"
@@ -764,7 +759,7 @@ class ChatBox extends React.Component {
                                   </Button>
                                 }
                               />
-                            )}
+                            ) */}
                           {message.role === "assistant" && (
                             <Popup
                               content="Copied to clipboard"
@@ -895,7 +890,7 @@ class ChatBox extends React.Component {
           loading={loading}>
           <Form.Input>
             {this.props.includeAttachments && (
-              <Button size="huge" left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
+              <Button size='huge' basic left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
                 <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
                 <Icon name='paperclip' color='grey' style={{ color: this.state.isTextareaFocused ? 'grey' : 'grey', cursor: 'pointer' }} />
               </Button>
