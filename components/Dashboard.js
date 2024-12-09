@@ -43,6 +43,7 @@ const {
   ENABLE_CHANGELOG,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
+  ENABLE_GROUPS,
   ENABLE_NETWORK,
   ENABLE_SOURCES,
   ENABLE_TASKS,
@@ -55,6 +56,8 @@ const {
 // Components
 const Home = require('./Home');
 const ContractHome = require('./ContractHome');
+const GroupHome = require('./GroupHome');
+const GroupView = require('./GroupView');
 const NetworkHome = require('./NetworkHome');
 const Library = require('./Library');
 const DocumentHome = require('./DocumentHome');
@@ -537,6 +540,12 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Network</p>
                 </Menu.Item>
               )}
+              {ENABLE_GROUPS && (USER_IS_ALPHA || USER_IS_ADMIN) && (
+                <Menu.Item as={Link} to='/groups' onClick={this.closeSidebars}>
+                  <Icon name='users' size='large'/>
+                  <p className='icon-label'>Groups</p>
+                </Menu.Item>
+              )}
               {ENABLE_SOURCES && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
@@ -676,11 +685,13 @@ class Dashboard extends React.Component {
                 <Route path='/people' element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path='/conversations/:id' element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path='/conversations' element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
-                <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} {...this.props} />} />
+                <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
+                <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
+                <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
                 <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
                 <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
-                <Route path='/users/:username' element={<UserView {...this.props} />} />
+                <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
                 {/* TODO: fix these routes */}
                 {/* /settings/admin should render the overview */}
                 {/* /settings/admin#users should load the user tab */}

@@ -14,10 +14,13 @@ const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
 const documentReducer = require('../reducers/documentReducer');
 const fileReducer = require('../reducers/fileReducer');
+const groupsReducer = require('../reducers/groupsReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
+const peersReducer = require('../reducers/peersReducer');
 const personReducer = require('../reducers/personReducer');
 const searchReducer = require('../reducers/searchReducer');
+const sourcesReducer = require('../reducers/sourcesReducer');
 const tasksReducer = require('../reducers/tasksReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
 const helpReducer = require('../reducers/helpReducer');
@@ -34,6 +37,7 @@ const rootReducer = combineReducers({
   conversations: conversationReducer,
   documents: documentReducer,
   files: fileReducer,
+  groups: groupsReducer,
   stats: adminReducer,
   people: personReducer,
   inquiries: inquiriesReducer,
@@ -41,7 +45,9 @@ const rootReducer = combineReducers({
   search: searchReducer,
   feedback: feedbackReducer,
   help: helpReducer,
+  peers: peersReducer,
   redis: redisReducer,
+  sources: sourcesReducer,
   tasks: tasksReducer,
   users: accountsReducer,
   wallet: walletReducer

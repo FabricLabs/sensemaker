@@ -106,6 +106,24 @@ const {
   fetchUserFiles,
 } = require('../actions/fileActions');
 
+const {
+  fetchGroup,
+  fetchGroups,
+  createGroup
+} = require('../actions/groupActions');
+
+const {
+  fetchPeer,
+  fetchPeers,
+  createPeer
+} = require('../actions/peerActions');
+
+const {
+  fetchSource,
+  fetchSources,
+  createSource
+} = require('../actions/sourceActions');
+
 // ## Upload Actions
 const {
   fetchUploads,
@@ -179,6 +197,11 @@ module.exports = {
   fetchFiles: fetchFiles,
   fetchFile: fetchFile,
   uploadFile: uploadFile,
+  fetchGroup: fetchGroup,
+  fetchGroups: fetchGroups,
+  createGroup: createGroup,
+  createPeer: createPeer,
+  createSource: createSource,
   fetchUserFiles: fetchUserFiles,
   fetchInquiry: fetchInquiry,
   fetchInquiries: fetchInquiries,
@@ -193,9 +216,13 @@ module.exports = {
   acceptInvitation: acceptInvitation,
   declineInvitation: declineInvitation,
   deleteInvitation: deleteInvitation,
+  fetchPeer: fetchPeer,
+  fetchPeers: fetchPeers,
   fetchPeople: fetchPeople,
   fetchPerson: fetchPerson,
   fetchResponse: fetchResponse,
+  fetchSource: fetchSource,
+  fetchSources: fetchSources,
   fetchTask: fetchTask,
   fetchTasks: fetchTasks,
   fetchUploads,

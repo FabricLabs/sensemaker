@@ -84,7 +84,7 @@ class TaskHome extends React.Component {
           <Table.Body>
             {tasks && tasks.tasks.map((x) => {
               return (
-                <Table.Row>
+                <Table.Row className='fade-in'>
                   <Table.Cell><Input type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} onChange={this.handleTaskCompletionChange} /></Table.Cell>
                   <Table.Cell>{x.title}</Table.Cell>
                   <Table.Cell right aligned>

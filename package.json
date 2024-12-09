@@ -1,6 +1,6 @@
 {
   "name": "sensemaker",
-  "version": "0.2.0-RC1",
+  "version": "0.2.0-RC2",
   "description": "crawl and aggregate data.",
   "main": "scripts/desktop.js",
   "scripts": {

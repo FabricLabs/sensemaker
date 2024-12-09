@@ -25,11 +25,21 @@ module.exports = {
     latest: require('./announcements/latest_announcement'),
     create: require('./announcements/create_announcement')
   },
+  blobs: {
+    view: require('./blobs/view_blob')
+  },
   conversations: {
     list: require('./conversations/list_conversations'),
     view: require('./conversations/view_conversation'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),
     getConversationsByID: require('./conversations/view_conversation')
+  },
+  contracts: {
+    list: require('./contracts/list_contracts'),
+    create: require('./contracts/create_contract'),
+    view: require('./contracts/view_contract'),
+    sign: require('./contracts/sign_contract'),
+    search: require('./contracts/search_contracts')
   },
   documents: {
     create: require('./documents/create_document'),
@@ -52,6 +62,12 @@ module.exports = {
     view: require('./files/view_file'),
     serve: require('./files/serve_file'),
     find: require('./files/find_file')
+  },
+  groups: {
+    create: require('./groups/create_group'),
+    list: require('./groups/list_groups'),
+    view: require('./groups/view_group'),
+    add_group_member: require('./groups/add_group_member')
   },
   help: {
     getConversations: require('./help/get_conversations'),
@@ -85,6 +101,11 @@ module.exports = {
     getMessages: require('./messages/list_messages'),
     regenerate: require('./messages/regenerate_message')
   },
+  peers: {
+    list: require('./peers/list_peers'),
+    create: require('./peers/create_peer'),
+    view: require('./peers/view_peer')
+  },
   people: {
     list: require('./people/get_people'),
     view: require('./people/view_person')
@@ -115,6 +136,11 @@ module.exports = {
   settings: {
     updateCompliance: require('./settings/update_compliance'),
     list: require('./settings/list_settings')
+  },
+  sources: {
+    create: require('./sources/create_source'),
+    list: require('./sources/list_sources'),
+    view: require('./sources/view_source')
   },
   statistics: {
     admin: require('./statistics/admin_statistics'),

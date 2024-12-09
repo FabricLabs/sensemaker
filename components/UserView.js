@@ -18,6 +18,10 @@ class UserView extends React.Component {
     super(props);
   }
 
+  componentDidMount () {
+    this.props.fetchUser(this.props.username);
+  }
+
   render () {
     return (
       <div>

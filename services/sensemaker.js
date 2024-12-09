@@ -788,8 +788,8 @@ class Sensemaker extends Hub {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
-        this.trainer.query({ query: request.query, messages: messages }),
-        this.sensemaker.query({ query: request.query, messages: messages })
+        this.trainer.query({ query: request.query, messages: messages, tools: true }),
+        this.sensemaker.query({ query: request.query, messages: messages, tools: true })
       ]).catch((error) => {
         console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
@@ -1283,11 +1283,23 @@ class Sensemaker extends Hub {
 
     this.worker.register('ScanRemotes', async (...params) => {
       console.debug('[WORKER]', 'Scanning Remotes:', params);
+      const sources = await this.db('sources').select('id', 'name', 'content').where({ status: 'active' });
+      for (let i = 0; i < sources.length; i++) {
+        const source = sources[i];
+        const synced = await this.syncSource(source.id);
+      }
+
       if (this.discord) {
+        this.discord.syncGuilds();
         this.discord.syncAllChannels();
-        const channels = await this.discord._listChannels();
-        for (let i = 0; i < channels.length; i++) {
-          const channel = channels[i];
+
+        for (let i = 0; i < this.discord.guilds.length; i++) {
+          const guild = this.discord.guilds[i];
+          const members = await this.discord.listGuildMembers(guild.id);
+        }
+
+        for (let i = 0; i < this.discord.channels.length; i++) {
+          const channel = this.discord.channels[i];
           const members = await this.discord.listChannelMembers(channel.id);
         }
       }
@@ -1462,6 +1474,9 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/features', ROUTES.products.listFeatures.bind(this));
     this.http._addRoute('GET', '/products', ROUTES.products.list.bind(this));
 
+    // Blobs
+    this.http._addRoute('GET', '/blobs/:id', ROUTES.blobs.view.bind(this));
+
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
     this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
@@ -1469,10 +1484,25 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/documents/delete/:fabricID', ROUTES.documents.delete.bind(this));
     this.http._addRoute('GET', '/conversations/documents/:id', ROUTES.documents.newConversation.bind(this));
 
+    this.http._addRoute('GET', '/groups', ROUTES.groups.list.bind(this));
+    this.http._addRoute('GET', '/groups/:id', ROUTES.groups.view.bind(this));
+    this.http._addRoute('POST', '/groups', ROUTES.groups.create.bind(this));
+    this.http._addRoute('POST', '/groups/:id/members', ROUTES.groups.add_group_member.bind(this));
+
     // Wallet
     this.http._addRoute('POST', '/keys', ROUTES.keys.create.bind(this));
     this.http._addRoute('GET', '/keys', ROUTES.keys.list.bind(this));
     // this.http._addRoute('GET', '/keys/:id', ROUTES.keys.view.bind(this));
+
+    // Peers
+    this.http._addRoute('POST', '/peers', ROUTES.peers.create.bind(this));
+    this.http._addRoute('GET', '/peers', ROUTES.peers.list.bind(this));
+    this.http._addRoute('GET', '/peers/:id', ROUTES.peers.view.bind(this));
+
+    // Sources
+    this.http._addRoute('POST', '/sources', ROUTES.sources.create.bind(this));
+    this.http._addRoute('GET', '/sources', ROUTES.sources.list.bind(this));
+    this.http._addRoute('GET', '/sources/:id', ROUTES.sources.view.bind(this));
 
     // Tasks
     this.http._addRoute('POST', '/tasks', ROUTES.tasks.create.bind(this));
@@ -1719,6 +1749,67 @@ class Sensemaker extends Hub {
   async sync () {
     await this.fs.sync();
     return this;
+  }
+
+  async syncSource (id) {
+    return new Promise(async (resolve, reject) => {
+      const source = await this.db('sources').where({ id }).first();
+      if (!source) throw new Error('Source not found.');
+      const link = source.content;
+      fetch(link).then(async (response) => {
+        const now = new Date();
+        const proposal = {
+          created: now.toISOString(),
+          creator: this.id,
+          body: await response.text()
+        };
+
+        const blob = new Actor({ content: proposal.body });
+        const existing = await this.db('blobs').where({ fabric_id: blob.id }).first();
+        if (!existing) {
+          const inserted = await this.db('blobs').insert({
+            content: proposal.body,
+            fabric_id: blob.id,
+            mime_type: response.headers.get('Content-Type').split(';')[0]
+          });
+        }
+
+        const embedding = await this.trainer.ingestDocument({
+          content: proposal.body,
+          metadata: { id: blob.id, origin: link }
+        }, 'hypertext');
+
+        const doc = await this.db('documents').where({ blob_id: blob.id }).select('id').first();
+        if (!doc) {
+          await this.db('documents').insert({
+            blob_id: blob.id,
+            created_at: toMySQLDatetime(now),
+            title: `Snaphot of ${source.content}`
+          });
+        } else {
+          await this.db('documents').update({
+            updated_at: toMySQLDatetime(now),
+            blob_id: blob.id
+          }).where({ id: doc.id });
+        }
+
+        await this.db('sources').update({
+          updated_at: toMySQLDatetime(now),
+          last_retrieved: toMySQLDatetime(now),
+          latest_blob_id: blob.id
+        }).where({ id });
+
+        const actor = new Actor(proposal);
+        resolve({
+          created: now,
+          content: proposal,
+          id: actor.id,
+          type: 'SourceSnapshot'
+        });
+      }).catch((exception) => {
+        reject(exception);
+      });
+    });
   }
 
   async _attachWorkers () {
