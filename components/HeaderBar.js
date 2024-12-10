@@ -46,8 +46,8 @@ class HeaderBar extends React.Component {
   render () {
     const { showBrand, showButtons } = this.props;
     return (
-      <div>
-        {(showBrand) && <Link to='/' style={{ float: 'left' }}><Icon name='eye' size='big' style={{ verticalAlign: 'bottom' }} /> <span className='brand'>{BRAND_NAME}</span></Link>}
+      <sensemaker-header-bar className='brand'>
+        {(showBrand) && <Link to='/' style={{ float: 'left', fontWeight: 'bold', textTransform: 'uppercase' }}><Icon name='eye' size='big' style={{ verticalAlign: 'bottom' }} /> <span className='brand'>{BRAND_NAME}</span></Link>}
         {(showButtons) && (
           <Button.Group floated='right'>
             <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
@@ -56,7 +56,7 @@ class HeaderBar extends React.Component {
           </Button.Group>
         )}
         <br style={{ clear: 'both' }} />
-      </div>
+      </sensemaker-header-bar>
     );
   }
 }

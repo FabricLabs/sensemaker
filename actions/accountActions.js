@@ -2,7 +2,12 @@
 
 const { fetchFromAPI } = require('./apiActions');
 
-async function fetchUsersFromAPI(token) {
+async function fetchAccountsFromAPI (token) {
+  // TODO: pagination
+  return fetchFromAPI('/accounts', null, token);
+}
+
+async function fetchUsersFromAPI (token) {
   // TODO: pagination
   return fetchFromAPI('/users', null, token);
 }
@@ -93,7 +98,6 @@ const askPasswordReset = (email) => {
   };
 }
 
-
 module.exports = {
   fetchUser,
   fetchUsers,
@@ -106,5 +110,5 @@ module.exports = {
   FETCH_ACCOUNTS_FAILURE,
   PASSWORD_RESET_REQUEST,
   PASSWORD_RESET_SUCCESS,
-  PASSWORD_RESET_FAILURE,
+  PASSWORD_RESET_FAILURE
 };

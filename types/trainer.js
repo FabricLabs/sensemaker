@@ -221,22 +221,16 @@ class Trainer extends Service {
         // Old Embeddings (specific to Langchain)
         const element = new Document({ pageContent: document.content, metadata: document.metadata });
         this.embeddings.addDocuments([element]).catch(reject).then(() => {
-          console.debug('[TRAINER]', 'Ingested document:', element);
-          // resolve({ type: 'IngestedDocument', content: element });
+          // TODO: check for `embedding` and fail if not present
+          const object = { type: EMBEDDING_MODEL, content: json.embedding };
+          // TODO: receive event in core service and correctly create blob, confirm ID matches
+          this.emit('TrainerDocument', {
+            id: actor.id,
+            metadata: document.metadata,
+            content: document.content
+          });
+          resolve({ type: 'Embedding', content: object });
         });
-
-        // TODO: check for `embedding` and fail if not present
-        const object = { type: EMBEDDING_MODEL, content: json.embedding };
-        console.debug('[TRAINER]', 'Ollama Object:', object);
-
-        // TODO: receive event in core service and correctly create blob, confirm ID matches
-        this.emit('TrainerDocument', {
-          id: actor.id,
-          metadata: document.metadata,
-          content: document.content
-        });
-
-        resolve({ type: 'Embedding', content: object });
       });
     });
   }

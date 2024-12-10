@@ -58,7 +58,6 @@ class EmailService extends Service {
 
   async send (message) {
     this.emit('debug', `[${this.settings.name}] Sending message...`, message);
-
     try {
       const result = await fetch(`https://api.postmarkapp.com/email`, {
         method: 'POST',
@@ -75,7 +74,7 @@ class EmailService extends Service {
           MessageStream: 'outbound'
         })
       });
-      console.debug('result:', result);
+      this.emit('debug', `Email sent:`, await result.text());
     } catch (exception) {
       console.debug('could not send email:', exception);
     }

@@ -160,7 +160,6 @@
 }
 
 /* HELP CHAT CSS */
-
 #help-box {
   position: fixed;
   bottom: 80px;
@@ -815,31 +814,10 @@ fabric-motd {
 
 .settings-container {
   margin-top: 2em;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  align-content: center;
 }
 
 .settings-container .ui.table {
   width: 40%;
-}
-
-.subscription-container {
-  margin-top: 1em;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 2em;
-}
-
-.subscription-container div {
-  padding-right: 2em;
-  padding-left: 2em;
-
 }
 
 .ui.card.info-file-card {
@@ -1035,10 +1013,25 @@ fabric-motd {
   width: '100%';
 }
 
+.brand span.brand {
+  font-size: 1.5em;
+}
+
 .splash-page .buttons {
   margin-top: 2em;
 }
 
-.splash-page section {
+.splash-page section:not(.lead) {
+  font-size: 1.1em;
   margin-bottom: 4em;
+  clear: both;
+}
+
+.ui.video.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
 }

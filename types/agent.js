@@ -17,8 +17,10 @@ const defaults = require('../settings/local');
 // Dependencies
 const fs = require('fs');
 const merge = require('lodash.merge');
+const fetch = require('cross-fetch');
 
 // Fabric Types
+const Actor = require('@fabric/core/types/actor');
 const Peer = require('@fabric/core/types/peer');
 const Service = require('@fabric/core/types/service');
 
@@ -134,37 +136,6 @@ class Agent extends Service {
             returns: {
               type: 'Object',
               description: 'The response from the AI agent.'
-            }
-          },
-          searchHost: {
-            type: 'function',
-            function: {
-              name: 'search_host',
-              description: 'Search the specified host for a query.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  host: {
-                    type: 'string',
-                    description: 'The host to search.'
-                  },
-                  path: {
-                    type: 'string',
-                    description: 'The path to search.'
-                  },
-                  body: {
-                    type: 'object',
-                    description: 'Query object to send to host, with required string parameter "query" designating the search term.',
-                    properties: {
-                      query: {
-                        type: 'string',
-                        description: 'The search term.'
-                      }
-                    }
-                  }
-                },
-                required: ['host', 'path', 'body']
-              }
             }
           }
         }
@@ -329,6 +300,7 @@ class Agent extends Service {
 
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
+          // Core Request
           fetch(endpoint, {
             method: 'POST',
             headers: merge({
@@ -344,7 +316,8 @@ class Agent extends Service {
                 temperature: (this.settings.temperature) ? this.settings.temperature : 0,
               } : undefined,
               messages: sample,
-              format: (request.format === 'json' || request.json) ? 'json' : undefined
+              format: (request.format === 'json' || request.json) ? 'json' : undefined,
+              tools: (request.tools) ? this.tools : undefined
             })
           }).catch((exception) => {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
@@ -383,19 +356,44 @@ class Agent extends Service {
             if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
             if (!base) return reject(new Error('No response from agent.'));
             if (base.error) return reject(base.error);
-            if (!base.choices) return reject(new Error('No choices in response.'));
+            const choice = base.choices[0];
+            if (choice.finish_reason && choice.finish_reason === 'tool_calls') {
+              const tool = choice.message.tool_calls[0];
+              const args = JSON.parse(tool.function.arguments);
+              switch (tool.function.name) {
+                // Simple HTTP GET
+                case 'http_get':
+                  try {
+                    const tool_response = await fetch(args.url);
+                    const obj = {
+                      role: 'tool',
+                      content: await tool_response.text(),
+                      tool_call_id: tool.tool_call_id
+                    };
 
-            if (request.requery) {
-              sample.push({ role: 'assistant', content: base.choices[0].message.content });
-              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Messages:', sample);
-              console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[REQUERY]', 'Prompt:', this.prompt);
-              // Re-execute query with John Cena
-              return this.query({ query: `Are you sure about that?`, messages: sample });
+                    const actor = new Actor({ content: obj.content });
+                    this.emit('document', {
+                      id: actor.id,
+                      content: obj.content
+                    });
+
+                    messages.push(choice.message);
+                    messages.push({ role: 'tool', content: obj.content, tool_call_id: tool.id });
+                  } catch (exception) {
+                    reject(exception);
+                  }
+
+                  return this.query({ query: request.query, messages: messages }).then(resolve).catch(reject);
+              }
             }
 
+            if (!base.choices) return reject(new Error('No choices in response.'));
+
+            // Emit completion event
             this.emit('completion', base);
             if (this.settings.debug) console.trace('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
 
+            // Resolve with response
             return resolve({
               type: 'AgentResponse',
               name: this.settings.name,
