@@ -13,8 +13,7 @@ module.exports = async function (req, res, next) {
   let {
     conversation_id,
     content,
-    context,
-    file_fabric_id
+    context
   } = req.body;
 
   if (!conversation_id) {
@@ -25,7 +24,6 @@ module.exports = async function (req, res, next) {
       creator_id: req.user.id,
       log: JSON.stringify([]),
       title: name,
-      file_fabric_id: file_fabric_id,
       // matrix_room_id: room.room_id
     });
 

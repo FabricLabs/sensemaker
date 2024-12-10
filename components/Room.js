@@ -21,7 +21,6 @@ class Conversation extends React.Component {
       actualConversation: null,
       recoveryFlag: false,
       recovering: false,
-      file_fabric_id: null,
       documentInfo: null,
       documentSections: null,
     };
@@ -57,14 +56,6 @@ class Conversation extends React.Component {
     const actual = this.props.conversations.find(conversation => conversation.slug == id);
     this.setState({ actualConversation: actual });
     await this.props.resetChat();
-    this.setState({ file_fabric_id: actual.file_fabric_id ? actual.file_fabric_id : null });
-    //if the conversation is related to a document, it fetchs for that document info
-    if (actual.file_fabric_id) {
-      await this.props.fetchDocument(actual.file_fabric_id);
-      await this.props.fetchDocumentSections(actual.file_fabric_id);
-    } else {
-      this.setState({documentInfo: null});
-    }
     // Fetch new conversation details and messages
     await this.props.getMessages({ conversation_id: id });
   }
@@ -109,6 +100,7 @@ class Conversation extends React.Component {
           documentSections={this.state.documentSections}
           documentInfoSidebar={this.props.documentInfoSidebar}
           fetchData={this.fetchData}
+          takeFocus={true}
         />
       </fabric-component>
 

@@ -21,9 +21,7 @@ async function main (input = {}) {
   sensemaker.on('error', handleSensemakerError);
   sensemaker.on('log', handleSensemakerLog);
   sensemaker.on('warning', handleSensemakerWarning);
-  sensemaker.on('debug', (...debug) => {
-    console.debug(`[${((new Date() - start) / 1000)}s]`, '[SENSEMAKER]', '[DEBUG]', ...debug);
-  });
+  if (input.debug) sensemaker.on('debug', (...debug) => { console.debug(`[${((new Date() - start) / 1000)}s]`, '[SENSEMAKER]', '[DEBUG]', ...debug); });
 
   // Start Node
   try {

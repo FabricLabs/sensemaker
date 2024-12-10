@@ -2,10 +2,17 @@
 
 // Dependencies
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 // Semantic UI
 const {
+  Button,
+  Divider,
+  Form,
   Header,
+  Icon,
+  Input,
+  Label,
   Segment,
   Table
 } = require('semantic-ui-react');
@@ -56,38 +63,118 @@ class SourceHome extends React.Component {
 
   componentDidMount () {
     this.start();
+    this.props.fetchPeers();
+    this.props.fetchSources();
+  }
+
+  handleSourceInputChange = (e) => {
+    this.setState({ sourceContent: e.target.value });
+  }
+
+  handleSourceSubmit = async (e) => {
+    this.setState({ loading: true })
+    const group = await this.props.createSource({ content: this.state.sourceContent });
+    this.setState({ sourceContent: '', loading: false });
+    this.props.fetchSources();
+  }
+
+  handlePeerInputChange = (e) => {
+    this.setState({ peerAddress: e.target.value });
+  }
+
+  handlePeerSubmit = async (e) => {
+    this.setState({ loading: true })
+    const group = await this.props.createPeer({ address: this.state.peerAddress });
+    this.setState({ peerAddress: '', loading: false });
+    this.props.fetchSources();
   }
 
   render () {
     const now = new Date();
-    const { sources } = this.props;
+    const { network, peers, sources } = this.props;
     return (
       <Segment className='fade-in' loading={sources?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
         <h2>Sources</h2>
         <p>Remote data sources can be added to improve coverage.</p>
-        <Table>
+        <div>
+          <Button color='blue' as={Link} to='/services/discord/authorize'>
+            <Icon name='discord' /> Discord
+          </Button>
+        </div>
+        <Divider />
+        <Form huge fluid>
+          <Form.Field fluid>
+            <label>Link</label>
+            <Input fluid placeholder='e.g., https://goon.vc, etc.' value={this.state.sourceContent} onChange={this.handleSourceInputChange} action={<Button onClick={this.handleSourceSubmit}>Create Source</Button>} />
+          </Form.Field>
+        </Form>
+        <Table style={{ clear: 'both' }}>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Source</Table.HeaderCell>
+              <Table.HeaderCell>Name</Table.HeaderCell>
               <Table.HeaderCell>URL</Table.HeaderCell>
+              <Table.HeaderCell>Recurrence</Table.HeaderCell>
+              <Table.HeaderCell>Last Retrieved</Table.HeaderCell>
               <Table.HeaderCell>Actions</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {sources?.current?.map((source, index) => {
+            {sources?.sources?.map((source, index) => {
               return (
                 <Table.Row key={index}>
                   <Table.Cell>{source.name}</Table.Cell>
-                  <Table.Cell>{source.url}</Table.Cell>
+                  <Table.Cell><a href={source.content} target="_blank"><code>{source.content}</code> <Icon name='external alternate' /></a></Table.Cell>
+                  <Table.Cell>{source.recurrence}</Table.Cell>
+                  <Table.Cell textAlign='center'>
+                      {source.last_retrieved ? (
+                        <Label><a href={`/blobs/${source.latest_blob_id}`}><Icon name='file' /> {source.last_retrieved}</a></Label>
+                      ) : (<p>Initializing...</p>)}
+                  </Table.Cell>
                   <Table.Cell>
-                    <a href={source.url} target='_blank'>View</a>
+                    <Button.Group>
+                      <Button icon labelPosition='left'><Icon name='sync' /> Sync</Button>
+                      <Button icon labelPosition='right'>Discuss <Icon name='right chevron' /></Button>
+                    </Button.Group>
                   </Table.Cell>
                 </Table.Row>
               );
             })}
           </Table.Body>
         </Table>
-        <ChatBox {...this.props} context={{ sources: sources?.current }} placeholder='Ask about these sources...' />
+        <ChatBox {...this.props} context={{ sources: sources?.sources }} placeholder='Ask about these sources...' />
+        <Divider />
+        <Header as='h2'>Peers</Header>
+        <Form huge fluid>
+          <Form.Field fluid>
+            <label>Address</label>
+            <Input fluid placeholder='fabric:10.0.0.1:7777' value={this.state.peerContent} onChange={this.handlePeerInputChange} action={<Button onClick={this.handlePeerSubmit}>Add Peer <Icon name='add' /></Button>} />
+          </Form.Field>
+        </Form>
+        <Table>
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell>Peer</Table.HeaderCell>
+              <Table.HeaderCell>Address</Table.HeaderCell>
+              <Table.HeaderCell>Port</Table.HeaderCell>
+              <Table.HeaderCell>Protocol</Table.HeaderCell>
+              <Table.HeaderCell>Connected</Table.HeaderCell>
+              <Table.HeaderCell>Controls</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {network && network.peers && network.peers
+              .map(instance => {
+                return (<Table.Row>
+                  <Table.Cell><Link to={"/peers/" + instance.id}>{instance.title}</Link></Table.Cell>
+                  <Table.Cell>{instance.address}</Table.Cell>
+                  <Table.Cell>{instance.port}</Table.Cell>
+                  <Table.Cell>{instance.protocol}</Table.Cell>
+                  <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
+                  <Table.Cell><Button><Icon name='stop' /></Button></Table.Cell>
+                </Table.Row>)
+              })}
+          </Table.Body>
+        </Table>
       </Segment>
     );
   }

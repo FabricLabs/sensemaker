@@ -22,7 +22,7 @@ class Changelog extends React.Component {
     };
 
     return (
-      <div className="changelog">
+      <div className="changelog fade-in">
         <h1>The Changelog</h1>
         <p>Stay up-to-date with the latest changes.</p>
         <h2>Announcements</h2>
@@ -55,7 +55,8 @@ class Changelog extends React.Component {
         {/* TODO: populate from GitHub releases */}
         <h2>Releases</h2>
         <ul>
-          <li>1.0.0-RC1: Exclusive access!</li>
+          <li>0.2.0-RC2: Improved support for tasking, simplified UI, reduced attack surface.</li>
+          <li>0.2.0-RC1: Exclusive access!</li>
         </ul>
       </div>
     );

@@ -32,8 +32,6 @@ class SignUpForm extends React.Component {
       errorContent: '',
       firstName: '',
       lastName: '',
-      firmName: '',
-      firmSize: null,
       username: '',
       email: '',
       isNewUserValid: false,
@@ -134,7 +132,7 @@ class SignUpForm extends React.Component {
     //this is the function to update the new password for the user
     event.preventDefault();
     const { resetToken } = this.props;
-    const { username, password, email, firstName, lastName, firmName, firmSize } = this.state;
+    const { username, password, email, firstName, lastName } = this.state;
 
     try {
       //here we call the register api action, we set our state to registering
@@ -143,7 +141,7 @@ class SignUpForm extends React.Component {
       //forced delay
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      await this.props.fullRegister(username, password, email, firstName, lastName, firmName, firmSize);
+      await this.props.fullRegister(username, password, email, firstName, lastName);
 
     } catch (error) {
       this.setState({ registering: false });
@@ -195,8 +193,6 @@ class SignUpForm extends React.Component {
       tokenError,
       firstName,
       lastName,
-      firmName,
-      firmSize,
       username,
       isNewUserValid,
       usernameError,
@@ -265,26 +261,6 @@ class SignUpForm extends React.Component {
                     autoComplete="off"
                     value={lastName}
                     required
-                  />
-                </Form.Group>
-                <Form.Group className='signup-form-group'>
-                  <Form.Input
-                    size='small'
-                    label='Firm name'
-                    type='text'
-                    name='firmName'
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={firmName}
-                  />
-                  <Form.Input
-                    size='small'
-                    label='Firm size'
-                    type='number'
-                    name='firmSize'
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={firmSize}
                   />
                 </Form.Group>
                 <Form.Group className='signup-form-group'>

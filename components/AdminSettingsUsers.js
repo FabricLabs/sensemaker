@@ -89,7 +89,7 @@ class AdminUsers extends React.Component {
   }
 
   renderConfirmResetModal = () => {
-    const { users } = this.props;
+    const { accounts, users } = this.props;
     const { confirmResetOpen, emailReseting } = this.state;
     return (
       <Modal
@@ -129,7 +129,7 @@ class AdminUsers extends React.Component {
 
     const inquiriesTotal = stats?.inquiries?.total ?? 0;
     // const invitationsTotal = stats?.invitations?.total ?? 0;
-    const usersTotal = stats?.users?.total ?? 0;
+    const usersTotal = stats?.accounts?.total ?? 0;
 
     return (
       <section className='fade-in users-section'>
@@ -181,7 +181,7 @@ class AdminUsers extends React.Component {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {users && users.users && users.users
+              {accounts && accounts.users && accounts.users
                 .filter(instance =>
                   (instance.email ? (instance.email.toLowerCase().includes(searchQuery.toLowerCase())) : (searchQuery ? false : true)) ||
                   (instance.username.toLowerCase().includes(searchQuery.toLowerCase()))

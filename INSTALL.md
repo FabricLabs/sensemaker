@@ -1,44 +1,45 @@
 # Install Guide
 ## All Platforms
-Sensemaker requires Node, MySQL, and Redis to run.
+Sensemaker requires Node, MySQL, Redis, and Ollama to run.  Install scripts are included in the `scripts/` directory, including `install.sh` to automate installation on a compatible system.
 
-### Key Management
-```
-export FABRIC_SEED="some 24-word seed"
-```
+**Windows Users:** there is a known issue installing the TensorFlow dependency: https://github.com/tensorflow/tfjs/issues/7341
 
 ### Database Setup
-```
+MySQL is used as a reliable database for Sensemaker.
+
+Open shell:
+```bash
 sudo mysql
 ```
 
 In the MySQL shell:
-```
+```sql
 CREATE DATABASE db_sensemaker;
 CREATE USER 'db_user_sensemaker'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON db_sensemaker.* TO 'db_user_sensemaker'@'localhost';
 EXIT;
 ```
+Be sure to set a password in the commands above.
 
-Install Knex, Seed Database
-```
+#### Knex
+Knex is used to manage database schemas.
+
+Install `knex`:
+```bash
 npm i -g knex # schema management tool
 knex migrate:latest # create tables
-knex seed:run # insert data
+knex seed:run # initial data
 ```
 
 ### Ollama
 Ollama is a convenient API provider for LLM interactions.
 
-```
+Run the install scripts:
+```bash
 ./scripts/install-ollama.sh
 ./scripts/install-models.sh
 ```
-
-Run dependencies with docker-compose (optional)
-```
-docker-compose up -d
-```
+Other models can be installed using `ollama pull <model-name>` and configured in `settings/local.js` in the `ollama` property.
 
 ## Debian/Ubuntu
 ```

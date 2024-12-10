@@ -43,6 +43,7 @@ const {
   ENABLE_CHANGELOG,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
+  ENABLE_GROUPS,
   ENABLE_NETWORK,
   ENABLE_SOURCES,
   ENABLE_TASKS,
@@ -55,6 +56,8 @@ const {
 // Components
 const Home = require('./Home');
 const ContractHome = require('./ContractHome');
+const GroupHome = require('./GroupHome');
+const GroupView = require('./GroupView');
 const NetworkHome = require('./NetworkHome');
 const Library = require('./Library');
 const DocumentHome = require('./DocumentHome');
@@ -81,6 +84,7 @@ const HelpBox = require('./HelpBox');
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
+const FeaturesHome = require('./FeaturesHome.js');
 
 /**
  * The main dashboard component.
@@ -536,6 +540,12 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Network</p>
                 </Menu.Item>
               )}
+              {ENABLE_GROUPS && (USER_IS_ALPHA || USER_IS_ADMIN) && (
+                <Menu.Item as={Link} to='/groups' onClick={this.closeSidebars}>
+                  <Icon name='users' size='large'/>
+                  <p className='icon-label'>Groups</p>
+                </Menu.Item>
+              )}
               {ENABLE_SOURCES && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
@@ -668,36 +678,38 @@ class Dashboard extends React.Component {
                   />
                 } />
                 <Route path='/settings/library' element={<Library />} />
-                <Route path="/updates" element={<Changelog {...this.props} />} />
-                <Route path="/documents" element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} />
-                <Route path="/documents/:fabricID" element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
-                <Route path="/conversations/documents/:id" element={<DocumentNewChat {...this.props} documentInfoSidebar={this.documentInfoSidebar} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
-                <Route path="/people" element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
-                <Route path="/conversations/:id" element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
-                <Route path="/conversations" element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
-                <Route path="/sources" element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} {...this.props} />} />
-                <Route path="/tasks" element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
-                <Route path="/tasks/:id" element={<TaskView task={this.props.task} />} />
-                <Route path="/uploads" element={<UploadHome {...this.props} />} />
-                <Route path="/users/:username" element={<UserView {...this.props} />} />
+                <Route path='/updates' element={<Changelog {...this.props} />} />
+                <Route path='/documents' element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} />
+                <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
+                <Route path='/features' element={<FeaturesHome />} />
+                <Route path='/people' element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
+                <Route path='/conversations/:id' element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
+                <Route path='/conversations' element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
+                <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
+                <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
+                <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
+                <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
+                <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
+                <Route path='/uploads' element={<UploadHome {...this.props} />} />
+                <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
                 {/* TODO: fix these routes */}
                 {/* /settings/admin should render the overview */}
                 {/* /settings/admin#users should load the user tab */}
-                <Route path="/settings/admin/overview" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/announcements" element={<AdminSettings {...this.props} activeIndex={1} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/settings" element={<AdminSettings {...this.props} activeIndex={2} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/users" element={<AdminSettings {...this.props} activeIndex={3} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/growth" element={<AdminSettings {...this.props} activeIndex={4} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/conversations" element={<AdminSettings {...this.props} activeIndex={5} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/services" element={<AdminSettings {...this.props} activeIndex={6} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings/admin/design" element={<AdminSettings {...this.props} activeIndex={7} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/overview' element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/announcements' element={<AdminSettings {...this.props} activeIndex={1} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/settings' element={<AdminSettings {...this.props} activeIndex={2} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/users' element={<AdminSettings {...this.props} activeIndex={3} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/growth' element={<AdminSettings {...this.props} activeIndex={4} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/conversations' element={<AdminSettings {...this.props} activeIndex={5} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/services' element={<AdminSettings {...this.props} activeIndex={6} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin/design' element={<AdminSettings {...this.props} activeIndex={7} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
                 {/* END TODO */}
-                <Route path="/settings/admin" element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path="/settings" element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/keys" element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
-                <Route path="/peers" element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
-                <Route path="/contracts" element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
-                <Route path="/contracts/terms-of-use" element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
+                <Route path='/settings/admin' element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings' element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
+                <Route path='/keys' element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
+                <Route path='/peers' element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
+                <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
+                <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
             )}
           </Container>
