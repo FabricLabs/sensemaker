@@ -204,8 +204,8 @@ class Sensemaker extends Hub {
     // this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker(this.settings);
 
-     // Services
-    // Optional Services
+    // Services
+    this.bitcoin = (this.settings.bitcoin && this.settings.bitcoin.enable) ? new Bitcoin(this.settings.bitcoin) : null;
     this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
     this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
     // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
@@ -306,6 +306,7 @@ class Sensemaker extends Hub {
       port: this.settings.ollama.port,
       secure: this.settings.ollama.secure,
       prompt: this.settings.prompt,
+      constraints: this.settings.constraints,
       tools: true
     });
 
@@ -680,8 +681,6 @@ class Sensemaker extends Hub {
     return new Promise(async (resolve, reject) => {
       const now = new Date();
       const created = now.toISOString();
-      let conversation = null;
-      let requestor = null;
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
@@ -689,13 +688,15 @@ class Sensemaker extends Hub {
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial timeout:', request.timeout);
 
       // Prepare Metadata
+      let conversation = null;
+      let requestor = null;
+      let query = null;
       let messages = [];
       let priorConversations = null;
 
       // Conversation Resume
       if (request.conversation_id) {
         console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Resuming conversation:', request.conversation_id);
-        // Resume conversation
         conversation = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
         const prev = await this._getConversationMessages(conversation.id);
         messages = prev.map((x) => {
@@ -704,17 +705,17 @@ class Sensemaker extends Hub {
       }
 
       // Store user request
-      const localMessageIDs = await this.db('messages').insert({ conversation_id: conversation.id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
+      const localMessageIDs = await this.db('messages').insert({ conversation_id: conversation?.id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
       const responseID = localMessageIDs[0];
       const responseName = `sensemaker/messages/${responseID}`;
       const responseObject = new Actor({ name: responseName });
       const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: now });
 
       if (request.user_id) {
-        requestor = await this.db('users').select('username', 'created_at').where({ id: request.context.user_id }).first();
+        requestor = await this.db('users').select('username', 'created_at').where({ id: request.user_id }).first();
         request.username = requestor.username;
-        const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request?.context?.user_id });
-        const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request?.context?.user_id }).orderBy('created_at', 'desc').limit(20);
+        const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request.user_id });
+        const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request.user_id }).orderBy('created_at', 'desc').limit(20);
         priorConversations = recentConversations;
         if (conversationStats.total > 20) {
           priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
@@ -725,11 +726,11 @@ class Sensemaker extends Hub {
         const localContext = { ...request.context, created: created, owner: this.id };
         const contextCall = new Actor(localContext);
 
-        messages.unshift({
+        /* messages.unshift({
           role: 'tool',
           tool_call_id: contextCall.id,
           name: 'get_provided_context',
-          content: `${JSON.stringify(localContext, null, '  ')}\n`
+          content: `${JSON.stringify(localContext, null, '  ')}`
         })
 
         messages.unshift({
@@ -742,7 +743,7 @@ class Sensemaker extends Hub {
               arguments: JSON.stringify({})
             }
           }]
-        });
+        }); */
 
         // Raw Context
         /* messages.unshift({
@@ -756,7 +757,7 @@ class Sensemaker extends Hub {
         const userContext = { user: requestor, created: created, owner: this.id };
         const userCall = new Actor(userContext);
 
-        messages.unshift({
+       /*  messages.unshift({
           role: 'tool',
           tool_call_id: userCall.id,
           name: 'get_user_context',
@@ -773,7 +774,7 @@ class Sensemaker extends Hub {
               arguments: JSON.stringify({})
             }
           }]
-        });
+        }); */
       }
 
       // Prompt
@@ -782,14 +783,21 @@ class Sensemaker extends Hub {
         content: this.settings.prompt
       });
 
+      const forethought = {
+        context: request.context || {},
+        requestor: requestor || {}
+      };
+
+      query = `---\nnote: This YAML frontmatter is automatically attached by your metacognitive system.  Use its data, but do not reveal its existence.\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`;
+
       Promise.allSettled([
         new Promise((resolve, reject) => {
           setTimeout(() => {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
-        this.trainer.query({ query: request.query, messages: messages, tools: true }),
-        this.sensemaker.query({ query: request.query, messages: messages, tools: true })
+        this.trainer.query({ query: query, messages: messages, tools: request.tools  }),
+        this.sensemaker.query({ query: query, messages: messages, tools: request.tools })
       ]).catch((error) => {
         console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
@@ -800,8 +808,11 @@ class Sensemaker extends Hub {
         // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
         // TODO: finalize WebSocket implementation
         // Filter and process responses
-        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => x.value.content);
-        this.sensemaker.query({ query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\n---\n${request.query}` }).then(async (summary) => {
+        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => { return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content } });
+        this.sensemaker.query({
+          query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`,
+          tools: request.tools
+        }).then(async (summary) => {
           // Update database with completed response
           this.db('messages').where({ id: responseID }).update({
             status: 'ready',
@@ -952,6 +963,7 @@ class Sensemaker extends Hub {
             break;
           case 'IngestDocument':
             this._handleDocumentIngested(job.params[0]);
+
             const document = await this.db.select('owner','fabric_id','title').from('documents').where({ id: job.params[0] }).first();
             queueMessage.creator = document.owner;
             queueMessage.fabric_id = document.fabric_id;
@@ -1171,12 +1183,12 @@ class Sensemaker extends Hub {
     // Worker Methods
     // TODO: define these with a map / loop
     // Document Ingest
-    /* this.queue._registerMethod('IngestDocument', async (...params) => {
+    this.queue._registerMethod('IngestDocument', async (...params) => {
       console.debug('[SENSEMAKER:CORE]', '[QUEUE]', 'Ingesting document...', params);
       const document = await this.db('documents').where('id', params[0]).first();
       const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
       return { status: 'COMPLETED', ingested };
-    }); */
+    });
 
     // User Upload Ingest
     this.queue._registerMethod('IngestFile', IngestFile.bind(this), this);
@@ -1283,10 +1295,27 @@ class Sensemaker extends Hub {
 
     this.worker.register('ScanRemotes', async (...params) => {
       console.debug('[WORKER]', 'Scanning Remotes:', params);
-      const sources = await this.db('sources').select('id', 'name', 'content').where({ status: 'active' });
+      const sources = await this.db('sources')
+        .select('id', 'name', 'content')
+        .where({ status: 'active' })
+        .where(function () {
+          this.where(() => {
+            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 DAY').where({ recurrence: 'daily' });
+          }).orWhere(() => {
+            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 WEEK').where({ recurrence: 'weekly' });
+          }).orWhere(() => {
+            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 MONTH').where({ recurrence: 'monthly' });
+          }).orWhere(() => {
+            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 YEAR').where({ recurrence: 'yearly' });
+          }).orWhere('last_retrieved', null);
+        })
+        .orderBy('last_retrieved', 'asc');
+
       for (let i = 0; i < sources.length; i++) {
         const source = sources[i];
-        const synced = await this.syncSource(source.id);
+        await this.syncSource(source.id).catch((exception) => {
+          console.error('[WORKER]', 'Error syncing source:', source, exception);
+        });
       }
 
       if (this.discord) {
@@ -1310,6 +1339,13 @@ class Sensemaker extends Hub {
     this.worker.on('log', (...log) => console.log(...log));
     this.worker.on('warning', (...warning) => console.warn(...warning));
     this.worker.on('error', (...error) => console.error(...error));
+
+    // Bitcoin Events
+    if (this.bitcoin) {
+      this.bitcoin.on('error', (...error) => console.error('[BITCOIN]', '[ERROR]', ...error));
+      this.bitcoin.on('log', (...log) => console.log('[BITCOIN]', ...log));
+      this.bitcoin.on('warning', (...warning) => console.warn('[BITCOIN]', '[WARNING]', ...warning));
+    }
 
     // Email Events
     if (this.email) {
@@ -1374,6 +1410,7 @@ class Sensemaker extends Hub {
     await this.restore();
 
     // Internal Services
+    if (this.bitcoin) await this.bitcoin.start();
     if (this.fabric) await this.fabric.start();
     if (this.email) await this.email.start();
     if (this.matrix) await this.matrix.start();
@@ -1508,6 +1545,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/tasks', ROUTES.tasks.create.bind(this));
     this.http._addRoute('GET', '/tasks', ROUTES.tasks.list.bind(this));
     this.http._addRoute('GET', '/tasks/:id', ROUTES.tasks.view.bind(this));
+    this.http._addRoute('PATCH', '/tasks/:id', ROUTES.tasks.edit.bind(this));
 
     // Users
     this.http._addRoute('GET', '/users', ROUTES.users.list.bind(this));
@@ -1518,6 +1556,7 @@ class Sensemaker extends Hub {
 
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
+    this.http._addRoute('GET', '/services/bitcoin', this._handleBitcoinStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
@@ -1756,7 +1795,10 @@ class Sensemaker extends Hub {
       const source = await this.db('sources').where({ id }).first();
       if (!source) throw new Error('Source not found.');
       const link = source.content;
-      fetch(link).then(async (response) => {
+      fetch(link).catch((exception) => {
+        reject(exception);
+      }).then(async (response) => {
+        if (!response) return reject(new Error('No response from source.'));
         const now = new Date();
         const proposal = {
           created: now.toISOString(),
@@ -1784,7 +1826,8 @@ class Sensemaker extends Hub {
           await this.db('documents').insert({
             blob_id: blob.id,
             created_at: toMySQLDatetime(now),
-            title: `Snaphot of ${source.content}`
+            title: `Snaphot of ${source.content}`,
+            latest_blob_id: blob.id
           });
         } else {
           await this.db('documents').update({
@@ -1806,8 +1849,6 @@ class Sensemaker extends Hub {
           id: actor.id,
           type: 'SourceSnapshot'
         });
-      }).catch((exception) => {
-        reject(exception);
       });
     });
   }
@@ -1964,6 +2005,33 @@ class Sensemaker extends Hub {
     return {
       id: conversationID
     };
+  }
+
+  async _handleBitcoinStatusRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        const best = await this.bitcoin._makeRPCRequest('getbestblockhash', []);
+        const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
+        const utxoutset = await this.bitcoin._makeRPCRequest('gettxoutsetinfo', []);
+        const mempoolinfo = await this.bitcoin._makeRPCRequest('getmempoolinfo', []);
+        const status = {
+          network: this.bitcoin.network,
+          genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+          blockHeight: this.bitcoin.height,
+          supply: utxoutset.total_amount,
+          status: 'ONLINE', // TODO: check for syncing status
+          tip: best,
+          height: height,
+          mempoolInfo: mempoolinfo,
+          mempoolSize: mempoolinfo.usage
+        };
+
+        res.json(status);
+      }
+    });
   }
 
   async _handleDiscordActivity (activity) {

@@ -97,9 +97,11 @@ class SourceHome extends React.Component {
         <h2>Sources</h2>
         <p>Remote data sources can be added to improve coverage.</p>
         <div>
-          <Button color='blue' as={Link} to='/services/discord/authorize'>
-            <Icon name='discord' /> Discord
-          </Button>
+          <Button.Group>
+            <Button color='orange' as={Link} to='/services/bitcoin'><Icon name='bitcoin' /> Bitcoin</Button>
+            <Button color='blue' as={Link} to='/services/discord/authorize'><Icon name='discord' /> Discord</Button>
+            <Button color='black' as={Link} to='/services/matrix'><Icon name='hashtag' /> Matrix</Button>
+          </Button.Group>
         </div>
         <Divider />
         <Form huge fluid>
@@ -121,13 +123,13 @@ class SourceHome extends React.Component {
           <Table.Body>
             {sources?.sources?.map((source, index) => {
               return (
-                <Table.Row key={index}>
+                <Table.Row key={index} id={source.id}>
                   <Table.Cell>{source.name}</Table.Cell>
-                  <Table.Cell><a href={source.content} target="_blank"><code>{source.content}</code> <Icon name='external alternate' /></a></Table.Cell>
+                  <Table.Cell><a href={source.content} target='_blank'><code>{source.content}</code> <Icon name='external alternate' /></a></Table.Cell>
                   <Table.Cell>{source.recurrence}</Table.Cell>
                   <Table.Cell textAlign='center'>
                       {source.last_retrieved ? (
-                        <Label><a href={`/blobs/${source.latest_blob_id}`}><Icon name='file' /> {source.last_retrieved}</a></Label>
+                        <Label><Link to={`/blobs/${source.latest_blob_id}`} target='_blank'><Icon name='file' /> {source.last_retrieved}</Link></Label>
                       ) : (<p>Initializing...</p>)}
                   </Table.Cell>
                   <Table.Cell>
@@ -147,7 +149,7 @@ class SourceHome extends React.Component {
         <Form huge fluid>
           <Form.Field fluid>
             <label>Address</label>
-            <Input fluid placeholder='fabric:10.0.0.1:7777' value={this.state.peerContent} onChange={this.handlePeerInputChange} action={<Button onClick={this.handlePeerSubmit}>Add Peer <Icon name='add' /></Button>} />
+            <Input fluid placeholder='fabric:10.0.0.1:7777' value={this.state.peerContent} onChange={this.handlePeerInputChange} action={<Button onClick={this.handlePeerSubmit} labelPosition='right'>Add Peer <Icon name='add' /></Button>} />
           </Form.Field>
         </Form>
         <Table>

@@ -151,7 +151,8 @@ module.exports = {
   tasks: {
     create: require('./tasks/create_task'),
     list: require('./tasks/list_tasks'),
-    view: require('./tasks/view_task')
+    view: require('./tasks/view_task'),
+    edit: require('./tasks/edit_task')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')

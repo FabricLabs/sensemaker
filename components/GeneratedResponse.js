@@ -28,26 +28,22 @@ class GeneratedResponse extends React.Component {
 
   componentDidMount () {
     const { request } = this.props;
+    // console.debug('GeneratedResponse.componentDidMount', { request });
     this.props.fetchResponse(request);
   }
 
-  componentDidUpdate (prevProps) {
-    const { response } = this.props;
-    if (prevProps.response !== response) {
-      // if (!response.loading) {
-      //   this.setState({ loading: false });
-      // }
-    }
+  componentDidUpdate (prevProps, prevState, snapshot) {
+    const { response, tasks } = this.props;
   }
 
   render () {
-    const { network, response } = this.props;
+    const { network, chat } = this.props;
     return (
       <Segment className='fade-in' loading={network?.loading}>
-        {(response?.loading) ? <h3>{BRAND_NAME} is thinking...</h3> : (
+        {(chat?.loading) ? <h3>{BRAND_NAME} is thinking...</h3> : (
           <sensemaker-response>
             <h3>{BRAND_NAME} says...</h3>
-            <div dangerouslySetInnerHTML={{ __html: marked.parse((response) ? response.choices[0].message.content : '') }}></div>
+            <div dangerouslySetInnerHTML={{ __html: marked.parse((chat.response) ? chat.response.choices[0].message.content : '') }}></div>
           </sensemaker-response>
         )}
       </Segment>

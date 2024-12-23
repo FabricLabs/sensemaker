@@ -46,10 +46,15 @@ module.exports = {
   name: 'Sensemaker',
   mode: 'production',
   expander: true,
-  crawl: false,
+  crawl: true,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   temperature: 0,
+  constraints: {
+    tokens: {
+      max: 65536 // can be doubled to ~131072
+    }
+  },
   trainer: {
     enable: false,
     hosts: ['localhost:7777'],
@@ -186,6 +191,20 @@ module.exports = {
     fullnode: false,
     authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',
     network: 'regtest'
+    interval: 60000,
+    nodes: [
+      { name: 'BITCOIN_LOCAL_MAINNET_WALLET', network: 'mainnet', url: 'http://localhost:8332', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_MAINNET_BOUNDARY', network: 'mainnet', url: 'http://localhost:8332', roles: ['blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_TESTNET_WALLET', network: 'testnet', url: 'http://localhost:18332', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_TESTNET_BOUNDARY', network: 'testnet', url: 'http://localhost:18332', roles: ['blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_REGTEST_WALLET', network: 'regtest', url: 'http://localhost:18443', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_REGTEST_BOUNDARY', network: 'regtest', url: 'http://localhost:18443', roles: ['blockchain', 'mempool'] }
+    ],
+    constraints: {
+      storage: {
+        size: 550 // size in MB
+      }
+    }
   },
   github: {
     interval: 10000,

@@ -55,6 +55,7 @@ class Trainer extends Service {
     super(settings);
 
     this.settings = merge({
+      name: 'TRAINED',
       debug: true,
       model: 'llama2',
       ollama: {
@@ -254,6 +255,7 @@ class Trainer extends Service {
       /* const embedded = await this.embeddings.embedQuery(request.query);
       console.debug('Embedded query:', embedded); */
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
+      // TODO: replace with `createRetrievalChain`
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query

@@ -63,14 +63,31 @@ class DocumentHome extends React.Component {
     this.props.searchDocument(query);
   }, 1000);
 
-  toggleCreateDocumentModal = () => {
-    console.debug('creating document modal...');
+  initiateDocumentCreation = async () => {
+    const created = await fetch('/documents', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + this.props.token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        // title: 'Untitled Document',
+      })
+    });
+
+    const document = await created.json();
+
+    // TODO: use `id` not `@id`
+    console.debug('history:', this.props.history);
+    this.props.navigate('/documents/' + document['@id'] + '?mode=edit');
   }
 
   render () {
     const { loading, documents } = this.props;
     const { filteredDocuments, searchQuery, searching } = this.state;
     const displayDocuments = searchQuery ? filteredDocuments : documents;
+
     return (
       <fabric-document-home>
         <Segment className='fade-in' fluid style={{ maxHeight: '100%' }}>
@@ -78,11 +95,11 @@ class DocumentHome extends React.Component {
             <h1 style={{ marginTop: '0' }}>Library</h1>
             <Button.Group>
               <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stopped' /></Button>
-              <Button icon color='green' onClick={this.toggleCreateDocumentModal.bind(this)}>Create Document <Icon name='add' /></Button>
+              <Button icon color='green' onClick={this.initiateDocumentCreation.bind(this)}>Create Document <Icon name='add' /></Button>
             </Button.Group>
           </div>
           <p>Search, upload, and manage files.</p>
-          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} />
+          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} navigate={this.props.navigate} />
           {(displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
             <fabric-search fluid placeholder='Find...' className='ui search'>
               <div className='ui huge icon fluid input'>

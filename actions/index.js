@@ -32,6 +32,11 @@ const {
   editEmail,
 } = require('../actions/adminActions');
 
+// # Bitcoin Actions
+const {
+  fetchBitcoinStats
+} = require('../actions/bitcoinActions');
+
 // ## Invitation Actions
 const {
   fetchInvitation,
@@ -140,7 +145,8 @@ const {
 const {
   createTask,
   fetchTasks,
-  fetchTask
+  fetchTask,
+  updateTask
 } = require('../actions/taskActions');
 
 // ## Feedback Actions
@@ -175,6 +181,7 @@ const {
 
 // ## Export
 module.exports = {
+  fetchBitcoinStats,
   fetchKey,
   fetchKeys,
   createKey,
@@ -208,6 +215,7 @@ module.exports = {
   deleteInquiry: deleteInquiry,
   createInquiry: createInquiry,
   createTask: createTask,
+  updateTask: updateTask,
   fetchInvitation: fetchInvitation,
   fetchInvitations: fetchInvitations,
   sendInvitation: sendInvitation,

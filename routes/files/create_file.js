@@ -61,10 +61,6 @@ async function http_create_file (req, res, next) {
     const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
     this.http.broadcast(messageFile);
 
-
-
-    const insertedFile = await this.db('files').where({ id: savedFile[0] }).first();
-
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
@@ -94,10 +90,10 @@ async function http_create_file (req, res, next) {
 
           this.http.broadcast(messageFile);
 
-          console.debug('[FILES]', 'Ingesting file:', req.file.originalname);
           const hash = crypto.createHash('sha256').update(data);
           const digest = hash.digest('hex');
           const actor = new Actor({ content: data.toString('utf8') });
+          // TODO: preserve additional fields (ctime, mtime, etc.)
           const insertedDocument = await this.db('documents').insert({
             title: req.file.originalname,
             content: data.toString('utf8'),
@@ -105,19 +101,22 @@ async function http_create_file (req, res, next) {
             encoding: 'utf8',
             filename: req.file.originalname,
             sha256: digest,
+            creator: req.user.id,
             owner: req.user.id,
             file_id: savedFile[0],
-            ingestion_status: 'processing'
+            ingestion_status: 'processing',
+            latest_blob_id: actor.id,
+            mime_type: mimeType,
+            history: JSON.stringify([actor.id]),
           });
 
-          console.debug('[FILES]', 'Inserted document:', insertedDocument[0]);
-
           // Queue jobs
-          this.queue.addJob({
+          // TODO: fix / troubleshoot ingestion of large files
+          /* this.queue.addJob({
             method: 'IngestFile',
             params: [savedFile[0]],
             attempts: 3,
-          });
+          }); */
 
           /* this.queue.addJob({
             method: 'IngestDocument',
@@ -125,7 +124,7 @@ async function http_create_file (req, res, next) {
             attempts: 3,
           }); */
 
-          res.send({ status: 'success', message: 'Successfully uploaded file!', file_id: savedFile[0], fabric_id: actor.id });
+          res.send({ status: 'success', message: 'Successfully uploaded file!', document_id: actor.id, file_id: savedFile[0], fabric_id: actor.id });
         } catch (updateError) {
           console.error('Failed to update file status:', updateError);
           res.status(500);

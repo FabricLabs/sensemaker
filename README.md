@@ -4,8 +4,12 @@ making sense of stuff.
 
 **`SENSEMAKER`** provides robust intelligence gathering services, accumulating and organizing information from a set of configurable data streams to automatically construct new models and foster insight into complex systems.
 
+## Core Features
+- Multi-stage LLM Pipeline
+- Basic Access to the World Wide Web
+
 ## Requirements
-- Node 18.19 (use `scripts/nvm/install.sh`)
+- Node 18.19.1 (use `scripts/nvm/install.sh`)
 - MySQL 8.3
 - Redis Stack 7.2
 

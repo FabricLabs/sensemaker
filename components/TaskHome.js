@@ -17,12 +17,14 @@ const {
   Header,
   Input,
   Icon,
-  Table
+  Table,
+  Transition
 } = require('semantic-ui-react');
 
 // Local Components
 const ChatBox = require('./ChatBox');
 const GeneratedResponse = require('./GeneratedResponse');
+const HeaderBar = require('./HeaderBar');
 
 class TaskHome extends React.Component {
   constructor (settings = {}) {
@@ -34,7 +36,7 @@ class TaskHome extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchTasks().then(this.props.fetchResponse);
+    this.props.fetchTasks();
   }
 
   componentDidUpdate (prevProps) {
@@ -42,11 +44,11 @@ class TaskHome extends React.Component {
   }
 
   handleTaskCompletionChange = (e) => {
-    console.debug('task completion changed, target:', e.target);
-    console.debug('task completion changed, value:', e.target.value);
     const now = new Date();
-    // TODO: mark completion
-    this.setState({ taskCompletion: e.target.value });
+    this.props.updateTask(e.target.id, { completed_at: now });
+    this.setState({ taskCompletion: now });
+    // TODO: also receive events from WebSocket
+    this.props.fetchTasks();
   }
 
   handleTaskInputChange = (e) => {
@@ -63,57 +65,82 @@ class TaskHome extends React.Component {
   render () {
     const { network, tasks, response } = this.props;
     return (
-      <Segment className='fade-in' loading={network?.loading} style={{ maxHeight: '100%', height: '97vh' }}>
-        <h2>Tasks</h2>
-        <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
-        <p>To get started, create a task below.</p>
-        <Form huge fluid onSubmit={this.handleTaskSubmit}>
-          <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading}>
-            <label>Task</label>
-            <Input fluid type='text' name='title' placeholder='e.g., do the laundry, etc.' action={<Button primary content='Create Task &raquo;' />} />
-          </Form.Field>
-        </Form>
-        <Table>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell></Table.HeaderCell>
-              <Table.HeaderCell>Task</Table.HeaderCell>
-              <Table.HeaderCell></Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {tasks && tasks.tasks.map((x) => {
-              return (
-                <Table.Row className='fade-in'>
-                  <Table.Cell><Input type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} onChange={this.handleTaskCompletionChange} /></Table.Cell>
-                  <Table.Cell>{x.title}</Table.Cell>
-                  <Table.Cell right aligned>
-                    {(x.can_edit) ? (<Icon name='pencil' />) : null}
-                    {(x.can_edit) ? (<Icon name='archive' />) : null}
-                  </Table.Cell>
-                </Table.Row>
-              );
-            })}
-          </Table.Body>
-        </Table>
-        <GeneratedResponse request={{
-          query: 'Suggest next steps.',
-          messages: [
-            { role: 'user', content: `The following is a list of tasks: ${JSON.stringify(tasks.tasks)}` }
-          ]
-        }} chat={this.props.chat} fetchResponse={this.props.fetchResponse} {...this.props} />
-        <ChatBox
-            {...this.props}
-            context={{ tasks: tasks, summary: response?.content }}
-            messagesEndRef={this.messagesEndRef}
-            includeFeed={true}
-            placeholder={`Your request...`}
-            resetInformationSidebar={this.props.resetInformationSidebar}
-            messageInfo={this.props.messageInfo}
-            thumbsUp={this.props.thumbsUp}
-            thumbsDown={this.props.thumbsDown}
-          />
-      </Segment>
+      <sensemaker-task-home class='fade-in' style={{ height: '100%' }}>
+        <Segment className='fade-in' loading={network?.loading} style={{ maxHeight: '100%' }}>
+          <h2>Tasks</h2>
+          <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
+          <p>To get started, create a task below.</p>
+          <Form huge fluid onSubmit={this.handleTaskSubmit}>
+            <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading}>
+              <label>Task</label>
+              <Input fluid type='text' name='title' placeholder='e.g., do the laundry, etc.' action={<Button primary content='Create Task &raquo;' />} />
+            </Form.Field>
+          </Form>
+          <Table compact>
+            <Table.Header fullWidth={true}>
+              <Table.Row>
+                <Table.HeaderCell><Input type='checkbox' disabled={true} title='Not yet enabled.' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.HeaderCell>
+                <Table.HeaderCell>Task</Table.HeaderCell>
+                <Table.HeaderCell></Table.HeaderCell>
+                <Table.HeaderCell textAlign='right'>
+                  <Button.Group>
+                    <Button basic active><Icon name='asterisk' /> All</Button>
+                    <Button basic disabled><Icon name='sun' /> Active</Button>
+                    <Button basic disabled><Icon name='disk' /> Archive</Button>
+                  </Button.Group>
+                </Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body animation='fade right'>
+              {tasks && tasks.tasks.map((x) => {
+                return (
+                  <Table.Row className='fade-in' key={x.id}>
+                    <Table.Cell collapsing><Input id={x.id} type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} onChange={this.handleTaskCompletionChange} className='desktop-only' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.Cell>
+                    <Table.Cell collapsing>{x.title}</Table.Cell>
+                    <Table.Cell collapsing></Table.Cell>
+                    <Table.Cell collapsing textAlign='right'>
+                      <Button.Group basic className='desktop-only'>
+                        {(x.can_edit) ? (<Button icon><Icon name='pencil' /></Button>) : null}
+                        {(x.can_edit) ? (<Button icon><Icon name='archive' /></Button>) : null}
+                        <Button icon><Icon name='thumbtack' /></Button>
+                      </Button.Group>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
+            </Table.Body>
+          </Table>
+          <GeneratedResponse request={{
+            query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
+            messages: [
+              {
+                role: 'user',
+                content: `The following is a list of tasks: ${JSON.stringify(
+                  tasks.tasks.filter((x) => {
+                    return (x.completed_at) ? false : true;
+                  }).map((x) => {
+                    return {
+                      title: x.title,
+                      due_date: x.due_date
+                    }
+                  })
+                )}`
+              }
+            ]
+          }} chat={this.props.chat} fetchResponse={this.props.fetchResponse} {...this.props} />
+          <ChatBox
+              {...this.props}
+              context={{ tasks: tasks.tasks, summary: response?.content }}
+              messagesEndRef={this.messagesEndRef}
+              includeFeed={true}
+              placeholder={`Your request...`}
+              resetInformationSidebar={this.props.resetInformationSidebar}
+              messageInfo={this.props.messageInfo}
+              thumbsUp={this.props.thumbsUp}
+              thumbsDown={this.props.thumbsDown}
+            />
+        </Segment>
+      </sensemaker-task-home>
     );
   }
 

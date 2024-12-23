@@ -80,7 +80,8 @@ class DocumentUploader extends React.Component {
       uploadSuccess: false,
     });
 
-    await this.props.uploadFile(this.state.file);
+    const uploaded = await this.props.uploadFile(this.state.file);
+    this.props.navigate('/documents/' + uploaded.document_id);
   }
 
   isValidFileType (fileType) {

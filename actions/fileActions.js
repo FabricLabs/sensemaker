@@ -30,7 +30,7 @@ const fetchFileSuccess = (instance) => ({ type: FETCH_FILE_SUCCESS, payload: ins
 const fetchFileFailure = (error) => ({ type: FETCH_FILE_FAILURE, payload: error, loading: false });
 
 const uploadFileRequest = () => ({ type: UPLOAD_FILE_REQUEST });
-const uploadFileSuccess = (fabric_id) => ({ type: UPLOAD_FILE_SUCCESS, payload: fabric_id });
+const uploadFileSuccess = (file) => ({ type: UPLOAD_FILE_SUCCESS, payload: file });
 const uploadFileFailure = (error) => ({ type: UPLOAD_FILE_FAILURE, payload: error });
 
 // Thunk action creator
@@ -102,12 +102,13 @@ const uploadFile = (file) => {
       }
 
       const fileAnswer = await fileCreation.json();
+      console.debug('fileAnswer:', fileAnswer);
+      dispatch(uploadFileSuccess({ id: fileAnswer.fabric_id }));
 
-      dispatch(uploadFileSuccess(fileAnswer.fabric_id));
+      return fileAnswer;
     } catch (error) {
       dispatch(uploadFileFailure(error.message));
     }
-
   }
 }
 

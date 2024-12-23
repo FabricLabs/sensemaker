@@ -8,6 +8,7 @@ const thunkMiddleware = require('redux-thunk').default;
 const accountsReducer = require('../reducers/accountsReducer');
 const adminReducer = require('../reducers/adminReducer');
 const authReducer = require('../reducers/authReducer');
+const bitcoinReducer = require('../reducers/bitcoinReducer');
 const bridgeReducer = require('../reducers/bridgeReducer');
 const chatReducer = require('../reducers/chatReducer');
 const contractReducer = require('../reducers/contractReducer');
@@ -31,6 +32,7 @@ const walletReducer = require('../reducers/walletReducer');
 const rootReducer = combineReducers({
   accounts: accountsReducer,
   auth: authReducer,
+  bitcoin: bitcoinReducer,
   bridge: bridgeReducer,
   chat: chatReducer,
   contracts: contractReducer,

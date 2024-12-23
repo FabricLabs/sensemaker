@@ -53,6 +53,7 @@ async function main (input = {}) {
     return {
       accounts: state.users,
       auth: state.auth,
+      bitcoin: state.bitcoin,
       chat: state.chat,
       contracts: state.contracts,
       conversation: state.conversations.conversation,

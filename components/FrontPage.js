@@ -9,8 +9,9 @@ const { Link } = require('react-router-dom');
 const {
   Button,
   Card,
+  Header,
   Icon,
-  Header
+  Segment
 } = require('semantic-ui-react');
 
 // Local Components
@@ -44,7 +45,7 @@ class FrontPage extends React.Component {
         <HeaderBar showBrand={false} showButtons={false} />
         <section class='lead'>
           <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
-          <p style={{ fontSize: '2em', width: '320px' }}>{BRAND_TAGLINE}</p>
+          <p style={{ fontSize: '2em' }}>{BRAND_TAGLINE}</p>
           <p style={{ fontSize: '1.2em', marginBottom: '2em' }}>{PITCH_CTA_TEXT}</p>
           <Button.Group floated='right' size='huge'>
             <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
@@ -54,6 +55,11 @@ class FrontPage extends React.Component {
         </section>
         {/*
         <section style={{ marginTop: '12em' }}>
+          <Segment style={{ padding: '2em' }}>
+            <h2>Deploy Agents in Seconds</h2>
+            <p>Sensemaker enables the rapid deployment of research-grade artificial intelligence tooling into real-world scenarios.  Gain instantaneous insight into real-time data from the field, ranging from social media to physical sensors.</p>
+            <Button size='large' color='black' as={Link} to='/features' floated='right'>Learn More <Icon name='right chevron' /></Button>
+          </Segment>
           <Card fluid>
             <Card.Content style={{ padding: '2em' }}>
               <Card.Header as='h2'>Local Intelligence</Card.Header>

@@ -301,7 +301,7 @@ const editDocumentSection = (fabricID, target, title, content = null) => {
   }
 }
 
-const editDocument = (fabricID,title) => {
+const editDocument = (fabricID, object) => {
   return async (dispatch, getState) => {
     dispatch(editDocumentRequest());
     const { token } = getState().auth;
@@ -312,11 +312,10 @@ const editDocument = (fabricID,title) => {
           'Content-Type': 'application/json'
         },
         method: 'PATCH',
-        body: JSON.stringify({ title })
+        body: JSON.stringify(object)
       });
 
       const document = await response.json();
-
       dispatch(editDocumentSuccess(document));
     } catch (error) {
       console.error('Error fetching data:', error);

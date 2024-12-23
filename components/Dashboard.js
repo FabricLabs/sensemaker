@@ -7,6 +7,7 @@ const {
   Navigate,
   Route,
   Routes,
+  useHistory,
   useLocation,
   useParams,
   useNavigate,
@@ -55,6 +56,9 @@ const {
 
 // Components
 const Home = require('./Home');
+const BitcoinHome = require('./services/BitcoinHome.js');
+// const DiscordHome = require('./services/DiscordHome.js');
+// const MatrixHome = require('./services/MatrixHome.js');
 const ContractHome = require('./ContractHome');
 const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
@@ -466,14 +470,13 @@ class Dashboard extends React.Component {
   //====================================================//
 
   render () {
-    // const {location, params, navigate} = this.props;
+    // TODO: prompt user for external links replacing current application
+    // const { navigate } = this.props;
+
     const USER_IS_ADMIN = this.props.auth && this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth && this.props.auth.isAlpha || this.props.auth.isAdmin || false;
     const USER_IS_BETA = this.props.auth && this.props.auth.isBeta || this.props.auth.isAdmin || false;
 
-    // const USER_IS_ADMIN = true;
-    // const USER_IS_ALPHA = true;
-    // const USER_IS_BETA = true;
     const {
       openSectionBar,
       resetInformationSidebar,
@@ -507,7 +510,7 @@ class Dashboard extends React.Component {
     };
 
     return (
-      <sensemaker-dashboard style={{ height: '100%' }} className='fade-in'>
+      <sensemaker-dashboard style={{ height: '100%' }}>
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
@@ -679,7 +682,7 @@ class Dashboard extends React.Component {
                 } />
                 <Route path='/settings/library' element={<Library />} />
                 <Route path='/updates' element={<Changelog {...this.props} />} />
-                <Route path='/documents' element={<DocumentHome documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} />
+                <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path='/features' element={<FeaturesHome />} />
                 <Route path='/people' element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
@@ -688,7 +691,7 @@ class Dashboard extends React.Component {
                 <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
-                <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} />} />
+                <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
                 <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
                 <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
@@ -708,6 +711,7 @@ class Dashboard extends React.Component {
                 <Route path='/settings' element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path='/keys' element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
                 <Route path='/peers' element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
+                <Route path='/services/bitcoin' element={<BitcoinHome {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
@@ -717,41 +721,41 @@ class Dashboard extends React.Component {
         {ENABLE_FEEDBACK_BUTTON && (
           <div>
             <div id='feedback-button'>
-            {this.state.helpNotification ?
-              (<Icon
-                size='big'
-                // name='question circle outline'
-                name={this.state.helpBoxOpen ? 'close' : 'bell outline'}
-                className='red jiggle-animation'
-                onClick={() => this.toggleHelpBox()}
-              />) :
-              (<Icon
-                size='big'
-                // name='question circle outline'
-                name={this.state.helpBoxOpen ? 'close' : 'question circle outline'}
-                // id='feedback-button'
-                className='grey'
-                onClick={() => this.toggleHelpBox()}
-              />)}
-          </div>
-          <FeedbackBox
-            open={this.state.helpBoxOpen}
-            toggleHelpBox={this.toggleHelpBox}
-            feedbackSection={true}
-            sendFeedback={this.props.sendFeedback}
-            feedback={this.props.feedback}
-          />
-          <HelpBox
-            open={this.state.helpBoxOpen}
-            fetchHelpConversations={this.props.fetchHelpConversations}
-            fetchHelpMessages={this.props.fetchHelpMessages}
-            sendHelpMessage={this.props.sendHelpMessage}
-            markMessagesRead={this.props.markMessagesRead}
-            clearHelpMessages={this.props.clearHelpMessages}
-            help={this.props.help}
-            notification={this.state.helpNotification}
-            stopNotification={() => this.setState({ helpNotification: false })}
-          />
+              {this.state.helpNotification ?
+                (<Icon
+                  size='big'
+                  // name='question circle outline'
+                  name={this.state.helpBoxOpen ? 'close' : 'bell outline'}
+                  className='red jiggle-animation'
+                  onClick={() => this.toggleHelpBox()}
+                />) :
+                (<Icon
+                  size='big'
+                  // name='question circle outline'
+                  name={this.state.helpBoxOpen ? 'close' : 'question circle outline'}
+                  // id='feedback-button'
+                  className='grey'
+                  onClick={() => this.toggleHelpBox()}
+                />)}
+            </div>
+            <FeedbackBox
+              open={this.state.helpBoxOpen}
+              toggleHelpBox={this.toggleHelpBox}
+              feedbackSection={true}
+              sendFeedback={this.props.sendFeedback}
+              feedback={this.props.feedback}
+            />
+            <HelpBox
+              open={this.state.helpBoxOpen}
+              fetchHelpConversations={this.props.fetchHelpConversations}
+              fetchHelpMessages={this.props.fetchHelpMessages}
+              sendHelpMessage={this.props.sendHelpMessage}
+              markMessagesRead={this.props.markMessagesRead}
+              clearHelpMessages={this.props.clearHelpMessages}
+              help={this.props.help}
+              notification={this.state.helpNotification}
+              stopNotification={() => this.setState({ helpNotification: false })}
+            />
           </div>
         )}
         <InformationSidebar
@@ -776,6 +780,7 @@ function dashboard (props) {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
+
   return <Dashboard {...{ location, navigate, params }} {...props} />
 }
 

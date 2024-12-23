@@ -12,10 +12,11 @@ module.exports = async function (req, res, next) {
         'title',
         'description',
         'created_at',
-        'due_date'
+        'due_date',
+        'completed_at'
       ).where('owner', req.user.id);
 
-      const endowments = tasks.map((task) => {
+      const endowments = tasks.filter(x => !x.completed_at).map((task) => {
         task.can_edit = true;
         task.can_delete = true;
         return task;
