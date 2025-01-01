@@ -59,7 +59,9 @@ async function main (input = {}) {
       conversation: state.conversations.conversation,
       conversations: state.conversations.conversations,
       conversationsLoading: state.conversations.loading,
+      discord: state.discord,
       documents: state.documents,
+      fabric: state.fabric,
       files: state.files,
       groups: state.groups,
       people: state.people,
@@ -70,6 +72,7 @@ async function main (input = {}) {
       isAdmin: state.auth.isAdmin,
       isCompliant: state.auth.isCompliant,
       isSending: state.chat.isSending,
+      matrix: state.matrix,
       sources: state.sources,
       tasks: state.tasks,
       token: state.auth.token,
@@ -118,5 +121,5 @@ async function main (input = {}) {
 main(settings).catch((exception) => {
   console.error('[SENSEMAKER:BROWSER] Main Process Exception:', exception);
 }).then((output) => {
-  console.log('[SENSEMAKER:BROWSER] Main Process Output:', output);
+  console.log('[SENSEMAKER:BROWSER] Main Process Ready:', output);
 });

@@ -1557,8 +1557,16 @@ class Sensemaker extends Hub {
     // Services
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin', this._handleBitcoinStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/bitcoin/blocks', this._handleBitcoinBlockListRequest.bind(this));
+    this.http._addRoute('GET', '/services/bitcoin/blocks/:blockhash', this._handleBitcoinBlockRequest.bind(this));
+    this.http._addRoute('GET', '/services/bitcoin/transactions', this._handleBitcoinTransactionListRequest.bind(this));
+    this.http._addRoute('GET', '/services/bitcoin/transactions/:txhash', this._handleBitcoinTransactionRequest.bind(this));
+    this.http._addRoute('GET', '/services/discord', this._handleDiscordStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
+    this.http._addRoute('GET', '/services/fabric', this._handleFabricStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/github', this._handleGitHubStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/matrix', this._handleMatrixStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
     this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
@@ -1568,6 +1576,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
 
     // Help chat
+    // TODO: rework help system into standardized pop-out chat
     this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
     this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
     this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
@@ -1576,12 +1585,10 @@ class Sensemaker extends Hub {
 
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
+
+    // Inquiries
     this.http._addRoute('POST', '/inquiries', ROUTES.inquiries.create.bind(this));
     this.http._addRoute('GET', '/inquiries', ROUTES.inquiries.list.bind(this));
-
-    //endpoint to delete inquiry from admin panel
-    // TODO: change to DELETE
-    // this.http._addRoute('PATCH', '/inquiries/delete/:id', ROUTES.inquiries.delete.bind(this));
     this.http._addRoute('DELETE', '/inquiries/:id', ROUTES.inquiries.delete.bind(this));
     this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
@@ -2007,26 +2014,245 @@ class Sensemaker extends Hub {
     };
   }
 
+  async _handleBitcoinBlockRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        if (!req.params.blockhash) return res.send({ status: 'error', message: 'Block hash is required.' });
+        const block = await this.bitcoin._makeRPCRequest('getblock', [req.params.blockhash, 1]);
+        const stats = await this.bitcoin._makeRPCRequest('getblockstats', [block.height]);
+        block.subsidy = stats.subsidy / 100000000;
+        block.feesPaid = stats.totalfee /  100000000;
+        res.send(block);
+      }
+    })
+  }
+
+  async _handleBitcoinBlockListRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        // TODO: allow various parameters (sort order, cursor start, etc.)
+        // TODO: cache each of these queries
+        // TODO: cache this request overall
+        const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
+        const promises = [];
+        const count = 10;
+
+        for (let i = 0; i < count; i++) {
+          promises.push(this.bitcoin._makeRPCRequest('getblockstats', [height - i]));
+        }
+
+        const blockstats = await Promise.all(promises);
+        const blocks = await Promise.all(blockstats.map(async (x) => {
+          return new Promise((resolve, reject) => {
+            this.bitcoin._makeRPCRequest('getblock', [x.blockhash, 1]).catch((error) => {
+              reject(error);
+            }).then((block) => {
+              block.subsidy = x.subsidy / 100000000;
+              block.feesPaid = x.totalfee /  100000000;
+              // TODO: evaluate TX inclusion
+              block.tx = null;
+              resolve(block);
+            });
+          });
+        }));
+
+        // TODO: read transactions from recent blocks
+        const transactions = [];
+
+        // Loop through all blocks until we have 5 transactions
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          // Calculate the total value of the block
+          // block.value = (block.tx) ? block.tx.reduce((acc, x) => acc + x.vout.reduce((acc, x) => acc + x.value, 0), 0) : 0;
+          block.value = 0;
+          if (!block.tx) continue;
+
+          // For all transactions in the block...
+          for (let j = 0; j < block.tx.length; j++) {
+            const tx = block.tx[j];
+
+            // Assign properties
+            tx.blockhash = block.hash;
+            tx.height = block.height;
+            tx.time = block.time;
+            tx.value = tx.vout.reduce((acc, x) => acc + x.value, 0);
+
+            // Add the transaction to the list
+            transactions.push(tx);
+          }
+        }
+
+        return res.send(blocks);
+      }
+    });
+  }
+
+  async _handleBitcoinTransactionRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        if (!req.params.txhash) return res.send({ status: 'error', message: 'Transaction hash is required.' });
+        const tx = await this.bitcoin._makeRPCRequest('getrawtransaction', [req.params.txhash]);
+        res.send(tx);
+      }
+    })
+  }
+
+  async _handleBitcoinTransactionListRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        // TODO: allow various parameters (sort order, cursor start, etc.)
+        // TODO: cache each of these queries
+        // TODO: cache this request overall
+        const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
+        const promises = [];
+        const count = 10;
+
+        for (let i = 0; i < count; i++) {
+          promises.push(this.bitcoin._makeRPCRequest('getblockstats', [height - i]));
+        }
+
+        const blockstats = await Promise.all(promises);
+        const blocks = await Promise.all(blockstats.map(async (x) => {
+          return new Promise((resolve, reject) => {
+            this.bitcoin._makeRPCRequest('getblock', [x.blockhash, 1]).catch((error) => {
+              reject(error);
+            }).then((block) => {
+              block.subsidy = x.subsidy / 100000000;
+              block.feesPaid = x.totalfee /  100000000;
+              // TODO: evaluate TX inclusion
+              block.tx = null;
+              resolve(block);
+            });
+          });
+        }));
+
+        // TODO: read transactions from recent blocks
+        const transactions = [];
+
+        // Loop through all blocks until we have 5 transactions
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          // Calculate the total value of the block
+          // block.value = (block.tx) ? block.tx.reduce((acc, x) => acc + x.vout.reduce((acc, x) => acc + x.value, 0), 0) : 0;
+          block.value = 0;
+          if (!block.tx) continue;
+
+          // For all transactions in the block...
+          for (let j = 0; j < block.tx.length; j++) {
+            const tx = block.tx[j];
+
+            // Assign properties
+            tx.blockhash = block.hash;
+            tx.height = block.height;
+            tx.time = block.time;
+            tx.value = tx.vout.reduce((acc, x) => acc + x.value, 0);
+
+            // Add the transaction to the list
+            transactions.push(tx);
+          }
+        }
+
+        return res.send(blocks);
+      }
+    });
+  }
+
   async _handleBitcoinStatusRequest (req, res, next) {
     res.format({
       html: () => {
         res.send(this.applicationString);
       },
       json: async () => {
+        // TODO: cache each of these queries
+        // TODO: cache this request overall
+        const blockchain = await this.bitcoin._makeRPCRequest('getblockchaininfo', []);
         const best = await this.bitcoin._makeRPCRequest('getbestblockhash', []);
         const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
         const utxoutset = await this.bitcoin._makeRPCRequest('gettxoutsetinfo', []);
         const mempoolinfo = await this.bitcoin._makeRPCRequest('getmempoolinfo', []);
+        const tip = await this.bitcoin._makeRPCRequest('getblockheader', [best]);
+        const market = await this.bitcoin._makeRPCRequest('getblockstats', [tip]);
+        const blockstats = await Promise.all([
+          this.bitcoin._makeRPCRequest('getblockstats', [height]),
+          this.bitcoin._makeRPCRequest('getblockstats', [height - 1]),
+          this.bitcoin._makeRPCRequest('getblockstats', [height - 2]),
+          this.bitcoin._makeRPCRequest('getblockstats', [height - 3]),
+          this.bitcoin._makeRPCRequest('getblockstats', [height - 4]),
+          this.bitcoin._makeRPCRequest('getblockstats', [height - 5])
+        ]);
+
+        const blocks = await Promise.all(blockstats.map(async (x) => {
+          const block = await this.bitcoin._makeRPCRequest('getblock', [x.blockhash, 2]);
+          block.subsidy = x.subsidy / 100000000;
+          block.feesPaid = x.totalfee /  100000000;
+          return block;
+        }));
+
+        // TODO: read transactions from recent blocks
+        const transactions = [];
+
+        // Loop through all blocks until we have 5 transactions
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          // Calculate the total value of the block
+          block.value = (block.tx) ? block.tx.reduce((acc, x) => acc + x.vout.reduce((acc, x) => acc + x.value, 0), 0) : 0;
+          if (!block.tx) continue;
+
+          // For all transactions in the block...
+          for (let j = 0; j < block.tx.length; j++) {
+            const tx = block.tx[j];
+
+            // Assign properties
+            tx.blockhash = block.hash;
+            tx.height = block.height;
+            tx.time = block.time;
+            tx.value = tx.vout.reduce((acc, x) => acc + x.value, 0);
+
+            // Add the transaction to the list
+            transactions.push(tx);
+
+            // Is this enough?
+            if (transactions.length >= 5) break;
+          }
+
+          // TODO: evaluate TX inclusion
+          blocks[i].tx = null;
+
+          // Do we have enough transactions?
+          if (transactions.length >= 5) break;
+        }
+
         const status = {
           network: this.bitcoin.network,
           genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+          blockChain: blockchain,
+          blockDate: tip.time,
           blockHeight: this.bitcoin.height,
           supply: utxoutset.total_amount,
           status: 'ONLINE', // TODO: check for syncing status
           tip: best,
           height: height,
           mempoolInfo: mempoolinfo,
-          mempoolSize: mempoolinfo.usage
+          mempoolSize: mempoolinfo.usage,
+          unspentTransactions: utxoutset.transactions,
+          unspentOutputs: utxoutset.txouts,
+          market: market,
+          recentBlocks: blocks,
+          recentTransactions: transactions,
+          syncActive: blockchain.initialblockdownload,
+          syncProgress: blockchain.verificationprogress
         };
 
         res.json(status);
@@ -2267,6 +2493,54 @@ class Sensemaker extends Hub {
 
   async _handleDiscordReady (message) {
     console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Ready:', message);
+  }
+
+  async _handleDiscordStatusRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        const status = await this.discord;
+        res.send(status);
+      }
+    });
+  }
+
+  async _handleFabricStatusRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        const status = await this.fabric;
+        res.send(status);
+      }
+    });
+  }
+
+  async _handleGitHubStatusRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        const status = await this.github;
+        res.send(status);
+      }
+    });
+  }
+
+  async _handleMatrixStatusRequest (req, res, next) {
+    res.format({
+      html: () => {
+        res.send(this.applicationString);
+      },
+      json: async () => {
+        const status = await this.matrix;
+        res.send(status);
+      }
+    });
   }
 
   async _handleHealthRequest (req, res, next) {

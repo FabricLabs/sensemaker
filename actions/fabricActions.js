@@ -1,51 +1,50 @@
 'use strict';
 
-// Dependencies
-const crypto = require('crypto');
-
-// Fabric Types
-const Actor = require('@fabric/core/types/actor');
+// Core Actions
+const { fetchFromAPI } = require('./apiActions');
 
 // Functions
-const _sortKeys = require('@fabric/core/functions/_sortKeys');
+// TODO: re-write to use common API methods
+async function fetchStatsFromAPI (token) {
+  const response = await fetch('/services/fabric', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+  });
+
+  return await response.json();
+}
 
 // Action types
-const GENERATE_ACTOR_ID_REQUEST = 'GENERATE_ACTOR_ID_REQUEST';
-const GENERATE_ACTOR_ID_SUCCESS = 'GENERATE_ACTOR_ID_SUCCESS';
-const GENERATE_ACTOR_ID_FAILURE = 'GENERATE_ACTOR_ID_FAILURE';
+const FETCH_FABRIC_STATS_REQUEST = 'FETCH_FABRIC_STATS_REQUEST';
+const FETCH_FABRIC_STATS_SUCCESS = 'FETCH_FABRIC_STATS_SUCCESS';
+const FETCH_FABRIC_STATS_FAILURE = 'FETCH_FABRIC_STATS_FAILURE';
 
 // Action creators
-const generateActorRequest = () => ({ type: GENERATE_ACTOR_ID_REQUEST });
-const generateActorSuccess = (id) => ({ type: GENERATE_ACTOR_ID_SUCCESS, payload: id });
-const generateActorFailure = (error) => ({ type: GENERATE_ACTOR_ID_FAILURE, payload: error });
+const fetchFabricStatsRequest = () => ({ type: FETCH_FABRIC_STATS_REQUEST });
+const fetchFabricStatsSuccess = (stats) => ({ type: FETCH_FABRIC_STATS_SUCCESS, payload: stats });
+const fetchFabricStatsFailure = (error) => ({ type: FETCH_FABRIC_STATS_FAILURE, payload: error });
 
 // Thunk action creator
-const generateActor = (state) => {
+const fetchFabricStats = () => {
   return async (dispatch, getState) => {
-    dispatch(generateActorRequest());
+    dispatch(fetchFabricStatsRequest());
     const { token } = getState().auth;
-
     try {
-      // Fabric IDs
-      const sorted = _sortKeys(state);
-      const actor = new Actor(sorted);
-      const json = JSON.stringify({ type: 'FabricActorState', object: sorted }, null, '  ');
-      const hash = crypto.createHash('sha256').update(json, 'utf8').digest('hex');
-
-      console.debug('[FABRIC:SEED]', 'Actor:', actor.id);
-      console.debug('[FABRIC:SEED]', 'JSON:', json.id);
-      console.debug('[FABRIC:SEED]', 'SHA256:', hash);
-
-      dispatch(generateActorSuccess(actor.id));
+      const stats = await fetchStatsFromAPI(token);
+      dispatch(fetchFabricStatsSuccess(stats));
     } catch (error) {
-      dispatch(generateActorFailure(error));
+      dispatch(fetchFabricStatsFailure(error));
     }
   };
 };
 
 module.exports = {
-  generateActor,
-  GENERATE_ACTOR_ID_REQUEST,
-  GENERATE_ACTOR_ID_SUCCESS,
-  GENERATE_ACTOR_ID_FAILURE
+  fetchFabricStats,
+  FETCH_FABRIC_STATS_REQUEST,
+  FETCH_FABRIC_STATS_SUCCESS,
+  FETCH_FABRIC_STATS_FAILURE
 };

@@ -46,7 +46,7 @@ class FrontPage extends React.Component {
         <section class='lead'>
           <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
           <p style={{ fontSize: '2em' }}>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.2em', marginBottom: '2em' }}>{PITCH_CTA_TEXT}</p>
+          <p style={{ fontSize: '1.2em', marginBottom: '4em' }}>{PITCH_CTA_TEXT}</p>
           <Button.Group floated='right' size='huge'>
             <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
             <Button.Or />

@@ -8,6 +8,8 @@ module.exports = function (req, res, next) {
   if (!request) return res.status(400).json({ error: 'Invalid request.' });
   if (!request.messages) return res.status(400).json({ error: 'Invalid messages.' });
 
+  request.user_id = req.user.id;
+
   this.handleTextRequest(request).catch((error) => {
     console.error('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Error:', error);
   }).then((response) => {

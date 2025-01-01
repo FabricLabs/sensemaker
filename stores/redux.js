@@ -13,11 +13,15 @@ const bridgeReducer = require('../reducers/bridgeReducer');
 const chatReducer = require('../reducers/chatReducer');
 const contractReducer = require('../reducers/contractReducer');
 const conversationReducer = require('../reducers/conversationReducer');
+const discordReducer = require('../reducers/discordReducer');
 const documentReducer = require('../reducers/documentReducer');
+ const fabricReducer = require('../reducers/fabricReducer');
 const fileReducer = require('../reducers/fileReducer');
+const githubReducer = require('../reducers/githubReducer');
 const groupsReducer = require('../reducers/groupsReducer');
 const inquiriesReducer = require('../reducers/inquiriesReducer');
 const invitationReducer = require('../reducers/invitationReducer');
+const matrixReducer = require('../reducers/matrixReducer');
 const peersReducer = require('../reducers/peersReducer');
 const personReducer = require('../reducers/personReducer');
 const searchReducer = require('../reducers/searchReducer');
@@ -37,10 +41,14 @@ const rootReducer = combineReducers({
   chat: chatReducer,
   contracts: contractReducer,
   conversations: conversationReducer,
+  discord: discordReducer,
   documents: documentReducer,
+  fabric: fabricReducer,
   files: fileReducer,
+  github: githubReducer,
   groups: groupsReducer,
   stats: adminReducer,
+  matrix: matrixReducer,
   people: personReducer,
   inquiries: inquiriesReducer,
   invitation: invitationReducer,

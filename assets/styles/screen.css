@@ -293,9 +293,17 @@ h3 {
   text-transform: uppercase;
 }
 
+.right.floated {
+  float: right;
+}
+
 .clearfix {
   clear: both;
   display: block;
+}
+
+.uppercase {
+  text-transform: uppercase;
 }
 
 .ui.grid {

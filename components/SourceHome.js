@@ -99,7 +99,9 @@ class SourceHome extends React.Component {
         <div>
           <Button.Group>
             <Button color='orange' as={Link} to='/services/bitcoin'><Icon name='bitcoin' /> Bitcoin</Button>
-            <Button color='blue' as={Link} to='/services/discord/authorize'><Icon name='discord' /> Discord</Button>
+            <Button color='blue' as={Link} to='/services/discord'><Icon name='discord' /> Discord</Button>
+            <Button color='green' as={Link} to='/services/fabric'><Icon name='cloud' /> Fabric</Button>
+            <Button color='white' as={Link} to='/services/github'><Icon name='github alt' /> GitHub</Button>
             <Button color='black' as={Link} to='/services/matrix'><Icon name='hashtag' /> Matrix</Button>
           </Button.Group>
         </div>
@@ -132,7 +134,7 @@ class SourceHome extends React.Component {
                         <Label><Link to={`/blobs/${source.latest_blob_id}`} target='_blank'><Icon name='file' /> {source.last_retrieved}</Link></Label>
                       ) : (<p>Initializing...</p>)}
                   </Table.Cell>
-                  <Table.Cell>
+                  <Table.Cell textAlign='right'>
                     <Button.Group>
                       <Button icon labelPosition='left'><Icon name='sync' /> Sync</Button>
                       <Button icon labelPosition='right'>Discuss <Icon name='right chevron' /></Button>

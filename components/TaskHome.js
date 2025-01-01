@@ -82,6 +82,7 @@ class TaskHome extends React.Component {
                 <Table.HeaderCell><Input type='checkbox' disabled={true} title='Not yet enabled.' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.HeaderCell>
                 <Table.HeaderCell>Task</Table.HeaderCell>
                 <Table.HeaderCell></Table.HeaderCell>
+                <Table.HeaderCell></Table.HeaderCell>
                 <Table.HeaderCell textAlign='right'>
                   <Button.Group>
                     <Button basic active><Icon name='asterisk' /> All</Button>
@@ -100,9 +101,16 @@ class TaskHome extends React.Component {
                     <Table.Cell collapsing></Table.Cell>
                     <Table.Cell collapsing textAlign='right'>
                       <Button.Group basic className='desktop-only'>
-                        {(x.can_edit) ? (<Button icon><Icon name='pencil' /></Button>) : null}
-                        {(x.can_edit) ? (<Button icon><Icon name='archive' /></Button>) : null}
-                        <Button icon><Icon name='thumbtack' /></Button>
+                        {(x.can_edit) ? (<Button icon><Icon name='play' /></Button>) : null}
+                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='pause' /></Button>) : null}
+                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='stop' /></Button>) : null}
+                      </Button.Group>
+                    </Table.Cell>
+                    <Table.Cell collapsing textAlign='right'>
+                      <Button.Group basic className='desktop-only'>
+                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='pencil' /></Button>) : null}
+                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='archive' /></Button>) : null}
+                        <Button icon disabled={true}><Icon name='thumbtack' /></Button>
                       </Button.Group>
                     </Table.Cell>
                   </Table.Row>
@@ -110,35 +118,31 @@ class TaskHome extends React.Component {
               })}
             </Table.Body>
           </Table>
-          <GeneratedResponse request={{
-            query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
-            messages: [
-              {
-                role: 'user',
-                content: `The following is a list of tasks: ${JSON.stringify(
-                  tasks.tasks.filter((x) => {
-                    return (x.completed_at) ? false : true;
-                  }).map((x) => {
-                    return {
-                      title: x.title,
-                      due_date: x.due_date
-                    }
-                  })
-                )}`
-              }
-            ]
-          }} chat={this.props.chat} fetchResponse={this.props.fetchResponse} {...this.props} />
-          <ChatBox
-              {...this.props}
-              context={{ tasks: tasks.tasks, summary: response?.content }}
-              messagesEndRef={this.messagesEndRef}
-              includeFeed={true}
-              placeholder={`Your request...`}
-              resetInformationSidebar={this.props.resetInformationSidebar}
-              messageInfo={this.props.messageInfo}
-              thumbsUp={this.props.thumbsUp}
-              thumbsDown={this.props.thumbsDown}
-            />
+          <GeneratedResponse
+            request={{
+              query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
+              messages: [
+                {
+                  role: 'user',
+                  content: `The following is a list of tasks: ${JSON.stringify(
+                    tasks.tasks.filter((x) => {
+                      return (x.completed_at) ? false : true;
+                    }).map((x) => {
+                      return {
+                        title: x.title,
+                        due_date: x.due_date
+                      }
+                    })
+                  )}`
+                }
+              ]
+            }}
+            chat={this.props.chat}
+            context={{ tasks: tasks.tasks, summary: response?.content }}
+            fetchResponse={this.props.fetchResponse}
+            placeholder={'Let\'s start with...'}
+            {...this.props}
+          />
         </Segment>
       </sensemaker-task-home>
     );

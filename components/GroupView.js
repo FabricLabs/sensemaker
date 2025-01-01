@@ -1,9 +1,16 @@
 'use strict';
 
+// Dependencies
+// React
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const {
+  Link,
+  useParams
+} = require('react-router-dom');
 
+// Components
+// Semantic UI
 const {
   Breadcrumb,
   Button,
@@ -16,14 +23,18 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-class GroupView extends React.Component {
+// Local Components
+const ChatBox = require('./ChatBox');
+
+class FabricGroupView extends React.Component {
   constructor (settings = {}) {
     super(settings);
     this.state = {};
+    return this;
   }
 
   componentDidMount () {
-    this.props.fetchGroup();
+    this.props.fetchGroup(this.props.id);
   }
 
   handleGroupMemberCompletionChange = (e) => {
@@ -51,7 +62,7 @@ class GroupView extends React.Component {
       <div>
         <div>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
-          <Breadcrumb style={{ marginLeft: '1em' }}>
+          <Breadcrumb className='uppercase' style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/groups'>Groups</Link></Breadcrumb.Section>
             <Breadcrumb.Divider />
             <Breadcrumb.Section active>{groups.current.name}</Breadcrumb.Section>
@@ -59,7 +70,7 @@ class GroupView extends React.Component {
         </div>
         <Segment loading={groups.loading} style={{ maxHeight: '100%', height: 'auto' }}>
           <Header as='h2'>{groups.current.name}</Header>
-          <p>foo</p>
+          <p>{groups.current.description}</p>
           <h3>Members</h3>
           <Form>
             <Form.Field>
@@ -82,6 +93,21 @@ class GroupView extends React.Component {
               </List.Item>
             ))}
           </List>
+          <h3>Conversations</h3>
+          <div>
+            <Button as={Link} to={`/conversations?mode=new&context=/${JSON.stringify({ group: groups.current.id })}`} color='black'>Chat</Button>
+          </div>
+          <ChatBox
+              {...this.props}
+              context={{ group: groups.current }}
+              messagesEndRef={this.messagesEndRef}
+              includeFeed={true}
+              placeholder={`Ask a question about ${groups.current.name}...`}
+              resetInformationSidebar={this.props.resetInformationSidebar}
+              messageInfo={this.props.messageInfo}
+              thumbsUp={this.props.thumbsUp}
+              thumbsDown={this.props.thumbsDown}
+            />
         </Segment>
       </div>
     );
@@ -90,6 +116,11 @@ class GroupView extends React.Component {
   toHTML () {
     return ReactDOMServer.renderToString(this.render());
   }
+}
+
+function GroupView (props) {
+  const { id } = useParams();
+  return <FabricGroupView id={id} {...props} />;
 }
 
 module.exports = GroupView;

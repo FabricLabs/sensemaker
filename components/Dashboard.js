@@ -22,7 +22,7 @@ const {
 const {
   helpMessageToastEmitter,
   helpMessageSound
-} = require('../functions/toastifyProps.js');
+} = require('../functions/toastifyProps');
 
 // Semantic UI
 const {
@@ -56,14 +56,12 @@ const {
 
 // Components
 const Home = require('./Home');
-const BitcoinHome = require('./services/BitcoinHome.js');
-// const DiscordHome = require('./services/DiscordHome.js');
-// const MatrixHome = require('./services/MatrixHome.js');
-const ContractHome = require('./ContractHome');
+const FeaturesHome = require('./FeaturesHome');
 const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
 const NetworkHome = require('./NetworkHome');
 const Library = require('./Library');
+const ContractHome = require('./ContractHome');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const DocumentNewChat = require('./DocumentNewChat');
@@ -76,7 +74,7 @@ const TaskHome = require('./TaskHome');
 const TaskView = require('./TaskView');
 const UploadHome = require('./UploadHome');
 const UserView = require('./UserView');
-const WalletHome = require('./WalletHome.js');
+const WalletHome = require('./WalletHome');
 const Changelog = require('./Changelog');
 const Room = require('./Room');
 const Settings = require('./Settings');
@@ -88,7 +86,17 @@ const HelpBox = require('./HelpBox');
 
 // Fabric Bridge
 const Bridge = require('./Bridge');
-const FeaturesHome = require('./FeaturesHome.js');
+
+// Services
+const BitcoinHome = require('./services/BitcoinHome');
+const BitcoinBlockList = require('./services/BitcoinBlockList');
+const BitcoinBlockView = require('./services/BitcoinBlockView');
+const BitcoinTransactionList = require('./services/BitcoinTransactionList');
+const BitcoinTransactionView = require('./services/BitcoinTransactionView');
+const DiscordHome = require('./services/DiscordHome');
+const FabricHome = require('./services/FabricHome');
+const GitHubHome = require('./services/GitHubHome');
+const MatrixHome = require('./services/MatrixHome');
 
 /**
  * The main dashboard component.
@@ -472,11 +480,9 @@ class Dashboard extends React.Component {
   render () {
     // TODO: prompt user for external links replacing current application
     // const { navigate } = this.props;
-
     const USER_IS_ADMIN = this.props.auth && this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth && this.props.auth.isAlpha || this.props.auth.isAdmin || false;
     const USER_IS_BETA = this.props.auth && this.props.auth.isBeta || this.props.auth.isAdmin || false;
-
     const {
       openSectionBar,
       resetInformationSidebar,
@@ -514,11 +520,11 @@ class Dashboard extends React.Component {
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
-        <div attached="bottom" style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
+        <div attached='bottom' style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id="main-sidebar" animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
+          <Sidebar as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div>
-              <Menu.Item as={Link} to="/" onClick={() => this.handleMenuItemClick('home')}>
+              <Menu.Item as={Link} to='/' onClick={() => this.handleMenuItemClick('home')}>
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
@@ -659,6 +665,7 @@ class Dashboard extends React.Component {
             ) : null}
             {this.state.isLoading ? null : (
               <Routes>
+                {/* TODO: add a nice 404 page */}
                 <Route path="*" element={<Navigate to='/' replace />} />
                 <Route path="/" element={
                   <Home
@@ -712,6 +719,14 @@ class Dashboard extends React.Component {
                 <Route path='/keys' element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
                 <Route path='/peers' element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
                 <Route path='/services/bitcoin' element={<BitcoinHome {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
+                <Route path='/services/bitcoin/blocks' element={<BitcoinBlockList {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
+                <Route path='/services/bitcoin/blocks/:blockhash' element={<BitcoinBlockView {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
+                <Route path='/services/bitcoin/transactions' element={<BitcoinTransactionList {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
+                <Route path='/services/bitcoin/transactions/:txhash' element={<BitcoinTransactionView {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
+                <Route path='/services/discord' element={<DiscordHome {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
+                <Route path='/services/github' element={<GitHubHome {...this.props} />} />
+                <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>
@@ -780,7 +795,6 @@ function dashboard (props) {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
-
   return <Dashboard {...{ location, navigate, params }} {...props} />
 }
 

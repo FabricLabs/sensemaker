@@ -34,8 +34,27 @@ const {
 
 // # Bitcoin Actions
 const {
-  fetchBitcoinStats
+  fetchBitcoinStats,
+  fetchBitcoinBlock,
+  fetchBitcoinBlocks,
+  fetchBitcoinTransaction,
+  fetchBitcoinTransactions
 } = require('../actions/bitcoinActions');
+
+// # Discord Actions
+const {
+  fetchDiscordStats
+} = require('../actions/discordActions');
+
+// # Fabric Actions
+const {
+  fetchFabricStats
+} = require('../actions/fabricActions');
+
+// # GitHub Actions
+const {
+  fetchGitHubStats
+} = require('../actions/githubActions');
 
 // ## Invitation Actions
 const {
@@ -80,6 +99,16 @@ const {
   fetchConversation,
   conversationTitleEdit,
 } = require('../actions/conversationActions');
+
+// # GitHub Actions
+const {
+  fetchGithubStats
+} = require('../actions/githubActions');
+
+// # Matrix Actions
+const {
+  fetchMatrixStats
+} = require('../actions/matrixActions');
 
 // ## Person Actions
 const {
@@ -182,6 +211,13 @@ const {
 // ## Export
 module.exports = {
   fetchBitcoinStats,
+  fetchBitcoinBlock,
+  fetchBitcoinBlocks,
+  fetchBitcoinTransaction,
+  fetchBitcoinTransactions,
+  fetchDiscordStats,
+  fetchFabricStats,
+  fetchGitHubStats,
   fetchKey,
   fetchKeys,
   createKey,
@@ -224,6 +260,7 @@ module.exports = {
   acceptInvitation: acceptInvitation,
   declineInvitation: declineInvitation,
   deleteInvitation: deleteInvitation,
+  fetchMatrixStats,
   fetchPeer: fetchPeer,
   fetchPeers: fetchPeers,
   fetchPeople: fetchPeople,

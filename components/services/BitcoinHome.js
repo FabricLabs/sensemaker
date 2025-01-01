@@ -2,11 +2,20 @@
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
+const { Link } = require('react-router-dom');
 
 const {
+  Breadcrumb,
+  Button,
+  Card,
+  Header,
+  Icon,
   Segment,
   Table
 } = require('semantic-ui-react');
+
+const toRelativeTime = require('../../functions/toRelativeTime');
+const truncateMiddle = require('../../functions/truncateMiddle');
 
 class BitcoinHome extends React.Component {
   constructor (props) {
@@ -71,89 +80,109 @@ class BitcoinHome extends React.Component {
 
   render () {
     const { bitcoin } = this.props;
+    console.debug('[BITCOIN]', 'Service:', bitcoin);
     return (
-      <Segment className='fade-in' loading={bitcoin?.loading} style={{ maxHeight: '100%' }}>
-        <h1>Bitcoin</h1>
-        <div>
-          <div>Chain Tip: <code>{bitcoin?.tip || '...'}</code></div>
-          <div>Genesis: <code>{bitcoin?.genesisHash || '...'}</code></div>
-          <div>Block Height: <code>{bitcoin?.height || 0}</code></div>
-          <div>Bitcoin Issued: <code>{bitcoin?.supply || 0}</code></div>
-          <div>Mempool Size: <code>{bitcoin?.mempoolSize || 0}</code></div>
+      <div>
+        <div className='uppercase'>
+          <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
+          <Breadcrumb style={{ marginLeft: '1em' }}>
+            <Breadcrumb.Section><Link to='/services/bitcoin'>Bitcoin</Link></Breadcrumb.Section>
+          </Breadcrumb>
         </div>
-        <div>
-          <h2>Latest Blocks</h2>
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Height</Table.HeaderCell>
-                <Table.HeaderCell>Hash</Table.HeaderCell>
-                <Table.HeaderCell>Timestamp</Table.HeaderCell>
-                <Table.HeaderCell>Transactions</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {this.state.bitcoin?.blocks.slice(0, 5).map((block, index) => (
-                <Table.Row key={index}>
-                  <Table.Cell>{block.height}</Table.Cell>
-                  <Table.Cell>{block.hash}</Table.Cell>
-                  <Table.Cell>{block.timestamp}</Table.Cell>
-                  <Table.Cell>{block.transactions}</Table.Cell>
+        <Segment className='fade-in' loading={bitcoin?.loading} style={{ maxHeight: '100%' }}>
+          <Card className='right floated'>
+            <Card.Content textAlign='right'>
+              {bitcoin?.syncActive && <div><strong>Syncing block {bitcoin?.height}... (~{(100 * bitcoin.syncProgress).toFixed(1)}%)</strong></div>}
+              <div><strong>Chain Height:</strong> <code>{bitcoin?.height || 0}</code></div>
+              <div><strong>Supply:</strong> <code>{bitcoin?.supply || 0}</code></div>
+            </Card.Content>
+          </Card>
+          <Header as='h1' style={{ marginTop: 0 }}><Icon name='bitcoin' />Bitcoin</Header>
+          <p>Bitcoin is a peer-to-peer electronic cash system.</p>
+          <div>
+            <Header as='h2'>Latest Blocks</Header>
+            <Table>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>Height</Table.HeaderCell>
+                  <Table.HeaderCell>Hash</Table.HeaderCell>
+                  <Table.HeaderCell>Timestamp</Table.HeaderCell>
+                  <Table.HeaderCell>Transactions</Table.HeaderCell>
+                  <Table.HeaderCell>Size</Table.HeaderCell>
+                  <Table.HeaderCell>Subsidy</Table.HeaderCell>
+                  <Table.HeaderCell>Fees Paid</Table.HeaderCell>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-        </div>
-        <div>
-          <h2>Latest Transactions</h2>
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Hash</Table.HeaderCell>
-                <Table.HeaderCell>Block</Table.HeaderCell>
-                <Table.HeaderCell>Timestamp</Table.HeaderCell>
-                <Table.HeaderCell>Amount</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {this.state.bitcoin?.transactions.slice(0, 5).map((tx, index) => (
-                <Table.Row key={index}>
-                  <Table.Cell>{tx.hash}</Table.Cell>
-                  <Table.Cell>{tx.block}</Table.Cell>
-                  <Table.Cell>{tx.timestamp}</Table.Cell>
-                  <Table.Cell>{tx.amount}</Table.Cell>
+              </Table.Header>
+              <Table.Body>
+                {bitcoin && bitcoin.recentBlocks && bitcoin.recentBlocks.length && bitcoin.recentBlocks.slice(0, 5).map((block, index) => (
+                  <Table.Row key={index}>
+                    <Table.Cell>{block.height}</Table.Cell>
+                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + block.hash}>{truncateMiddle(block.hash || '', 11, '…')}</Link></Table.Cell>
+                    <Table.Cell><abbr title={(new Date(block.time * 1000)).toISOString()}>{toRelativeTime(new Date(block.time * 1000))}</abbr></Table.Cell>
+                    <Table.Cell>{block.nTx}</Table.Cell>
+                    <Table.Cell>{(block.size / 1024 / 1024).toFixed(3)} MB</Table.Cell>
+                    <Table.Cell>{block.subsidy?.toFixed(8)} BTC</Table.Cell>
+                    <Table.Cell>{block.feesPaid?.toFixed(8)} BTC</Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          </div>
+          <div style={{ marginTop: '1em' }}>
+            <Button.Group floated='right'>
+              <Button labeled icon labelPosition='right'>Create Transaction <Icon name='add' /></Button>
+            </Button.Group>
+            <Header as='h2'>Latest Transactions</Header>
+            <Table>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>Block</Table.HeaderCell>
+                  <Table.HeaderCell>Hash</Table.HeaderCell>
+                  <Table.HeaderCell>Timestamp</Table.HeaderCell>
+                  <Table.HeaderCell>Inputs</Table.HeaderCell>
+                  <Table.HeaderCell>Outputs</Table.HeaderCell>
+                  <Table.HeaderCell textAlign='right'>Amount</Table.HeaderCell>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-        </div>
-        <div>
-          <h2>Mempool</h2>
-        </div>
-        <div>
-          <h2>Nodes</h2>
-          <Table>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Name</Table.HeaderCell>
-                <Table.HeaderCell>Network</Table.HeaderCell>
-                <Table.HeaderCell>URL</Table.HeaderCell>
-                <Table.HeaderCell>Roles</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {this.state.bitcoin?.nodes.map((node, index) => (
-                <Table.Row key={index}>
-                  <Table.Cell>{node.name}</Table.Cell>
-                  <Table.Cell>{node.network}</Table.Cell>
-                  <Table.Cell>{node.url}</Table.Cell>
-                  <Table.Cell>{node.roles.join(', ')}</Table.Cell>
+              </Table.Header>
+              <Table.Body>
+                {bitcoin && bitcoin.recentTransactions && bitcoin.recentTransactions.length && bitcoin.recentTransactions.slice(0, 5).map((tx, index) => (
+                  <Table.Row key={index}>
+                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + tx.blockhash}>{`#${tx.block?.height}`} {truncateMiddle(tx.blockhash || '', 11, '…')} (#{tx.height})</Link></Table.Cell>
+                    <Table.Cell><Link to={`/services/bitcoin/transactions/` + tx.txid}>{truncateMiddle(tx.txid || '', 11, '…')}</Link></Table.Cell>
+                    <Table.Cell><abbr title={(new Date(tx.time * 1000)).toISOString()}>{toRelativeTime(new Date(tx.time * 1000))}</abbr></Table.Cell>
+                    <Table.Cell>{tx.vin && tx.vin.length} inputs</Table.Cell>
+                    <Table.Cell>{tx.vout && tx.vout.length} outputs</Table.Cell>
+                    <Table.Cell textAlign='right'>{tx.value.toFixed(8)} BTC</Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          </div>
+          <div style={{ marginTop: '1em' }}>
+            <Header as='h2'>Nodes</Header>
+            <Table>
+              <Table.Header>
+                <Table.Row>
+                  <Table.HeaderCell>Name</Table.HeaderCell>
+                  <Table.HeaderCell>Network</Table.HeaderCell>
+                  <Table.HeaderCell>URL</Table.HeaderCell>
+                  <Table.HeaderCell>Roles</Table.HeaderCell>
                 </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
-        </div>
-      </Segment>
+              </Table.Header>
+              <Table.Body>
+                {bitcoin && bitcoin.nodes && bitcoin.nodes.map((node, index) => (
+                  <Table.Row key={index}>
+                    <Table.Cell>{node.name}</Table.Cell>
+                    <Table.Cell>{node.network}</Table.Cell>
+                    <Table.Cell>{node.url}</Table.Cell>
+                    <Table.Cell>{node.roles.join(', ')}</Table.Cell>
+                  </Table.Row>
+                ))}
+              </Table.Body>
+            </Table>
+          </div>
+        </Segment>
+      </div>
     );
   }
 

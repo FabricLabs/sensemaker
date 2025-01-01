@@ -14,6 +14,9 @@ const {
   Segment
 } = require('semantic-ui-react');
 
+// Local Components
+const ChatBox = require('./ChatBox');
+
 class GeneratedResponse extends React.Component {
   constructor (settings = {}) {
     super(settings);
@@ -21,29 +24,35 @@ class GeneratedResponse extends React.Component {
     this.state = {
       loading: false,
       request: {
-        query: ''
+        query: 'Introduce yourself.'
       }
     };
   }
 
   componentDidMount () {
     const { request } = this.props;
-    // console.debug('GeneratedResponse.componentDidMount', { request });
     this.props.fetchResponse(request);
-  }
-
-  componentDidUpdate (prevProps, prevState, snapshot) {
-    const { response, tasks } = this.props;
   }
 
   render () {
     const { network, chat } = this.props;
     return (
       <Segment className='fade-in' loading={network?.loading}>
-        {(chat?.loading) ? <h3>{BRAND_NAME} is thinking...</h3> : (
+        {(chat?.loading || !chat.response || !chat.response.choices) ? <h3>{BRAND_NAME} is thinking...</h3> : (
           <sensemaker-response>
             <h3>{BRAND_NAME} says...</h3>
             <div dangerouslySetInnerHTML={{ __html: marked.parse((chat.response) ? chat.response.choices[0].message.content : '') }}></div>
+            <ChatBox
+              {...this.props}
+              context={ this.props.context }
+              messagesEndRef={this.messagesEndRef}
+              includeFeed={true}
+              placeholder={this.props.placeholder || `Your response...`}
+              resetInformationSidebar={this.props.resetInformationSidebar}
+              messageInfo={this.props.messageInfo}
+              thumbsUp={this.props.thumbsUp}
+              thumbsDown={this.props.thumbsDown}
+            />
           </sensemaker-response>
         )}
       </Segment>
