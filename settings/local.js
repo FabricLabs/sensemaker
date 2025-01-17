@@ -188,9 +188,9 @@ module.exports = {
     }
   },
   bitcoin: {
+    enable: true,
     fullnode: false,
-    authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',
-    network: 'regtest'
+    network: 'mainnet',
     interval: 60000,
     nodes: [
       { name: 'BITCOIN_LOCAL_MAINNET_WALLET', network: 'mainnet', url: 'http://localhost:8332', roles: ['wallet', 'blockchain', 'mempool'] },

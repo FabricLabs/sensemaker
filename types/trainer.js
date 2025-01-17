@@ -10,8 +10,6 @@ const {
 } = require('../constants');
 
 // Dependencies
-require('@tensorflow/tfjs-node');
-
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -36,8 +34,7 @@ const { TextLoader } = require('langchain/document_loaders/fs/text');
 const { RetrievalQAChain } = require('langchain/chains');
 // const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { RedisVectorStore } = require('@langchain/redis');
-// const { CheerioWebBaseLoader } = require('langchain/document_loaders/web/cheerio');
-const { TensorFlowEmbeddings } = require('@langchain/community/embeddings/tensorflow');
+const { OllamaEmbeddings } = require('@langchain/ollama');
 const { Document } = require('@langchain/core/documents');
 
 // Fabric Types
@@ -349,7 +346,7 @@ class Trainer extends Service {
         console.debug('[SENSEMAKER]', '[TRAINER]', 'Redis connected.');
         const allDocs = await this.ingestReferences();
         // console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references:', allDocs);
-        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
+        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
           redisClient: this.redis,
           indexName: this.settings.redis.name || 'sensemaker-embeddings'
         });

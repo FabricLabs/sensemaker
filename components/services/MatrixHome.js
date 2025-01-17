@@ -78,6 +78,18 @@ class MatrixHome extends React.Component {
           <Header as='h1' style={{ marginTop: 0 }}><Icon name='hashtag' />Matrix</Header>
           <p>Matrix is a decentralized chat network.</p>
         </Segment>
+        <Segment className='fade-in' loading={matrix?.loading} style={{ maxHeight: '100%' }}>
+          <Header as='h2'>Rooms</Header>
+          <ul>
+            {matrix?.rooms?.map((doc, index) => {
+              return (
+                <li key={index}>
+                  <Link to={`/services/matrix/rooms/${doc.id}`}>{doc.title}</Link> - {truncateMiddle(doc.content, 100)} - {toRelativeTime(doc.createdAt)}
+                </li>
+              );
+            })}
+          </ul>
+        </Segment>
       </div>
     );
   }
