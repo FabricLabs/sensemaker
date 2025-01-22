@@ -52,6 +52,7 @@ async function main (input = {}) {
   const mapStateToProps = (state) => {
     return {
       accounts: state.users,
+      agents: state.agents,
       auth: state.auth,
       bitcoin: state.bitcoin,
       chat: state.chat,
@@ -60,6 +61,7 @@ async function main (input = {}) {
       conversations: state.conversations.conversations,
       conversationsLoading: state.conversations.loading,
       discord: state.discord,
+      disk: state.disk,
       documents: state.documents,
       fabric: state.fabric,
       files: state.files,

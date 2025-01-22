@@ -18,7 +18,8 @@ module.exports = {
     design: require('./admin/design')
   },
   agents: {
-    list: require('./agents/list_agents'),
+    create: require('./agents/create_agent'),
+    list: require('./agents/list_agents')
   },
   announcements: {
     list: require('./announcements/list_announcements'),
@@ -122,6 +123,10 @@ module.exports = {
     create: require('./reviews/create_review')
   },
   services: {
+    disk: {
+      list: require('./services/disk/list_files'),
+      view: require('./services/disk/view_path')
+    },
     rsi: {
       activities: {
         create: require('./services/rsi/create_activity')

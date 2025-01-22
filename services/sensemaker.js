@@ -1494,6 +1494,7 @@ class Sensemaker extends Hub {
 
     // Agents
     this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
+    this.http._addRoute('POST', '/agents', ROUTES.agents.create.bind(this));
 
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
@@ -1565,6 +1566,8 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
     this.http._addRoute('GET', '/services/fabric', this._handleFabricStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/disk', ROUTES.services.disk.list.bind(this));
+    this.http._addRoute('GET', '/services/disk/:path', ROUTES.services.disk.view.bind(this));
     this.http._addRoute('GET', '/services/github', this._handleGitHubStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/matrix', this._handleMatrixStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
@@ -2342,7 +2345,7 @@ class Sensemaker extends Hub {
       });
 
       const request = this.handleTextRequest({
-        conversation_id: conversationID,
+        conversation_id: activity.target.id,
         query: activity.object.content,
         platform: 'discord',
         username: activity.actor.username
@@ -2501,7 +2504,11 @@ class Sensemaker extends Hub {
         res.send(this.applicationString);
       },
       json: async () => {
-        const status = await this.discord;
+        const guilds = await this.discord._listGuilds();
+        const status = {
+          guilds: guilds
+        };
+
         res.send(status);
       }
     });
@@ -2537,8 +2544,10 @@ class Sensemaker extends Hub {
         res.send(this.applicationString);
       },
       json: async () => {
-        const status = await this.matrix;
-        res.send(status);
+        const rooms = await this.matrix._listPublicRooms();
+        res.send({
+          rooms: rooms
+        });
       }
     });
   }
@@ -2685,6 +2694,8 @@ class Sensemaker extends Hub {
       query: activity.object.content,
       platform: 'matrix',
       // username: activity.actor.username
+    }).catch((error) => {
+      console.error('Error handling text request:', error);
     }).then(async (response) => {
       const proposal = { object: response.content };
       this.matrix._send(proposal, roomID);

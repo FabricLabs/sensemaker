@@ -82,7 +82,6 @@ class TaskHome extends React.Component {
                 <Table.HeaderCell><Input type='checkbox' disabled={true} title='Not yet enabled.' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.HeaderCell>
                 <Table.HeaderCell>Task</Table.HeaderCell>
                 <Table.HeaderCell></Table.HeaderCell>
-                <Table.HeaderCell></Table.HeaderCell>
                 <Table.HeaderCell textAlign='right'>
                   <Button.Group>
                     <Button basic active><Icon name='asterisk' /> All</Button>
@@ -99,13 +98,6 @@ class TaskHome extends React.Component {
                     <Table.Cell collapsing><Input id={x.id} type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} onChange={this.handleTaskCompletionChange} className='desktop-only' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.Cell>
                     <Table.Cell collapsing>{x.title}</Table.Cell>
                     <Table.Cell collapsing></Table.Cell>
-                    <Table.Cell collapsing textAlign='right'>
-                      <Button.Group basic className='desktop-only'>
-                        {(x.can_edit) ? (<Button icon><Icon name='play' /></Button>) : null}
-                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='pause' /></Button>) : null}
-                        {(x.can_edit) ? (<Button icon disabled={true}><Icon name='stop' /></Button>) : null}
-                      </Button.Group>
-                    </Table.Cell>
                     <Table.Cell collapsing textAlign='right'>
                       <Button.Group basic className='desktop-only'>
                         {(x.can_edit) ? (<Button icon disabled={true}><Icon name='pencil' /></Button>) : null}

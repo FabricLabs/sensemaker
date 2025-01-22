@@ -41,6 +41,7 @@ const {
   BRAND_NAME,
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
+  ENABLE_AGENTS,
   ENABLE_CHANGELOG,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
@@ -56,6 +57,7 @@ const {
 
 // Components
 const Home = require('./Home');
+const AgentHome = require('./AgentHome');
 const FeaturesHome = require('./FeaturesHome');
 const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
@@ -64,7 +66,6 @@ const Library = require('./Library');
 const ContractHome = require('./ContractHome');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
-const DocumentNewChat = require('./DocumentNewChat');
 const PeopleHome = require('./PeopleHome');
 const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
@@ -93,7 +94,10 @@ const BitcoinBlockList = require('./services/BitcoinBlockList');
 const BitcoinBlockView = require('./services/BitcoinBlockView');
 const BitcoinTransactionList = require('./services/BitcoinTransactionList');
 const BitcoinTransactionView = require('./services/BitcoinTransactionView');
+const DiskHome = require('./services/DiskHome');
+const DiskPath = require('./services/DiskPath');
 const DiscordHome = require('./services/DiscordHome');
+const DiscordGuild = require('./services/discord/DiscordGuild');
 const FabricHome = require('./services/FabricHome');
 const GitHubHome = require('./services/GitHubHome');
 const MatrixHome = require('./services/MatrixHome');
@@ -534,6 +538,12 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Tasks</p>
                 </Menu.Item>
               )}
+              {ENABLE_AGENTS && USER_IS_ALPHA && (
+                <Menu.Item as={Link} to='/agents' onClick={this.closeSidebars}>
+                  <Icon name='user' size='large'/>
+                  <p className='icon-label'>Agents</p>
+                </Menu.Item>
+              )}
               <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
                 <div className='col-center'>
                   <Icon name='comment alternate' size='large' />
@@ -689,6 +699,7 @@ class Dashboard extends React.Component {
                 } />
                 <Route path='/settings/library' element={<Library />} />
                 <Route path='/updates' element={<Changelog {...this.props} />} />
+                <Route path='/agents' element={<AgentHome {...this.props} />} />
                 <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path='/features' element={<FeaturesHome />} />
@@ -724,6 +735,9 @@ class Dashboard extends React.Component {
                 <Route path='/services/bitcoin/transactions' element={<BitcoinTransactionList {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/bitcoin/transactions/:txhash' element={<BitcoinTransactionView {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/discord' element={<DiscordHome {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/guilds/:guildid' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/disk' element={<DiskHome {...this.props} disk={this.props.disk} fetchDiskStats={this.props.fetchDiskStats} />} />
+                <Route path='/services/disk/:path' element={<DiskPath {...this.props} disk={this.props.disk} fetchDiskStats={this.props.fetchDiskStats} />} />
                 <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
                 <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />

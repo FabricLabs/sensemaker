@@ -98,6 +98,7 @@ class SourceHome extends React.Component {
         <p>Remote data sources can be added to improve coverage.</p>
         <div>
           <Button.Group>
+            <Button as={Link} to='/services/disk'><Icon name='disk' /> Local</Button>
             <Button color='orange' as={Link} to='/services/bitcoin'><Icon name='bitcoin' /> Bitcoin</Button>
             <Button color='blue' as={Link} to='/services/discord'><Icon name='discord' /> Discord</Button>
             <Button color='green' as={Link} to='/services/fabric'><Icon name='cloud' /> Fabric</Button>

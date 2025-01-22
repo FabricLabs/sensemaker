@@ -2,8 +2,8 @@
 
 module.exports = async function (req, res, next) {
   res.format({
-    json: () => {
-      const agents = Object.keys(this.agents).map(x => {
+    json: async () => {
+      /* const agents = Object.keys(this.agents).map(x => {
         const agent = this.agents[x];
         return {
           name: x,
@@ -14,9 +14,12 @@ module.exports = async function (req, res, next) {
           documentation: agent.settings.documentation,
           settings: agent.settings
         };
-      });
-
-      res.send(agents);
+      }); */
+      const agents = await this.db('agents').select('*');
+      res.send({ agents: agents });
+    },
+    html: () => {
+      res.send(this.applicationString);
     }
   });
 };

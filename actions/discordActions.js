@@ -18,15 +18,34 @@ async function fetchStatsFromAPI (token) {
   return await response.json();
 }
 
+async function fetchGuildFromAPI (id, token) {
+  const response = await fetch(`/services/discord/guilds/${id}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+  });
+
+  return await response.json();
+}
+
 // Action types
 const FETCH_DISCORD_STATS_REQUEST = 'FETCH_DISCORD_STATS_REQUEST';
 const FETCH_DISCORD_STATS_SUCCESS = 'FETCH_DISCORD_STATS_SUCCESS';
 const FETCH_DISCORD_STATS_FAILURE = 'FETCH_DISCORD_STATS_FAILURE';
+const FETCH_DISCORD_GUILD_REQUEST = 'FETCH_DISCORD_GUILD_REQUEST';
+const FETCH_DISCORD_GUILD_SUCCESS = 'FETCH_DISCORD_GUILD_SUCCESS';
+const FETCH_DISCORD_GUILD_FAILURE = 'FETCH_DISCORD_GUILD_FAILURE';
 
 // Action creators
 const fetchDiscordStatsRequest = () => ({ type: FETCH_DISCORD_STATS_REQUEST });
 const fetchDiscordStatsSuccess = (stats) => ({ type: FETCH_DISCORD_STATS_SUCCESS, payload: stats });
 const fetchDiscordStatsFailure = (error) => ({ type: FETCH_DISCORD_STATS_FAILURE, payload: error });
+const fetchDiscordGuildRequest = () => ({ type: FETCH_DISCORD_GUILD_REQUEST });
+const fetchDiscordGuildSuccess = (stats) => ({ type: FETCH_DISCORD_GUILD_SUCCESS, payload: stats });
+const fetchDiscordGuildFailure = (error) => ({ type: FETCH_DISCORD_GUILD_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchDiscordStats = () => {
@@ -42,9 +61,26 @@ const fetchDiscordStats = () => {
   };
 };
 
+const fetchDiscordGuild = (id) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchDiscordGuildRequest());
+    const { token } = getState().auth;
+    try {
+      const guild = await fetchGuildFromAPI(id, token);
+      dispatch(fetchDiscordGuildSuccess(guild));
+    } catch (error) {
+      dispatch(fetchDiscordGuildFailure(error));
+    }
+  };
+};
+
 module.exports = {
   fetchDiscordStats,
+  fetchDiscordGuild,
   FETCH_DISCORD_STATS_REQUEST,
   FETCH_DISCORD_STATS_SUCCESS,
-  FETCH_DISCORD_STATS_FAILURE
+  FETCH_DISCORD_STATS_FAILURE,
+  FETCH_DISCORD_GUILD_REQUEST,
+  FETCH_DISCORD_GUILD_SUCCESS,
+  FETCH_DISCORD_GUILD_FAILURE
 };

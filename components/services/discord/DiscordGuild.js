@@ -14,10 +14,10 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-const toRelativeTime = require('../../functions/toRelativeTime');
-const truncateMiddle = require('../../functions/truncateMiddle');
+const toRelativeTime = require('../../../functions/toRelativeTime');
+const truncateMiddle = require('../../../functions/truncateMiddle');
 
-class DiscordHome extends React.Component {
+class DiscordGuild extends React.Component {
   constructor (props) {
     super(props);
 
@@ -49,9 +49,9 @@ class DiscordHome extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchDiscordStats();
+    this.props.fetchDiscordGuild(this.props.guilldid);
     this.watcher = setInterval(() => {
-      this.props.fetchDiscordStats();
+      this.props.fetchDiscordGuild();
     }, 60000);
   }
 
@@ -68,31 +68,25 @@ class DiscordHome extends React.Component {
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/services/discord'>Discord</Link></Breadcrumb.Section>
+            <Breadcrumb.Divider />
+            <Breadcrumb.Section>Guilds</Breadcrumb.Section>
+            <Breadcrumb.Divider />
+            <Breadcrumb.Section>{discord.guild.name}</Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={discord?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}><Icon name='discord' />Discord</Header>
-          <p>Discord is a popular social network for gamers.</p>
+          <Header as='h1' style={{ marginTop: 0 }}>{discord.guild.name}</Header>
         </Segment>
-        <Header as='h2'>Guilds</Header>
-        <Card.Group className='guilds' loading={discord.loading}>
-          {discord.guilds.slice(0, 2).map((guild) => (
-            <Card key={guild.id} as={Link} to={`/services/discord/guilds/${guild.id}`}>
+        <Header as='h2'>Members</Header>
+        <Card.Group loading={discord.loading}>
+          {discord && discord.guild && discord.guild.members && discord.guild.members.slice(0, 2).map((member) => (
+            <Card key={member.id} className='member'>
               <Card.Content>
-                <Card.Header>{guild.name}</Card.Header>
-                <p>{guild.description}</p>
+                <Card.Header>{member.name}</Card.Header>
+                <p>{member.description}</p>
               </Card.Content>
             </Card>
           ))}
-          <Card>
-            <Card.Content>
-              <Card.Header>Add Your Guild &raquo;</Card.Header>
-              <p>Authorize the SENSEMAKER application on Discord to add your Guild.</p>
-            </Card.Content>
-            <Card.Content extra>
-              <a href='/services/discord/authorize' className='ui icon button'><Icon name='plus' /> Add Guild</a>
-            </Card.Content>
-          </Card>
         </Card.Group>
       </div>
     );
@@ -103,4 +97,4 @@ class DiscordHome extends React.Component {
   }
 }
 
-module.exports = DiscordHome;
+module.exports = DiscordGuild;

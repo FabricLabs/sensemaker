@@ -18,7 +18,7 @@ const {
 const toRelativeTime = require('../../functions/toRelativeTime');
 const truncateMiddle = require('../../functions/truncateMiddle');
 
-class MatrixHome extends React.Component {
+class MatrixRoom extends React.Component {
   constructor (props) {
     super(props);
 
@@ -69,7 +69,7 @@ class MatrixHome extends React.Component {
     const { matrix } = this.props;
     console.debug('[MATRIX]', 'Service:', matrix);
     return (
-      <div style={{ minHeight: '100%', maxHeight: '100%', overflowX: 'auto' }}>
+      <div style={{ minHeight: '100%', maxHeight: '100%', overflow: 'auto' }}>
         <div className='uppercase'>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>
@@ -77,26 +77,20 @@ class MatrixHome extends React.Component {
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={matrix?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}><Icon name='hashtag' />Matrix</Header>
-          <p>Matrix is a decentralized chat network.</p>
+          <Header as='h1' style={{ marginTop: 0 }}><Icon name='hashtag' />{matrix.room?.name || 'unknown room'}</Header>
+          <p>{matrix.room?.description}</p>
         </Segment>
-        <Header as='h2'>Rooms</Header>
-        <Card.Group loading={matrix?.loading}>
-          {matrix?.rooms?.slice(0, 10).map((doc, index) => {
+        <div>
+          {matrix.room && matrix.room.messages && matrix.room.messages.map((message, index) => {
             return (
-              <Card key={index} as={Link} to={`/services/matrix/rooms/${doc.room_id}`}>
-                <Card.Content>
-                  <Card.Header>{doc.name}</Card.Header>
-                  <p>{doc.topic}</p>
-                </Card.Content>
-                <Card.Content extra>
-                  <Label><code>{doc.canonical_alias}</code></Label>
-                  <Label><Icon name='users' /><abbr title={doc.num_joined_members + ' members'}>{Number(doc.num_joined_members).toLocaleString()}</abbr></Label>
-                </Card.Content>
-              </Card>
+              <Segment key={message.id} loading={matrix.loading} style={{ maxHeight: '100%', height: 'auto' }}>
+                <Header as='h3'>{message.sender}</Header>
+                <p>{message.body}</p>
+                <Label as='span' color='grey' size='tiny'>{toRelativeTime(message.timestamp)}</Label>
+              </Segment>
             );
           })}
-        </Card.Group>
+        </div>
       </div>
     );
   }
@@ -106,4 +100,4 @@ class MatrixHome extends React.Component {
   }
 }
 
-module.exports = MatrixHome;
+module.exports = MatrixRoom;
