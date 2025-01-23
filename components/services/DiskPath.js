@@ -3,7 +3,10 @@
 // Dependencies
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const {
+  Link,
+  useParams
+} = require('react-router-dom');
 
 const {
   Breadcrumb,
@@ -62,7 +65,6 @@ class DiskPath extends React.Component {
   render () {
     const { disk } = this.props;
     console.debug('[DISK]', 'Service:', disk);
-    console.debug('[DISK]', 'Props:', this.props);
     const parts = window.location.pathname.split('/');
     return (
       <div style={{ maxHeight: '100%', minHeight: '100%', overflowY: 'auto' }}>
@@ -80,13 +82,17 @@ class DiskPath extends React.Component {
             }).join(<Breadcrumb.Divider />)}
           </Breadcrumb>
         </div>
-        {disk.isFile ? (
+        {disk.object?.isFile ? (
           <Segment className='fade-in' loading={disk?.loading} style={{ maxHeight: '100%' }}>
-            <Header as='h2'>{disk.path}</Header>
-            <p>{disk.content}</p>
+            <Header as='h2'>{disk.object?.name || 'Loading...'}</Header>
+            <div>
+              <code>
+                <pre>{disk.object?.content || 'Loading...'}</pre>
+              </code>
+            </div>
           </Segment>
         ) : null}
-        {disk.isDirectory ? (
+        {disk.object?.isDirectory ? (
           <DiskTable loading={disk.loading} disk={disk} {...this.props} />
         ) : null}
       </div>
@@ -98,4 +104,11 @@ class DiskPath extends React.Component {
   }
 }
 
-module.exports = DiskPath;
+
+
+function PathView (props) {
+  const { path } = useParams();
+  return <DiskPath path={path} {...props} />;
+}
+
+module.exports = PathView;

@@ -79,7 +79,12 @@ const {
 // # Discord Actions
 const {
   fetchDiscordStats,
-  fetchDiscordGuild
+  fetchDiscordChannel,
+  fetchDiscordChannels,
+  fetchDiscordGuild,
+  fetchDiscordGuilds,
+  fetchDiscordUser,
+  fetchDiscordUsers
 } = require('../actions/discordActions');
 
 // ## Document Actions
@@ -224,7 +229,12 @@ module.exports = {
   fetchBitcoinTransaction,
   fetchBitcoinTransactions,
   fetchDiscordStats,
+  fetchDiscordChannel,
+  fetchDiscordChannels,
   fetchDiscordGuild,
+  fetchDiscordGuilds,
+  fetchDiscordUser,
+  fetchDiscordUsers,
   fetchFabricStats,
   fetchGitHubStats,
   fetchKey,

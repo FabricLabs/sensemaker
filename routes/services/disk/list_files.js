@@ -5,10 +5,10 @@ const fs = require('fs');
 module.exports = async function (req, res, next) {
   res.format({
     json: () => {
-      const path = process.env.PWD;
-      const stats = fs.statSync(path);
-      const ls = fs.readdirSync(path).map((file) => {
-        const stats = fs.statSync(`${path + '/' + file}`);
+      const root = process.env.PWD;
+      const stats = fs.statSync(root);
+      const ls = fs.readdirSync(root).map((file) => {
+        const stats = fs.statSync(`${root + '/' + file}`);
         return {
           name: file,
           path: file,
@@ -17,9 +17,12 @@ module.exports = async function (req, res, next) {
       });
 
       res.send({
-        path,
-        stats,
-        list: ls
+        path: '/',
+        object: {
+          path: root,
+          stats,
+          list: ls
+        }
       });
     },
     html: () => {

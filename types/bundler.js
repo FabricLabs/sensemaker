@@ -4,8 +4,9 @@
 const path = require('path');
 const merge = require('lodash.merge');
 const webpack = require('webpack');
-const { JSDOM } = require('jsdom');
 
+// Polyfills
+const { JSDOM } = require('jsdom');
 const dom = new JSDOM();
 
 // Browser Polyfills

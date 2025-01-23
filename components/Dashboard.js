@@ -97,7 +97,12 @@ const BitcoinTransactionView = require('./services/BitcoinTransactionView');
 const DiskHome = require('./services/DiskHome');
 const DiskPath = require('./services/DiskPath');
 const DiscordHome = require('./services/DiscordHome');
+const DiscordChannel = require('./services/discord/DiscordChannel');
+const DiscordChannels = require('./services/discord/DiscordChannelList');
 const DiscordGuild = require('./services/discord/DiscordGuild');
+const DiscordGuilds = require('./services/discord/DiscordGuildList');
+const DiscordUser = require('./services/discord/DiscordUser');
+const DiscordUsers = require('./services/discord/DiscordUserList');
 const FabricHome = require('./services/FabricHome');
 const GitHubHome = require('./services/GitHubHome');
 const MatrixHome = require('./services/MatrixHome');
@@ -735,9 +740,14 @@ class Dashboard extends React.Component {
                 <Route path='/services/bitcoin/transactions' element={<BitcoinTransactionList {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/bitcoin/transactions/:txhash' element={<BitcoinTransactionView {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/discord' element={<DiscordHome {...this.props} discord={this.props.discord} />} />
-                <Route path='/services/discord/guilds/:guildid' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
-                <Route path='/services/disk' element={<DiskHome {...this.props} disk={this.props.disk} fetchDiskStats={this.props.fetchDiskStats} />} />
-                <Route path='/services/disk/:path' element={<DiskPath {...this.props} disk={this.props.disk} fetchDiskStats={this.props.fetchDiskStats} />} />
+                <Route path='/services/discord/channels' element={<DiscordChannels {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/channels/:id' element={<DiscordChannel {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/guilds' element={<DiscordGuilds {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/guilds/:id' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/users' element={<DiscordUsers {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/users/:id' element={<DiscordUser {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/disk/:path' element={<DiskPath {...this.props} disk={this.props.disk} />} />
+                <Route path='/services/disk' element={<DiskHome {...this.props} disk={this.props.disk} />} />
                 <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
                 <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />

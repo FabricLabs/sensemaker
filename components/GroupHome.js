@@ -4,6 +4,8 @@ const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
+// Components
+// Semantic UI
 const {
   Button,
   Card,
@@ -14,6 +16,9 @@ const {
   List,
   Segment
 } = require('semantic-ui-react');
+
+// Local Components
+const ChatBox = require('./ChatBox');
 
 class GroupHome extends React.Component {
   constructor (settings = {}) {
@@ -80,6 +85,7 @@ class GroupHome extends React.Component {
               </Card>
             ))}
           </Card.Group>
+          <ChatBox {...this.props} context={{ groups: groups?.groups }} placeholder='Ask about these groups...' />
         </div>
       </Segment>
     );

@@ -22,11 +22,29 @@ module.exports = async function (req, res, next) {
       let isDirectory = false;
       let isFile = false;
       let stats = null;
+      let ls = null;
+      let content = null;
 
       try {
         isDirectory = fs.lstatSync(path).isDirectory();
         isFile = fs.lstatSync(path).isFile();
         stats = fs.statSync(path);
+
+        if (isDirectory) {
+          ls = fs.readdirSync(path).map((file) => {
+            const ours = `${name}/${file}`;
+            const info = fs.statSync(base + '/' + ours);
+            return {
+              name: file,
+              path: ours,
+              stats: info
+            };
+          });
+        }
+
+        if (isFile) {
+          content = fs.readFileSync(path, 'utf8');
+        }
       } catch (error) {
         console.error('[FILE]', 'Error:', error);
       }
@@ -38,11 +56,15 @@ module.exports = async function (req, res, next) {
       }
 
       res.send({
-        isDirectory,
-        isFile,
-        name: name,
         path: name,
-        stats
+        object: {
+          isDirectory,
+          isFile,
+          list: ls,
+          name,
+          stats,
+          content
+        }
       });
     },
     'html': () => {

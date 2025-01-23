@@ -94,7 +94,7 @@ class DocumentHome extends React.Component {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
             <h1 style={{ marginTop: '0' }}>Library</h1>
             <Button.Group>
-              <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stopped' /></Button>
+              <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stop' /></Button>
               <Button icon color='green' onClick={this.initiateDocumentCreation.bind(this)}>Create Document <Icon name='add' /></Button>
             </Button.Group>
           </div>

@@ -123,6 +123,20 @@ module.exports = {
     create: require('./reviews/create_review')
   },
   services: {
+    discord: {
+      guilds: {
+        list: require('./services/discord/list_guilds'),
+        view: require('./services/discord/view_guild')
+      },
+      channels: {
+        list: require('./services/discord/list_channels'),
+        view: require('./services/discord/view_channel')
+      },
+      users: {
+        list: require('./services/discord/list_users'),
+        view: require('./services/discord/view_user')
+      }
+    },
     disk: {
       list: require('./services/disk/list_files'),
       view: require('./services/disk/view_path')

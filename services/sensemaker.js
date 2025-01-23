@@ -1563,6 +1563,12 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/bitcoin/transactions', this._handleBitcoinTransactionListRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin/transactions/:txhash', this._handleBitcoinTransactionRequest.bind(this));
     this.http._addRoute('GET', '/services/discord', this._handleDiscordStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/discord/guilds', ROUTES.services.discord.guilds.list.bind(this));
+    this.http._addRoute('GET', '/services/discord/guilds/:guildid', ROUTES.services.discord.guilds.view.bind(this));
+    this.http._addRoute('GET', '/services/discord/channels', ROUTES.services.discord.channels.list.bind(this));
+    this.http._addRoute('GET', '/services/discord/channels/:id', ROUTES.services.discord.channels.view.bind(this));
+    this.http._addRoute('GET', '/services/discord/users', ROUTES.services.discord.users.list.bind(this));
+    this.http._addRoute('GET', '/services/discord/users/:id', ROUTES.services.discord.users.view.bind(this));
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
     this.http._addRoute('GET', '/services/fabric', this._handleFabricStatusRequest.bind(this));

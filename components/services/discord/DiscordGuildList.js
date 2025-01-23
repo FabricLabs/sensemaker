@@ -3,7 +3,10 @@
 // Dependencies
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const {
+  Link,
+  useParams
+} = require('react-router-dom');
 
 // Components
 // Semantic UI
@@ -17,12 +20,13 @@ const {
 } = require('semantic-ui-react');
 
 // Local Components
-const ChatBox = require('../ChatBox');
+// const DiscordUserCard = require('./DiscordUserCard');
 
-// const toRelativeTime = require('../../functions/toRelativeTime');
-// const truncateMiddle = require('../../functions/truncateMiddle');
+// Functions
+const toRelativeTime = require('../../../functions/toRelativeTime');
+const truncateMiddle = require('../../../functions/truncateMiddle');
 
-class DiscordHome extends React.Component {
+class GuildList extends React.Component {
   constructor (props) {
     super(props);
 
@@ -32,6 +36,7 @@ class DiscordHome extends React.Component {
       discord: {},
       state: {
         discord: {
+          guild: {},
           guilds: []
         }
       }
@@ -54,9 +59,9 @@ class DiscordHome extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchDiscordStats();
+    this.props.fetchDiscordGuilds();
     this.watcher = setInterval(() => {
-      this.props.fetchDiscordStats();
+      this.props.fetchDiscordGuilds();
     }, 60000);
   }
 
@@ -68,38 +73,40 @@ class DiscordHome extends React.Component {
     const { discord } = this.props;
     console.debug('[DISCORD]', 'Service:', discord);
     return (
-      <div>
+      <div style={{ minHeight: '100%', maxHeight: '100%', overflowY: 'auto' }}>
         <div className='uppercase'>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/services/discord'>Discord</Link></Breadcrumb.Section>
+            <Breadcrumb.Divider />
+            <Breadcrumb.Section><Link to='/services/discord/guilds'>Guilds</Link></Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={discord?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}><Icon name='discord' />Discord</Header>
-          <p>Discord is a popular social network for gamers.</p>
+          <Header as='h1' style={{ marginTop: 0 }}>{discord.guild.name}</Header>
         </Segment>
-        <Header as='h2'>Guilds</Header>
-        <Card.Group className='guilds' loading={discord.loading}>
-          {discord.guilds.slice(0, 2).map((guild) => (
-            <Card key={guild.id} as={Link} to={`/services/discord/guilds/${guild.id}`}>
+        <Header as='h2'>{discord && discord.guilds && discord.guilds.length} Guilds</Header>
+        <Card.Group loading={discord.loading}>
+          {discord && discord.guilds && discord.guilds.map((guild) => (
+            <Card key={guild.id}>
               <Card.Content>
-                <Card.Header>{guild.name}</Card.Header>
-                <p>{guild.description}</p>
+                <Card.Header>
+                  <Link to={`/services/discord/guilds/${guild.id}`}>{guild.name}</Link>
+                </Card.Header>
+                <Card.Meta>
+                  <span>{guild.id}</span>
+                </Card.Meta>
+                <Card.Description>
+                  <p>{guild.description}</p>
+                </Card.Description>
+              </Card.Content>
+              <Card.Content extra>
+                <Icon name='user' />
+                {guild.members.length} Members
               </Card.Content>
             </Card>
           ))}
-          <Card>
-            <Card.Content>
-              <Card.Header>Add Your Guild &raquo;</Card.Header>
-              <p>Authorize the SENSEMAKER application on Discord to add your Guild.</p>
-            </Card.Content>
-            <Card.Content extra>
-              <a href='/services/discord/authorize' className='ui icon button'><Icon name='plus' /> Add Guild</a>
-            </Card.Content>
-          </Card>
         </Card.Group>
-        <ChatBox {...this.props} context={{ discord: discord }} placeholder='Ask about Discord...' />
       </div>
     );
   }
@@ -109,4 +116,9 @@ class DiscordHome extends React.Component {
   }
 }
 
-module.exports = DiscordHome;
+function Guild (props) {
+  const { id } = useParams();
+  return <GuildList {...props} id={id} />;
+}
+
+module.exports = Guild;

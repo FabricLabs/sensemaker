@@ -147,39 +147,6 @@ class SourceHome extends React.Component {
           </Table.Body>
         </Table>
         <ChatBox {...this.props} context={{ sources: sources?.sources }} placeholder='Ask about these sources...' />
-        <Divider />
-        <Header as='h2'>Peers</Header>
-        <Form huge fluid>
-          <Form.Field fluid>
-            <label>Address</label>
-            <Input fluid placeholder='fabric:10.0.0.1:7777' value={this.state.peerContent} onChange={this.handlePeerInputChange} action={<Button onClick={this.handlePeerSubmit} labelPosition='right'>Add Peer <Icon name='add' /></Button>} />
-          </Form.Field>
-        </Form>
-        <Table>
-          <Table.Header>
-            <Table.Row>
-              <Table.HeaderCell>Peer</Table.HeaderCell>
-              <Table.HeaderCell>Address</Table.HeaderCell>
-              <Table.HeaderCell>Port</Table.HeaderCell>
-              <Table.HeaderCell>Protocol</Table.HeaderCell>
-              <Table.HeaderCell>Connected</Table.HeaderCell>
-              <Table.HeaderCell>Controls</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {network && network.peers && network.peers
-              .map(instance => {
-                return (<Table.Row>
-                  <Table.Cell><Link to={"/peers/" + instance.id}>{instance.title}</Link></Table.Cell>
-                  <Table.Cell>{instance.address}</Table.Cell>
-                  <Table.Cell>{instance.port}</Table.Cell>
-                  <Table.Cell>{instance.protocol}</Table.Cell>
-                  <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
-                  <Table.Cell><Button><Icon name='stop' /></Button></Table.Cell>
-                </Table.Row>)
-              })}
-          </Table.Body>
-        </Table>
       </Segment>
     );
   }

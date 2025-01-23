@@ -40,17 +40,6 @@ class DiskTable extends React.Component {
     return this;
   }
 
-  componentDidMount () {
-    this.props.fetchDiskStats();
-    this.watcher = setInterval(() => {
-      this.props.fetchDiskStats();
-    }, 5000);
-  }
-
-  componentWillUnmount () {
-    clearInterval(this.watcher);
-  }
-
   render () {
     const { disk } = this.props;
     return (
@@ -64,13 +53,13 @@ class DiskTable extends React.Component {
           </Table.Row>
         </Table.Header>
         <Table.Body>
-          {disk?.list?.map((file) => (
+          {disk?.object?.list && disk.object.list.map((file) => (
             <Table.Row key={file.id}>
               <Table.Cell><Icon name={(
                 file.stats.isDirectory
                   ? 'folder'
                   : 'file'
-              )} /> <Link to={`/services/disk/${file.name}`}>{file.name}</Link></Table.Cell>
+              )} /> <Link to={`/services/disk/${file.path}`}>{file.name}</Link></Table.Cell>
               <Table.Cell>{file.stats.size.toLocaleString() } bytes</Table.Cell>
               <Table.Cell>{toRelativeTime(file.stats.birthtime)}</Table.Cell>
               <Table.Cell>{toRelativeTime(file.stats.mtime)}</Table.Cell>

@@ -26,7 +26,7 @@ const DiscordUserCard = require('./DiscordUserCard');
 const toRelativeTime = require('../../../functions/toRelativeTime');
 const truncateMiddle = require('../../../functions/truncateMiddle');
 
-class DiscordGuild extends React.Component {
+class DiscordChannelList extends React.Component {
   constructor (props) {
     super(props);
 
@@ -37,7 +37,7 @@ class DiscordGuild extends React.Component {
       state: {
         discord: {
           guild: {},
-          guilds: []
+          channels: []
         }
       }
     }, props);
@@ -50,7 +50,7 @@ class DiscordGuild extends React.Component {
     // Fabric State
     this._state = {
       discord: {
-        guilds: {}
+        channels: {}
       },
       content: this.settings.state
     };
@@ -59,9 +59,9 @@ class DiscordGuild extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchDiscordGuild(this.props.id);
+    this.props.fetchDiscordChannels();
     this.watcher = setInterval(() => {
-      this.props.fetchDiscordGuild(this.props.id);
+      this.props.fetchDiscordChannels();
     }, 60000);
   }
 
@@ -79,9 +79,7 @@ class DiscordGuild extends React.Component {
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/services/discord'>Discord</Link></Breadcrumb.Section>
             <Breadcrumb.Divider />
-            <Breadcrumb.Section><Link to='/services/discord/guilds'>Guilds</Link></Breadcrumb.Section>
-            <Breadcrumb.Divider />
-            <Breadcrumb.Section>{discord.guild.name}</Breadcrumb.Section>
+            <Breadcrumb.Section><Link to='/services/discord/channels'>Channels</Link></Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={discord?.loading} style={{ maxHeight: '100%' }}>
@@ -89,32 +87,27 @@ class DiscordGuild extends React.Component {
         </Segment>
         <Header as='h2'>{discord && discord.guild && discord.guild.members && discord.guild.members.length} Members</Header>
         <Card.Group loading={discord.loading}>
-          {discord && discord.guild && discord.guild.members && discord.guild.members.slice(0, 5).map((id, i) => (
-            <DiscordUserCard {...this.props} key={i} id={id} />
-          ))}
-          <Card as={Link} to={`/services/discord/guilds/${discord.guild.id}/members`}>
-            <Card.Content>
-              <Card.Header>...</Card.Header>
-              <p>View all members</p>
-            </Card.Content>
-          </Card>
-        </Card.Group>
-        <Header as='h2'>{discord && discord.guild && discord.guild.channels && discord.guild.channels.length} Channels</Header>
-        <Card.Group loading={discord.loading}>
-          {discord && discord.guild && discord.guild.channels && discord.guild.channels.slice(0, 5).map((id, i) => (
-            <Card key={i} id={id} className='channel' as ={Link} to={`/services/discord/guilds/${discord.guild.id}/channels/${id}`}>
+          {discord && discord.channels && discord.channels.map((id) => (
+            <Card key={id}>
               <Card.Content>
-                <Card.Header>{id}</Card.Header>
-                <p>{id}</p>
+                <Card.Header>
+                  <Link to={`/services/discord/guild/${id}`}>{truncateMiddle(discord.channels[id].name, 20)}</Link>
+                </Card.Header>
+                <Card.Meta>
+                  <span className='date'>{toRelativeTime(discord.channels[id].created_at)}</span>
+                </Card.Meta>
+                <Card.Description>
+                  {discord.channels[id].description}
+                </Card.Description>
+              </Card.Content>
+              <Card.Content extra>
+                <Link to={`/services/discord/guild/${id}`}>
+                  <Icon name='user' />
+                  {discord.channels[id].members.length} Members
+                </Link>
               </Card.Content>
             </Card>
           ))}
-          <Card as={Link} to={`/services/discord/guilds/${discord.guild.id}/channels`}>
-            <Card.Content>
-              <Card.Header>...</Card.Header>
-              <p>View all channels</p>
-            </Card.Content>
-          </Card>
         </Card.Group>
       </div>
     );
@@ -125,9 +118,9 @@ class DiscordGuild extends React.Component {
   }
 }
 
-function Guild (props) {
+function Channel (props) {
   const { id } = useParams();
-  return <DiscordGuild {...props} id={id} />;
+  return <DiscordChannelList {...props} id={id} />;
 }
 
-module.exports = Guild;
+module.exports = Channel;
