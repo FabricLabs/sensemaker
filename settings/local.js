@@ -26,6 +26,11 @@ const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
+const {
+  CORE_MODEL,
+  EMBEDDING_MODEL
+} = require('../constants');
+
 // Prompts
 const promptPath = path.join(__dirname, '../prompts/sensemaker.txt');
 const basePrompt = fs.readFileSync(promptPath, 'utf8');
@@ -67,7 +72,7 @@ module.exports = {
     local: {
       name: 'LOCAL',
       prompt: basePrompt.toString('utf8'),
-      model: 'llama3.2',
+      model: CORE_MODEL,
       host: '127.0.0.1',
       port: 11434,
       secure: false,
@@ -245,8 +250,8 @@ module.exports = {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: 11434,
     secure: false,
-    model: 'llama3.2', // default model
-    models: ['llama3.2', 'llama3.2-vision'], // models to "prime" (preload)
+    model: CORE_MODEL, // default model
+    models: [CORE_MODEL, 'llama3.2-vision'], // models to "prime" (preload)
     temperature: 0
   },
   openai: {
