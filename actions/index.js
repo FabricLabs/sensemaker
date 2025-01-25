@@ -34,6 +34,7 @@ const {
 
 // ## Agent Actions
 const {
+  fetchAgent,
   fetchAgentStats
 } = require('../actions/agentActions');
 
@@ -222,6 +223,7 @@ const {
 
 // ## Export
 module.exports = {
+  fetchAgent,
   fetchAgentStats,
   fetchBitcoinStats,
   fetchBitcoinBlock,

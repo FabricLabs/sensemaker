@@ -58,6 +58,7 @@ const {
 // Components
 const Home = require('./Home');
 const AgentHome = require('./AgentHome');
+const AgentView = require('./AgentView');
 const FeaturesHome = require('./FeaturesHome');
 const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
@@ -705,6 +706,7 @@ class Dashboard extends React.Component {
                 <Route path='/settings/library' element={<Library />} />
                 <Route path='/updates' element={<Changelog {...this.props} />} />
                 <Route path='/agents' element={<AgentHome {...this.props} />} />
+                <Route path='/agents/:id' element={<AgentView {...this.props} />} />
                 <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path='/features' element={<FeaturesHome />} />
@@ -744,6 +746,8 @@ class Dashboard extends React.Component {
                 <Route path='/services/discord/channels/:id' element={<DiscordChannel {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/discord/guilds' element={<DiscordGuilds {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/discord/guilds/:id' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/guilds/:id/channels' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
+                <Route path='/services/discord/guilds/:id/members' element={<DiscordGuild {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/discord/users' element={<DiscordUsers {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/discord/users/:id' element={<DiscordUser {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/disk/:path' element={<DiskPath {...this.props} disk={this.props.disk} />} />

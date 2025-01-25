@@ -1299,15 +1299,11 @@ class Sensemaker extends Hub {
         .select('id', 'name', 'content')
         .where({ status: 'active' })
         .where(function () {
-          this.where(() => {
-            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 DAY').where({ recurrence: 'daily' });
-          }).orWhere(() => {
-            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 WEEK').where({ recurrence: 'weekly' });
-          }).orWhere(() => {
-            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 MONTH').where({ recurrence: 'monthly' });
-          }).orWhere(() => {
-            this.whereRaw('last_retrieved < NOW() - INTERVAL 1 YEAR').where({ recurrence: 'yearly' });
-          }).orWhere('last_retrieved', null);
+          this.whereRaw('last_retrieved < NOW() - INTERVAL 1 DAY').where({ recurrence: 'daily' })
+            .orWhereRaw('last_retrieved < NOW() - INTERVAL 1 WEEK').where({ recurrence: 'weekly' })
+            .orWhereRaw('last_retrieved < NOW() - INTERVAL 1 MONTH').where({ recurrence: 'monthly' })
+            .orWhereRaw('last_retrieved < NOW() - INTERVAL 1 YEAR').where({ recurrence: 'yearly' })
+            .orWhere('last_retrieved', null);
         })
         .orderBy('last_retrieved', 'asc');
 
@@ -1493,8 +1489,9 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
     // Agents
-    this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
     this.http._addRoute('POST', '/agents', ROUTES.agents.create.bind(this));
+    this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
+    this.http._addRoute('GET', '/agents/:id', ROUTES.agents.view.bind(this));
 
     // Files
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
@@ -1832,10 +1829,17 @@ class Sensemaker extends Hub {
           });
         }
 
-        const embedding = await this.trainer.ingestDocument({
-          content: proposal.body,
-          metadata: { id: blob.id, origin: link }
-        }, 'hypertext');
+        let embedding = null;
+
+        try {
+          embedding = await this.trainer.ingestDocument({
+            content: proposal.body,
+            metadata: { id: blob.id, origin: link }
+          }, 'hypertext');
+        } catch (exception) {
+          console.error('[SENSEMAKER:CORE]', '[SYNC]', 'Error ingesting document:', exception);
+          reject(exception);
+        }
 
         const doc = await this.db('documents').where({ blob_id: blob.id }).select('id').first();
         if (!doc) {

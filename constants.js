@@ -18,9 +18,11 @@ const {
 const AGENT_MAX_TOKENS = 8192;
 const AGENT_TEMPERATURE = 0.5;
 const BRAND_NAME = 'Sensemaker';
-const ENABLE_LOGIN = true;
-const ENABLE_REGISTRATION = false;
+const CORE_MODEL = 'llama3.2';
 const EMBEDDING_MODEL = 'mxbai-embed-large';
+
+// Authentication
+const BCRYPT_PASSWORD_ROUNDS = 10;
 
 // Features
 const ALLOWED_UPLOAD_TYPES = [
@@ -31,27 +33,30 @@ const ALLOWED_UPLOAD_TYPES = [
   'application/pdf',
 ];
 
-const BCRYPT_PASSWORD_ROUNDS = 10;
-
+// Flags
 const ENABLE_AGENTS = true;
-const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
-const ENABLE_CONTENT_TOPBAR = true;
-const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_BILLING = false; // TODO: enable billing
+const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
+const ENABLE_CHAT = true;
+const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONTRACTS = true;
+const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_DISCORD_LOGIN = false;
+const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_DOCUMENTS = true;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_GROUPS = true;
-const ENABLE_UPLOADS = false;
-const ENABLE_DOCUMENT_SEARCH = true;
-const ENABLE_PERSON_SEARCH = false;
 const ENABLE_LIBRARY = true;
-const ENABLE_CHAT = true;
+const ENABLE_LOGIN = true;
+const ENABLE_PERSON_SEARCH = false;
+const ENABLE_REGISTRATION = false;
 const ENABLE_SOURCES = true;
 const ENABLE_TASKS = true;
+const ENABLE_UPLOADS = false;
 const ENABLE_WALLET = false;
+
+// UI
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
 const USER_MENU_HOVER_TIME_MS = 1000;
 const USER_HINT_TIME_MS = 3000;
@@ -84,6 +89,7 @@ module.exports = {
   INTEGRITY_CHECK,
   ALLOWED_UPLOAD_TYPES,
   BCRYPT_PASSWORD_ROUNDS,
+  CORE_MODEL,
   EMBEDDING_MODEL,
   ENABLE_AGENTS,
   ENABLE_CONTENT_TOPBAR,

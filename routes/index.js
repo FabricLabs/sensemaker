@@ -19,7 +19,8 @@ module.exports = {
   },
   agents: {
     create: require('./agents/create_agent'),
-    list: require('./agents/list_agents')
+    list: require('./agents/list_agents'),
+    view: require('./agents/view_agent')
   },
   announcements: {
     list: require('./announcements/list_announcements'),

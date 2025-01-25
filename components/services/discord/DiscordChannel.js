@@ -81,11 +81,11 @@ class DiscordChannel extends React.Component {
             <Breadcrumb.Divider />
             <Breadcrumb.Section><Link to='/services/discord/channels'>Channels</Link></Breadcrumb.Section>
             <Breadcrumb.Divider />
-            <Breadcrumb.Section>{discord.channel.name}</Breadcrumb.Section>
+            <Breadcrumb.Section>{discord.channel?.name || 'Loading...'}</Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={discord?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}>{discord.channel.name}</Header>
+          <Header as='h1' style={{ marginTop: 0 }}>{discord.channel?.name || 'Loading...'}</Header>
         </Segment>
       </div>
     );

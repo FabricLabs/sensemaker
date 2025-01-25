@@ -118,9 +118,9 @@ class DiscordUserList extends React.Component {
   }
 }
 
-function Guild (props) {
+function UserList (props) {
   const { id } = useParams();
   return <DiscordUserList {...props} id={id} />;
 }
 
-module.exports = Guild;
+module.exports = UserList;
