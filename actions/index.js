@@ -32,25 +32,20 @@ const {
   editEmail,
 } = require('../actions/adminActions');
 
-// ## Invitation Actions
+// ## Agent Actions
 const {
-  fetchInvitation,
-  fetchInvitations,
-  sendInvitation,
-  reSendInvitation,
-  checkInvitationToken,
-  acceptInvitation,
-  declineInvitation,
-  deleteInvitation,
-} = require('../actions/invitationActions');
+  fetchAgent,
+  fetchAgentStats
+} = require('../actions/agentActions');
 
-// ## Inquiries Actions
+// # Bitcoin Actions
 const {
-  fetchInquiry,
-  fetchInquiries,
-  deleteInquiry,
-  createInquiry
-} = require('../actions/inquiriesActions');
+  fetchBitcoinStats,
+  fetchBitcoinBlock,
+  fetchBitcoinBlocks,
+  fetchBitcoinTransaction,
+  fetchBitcoinTransactions
+} = require('../actions/bitcoinActions');
 
 // ## Chat Actions
 const {
@@ -76,11 +71,22 @@ const {
   conversationTitleEdit,
 } = require('../actions/conversationActions');
 
-// ## Person Actions
+// ## Disk Actions
 const {
-  fetchPeople,
-  fetchPerson
-} = require('../actions/personActions');
+  fetchDiskPath,
+  fetchDiskStats
+} = require('../actions/diskActions');
+
+// # Discord Actions
+const {
+  fetchDiscordStats,
+  fetchDiscordChannel,
+  fetchDiscordChannels,
+  fetchDiscordGuild,
+  fetchDiscordGuilds,
+  fetchDiscordUser,
+  fetchDiscordUsers
+} = require('../actions/discordActions');
 
 // ## Document Actions
 const {
@@ -97,6 +103,16 @@ const {
   deleteDocumentSection,
 } = require('../actions/documentActions');
 
+// # Fabric Actions
+const {
+  fetchFabricStats
+} = require('../actions/fabricActions');
+
+// ## Feedback Actions
+const {
+  sendFeedback
+} = require('../actions/feedbackActions');
+
 // ## Files Actions
 const {
   fetchFiles,
@@ -106,47 +122,16 @@ const {
   fetchUserFiles,
 } = require('../actions/fileActions');
 
+// # GitHub Actions
+const {
+  fetchGitHubStats
+} = require('../actions/githubActions');
+
 const {
   fetchGroup,
   fetchGroups,
   createGroup
 } = require('../actions/groupActions');
-
-const {
-  fetchPeer,
-  fetchPeers,
-  createPeer
-} = require('../actions/peerActions');
-
-const {
-  fetchSource,
-  fetchSources,
-  createSource
-} = require('../actions/sourceActions');
-
-// ## Upload Actions
-const {
-  fetchUploads,
-  fetchUpload,
-  searchUploads,
-} = require('../actions/uploadActions');
-
-// ## Search Actions
-const {
-  searchGlobal,
-} = require('../actions/searchActions');
-
-// ## Task Actions
-const {
-  createTask,
-  fetchTasks,
-  fetchTask
-} = require('../actions/taskActions');
-
-// ## Feedback Actions
-const {
-  sendFeedback,
-} = require('../actions/feedbackActions');
 
 // ## Help Actions
 const {
@@ -158,6 +143,43 @@ const {
   clearHelpMessages,
 } = require('../actions/helpActions');
 
+// ## Invitation Actions
+const {
+  fetchInvitation,
+  fetchInvitations,
+  sendInvitation,
+  reSendInvitation,
+  checkInvitationToken,
+  acceptInvitation,
+  declineInvitation,
+  deleteInvitation,
+} = require('../actions/invitationActions');
+
+// ## Inquiries Actions
+const {
+  fetchInquiry,
+  fetchInquiries,
+  deleteInquiry,
+  createInquiry
+} = require('../actions/inquiriesActions');
+
+// # Matrix Actions
+const {
+  fetchMatrixStats
+} = require('../actions/matrixActions');
+
+// ## Person Actions
+const {
+  fetchPeople,
+  fetchPerson
+} = require('../actions/personActions');
+
+const {
+  fetchPeer,
+  fetchPeers,
+  createPeer
+} = require('../actions/peerActions');
+
 // ## Redis Actions
 const {
   syncRedisQueue,
@@ -165,6 +187,32 @@ const {
   lastJobCompleted,
   clearQueue,
 } = require('../actions/redisActions');
+
+// ## Search Actions
+const {
+  searchGlobal,
+} = require('../actions/searchActions');
+
+const {
+  fetchSource,
+  fetchSources,
+  createSource
+} = require('../actions/sourceActions');
+
+// ## Task Actions
+const {
+  createTask,
+  fetchTasks,
+  fetchTask,
+  updateTask
+} = require('../actions/taskActions');
+
+// ## Upload Actions
+const {
+  fetchUploads,
+  fetchUpload,
+  searchUploads,
+} = require('../actions/uploadActions');
 
 // ## Wallet Actions
 const {
@@ -175,6 +223,22 @@ const {
 
 // ## Export
 module.exports = {
+  fetchAgent,
+  fetchAgentStats,
+  fetchBitcoinStats,
+  fetchBitcoinBlock,
+  fetchBitcoinBlocks,
+  fetchBitcoinTransaction,
+  fetchBitcoinTransactions,
+  fetchDiscordStats,
+  fetchDiscordChannel,
+  fetchDiscordChannels,
+  fetchDiscordGuild,
+  fetchDiscordGuilds,
+  fetchDiscordUser,
+  fetchDiscordUsers,
+  fetchFabricStats,
+  fetchGitHubStats,
   fetchKey,
   fetchKeys,
   createKey,
@@ -183,6 +247,8 @@ module.exports = {
   fetchConversation: fetchConversation,
   fetchConversations: fetchConversations,
   conversationTitleEdit: conversationTitleEdit,
+  fetchDiskPath: fetchDiskPath,
+  fetchDiskStats: fetchDiskStats,
   fetchDocuments: fetchDocuments,
   fetchDocument: fetchDocument,
   fetchDocumentSections: fetchDocumentSections,
@@ -208,6 +274,7 @@ module.exports = {
   deleteInquiry: deleteInquiry,
   createInquiry: createInquiry,
   createTask: createTask,
+  updateTask: updateTask,
   fetchInvitation: fetchInvitation,
   fetchInvitations: fetchInvitations,
   sendInvitation: sendInvitation,
@@ -216,6 +283,7 @@ module.exports = {
   acceptInvitation: acceptInvitation,
   declineInvitation: declineInvitation,
   deleteInvitation: deleteInvitation,
+  fetchMatrixStats,
   fetchPeer: fetchPeer,
   fetchPeers: fetchPeers,
   fetchPeople: fetchPeople,

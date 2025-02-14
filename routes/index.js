@@ -18,7 +18,9 @@ module.exports = {
     design: require('./admin/design')
   },
   agents: {
+    create: require('./agents/create_agent'),
     list: require('./agents/list_agents'),
+    view: require('./agents/view_agent')
   },
   announcements: {
     list: require('./announcements/list_announcements'),
@@ -122,6 +124,24 @@ module.exports = {
     create: require('./reviews/create_review')
   },
   services: {
+    discord: {
+      guilds: {
+        list: require('./services/discord/list_guilds'),
+        view: require('./services/discord/view_guild')
+      },
+      channels: {
+        list: require('./services/discord/list_channels'),
+        view: require('./services/discord/view_channel')
+      },
+      users: {
+        list: require('./services/discord/list_users'),
+        view: require('./services/discord/view_user')
+      }
+    },
+    disk: {
+      list: require('./services/disk/list_files'),
+      view: require('./services/disk/view_path')
+    },
     rsi: {
       activities: {
         create: require('./services/rsi/create_activity')
@@ -151,7 +171,8 @@ module.exports = {
   tasks: {
     create: require('./tasks/create_task'),
     list: require('./tasks/list_tasks'),
-    view: require('./tasks/view_task')
+    view: require('./tasks/view_task'),
+    edit: require('./tasks/edit_task')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')

@@ -15,7 +15,7 @@ const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
 
 class Conversation extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       actualConversation: null,
@@ -28,12 +28,12 @@ class Conversation extends React.Component {
     this.messagesEndRef = React.createRef();
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.fetchData(this.props.id);
     window.addEventListener('resize', this.handleResize);
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (this.props.id !== prevProps.id) {
       this.setState({ recoveryFlag: true, recovering: false });
       this.fetchData(this.props.id);
@@ -47,7 +47,7 @@ class Conversation extends React.Component {
     }
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
   }
 
@@ -65,9 +65,8 @@ class Conversation extends React.Component {
     this.forceUpdate();
   };
 
-  render() {
+  render () {
     const { id, chat, messages } = this.props;
-
     const componentStyle = {
       display: 'absolute',
       top: '1em',
@@ -108,7 +107,7 @@ class Conversation extends React.Component {
   }
 }
 
-function Chat(props) {
+function Chat (props) {
   const { id } = useParams();
   return <Conversation id={id} {...props} />;
 }

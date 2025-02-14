@@ -5,18 +5,15 @@ const Actor = require('@fabric/core/types/actor');
 
 module.exports = function (req, res, next) {
   const request = req.body;
-  console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion request:', request.body);
-  const network = Object.keys(this.agents).map((agent) => {
-    console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Sending request to agent:', agent, request.body);
-    return this.agents[agent].query(request);
-  });
+  if (!request) return res.status(400).json({ error: 'Invalid request.' });
+  if (!request.messages) return res.status(400).json({ error: 'Invalid messages.' });
 
-  Promise.race(network).catch((error) => {
+  request.user_id = req.user.id;
+
+  this.handleTextRequest(request).catch((error) => {
     console.error('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Error:', error);
-    // res.status(500).json({ status: 'error', message: 'Internal server error.', error: error });
-  }).then((results) => {
-    console.debug('[SENSEMAKER:CORE]', '[API]', '[CHAT]', 'Chat completion results:', results);
-    if (!results) results = { content: 'Something went wrong.  Try again later.' };
+  }).then((response) => {
+    if (!response) response = { content: 'Something went wrong.  Try again later.' };
     const object = {
       object: 'chat.completion',
       created: Date.now() / 1000,
@@ -27,7 +24,7 @@ module.exports = function (req, res, next) {
           index: 0,
           message: {
             role: 'assistant',
-            content: results.content
+            content: response.content
           },
           finish_reason: 'stop'
         }

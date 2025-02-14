@@ -26,6 +26,11 @@ const {
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
+const {
+  CORE_MODEL,
+  EMBEDDING_MODEL
+} = require('../constants');
+
 // Prompts
 const promptPath = path.join(__dirname, '../prompts/sensemaker.txt');
 const basePrompt = fs.readFileSync(promptPath, 'utf8');
@@ -46,10 +51,15 @@ module.exports = {
   name: 'Sensemaker',
   mode: 'production',
   expander: true,
-  crawl: false,
+  crawl: true,
   debug: false, // environment.readVariable('DEBUG') || false,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   temperature: 0,
+  constraints: {
+    tokens: {
+      max: 65536 // can be doubled to ~131072
+    }
+  },
   trainer: {
     enable: false,
     hosts: ['localhost:7777'],
@@ -62,7 +72,7 @@ module.exports = {
     local: {
       name: 'LOCAL',
       prompt: basePrompt.toString('utf8'),
-      model: 'llama3.2',
+      model: CORE_MODEL,
       host: '127.0.0.1',
       port: 11434,
       secure: false,
@@ -183,9 +193,23 @@ module.exports = {
     }
   },
   bitcoin: {
+    enable: true,
     fullnode: false,
-    authority: 'http://YOUR_RPC_USER_HERE:YOUR_RPC_PASSWORD_HERE@localhost:8443',
-    network: 'regtest'
+    network: 'mainnet',
+    interval: 60000,
+    nodes: [
+      { name: 'BITCOIN_LOCAL_MAINNET_WALLET', network: 'mainnet', url: 'http://localhost:8332', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_MAINNET_BOUNDARY', network: 'mainnet', url: 'http://localhost:8332', roles: ['blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_TESTNET_WALLET', network: 'testnet', url: 'http://localhost:18332', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_TESTNET_BOUNDARY', network: 'testnet', url: 'http://localhost:18332', roles: ['blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_REGTEST_WALLET', network: 'regtest', url: 'http://localhost:18443', roles: ['wallet', 'blockchain', 'mempool'] },
+      { name: 'BITCOIN_LOCAL_REGTEST_BOUNDARY', network: 'regtest', url: 'http://localhost:18443', roles: ['blockchain', 'mempool'] }
+    ],
+    constraints: {
+      storage: {
+        size: 550 // size in MB
+      }
+    }
   },
   github: {
     interval: 10000,
@@ -226,8 +250,8 @@ module.exports = {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: 11434,
     secure: false,
-    model: 'llama3.2', // default model
-    models: ['llama3.2', 'llama3.2-vision'], // models to "prime" (preload)
+    model: CORE_MODEL, // default model
+    models: [CORE_MODEL, 'llama3.2-vision'], // models to "prime" (preload)
     temperature: 0
   },
   openai: {

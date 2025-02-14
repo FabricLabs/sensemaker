@@ -27,6 +27,10 @@ const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
 const messageSuccess = (message) => ({ type: CHAT_SUCCESS, payload: { message }, isSending: false });
 const messageFailure = (error) => ({ type: CHAT_FAILURE, payload: error, error: error, isSending: false });
 
+const responseRequest = () => ({ type: FETCH_RESPONSE_REQUEST, isSending: true });
+const responseSuccess = (response) => ({ type: FETCH_RESPONSE_SUCCESS, payload: response, isSending: false });
+const responseFailure = (error) => ({ type: FETCH_RESPONSE_FAILURE, payload: error, error: error, isSending: false });
+
 const getMessagesRequest = () => ({ type: GET_MESSAGES_REQUEST, isSending: true });
 const getMessagesSuccess = (messages) => ({ type: GET_MESSAGES_SUCCESS, payload: { messages }, isSending: false });
 const getMessagesFailure = (error) => ({ type: GET_MESSAGES_FAILURE, payload: error, error: error, isSending: false });
@@ -75,7 +79,7 @@ const submitMessage = (message, collection_id = null) => {
 
 const fetchResponse = (message) => {
   return async (dispatch, getState) => {
-    dispatch(messageRequest());
+    dispatch(responseRequest());
     const token = getState().auth.token;
 
     try {
@@ -95,9 +99,9 @@ const fetchResponse = (message) => {
       }
 
       const result = await response.json();
-      dispatch(messageSuccess(result));
+      dispatch(responseSuccess(result));
     } catch (error) {
-      dispatch(messageFailure(error.message));
+      dispatch(responseFailure(error.message));
     }
   };
 };

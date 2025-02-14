@@ -7,6 +7,9 @@ const {
   CREATE_TASK_REQUEST,
   CREATE_TASK_SUCCESS,
   CREATE_TASK_FAILURE,
+  UPDATE_TASK_REQUEST,
+  UPDATE_TASK_SUCCESS,
+  UPDATE_TASK_FAILURE
 } = require('../actions/taskActions');
 
 const initialState = {
@@ -32,6 +35,12 @@ function tasksReducer (state = initialState, action) {
       return { ...state, createdSuccess: true, creating: false };
     case CREATE_TASK_FAILURE:
       console.debug('fetch tasks failure:', state, action);
+      return { ...state, createdSuccess: false, error: action.payload, creating: false };
+    case UPDATE_TASK_REQUEST:
+      return { ...state, creating: true };
+    case UPDATE_TASK_SUCCESS:
+      return { ...state, createdSuccess: true, creating: false };
+    case UPDATE_TASK_FAILURE:
       return { ...state, createdSuccess: false, error: action.payload, creating: false };
     default:
       return state;

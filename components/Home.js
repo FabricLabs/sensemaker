@@ -4,6 +4,8 @@
 const React = require('react');
 const { Link, useLocation } = require('react-router-dom');
 
+// Components
+// Semantic UI
 const {
   Button,
   Card,
@@ -12,6 +14,8 @@ const {
   Segment
 } = require('semantic-ui-react');
 
+// Local Components
+const ActivityStream = require('./ActivityStream');
 const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
 
@@ -95,6 +99,7 @@ class Home extends React.Component {
             </Card>
           </Card.Group>
         ) : null}
+        <ActivityStream includeHeader={false} />
         <Clock style={{ position: 'fixed', bottom: '1em', right: '1em' }} />
       </sensemaker-home>
     );
