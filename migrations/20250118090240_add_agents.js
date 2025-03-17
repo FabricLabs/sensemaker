@@ -14,9 +14,13 @@ exports.up = function (knex) {
     table.json('prompt_blob_history');
     table.string('latest_prompt_blob_id');
     table.timestamps(true, true);
+  }).alterTable('conversations', (table) => {
+    table.string('agent_id');
   });
 };
 
 exports.down = function (knex) {
-  return knex.schema.dropTable('agents');
+  return knex.schema.dropTable('agents').alterTable('conversations', (table) => {
+    table.dropColumn('agent_id');
+  });
 };

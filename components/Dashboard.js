@@ -107,6 +107,8 @@ const DiscordUsers = require('./services/discord/DiscordUserList');
 const FabricHome = require('./services/FabricHome');
 const GitHubHome = require('./services/GitHubHome');
 const MatrixHome = require('./services/MatrixHome');
+const MatrixRoom = require('./services/matrix/MatrixRoom');
+const MatrixRoomList = require('./services/matrix/MatrixRoomList');
 
 /**
  * The main dashboard component.
@@ -538,16 +540,22 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && USER_IS_ALPHA && (
+              {ENABLE_AGENTS && USER_IS_ALPHA && (
+                <Menu.Item as={Link} to='/agents' onClick={this.closeSidebars}>
+                  <Icon name='user' size='large'/>
+                  <p className='icon-label'>Agents</p>
+                </Menu.Item>
+              )}
+              {ENABLE_TASKS && USER_IS_BETA && (
                 <Menu.Item as={Link} to='/tasks' onClick={this.closeSidebars}>
                   <Icon name='tasks' size='large'/>
                   <p className='icon-label'>Tasks</p>
                 </Menu.Item>
               )}
-              {ENABLE_AGENTS && USER_IS_ALPHA && (
-                <Menu.Item as={Link} to='/agents' onClick={this.closeSidebars}>
-                  <Icon name='user' size='large'/>
-                  <p className='icon-label'>Agents</p>
+              {ENABLE_SOURCES && USER_IS_ADMIN && (
+                <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
+                  <Icon name='globe' size='large'/>
+                  <p className='icon-label'>Sources</p>
                 </Menu.Item>
               )}
               <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
@@ -569,12 +577,6 @@ class Dashboard extends React.Component {
                 <Menu.Item as={Link} to='/groups' onClick={this.closeSidebars}>
                   <Icon name='users' size='large'/>
                   <p className='icon-label'>Groups</p>
-                </Menu.Item>
-              )}
-              {ENABLE_SOURCES && USER_IS_ADMIN && (
-                <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
-                  <Icon name='globe' size='large'/>
-                  <p className='icon-label'>Sources</p>
                 </Menu.Item>
               )}
               {ENABLE_WALLET && USER_IS_ADMIN && (
@@ -716,7 +718,7 @@ class Dashboard extends React.Component {
                 <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
-                <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
+                <Route path='/tasks' element={<TaskHome {...this.props} chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
                 <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
                 <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
@@ -755,6 +757,8 @@ class Dashboard extends React.Component {
                 <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
                 <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />
+                <Route path='/services/matrix/rooms' element={<MatrixRoomList {...this.props} />} />
+                <Route path='/services/matrix/rooms/:id' element={<MatrixRoom {...this.props} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
               </Routes>

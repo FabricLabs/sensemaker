@@ -142,6 +142,11 @@ module.exports = {
       list: require('./services/disk/list_files'),
       view: require('./services/disk/view_path')
     },
+    matrix: {
+      rooms: {
+        view: require('./services/matrix/view_room')
+      }
+    },
     rsi: {
       activities: {
         create: require('./services/rsi/create_activity')

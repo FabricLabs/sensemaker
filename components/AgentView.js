@@ -17,6 +17,10 @@ const {
   Table
 } = require('semantic-ui-react');
 
+// Local Components
+const ChatBox = require('./ChatBox');
+
+// Functions
 const toRelativeTime = require('../functions/toRelativeTime');
 const truncateMiddle = require('../functions/truncateMiddle');
 
@@ -81,6 +85,17 @@ class AgentPage extends React.Component {
             <div>{agents.agent?.prompt || 'Loading...'}</div>
           </div>
         </Segment>
+        <ChatBox
+              {...this.props}
+              agent={agents?.agent.id}
+              messagesEndRef={this.messagesEndRef}
+              includeFeed={true}
+              placeholder={`Your request for ${agents?.agent.name}...`}
+              resetInformationSidebar={this.props.resetInformationSidebar}
+              messageInfo={this.props.messageInfo}
+              thumbsUp={this.props.thumbsUp}
+              thumbsDown={this.props.thumbsDown}
+            />
       </div>
     );
   }

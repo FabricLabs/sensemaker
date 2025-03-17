@@ -67,11 +67,11 @@ class TaskView extends React.Component {
           </Table.Header>
           <Table.Body>
             <Table.Row>
-              <Table.Cell>{task.id}</Table.Cell>
+              <Table.Cell>{task?.id}</Table.Cell>
               <Table.Cell><Input type='checkbox' name='task_is_complete' checked={true} /></Table.Cell>
               <Table.Cell><code>text/plain</code></Table.Cell>
-              <Table.Cell><code>{task.title}</code></Table.Cell>
-              <Table.Cell><code>{task.description}</code></Table.Cell>
+              <Table.Cell><code>{task?.title}</code></Table.Cell>
+              <Table.Cell><code>{task?.description}</code></Table.Cell>
             </Table.Row>
           </Table.Body>
         </Table>

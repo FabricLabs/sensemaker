@@ -221,7 +221,7 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { documentChat, context } = this.props;
+    const { documentChat, context, agent } = this.props;
 
     let dataToSubmit;
 
@@ -235,14 +235,16 @@ class ChatBox extends React.Component {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
-        context: context
+        context: context,
+        agent: agent
       }
     } else {
       //else, we are in a previous one and we already have a conversationID for this
       dataToSubmit = {
         conversation_id: this.props.conversationID,
         content: query,
-        context: context
+        context: context,
+        agent: agent
       }
     }
 

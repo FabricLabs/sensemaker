@@ -12,11 +12,13 @@ const { Link } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
+  Dropdown,
   Form,
-  Segment,
   Header,
-  Input,
   Icon,
+  Input,
+  Segment,
+  Select,
   Table,
   Transition
 } = require('semantic-ui-react');
@@ -37,6 +39,7 @@ class TaskHome extends React.Component {
 
   componentDidMount () {
     this.props.fetchTasks();
+    this.props.fetchAgentStats();
   }
 
   componentDidUpdate (prevProps) {
@@ -96,7 +99,7 @@ class TaskHome extends React.Component {
                 return (
                   <Table.Row className='fade-in' key={x.id}>
                     <Table.Cell collapsing><Input id={x.id} type='checkbox' name='task_is_complete' checked={(x.completed_at) ? true : false} onChange={this.handleTaskCompletionChange} className='desktop-only' style={{ transform: 'scale(1.5)', marginLeft: '1em' }} /></Table.Cell>
-                    <Table.Cell collapsing>{x.title}</Table.Cell>
+                    <Table.Cell collapsing><Link to={`/tasks/${x.id}`}>{x.title}</Link></Table.Cell>
                     <Table.Cell collapsing></Table.Cell>
                     <Table.Cell collapsing textAlign='right'>
                       <Button.Group basic className='desktop-only'>

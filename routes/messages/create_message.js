@@ -13,7 +13,8 @@ module.exports = async function (req, res, next) {
   let {
     conversation_id,
     content,
-    context
+    context,
+    agent
   } = req.body;
 
   if (!conversation_id) {
@@ -73,9 +74,9 @@ module.exports = async function (req, res, next) {
       conversation_id: fabricConversationID,
       context: {
         ...context,
-        user_id: req.user.id,
         username: req.user.username
       },
+      agent: agent,
       query: content,
       user_id: req.user.id
     }).catch((exception) => {

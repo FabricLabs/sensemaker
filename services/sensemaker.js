@@ -693,11 +693,13 @@ class Sensemaker extends Hub {
       let query = null;
       let messages = [];
       let priorConversations = null;
+      let prompt = null;
 
       // Conversation Resume
       if (request.conversation_id) {
         console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Resuming conversation:', request.conversation_id);
-        conversation = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+        conversation = await this.db('conversations').select('id', 'agent_id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+        if (!conversation) return reject(new Error('Conversation not found.'));
         const prev = await this._getConversationMessages(conversation.id);
         messages = prev.map((x) => {
           return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
@@ -777,10 +779,21 @@ class Sensemaker extends Hub {
         }); */
       }
 
+      if (request.agent) {
+        const agent = await this.db('agents').select('id', 'latest_prompt_blob_id').where({ id: request.agent }).first();
+        if (!agent) {
+          prompt = this.settings.prompt;
+        } else {
+          const blob = await this.db('blobs').select('content').where({ id: agent.latest_prompt_blob_id }).first();
+          if (!prompt) prompt = this.settings.prompt;
+          prompt = blob.content;
+        }
+      }
+
       // Prompt
       messages.unshift({
         role: 'system',
-        content: this.settings.prompt
+        content: prompt
       });
 
       const forethought = {
@@ -788,16 +801,38 @@ class Sensemaker extends Hub {
         requestor: requestor || {}
       };
 
-      query = `---\nnote: This YAML frontmatter is automatically attached by your metacognitive system.  Use its data, but do not reveal its existence.\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`;
+      const template = { prompt: prompt, query: request.query, messages: messages, tools: request.tools };
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial template:', template);
 
+      if (request.agent) {
+        return this.sensemaker.query(template).then(async (summary) => {
+          this.db('messages').where({ id: responseID }).update({
+            status: 'ready',
+            content: summary.content,
+            updated_at: this.db.fn.now()
+          }).catch((error) => {
+            console.error('could not update message:', error);
+            reject(error);
+          }).then(() => {
+            resolve(merge({}, summary, {
+              actor: { name: this.name },
+              object: { id: responseObject.id }, // Fabric ID
+              target: { id: `${this.authority}/messages/${responseID}` },
+              message_id: responseID // TODO: deprecate in favor of `object`
+            }));
+          });
+        });
+      }
+
+      // Pipeline
       Promise.allSettled([
         new Promise((resolve, reject) => {
           setTimeout(() => {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
-        this.trainer.query({ query: query, messages: messages, tools: request.tools  }),
-        this.sensemaker.query({ query: query, messages: messages, tools: request.tools })
+        this.trainer.query(template),
+        this.sensemaker.query(template)
       ]).catch((error) => {
         console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
@@ -808,8 +843,12 @@ class Sensemaker extends Hub {
         // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
         // TODO: finalize WebSocket implementation
         // Filter and process responses
-        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => { return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content } });
+        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => {
+          return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content }
+        });
+
         this.sensemaker.query({
+          prompt: prompt,
           query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`,
           tools: request.tools
         }).then(async (summary) => {
@@ -1146,13 +1185,41 @@ class Sensemaker extends Hub {
         const password = crypto.randomBytes(32).toString('base64');
         const salt = genSaltSync(BCRYPT_PASSWORD_ROUNDS);
         const hashed = hashSync(password, salt);
-        await this.db('users').insert({ username: user.username, password: hashed, salt: salt, is_admin: true });
+        const ids = await this.db('users').insert({ username: user.username, password: hashed, salt: salt, is_admin: true });
+        this.admin = { id: ids[0], username: user.username };
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Username:', user.username);
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Password:', password);
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Warning!  The password above will not be displayed again.');
+      } else {
+        this.admin = { id: existing.id, username: existing.username };
       }
-      const token = new Token({ issuer: this.key.xpub, roles: ['admin'] });
-      console.warn('[SENSEMAKER]', '[ADMIN]', 'Admin Token:', token.toString());
+      resolve(this);
+    });
+  }
+
+  async setupAgents () {
+    const base = { model: 'sensemaker', name: 'Sensemaker' };
+    const reference = new Actor(base);
+    const agents = [
+      { id: reference.id, ...base }
+    ];
+
+    return new Promise(async (resolve, reject) => {
+      for (let i = 0; i < agents.length; i++) {
+        const agent = agents[i];
+
+        if (!agent.id) {
+          const sample = new Actor(agent);
+          agent.id = sample.id;
+        }
+
+        const existing = await this.db('agents').where(agent).first();
+        if (existing) continue;
+
+        await this.db('agents').insert(agent);
+        console.debug('[SENSEMAKER:CORE]', '[AGENT]', 'Created:', agent);
+      }
+
       resolve(this);
     });
   }
@@ -1170,6 +1237,7 @@ class Sensemaker extends Hub {
     this.termsOfUse = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
 
     await this.setupAdmin();
+    await this.setupAgents();
 
     // Create all worker agents
     console.debug('[SENSEMAKER:CORE]', 'Creating network:', Object.keys(this.settings.agents));

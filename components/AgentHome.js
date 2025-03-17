@@ -116,7 +116,8 @@ class AgentHome extends React.Component {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              name: e.target[0].value
+              name: e.target[0].value,
+              prompt: e.target[1].value
             })
           }).then((res) => {
             console.debug('Create Agent Response:', res);
