@@ -170,6 +170,7 @@ const {
 
 // # Matrix Actions
 const {
+  authenticateMatrix,
   fetchMatrixStats,
   fetchMatrixRoom
 } = require('./matrixActions');
@@ -290,6 +291,7 @@ module.exports = {
   acceptInvitation: acceptInvitation,
   declineInvitation: declineInvitation,
   deleteInvitation: deleteInvitation,
+  authenticateMatrix,
   fetchMatrixStats,
   fetchMatrixRoom,
   fetchPeer: fetchPeer,

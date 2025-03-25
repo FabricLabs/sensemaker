@@ -68,11 +68,52 @@ class ChatBox extends React.Component {
       editLoading: false,
       editingTitle: false,
       startedChatting: false,
-      takeFocus: this.settings.takeFocus || this.props.takeFocus || false
+      takeFocus: this.settings.takeFocus || this.props.takeFocus || false,
+      // New states for file preview
+      filePreview: null,
+      showFilePreview: false,
+      attachmentExists: false,
+      uploadProgress: 0,
+      isUploading: false,
+      uploadedFileId: null
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
+
+    // Add styles for file preview animation
+    this.filePreviewStyles = {
+      container: {
+        overflow: 'hidden',
+        transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out',
+        maxHeight: '0',
+        opacity: '0',
+        marginBottom: '10px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '5px',
+        padding: '0 10px'
+      },
+      visible: {
+        maxHeight: '60px',
+        opacity: '1',
+        padding: '10px'
+      },
+      content: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+      },
+      fileName: {
+        flex: 1,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      },
+      removeButton: {
+        cursor: 'pointer',
+        color: '#666'
+      }
+    };
   }
 
   componentDidMount () {
@@ -547,13 +588,64 @@ class ChatBox extends React.Component {
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
       if (this.isValidFileType(file.type)) {
-        console.debug('File selected:', file.name, file.size, file.type); // Debugging log
-        this.setState({ file: file, formatError: false, attachmentExists: true });
-        this.handleUpload();
+        console.debug('File selected:', file.name, file.size, file.type);
+        this.setState({
+          file: file,
+          formatError: false,
+          attachmentExists: true,
+          filePreview: {
+            name: file.name,
+            size: this.formatFileSize(file.size),
+            type: file.type
+          },
+          showFilePreview: true,
+          isUploading: true,
+          uploadProgress: 0
+        });
+
+        // Start upload immediately after file selection
+        try {
+          const result = await this.props.uploadDocument(file);
+          this.setState({
+            uploadProgress: 100,
+            isUploading: false,
+            uploadedFileId: result.file_id // Store the returned file ID
+          });
+        } catch (error) {
+          console.error('Upload error:', error);
+          this.setState({
+            isUploading: false,
+            formatError: true,
+            errorMsg: 'Failed to upload file'
+          });
+        }
       } else {
         this.setState({ formatError: true, file: null });
       }
     }
+  };
+
+  removeFile = () => {
+    this.setState({
+      file: null,
+      filePreview: null,
+      showFilePreview: false,
+      attachmentExists: false,
+      uploadProgress: 0,
+      isUploading: false,
+      uploadedFileId: null
+    });
+    // Reset the file input
+    const fileInput = document.querySelector('#input-control-form input[type="file"]');
+    if (fileInput) fileInput.value = '';
+  };
+
+  formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   handleSaveEditing = async () => {
@@ -568,27 +660,6 @@ class ChatBox extends React.Component {
     // Reset editing state without saving
     this.setState({ editingTitle: false, editedTitle: '' });
   };
-
-  handleUpload = async () => {
-    this.setState({
-      uploading: true,
-      fileExists: false,
-      file_id: null,
-      formatError: false,
-      errorMsg: '',
-      uploadSuccess: false,
-    });
-
-    console.debug('Uploading:', this.state.file);
-
-    try {
-      await this.props.uploadDocument(this.state.file);
-    } catch (exception) {
-      console.debug('Upload error:', exception);
-    }
-
-    console.debug('Upload complete:', this.props.uploadedDocument);
-  }
 
   isValidFileType (fileType) {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
@@ -831,7 +902,7 @@ class ChatBox extends React.Component {
                   </Feed.Extra>
                   <Feed.Extra text>
                     {generatingResponse &&
-                      message.id === messages[messages.length - 1].id &&
+                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
                       !reGeneratingResponse && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
@@ -888,6 +959,43 @@ class ChatBox extends React.Component {
             );
           }) : null}
         </Feed>)}
+        {/* File Preview Component */}
+        {this.state.showFilePreview && this.state.filePreview && (
+          <div style={{
+            ...this.filePreviewStyles.container,
+            ...(this.state.showFilePreview ? this.filePreviewStyles.visible : {})
+          }}>
+            <div style={this.filePreviewStyles.content}>
+              <Icon name='file' />
+              <div style={this.filePreviewStyles.fileName}>
+                <strong>{this.state.filePreview.name}</strong>
+                <div style={{ fontSize: '0.8em', color: '#666' }}>
+                  {this.state.filePreview.size}
+                </div>
+                {this.state.isUploading && (
+                  <Progress
+                    percent={this.state.uploadProgress}
+                    size='tiny'
+                    color='blue'
+                    style={{ marginTop: '5px', marginBottom: '0' }}
+                  >
+                    {this.state.uploadProgress === 100 ? 'Upload Complete' : 'Uploading...'}
+                  </Progress>
+                )}
+                {this.state.formatError && (
+                  <Message negative size='tiny' style={{ marginTop: '5px', padding: '5px' }}>
+                    {this.state.errorMsg || 'Invalid file format'}
+                  </Message>
+                )}
+              </div>
+              <Icon
+                name='close'
+                style={this.filePreviewStyles.removeButton}
+                onClick={this.removeFile}
+              />
+            </div>
+          </div>
+        )}
         <Form
           id='input-control-form'
           size="big"

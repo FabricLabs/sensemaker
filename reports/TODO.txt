@@ -1,5 +1,5 @@
-./constants.js: const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 ./constants.js: const ENABLE_BILLING = false; // TODO: enable billing
+./constants.js: const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
 ./constants.js: GENESIS_HASH, // TODO: use a real genesis hash
 ./constants.js: RELEASE_NAME, // TODO: use a real release name
 ./constants.js: RELEASE_DESCRIPTION, // TODO: use a real release description
@@ -14,6 +14,8 @@
 ./types/queue.js: // TODO: reverse this logic to reject if !this.redis
 ./types/agent.js.bak: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js.bak: // TODO: consider making this a FabricMessageID
+./types/trainer.js: // TODO: ingest actor
+./types/trainer.js: // TODO: measure size, split, reduce, etc.
 ./types/trainer.js: // text: document.content, // TODO: re-work storage, use document ID instead
 ./types/trainer.js: // TODO: check for `embedding` and fail if not present
 ./types/trainer.js: // TODO: receive event in core service and correctly create blob, confirm ID matches
@@ -55,8 +57,14 @@
 ./components/DocumentHome.js: // TODO: use `id` not `@id`
 ./components/Changelog.js: {/* TODO: populate from GitHub releases */}
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
+./components/Dashboard.js: // TODO: prompt user for external links replacing current application
+./components/Dashboard.js: {/* TODO: add a nice 404 page */}
 ./components/Dashboard.js: {/* TODO: fix these routes */}
 ./components/Dashboard.js: {/* END TODO */}
+./components/SourceView.js: // TODO: reduce to a web component (no react)
+./components/SourceView.js: // TODO: reconcile with Fabric API
+./components/TaskHome.js: // TODO: also receive events from WebSocket
+./components/services/BitcoinHome.js: keys: {}, // TODO: add keys from this.seed, this.key, etc.,
 ./scripts/setup.sh: # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
 ./scripts/trainer.js: // TODO: import these from constants file
 ./scripts/trainer.js: // TODO: filter documents by embedding status (only process documents lacking embeddings)
@@ -68,13 +76,20 @@
 ./scripts/browser.js: // TODO: consider GraphQL to pass schema
 ./scripts/browser.js: // TODO: migrate this to `functions/mapStateToProps.js`?
 ./scripts/browser.js: // TODO: render to `fabric-application-target`?
+./actions/bitcoinActions.js: // TODO: re-write to use common API methods
+./actions/discordActions.js: // TODO: re-write to use common API methods
 ./actions/sourceActions.js: // TODO: pagination
 ./actions/bridgeActions.js: // TODO: get bridge instance
+./actions/fabricActions.js: // TODO: re-write to use common API methods
+./actions/githubActions.js: // TODO: re-write to use common API methods
+./actions/matrixActions.js: // TODO: re-write to use common API methods
+./actions/agentActions.js: // TODO: re-write to use common API methods
 ./actions/accountActions.js: // TODO: pagination
 ./actions/accountActions.js: // TODO: pagination
 ./actions/peerActions.js: // TODO: pagination
 ./actions/uploadActions.js: // TODO: pagination
 ./actions/uploadActions.js: body: JSON.stringify({ query }) // TODO: filter search to user's files (at API level)
+./actions/diskActions.js: // TODO: re-write to use common API methods
 ./actions/taskActions.js: // TODO: pagination
 ./actions/authActions.js: // TODO: make HTTPOnly, Secure, and SameSite=Strict
 ./actions/authActions.js: // TODO: repurpose into local cache for offline use (i.e., /documents, etc.)
@@ -83,6 +98,7 @@
 ./actions/walletActions.js: // TODO: pagination
 ./functions/IngestFile.js: // TODO: check for error
 ./functions/IngestFile.js: // TODO: check for error
+./routes/tasks/edit_task.js: // TODO: handle errors
 ./routes/messages/create_message.js: // TODO: ensure no LocalConversation is shared externally
 ./routes/messages/create_message.js: // TODO: emit message
 ./routes/messages/regenerate_message.js: // TODO: update message graph; consider requests, responses
@@ -123,6 +139,7 @@
 ./routes/documents/edit_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
 ./routes/documents/edit_document_section.js: // TODO: handle errors
 ./routes/services/rsi/create_activity.js: // TODO: add sha256
+./routes/services/disk/view_path.js: // TODO: secure this endpoint
 ./routes/reviews/create_review.js: // TODO: check token
 ./routes/invitations/create_invitation.js: // TODO: serve from assets (@nplayer89)
 ./services/gemini.js: // TODO: import from prompts/sensemaker.txt
@@ -145,6 +162,7 @@
 ./services/sensemaker.js: // TODO: define Agent methods from `documentation`
 ./services/sensemaker.js: // TODO: move to a different method... generateBlock should only snapshot existing state
 ./services/sensemaker.js: // TODO: remove async, use local state instead
+./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
 ./services/sensemaker.js: // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
 ./services/sensemaker.js: // TODO: finalize WebSocket implementation
 ./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
@@ -161,7 +179,7 @@
 ./services/sensemaker.js: // TODO: migrate these to @fabric/core using "Resources"
 ./services/sensemaker.js: // TODO: test each search endpoint
 ./services/sensemaker.js: // TODO: switch to PATCH `/users/:username`
-./services/sensemaker.js: // TODO: change to DELETE
+./services/sensemaker.js: // TODO: rework help system into standardized pop-out chat
 ./services/sensemaker.js: // TODO: render page for accepting invitation
 ./services/sensemaker.js: // TODO: change to /sessions
 ./services/sensemaker.js: // TODO: fix these routes
@@ -169,6 +187,21 @@
 ./services/sensemaker.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
 ./services/sensemaker.js: // TODO: troubleshoot why this is necessary (use `why()` above)
 ./services/sensemaker.js: // TODO: check token
+./services/sensemaker.js: // TODO: allow various parameters (sort order, cursor start, etc.)
+./services/sensemaker.js: // TODO: cache each of these queries
+./services/sensemaker.js: // TODO: cache this request overall
+./services/sensemaker.js: // TODO: evaluate TX inclusion
+./services/sensemaker.js: // TODO: read transactions from recent blocks
+./services/sensemaker.js: // TODO: allow various parameters (sort order, cursor start, etc.)
+./services/sensemaker.js: // TODO: cache each of these queries
+./services/sensemaker.js: // TODO: cache this request overall
+./services/sensemaker.js: // TODO: evaluate TX inclusion
+./services/sensemaker.js: // TODO: read transactions from recent blocks
+./services/sensemaker.js: // TODO: cache each of these queries
+./services/sensemaker.js: // TODO: cache this request overall
+./services/sensemaker.js: // TODO: read transactions from recent blocks
+./services/sensemaker.js: // TODO: evaluate TX inclusion
+./services/sensemaker.js: status: 'ONLINE', // TODO: check for syncing status
 ./services/sensemaker.js: // TODO: add reactions
 ./services/sensemaker.js: // TODO: show error message in client
 ./services/sensemaker.js: // TODO: halt on !req.user.id

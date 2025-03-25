@@ -3,7 +3,7 @@
 // Dependencies
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link, useParams } = require('react-router-dom');
+const { Link, useParams, useSearchParams } = require('react-router-dom');
 
 // Components
 // Semantic UI
@@ -50,6 +50,8 @@ class AgentPage extends React.Component {
       content: this.settings.state
     };
 
+    this.chatBoxRef = React.createRef();
+
     return this;
   }
 
@@ -58,6 +60,15 @@ class AgentPage extends React.Component {
     this.watcher = setInterval(() => {
       this.props.fetchAgent(this.props.id);
     }, 60000);
+
+    // Focus chat input if action=chat
+    if (this.props.action === 'chat') {
+      setTimeout(() => {
+        if (this.chatBoxRef.current) {
+          this.chatBoxRef.current.focus();
+        }
+      }, 100);
+    }
   }
 
   componentWillUnmount () {
@@ -87,6 +98,7 @@ class AgentPage extends React.Component {
         </Segment>
         <ChatBox
               {...this.props}
+              ref={this.chatBoxRef}
               agent={agents?.agent.id}
               messagesEndRef={this.messagesEndRef}
               includeFeed={true}
@@ -107,7 +119,9 @@ class AgentPage extends React.Component {
 
 function AgentView (props) {
   const { id } = useParams();
-  return <AgentPage {...props} id={id} />;
+  const [searchParams] = useSearchParams();
+  const action = searchParams.get('action');
+  return <AgentPage {...props} id={id} action={action} />;
 }
 
 module.exports = AgentView;

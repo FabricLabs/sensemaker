@@ -65,6 +65,7 @@
     "@langchain/ollama": "=0.1.5",
     "@langchain/redis": "=0.1.0",
     "@rsi/star-citizen": "GoonCitizen/star-citizen-live",
+    "matrix-js-sdk": "=32.4.0",
     "2captcha": "=3.0.7",
     "assert-browserify": "=2.0.0",
     "async-mutex": "=0.5.0",

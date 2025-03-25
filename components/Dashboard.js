@@ -43,6 +43,7 @@ const {
   RELEASE_DESCRIPTION,
   ENABLE_AGENTS,
   ENABLE_CHANGELOG,
+  ENABLE_CHAT,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
   ENABLE_GROUPS,
@@ -72,6 +73,7 @@ const Conversations = require('./Conversations');
 const ConversationsList = require('./ConversationsList');
 const LibraryList = require('./LibraryList');
 const SourceHome = require('./SourceHome');
+const SourceView = require('./SourceView');
 const TaskHome = require('./TaskHome');
 const TaskView = require('./TaskView');
 const UploadHome = require('./UploadHome');
@@ -109,6 +111,7 @@ const GitHubHome = require('./services/GitHubHome');
 const MatrixHome = require('./services/MatrixHome');
 const MatrixRoom = require('./services/matrix/MatrixRoom');
 const MatrixRoomList = require('./services/matrix/MatrixRoomList');
+const MatrixLoginPage = require('./services/matrix/MatrixLoginPage');
 
 /**
  * The main dashboard component.
@@ -558,15 +561,18 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Sources</p>
                 </Menu.Item>
               )}
-              <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
-                <div className='col-center'>
-                  <Icon name='comment alternate' size='large' />
-                  <p className='icon-label'>Chat</p>
-                </div>
-                <div className='expand-icon'>
-                  {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
-                </div>
-              </Menu.Item>
+              {ENABLE_CHAT && (
+                // <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
+                <Menu.Item as={Link} to='/conversations' onClick={this.closeSidebars}>
+                  <div className='col-center'>
+                    <Icon name='comment alternate' size='large' />
+                    <p className='icon-label'>Chat</p>
+                  </div>
+                  <div className='expand-icon'>
+                    {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
+                  </div>
+                </Menu.Item>
+              )}
               {ENABLE_NETWORK && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/peers' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
@@ -718,8 +724,9 @@ class Dashboard extends React.Component {
                 <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
+                <Route path='/sources/:id' element={<SourceView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
                 <Route path='/tasks' element={<TaskHome {...this.props} chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
-                <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
+                <Route path='/tasks/:id' element={<TaskView {...this.props} task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
                 <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
                 {/* TODO: fix these routes */}
@@ -757,6 +764,7 @@ class Dashboard extends React.Component {
                 <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
                 <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />
+                <Route path='/services/matrix/authorize' element={<MatrixLoginPage {...this.props} />} />
                 <Route path='/services/matrix/rooms' element={<MatrixRoomList {...this.props} />} />
                 <Route path='/services/matrix/rooms/:id' element={<MatrixRoom {...this.props} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
@@ -816,6 +824,7 @@ class Dashboard extends React.Component {
           documentInfo={documentInfo}
           documentSections={documentSections}
           onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
+          message={this.props.chat?.messages?.find(m => m.id === checkingMessageID)}
         />
         <ToastContainer />
       </sensemaker-dashboard>

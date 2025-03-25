@@ -173,7 +173,6 @@ class SignUpForm extends React.Component {
     const hasEightCharacters = password.length >= 8;
     const hasCapitalLetter = /[A-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-
     return hasEightCharacters && hasCapitalLetter && hasNumber;
   };
 
@@ -181,8 +180,7 @@ class SignUpForm extends React.Component {
     return (this.state.password && this.state.confirmedPassword && this.state.password === this.state.confirmedPassword);
   }
 
-  render() {
-
+  render () {
     const {
       password,
       confirmedPassword,
@@ -288,7 +286,7 @@ class SignUpForm extends React.Component {
                   />
                 </Form.Group>
 
-                <p>Password must have at least 8 characters, a capital letter and a number.</p>
+                <p>Password must have at least 8 characters, a capital letter, and a number.</p>
                 <Form.Group className='signup-form-group'>
                   <Form.Input
                     size='small'

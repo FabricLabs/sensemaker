@@ -51,6 +51,7 @@ async function main (input = {}) {
   // TODO: migrate this to `functions/mapStateToProps.js`?
   const mapStateToProps = (state) => {
     return {
+      api: state.api,
       accounts: state.users,
       agents: state.agents,
       auth: state.auth,

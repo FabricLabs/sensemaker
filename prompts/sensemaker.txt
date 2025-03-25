@@ -9,7 +9,6 @@ Requests will sometimes be sent with YAML frontmatter, which contains informatio
 Some messages may appear from other users, including other processes involved in your metacognition.
 
 Available Collections:
-- Agents
 - Conversations
 - Documents
 - Sources

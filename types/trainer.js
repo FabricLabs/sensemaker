@@ -286,7 +286,10 @@ class Trainer extends Service {
       } */
       filter = request.filter;
 
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).catch((error) => {
+        console.error('[TRAINER]', 'Error searching:', error);
+        reject(error);
+      }).then((results) => {
         const map = {};
 
         results.forEach((x) => {

@@ -79,6 +79,11 @@ class MatrixHome extends React.Component {
         <Segment className='fade-in' loading={matrix?.loading} style={{ maxHeight: '100%' }}>
           <Header as='h1' style={{ marginTop: 0 }}><Icon name='hashtag' />Matrix</Header>
           <p>Matrix is a decentralized chat network.</p>
+          {matrix?.accounts?.length > 0 && (
+            <div><p>Signed in as <strong>{matrix.accounts[0].username}</strong></p></div>
+          ) || (
+            <div><Button as={Link} to='/services/matrix/authorize' primary>Sign In</Button></div>
+          )}
         </Segment>
         <Header as='h2'>Rooms</Header>
         <Card.Group loading={matrix?.loading}>

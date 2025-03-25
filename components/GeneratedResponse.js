@@ -30,8 +30,28 @@ class GeneratedResponse extends React.Component {
   }
 
   componentDidMount () {
-    const { request } = this.props;
-    this.props.fetchResponse(request);
+    const { request, context } = this.props;
+    // Only fetch response if we have meaningful context data
+    if (context && Object.keys(context).length > 0) {
+      this.props.fetchResponse(request);
+    }
+  }
+
+  componentDidUpdate (prevProps) {
+    const { request, context } = this.props;
+    const prevContext = prevProps.context;
+
+    // Check if context changed meaningfully
+    const hasContext = context && Object.keys(context).length > 0;
+    const hadContext = prevContext && Object.keys(prevContext).length > 0;
+
+    // Fetch response if:
+    // 1. We didn't have context before but now we do
+    // 2. Context data has changed
+    if ((!hadContext && hasContext) ||
+        (JSON.stringify(prevContext) !== JSON.stringify(context))) {
+      this.props.fetchResponse(request);
+    }
   }
 
   render () {

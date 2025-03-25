@@ -7,14 +7,15 @@ const ReactDOMServer = require('react-dom/server');
 // Semantic UI
 const { Link } = require('react-router-dom');
 const {
+  Button,
   Card,
   Label,
   Segment,
   Pagination,
   Divider,
-  Button,
   Icon,
-  Form
+  Form,
+  Search
 } = require('semantic-ui-react');
 
 // Components
@@ -40,6 +41,7 @@ class Conversations extends React.Component {
       editingID: null, // ID of the conversation being edited
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
+      searchQuery: '', // Add search query to state
     };
   }
 
@@ -111,9 +113,16 @@ class Conversations extends React.Component {
     this.setState({ editingID: null, editedTitle: '' });
   };
 
+  handleSearchChange = (e, { value }) => {
+    this.setState({
+      searchQuery: value,
+      currentPage: 1 // Reset to first page when searching
+    });
+  };
+
   render () {
     const { loading, error, conversations, users } = this.props;
-    const { currentPage, windowWidth, windowHeight, editLoading } = this.state;
+    const { currentPage, windowWidth, windowHeight, editLoading, searchQuery } = this.state;
 
     if (loading) {
       return <div>Loading...</div>;
@@ -123,11 +132,20 @@ class Conversations extends React.Component {
       return <div>Error: {error}</div>;
     }
 
+    // Filter conversations based on search query only
+    const filteredConversations = conversations.filter(conversation => {
+      if (searchQuery) {
+        return conversation && conversation.title &&
+          conversation.title.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      return true;
+    });
+
     // Calculate conversations for current page
-    const itemsPerPage = windowHeight < 600 ? 11 : windowHeight < 769 ? 14 : 20;
+    const itemsPerPage = windowWidth < 600 ? 11 : windowWidth < 769 ? 14 : 20;
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentConversations = conversations.slice(indexOfFirstItem, indexOfLastItem);
+    const currentConversations = filteredConversations.slice(indexOfFirstItem, indexOfLastItem);
     const componentStyle = {
       display: 'absolute',
       top: '1em',
@@ -149,7 +167,12 @@ class Conversations extends React.Component {
           <h2 style={{ marginTop: '0' }}>Chat</h2>
           <Button icon color='green'>New Conversation <Icon name='right chevron' /></Button>
         </div>
-        <p>Tracking <strong>{conversationCount}</strong> conversations.</p>
+        <p>
+          {searchQuery ?
+            `Found ${filteredConversations.length} matching conversations` :
+            `Tracking ${conversations.length} conversations.`
+          }
+        </p>
         <Divider />
         <div className='desktop-only'>
           <h3>Contacts</h3>
@@ -173,22 +196,28 @@ class Conversations extends React.Component {
           </Card.Group>
         </div>
         <Divider />
+        <div className='right floated'>
+          <Button.Group>
+            <Button><Icon name='asterisk' /> All</Button>
+            <Button><Icon name='download' /> Local</Button>
+            <Button color='blue' as={Link} to='/services/discord'><Icon name='discord' /> Discord</Button>
+            <Button color='black' as={Link} to='/services/matrix'><Icon name='hashtag' /> Matrix</Button>
+          </Button.Group>
+        </div>
         <h3>Conversations</h3>
-        {(currentConversations && currentConversations.length) ? (
-          <ChatBox
-            {...this.props}
-            messagesEndRef={this.messagesEndRef}
-            includeAttachments={false}
-            includeFeed={true}
-            placeholder={'Ask about these conversations...'}
-            context={{ conversations: currentConversations }}
-            resetInformationSidebar={this.props.resetInformationSidebar}
-            messageInfo={this.props.messageInfo}
-            thumbsUp={this.props.thumbsUp}
-            thumbsDown={this.props.thumbsDown}
-            style={{ margin: '0' }}
+        <div style={{ width: '100%' }}>
+          <Search
+            fluid
+            input={{
+              fluid: true,
+              size: 'large',
+              placeholder: 'Search conversations...'
+            }}
+            value={this.state.searchQuery}
+            onSearchChange={this.handleSearchChange}
+            showNoResults={false}
           />
-        ) : null}
+        </div>
         {(currentConversations && currentConversations.length) ? (
           <Card.Group style={{ marginTop: '1em', marginBottom: '1em' }}>
             {currentConversations.map(conversation => {
@@ -272,6 +301,21 @@ class Conversations extends React.Component {
           ellipsisItem={(windowWidth > 480) ? undefined : null}
           boundaryRange={(windowWidth > 480) ? 1 : 0}
         /> : null}
+        {(currentConversations && currentConversations.length) ? (
+          <ChatBox
+            {...this.props}
+            messagesEndRef={this.messagesEndRef}
+            includeAttachments={false}
+            includeFeed={true}
+            placeholder={'Ask about these conversations...'}
+            context={{ conversations: currentConversations }}
+            resetInformationSidebar={this.props.resetInformationSidebar}
+            messageInfo={this.props.messageInfo}
+            thumbsUp={this.props.thumbsUp}
+            thumbsDown={this.props.thumbsDown}
+            style={{ margin: '0' }}
+          />
+        ) : null}
       </Segment>
     );
   }

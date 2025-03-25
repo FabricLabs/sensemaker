@@ -50,7 +50,8 @@ class FrontPage extends React.Component {
           <Button.Group floated='right' size='huge'>
             <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
             <Button.Or />
-            <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button>
+            {/* <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button> */}
+            <Button as={Link} to='/inquiries' color='black'>Learn More <Icon name='right chevron' /></Button>
           </Button.Group>
         </section>
         {/*

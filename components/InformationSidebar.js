@@ -36,6 +36,7 @@ class InformationSidebar extends React.Component {
       feedbackSent: false,
       feedbackFail: false,
       connectionProblem: false,
+      showDebug: false, // Add state for debug section visibility
     };
   }
 
@@ -56,6 +57,7 @@ class InformationSidebar extends React.Component {
       feedbackSent: false,
       feedbackFail: false,
       connectionProblem: false,
+      showDebug: false,
     });
   }
 
@@ -149,6 +151,7 @@ class InformationSidebar extends React.Component {
       feedbackFail,
       sending,
       connectionProblem,
+      showDebug,
     } = this.state;
     const { visible, documentSection, documentInfo, documentSections } = this.props;
 
@@ -266,7 +269,6 @@ class InformationSidebar extends React.Component {
                   </Form.Field>
                 </div>) : (
                   <div className='info-sidebar'>
-                    <p>{this.props.checkingMessageID}</p>
                     <Header inverted>Message Detail</Header>
                     {
                       // TODO: implement message->data API
@@ -280,6 +282,89 @@ class InformationSidebar extends React.Component {
                         <code>{JSON.stringify(this.state, null, '  ')}</code>
                       </fabric-state>
                     </fabric-search-results>
+                    <Card fluid>
+                      <CardContent>
+                        <CardHeader>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <strong>Author:</strong> {this.props.message?.author || 'Unknown'}
+                            </div>
+                            <div>
+                              <strong>Timestamp:</strong> {this.formatDateTime(this.props.message?.updated_at)}
+                            </div>
+                          </div>
+                          {this.props.message?.attachments && this.props.message.attachments.length > 0 && (
+                            <div style={{ marginTop: '0.5em' }}>
+                              <strong>Attachments:</strong>
+                              <ul style={{ marginTop: '0.5em', paddingLeft: '1.5em' }}>
+                                {this.props.message.attachments.map((attachment, index) => (
+                                  <li key={index}>
+                                    <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                                      {attachment.name || attachment.url}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </CardHeader>
+                        <CardDescription>
+                          <Button
+                            basic
+                            size='small'
+                            onClick={() => this.setState({ showDebug: !this.state.showDebug })}
+                            style={{ marginTop: '1em' }}
+                          >
+                            <Icon name={this.state.showDebug ? 'chevron down' : 'chevron right'} />
+                            {this.state.showDebug ? 'Hide Debug Info' : 'Show Debug Info'}
+                          </Button>
+                          {this.state.showDebug && (
+                            <div style={{
+                              marginTop: '1em',
+                              padding: '1em',
+                              backgroundColor: '#1b1c1d',
+                              borderRadius: '4px',
+                              maxHeight: '400px',
+                              overflowY: 'auto'
+                            }}>
+                              <Header size='small' inverted>Debug Information</Header>
+                              <div style={{ marginTop: '0.5em' }}>
+                                <div style={{ marginBottom: '0.5em' }}>
+                                  <strong style={{ color: '#fff' }}>Message ID:</strong>
+                                  <code style={{ color: '#fff', marginLeft: '0.5em' }}>{this.props.checkingMessageID}</code>
+                                </div>
+                                <div style={{ marginBottom: '0.5em' }}>
+                                  <strong style={{ color: '#fff' }}>State:</strong>
+                                  <pre style={{
+                                    color: '#fff',
+                                    marginTop: '0.5em',
+                                    backgroundColor: '#2d2d2d',
+                                    padding: '0.5em',
+                                    borderRadius: '4px',
+                                    overflowX: 'auto'
+                                  }}>
+                                    {JSON.stringify(this.state, null, '  ')}
+                                  </pre>
+                                </div>
+                                <div>
+                                  <strong style={{ color: '#fff' }}>Message Data:</strong>
+                                  <pre style={{
+                                    color: '#fff',
+                                    marginTop: '0.5em',
+                                    backgroundColor: '#2d2d2d',
+                                    padding: '0.5em',
+                                    borderRadius: '4px',
+                                    overflowX: 'auto'
+                                  }}>
+                                    {JSON.stringify(this.props.message, null, '  ')}
+                                  </pre>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </CardDescription>
+                      </CardContent>
+                    </Card>
                   </div>
                 )
             )

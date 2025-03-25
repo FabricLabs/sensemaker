@@ -100,8 +100,11 @@ class AgentHome extends React.Component {
                 <Table.Cell>{toRelativeTime(agent.created_at)}</Table.Cell>
                 <Table.Cell>{toRelativeTime(agent.updated_at)}</Table.Cell>
                 <Table.Cell>
-                  <Icon name='pencil' />
-                  <Icon name='trash' />
+                  <Button.Group>
+                    <Button icon as={Link} to={`/agents/${agent.id}`}><Icon name='pencil' /></Button>
+                    <Button icon as={Link} to={`/agents/${agent.id}`}><Icon name='cog' /></Button>
+                    <Button icon as={Link} to={`/agents/${agent.id}?action=chat`}><Icon name='chat' /></Button>
+                  </Button.Group>
                 </Table.Cell>
               </Table.Row>
             ))}

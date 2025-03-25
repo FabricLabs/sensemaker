@@ -55,8 +55,6 @@ class Splash extends React.Component {
             <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
           </Routes>
         </fabric-component>
-        {/* This is not good, to take this route apart, but fabric component up there won't let me handle my SignUpForm width like i want,
-        right now i made this route apart, probably splash component needs a rebuild later */}
         <section style={{ display: 'flex', justifyContent: 'center' }}>
           <Routes>
             {/* TODO: fix these routes */}

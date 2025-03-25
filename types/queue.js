@@ -137,21 +137,20 @@ class Queue extends Actor {
   // }
 
   async _tick () {
+    // Increment the clock
     ++this.clock;
 
     if (this.settings.worker) {
-      console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
+      console.debug('[QUEUE]', (await this.jobs).length, 'jobs in queue,', this._state.output.length, 'completed this epoch,', 'current job is', JSON.stringify(this._state.current).length, 'bytes');
       this._state.current = await this._takeJob();
-      console.debug('[QUEUE]', 'Current job:', this._state.current);
+      if (this._state.current) console.debug('[QUEUE]', 'Starting job:', this._state.current);
 
       // If there's work to do, do it
       if (this._state.current && !this._state.current.status) {
-        console.log('actual current queue: ', this._state.current)
         this._state.current.status = 'COMPUTING';
 
         // Handle job completion or timeout
         try {
-
           const result = await Promise.race([
             this._completeJob(this._state.current),
             new Promise((_, reject) => {
@@ -165,15 +164,13 @@ class Queue extends Actor {
             })
           ]);
 
-          console.debug('[QUEUE]', 'Finished work:', result);
-
+          if (this.settings.debug) console.debug('[QUEUE]', 'Finished work:', result);
           if (result.status === 'FAILED' && this._state.current.attempts > 0) {
-            console.debug('[QUEUE] Failed job in the trainer::', this._state.current);
+            console.debug('[QUEUE] Failed job in the trainer:', this._state.current);
             await this._failJob(this._state.current);
           }
 
           this._state.output.push(result);
-
         } catch (exception) {
           console.error('[QUEUE]', 'Job failed:', exception);
           if (this._state.current && this._state.current.attempts > 0) {
@@ -184,11 +181,8 @@ class Queue extends Actor {
         }
       }
 
-      console.debug('[QUEUE]', 'Jobs completed this epoch:', this._state.output.length);
       this._state.output = [];
     }
-
-    console.debug('[QUEUE]', 'TICK', this.clock);
   }
 
 
@@ -253,7 +247,6 @@ class Queue extends Actor {
   async _takeJob () {
     const json = await this.redis.lPop(this.settings.collection);
     const job = JSON.parse(json);
-    console.debug('[QUEUE]', 'Took job:', job);
 
     // TODO: canonize this API
     this.emit('QueueJob', {
