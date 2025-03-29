@@ -18,6 +18,11 @@ class ActivityStream extends React.Component {
     return this;
   }
 
+  componentDidMount () {
+    console.debug('[SENSEMAKER:ACTIVITYSTREAM]', 'ActivityStream mounted!');
+    // this.props.fetchResource('/activities');
+  }
+
   render () {
     const { activities } = this.props;
     return (

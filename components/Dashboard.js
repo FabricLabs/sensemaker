@@ -92,11 +92,11 @@ const HelpBox = require('./HelpBox');
 const Bridge = require('./Bridge');
 
 // Services
-const BitcoinHome = require('./services/BitcoinHome');
-const BitcoinBlockList = require('./services/BitcoinBlockList');
-const BitcoinBlockView = require('./services/BitcoinBlockView');
-const BitcoinTransactionList = require('./services/BitcoinTransactionList');
-const BitcoinTransactionView = require('./services/BitcoinTransactionView');
+const BitcoinHome = require('./services/bitcoin/BitcoinHome');
+const BitcoinBlockList = require('./services/bitcoin/BitcoinBlockList');
+const BitcoinBlockView = require('./services/bitcoin/BitcoinBlockView');
+const BitcoinTransactionList = require('./services/bitcoin/BitcoinTransactionList');
+const BitcoinTransactionView = require('./services/bitcoin/BitcoinTransactionView');
 const DiskHome = require('./services/DiskHome');
 const DiskPath = require('./services/DiskPath');
 const DiscordHome = require('./services/DiscordHome');

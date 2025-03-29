@@ -50,79 +50,57 @@ class TaskHome extends React.Component {
       archiveTransitionVisible: true,
       showVisibilityModal: false,
       taskToMakePublic: null,
-      selectedDueDate: null
+      selectedDueDate: null,
+      showUncompleteConfirm: false,
+      taskToUncomplete: null,
+      sortBy: 'created_at',
+      showCompleted: false
     };
   }
 
   componentDidMount () {
     this.props.fetchTasks();
     this.props.fetchAgentStats();
-
-    // Initialize all calendar components
-    $('.ui.calendar').calendar({
-      type: 'date',
-      formatter: {
-        date: function (date, settings) {
-          if (!date) return '';
-          return date.toISOString().split('T')[0];
-        }
-      },
-      parser: {
-        date: function (text, settings) {
-          if (!text) return null;
-          return new Date(text);
-        }
-      },
-      closable: false,
-      onChange: (date, text) => {
-        const taskId = $(event.target).closest('.ui.calendar').data('task-id');
-        if (taskId) {
-          this.handleDueDateChange(taskId, text);
-          // Close the popup after date is selected
-          $(event.target).closest('.ui.calendar').calendar('popup', 'hide');
-        }
-      }
-    });
   }
 
   componentDidUpdate (prevProps) {
     const { tasks } = this.props;
-
-    // Reinitialize calendars when tasks change
-    if (prevProps.tasks !== tasks) {
-      $('.ui.calendar').calendar({
-        type: 'date',
-        formatter: {
-          date: function (date, settings) {
-            if (!date) return '';
-            return date.toISOString().split('T')[0];
-          }
-        },
-        parser: {
-          date: function (text, settings) {
-            if (!text) return null;
-            return new Date(text);
-          }
-        },
-        closable: false,
-        onChange: (date, text) => {
-          const taskId = $(event.target).closest('.ui.calendar').data('task-id');
-          if (taskId) {
-            this.handleDueDateChange(taskId, text);
-            // Close the popup after date is selected
-            $(event.target).closest('.ui.calendar').calendar('popup', 'hide');
-          }
-        }
-      });
-    }
   }
 
   handleTaskCompletionChange = (e) => {
-    const now = new Date();
-    this.props.updateTask(e.target.id, { completed_at: now });
-    this.setState({ taskCompletion: now });
-    // TODO: also receive events from WebSocket
+    const taskId = e.target.id;
+    const task = this.props.tasks.tasks.find(t => t.id === taskId);
+
+    if (task.completed_at) {
+      // If task is completed, show confirmation modal before uncompleting
+      this.setState({
+        showUncompleteConfirm: true,
+        taskToUncomplete: task
+      });
+    } else {
+      // If task is not completed, complete it immediately
+      const now = new Date();
+      this.props.updateTask(taskId, { completed_at: now });
+      this.setState({ taskCompletion: now });
+      this.props.fetchTasks();
+    }
+  }
+
+  handleUncompleteConfirm = async () => {
+    const { taskToUncomplete } = this.state;
+    await this.props.updateTask(taskToUncomplete.id, { completed_at: null });
+    this.setState({
+      showUncompleteConfirm: false,
+      taskToUncomplete: null
+    });
     this.props.fetchTasks();
+  }
+
+  handleUncompleteCancel = () => {
+    this.setState({
+      showUncompleteConfirm: false,
+      taskToUncomplete: null
+    });
   }
 
   handleTaskInputChange = (e) => {
@@ -239,12 +217,45 @@ class TaskHome extends React.Component {
     }
   }
 
+  handleSortChange = (e, { value }) => {
+    this.setState({ sortBy: value });
+  }
+
   filterTasks = (tasks) => {
-    const { searchQuery } = this.state;
-    if (!searchQuery) return tasks;
-    return tasks.filter(task =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const { searchQuery, sortBy, showCompleted } = this.state;
+    let filteredTasks = tasks;
+
+    // Filter out completed tasks by default
+    if (!showCompleted) {
+      filteredTasks = tasks.filter(task => !task.completed_at);
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply sorting
+    filteredTasks.sort((a, b) => {
+      if (sortBy === 'created_at') {
+        return new Date(b.created_at) - new Date(a.created_at);
+      } else if (sortBy === 'due_date') {
+        if (!a.due_date && !b.due_date) return 0;
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date) - new Date(b.due_date);
+      } else if (sortBy === 'completed_at') {
+        if (!a.completed_at && !b.completed_at) return 0;
+        if (!a.completed_at) return 1;
+        if (!b.completed_at) return -1;
+        return new Date(b.completed_at) - new Date(a.completed_at);
+      }
+      return 0;
+    });
+
+    return filteredTasks;
   }
 
   handleVisibilityClick = (task) => {
@@ -311,8 +322,20 @@ class TaskHome extends React.Component {
                   <Table.HeaderCell></Table.HeaderCell>
                   <Table.HeaderCell textAlign='right'>
                     <Button.Group>
-                      <Button basic active><Icon name='asterisk' /> All</Button>
-                      <Button basic disabled><Icon name='sun' /> Active</Button>
+                      <Button
+                        basic
+                        active={!this.state.showCompleted}
+                        onClick={() => this.setState({ showCompleted: false })}
+                      >
+                        <Icon name='asterisk' /> Active
+                      </Button>
+                      <Button
+                        basic
+                        active={this.state.showCompleted}
+                        onClick={() => this.setState({ showCompleted: true })}
+                      >
+                        <Icon name='check' /> Completed
+                      </Button>
                       <Button basic disabled><Icon name='disk' /> Archive</Button>
                     </Button.Group>
                   </Table.HeaderCell>
@@ -325,13 +348,13 @@ class TaskHome extends React.Component {
                       <Table.Cell collapsing>
                         <Button.Group basic className='desktop-only action-buttons'>
                           <Popup
-                            content='Mark as complete'
+                            content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
                             trigger={
                               <Button
                                 icon
                                 onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
                                 color={x.completed_at ? 'green' : undefined}
-                                className="complete-button"
+                                className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
                               >
                                 <Icon name='check' />
                               </Button>
@@ -340,14 +363,6 @@ class TaskHome extends React.Component {
                             size='tiny'
                           />
                         </Button.Group>
-                        {/* <Input
-                          id={x.id}
-                          type='checkbox'
-                          className='desktop-only'
-                          style={{ transform: 'scale(1.5)', marginLeft: '1em' }}
-                          checked={this.state.selectedTasks.has(x.id)}
-                          onChange={() => this.handleTaskSelection(x.id)}
-                        /> */}
                       </Table.Cell>
                       <Table.Cell collapsing>
                         {this.state.editingTaskId === x.id ? (
@@ -401,14 +416,6 @@ class TaskHome extends React.Component {
                             />
                           ) : null}
                           <Popup
-                            content='Details'
-                            trigger={
-                              <Button icon primary as={Link} to={`/tasks/${x.id}`}><Icon name='cog' /></Button>
-                            }
-                            position='top center'
-                            size='tiny'
-                          />
-                          <Popup
                             content='Archive task'
                             trigger={
                               <Button
@@ -455,7 +462,7 @@ class TaskHome extends React.Component {
               </Table.Body>
             </Table>
           </div>
-          <GeneratedResponse
+          {/* <GeneratedResponse
             request={{
               query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
               messages: [
@@ -479,7 +486,27 @@ class TaskHome extends React.Component {
             fetchResponse={this.props.fetchResponse}
             placeholder={'Let\'s start with...'}
             {...this.props}
-          />
+          /> */}
+
+          {/* Uncomplete Confirmation Modal */}
+          <Modal
+            size="tiny"
+            open={this.state.showUncompleteConfirm}
+            onClose={this.handleUncompleteCancel}
+          >
+            <Modal.Header>Mark Task as Incomplete</Modal.Header>
+            <Modal.Content>
+              <p>Are you sure you want to mark this task as incomplete?</p>
+            </Modal.Content>
+            <Modal.Actions>
+              <Button negative onClick={this.handleUncompleteCancel}>
+                Cancel
+              </Button>
+              <Button positive onClick={this.handleUncompleteConfirm}>
+                Mark Incomplete
+              </Button>
+            </Modal.Actions>
+          </Modal>
 
           {/* Archive Confirmation Modal */}
           <Modal
@@ -529,36 +556,38 @@ class TaskHome extends React.Component {
 
             .action-buttons {
               position: relative;
+              opacity: 0;
+              transition: opacity 0.2s ease;
+            }
+
+            tr:hover .action-buttons {
+              opacity: 1;
+            }
+
+            /* Make first column action buttons always visible */
+            td:first-child .action-buttons {
+              opacity: 1;
             }
 
             .complete-button {
-              transition: all 0.3s ease !important;
+              transition: all 0.2s ease !important;
+            }
+
+            .complete-button.completed {
+              color: #21ba45 !important;
+            }
+
+            .complete-button.incomplete {
+              opacity: 0;
+            }
+
+            tr:hover .complete-button.incomplete {
+              opacity: 1;
             }
 
             .complete-button:hover {
               background-color: #21ba45 !important;
               color: white !important;
-            }
-
-            .task-form input {
-              border: 1px solid transparent !important;
-              transition: border-color 0.3s ease !important;
-            }
-
-            .task-form.focused input {
-              border-color: rgba(34, 36, 38, 0.15) !important;
-            }
-
-            /* Show the action button when form is focused */
-            .task-form.focused .ui.action.input > .button {
-              opacity: 1;
-              transform: translateX(0);
-            }
-
-            /* Hide the action button container by default */
-            .task-form .ui.action.input > .button {
-              opacity: 0;
-              transform: translateX(-10px);
             }
 
             /* Constrain the width of the leftmost column */
@@ -574,21 +603,6 @@ class TaskHome extends React.Component {
               margin: 0;
               display: flex;
               justify-content: center;
-            }
-
-            /* Calendar container styles */
-            .calendar-container {
-              display: inline-flex;
-              align-items: center;
-              position: relative;
-            }
-
-            .ui.popup .ui.calendar {
-              padding: 0.5em;
-            }
-
-            .ui.popup .ui.input {
-              width: 200px;
             }
           `}</style>
         </Segment>

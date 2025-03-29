@@ -33,7 +33,8 @@ class TaskPage extends React.Component {
       editedDescription: '',
       isEditingTitle: false,
       editedTitle: '',
-      isTitleHovered: false
+      isTitleHovered: false,
+      isDescriptionHovered: false
     };
 
     this.handleDescriptionEdit = this.handleDescriptionEdit.bind(this);
@@ -43,6 +44,7 @@ class TaskPage extends React.Component {
     this.saveTitle = this.saveTitle.bind(this);
     this.toggleTitleEdit = this.toggleTitleEdit.bind(this);
     this.handleTitleHover = this.handleTitleHover.bind(this);
+    this.handleDescriptionHover = this.handleDescriptionHover.bind(this);
 
     return this;
   }
@@ -50,15 +52,6 @@ class TaskPage extends React.Component {
   componentDidMount () {
     console.debug('[SENSEMAKER:TASK]', 'TaskPage mounted!');
     this.props.fetchResource();
-
-    // Check if we should start in edit mode
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('edit') === 'title') {
-      this.setState({
-        isEditingTitle: true,
-        editedTitle: this.props.api?.resource?.title || ''
-      });
-    }
   }
 
   handleDescriptionEdit (e) {
@@ -107,6 +100,10 @@ class TaskPage extends React.Component {
 
   handleTitleHover (isHovered) {
     this.setState({ isTitleHovered: isHovered });
+  }
+
+  handleDescriptionHover (isHovered) {
+    this.setState({ isDescriptionHovered: isHovered });
   }
 
   render () {
@@ -166,6 +163,11 @@ class TaskPage extends React.Component {
           {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
           {(api?.resource?.due_date) ? <p>Due <abbr title={api?.resource?.due_date}>{toRelativeTime(api?.resource?.due_date)}</abbr></p> : null}
           <Divider />
+          {this.state.isEditingDescription ? null : (
+            <div style={{ float: 'right', opacity: this.state.isDescriptionHovered ? 1 : 0, transition: 'opacity 0.2s' }}>
+              <Button onClick={this.toggleDescriptionEdit}><Icon name='edit' /></Button>
+            </div>
+          )}
           <Header as='h2'>Description</Header>
           {this.state.isEditingDescription ? (
             <Form>
@@ -181,21 +183,21 @@ class TaskPage extends React.Component {
               </Button.Group>
             </Form>
           ) : (
-            <div>
+            <div
+              onMouseEnter={() => this.handleDescriptionHover(true)}
+              onMouseLeave={() => this.handleDescriptionHover(false)}
+            >
               <p>{api?.resource?.description}</p>
-              <Button icon labelPosition='left' onClick={this.toggleDescriptionEdit}>
-                <Icon name='edit' />
-                Edit Description
-              </Button>
             </div>
           )}
-          <Divider />
+          {/* <Divider />
           <Header as='h2'>Notes</Header>
           <Form>
             <Form.TextArea placeholder='Add a note...' />
             <Button primary>Save</Button>
-          </Form>
+          </Form> */}
           <Divider />
+          {/*
           <Header as='h2'>Recommendation</Header>
           <GeneratedResponse
             request={{
@@ -206,6 +208,7 @@ class TaskPage extends React.Component {
             placeholder={'Let\'s start with...'}
             {...this.props}
           />
+          */}
         </Segment>
       </div>
     );

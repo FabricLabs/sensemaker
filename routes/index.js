@@ -8,6 +8,9 @@ module.exports = {
     checkResetToken: require('./account/check_reset_token'),
     restorePassword: require('./account/restore_password')
   },
+  activities: {
+    list: require('./activities/list_activities')
+  },
   admin: {
     overview: require('./admin/overview'),
     settings: require('./admin/settings'),

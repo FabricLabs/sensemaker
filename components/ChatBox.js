@@ -606,17 +606,30 @@ class ChatBox extends React.Component {
         // Start upload immediately after file selection
         try {
           const result = await this.props.uploadDocument(file);
+
+          // Validate the upload response
+          if (!result) {
+            throw new Error('Upload failed - no response received');
+          }
+
+          // Check if result has file_id, if not try to get it from the response
+          const fileId = result.file_id || (result.response && result.response.file_id);
+
+          if (!fileId) {
+            throw new Error('Upload failed - no file ID received');
+          }
+
           this.setState({
             uploadProgress: 100,
             isUploading: false,
-            uploadedFileId: result.file_id // Store the returned file ID
+            uploadedFileId: fileId
           });
         } catch (error) {
           console.error('Upload error:', error);
           this.setState({
             isUploading: false,
             formatError: true,
-            errorMsg: 'Failed to upload file'
+            errorMsg: error.message || 'Failed to upload file'
           });
         }
       } else {
