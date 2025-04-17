@@ -4,6 +4,7 @@
 const path = require('path');
 const merge = require('lodash.merge');
 const webpack = require('webpack');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
 // Polyfills
 const { JSDOM } = require('jsdom');
@@ -95,6 +96,10 @@ class Bundler extends HTTPCompiler {
           }),
           new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer'],
+          }),
+          new BundleAnalyzerPlugin({
+            analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
+            openAnalyzer: true
           })
         ],
         watch: false

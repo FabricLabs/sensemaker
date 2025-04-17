@@ -5,6 +5,7 @@
   "main": "scripts/desktop.js",
   "scripts": {
     "build": "npm run build:browser",
+    "build:analyze": "ANALYZE=true npm run build:browser",
     "build:browser": "node scripts/build.js",
     "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
     "cli": "node scripts/cli.js",
@@ -65,7 +66,6 @@
     "@langchain/ollama": "=0.1.5",
     "@langchain/redis": "=0.1.0",
     "@rsi/star-citizen": "GoonCitizen/star-citizen-live",
-    "matrix-js-sdk": "=32.4.0",
     "2captcha": "=3.0.7",
     "assert-browserify": "=2.0.0",
     "async-mutex": "=0.5.0",
@@ -90,6 +90,7 @@
     "levelgraph": "=3.0.0",
     "lodash.debounce": "=4.0.8",
     "lodash.merge": "=4.6.2",
+    "matrix-js-sdk": "=32.4.0",
     "multer": "=1.4.5-lts.1",
     "mysql2": "=3.12.0",
     "node-ipc": "=9.1.1",
@@ -129,7 +130,8 @@
     "mocha": "=10.8.2",
     "semantic-ui-css": "=2.5.0",
     "semantic-ui-react": "=2.1.5",
-    "sinon": "=17.0.1"
+    "sinon": "=17.0.1",
+    "webpack-bundle-analyzer": "=4.10.2"
   },
   "c8": {
     "exclude": [

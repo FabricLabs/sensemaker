@@ -2,7 +2,7 @@
 
 // Core Actions
 const { fetchFromAPI } = require('./apiActions');
-const sdk = require('matrix-js-sdk');
+// const sdk = require('matrix-js-sdk');
 
 // Functions
 // TODO: re-write to use common API methods
