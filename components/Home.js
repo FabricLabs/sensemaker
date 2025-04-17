@@ -99,7 +99,12 @@ class Home extends React.Component {
             </Card>
           </Card.Group>
         ) : null}
-        <ActivityStream includeHeader={false} />
+        <ActivityStream
+          includeHeader={false}
+          api={this.props.api}
+          fetchResource={this.props.fetchResource}
+          {...this.props} 
+        />
         <Clock style={{ position: 'fixed', bottom: '1em', right: '1em' }} />
       </sensemaker-home>
     );

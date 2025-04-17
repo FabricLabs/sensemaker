@@ -537,7 +537,7 @@ class Dashboard extends React.Component {
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
         <div attached='bottom' style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
           {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
+          <Sidebar className='fade-in' as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div>
               <Menu.Item as={Link} to='/' onClick={() => this.handleMenuItemClick('home')}>
                 <Icon name='home' size='large' />
@@ -674,7 +674,7 @@ class Dashboard extends React.Component {
             <section>
               <Menu.Item style={{ borderBottom: 0 }}>
                 <Bridge responseCapture={this.responseCapture} />
-                <p style={{ marginTop: '2em' }}><small className="subtle">@FabricLabs</small></p>
+                <p style={{ marginTop: '2em' }}><small className='subtle'>@FabricLabs</small></p>
                 {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
               </Menu.Item>
             </section>
@@ -690,9 +690,10 @@ class Dashboard extends React.Component {
             {this.state.isLoading ? null : (
               <Routes>
                 {/* TODO: add a nice 404 page */}
-                <Route path="*" element={<Navigate to='/' replace />} />
-                <Route path="/" element={
+                <Route path='*' element={<Navigate to='/' replace />} />
+                <Route path='/' element={
                   <Home
+                    api={this.props.api}
                     auth={this.props.auth}
                     conversations={this.props.conversations}
                     fetchConversations={this.props.fetchConversations}
@@ -709,6 +710,7 @@ class Dashboard extends React.Component {
                     thumbsDown={this.thumbsDown}
                     uploadFile={this.props.uploadFile}
                     uploadDocument={this.props.uploadDocument}
+                    {...this.props}
                   />
                 } />
                 <Route path='/settings/library' element={<Library />} />

@@ -2,7 +2,7 @@
 
 const React = require('react');
 
-class ActivityStream extends React.Component {
+class ActivityStreamElement extends React.Component {
   constructor (props) {
     super(props);
 
@@ -19,17 +19,17 @@ class ActivityStream extends React.Component {
   }
 
   componentDidMount () {
-    console.debug('[SENSEMAKER:ACTIVITYSTREAM]', 'ActivityStream mounted!');
-    // this.props.fetchResource('/activities');
+    console.debug('[FABRIC:STREAM]', 'Stream mounted!');
+    this.props.fetchResource('/activities');
   }
 
   render () {
-    const { activities } = this.props;
+    const { activities = [] } = this.props.api?.resource || {};
     return (
-      <div className='activity-stream'>
+      <fabric-activity-stream className='activity-stream'>
         {this.props.includeHeader && <h3>Activity Stream</h3>}
         <div>
-          {activities && activities.map((activity, index) => {
+          {activities.map((activity, index) => {
             return (
               <div key={index}>
                 <strong>{activity.actor}</strong> {activity.verb} <strong>{activity.object}</strong>
@@ -37,9 +37,13 @@ class ActivityStream extends React.Component {
             );
           })}
         </div>
-      </div>
+      </fabric-activity-stream>
     );
   }
+}
+
+function ActivityStream (props) {
+  return <ActivityStreamElement {...props} />;
 }
 
 module.exports = ActivityStream;

@@ -1556,6 +1556,10 @@ class Sensemaker extends Hub {
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
+    // Activities
+    this.http._addRoute('GET', '/activities', ROUTES.activities.list.bind(this));
+    this.http._addRoute('GET', '/activities/:id', ROUTES.activities.view.bind(this));
+
     // Agents
     this.http._addRoute('POST', '/agents', ROUTES.agents.create.bind(this));
     this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
@@ -1664,6 +1668,9 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/inquiries', ROUTES.inquiries.create.bind(this));
     this.http._addRoute('GET', '/inquiries', ROUTES.inquiries.list.bind(this));
     this.http._addRoute('DELETE', '/inquiries/:id', ROUTES.inquiries.delete.bind(this));
+
+    // Invitations
+    // TODO: review this
     this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -1761,6 +1768,12 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/announcements', ROUTES.announcements.create.bind(this));
     this.http._addRoute('GET', '/announcements', ROUTES.announcements.list.bind(this));
     this.http._addRoute('GET', '/announcements/latest', ROUTES.announcements.latest.bind(this));
+
+    // "The Changelog"
+    // Stub for the news hub.
+    this.http._addRoute('GET', '/updates', (req, res, next) => {
+      res.send(this.applicationString);
+    });
 
     // await this._startAllServices();
 
@@ -2923,7 +2936,7 @@ class Sensemaker extends Hub {
 
     for (let i = 0; i < roomResult.joined_rooms.length; i++) {
       const room = roomResult.joined_rooms[i];
-      const members = await this.matrix.client.getJoinedRoomMembers(room);
+      /* const members = await this.matrix.client.getJoinedRoomMembers(room);
       console.log(`room ${room} has ${Object.keys(members.joined).length}`);
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
         try {
@@ -2931,7 +2944,7 @@ class Sensemaker extends Hub {
         } catch (exception) {
           console.warn('[SENSEMAKER:CORE]', '[MATRIX]', 'Failed to invite admin to room:', room);
         }
-      }
+      } */
     }
 
     this.emit('debug', '[SENSEMAKER:CORE] Matrix connected and ready!');

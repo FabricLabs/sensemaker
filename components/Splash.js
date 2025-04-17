@@ -36,7 +36,7 @@ const SignUpForm = require('./SignUpForm');
 const DeclinedInvitation = require('./DeclinedInvitation');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
-const Waitlist = require('./Waitlist');
+const InquiriesHome = require('./InquiriesHome');
 
 /**
  * Home page for visitors (not yet logged in).
@@ -45,21 +45,21 @@ class Splash extends React.Component {
   render () {
     const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
     return (
-      <sensemaker-splash class="fade-in splash">
-        <fabric-component class="ui primary action fluid container">
+      <sensemaker-splash class='fade-in splash'>
+        <fabric-component class='ui primary action fluid container'>
           <Routes>
-            <Route path="/" element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
-            <Route path="/inquiries" element={<Waitlist login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
-            <Route path="/features" element={<FeaturesHome />} />
-            <Route path="/sessions" element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
-            <Route path="/contracts/terms-of-use" element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+            <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+            <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+            <Route path='/features' element={<FeaturesHome />} />
+            <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+            <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
           </Routes>
         </fabric-component>
         <section style={{ display: 'flex', justifyContent: 'center' }}>
           <Routes>
             {/* TODO: fix these routes */}
-            <Route path="/services/passwords/:resetToken" element={<ResetPasswordForm />} />
-            <Route path="/services/invitations/:invitationToken"
+            <Route path='/services/passwords/:resetToken' element={<ResetPasswordForm />} />
+            <Route path='/services/invitations/:invitationToken'
               element={
                 <SignUpForm
                   checkInvitationToken={this.props.checkInvitationToken}
@@ -71,7 +71,7 @@ class Splash extends React.Component {
                   acceptInvitation={this.props.acceptInvitation}
                 />}
             />
-            <Route path="/services/invitations/decline/:invitationToken"
+            <Route path='/services/invitations/decline/:invitationToken'
               element={
                 <DeclinedInvitation
                   checkInvitationToken={this.props.checkInvitationToken}

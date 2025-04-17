@@ -16,6 +16,7 @@ const {
 
 // Local Components
 const HeaderBar = require('./HeaderBar');
+const KeyManagementModal = require('./KeyManagementModal');
 
 // Strings
 // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
@@ -39,6 +40,16 @@ class FrontPage extends React.Component {
     return this;
   }
 
+  handleKeyGenerated = (key) => {
+    // TODO: Handle the generated key (e.g., store it securely, redirect to dashboard)
+    console.log('Key generated:', key);
+  };
+
+  handleKeyImported = (key) => {
+    // TODO: Handle the imported key (e.g., store it securely, redirect to dashboard)
+    console.log('Key imported:', key);
+  };
+
   render () {
     return (
       <sensemaker-front-page class='splash-page fade-in'>
@@ -48,46 +59,15 @@ class FrontPage extends React.Component {
           <p style={{ fontSize: '2em' }}>{BRAND_TAGLINE}</p>
           <p style={{ fontSize: '1.2em', marginBottom: '4em' }}>{PITCH_CTA_TEXT}</p>
           <Button.Group floated='right' size='huge'>
-            <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
-            <Button.Or />
-            {/* <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button> */}
-            <Button as={Link} to='/inquiries' color='black'>Learn More <Icon name='right chevron' /></Button>
+            <Button color='blue' as={Link} to='/sessions' icon labelPosition='left'><Icon name='user' />Log In</Button>
+            <Button color='green' onClick={() => this.keyModal.handleOpen()} icon labelPosition='right'>Get Started<Icon name='right chevron' /></Button>
           </Button.Group>
         </section>
-        {/*
-        <section style={{ marginTop: '12em' }}>
-          <Segment style={{ padding: '2em' }}>
-            <h2>Deploy Agents in Seconds</h2>
-            <p>Sensemaker enables the rapid deployment of research-grade artificial intelligence tooling into real-world scenarios.  Gain instantaneous insight into real-time data from the field, ranging from social media to physical sensors.</p>
-            <Button size='large' color='black' as={Link} to='/features' floated='right'>Learn More <Icon name='right chevron' /></Button>
-          </Segment>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Local Intelligence</Card.Header>
-              <Card.Description>
-                <p>Sensemaker's offline-first design ensures reliability under adversarial conditions.</p>
-                <Button size='large' color='black' as={Link} to='/features' floated='right' labelPosition='right' icon='right chevron'>Learn More</Button>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Global Awareness</Card.Header>
-              <Card.Description>
-                <p>Robust connectivity with a variety of networks empowers Sensemaker with real-time analytics and powerful data visualizations.</p>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Your Data, Your Rules</Card.Header>
-              <Card.Description>
-                <p>Retain control over your most important information.  Sensemaker keeps all data locally, letting you choose what to share with the network.</p>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-        </section>
-        */}
+        <KeyManagementModal
+          ref={(ref) => this.keyModal = ref}
+          onKeyGenerated={this.handleKeyGenerated}
+          onKeyImported={this.handleKeyImported}
+        />
       </sensemaker-front-page>
     );
   }

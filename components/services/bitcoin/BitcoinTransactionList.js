@@ -7,8 +7,8 @@ const ReactDOMServer = require('react-dom/server');
 const { Link } = require('react-router-dom');
 
 // Functions
-const truncateMiddle = require('../../functions/truncateMiddle');
-const toRelativeTime = require('../../functions/toRelativeTime');
+const truncateMiddle = require('../../../functions/truncateMiddle');
+const toRelativeTime = require('../../../functions/toRelativeTime');
 
 // Components
 // Semantic UI

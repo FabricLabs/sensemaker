@@ -18,7 +18,7 @@ const {
 } = require('semantic-ui-react');
 
 // Local Components
-const GeneratedResponse = require('./GeneratedResponse');
+// const GeneratedResponse = require('./GeneratedResponse');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
@@ -109,7 +109,7 @@ class TaskPage extends React.Component {
   render () {
     const { api } = this.props;
     return (
-      <div>
+      <div className='fade-in'>
         <div className='uppercase'>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>

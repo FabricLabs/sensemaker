@@ -79,7 +79,7 @@ class AgentPage extends React.Component {
     const { agents } = this.props;
     console.debug('[AGENTS]', 'State:', agents);
     return (
-      <div>
+      <div className='fade-in'>
         <div className='uppercase'>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>

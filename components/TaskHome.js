@@ -287,6 +287,10 @@ class TaskHome extends React.Component {
     this.props.fetchTasks();
   }
 
+  handleWorkClick = (task) => {
+    this.props.history.push(`/tasks/${task.id}`);
+  }
+
   render () {
     const { agents, network, tasks, response } = this.props;
 
@@ -302,12 +306,14 @@ class TaskHome extends React.Component {
 
     return (
       <sensemaker-task-home class='fade-in' style={{ height: '100%' }}>
-        <Segment className='fade-in' loading={network?.loading} style={{ minHeight: '100%', maxHeight: '100%' }}>
-          <h2>Tasks</h2>
-          <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
-          <div>
-            <Table compact>
-              <Table.Header fullWidth={true}>
+        <Segment className='fade-in' loading={network?.loading} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flexShrink: 0 }}>
+            <h2>Tasks</h2>
+            <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Table>
+              <Table.Header fullWidth={true} style={{ flexShrink: 0 }}>
                 <Table.Row>
                   <Table.HeaderCell></Table.HeaderCell>
                   <Table.HeaderCell>
@@ -322,20 +328,8 @@ class TaskHome extends React.Component {
                   <Table.HeaderCell></Table.HeaderCell>
                   <Table.HeaderCell textAlign='right'>
                     <Button.Group>
-                      <Button
-                        basic
-                        active={!this.state.showCompleted}
-                        onClick={() => this.setState({ showCompleted: false })}
-                      >
-                        <Icon name='asterisk' /> Active
-                      </Button>
-                      <Button
-                        basic
-                        active={this.state.showCompleted}
-                        onClick={() => this.setState({ showCompleted: true })}
-                      >
-                        <Icon name='check' /> Completed
-                      </Button>
+                      <Button basic active={!this.state.showCompleted} onClick={() => this.setState({ showCompleted: false })}><Icon name='asterisk' /> Active</Button>
+                      <Button basic active={this.state.showCompleted} onClick={() => this.setState({ showCompleted: true })}><Icon name='check' /> Completed</Button>
                       <Button basic disabled><Icon name='disk' /> Archive</Button>
                     </Button.Group>
                   </Table.HeaderCell>
@@ -428,6 +422,19 @@ class TaskHome extends React.Component {
                             position='top center'
                             size='tiny'
                           />
+                          <Popup
+                            content='Begin work'
+                            trigger={
+                              <Button
+                                icon
+                                onClick={() => this.handleWorkClick(x)}
+                              >
+                                <Icon name='play' />
+                              </Button>
+                            }
+                            position='top center'
+                            size='tiny'
+                          />
                         </Button.Group>
                       </Table.Cell>
                     </Table.Row>
@@ -461,6 +468,7 @@ class TaskHome extends React.Component {
                 </Table.Row>
               </Table.Body>
             </Table>
+            <ChatBox {...this.props} context={{ tasks: tasks?.tasks }} placeholder='Ask about these tasks...' />
           </div>
           {/* <GeneratedResponse
             request={{
@@ -487,7 +495,6 @@ class TaskHome extends React.Component {
             placeholder={'Let\'s start with...'}
             {...this.props}
           /> */}
-
           {/* Uncomplete Confirmation Modal */}
           <Modal
             size="tiny"

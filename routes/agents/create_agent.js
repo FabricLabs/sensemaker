@@ -21,6 +21,7 @@ module.exports = async function (req, res, next) {
   });
 
   const user = await this.db('users').insert({
+    username: req.body.name.toLowerCase(),
     display_name: req.body.name
   });
 

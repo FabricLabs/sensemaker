@@ -42,6 +42,7 @@ class Conversations extends React.Component {
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
       searchQuery: '', // Add search query to state
+      isGlobalHovered: false
     };
   }
 
@@ -67,9 +68,7 @@ class Conversations extends React.Component {
   };
 
   handleSaveEditing = async (conversationID) => {
-
     const { editedTitle } = this.state;
-
     this.setState({ editLoading: true });
 
     const fetchPromise = fetch(`/conversations/${conversationID}`, {
@@ -165,7 +164,15 @@ class Conversations extends React.Component {
       <Segment className='fade-in' fluid style={{ minHeight: '100%', maxHeight: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
           <h2 style={{ marginTop: '0' }}>Chat</h2>
-          <Button icon color='green'>New Conversation <Icon name='right chevron' /></Button>
+          <Button.Group>
+            <Button
+              icon
+              color='black'
+              content={<Icon name='globe' />}
+              popup={{ content: 'Global chat', position: 'bottom center' }}
+            />
+            <Button icon color='green' labelPosition='right'>New Conversation<Icon name='right chevron' /></Button>
+          </Button.Group>
         </div>
         <p>
           {searchQuery ?
@@ -201,7 +208,7 @@ class Conversations extends React.Component {
             <Button><Icon name='asterisk' /> All</Button>
             <Button><Icon name='download' /> Local</Button>
             <Button color='blue' as={Link} to='/services/discord'><Icon name='discord' /> Discord</Button>
-            <Button color='black' as={Link} to='/services/matrix'><Icon name='hashtag' /> Matrix</Button>
+            {/* <Button color='black' as={Link} to='/services/matrix'><Icon name='hashtag' /> Matrix</Button> */}
           </Button.Group>
         </div>
         <h3>Conversations</h3>

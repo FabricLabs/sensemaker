@@ -9,11 +9,13 @@ module.exports = async function (req, res, next) {
   let isNew = false;
   let localMessageID = null;
   let localConversationID = null;
+  let localFileID = null;
   let fabricConversationID = null;
   let {
     conversation_id,
     content,
     context,
+    file_id,
     agent
   } = req.body;
 
@@ -36,6 +38,12 @@ module.exports = async function (req, res, next) {
     await this.db('conversations').update({ fabric_id: fabricConversationID }).where({ id: localConversationID });
   } else {
     fabricConversationID = conversation_id;
+  }
+
+  if (file_id) {
+    const file = await this.db('files').where({ fabric_id: file_id }).first();
+    if (!file) throw new Error(`No such File: ${file_id}`);
+    localFileID = file.id;
   }
 
   try {

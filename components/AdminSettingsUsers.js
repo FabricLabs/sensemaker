@@ -196,45 +196,47 @@ class AdminUsers extends React.Component {
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.updated_at)}</Table.Cell>
                       <Table.Cell textAlign="center">
-                        <Popup
-                          content="Add/Change Email"
-                          trigger={
-                            <Button
-                              icon='at'
-                              disabled={false}
-                              onClick={() => this.changeEmail(instance.email, instance.id)}
-                            />
-                          }
-                        />
-                        <Popup
-                          content="Send password reset"
-                          trigger={
-                            <Button
-                              icon='key'
-                              disabled={false}
-                              onClick={() => this.confirmResetPassword(instance.email)}
-                            />
-                          }
-                        />
-                        <Popup
-                          content="Change Username"
-                          trigger={
-                            <Button
-                              icon='user'
-                              disabled={false}
-                              onClick={() => this.changeUsername(instance.username, instance.id)}
-                            />
-                          }
-                        />
-                        {/* <Popup
-                          content="Disable User - Comming soon"
-                          trigger={
-                            <Button
-                              icon='ban'
-                              disabled={false}
-                            />
-                          }
-                        /> */}
+                        <Button.Group>
+                          <Popup
+                            content="Add/Change Email"
+                            trigger={
+                              <Button
+                                icon='at'
+                                disabled={false}
+                                onClick={() => this.changeEmail(instance.email, instance.id)}
+                              />
+                            }
+                          />
+                          <Popup
+                            content="Send password reset"
+                            trigger={
+                              <Button
+                                icon='key'
+                                disabled={false}
+                                onClick={() => this.confirmResetPassword(instance.email)}
+                              />
+                            }
+                          />
+                          <Popup
+                            content="Change Username"
+                            trigger={
+                              <Button
+                                icon='user'
+                                disabled={false}
+                                onClick={() => this.changeUsername(instance.username, instance.id)}
+                              />
+                            }
+                          />
+                          {/* <Popup
+                            content="Disable User - Comming soon"
+                            trigger={
+                              <Button
+                                icon='ban'
+                                disabled={false}
+                              />
+                            }
+                          /> */}
+                        </Button.Group>
                       </Table.Cell>
                     </Table.Row>
                   )

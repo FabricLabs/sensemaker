@@ -17,11 +17,11 @@ const {
 } = require('semantic-ui-react');
 
 // Local Components
-const KeyringManager = require('../KeyringManager');
+const KeyringManager = require('../../KeyringManager');
 
 // Functions
-const toRelativeTime = require('../../functions/toRelativeTime');
-const truncateMiddle = require('../../functions/truncateMiddle');
+const toRelativeTime = require('../../../functions/toRelativeTime');
+const truncateMiddle = require('../../../functions/truncateMiddle');
 
 class BitcoinHome extends React.Component {
   constructor (props) {
@@ -158,8 +158,8 @@ class BitcoinHome extends React.Component {
             <Table>
               <Table.Header>
                 <Table.Row>
-                  <Table.HeaderCell>Block</Table.HeaderCell>
                   <Table.HeaderCell>Hash</Table.HeaderCell>
+                  <Table.HeaderCell>Block</Table.HeaderCell>
                   <Table.HeaderCell>Timestamp</Table.HeaderCell>
                   <Table.HeaderCell>Inputs</Table.HeaderCell>
                   <Table.HeaderCell>Outputs</Table.HeaderCell>
@@ -169,8 +169,8 @@ class BitcoinHome extends React.Component {
               <Table.Body>
                 {bitcoin && bitcoin.recentTransactions && bitcoin.recentTransactions.length && bitcoin.recentTransactions.slice(0, 5).map((tx, index) => (
                   <Table.Row key={index}>
-                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + tx.blockhash}>{`#${tx.block?.height}`} {truncateMiddle(tx.blockhash || '', 11, '…')} (#{tx.height})</Link></Table.Cell>
                     <Table.Cell><Link to={`/services/bitcoin/transactions/` + tx.txid}>{truncateMiddle(tx.txid || '', 11, '…')}</Link></Table.Cell>
+                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + tx.blockhash}>{truncateMiddle(tx.blockhash || '', 11, '…')} (#{tx.height})</Link></Table.Cell>
                     <Table.Cell><abbr title={(new Date(tx.time * 1000)).toISOString()}>{toRelativeTime(new Date(tx.time * 1000))}</abbr></Table.Cell>
                     <Table.Cell>{tx.vin && tx.vin.length} inputs</Table.Cell>
                     <Table.Cell>{tx.vout && tx.vout.length} outputs</Table.Cell>

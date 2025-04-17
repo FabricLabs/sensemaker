@@ -9,7 +9,8 @@ module.exports = {
     restorePassword: require('./account/restore_password')
   },
   activities: {
-    list: require('./activities/list_activities')
+    list: require('./activities/list_activities'),
+    view: require('./activities/view_activity')
   },
   admin: {
     overview: require('./admin/overview'),

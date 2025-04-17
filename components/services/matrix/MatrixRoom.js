@@ -75,7 +75,7 @@ class MatrixRoom extends React.Component {
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/services/matrix'>Matrix</Link></Breadcrumb.Section>
             <Breadcrumb.Divider icon='right chevron' />
-            <Breadcrumb.Section><Link to={`/services/matrix/rooms/${matrix.room?.id}`}>{truncateMiddle(matrix.room?.name, 16)}</Link></Breadcrumb.Section>
+            <Breadcrumb.Section><Link to={`/services/matrix/rooms/${matrix.room?.id}`}>{truncateMiddle(matrix.room?.name || '', 16)}</Link></Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={matrix?.loading} style={{ maxHeight: '100%' }}>

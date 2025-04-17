@@ -87,7 +87,7 @@ class FabricGroupView extends React.Component {
             {groups.current && groups.current.members && groups.current.members.map((member) => (
               <List.Item key={member.id}>
                 <List.Content>
-                  <List.Header>{member.name}</List.Header>
+                  <List.Header>{member.username}</List.Header>
                   <List.Description>{member.email}</List.Description>
                 </List.Content>
               </List.Item>

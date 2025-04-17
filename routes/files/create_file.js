@@ -94,7 +94,7 @@ async function http_create_file (req, res, next) {
           const digest = hash.digest('hex');
           const actor = new Actor({ content: data.toString('utf8') });
           // TODO: preserve additional fields (ctime, mtime, etc.)
-          const insertedDocument = await this.db('documents').insert({
+          /* const insertedDocument = await this.db('documents').insert({
             title: req.file.originalname,
             content: data.toString('utf8'),
             fabric_id: actor.id,
@@ -108,7 +108,7 @@ async function http_create_file (req, res, next) {
             latest_blob_id: actor.id,
             mime_type: mimeType,
             history: JSON.stringify([actor.id]),
-          });
+          }); */
 
           // Queue jobs
           // TODO: fix / troubleshoot ingestion of large files
@@ -124,7 +124,7 @@ async function http_create_file (req, res, next) {
             attempts: 3,
           }); */
 
-          res.send({ status: 'success', message: 'Successfully uploaded file!', document_id: actor.id, file_id: savedFile[0], fabric_id: actor.id });
+          res.send({ status: 'success', message: 'Successfully uploaded file!', document_id: actor.id, file_id: savedFile[0], fabric_id: actor.id, id: actor.id });
         } catch (updateError) {
           console.error('Failed to update file status:', updateError);
           res.status(500);

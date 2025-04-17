@@ -17,6 +17,11 @@ const {
   askPasswordReset,
 } = require('./accountActions');
 
+// ## Announcement Actions
+const {
+  fetchAnnouncements
+} = require('./announcementActions');
+
 // ## Authentication (and Authorization) Actions
 const {
   login,
@@ -232,6 +237,7 @@ const {
 module.exports = {
   fetchAgent,
   fetchAgentStats,
+  fetchAnnouncements,
   fetchBitcoinStats,
   fetchBitcoinBlock,
   fetchBitcoinBlocks,

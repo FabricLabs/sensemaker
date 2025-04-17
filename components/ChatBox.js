@@ -75,7 +75,8 @@ class ChatBox extends React.Component {
       attachmentExists: false,
       uploadProgress: 0,
       isUploading: false,
-      uploadedFileId: null
+      uploadedFileId: null,
+      loading: false // Added loading state
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -84,9 +85,9 @@ class ChatBox extends React.Component {
     // Add styles for file preview animation
     this.filePreviewStyles = {
       container: {
-        overflow: 'hidden',
+        overflow: 'visible',
         transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out',
-        maxHeight: '0',
+        maxHeight: 'none',
         opacity: '0',
         marginBottom: '10px',
         backgroundColor: '#f8f9fa',
@@ -94,24 +95,25 @@ class ChatBox extends React.Component {
         padding: '0 10px'
       },
       visible: {
-        maxHeight: '60px',
+        maxHeight: 'none',
         opacity: '1',
         padding: '10px'
       },
       content: {
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         gap: '10px'
       },
       fileName: {
         flex: 1,
-        overflow: 'hidden',
+        overflow: 'visible',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap'
       },
       removeButton: {
         cursor: 'pointer',
-        color: '#666'
+        color: '#666',
+        marginTop: '2px'
       }
     };
   }
@@ -277,7 +279,8 @@ class ChatBox extends React.Component {
         conversation_id: message?.conversation,
         content: query,
         context: context,
-        agent: agent
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
       }
     } else {
       //else, we are in a previous one and we already have a conversationID for this
@@ -285,7 +288,8 @@ class ChatBox extends React.Component {
         conversation_id: this.props.conversationID,
         content: query,
         context: context,
-        agent: agent
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
       }
     }
 
@@ -585,56 +589,71 @@ class ChatBox extends React.Component {
     const files = e.target.files;
     this.setState({ formatError: false });
 
-    if (files.length > 0) {
-      const file = files[0]; // Take only the first file
-      if (this.isValidFileType(file.type)) {
-        console.debug('File selected:', file.name, file.size, file.type);
-        this.setState({
-          file: file,
-          formatError: false,
-          attachmentExists: true,
-          filePreview: {
-            name: file.name,
-            size: this.formatFileSize(file.size),
-            type: file.type
-          },
-          showFilePreview: true,
-          isUploading: true,
-          uploadProgress: 0
-        });
+    // If no files were selected (canceled), clear loading state and return
+    if (!files || files.length === 0) {
+      this.setState({ loading: false });
+      return;
+    }
 
-        // Start upload immediately after file selection
-        try {
-          const result = await this.props.uploadDocument(file);
+    const file = files[0]; // Take only the first file
+    if (this.isValidFileType(file.type)) {
+      console.debug('File selected:', file.name, file.size, file.type);
+      this.setState({
+        file: file,
+        formatError: false,
+        attachmentExists: true,
+        filePreview: {
+          name: file.name,
+          size: this.formatFileSize(file.size),
+          type: file.type
+        },
+        showFilePreview: true,
+        isUploading: true,
+        uploadProgress: 0,
+        loading: true // Set loading state when starting upload
+      });
 
-          // Validate the upload response
-          if (!result) {
-            throw new Error('Upload failed - no response received');
-          }
+      // Start upload immediately after file selection
+      try {
+        const result = await this.props.uploadFile(file);
 
-          // Check if result has file_id, if not try to get it from the response
-          const fileId = result.file_id || (result.response && result.response.file_id);
-
-          if (!fileId) {
-            throw new Error('Upload failed - no file ID received');
-          }
-
-          this.setState({
-            uploadProgress: 100,
-            isUploading: false,
-            uploadedFileId: fileId
-          });
-        } catch (error) {
-          console.error('Upload error:', error);
-          this.setState({
-            isUploading: false,
-            formatError: true,
-            errorMsg: error.message || 'Failed to upload file'
-          });
+        // Validate the upload response
+        if (!result) {
+          throw new Error('Upload failed - no response received');
         }
-      } else {
-        this.setState({ formatError: true, file: null });
+
+        // Check various possible response structures for the file ID
+        const fileId = result.id || 
+                      (result.response && result.response.id) ||
+                      (result.data && result.data.id) ||
+                      result.id;
+
+        if (!fileId) {
+          console.error('Upload response:', result);
+          throw new Error('Upload failed - no file ID received in response');
+        }
+
+        this.setState({
+          uploadProgress: 100,
+          isUploading: false,
+          uploadedFileId: fileId,
+          loading: false // Reset loading state after successful upload
+        });
+      } catch (error) {
+        console.error('Upload error:', error);
+        this.setState({
+          isUploading: false,
+          formatError: true,
+          errorMsg: error.message || 'Failed to upload file',
+          loading: false // Reset loading state on error
+        });
       }
+    } else {
+      this.setState({ 
+        formatError: true, 
+        file: null,
+        loading: false // Reset loading state for invalid file type
+      });
     }
   };
 

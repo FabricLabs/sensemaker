@@ -26,7 +26,7 @@ const {
 
 const HeaderBar = require('./HeaderBar');
 
-class Waitlist extends React.Component {
+class InquiriesHome extends React.Component {
   constructor(props) {
     super(props);
 
@@ -108,10 +108,86 @@ class Waitlist extends React.Component {
   render () {
     const { email, error, joined } = this.state;
     return (
-      <sensemaker-waitlist>
-        <fabric-component class="ui primary action fluid container">
+      <sensemaker-inquiries>
+        <fabric-component className="ui primary action fluid container">
           <HeaderBar showBrand={false} showButtons={false} />
-          <Grid centered width='100%'>
+          <Header>What is Sensemaker?</Header>
+          <p>Sensemaker is a powerful artificial intelligence platform designed to run locally, on your own devices, without giving your data to some big company in the cloud.</p>
+          <Grid stackable columns={3} style={{ marginTop: '2em' }}>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='server' size='huge' color='blue' />
+                  <Card.Header>Local Intelligence</Card.Header>
+                  <Card.Description>
+                    Keep your data local, manage your costs, and ensure reliability with Sensemaker's offline-first design.
+                  </Card.Description>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='network wired' size='huge' color='green' />
+                  <Card.Header>Network Analysis</Card.Header>
+                  <Card.Description>
+                    Consume data streams from a variety of sources, including a robust peer-to-peer network of other users.
+                  </Card.Description>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='coins' size='huge' color='yellow' />
+                  <Card.Header>Earn for Insights</Card.Header>
+                  <Card.Description>
+                    Get rewarded for valuable contributions to the network.
+                  </Card.Description>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+          </Grid>
+
+          <Grid stackable columns={3} style={{ marginTop: '2em' }}>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='shield' size='huge' color='red' />
+                  <Card.Header>Your Data, Your Rules</Card.Header>
+                  <Card.Description>
+                    Retain control over your most important information. Sensemaker keeps all data locally, letting you choose what to share.
+                  </Card.Description>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='globe' size='huge' color='purple' />
+                  <Card.Header>Global Awareness</Card.Header>
+                  <Card.Description>
+                    Robust connectivity with a variety of networks empowers Sensemaker with real-time analytics and powerful data visualizations.
+                  </Card.Description>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+            <Grid.Column>
+              <Card fluid>
+                <Card.Content>
+                  <Icon name='rocket' size='huge' color='orange' />
+                  <Card.Header>Learn More</Card.Header>
+                  <Card.Description>
+                    Discover all the powerful features that make Sensemaker unique.
+                  </Card.Description>
+                  <Button as={Link} to='/features' color='black' style={{ marginTop: '1em' }}>
+                    Explore Features
+                  </Button>
+                </Card.Content>
+              </Card>
+            </Grid.Column>
+          </Grid>
+          <Grid centered width='100%' style={{ marginTop: '2em' }}>
             <Grid.Column mobile={16} tablet={8} computer={8}>
               <Card fluid style={{ textAlign: 'left' }}>
                 <Card.Content>
@@ -144,9 +220,9 @@ class Waitlist extends React.Component {
             </Grid.Column>
           </Grid>
         </fabric-component>
-      </sensemaker-waitlist>
+      </sensemaker-inquiries>
     );
   }
 }
 
-module.exports = Waitlist;
+module.exports = InquiriesHome;
