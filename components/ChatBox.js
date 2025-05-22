@@ -76,7 +76,9 @@ class ChatBox extends React.Component {
       uploadProgress: 0,
       isUploading: false,
       uploadedFileId: null,
-      loading: false // Added loading state
+      loading: false, // Added loading state
+      signingKey: null, // Add signing key to state
+      isRecording: false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -260,7 +262,7 @@ class ChatBox extends React.Component {
     this.setState({ message: null, chat: { message: null } });
   }
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
@@ -457,63 +459,77 @@ class ChatBox extends React.Component {
   }
 
   handleMicrophoneClick = () => {
-    console.debug('[SENSEMAKER]', 'Microphone click');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        console.debug('[SENSEMAKER]', 'Got audio stream:', stream);
-
-        const recorder = new MediaRecorder(stream);
-        const speaker = hark(stream, {});
-        const chunks = [];
-
-        speaker.on('silence', () => {
-          console.debug('[SENSEMAKER]', 'Silence detected');
-        });
-
-        speaker.on('speaking', () => {
-          console.debug('[SENSEMAKER]', 'Speaking detected');
-        });
-
-        speaker.on('stopped_speaking', () => {
-          console.debug('[SENSEMAKER]', 'Speaking stopped');
-          console.debug('[SENSEMAKER]', 'All chunks:', chunks);
-
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          const reader = new FileReader();
-
-          reader.onload = function () {
-            console.debug('[SENSEMAKER]', 'Reader loaded:', reader.result);
-            const recognition = new webkitSpeechRecognition();
-
-            recognition.onresult = function (event) {
-              console.debug('[SENSEMAKER]', 'Transcribed text:', event.results[0][0].transcript);
-            };
-
-            recognition.onnomatch = (event) => {
-              console.debug('[SENSEMAKER]', 'No match:', event);
-            }
-
-            recognition.start();
-            console.debug('[SENSEMAKER]', 'Recognition started...', recognition);
-          }
-
-          reader.readAsDataURL(blob);
-          console.debug('[SENSEMAKER]', 'Reader is reading...', blob);
-        });
-
-        recorder.ondataavailable = (e) => {
-          // console.debug('[SENSEMAKER]', 'Audio Chunk:', e.data);
-          chunks.push(e.data);
-        };
-
-        recorder.start(1000);
-        console.debug('[SENSEMAKER]', 'Recorder started:', recorder);
-      }).catch((err) => {
-        console.error(`The following getUserMedia error occurred: ${err}`);
-      });
-    } else {
-      console.debug('getUserMedia not supported on your browser!');
+    if (!('webkitSpeechRecognition' in window)) {
+      console.debug('Speech recognition not supported');
+      return;
     }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    // Add recording state to handle UI updates
+    this.setState({ isRecording: !this.state.isRecording });
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const speaker = hark(stream, {
+        // Configure silence detection
+        threshold: -65,      // silence threshold in dB
+        interval: 100,       // interval for silence checks
+        timeout: 1000       // time until silence is detected
+      });
+
+      let silenceTimeout;
+      let finalTranscript = '';
+
+      speaker.on('speaking', () => {
+        console.debug('[SENSEMAKER]', 'Speaking detected');
+        // Clear any existing silence timeout
+        if (silenceTimeout) {
+          clearTimeout(silenceTimeout);
+        }
+      });
+
+      speaker.on('stopped_speaking', () => {
+        console.debug('[SENSEMAKER]', 'Silence detected');
+        // Set timeout to stop recognition after sustained silence
+        silenceTimeout = setTimeout(() => {
+          recognition.stop();
+          stream.getTracks().forEach(track => track.stop());
+          speaker.stop();
+
+          // Update UI and input field with final transcript
+          this.setState({
+            isRecording: false,
+            query: finalTranscript
+          });
+        }, 2000); // Wait 2 seconds of silence before stopping
+      });
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript = transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Update the input field with current transcript
+        this.setState({
+          query: finalTranscript || interimTranscript
+        });
+      };
+
+      recognition.start();
+    }).catch((err) => {
+      console.error('Media stream error:', err);
+      this.setState({ isRecording: false });
+    });
   }
 
   conversationTitle = (title) => {
@@ -649,8 +665,8 @@ class ChatBox extends React.Component {
         });
       }
     } else {
-      this.setState({ 
-        formatError: true, 
+      this.setState({
+        formatError: true,
         file: null,
         loading: false // Reset loading state for invalid file type
       });
@@ -767,11 +783,14 @@ class ChatBox extends React.Component {
 
     const inputStyle = {
       resize: 'none',
-      zIndex: '1'
+      zIndex: '1',
+      flex: '1',
+      width: '100%'
     };
 
     if (this.props.includeAttachments) {
       inputStyle.borderRadius = '0 5px 5px 0';
+      inputStyle.marginLeft = '0';
     }
 
     if (message?.conversation && !conversationID && !documentChat) {
@@ -1033,7 +1052,7 @@ class ChatBox extends React.Component {
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}>
-          <Form.Input>
+          <Form.Input style={{ display: 'flex', width: '100%' }}>
             {this.props.includeAttachments && (
               <Button size='huge' basic left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
                 <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
@@ -1062,11 +1081,13 @@ class ChatBox extends React.Component {
               style={inputStyle}
             />
             <Icon
-              name="microphone"
-              color="grey"
-              onClick={() => this.handleMicrophoneClick(this)}
-              //this inline style is necessary to make the icon look lighter when the textarea is not focused
-              style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
+              name={this.state.isRecording ? "stop" : "microphone"}
+              color={this.state.isRecording ? "red" : "grey"}
+              onClick={this.handleMicrophoneClick}
+              style={{
+                color: this.state.isTextareaFocused ? 'grey' : 'lightgrey',
+                cursor: 'pointer'
+              }}
             />
           </Form.Input>
         </Form>

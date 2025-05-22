@@ -5,6 +5,7 @@ const path = require('path');
 const merge = require('lodash.merge');
 const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const fs = require('fs');
 
 // Polyfills
 const { JSDOM } = require('jsdom');
@@ -43,9 +44,6 @@ class Bundler extends HTTPCompiler {
       state: {
         title: settings.title || 'Fabric HTTP Document'
       },
-      // TODO: load from:
-      // 1. webpack.config.js (local)
-      // 2. @fabric/http/webpack.config
       webpack: {
         mode: 'production',
         entry: path.resolve('./scripts/browser.js'),
@@ -54,17 +52,21 @@ class Bundler extends HTTPCompiler {
         },
         resolve: {
           fallback: {
-            crypto: require.resolve('crypto-browserify'),
+            crypto: path.resolve(__dirname, '../scripts/crypto-shim'),
+            ecc: path.resolve(__dirname, '../scripts/ecc-shim'),
             stream: require.resolve('stream-browserify'),
-            querystring: require.resolve('querystring-es3'),
             path: require.resolve('path-browserify'),
             assert: require.resolve('assert-browserify'),
-            util: require.resolve('node-util'),
-            fs: require.resolve('browserify-fs')
+            util: require.resolve('util/'),
+            fs: false,
+            http: false,
+            https: false,
+            zlib: false,
+            url: false
           },
           symlinks: false
         },
-        target: 'node',
+        target: 'web',
         output: {
           path: path.resolve('./assets/bundles'),
           filename: 'browser.min.js',
@@ -80,7 +82,19 @@ class Bundler extends HTTPCompiler {
               use: {
                 loader: 'babel-loader',
                 options: {
-                  presets: ['@babel/preset-env', '@babel/preset-react']
+                  presets: [
+                    ['@babel/preset-env', {
+                      modules: false,
+                      targets: {
+                        browsers: ['last 2 versions', 'not dead']
+                      }
+                    }],
+                    '@babel/preset-react'
+                  ],
+                  plugins: [
+                    '@babel/plugin-transform-runtime',
+                    '@babel/plugin-transform-modules-commonjs'
+                  ]
                 }
               }
             },
@@ -95,7 +109,7 @@ class Bundler extends HTTPCompiler {
             'process.env': JSON.stringify(process.env)
           }),
           new webpack.ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
+            Buffer: ['buffer', 'Buffer']
           }),
           new BundleAnalyzerPlugin({
             analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
@@ -116,6 +130,68 @@ class Bundler extends HTTPCompiler {
     this.packer = webpack(this.settings.webpack);
 
     return this;
+  }
+
+  async generateCacheManifest (outputPath = path.resolve('assets/cache.manifest')) {
+    function walk(dir, filelist = [], basedir = dir) {
+      fs.readdirSync(dir).forEach(file => {
+        const filepath = path.join(dir, file);
+        const relpath = path.relative(basedir, filepath).replace(/\\/g, '/');
+        if (fs.statSync(filepath).isDirectory()) {
+          walk(filepath, filelist, basedir);
+        } else {
+          // Exclude the manifest itself
+          if (!relpath.endsWith('cache.manifest')) {
+            filelist.push(relpath);
+          }
+        }
+      });
+      return filelist;
+    }
+    const assetDir = path.resolve('assets');
+    const files = walk(assetDir).map(f => f.startsWith('.') ? f.slice(1) : f);
+    const manifest = [
+      'CACHE MANIFEST',
+      `# Hash: ${Date.now()}`,
+      '',
+      'CACHE:',
+      ...files,
+      '',
+      'NETWORK:',
+      '*',
+      '',
+      'FALLBACK:',
+      ''
+    ].join('\n');
+    fs.writeFileSync(outputPath, manifest, 'utf8');
+    console.log(`[BUNDLER] cache.manifest generated with ${files.length} files.`);
+  }
+
+  async generateWebManifest (outputPath = path.resolve('assets/manifest.json')) {
+    const manifest = {
+      name: this.site.name,
+      short_name: this.site.name,
+      description: this.site.description || '',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#000000',
+      icons: [
+        {
+          src: '/assets/icons/icon-192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/assets/icons/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        }
+      ]
+    };
+
+    fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2), 'utf8');
+    console.log(`[BUNDLER] manifest.json generated.`);
   }
 }
 

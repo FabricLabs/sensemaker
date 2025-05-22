@@ -22,6 +22,9 @@ exports.up = function (knex) {
     table.integer('user_id');
   }).alterTable('files', (table) => {
     table.string('fabric_id');
+  }).alterTable('messages', (table) => {
+    table.string('identity_id');
+    table.json('attachments');
   });
 };
 
@@ -34,5 +37,8 @@ exports.down = function (knex) {
     table.dropColumn('fabric_id');
   }).alterTable('conversations', (table) => {
     table.dropColumn('type');
+  }).alterTable('messages', (table) => {
+    table.dropColumn('identity_id');
+    table.dropColumn('attachments');
   });
 };

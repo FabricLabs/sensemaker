@@ -19,6 +19,9 @@
 <dt><a href="#SPA">SPA</a></dt>
 <dd><p>Fully-managed HTML application.</p>
 </dd>
+<dt><a href="#InMemoryVectorStore">InMemoryVectorStore</a></dt>
+<dd><p>Simple in-memory vector store for testing and development.</p>
+</dd>
 <dt><a href="#Trainer">Trainer</a></dt>
 <dd><p>Implements document ingestion.</p>
 </dd>
@@ -142,6 +145,12 @@ Creates an instance of the [Site](#Site), which provides general statistics cove
 Fully-managed HTML application.
 
 **Kind**: global class  
+<a name="InMemoryVectorStore"></a>
+
+## InMemoryVectorStore
+Simple in-memory vector store for testing and development.
+
+**Kind**: global class  
 <a name="Trainer"></a>
 
 ## Trainer
@@ -236,8 +245,10 @@ Sensemaker is the primary instance of the AI.
     * [.retrieveFile(id)](#Sensemaker+retrieveFile) ⇒ <code>Object</code>
     * [.start()](#Sensemaker+start) ⇒ <code>Promise</code>
     * [.stop()](#Sensemaker+stop) ⇒ <code>Promise</code>
+    * [.syncSource(id)](#Sensemaker+syncSource) ⇒ <code>Promise</code>
     * [._getRoomMessages()](#Sensemaker+_getRoomMessages) ⇒ <code>Array</code>
     * [._handleRequest(request)](#Sensemaker+_handleRequest) ⇒ <code>SensemakerResponse</code>
+    * [.verifyMessage(signedMessage)](#Sensemaker+verifyMessage) ⇒ <code>Boolean</code>
 
 <a name="new_Sensemaker_new"></a>
 
@@ -391,6 +402,17 @@ Stop the process.
 
 **Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
 **Returns**: <code>Promise</code> - Resolves once the process has been stopped.  
+<a name="Sensemaker+syncSource"></a>
+
+### sensemaker.syncSource(id) ⇒ <code>Promise</code>
+Synchronize a remote [Source](Source) by ID.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>Hash256</code> | The ID of the source to sync. |
+
 <a name="Sensemaker+_getRoomMessages"></a>
 
 ### sensemaker.\_getRoomMessages() ⇒ <code>Array</code>
@@ -409,4 +431,16 @@ Generate a response to a request.
 | --- | --- | --- |
 | request | <code>SensemakerRequest</code> | The request. |
 | [request.room] | <code>String</code> | Matrix room to retrieve conversation history from. |
+
+<a name="Sensemaker+verifyMessage"></a>
+
+### sensemaker.verifyMessage(signedMessage) ⇒ <code>Boolean</code>
+Verifies a signed message
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Boolean</code> - - Whether the signature is valid  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| signedMessage | <code>Object</code> | The signed message object |
 

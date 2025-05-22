@@ -26,6 +26,9 @@ module.exports = {
     list: require('./agents/list_agents'),
     view: require('./agents/view_agent')
   },
+  alerts: {
+    list: require('./alerts/list_alerts')
+  },
   announcements: {
     list: require('./announcements/list_announcements'),
     latest: require('./announcements/latest_announcement'),
@@ -95,6 +98,9 @@ module.exports = {
     acceptInvitation: require('./invitations/accept_invitation'),
     declineInvitation: require('./invitations/decline_invitation'),
     deleteInvitation: require('./invitations/delete_invitation')
+  },
+  jobs: {
+    list: require('./jobs/list_jobs')
   },
   keys: {
     list: require('./keys/list_keys'),
@@ -182,6 +188,10 @@ module.exports = {
     list: require('./tasks/list_tasks'),
     view: require('./tasks/view_task'),
     edit: require('./tasks/edit_task')
+  },
+  topics: {
+    list: require('./topics/list_topics'),
+    view: require('./topics/view_topic')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')

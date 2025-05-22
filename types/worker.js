@@ -10,6 +10,10 @@ const Service = require('@fabric/core/types/service');
 // Types
 const Queue = require('./queue');
 
+// Environment detection
+const isBrowser = typeof window !== 'undefined';
+const isNode = !isBrowser && typeof process !== 'undefined';
+
 /**
  * Worker service.
  */
@@ -43,6 +47,13 @@ class Worker extends Service {
       working: false
     };
 
+    // Handle cleanup in browser environment
+    if (isBrowser) {
+      window.addEventListener('beforeunload', () => {
+        this.stop();
+      });
+    }
+
     return this;
   }
 
@@ -75,6 +86,18 @@ class Worker extends Service {
     const work = method.apply(this.state, job.params);
 
     work.then((output) => {
+      this.emit('work', {
+        job,
+        output,
+        timestamp: Date.now()
+      });
+      this._state.working = false;
+    }).catch((error) => {
+      this.emit('error', {
+        job,
+        error,
+        timestamp: Date.now()
+      });
       this._state.working = false;
     });
   }
@@ -93,10 +116,30 @@ class Worker extends Service {
   }
 
   async stop () {
-    // clearInterval(this._heart);
-    // clearInterval(this._timer);
-    // clearInterval(this._ticker);
-    this.process.exit();
+    // Clear all intervals
+    if (this._heart) clearInterval(this._heart);
+    if (this._timer) clearInterval(this._timer);
+    if (this._ticker) clearInterval(this._ticker);
+
+    // Stop the queue
+    try {
+      if (this.queue) {
+        await this.queue.stop();
+        this.queue = null;
+      }
+    } catch (error) {
+      console.error('[WORKER]', 'Error stopping queue:', error);
+    }
+
+    // Clear state
+    this._state.working = false;
+    this._state.stack = [];
+    this._state.current = null;
+    this._state.types = {};
+
+    // Emit stopped event
+    this.emit('stopped');
+
     return true;
   }
 }

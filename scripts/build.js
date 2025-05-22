@@ -1,6 +1,13 @@
 'use strict';
 
-require('@babel/register');
+require('@babel/register')({
+  ignore: [
+    function (filepath) {
+      return /node_modules/.test(filepath) && !/node_modules[\\/]+@fabric[\\/]hub/.test(filepath);
+    }
+  ],
+  presets: ['@babel/preset-env', '@babel/preset-react']
+});
 
 const React = require('react');
 const ReactDOM = require('react-dom');
@@ -20,16 +27,17 @@ const SensemakerUI = require('../components/SensemakerUI');
 
 // Program Body
 async function main (input = {}) {
+  const mode = input.mode || 'development';
   const site = new SensemakerUI(input);
   const compiler = new Bundler({
     document: site,
     webpack: {
-      mode: settings.mode || 'development',
+      mode: mode,
       module: {
         rules: [
           {
             test: /\.(js|jsx)$/,
-            exclude: /node_modules/,
+            exclude: /node_modules\/(?!@fabric\/hub)/,
             use: {
               loader: 'babel-loader',
               options: {
@@ -52,6 +60,9 @@ async function main (input = {}) {
   });
 
   await compiler.compileTo('assets/index.html');
+
+  // Automatically generate cache.manifest for offline support
+  await compiler.generateCacheManifest();
 
   return {
     site: site.id

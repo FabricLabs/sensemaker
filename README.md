@@ -14,6 +14,12 @@ making sense of stuff.
 - Redis Stack 7.2
 
 ## Quick Start
+Sensemaker runs locally, on your machine, unless configured to do otherwise.  First, clone the repository:
+
+```
+git clone git@github.com:FabricLabs/sensemaker.git
+```
+
 From the repository root:
 ```
 npm i # install dependencies
@@ -21,10 +27,13 @@ npm start # run node
 ```
 A basic web interface should now be provided at http://localhost:3040
 
-**Important!**  
-Your username and password will be displayed in the logs **for the first boot only**.  This is your administrative account, with full access to managing your node.
+If you'd like to avoid the web components, you can use `npm run demo` to skip straight to the networking demo.
 
-Enjoy!
+**Important!**  
+Your username and password will be displayed in the logs **for the first boot only**.  This is your administrative account, with full access to managing your node.  Secure it somewhere safely!
+
+## Next Steps
+- Ask your instance a few questions to get a feel for how it responds.
 
 ## Configuring
 Settings may be provided by modifying `settings/local.js` with any of the following properties:

@@ -6,7 +6,7 @@ const { BRAND_NAME } = require('../constants');
 // Dependencies
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
-const { Link } = require('react-router-dom');
+const { Link, useNavigate } = require('react-router-dom');
 
 // Components
 // Semantic UI
@@ -29,11 +29,12 @@ const {
 const ChatBox = require('./ChatBox');
 const GeneratedResponse = require('./GeneratedResponse');
 const HeaderBar = require('./HeaderBar');
+const UserProfileSection = require('./UserProfileSection');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
 
-class TaskHome extends React.Component {
+class TaskHomePage extends React.Component {
   constructor (settings = {}) {
     super(settings);
 
@@ -43,7 +44,6 @@ class TaskHome extends React.Component {
       editingTaskTitle: '',
       taskTitle: '',
       selectedTasks: new Set(),
-      searchQuery: '',
       isTaskFormFocused: false,
       showArchiveConfirm: false,
       taskToArchive: null,
@@ -222,20 +222,11 @@ class TaskHome extends React.Component {
   }
 
   filterTasks = (tasks) => {
-    const { searchQuery, sortBy, showCompleted } = this.state;
+    const { sortBy } = this.state;
     let filteredTasks = tasks;
 
     // Filter out completed tasks by default
-    if (!showCompleted) {
-      filteredTasks = tasks.filter(task => !task.completed_at);
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      filteredTasks = filteredTasks.filter(task =>
-        task.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+    filteredTasks = tasks.filter(task => !task.completed_at);
 
     // Apply sorting
     filteredTasks.sort((a, b) => {
@@ -246,11 +237,6 @@ class TaskHome extends React.Component {
         if (!a.due_date) return 1;
         if (!b.due_date) return -1;
         return new Date(a.due_date) - new Date(b.due_date);
-      } else if (sortBy === 'completed_at') {
-        if (!a.completed_at && !b.completed_at) return 0;
-        if (!a.completed_at) return 1;
-        if (!b.completed_at) return -1;
-        return new Date(b.completed_at) - new Date(a.completed_at);
       }
       return 0;
     });
@@ -288,7 +274,29 @@ class TaskHome extends React.Component {
   }
 
   handleWorkClick = (task) => {
-    this.props.history.push(`/tasks/${task.id}`);
+    this.props.navigate(`/tasks/${task.id}?action=work`);
+  }
+
+  handleAddClick = () => {
+    this.setState({ showTopInput: true }, () => {
+      // Focus the input after it's rendered
+      setTimeout(() => {
+        const input = document.querySelector('.task-form input');
+        if (input) input.focus();
+      }, 0);
+    });
+  }
+
+  handleTopInputSubmit = async (e) => {
+    e.preventDefault();
+    this.setState({ loading: true });
+    const task = await this.props.createTask({ title: this.state.taskTitle });
+    this.setState({
+      taskTitle: '',
+      loading: false,
+      showTopInput: false
+    });
+    this.props.fetchTasks();
   }
 
   render () {
@@ -311,308 +319,308 @@ class TaskHome extends React.Component {
             <h2>Tasks</h2>
             <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Table>
-              <Table.Header fullWidth={true} style={{ flexShrink: 0 }}>
-                <Table.Row>
-                  <Table.HeaderCell></Table.HeaderCell>
-                  <Table.HeaderCell>
-                    <Input
-                      fluid
-                      icon='search'
-                      placeholder='Search tasks...'
-                      value={this.state.searchQuery}
-                      onChange={this.handleSearchChange}
-                    />
-                  </Table.HeaderCell>
-                  <Table.HeaderCell></Table.HeaderCell>
-                  <Table.HeaderCell textAlign='right'>
-                    <Button.Group>
-                      <Button basic active={!this.state.showCompleted} onClick={() => this.setState({ showCompleted: false })}><Icon name='asterisk' /> Active</Button>
-                      <Button basic active={this.state.showCompleted} onClick={() => this.setState({ showCompleted: true })}><Icon name='check' /> Completed</Button>
-                      <Button basic disabled><Icon name='disk' /> Archive</Button>
-                    </Button.Group>
-                  </Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body animation='fade right'>
-                {filteredTasks.map((x) => {
-                  return (
-                    <Table.Row className='fade-in' key={x.id}>
-                      <Table.Cell collapsing>
-                        <Button.Group basic className='desktop-only action-buttons'>
-                          <Popup
-                            content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
-                            trigger={
-                              <Button
-                                icon
-                                onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
-                                color={x.completed_at ? 'green' : undefined}
-                                className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
-                              >
-                                <Icon name='check' />
-                              </Button>
-                            }
-                            position='top center'
-                            size='tiny'
-                          />
-                        </Button.Group>
-                      </Table.Cell>
-                      <Table.Cell collapsing>
-                        {this.state.editingTaskId === x.id ? (
-                          <Input
-                            fluid
-                            value={this.state.editingTaskTitle}
-                            onChange={this.handleEditChange}
-                            onKeyDown={this.handleEditSubmit}
-                            onBlur={this.handleEditBlur}
-                            autoFocus
-                          />
-                        ) : (
-                          <div
-                            onClick={() => x.can_edit && this.handleEditStart(x)}
-                            style={{
-                              cursor: x.can_edit ? 'pointer' : 'default',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5em'
-                            }}
-                            className="task-title-container"
-                          >
-                            <Link to={`/tasks/${x.id}`}>{x.title}</Link>
-                            {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
-                          </div>
-                        )}
-                        <style>{`
-                          .task-title-container:hover .edit-icon {
-                            opacity: 1 !important;
-                            transition: opacity 0.2s ease;
+        </Segment>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <Table>
+            <Table.Body animation='fade'>
+              <Table.Row className='fade-in'>
+                <Table.Cell width={1}></Table.Cell>
+                <Table.Cell width={12}>
+                  <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0, marginLeft: '-1em' }}>
+                    <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
+                      <Input
+                        fluid
+                        type='text'
+                        name='title'
+                        value={this.state.taskTitle}
+                        placeholder='Add a new task...'
+                        onFocus={this.handleTaskFormFocus}
+                        onBlur={this.handleTaskFormBlur}
+                        style={{ padding: '0.5em 0' }}
+                      />
+                    </Form.Field>
+                  </Form>
+                </Table.Cell>
+                <Table.Cell width={3} textAlign='right'>
+                  <Button.Group basic className='desktop-only action-buttons'>
+                    <Button primary icon onClick={this.handleTaskSubmit} disabled={!this.state.taskTitle}>
+                      <Icon name='plus' />
+                    </Button>
+                  </Button.Group>
+                </Table.Cell>
+              </Table.Row>
+              {filteredTasks.map((x) => {
+                return (
+                  <Table.Row className='fade-in' key={x.id}>
+                    <Table.Cell width={1} collapsing>
+                      <Button.Group basic className='desktop-only action-buttons' style={{ marginLeft: '3px' }}>
+                        <Popup
+                          content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
+                          trigger={
+                            <Button
+                              icon
+                              onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
+                              color={x.completed_at ? 'green' : undefined}
+                              className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
+                            >
+                              <Icon name='check' />
+                            </Button>
                           }
-                        `}</style>
-                      </Table.Cell>
-                      <Table.Cell collapsing></Table.Cell>
-                      <Table.Cell collapsing textAlign='right'>
-                        <Button.Group basic className='desktop-only action-buttons'>
-                          {(x.can_edit) ? (
-                            <Popup
-                              content='Edit task'
-                              trigger={
-                                <Button
-                                  icon
-                                  as={Link}
-                                  to={`/tasks/${x.id}?edit=title`}
-                                >
-                                  <Icon name='pencil' />
-                                </Button>
-                              }
-                              position='top center'
-                              size='tiny'
-                            />
-                          ) : null}
-                          <Popup
-                            content='Archive task'
-                            trigger={
-                              <Button
-                                icon
-                                onClick={() => this.handleArchiveClick(x)}
-                              >
-                                <Icon name='archive' />
-                              </Button>
-                            }
-                            position='top center'
-                            size='tiny'
-                          />
-                          <Popup
-                            content='Begin work'
-                            trigger={
-                              <Button
-                                icon
-                                onClick={() => this.handleWorkClick(x)}
-                              >
-                                <Icon name='play' />
-                              </Button>
-                            }
-                            position='top center'
-                            size='tiny'
-                          />
-                        </Button.Group>
-                      </Table.Cell>
-                    </Table.Row>
-                  );
-                })}
-                <Table.Row className='fade-in'>
-                  <Table.Cell collapsing></Table.Cell>
-                  <Table.Cell colSpan="3">
-                    <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0 }}>
-                      <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
+                          position='top center'
+                          size='tiny'
+                        />
+                      </Button.Group>
+                    </Table.Cell>
+                    <Table.Cell width={12}>
+                      {this.state.editingTaskId === x.id ? (
                         <Input
                           fluid
-                          type='text'
-                          name='title'
-                          value={this.state.taskTitle}
-                          placeholder='Add a new task...'
-                          onFocus={this.handleTaskFormFocus}
-                          onBlur={this.handleTaskFormBlur}
-                          action={
-                            <Transition visible={this.state.isTaskFormFocused || this.state.taskTitle} animation='slide right' duration={300}>
-                              <Button primary attached='right' type='submit'>
-                                Create
-                                <Icon name='right chevron' />
-                              </Button>
-                            </Transition>
-                          }
+                          value={this.state.editingTaskTitle}
+                          onChange={this.handleEditChange}
+                          onKeyDown={this.handleEditSubmit}
+                          onBlur={this.handleEditBlur}
+                          autoFocus
                         />
-                      </Form.Field>
-                    </Form>
-                  </Table.Cell>
-                </Table.Row>
-              </Table.Body>
-            </Table>
-            <ChatBox {...this.props} context={{ tasks: tasks?.tasks }} placeholder='Ask about these tasks...' />
-          </div>
-          {/* <GeneratedResponse
-            request={{
-              query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
-              messages: [
-                {
-                  role: 'user',
-                  content: `The following is a list of tasks: ${JSON.stringify(
-                    tasks.tasks.filter((x) => {
-                      return (x.completed_at) ? false : true;
-                    }).map((x) => {
-                      return {
-                        title: x.title,
-                        due_date: x.due_date
-                      }
-                    })
-                  )}`
-                }
-              ]
-            }}
-            chat={this.props.chat}
-            context={{ tasks: tasks.tasks, summary: response?.content }}
-            fetchResponse={this.props.fetchResponse}
-            placeholder={'Let\'s start with...'}
-            {...this.props}
-          /> */}
-          {/* Uncomplete Confirmation Modal */}
-          <Modal
-            size="tiny"
-            open={this.state.showUncompleteConfirm}
-            onClose={this.handleUncompleteCancel}
-          >
-            <Modal.Header>Mark Task as Incomplete</Modal.Header>
-            <Modal.Content>
-              <p>Are you sure you want to mark this task as incomplete?</p>
-            </Modal.Content>
-            <Modal.Actions>
-              <Button negative onClick={this.handleUncompleteCancel}>
-                Cancel
-              </Button>
-              <Button positive onClick={this.handleUncompleteConfirm}>
-                Mark Incomplete
-              </Button>
-            </Modal.Actions>
-          </Modal>
+                      ) : (
+                        <div
+                          onClick={() => x.can_edit && this.handleEditStart(x)}
+                          style={{
+                            cursor: x.can_edit ? 'pointer' : 'default',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5em',
+                            padding: '0.5em 0'
+                          }}
+                          className="task-title-container"
+                        >
+                          <Link to={`/tasks/${x.id}`}>{x.title}</Link>
+                          {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
+                        </div>
+                      )}
+                    </Table.Cell>
+                    <Table.Cell width={3} collapsing textAlign='right'>
+                      <Button.Group basic className='desktop-only action-buttons'>
+                        {(x.can_edit) ? (
+                          <Popup
+                            content='Edit task'
+                            trigger={
+                              <Button
+                                icon
+                                as={Link}
+                                to={`/tasks/${x.id}?edit=title`}
+                              >
+                                <Icon name='pencil' />
+                              </Button>
+                            }
+                            position='top center'
+                            size='tiny'
+                          />
+                        ) : null}
+                        <Popup
+                          content='Archive task'
+                          trigger={
+                            <Button
+                              icon
+                              onClick={() => this.handleArchiveClick(x)}
+                            >
+                              <Icon name='archive' />
+                            </Button>
+                          }
+                          position='top center'
+                          size='tiny'
+                        />
+                        <Popup
+                          content='Begin work'
+                          trigger={
+                            <Button
+                              icon
+                              onClick={() => this.handleWorkClick(x)}
+                            >
+                              <Icon name='play' />
+                            </Button>
+                          }
+                          position='top center'
+                          size='tiny'
+                        />
+                      </Button.Group>
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              })}
+              {/* Empty row for new task creation */}
+              <Table.Row className='fade-in'>
+                <Table.Cell width={1}></Table.Cell>
+                <Table.Cell width={12}>
+                  <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0 }}>
+                    <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
+                      <Input
+                        fluid
+                        type='text'
+                        name='title'
+                        value={this.state.taskTitle}
+                        placeholder='Add a new task...'
+                        onFocus={this.handleTaskFormFocus}
+                        onBlur={this.handleTaskFormBlur}
+                        style={{ padding: '0.5em 0' }}
+                      />
+                    </Form.Field>
+                  </Form>
+                </Table.Cell>
+                <Table.Cell width={3} textAlign='right'>
+                  <Button.Group basic className='desktop-only action-buttons'>
+                    <Button
+                      primary
+                      icon
+                      onClick={this.handleTaskSubmit}
+                      disabled={!this.state.taskTitle}
+                    >
+                      <Icon name='plus' />
+                    </Button>
+                  </Button.Group>
+                </Table.Cell>
+              </Table.Row>
+            </Table.Body>
+          </Table>
+          <ChatBox {...this.props} context={{ tasks: tasks?.tasks }} placeholder='Ask about these tasks...' />
+        </div>
+        {/* <GeneratedResponse
+          request={{
+            query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',
+            messages: [
+              {
+                role: 'user',
+                content: `The following is a list of tasks: ${JSON.stringify(
+                  tasks.tasks.filter((x) => {
+                    return (x.completed_at) ? false : true;
+                  }).map((x) => {
+                    return {
+                      title: x.title,
+                      due_date: x.due_date
+                    }
+                  })
+                )}`
+              }
+            ]
+          }}
+          chat={this.props.chat}
+          context={{ tasks: tasks.tasks, summary: response?.content }}
+          fetchResponse={this.props.fetchResponse}
+          placeholder={'Let\'s start with...'}
+          {...this.props}
+        /> */}
+        <Modal size="tiny" open={this.state.showUncompleteConfirm} onClose={this.handleUncompleteCancel}>
+          <Modal.Header>Mark Task as Incomplete</Modal.Header>
+          <Modal.Content>
+            <p>Are you sure you want to mark this task as incomplete?</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button negative onClick={this.handleUncompleteCancel}>
+              Cancel
+            </Button>
+            <Button positive onClick={this.handleUncompleteConfirm}>
+              Mark Incomplete
+            </Button>
+          </Modal.Actions>
+        </Modal>
 
-          {/* Archive Confirmation Modal */}
-          <Modal
-            size="tiny"
-            open={this.state.showArchiveConfirm}
-            onClose={this.handleArchiveCancel}
-          >
-            <Modal.Header>Archive Incomplete Task</Modal.Header>
-            <Modal.Content>
-              <p>Are you sure? This task isn't complete.</p>
-            </Modal.Content>
-            <Modal.Actions>
-              <Button negative onClick={this.handleArchiveCancel}>
-                Cancel
-              </Button>
-              <Button positive onClick={() => this.handleArchiveConfirm(this.state.taskToArchive)}>
-                Archive
-              </Button>
-            </Modal.Actions>
-          </Modal>
+        <Modal size="tiny" open={this.state.showArchiveConfirm} onClose={this.handleArchiveCancel}>
+          <Modal.Header>Archive Incomplete Task</Modal.Header>
+          <Modal.Content>
+            <p>Are you sure? This task isn't complete.</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button negative onClick={this.handleArchiveCancel}>
+              Cancel
+            </Button>
+            <Button positive onClick={() => this.handleArchiveConfirm(this.state.taskToArchive)}>
+              Archive
+            </Button>
+          </Modal.Actions>
+        </Modal>
 
-          {/* Visibility Confirmation Modal */}
-          <Modal
-            size="tiny"
-            open={this.state.showVisibilityModal}
-            onClose={this.handleVisibilityCancel}
-          >
-            <Modal.Header>Make Task Public</Modal.Header>
-            <Modal.Content>
-              <p>Are you sure you want to make this task visible to the public? This action cannot be undone.</p>
-            </Modal.Content>
-            <Modal.Actions>
-              <Button negative onClick={this.handleVisibilityCancel}>
-                Cancel
-              </Button>
-              <Button positive onClick={this.handleVisibilityConfirm}>
-                Make Public
-              </Button>
-            </Modal.Actions>
-          </Modal>
+        <Modal size="tiny" open={this.state.showVisibilityModal} onClose={this.handleVisibilityCancel}>
+          <Modal.Header>Make Task Public</Modal.Header>
+          <Modal.Content>
+            <p>Are you sure you want to make this task visible to the public? This action cannot be undone.</p>
+          </Modal.Content>
+          <Modal.Actions>
+            <Button negative onClick={this.handleVisibilityCancel}>
+              Cancel
+            </Button>
+            <Button positive onClick={this.handleVisibilityConfirm}>
+              Make Public
+            </Button>
+          </Modal.Actions>
+        </Modal>
 
-          <style>{`
-            .task-title-container:hover .edit-icon {
-              opacity: 1 !important;
-              transition: opacity 0.2s ease;
-            }
+        <style>{`
+          .task-title-container:hover .edit-icon {
+            opacity: 1 !important;
+            transition: opacity 0.2s ease;
+          }
 
-            .action-buttons {
-              position: relative;
-              opacity: 0;
-              transition: opacity 0.2s ease;
-            }
+          .action-buttons {
+            position: relative;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+          }
 
-            tr:hover .action-buttons {
-              opacity: 1;
-            }
+          tr:hover .action-buttons {
+            opacity: 1;
+          }
 
-            /* Make first column action buttons always visible */
-            td:first-child .action-buttons {
-              opacity: 1;
-            }
+          /* Make first column action buttons always visible */
+          td:first-child .action-buttons {
+            opacity: 1;
+          }
 
-            .complete-button {
-              transition: all 0.2s ease !important;
-            }
+          .complete-button {
+            transition: all 0.2s ease !important;
+          }
 
-            .complete-button.completed {
-              color: #21ba45 !important;
-            }
+          .complete-button.completed {
+            color: #21ba45 !important;
+          }
 
-            .complete-button.incomplete {
-              opacity: 0;
-            }
+          .complete-button.incomplete {
+            opacity: 0;
+          }
 
-            tr:hover .complete-button.incomplete {
-              opacity: 1;
-            }
+          tr:hover .complete-button.incomplete {
+            opacity: 1;
+          }
 
-            .complete-button:hover {
-              background-color: #21ba45 !important;
-              color: white !important;
-            }
+          .complete-button:hover {
+            background-color: #21ba45 !important;
+            color: white !important;
+          }
 
-            /* Constrain the width of the leftmost column */
-            .ui.table td:first-child {
-              width: 42px !important;
-              min-width: 42px !important;
-              max-width: 42px !important;
-              padding-right: 0;
-            }
+          /* Constrain the width of the leftmost column */
+          .ui.table td:first-child {
+            width: 42px !important;
+            min-width: 42px !important;
+            max-width: 42px !important;
+            padding-right: 0;
+          }
 
-            /* Ensure the button group stays compact */
-            .ui.table td:first-child .button.group {
-              margin: 0;
-              display: flex;
-              justify-content: center;
-            }
-          `}</style>
-        </Segment>
+          /* Ensure the button group stays compact */
+          .ui.table td:first-child .button.group {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+          }
+
+          /* Add proper spacing for table cells */
+          .ui.table td {
+            padding: 0.8em 0.5em !important;
+            vertical-align: middle;
+          }
+
+          /* Add proper spacing for the task title cell */
+          .ui.table td:nth-child(2) {
+            padding-left: 1em !important;
+          }
+        `}</style>
       </sensemaker-task-home>
     );
   }
@@ -626,4 +634,11 @@ class TaskHome extends React.Component {
   }
 }
 
-module.exports = TaskHome;
+function TaskHome () {
+  return (props) => {
+    const navigate = useNavigate();
+    return <TaskHomePage {...props} navigate={navigate} />;
+  };
+};
+
+module.exports = TaskHome(TaskHomePage);

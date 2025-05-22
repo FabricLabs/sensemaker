@@ -109,6 +109,7 @@ class AgentHome extends React.Component {
           open={this.state.modalOpen}
           onClose={() => this.setState({ modalOpen: false })}
           size='small'
+          className='fade-in'
         >
           <Modal.Header>Create New Agent</Modal.Header>
           <Modal.Content>
@@ -136,27 +137,27 @@ class AgentHome extends React.Component {
             }}>
               <Form.Field>
                 <label>Agent Name</label>
-                <Form.Input 
-                  placeholder='Enter a name for your agent' 
+                <Form.Input
+                  placeholder='Enter a name for your agent'
                   name='name'
                   required
                 />
               </Form.Field>
               <Form.Field>
                 <label>Agent Prompt</label>
-                <Form.TextArea 
-                  placeholder="Describe your agent's behavior and capabilities..." 
+                <Form.TextArea
+                  placeholder="Describe your agent's behavior and capabilities..."
                   name='prompt'
                   required
                   style={{ minHeight: '150px' }}
                 />
               </Form.Field>
               <Form.Field>
-                <Button 
-                  type='submit' 
-                  primary 
+                <Button
+                  type='submit'
+                  primary
                   fluid
-                  content='Create Agent' 
+                  content='Create Agent'
                 />
               </Form.Field>
             </Form>

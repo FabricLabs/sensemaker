@@ -35,6 +35,7 @@ const TermsOfUseModal = require('./TermsOfUseModal');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
+const Bridge = require('./Bridge');
 
 /**
  * The Sensemaker UI.
@@ -42,6 +43,11 @@ const Waitlist = require('./Waitlist');
 class SensemakerUI extends React.Component {
   constructor (props) {
     super(props);
+
+    // Initialize bridge
+    this.bridge = new Bridge({
+      responseCapture: this.handleMessageSuccess.bind(this)
+    });
 
     this.state = {
       isAuthenticated: false,
@@ -56,9 +62,8 @@ class SensemakerUI extends React.Component {
     this.setState({ isAuthenticated: true });
   }
 
-  handleMessageSuccess = (result) => {
-    console.log('message success! result:', result);
-    this.setState({ incomingMessage: result });
+  handleMessageSuccess = (action) => {
+    const { id, isAdmin } = this.props.auth;
   }
 
   handleRegisterSuccess = () => {
@@ -169,6 +174,13 @@ class SensemakerUI extends React.Component {
     console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
   }
 
+  componentWillUnmount () {
+    // Clean up bridge connection
+    if (this.bridge) {
+      this.bridge.stop();
+    }
+  }
+
   render () {
     const { modalLogOut, loggedOut } = this.state;
     const { login, error } = this.props;
@@ -201,6 +213,7 @@ class SensemakerUI extends React.Component {
                   declineInvitation={this.props.declineInvitation}
                   createInquiry={this.props.createInquiry}
                   inquiries={this.props.inquiries}
+                  bridge={this.bridge}
                 />
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (
                 <TermsOfUseModal
@@ -215,6 +228,7 @@ class SensemakerUI extends React.Component {
                   auth={this.props.auth}
                   onLogoutSuccess={this.handleLogout}
                   onMessageSuccess={this.handleMessageSuccess}
+                  responseCapture={this.handleMessageSuccess}
                   createTask={this.props.createTask}
                   fetchContract={this.props.fetchContract}
                   fetchConversation={this.props.fetchConversation}
@@ -233,6 +247,7 @@ class SensemakerUI extends React.Component {
                   uploadFile={this.props.uploadFile}
                   isAdmin={this.props.auth && this.props.auth.isAdmin}
                   isCompliant={this.props.auth && this.props.auth.isCompliant}
+                  bridge={this.bridge}
                   {...this.props}
                 />
               )}

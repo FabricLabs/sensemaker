@@ -5,7 +5,7 @@ const LOCALE = 'en';
 
 // Branding
 const BRAND_NAME = 'sensemaker';
-const BRAND_TAGLINE = 'distributed artificial intelligence';
+const BRAND_TAGLINE = 'self-hosted digital assistant';
 
 // Pitch (CTA, Front Page, etc.)
 const PITCH_CTA_TEXT = 'Order from chaos.  Run locally, think globally.';

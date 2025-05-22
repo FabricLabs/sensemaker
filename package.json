@@ -7,6 +7,9 @@
     "build": "npm run build:browser",
     "build:analyze": "ANALYZE=true npm run build:browser",
     "build:browser": "node scripts/build.js",
+    "build:dev": "NODE_ENV=development npm run build:browser",
+    "build:prod": "NODE_ENV=production npm run build:browser",
+    "build:linux": "scripts/build-linux.sh",
     "build:semantic": "cd libraries/semantic && npx gulp build && cd ../..",
     "cli": "node scripts/cli.js",
     "coverage": "c8 npm test",
@@ -18,13 +21,15 @@
     "reports": "npm run report:install && npm run report:todo",
     "make:dev": "npm run make:docs && glob-run js-beautify --indent-size 2 -r docs/**.html",
     "make:docs": "npm run make:api && node_modules/.bin/jsdoc -c jsdoc.json services/**.js types/**.js node_modules/@fabric/core/types/service.js DEVELOPERS.md -d docs/ && glob-run js-beautify --indent-size 2 -r docs/**.html",
-    "package": "electron-packager .",
+    "migrate:database": "knex migrate:latest",
     "report:coverage": "npm run make:coverage && c8 report --reporter=text-lcov > reports/coverage.lcov",
     "report:install": "rm -rf node_modules && echo \"\n\" > package-lock.json && echo \"$ npm i\" > reports/install.log && npm i >> reports/install.log",
-    "report:todo": "grep --exclude package.json --exclude-dir=.env --exclude-dir=.git --exclude-dir=_book --exclude-dir=stores --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs --exclude-dir=libraries -rEI \"TODO|FIXME\" . | sed 's/\\([^:]*:\\)[ ]*/\\1 /' > reports/TODO.txt",
+    "report:todo": "grep --exclude package.json --exclude-dir=.env --exclude-dir=.git --exclude-dir=_book --exclude-dir=stores --exclude-dir=assets --exclude-dir=node_modules --exclude-dir=reports --exclude-dir=coverage --exclude-dir=docs --exclude-dir=libraries --exclude-dir=dist -rEI \"TODO|FIXME\" . | sed 's/\\([^:]*:\\)[ ]*/\\1 /' > reports/TODO.txt",
     "review:coverage": "npm run make:coverage && http-server -p 8000 reports/coverage",
     "serve:docs": "fabric-http docs",
-    "setup": "knex migrate:latest",
+    "setup": "npm run migrate",
+    "setup:database": "npm run migrate && npm run setup:seed",
+    "setup:seed": "knex seed:run",
     "start": "npm run build && node --max-old-space-size=8192 scripts/node.js",
     "test": "mocha tests"
   },
@@ -56,15 +61,16 @@
   },
   "homepage": "https://sensemaker.io",
   "dependencies": {
+    "@bitcoinerlab/secp256k1": "=1.2.0",
     "@fabric/core": "FabricLabs/fabric#feature/v0.1.0-RC1",
     "@fabric/discord": "FabricLabs/fabric-discord#feature/v0.1.0-RC1",
     "@fabric/http": "FabricLabs/fabric-http#feature/v0.1.0-RC1",
     "@fabric/hub": "FabricLabs/hub.fabric.pub#feature/sensemaker",
-    "@fabric/matrix": "FabricLabs/fabric-matrix#feature/v0.1.0-RC1",
     "@google/generative-ai": "=0.21.0",
     "@langchain/community": "=0.3.27",
     "@langchain/ollama": "=0.1.5",
     "@langchain/redis": "=0.1.0",
+    "@langchain/textsplitters": "=0.1.0",
     "@rsi/star-citizen": "GoonCitizen/star-citizen-live",
     "2captcha": "=3.0.7",
     "assert-browserify": "=2.0.0",
@@ -72,14 +78,17 @@
     "axios": "=1.7.9",
     "babel-loader": "=8.2.5",
     "bcrypt": "=5.1.1",
-    "bitcoinjs-lib": "=5.2.0",
+    "bip32": "=3.1.0",
+    "bitcoinjs-lib": "=6.1.0",
     "browserify-fs": "=1.0.0",
+    "browserify-zlib": "=0.2.0",
     "commander": "=7.2.0",
+    "cross-fetch": "=4.1.0",
     "crypto-browserify": "=3.12.1",
     "d3-dsv": "=2.0.0",
-    "electron-is-dev": "=1.1.0",
     "fast-json-patch": "=3.1.1",
     "fomantic-ui": "=2.9.3",
+    "glob-run": "=0.1.7",
     "hark": "=1.2.3",
     "http-proxy": "=1.18.1",
     "iconv-lite": "=0.6.3",
@@ -90,7 +99,6 @@
     "levelgraph": "=3.0.0",
     "lodash.debounce": "=4.0.8",
     "lodash.merge": "=4.6.2",
-    "matrix-js-sdk": "=32.4.0",
     "multer": "=1.4.5-lts.1",
     "mysql2": "=3.12.0",
     "node-ipc": "=9.1.1",
@@ -111,20 +119,21 @@
     "redis": "=4.7.0",
     "redux": "=4.2.1",
     "redux-thunk": "=2.4.2",
+    "secp256k1": "=5.0.1",
     "smtp-client": "=0.4.0",
     "sqlite3": "=5.1.7",
     "stream-browserify": "=3.0.0",
-    "stripe": "=14.14.0"
+    "stripe": "=14.14.0",
+    "tiny-secp256k1": "=2.2.3"
   },
   "devDependencies": {
+    "@babel/plugin-transform-runtime": "=7.27.1",
     "@babel/preset-env": "=7.26.7",
     "@babel/preset-react": "=7.26.3",
     "@babel/register": "=7.25.9",
     "@observablehq/plot": "=0.6.16",
     "c8": "=10.1.3",
     "chai": "=4.3.2",
-    "electron": "=29.1.0",
-    "electron-packager": "=17.1.2",
     "gulp": "=4.0.2",
     "jsdoc-to-markdown": "=7.1.1",
     "mocha": "=10.8.2",
@@ -143,5 +152,29 @@
     ],
     "report-dir": "./reports/coverage",
     "temp-dir": "./reports/c8"
+  },
+  "build": {
+    "appId": "io.sensemaker.app",
+    "productName": "Sensemaker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "assets/**/*",
+      "scripts/**/*",
+      "settings/**/*",
+      "types/**/*",
+      "services/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

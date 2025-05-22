@@ -1,6 +1,7 @@
 'use strict';
 
-const fetch = require('node-fetch');
+// Remove cross-fetch import and use native fetch
+// const fetch = require('cross-fetch');
 
 // Action types
 const FETCH_RESOURCE_REQUEST = 'FETCH_RESOURCE_REQUEST';

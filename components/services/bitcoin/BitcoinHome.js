@@ -10,14 +10,17 @@ const {
   Breadcrumb,
   Button,
   Card,
+  Grid,
   Header,
   Icon,
-  Segment,
-  Table
+  Segment
 } = require('semantic-ui-react');
 
 // Local Components
 const KeyringManager = require('../../KeyringManager');
+const BlocksList = require('./BlocksList');
+const TransactionsList = require('./TransactionsList');
+const NodesList = require('./NodesList');
 
 // Functions
 const toRelativeTime = require('../../../functions/toRelativeTime');
@@ -45,13 +48,17 @@ class BitcoinHome extends React.Component {
           genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
           blockHeight: 0,
           issuance: 0,
-          blocks: [],
-          transactions: [],
-          nodes: []
+          blocks: {},
+          transactions: {},
+          nodes: [],
+          recentBlocks: [],
+          recentTransactions: [],
+          loading: false,
+          syncActive: false,
+          syncProgress: 0
         }
       }
     }, props);
-
 
     // React State
     this.state = {
@@ -64,7 +71,7 @@ class BitcoinHome extends React.Component {
       bitcoin: {
         keys: {}, // TODO: add keys from this.seed, this.key, etc.,
         blocks: {},
-        transactions: {},
+        transactions: {}, // Map of transactions by txid
         mempool: [],
         nodes: []
       },
@@ -75,14 +82,63 @@ class BitcoinHome extends React.Component {
   }
 
   componentDidMount () {
-    this.props.fetchBitcoinStats();
+    // Subscribe to Bitcoin service updates
+    this.props.bridge.subscribe('/services/bitcoin');
+
+    // Check if keys are loaded
+    const storedKeyring = localStorage.getItem('keyring');
+    if (!storedKeyring) {
+      this.setState({ showKeyringManager: true });
+    }
+
+    // Check if we're in deposit mode
+    const isDepositAction = window.location.pathname === '/services/bitcoin' && window.location.search.includes('action=deposit');
+    if (isDepositAction && !storedKeyring) {
+      this.setState({ showKeyringManager: true });
+    }
+
+    // Initial data fetch
+    this.setState({ bitcoin: { ...this.state.bitcoin, loading: true } });
+    this.props.fetchBitcoinStats().catch(error => {
+      console.error('[BITCOIN:HOME]', 'Failed to fetch stats:', error);
+      this.setState({ bitcoin: { ...this.state.bitcoin, loading: false } });
+    });
+
+    // Periodic refresh
     this.watcher = setInterval(() => {
-      this.props.fetchBitcoinStats();
+      this.setState({ bitcoin: { ...this.state.bitcoin, loading: true } });
+      this.props.fetchBitcoinStats().catch(error => {
+        console.error('[BITCOIN:HOME]', 'Failed to fetch stats:', error);
+        this.setState({ bitcoin: { ...this.state.bitcoin, loading: false } });
+      });
     }, 60000);
   }
 
   componentWillUnmount () {
-    clearInterval(this.watcher);
+    // Unsubscribe from Bitcoin service updates
+    this.props.bridge.unsubscribe('/services/bitcoin');
+
+    // Clean up interval
+    if (this.watcher) {
+      clearInterval(this.watcher);
+    }
+  }
+
+  handleAuthorityMessage (update) {
+    console.debug('[BITCOIN:HOME]', 'Received update:', update);
+    // Handle state updates from bridge
+    if (update.type === 'PATCH') {
+      const path = update.path;
+      const value = update.value;
+      
+      this.setState(prevState => ({
+        bitcoin: {
+          ...prevState.bitcoin,
+          [path]: value,
+          loading: false
+        }
+      }));
+    }
   }
 
   toggleKeyringManager = () => {
@@ -92,9 +148,14 @@ class BitcoinHome extends React.Component {
   };
 
   render () {
-    const { bitcoin } = this.props;
+    const { bitcoin } = this.state;
     const { showKeyringManager } = this.state;
     console.debug('[BITCOIN]', 'Service:', bitcoin);
+
+    // Format height and supply values
+    const formattedHeight = bitcoin?.height ? bitcoin.height.toLocaleString() : '0';
+    const formattedSupply = bitcoin?.supply ? (bitcoin.supply / 100000000).toFixed(8) : '0.00000000';
+
     return (
       <div>
         <div className='uppercase'>
@@ -111,103 +172,40 @@ class BitcoinHome extends React.Component {
             <Icon name='key' /> Keys
           </Button>
         </div>
-        <Segment className='fade-in' loading={bitcoin?.loading} style={{ maxHeight: '100%' }}>
-          <Card className='right floated'>
-            <Card.Content textAlign='right'>
-              {bitcoin?.syncActive && <div><strong>Syncing block {bitcoin?.height}... (~{(100 * bitcoin.syncProgress).toFixed(1)}%)</strong></div>}
-              <div><strong>Chain Height:</strong> <code>{bitcoin?.height || 0}</code></div>
-              <div><strong>Supply:</strong> <code>{bitcoin?.supply || 0}</code></div>
-            </Card.Content>
-          </Card>
+        <Segment className='fade-in' style={{ maxHeight: '100%' }}>
           <Header as='h1' style={{ marginTop: 0 }}><Icon name='bitcoin' />Bitcoin</Header>
           <p>Bitcoin is a peer-to-peer electronic cash system.</p>
-          <div>
-            <Header as='h2'>Latest Blocks</Header>
-            <Table>
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell>Height</Table.HeaderCell>
-                  <Table.HeaderCell>Hash</Table.HeaderCell>
-                  <Table.HeaderCell>Timestamp</Table.HeaderCell>
-                  <Table.HeaderCell>Transactions</Table.HeaderCell>
-                  <Table.HeaderCell>Size</Table.HeaderCell>
-                  <Table.HeaderCell>Subsidy</Table.HeaderCell>
-                  <Table.HeaderCell>Fees Paid</Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {bitcoin && bitcoin.recentBlocks && bitcoin.recentBlocks.length && bitcoin.recentBlocks.slice(0, 5).map((block, index) => (
-                  <Table.Row key={index}>
-                    <Table.Cell>{block.height}</Table.Cell>
-                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + block.hash}>{truncateMiddle(block.hash || '', 11, '…')}</Link></Table.Cell>
-                    <Table.Cell><abbr title={(new Date(block.time * 1000)).toISOString()}>{toRelativeTime(new Date(block.time * 1000))}</abbr></Table.Cell>
-                    <Table.Cell>{block.nTx}</Table.Cell>
-                    <Table.Cell>{(block.size / 1024 / 1024).toFixed(3)} MB</Table.Cell>
-                    <Table.Cell>{block.subsidy?.toFixed(8)} BTC</Table.Cell>
-                    <Table.Cell>{block.feesPaid?.toFixed(8)} BTC</Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table>
-          </div>
-          <div style={{ marginTop: '1em' }}>
-            <Button.Group floated='right'>
-              <Button labeled icon labelPosition='right'>Create Transaction <Icon name='add' /></Button>
-            </Button.Group>
-            <Header as='h2'>Latest Transactions</Header>
-            <Table>
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell>Hash</Table.HeaderCell>
-                  <Table.HeaderCell>Block</Table.HeaderCell>
-                  <Table.HeaderCell>Timestamp</Table.HeaderCell>
-                  <Table.HeaderCell>Inputs</Table.HeaderCell>
-                  <Table.HeaderCell>Outputs</Table.HeaderCell>
-                  <Table.HeaderCell textAlign='right'>Amount</Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {bitcoin && bitcoin.recentTransactions && bitcoin.recentTransactions.length && bitcoin.recentTransactions.slice(0, 5).map((tx, index) => (
-                  <Table.Row key={index}>
-                    <Table.Cell><Link to={`/services/bitcoin/transactions/` + tx.txid}>{truncateMiddle(tx.txid || '', 11, '…')}</Link></Table.Cell>
-                    <Table.Cell><Link to={`/services/bitcoin/blocks/` + tx.blockhash}>{truncateMiddle(tx.blockhash || '', 11, '…')} (#{tx.height})</Link></Table.Cell>
-                    <Table.Cell><abbr title={(new Date(tx.time * 1000)).toISOString()}>{toRelativeTime(new Date(tx.time * 1000))}</abbr></Table.Cell>
-                    <Table.Cell>{tx.vin && tx.vin.length} inputs</Table.Cell>
-                    <Table.Cell>{tx.vout && tx.vout.length} outputs</Table.Cell>
-                    <Table.Cell textAlign='right'>{tx.value.toFixed(8)} BTC</Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table>
-          </div>
-          <div style={{ marginTop: '1em' }}>
-            <Header as='h2'>Nodes</Header>
-            <Table>
-              <Table.Header>
-                <Table.Row>
-                  <Table.HeaderCell>Name</Table.HeaderCell>
-                  <Table.HeaderCell>Network</Table.HeaderCell>
-                  <Table.HeaderCell>URL</Table.HeaderCell>
-                  <Table.HeaderCell>Roles</Table.HeaderCell>
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {bitcoin && bitcoin.nodes && bitcoin.nodes.map((node, index) => (
-                  <Table.Row key={index}>
-                    <Table.Cell>{node.name}</Table.Cell>
-                    <Table.Cell>{node.network}</Table.Cell>
-                    <Table.Cell>{node.url}</Table.Cell>
-                    <Table.Cell>{node.roles.join(', ')}</Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table>
-          </div>
         </Segment>
-        <KeyringManager
-          open={showKeyringManager}
-          onClose={this.toggleKeyringManager}
-        />
+        <Grid columns={3}>
+          <Grid.Row>
+            <Grid.Column>
+              <Segment>
+                <p><strong>Transactions in Mempool:</strong> {bitcoin?.mempool?.length || 0}</p>
+                <TransactionsList transactions={bitcoin?.recentTransactions || []} />
+              </Segment>
+            </Grid.Column>
+            <Grid.Column>
+              <Segment>
+                <p><strong>Recent Blocks</strong></p>
+                <BlocksList blocks={bitcoin?.recentBlocks || []} />
+              </Segment>
+            </Grid.Column>
+            <Grid.Column>
+              <Segment>
+                {bitcoin?.syncActive && <div><strong>Syncing block {formattedHeight}... (~{(100 * bitcoin.syncProgress).toFixed(1)}%)</strong></div>}
+                <div><strong>Chain Height:</strong> <code>{formattedHeight}</code></div>
+                <div><strong>Supply:</strong> <code>{formattedSupply} BTC</code></div>
+              </Segment>
+            </Grid.Column>
+          </Grid.Row>
+        </Grid>
+        <Segment className='fade-in'>
+          <p>To create or receive Bitcoin transactions, you must first set up a wallet.</p>
+          <KeyringManager
+            open={showKeyringManager}
+            onClose={this.toggleKeyringManager}
+          />
+        </Segment>
       </div>
     );
   }

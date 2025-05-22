@@ -56,6 +56,9 @@
         <p>Settings can be configured locally through <code>settings/local.js</code> — care should be taken not to commit secrets; <strong>again, prefer environment variables</strong>.</p>
         <h2>Overview</h2>
         <p>The project is primarily built in JavaScript, running Node.js on the server and leveraging React on the client side. The client is transpiled using Webpack, and delivered as a complete bundle to the <code>assets/</code> directory. This directory can be served by a static web server, so long as update operations (and requests for JSON representations of hosted resources) are passed through to the backend HTTP server (served on port <code>3045</code> by default).</p>
+        <h3>Build Process</h3>
+        <p>Running <code>npm start</code> will compile the UI using <code>scripts/build.js</code> to the <code>assets/</code> directory. You can serve this directory from any standard web server, but you will need to route HTTP requests with the <code>Accept: application/json</code> header to the backend server (port 3045) in addition to WebSockets if you want real-time functionality.</p>
+        <p>You can run the node without compiling the UI using <code>scripts/node.js</code> — this can aide in accelerating server-side development.</p>
         <h3>Breakdown</h3>
         <ul>
           <li>Coordinator — <code>scripts/node.js</code> the Node.js master process, managing:
@@ -96,8 +99,8 @@
           <li>Ollama is used to provide a standard API for interfacing with LLMs</li>
           <li>Fabric is used for connectivity between instances</li>
         </ul>
-        <h2>Python Environment</h2>
-        <p>Run <code>source .env/bin/activate</code> to enter the Python environment. See also <code>requirements.txt</code> for dependencies.</p>
+        <h2>Design &amp; CSS</h2>
+        <p>We use a custom Semantic UI theme, located in <code>libraries/semantic</code> — you can modify the theme and recompile the CSS styles using the <code>npm run build:semantic</code> command.</p>
         <h2>Tips</h2>
         <ul>
           <li>You can use <code>scripts/node.js</code> to quickly run the service without building: <code>node scripts/node.js</code></li>

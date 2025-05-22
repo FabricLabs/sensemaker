@@ -51,7 +51,7 @@ cd sensemaker
 ./scripts/install-ollama.sh
 ./scripts/install-models.sh
 ./scripts/nvm/install.sh
-nvm i 18.19.1
+nvm i 22.14.0
 ```
 
 ### Redis Stack
@@ -80,7 +80,7 @@ sudo mkdir -p /media/storage/node/files
 ## MacOS
 - Homebrew
 - NVM: `./scripts/nvm/install.sh`
-- Node: `nvm install 18.19.1` (double-check documentation)
+- Node: `nvm install 22.14.0` (double-check documentation)
 - `brew install python3 pkg-config pixman cairo pango`
 - `ssh-keygen -t ed25519`
 - PUPPETEER_SKIP_DOWNLOAD=true npm run report:install

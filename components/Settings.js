@@ -101,6 +101,15 @@ class SensemakerUserSettings extends React.Component {
               <Table.Body>
                 <Table.Row className='settings-row'>
                   <Table.Cell>
+                    <Header as='h4'>Fabric</Header>
+                    <Button.Group>
+                      <Button>Connect</Button>
+                      <Button>Disconnect</Button>
+                    </Button.Group>
+                  </Table.Cell>
+                </Table.Row>
+                <Table.Row className='settings-row'>
+                  <Table.Cell>
                     {(user_discord) ? <Button.Group>
                       <div className='ui left labeled button'>
                         <Label color='blue' pointing='right'><Icon name='discord' /></Label>

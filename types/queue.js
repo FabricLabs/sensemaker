@@ -17,6 +17,7 @@ class Queue extends Actor {
     this.settings = merge({
       clock: 0,
       collection: 'queue:jobs',
+      debug: false,
       frequency: 1, // hz
       redis: null,
       state: {
@@ -24,7 +25,8 @@ class Queue extends Actor {
         jobs: {}
       },
       worker: false,
-      workers: 0
+      workers: 0,
+      verbosity: 0
     }, settings);
 
     this._state = {
@@ -89,53 +91,6 @@ class Queue extends Actor {
     return this._methods[name];
   }
 
-  // async _tick () {
-  //   ++this.clock;
-
-  //   if (this.settings.worker) {
-  //     console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
-  //     if (!this._state.current) this._state.current = await this._takeJob();
-  //     console.debug('[QUEUE]', 'Current job:', this._state.current);
-
-  //     // If there's work to do, do it
-  //     if (this._state.current && !this._state.current.status) {
-  //       this._state.current.status = 'COMPUTING';
-
-  //       // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
-  //       // Race to Complete or Timeout
-  //       Promise.race([
-  //         this._completeJob(this._state.current),
-  //         new Promise((resolve, reject) => {
-  //           setTimeout(() => {
-  //             console.error('[QUEUE]', 'Job timed out:', this._state.current);
-  //             reject(new Error('Job timed out.'));
-  //           }, this.interval);
-  //         })
-  //       ]).catch((exception) => {
-  //         console.error('[QUEUE]', 'Job failed:', exception);
-  //         // TODO: implement retries here (decrement counter, reinsert job into queue)
-  //         if(this._state.current.attempts > 0){
-  //           await this._failJob(this._state.current);
-  //         }
-  //         this._state.current = null;
-  //       }).then((result) => {
-  //         console.debug('[QUEUE]', 'Finished work:', result);
-  //         if(result.status === 'FAILED' && this._state.current.attempts > 0){
-  //           await this._failJob(this._state.current);
-  //         }
-
-  //         this._state.current = null;
-  //         this._state.output.push(result);
-  //       });
-  //     }
-
-  //     console.debug('[QUEUE]', 'Jobs completed this epoch:', this._state.output.length);
-  //     this._state.output = [];
-  //   }
-
-  //   console.debug('[QUEUE]', 'TICK', this.clock);
-  // }
-
   async _tick () {
     // Increment the clock
     ++this.clock;
@@ -184,7 +139,6 @@ class Queue extends Actor {
       this._state.output = [];
     }
   }
-
 
   async start () {
     await this._registerMethod('verify', async function (...params) {

@@ -54,6 +54,7 @@ async function main (input = {}) {
       api: state.api,
       accounts: state.users,
       agents: state.agents,
+      alerts: state.alerts,
       announcements: state.announcements,
       auth: state.auth,
       bitcoin: state.bitcoin,

@@ -29,6 +29,7 @@ const {
 // Local Components
 const ChatBox = require('./ChatBox');
 const DocumentUploader = require('./DocumentUploader');
+const UserProfileSection = require('./UserProfileSection');
 
 // Functions
 const formatDate = require('../functions/formatDate');
@@ -94,7 +95,7 @@ class DocumentHome extends React.Component {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
             <h1 style={{ marginTop: '0' }}>Library</h1>
             <Button.Group>
-              <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stop' /></Button>
+              {/* <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stop' /></Button> */}
               <Button icon color='green' onClick={this.initiateDocumentCreation.bind(this)}>Create Document <Icon name='add' /></Button>
             </Button.Group>
           </div>
@@ -122,6 +123,13 @@ class DocumentHome extends React.Component {
             </fabric-search>
           ) : null)}
           <List as={Card.Group} doubling loading={loading} style={{ marginTop: '1em', marginBottom: '1em' }}>
+            <List.Item as={Card} key='create-new-document' onClick={this.initiateDocumentCreation.bind(this)} style={{ cursor: 'pointer', background: '#f9f9f9', minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Card.Content textAlign='center'>
+                <Icon name='add circle' size='huge' color='green' />
+                <Header as='h3' color='green' style={{ marginTop: '0.5em' }}>Create New Document</Header>
+                <p>Start a new document from scratch</p>
+              </Card.Content>
+            </List.Item>
             {(searching || documents.loading) ? (
               <Loader active inline='centered' /> // Display loading icon if searching is true
             ) : (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (

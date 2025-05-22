@@ -23,6 +23,10 @@ const fetch = require('cross-fetch');
 const Actor = require('@fabric/core/types/actor');
 const Peer = require('@fabric/core/types/peer');
 const Service = require('@fabric/core/types/service');
+const Message = require('@fabric/core/types/message');
+
+// LLM Types
+const { Document } = require('@langchain/core/documents');
 
 // Sensemaker Services
 // const Mistral = require('../services/mistral');
@@ -71,6 +75,10 @@ class Agent extends Service {
       },
       fabric: {
         listen: false,
+      },
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       },
       parameters: {
         temperature: AGENT_TEMPERATURE,
@@ -139,6 +147,13 @@ class Agent extends Service {
             }
           }
         }
+      },
+      state: {
+        fabric: {
+          tip: null
+        },
+        status: 'STOPPED',
+        workers: []
       }
     }, settings);
 
@@ -264,7 +279,7 @@ class Agent extends Service {
       if (this.settings.debug) console.debug('[AGENT]', 'Host:', this.settings.host);
       if (this.settings.debug) console.debug('[AGENT]', 'Model:', this.settings.model);
       if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
-      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`,  'Querying:', request);
+      if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Querying:', request);
       if (!request.messages) request.messages = [];
 
       // Prepare messages
@@ -310,14 +325,14 @@ class Agent extends Service {
             body: JSON.stringify({
               model: this.settings.model,
               keep_alive: (this.settings.keepalive) ? -1 : undefined,
-              prompt: (!this.settings.openai.enable) ? this.prompt : undefined,
-              options: (!this.settings.openai.enable) ? {
-                num_ctx: this.settings.constraints.tokens.max,
-                temperature: (this.settings.temperature) ? this.settings.temperature : 0,
-              } : undefined,
               messages: sample,
               format: (request.format === 'json' || request.json) ? 'json' : undefined,
-              tools: (request.tools) ? this.tools : undefined
+              options: {
+                temperature: this.settings.temperature,
+                max_tokens: this.settings.max_tokens
+              },
+              tools: (request.tools) ? this.tools : undefined,
+              stream: false
             })
           }).catch((exception) => {
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
@@ -489,12 +504,111 @@ class Agent extends Service {
     }
   }
 
+  async ingestReferences () {
+    return new Promise((resolve, reject) => {
+      fs.readFile('./assets/bitcoin.pdf', async (error, whitepaper) => {
+        if (error) {
+          console.error('[AGENT]', 'Error reading whitepaper:', error);
+          return;
+        }
+
+        // Store Documents
+        // Web Application
+        // const spa = await this.ui.load();
+        // console.debug('[AGENT]', 'SPA:', spa);
+
+        // Whitepaper
+        // const contract = new Document({ pageContent: whitepaper.toString('utf8'), metadata: { type: 'text/markdown' } });
+        // const contractChunks = await this.splitter.splitDocuments([contract]);
+        // const chunks = await this.splitter.splitDocuments(spa);
+        // const allDocs = [contract].concat(spa, contractChunks, chunks);
+        // const allDocs = contractChunks.concat(chunks);
+
+        const stub = new Document({ pageContent: 'Hello, world!', metadata: { type: 'text/plain' } });
+        const allDocs = [ stub ];
+
+        // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
+        if (this.settings.debug) console.debug('[SENSEMAKER]', '[AGENT]', '[GENESIS]', allDocs);
+
+        // Return the documents
+        resolve(allDocs);
+      });
+    });
+  }
+
+  async _setupRedis () {
+    // Redis Client
+    this.redis = createClient({
+      username: this.settings.redis.username,
+      password: this.settings.redis.password,
+      socket: {
+        host: this.settings.redis.host,
+        port: this.settings.redis.port,
+        enable_offline_queue: false,
+        timeout: 10000, // Increased timeout to 10 seconds
+        reconnectStrategy: (retries) => {
+          if (retries > 10) {
+            console.error('[AGENT] Redis connection failed after 10 retries');
+            return new Error('Redis connection failed after 10 retries');
+          }
+          const delay = Math.min(retries * 100, 3000);
+          console.debug(`[AGENT] Redis reconnecting in ${delay}ms...`);
+          return delay;
+        }
+      }
+    });
+
+    // Connect to Redis with timeout
+    const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {
+      const timeout = setTimeout(() => {
+        rejectRedis(new Error('Redis connection timeout'));
+      }, 15000); // 15 second timeout
+
+      // Attempt Redis connection
+      this.redis.connect().then(() => {
+        clearTimeout(timeout);
+        resolveRedis();
+      }).catch((error) => {
+        clearTimeout(timeout);
+        rejectRedis(error);
+      });
+    });
+
+    await connectWithTimeout;
+    console.debug('[AGENT] Redis connected successfully');
+
+    try {
+      // Initialize vector store
+      const allDocs = await this.ingestReferences();
+      console.debug('[AGENT] References loaded, creating vector store...');
+
+      this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
+        redisClient: this.redis,
+        indexName: this.settings.redis.name || 'sensemaker-embeddings'
+      });
+
+      console.debug('[AGENT] Vector store initialized successfully');
+      this._state.content.status = this._state.status = 'STARTED';
+      this.commit();
+      resolve(this);
+    } catch (error) {
+      console.error('[AGENT] Error initializing vector store:', error);
+      throw error;
+    }
+  }
+
   start () {
     return new Promise(async (resolve, reject) => {
+      this._state.content.status = 'STARTING';
       if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 
       // Load default prompt.
       if (!this.prompt) this.loadDefaultPrompt();
+
+      // Setup Redis
+      if (this.settings.redis) {
+        this._setupRedis();
+      }
 
       // Attach event handlers.
       // TODO: use Fabric's Service API to define and start all services.
@@ -537,7 +651,34 @@ class Agent extends Service {
 
   stop () {
     return new Promise((resolve, reject) => {
-      this.fabric.stop().then(() => {
+      this.fabric.stop().then(async () => {
+        // Stop Redis if connected
+        if (this.redis) {
+          const redisClose = new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            console.warn('[AGENT]', 'Timeout closing Redis, forcing close');
+            this.redis = null;
+            resolve();
+          }, 5000);
+
+          this.redis.quit().then(() => {
+            clearTimeout(timeout);
+            console.debug('[AGENT]', 'Redis connection closed');
+            this.redis = null;
+            resolve();
+          }).catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[AGENT]', 'Error closing Redis:', error);
+            }
+            this.redis = null;
+            resolve();
+          });
+        });
+
+        await redisClose;
+      }
+
         this.emit('stopped');
 
         resolve(this);

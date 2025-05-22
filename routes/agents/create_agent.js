@@ -20,7 +20,7 @@ module.exports = async function (req, res, next) {
     prompt_blob_history: JSON.stringify([blobNumber[0]])
   });
 
-  const user = await this.db('users').insert({
+  /* const user = await this.db('users').insert({
     username: req.body.name.toLowerCase(),
     display_name: req.body.name
   });
@@ -29,7 +29,7 @@ module.exports = async function (req, res, next) {
 
   await this.db('agents').update({
     user_id: user[0]
-  }).where('id', actor.id);
+  }).where('id', actor.id); */
 
   res.format({
     json: () => {

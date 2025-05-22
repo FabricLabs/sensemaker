@@ -55,11 +55,11 @@ async function http_create_file (req, res, next) {
     const queueMessage = {
       type: 'IngestFile',
       param_id: savedFile[0],
-      creator: req.user.id,
-    }
+      creator: req.user.id
+    };
 
-    const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
-    this.http.broadcast(messageFile);
+    // const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+    // this.http.broadcast(messageFile);
 
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -81,18 +81,19 @@ async function http_create_file (req, res, next) {
         }
 
         try {
+          const preimage = crypto.createHash('sha256').update(data).digest('hex');
+          const doubleHash = crypto.createHash('sha256').update(preimage).digest('hex');
+          const actor = new Actor({ content: data.toString('utf8') });
+
+          // Update the file record with the fabric_id
           await this.db('files')
             .where({ id: savedFile[0] })
             .update({
+              fabric_id: actor.id,
               updated_at: new Date(),
-              status: 'uploaded',
+              status: 'uploaded'
             });
 
-          this.http.broadcast(messageFile);
-
-          const hash = crypto.createHash('sha256').update(data);
-          const digest = hash.digest('hex');
-          const actor = new Actor({ content: data.toString('utf8') });
           // TODO: preserve additional fields (ctime, mtime, etc.)
           /* const insertedDocument = await this.db('documents').insert({
             title: req.file.originalname,
@@ -112,16 +113,16 @@ async function http_create_file (req, res, next) {
 
           // Queue jobs
           // TODO: fix / troubleshoot ingestion of large files
-          /* this.queue.addJob({
+          this.queue.addJob({
             method: 'IngestFile',
             params: [savedFile[0]],
-            attempts: 3,
-          }); */
+            attempts: 3
+          });
 
           /* this.queue.addJob({
             method: 'IngestDocument',
             params: [insertedDocument[0]],
-            attempts: 3,
+            attempts: 3
           }); */
 
           res.send({ status: 'success', message: 'Successfully uploaded file!', document_id: actor.id, file_id: savedFile[0], fabric_id: actor.id, id: actor.id });

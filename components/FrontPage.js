@@ -8,10 +8,9 @@ const { Link } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
-  Card,
+  Container,
   Header,
-  Icon,
-  Segment
+  Icon
 } = require('semantic-ui-react');
 
 // Local Components
@@ -40,29 +39,21 @@ class FrontPage extends React.Component {
     return this;
   }
 
-  handleKeyGenerated = (key) => {
-    // TODO: Handle the generated key (e.g., store it securely, redirect to dashboard)
-    console.log('Key generated:', key);
-  };
-
-  handleKeyImported = (key) => {
-    // TODO: Handle the imported key (e.g., store it securely, redirect to dashboard)
-    console.log('Key imported:', key);
-  };
-
   render () {
     return (
       <sensemaker-front-page class='splash-page fade-in'>
         <HeaderBar showBrand={false} showButtons={false} />
-        <section class='lead'>
-          <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
-          <p style={{ fontSize: '2em' }}>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.2em', marginBottom: '4em' }}>{PITCH_CTA_TEXT}</p>
-          <Button.Group floated='right' size='huge'>
-            <Button color='blue' as={Link} to='/sessions' icon labelPosition='left'><Icon name='user' />Log In</Button>
-            <Button color='green' onClick={() => this.keyModal.handleOpen()} icon labelPosition='right'>Get Started<Icon name='right chevron' /></Button>
-          </Button.Group>
-        </section>
+        <Container text style={{ marginTop: '4em', marginBottom: '4em' }}>
+          <section className='lead' style={{ textAlign: 'center' }}>
+            <Header as='h1' style={{ fontSize: '8em', marginBottom: '0.2em' }}>{BRAND_NAME}</Header>
+            <p style={{ fontSize: '2em', marginBottom: '1em' }}>{BRAND_TAGLINE}</p>
+            <p style={{ fontSize: '1.2em', marginBottom: '4em', color: 'rgba(0,0,0,0.6)' }}>{PITCH_CTA_TEXT}</p>
+            <Button.Group size='huge'>
+              <Button color='blue' as={Link} to='/sessions' icon labelPosition='left'><Icon name='user' />Log In</Button>
+              <Button color='green' as={Link} to='/features' icon labelPosition='right'>Learn More<Icon name='right chevron' /></Button>
+            </Button.Group>
+          </section>
+        </Container>
         <KeyManagementModal
           ref={(ref) => this.keyModal = ref}
           onKeyGenerated={this.handleKeyGenerated}

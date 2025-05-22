@@ -181,7 +181,7 @@ class AdminUsers extends React.Component {
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {accounts && accounts.users && accounts.users
+              {accounts && Array.isArray(accounts.users) && accounts.users
                 .filter(instance =>
                   (instance.email ? (instance.email.toLowerCase().includes(searchQuery.toLowerCase())) : (searchQuery ? false : true)) ||
                   (instance.username.toLowerCase().includes(searchQuery.toLowerCase()))

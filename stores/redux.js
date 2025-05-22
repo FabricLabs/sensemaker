@@ -9,6 +9,7 @@ const apiReducer = require('../reducers/apiReducer');
 const accountsReducer = require('../reducers/accountsReducer');
 const adminReducer = require('../reducers/adminReducer');
 const agentReducer = require('../reducers/agentReducer');
+const alertReducer = require('../reducers/alertReducer');
 const authReducer = require('../reducers/authReducer');
 const bitcoinReducer = require('../reducers/bitcoinReducer');
 const bridgeReducer = require('../reducers/bridgeReducer');
@@ -40,6 +41,7 @@ const rootReducer = combineReducers({
   api: apiReducer,
   accounts: accountsReducer,
   agents: agentReducer,
+  alerts: alertReducer,
   auth: authReducer,
   bitcoin: bitcoinReducer,
   bridge: bridgeReducer,
