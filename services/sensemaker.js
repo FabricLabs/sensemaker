@@ -224,22 +224,22 @@ class Sensemaker extends Hub {
       passphrase: this.settings.passphrase
     });
 
-    if (!this._rootKey || !this._rootKey.xprv) {
-      throw new Error('Failed to initialize root key');
-    }
-
     console.debug('[SENSEMAKER:CORE]', '[KEY]', 'Root key initialized:', {
-      seed: this.settings.seed,
+      seed: this._rootKey.seed,
       xprv: this._rootKey.xprv,
       xpub: this._rootKey.xpub,
       hasXprv: !!this._rootKey.xprv,
       hasXpub: !!this._rootKey.xpub
     });
 
+    if (!this._rootKey || !this._rootKey.xprv) {
+      throw new Error('Failed to initialize root key');
+    }
+
     // Internals
     this.agent = new Peer({
       ...this.settings,
-      key: this._rootKey,
+      key: { xprv: this._rootKey.xprv },
       contract: {
         state: {
           balance: 0
@@ -247,7 +247,7 @@ class Sensemaker extends Hub {
       }
     });
 
-    this.graph = new Graph(this.settings);
+    this.graph = new Graph({ ...this.settings, key: { xprv: this._rootKey.xprv } });
     // this.brain = new Brain(this.settings);
     this.chain = new Chain(this.settings);
     this.queue = new Queue({
@@ -258,16 +258,31 @@ class Sensemaker extends Hub {
 
     // Audits
     this.audits = new Logger(this.settings);
-    this.learner = new Learner(this.settings);
-    this.trainer = new Trainer(this.settings);
-    this.coordinator = new Coordinator({ name: 'Sensemaker', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
-    this.router = new Coordinator({ name: 'Router', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
+    // this.learner = new Learner(this.settings);
+    this.trainer = new Trainer({ ...this.settings, key: { xprv: this._rootKey.xprv } });
+    this.coordinator = new Coordinator({
+      name: 'Sensemaker',
+      goals: this.settings.goals,
+      actions: ['idle', 'proceed'],
+      agent: this.settings.ollama,
+      key: { xprv: this._rootKey.xprv }
+    });
+
+    this.router = new Coordinator({
+      name: 'Router',
+      goals: this.settings.goals,
+      actions: ['idle', 'proceed'],
+      agent: this.settings.ollama,
+      key: { xprv: this._rootKey.xprv }
+    });
+
     this.sandbox = new Sandbox(this.settings.sandbox);
-    this.worker = new Worker(this.settings);
+    this.worker = new Worker({ ...this.settings, key: { xprv: this._rootKey.xprv } });
 
     // Configure Bitcoin regtest
     this.regtest = new Bitcoin({
-      debug: true,
+      debug: this.settings.bitcoin.debug,
+      key: { xprv: this._rootKey.xprv },
       mode: 'rpc',
       managed: true,
       network: 'regtest',
@@ -308,7 +323,7 @@ class Sensemaker extends Hub {
 
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
-    this.fs = new Filesystem({ path: './stores/sensemaker' });
+    this.fs = new Filesystem({ path: './stores/sensemaker', key: { xprv: this._rootKey.xprv } });
 
     // Federation Setup
     this._federation = new Federation(this.settings.federation);
@@ -418,6 +433,7 @@ class Sensemaker extends Hub {
       host: this.settings.ollama.host,
       port: this.settings.ollama.port,
       secure: this.settings.ollama.secure,
+      key: this.settings.key,
       prompt: this.settings.prompt,
       constraints: this.settings.constraints,
       tools: true
@@ -425,8 +441,27 @@ class Sensemaker extends Hub {
 
     // Custom Models
     // NOTE: these are tested with `llama3` but not other models
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
-    this.summarizer = new Agent({ name: this.settings.name, listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: this.prompt });
+    this.searcher = new Agent({
+      name: 'SEARCHER',
+      rules: this.settings.rules,
+      model: this.settings.ollama.model,
+      host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
+      key: this.settings.key,
+      prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.'
+    });
+
+    this.summarizer = new Agent({
+      name: this.settings.name,
+      listen: false,
+      model: this.settings.ollama.model,
+      host: this.settings.ollama.host,
+      secure: this.settings.ollama.secure,
+      port: this.settings.ollama.port,
+      key: this.settings.key,
+      prompt: this.prompt
+    });
 
     // Pipeline Datasources
     this.datasources = {
@@ -897,6 +932,7 @@ class Sensemaker extends Hub {
       if (request.user_id) {
         requestor = await this.db('users').select('username', 'created_at').where({ id: request.user_id }).first();
         request.username = requestor.username;
+        request.user = { username: requestor.username, id: request.user_id };
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request.user_id });
         const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request.user_id }).orderBy('created_at', 'desc').limit(20);
         priorConversations = recentConversations;
@@ -935,31 +971,6 @@ class Sensemaker extends Hub {
         }); */
       }
 
-      // User Context
-      if (requestor) {
-        const userContext = { user: requestor, created: created, owner: this.id };
-        const userCall = new Actor(userContext);
-
-       /*  messages.unshift({
-          role: 'tool',
-          tool_call_id: userCall.id,
-          name: 'get_user_context',
-          content: `${JSON.stringify(userContext, null, '  ')}\n`
-        });
-
-        messages.unshift({
-          role: 'assistant',
-          tool_calls: [{
-            id: userCall.id,
-            type: 'function',
-            function: {
-              name: 'get_user_context',
-              arguments: JSON.stringify({})
-            }
-          }]
-        }); */
-      }
-
       if (request.agent) {
         const agent = await this.db('agents').select('id', 'latest_prompt_blob_id').where({ id: request.agent }).first();
         if (!agent) {
@@ -972,14 +983,6 @@ class Sensemaker extends Hub {
       } else {
         prompt = this.settings.prompt;
       }
-
-      messages.unshift({
-        role: 'assistant',
-        content: 'The context for our conversation in JSON format:\n\n' +
-          '```\n' +
-          JSON.stringify(request.context, null, '  ') + '\n' +
-          '```'
-      });
 
       // Prompt
       messages.unshift({
@@ -997,13 +1000,10 @@ class Sensemaker extends Hub {
         query: request.query,
         messages: messages,
         tools: request.tools,
-        user: (request.user_id) ? {
-          id: request.user_id
-        } : undefined
+        user: request.user
       };
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial template:', template);
-
       if (request.agent) {
         return this.sensemaker.query(template).then(async (summary) => {
           this.db('messages').where({ id: responseID }).update({
@@ -1847,13 +1847,13 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/alerts', ROUTES.alerts.list.bind(this));
 
     // Files
+    // TODO: use proper API to add this route
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
-    // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
-    this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
+    this.http._addRoute('GET', '/files/:id/download', ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
     // this.http._addRoute('GET', '/files/user/:id', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
-    this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
+    // this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
 
     // Uploads
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
@@ -3705,6 +3705,288 @@ class Sensemaker extends Hub {
     }
 
     return updated;
+  }
+
+  async _updateBitcoinStatus (cacheKey, cacheTTL) {
+    const bitcoin = this.bitcoin || this.regtest;
+    // Make RPC calls with original names
+    const blockchain = await bitcoin._makeRPCRequest('getblockchaininfo', []);
+    const best = await bitcoin._makeRPCRequest('getbestblockhash', []);
+    const height = await bitcoin._makeRPCRequest('getblockcount', []);
+
+    // Initialize mempool info with default values
+    let mempoolinfo = {
+      size: 0,
+      bytes: 0,
+      usage: 0,
+      maxmempool: 300000000, // 300MB default
+      mempoolminfee: 0.00001000, // 1 sat/byte default
+      minrelaytxfee: 0.00001000 // 1 sat/byte default
+    };
+
+    try {
+      const result = await bitcoin._makeRPCRequest('getmempoolinfo', [true]);
+      if (result) {
+        mempoolinfo = {
+          ...mempoolinfo, // Keep defaults as fallback
+          ...result // Override with actual values if available
+        };
+      }
+    } catch (err) {
+      console.error('[SENSEMAKER]', 'Error getting mempool info:', err);
+    }
+
+    const tip = await bitcoin._makeRPCRequest('getblockheader', [best]);
+
+    // Initialize market with default values
+    let market = {
+      subsidy: 0,
+      totalfee: 0,
+      height: height,
+      time: Date.now() / 1000
+    };
+
+    try {
+      const result = await bitcoin._makeRPCRequest('getblockstats', [tip.height]);
+      if (result) {
+        market = {
+          ...market, // Keep defaults as fallback
+          ...result // Override with actual values if available
+        };
+      }
+    } catch (err) {
+      console.error('[SENSEMAKER]', 'Error getting block stats:', err);
+    }
+
+    // Get block stats with error handling
+    const blockstatsPromises = [
+      height,
+      height - 1,
+      height - 2,
+      height - 3,
+      height - 4,
+      height - 5
+    ].map(h => bitcoin._makeRPCRequest('getblockstats', [h])
+      .catch(err => {
+        console.error('[SENSEMAKER]', `Error getting block stats for height ${h}:`, err);
+        return null;
+      }));
+
+    const blockstats = await Promise.all(blockstatsPromises);
+
+    // Filter out any failed block stats and ensure they have required properties
+    const validBlockstats = blockstats.filter(x => x != null && x.blockhash && x.subsidy != null && x.totalfee != null);
+
+    // Get blocks with error handling
+    const blocks = await Promise.all(validBlockstats.map(async (x) => {
+      try {
+        const block = await bitcoin._makeRPCRequest('getblock', [x.blockhash, 2]);
+        if (block) {
+          block.subsidy = (x.subsidy || 0) / 100000000;
+          block.feesPaid = (x.totalfee || 0) / 100000000;
+          return block;
+        }
+        return null;
+      } catch (err) {
+        console.error('[SENSEMAKER]', `Error getting block ${x.blockhash}:`, err);
+        return null;
+      }
+    }));
+
+    // Filter out any failed blocks
+    const validBlocks = blocks.filter(x => x != null);
+    const transactions = [];
+
+    // Get cached mempool data if available
+    const cachedMempool = await this.cache.get('bitcoin:mempool');
+    const mempooltxs = cachedMempool || {};
+
+    // Process mempool transactions
+    for (const [txid, tx] of Object.entries(mempooltxs)) {
+      const mempoolTx = {
+        txid: txid,
+        time: tx.time,
+        fee: tx.fee,
+        size: tx.size,
+        height: -1, // -1 indicates unconfirmed
+        blockhash: null,
+        value: tx.vout ? tx.vout.reduce((acc, x) => acc + x.value, 0) : 0
+      };
+      transactions.push(mempoolTx);
+    }
+
+    // Loop through all blocks until we have 5 transactions
+    for (let i = 0; i < validBlocks.length; i++) {
+      const block = validBlocks[i];
+      // Calculate the total value of the block
+      block.value = (block.tx) ? block.tx.reduce((acc, x) => acc + x.vout.reduce((acc, x) => acc + x.value, 0), 0) : 0;
+      if (!block.tx) continue;
+
+      // For all transactions in the block...
+      for (let j = 0; j < block.tx.length; j++) {
+        const tx = block.tx[j];
+
+        // Assign properties
+        tx.blockhash = block.hash;
+        tx.height = block.height;
+        tx.time = block.time;
+        tx.value = tx.vout.reduce((acc, x) => acc + x.value, 0);
+
+        // Add the transaction to the list
+        transactions.push(tx);
+
+        // Is this enough?
+        if (transactions.length >= 5) break;
+      }
+
+      // Remove transaction data after we're done with it
+      delete validBlocks[i].tx;
+
+      // Do we have enough transactions?
+      if (transactions.length >= 5) break;
+    }
+
+    // Sort transactions by time in descending order (most recent first)
+    transactions.sort((a, b) => b.time - a.time);
+
+    // Get cached UTXO set info if available
+    const cachedUtxoSet = await this.cache.get('bitcoin:utxoset');
+    const utxoutset = cachedUtxoSet || {
+      total_amount: 0,
+      transactions: 0,
+      txouts: 0
+    };
+
+    const status = {
+      network: bitcoin.network,
+      genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+      blockChain: blockchain,
+      blockDate: tip.time,
+      blockHeight: bitcoin.height,
+      supply: utxoutset.total_amount,
+      status: 'ONLINE', // TODO: check for syncing status
+      tip: best,
+      height: height,
+      mempoolInfo: {
+        size: mempoolinfo.size,
+        bytes: mempoolinfo.bytes,
+        usage: mempoolinfo.usage,
+        maxmempool: mempoolinfo.maxmempool,
+        mempoolminfee: mempoolinfo.mempoolminfee,
+        minrelaytxfee: mempoolinfo.minrelaytxfee
+      },
+      mempoolSize: mempoolinfo.usage,
+      unspentTransactions: utxoutset.transactions,
+      unspentOutputs: utxoutset.txouts,
+      market: {
+        subsidy: market.subsidy / 100000000,
+        feesPaid: market.totalfee / 100000000,
+        height: market.height,
+        time: market.time
+      },
+      recentBlocks: validBlocks.map(block => ({
+        hash: block.hash,
+        height: block.height,
+        time: block.time,
+        size: block.size,
+        weight: block.weight,
+        subsidy: block.subsidy,
+        feesPaid: block.feesPaid,
+        value: block.value
+      })),
+      recentTransactions: transactions.map(tx => ({
+        txid: tx.txid,
+        time: tx.time,
+        fee: tx.fee,
+        size: tx.size,
+        height: tx.height,
+        value: tx.value
+      })),
+      syncActive: blockchain.initialblockdownload,
+      syncProgress: blockchain.verificationprogress,
+      timestamp: Date.now() // Add timestamp for cache freshness check
+    };
+
+    // Store in state
+    this._state.content.services.bitcoin.status = status;
+
+    // Cache the status
+    await this.cache.set(cacheKey, status, cacheTTL);
+
+    // Update UTXO set info in the background
+    bitcoin._makeRPCRequest('gettxoutsetinfo', []).then(async (utxoSet) => {
+      // Cache the UTXO set info for 1 hour
+      await this.cache.set('bitcoin:utxoset', utxoSet, 3600000);
+      // Update the cache with fresh data
+      await this.cache.set(cacheKey, status, cacheTTL);
+
+      // Update the state with fresh UTXO data
+      if (this._state.content.services.bitcoin.status) {
+        this._state.content.services.bitcoin.status.supply = utxoSet.total_amount;
+        this._state.content.services.bitcoin.status.unspentTransactions = utxoSet.transactions;
+        this._state.content.services.bitcoin.status.unspentOutputs = utxoSet.txouts;
+      }
+    }).catch(err => {
+      console.error('[SENSEMAKER]', 'Failed to update UTXO set info:', err);
+    });
+
+    // Update mempool data in the background
+    bitcoin._makeRPCRequest('getrawmempool', [true]).then(async (mempoolData) => {
+      // Cache the mempool data for 30 seconds
+      await this.cache.set('bitcoin:mempool', mempoolData, 30000);
+      this._state.content.services.bitcoin.mempool = mempoolData;
+    }).catch(err => {
+      console.error('[SENSEMAKER]', 'Failed to update mempool data:', err);
+    });
+
+    return status;
+  }
+
+  async _waitForBitcoind (maxAttempts = 5, initialDelay = 1000) {
+    if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', 'Waiting for bitcoind to be ready...');
+    let attempts = 0;
+    let delay = initialDelay;
+
+    while (attempts < maxAttempts) {
+      try {
+        if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', `Attempt ${attempts + 1}/${maxAttempts} to connect to bitcoind...`);
+
+        // Check multiple RPC endpoints to ensure full readiness
+        const checks = [
+          this.regtest._makeRPCRequest('getblockchaininfo'), // Basic blockchain info
+          this.regtest._makeRPCRequest('getnetworkinfo'),    // Network status
+          this.regtest._makeRPCRequest('getwalletinfo')      // Wallet status
+        ];
+
+        // Wait for all checks to complete
+        const results = await Promise.all(checks);
+
+        if (this.settings.debug && this.settings.verbosity > 4) {
+          console.debug('[FABRIC:BITCOIN]', 'Successfully connected to bitcoind:');
+          console.debug('[FABRIC:BITCOIN]', '- Blockchain info:', results[0]);
+          console.debug('[FABRIC:BITCOIN]', '- Network info:', results[1]);
+          console.debug('[FABRIC:BITCOIN]', '- Wallet info:', results[2]);
+        }
+
+        return true;
+      } catch (error) {
+        if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', `Connection attempt ${attempts + 1} failed:`, error.message);
+        attempts++;
+
+        // If we've exceeded max attempts, throw error
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to connect to bitcoind after ${maxAttempts} attempts: ${error.message}`);
+        }
+
+        // Wait before next attempt with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay = Math.min(delay * 1.5, 10000); // Exponential backoff with max 10s delay
+        continue; // Continue to next attempt
+      }
+    }
+
+    // Should never reach here due to maxAttempts check in catch block
+    throw new Error('Failed to connect to bitcoind: Max attempts exceeded');
   }
 }
 

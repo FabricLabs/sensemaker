@@ -93,6 +93,20 @@
   }
 }
 
+.fade-out {
+  opacity: 1;
+  animation: fadeOut 1.5s forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* .splash {
   margin-top: 2rem;
   display: flex;
@@ -900,7 +914,7 @@ fabric-motd {
 }
 
 .brand span.brand {
-  font-size: 1.5em;
+  /* font-size: 1.5em; */
 }
 
 .splash-page .buttons {

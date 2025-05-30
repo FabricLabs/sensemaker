@@ -486,7 +486,7 @@ class Dashboard extends React.Component {
         <div style={{
           display: 'flex',
           height: '100vh',
-          backgroundColor: '#ffffff'
+          backgroundColor: '#eee'
         }}>
           <Sidebar className='fade-in' as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div>

@@ -90,36 +90,36 @@ class Home extends React.Component {
           uploadFile={this.props.uploadFile}
           style={{ marginBottom: 0 }}
         />
-        <Grid columns={3} equal>
-          <Grid.Column>
+        <Grid columns={3} stackable equal style={{ display: 'flex', alignItems: 'stretch', marginTop: '-1em', marginLeft: 0 }}>
+          <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
           {(conversations && conversations.length) ? (
-              <Card key={conversations[0].slug} as={Link} to={'/conversations/' + conversations[0].slug} fluid>
-                <Card.Content>
-                  <Card.Header>{conversations[0].title}</Card.Header>
+              <Card key={conversations[0].slug} as={Link} to={'/conversations/' + conversations[0].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Content style={{ flex: '1 1 auto' }}>
+                  <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].title}</Card.Header>
                   <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
                 </Card.Content>
-                <Button.Group attached='bottom'>
+                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
                   <Button color='black' as={Link} to={'/conversations/' + conversations[0].slug}>Resume &raquo;</Button>
                 </Button.Group>
               </Card>
             )  : null}
           </Grid.Column>
-          <Grid.Column>
+          <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
             {(conversations && conversations.length) ? (
-              <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid>
-                <Card.Content>
-                  <Card.Header style={{textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'}}>{conversations[1].title}</Card.Header>
+              <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Content style={{ flex: '1 1 auto' }}>
+                  <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].title}</Card.Header>
                   <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].summary}</Card.Description>
                 </Card.Content>
-                <Button.Group attached='bottom'>
+                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
                   <Button color='black' as={Link} to={'/conversations/' + conversations[1].slug}>Resume &raquo;</Button>
                 </Button.Group>
               </Card>
             )  : null}
           </Grid.Column>
-          <Grid.Column>
-            <Card as={Link} to='/conversations' fluid>
-              <Card.Content>
+          <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
+            <Card as={Link} to='/conversations' fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Card.Content style={{ flex: '1 1 auto' }}>
                 <Card.Header>Recently...</Card.Header>
                 <List>
                   {conversations.slice(2, 5).map((conversation) => (
@@ -132,7 +132,7 @@ class Home extends React.Component {
                   ))}
                 </List>
               </Card.Content>
-              <Button.Group attached='bottom'>
+              <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
                 <Button color='black'>Explore History &raquo;</Button>
               </Button.Group>
             </Card>

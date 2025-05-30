@@ -100,7 +100,7 @@ class Trainer extends Agent {
       }
     }, settings);
 
-    this.agent = new Agent();
+    this.agent = new Agent({ key: this.settings.key });
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
@@ -120,38 +120,7 @@ class Trainer extends Agent {
     this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     // Redis Client
-    this.redis = createClient({
-      username: this.settings.redis.username,
-      password: this.settings.redis.password,
-      socket: {
-        host: this.settings.redis.host,
-        port: this.settings.redis.port,
-        enable_offline_queue: false,
-        timeout: 10000, // Increased timeout to 10 seconds
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            console.error('[TRAINER] Redis connection failed after 10 retries');
-            return new Error('Redis connection failed after 10 retries');
-          }
-          const delay = Math.min(retries * 100, 3000);
-          console.debug(`[TRAINER] Redis reconnecting in ${delay}ms...`);
-          return delay;
-        }
-      }
-    });
-
-    // Cluster
-    /* this.redis = createCluster({
-      rootNodes: [
-        {
-          host: this.settings.redis.host,
-          port: this.settings.redis.port
-        }
-      ],
-      defaults: {
-        password: this.settings.redis.password
-      }
-    }); */
+    this.redis = null;
 
     // Splitter for large documents
     this.splitter = new RecursiveCharacterTextSplitter({
@@ -203,7 +172,7 @@ class Trainer extends Agent {
 
   async getStoreForOwner (id) {
     const name = new Actor({ name: `sensemaker/owners/${id}` });
-    const reference = new Document({ pageContent: name.toGenericMessage() });
+    const reference = new Document({ pageContent: JSON.stringify(name.toGenericMessage()) });
     const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings(), {
       redisClient: this.redis,
       indexName: `sensemaker:owners:${id}`
@@ -239,50 +208,8 @@ class Trainer extends Agent {
           embeddings = this.embeddings;
         }
 
-        // Process each chunk
-        const results = [];
-        for (const chunk of chunks) {
-          const actor = new Actor({ content: chunk.pageContent });
-          const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
-          const response = await fetch(endpoint, {
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            method: 'POST',
-            body: JSON.stringify({
-              model: EMBEDDING_MODEL,
-              prompt: chunk.pageContent
-            })
-          });
-
-          const json = await response.json();
-          if (this.settings.debug) console.debug('[TRAINER]', endpoint, 'got embedding json:', json);
-
-          const inserted = await this.db('embeddings').insert({
-            fabric_id: actor.id,
-            content: JSON.stringify(json.embedding)
-          });
-
-          if (!inserted || !inserted.length) {
-            throw new Error('No embeddings inserted.');
-          }
-
-          if (this.settings.debug) console.debug('[TRAINER]', 'Inserted:', inserted);
-
-          // Add chunk to vector store
-          await embeddings.addDocuments([chunk]);
-
-          // Emit event
-          this.emit('TrainerDocument', {
-            id: actor.id,
-            metadata: chunk.metadata,
-            content: chunk.pageContent
-          });
-
-          results.push({ type: 'Embedding', content: { type: EMBEDDING_MODEL, content: json.embedding } });
-        }
-
-        resolve({ type: 'EmbeddingBatch', content: results });
+        await embeddings.addDocuments(chunks);
+        resolve({ type: 'EmbeddingBatch', content: [] });
       } catch (error) {
         console.error('[TRAINER]', 'Error ingesting document:', error);
         reject(error);
@@ -307,13 +234,11 @@ class Trainer extends Agent {
 
   async query (request) {
     return new Promise(async (resolve, reject) => {
-      /* const embedded = await this.embeddings.embedQuery(request.query);
-      console.debug('Embedded query:', embedded); */
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
       let store = null;
       if (request.user) {
         const messages = (request.messages) ? request.messages.map((m) => {
-          return new Document({ pageContent: m });
+          return new Document({ pageContent: m.content });
         }) : [];
 
         store = await this.getStoreForOwner(request.user.id);
@@ -346,27 +271,61 @@ class Trainer extends Agent {
    */
   async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
-      console.debug('[TRAINER]', 'searching:', request);
-      let filter = null;
-      if (!request.query) return reject(new Error('No query provided.'));
-      /* if (request.filter) {
-        for (const [key, value] of Object.entries(request.filter)) {
-          if (key === 'type') filter = x => x.metadata.type === value;
-        }
-      } */
-      filter = request.filter;
+      Promise.all([
+        this.searchGlobal(request, limit),
+        this.searchByOwner(request, limit)
+      ]).then((results) => {
+        const globalResults = results[0].content || [];
+        const ownerResults = results[1].content || [];
 
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).catch((error) => {
+        // Combine results, ensuring unique IDs
+        const combinedResults = {};
+        [...globalResults, ...ownerResults].forEach((x) => {
+          if (!combinedResults[x.id]) {
+            combinedResults[x.id] = x;
+          }
+        });
+
+        resolve({
+          type: 'TrainerSearchResponse',
+          content: Object.values(combinedResults)
+        });
+      });
+    });
+  }
+
+  async searchGlobal (request, limit = 100) {
+    return new Promise((resolve, reject) => {
+      if (!request.query) return reject(new Error('No query provided.'));
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
         console.error('[TRAINER]', 'Error searching:', error);
         reject(error);
       }).then((results) => {
         const map = {};
-
         results.forEach((x) => {
           const actor = new Actor({ content: x.pageContent });
           map[actor.id] = { id: actor.id, content: x.pageContent };
         });
+        resolve({
+          type: 'TrainerSearchResponse',
+          content: Object.values(map)
+        });
+      });
+    });
+  }
 
+  async searchByOwner (request, limit = 100) {
+    return new Promise(async (resolve, reject) => {
+      if (!request.query) return reject(new Error('No query provided.'));
+      const embeddings = await this.getStoreForOwner(request.user.id);
+      embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
+        reject(error);
+      }).then((results) => {
+        const map = {};
+        results.forEach((x) => {
+          const actor = new Actor({ content: x.pageContent });
+          map[actor.id] = { id: actor.id, content: x.pageContent };
+        });
         resolve({
           type: 'TrainerSearchResponse',
           content: Object.values(map)
@@ -379,6 +338,27 @@ class Trainer extends Agent {
     return new Promise(async (resolve, reject) => {
       console.debug('[TRAINER] Starting service...');
       this._state.content.status = this._state.status = 'STARTING';
+
+      this.redis = createClient({
+        username: this.settings.redis.username,
+        password: this.settings.redis.password,
+        socket: {
+          host: this.settings.redis.host,
+          port: this.settings.redis.port,
+          enable_offline_queue: false,
+          timeout: 10000, // Increased timeout to 10 seconds
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              console.error('[TRAINER] Redis connection failed after 10 retries');
+              return new Error('Redis connection failed after 10 retries');
+            }
+            const delay = Math.min(retries * 100, 3000);
+            console.debug(`[TRAINER] Redis reconnecting in ${delay}ms...`);
+            return delay;
+          }
+        }
+      });
+
       // Add Redis event handlers
       this.redis.on('error', (err) => {
         console.error('[TRAINER] Redis Client Error:', err);

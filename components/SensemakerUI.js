@@ -29,7 +29,10 @@ const {
   } = require('semantic-ui-react');
 
 // Local Components
+const FrontPage = require('./FrontPage');
 const Splash = require('./Splash');
+const InquiriesHome = require('./InquiriesHome');
+const FeaturesHome = require('./FeaturesHome');
 const Dashboard = require('./Dashboard');
 const TermsOfUseModal = require('./TermsOfUseModal');
 const LoginPage = require('./LoginPage');
@@ -183,7 +186,7 @@ class SensemakerUI extends React.Component {
 
   render () {
     const { modalLogOut, loggedOut } = this.state;
-    const { login, error } = this.props;
+    const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
       <sensemaker-interface id={this.id} class='fabric-site body'>
@@ -197,24 +200,13 @@ class SensemakerUI extends React.Component {
           ) : (
             <BrowserRouter>
               {(!this.props.auth || !this.props.auth.isAuthenticated) ? (
-                <Splash
-                  onLoginSuccess={this.handleLoginSuccess}
-                  onRegisterSuccess={this.handleRegisterSuccess}
-                  login={this.props.login}
-                  register={this.props.register}
-                  error={this.props.error}
-                  checkInvitationToken={this.props.checkInvitationToken}
-                  checkUsernameAvailable={this.props.checkUsernameAvailable}
-                  checkEmailAvailable={this.props.checkEmailAvailable}
-                  invitation={this.props.invitation}
-                  auth={this.props.auth}
-                  fullRegister={this.props.fullRegister}
-                  acceptInvitation={this.props.acceptInvitation}
-                  declineInvitation={this.props.declineInvitation}
-                  createInquiry={this.props.createInquiry}
-                  inquiries={this.props.inquiries}
-                  bridge={this.bridge}
-                />
+                <Routes>
+                  <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+                  <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+                  <Route path='/features' element={<FeaturesHome />} />
+                  <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+                  <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+                </Routes>
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (
                 <TermsOfUseModal
                   {...this.props}

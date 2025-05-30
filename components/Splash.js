@@ -45,15 +45,9 @@ class Splash extends React.Component {
   render () {
     const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
     return (
-      <sensemaker-splash className='fade-in splash'>
-        <fabric-component className='ui primary action fluid container'>
-          <Routes>
-            <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
-            <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
-            <Route path='/features' element={<FeaturesHome />} />
-            <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
-            <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
-          </Routes>
+      <sensemaker-splash class='fade-in splash'>
+        <fabric-component class='ui primary action fluid container'>
+
         </fabric-component>
         <section style={{ display: 'flex', justifyContent: 'center' }}>
           <Routes>

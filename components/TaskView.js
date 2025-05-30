@@ -19,6 +19,7 @@ const {
 
 // Local Components
 const GeneratedResponse = require('./GeneratedResponse');
+const MarkdownContent = require('./MarkdownContent');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
@@ -217,6 +218,7 @@ class TaskPage extends React.Component {
               />
             )}
           </Header>
+          <MarkdownContent {...this.props} content={api?.resource?.description || ''} />
           {this.state.isEditingDescription ? (
             <textarea
               value={this.state.editedDescription}

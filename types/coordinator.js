@@ -22,12 +22,13 @@ class Coordinator extends Service {
         secure: false
       },
       goals: [{ status: 'SLEEPING' }],
+      key: null,
       rules: [
         'Do not provide any response other than the exact name of an action.'
       ]
     }, settings);
 
-    this.agent = new Agent(this.settings.agent);
+    this.agent = new Agent({ ...this.settings.agent, key: this.settings.key });
     this.chooser = null;
 
     return this;

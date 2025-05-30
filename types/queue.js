@@ -199,19 +199,32 @@ class Queue extends Actor {
   }
 
   async _takeJob () {
-    const json = await this.redis.lPop(this.settings.collection);
-    const job = JSON.parse(json);
+    try {
+      // Check if Redis is available
+      if (!this.redis || !this.redis.isOpen) {
+        console.debug('[QUEUE]', 'Redis not available for _takeJob');
+        return null;
+      }
 
-    // TODO: canonize this API
-    this.emit('QueueJob', {
-      type: 'QueueJob',
-      content: job
-    });
+      const json = await this.redis.lPop(this.settings.collection);
+      if (!json) return null;
 
-    if (this.redis) {
-      await this.redis.publish('job:taken', JSON.stringify({ job }));
+      const job = JSON.parse(json);
+
+      // TODO: canonize this API
+      this.emit('QueueJob', {
+        type: 'QueueJob',
+        content: job
+      });
+
+      if (this.redis && this.redis.isOpen) {
+        await this.redis.publish('job:taken', JSON.stringify({ job }));
+      }
+      return job;
+    } catch (error) {
+      console.error('[QUEUE]', 'Error in _takeJob:', error);
+      return null;
     }
-    return job;
   }
 
   async _completeJob (job) {
@@ -219,7 +232,6 @@ class Queue extends Actor {
       const result = await this._methods[job.method](...job.params);
       console.debug('[QUEUE]', 'Completed job:', job);
 
-      // TODO: reverse this logic to reject if !this.redis
       if (this.redis) {
         await this.redis.publish('job:completed', JSON.stringify({ job, result }));
       }
@@ -238,9 +250,7 @@ class Queue extends Actor {
     }
   }
 
-
   async _failJob (job) {
-    //we take the failed job and we add it to the queue again with 1 less retry attempt
     job.attempts--;
     console.debug('[QUEUE]', 'Retrying job:', job);
     this._state.current = null;
@@ -261,6 +271,90 @@ class Queue extends Actor {
       throw error;
     }
     return this._state.content.jobs;
+  }
+
+  async stop () {
+    // Stop the ticker first
+    if (this.ticker) {
+      clearInterval(this.ticker);
+      this.ticker = null;
+    }
+
+    // Clear any pending jobs
+    try {
+      await this._clearQueue();
+    } catch (error) {
+      console.warn('[QUEUE]', 'Error clearing queue during stop:', error);
+    }
+
+    // Close Redis connections with timeouts
+    const redisClosePromises = [];
+
+    if (this.redis) {
+      const mainRedisClose = new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('[QUEUE]', 'Timeout closing main Redis connection, forcing close');
+          this.redis = null;
+          resolve();
+        }, 5000);
+
+        this.redis.quit()
+          .then(() => {
+            clearTimeout(timeout);
+            this.redis = null;
+            resolve();
+          })
+          .catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[QUEUE]', 'Error closing main Redis connection:', error);
+            }
+            this.redis = null;
+            resolve();
+          });
+      });
+      redisClosePromises.push(mainRedisClose);
+    }
+
+    if (this.subscriber) {
+      const subscriberClose = new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('[QUEUE]', 'Timeout closing Redis subscriber, forcing close');
+          this.subscriber = null;
+          resolve();
+        }, 5000);
+
+        this.subscriber.quit()
+          .then(() => {
+            clearTimeout(timeout);
+            this.subscriber = null;
+            resolve();
+          })
+          .catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[QUEUE]', 'Error closing Redis subscriber:', error);
+            }
+            this.subscriber = null;
+            resolve();
+          });
+      });
+      redisClosePromises.push(subscriberClose);
+    }
+
+    // Wait for all Redis connections to close or timeout
+    await Promise.all(redisClosePromises);
+
+    // Update state
+    this._state.status = 'STOPPED';
+    this._state.current = null;
+    this._state.output = [];
+
+    // Emit stopped event
+    this.emit('stopped');
+
+    console.log('[QUEUE]', 'Queue stopped successfully');
+    return true;
   }
 }
 

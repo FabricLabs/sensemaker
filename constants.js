@@ -54,6 +54,7 @@ const ENABLE_GROUPS = false;
 const ENABLE_JOBS = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_LOGIN = true;
+const ENABLE_MARKETING = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_REGISTRATION = false;
 const ENABLE_SOURCES = false;
@@ -119,6 +120,7 @@ module.exports = {
   ENABLE_PERSON_SEARCH,
   ENABLE_UPLOADS,
   ENABLE_LIBRARY,
+  ENABLE_MARKETING,
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_WALLET,

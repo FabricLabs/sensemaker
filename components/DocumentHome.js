@@ -101,27 +101,25 @@ class DocumentHome extends React.Component {
           </div>
           <p>Search, upload, and manage files.</p>
           <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} navigate={this.props.navigate} />
-          {(displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
-            <fabric-search fluid placeholder='Find...' className='ui search'>
-              <div className='ui huge icon fluid input'>
-                <input
-                  name='query'
-                  autoComplete='off'
-                  placeholder='Find...'
-                  type='text'
-                  tabIndex='0'
-                  className='prompt'
-                  //value={searchQuery}
-                  onChange={(e) => {
-                    const query = e.target.value;
-                    this.setState({ searchQuery: query });
-                    this.handleSearchChange(query); // Call the debounce function with the query
-                  }}
-                />
-                <i aria-hidden='true' className="search icon"></i>
-              </div>
-            </fabric-search>
-          ) : null)}
+          <fabric-search fluid placeholder='Find...' className='ui search'>
+            <div className='ui huge icon fluid input'>
+              <input
+                name='query'
+                autoComplete='off'
+                placeholder='Find...'
+                type='text'
+                tabIndex='0'
+                className='prompt'
+                //value={searchQuery}
+                onChange={(e) => {
+                  const query = e.target.value;
+                  this.setState({ searchQuery: query });
+                  this.handleSearchChange(query); // Call the debounce function with the query
+                }}
+              />
+              <i aria-hidden='true' className="search icon"></i>
+            </div>
+          </fabric-search>
           <List as={Card.Group} doubling loading={loading} style={{ marginTop: '1em', marginBottom: '1em' }}>
             <List.Item as={Card} key='create-new-document' onClick={this.initiateDocumentCreation.bind(this)} style={{ cursor: 'pointer', background: '#f9f9f9', minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Card.Content textAlign='center'>

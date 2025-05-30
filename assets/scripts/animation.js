@@ -17,8 +17,6 @@
     };
 
     container = document.querySelector('.fabric-site.body');
-    console.debug('container:', container);
-
     container.style.height = height + 'px';
     canvas = document.getElementById('video-background');
     canvas.width = width;
@@ -140,9 +138,9 @@
   }
 
   function shiftPoint (p) {
-    TweenLite.to(p, 1 + 1 * Math.random(), {
-      x: p.originX - 50 + Math.random() * 100,
-      y: p.originY - 50 + Math.random() * 100,
+    TweenLite.to(p, 1 + 5 * Math.random(), {
+      x: p.originX - 50 + Math.random() * 200,
+      y: p.originY - 50 + Math.random() * 200,
       ease: Circ.easeInOut,
       onComplete: function() {
         shiftPoint(p);

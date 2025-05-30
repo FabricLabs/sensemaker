@@ -12,6 +12,7 @@ const { Link, useNavigate } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
+  Card,
   Dropdown,
   Form,
   Header,
@@ -301,188 +302,184 @@ class TaskHomePage extends React.Component {
 
   render () {
     const { agents, network, tasks, response } = this.props;
-
-    // Prepare agent options for dropdown
-    const agentOptions = agents?.agents?.map(agent => ({
-      key: agent.id,
-      text: agent.name || agent.username,
-      value: agent.id,
-      image: { avatar: true, src: agent.avatar_url || undefined }
-    })) || [];
-
     const filteredTasks = tasks ? this.filterTasks(tasks.tasks) : [];
 
     return (
       <sensemaker-task-home class='fade-in' style={{ height: '100%' }}>
-        <Segment className='fade-in' loading={network?.loading} style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ flexShrink: 0 }}>
-            <h2>Tasks</h2>
-            <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
-          </div>
-        </Segment>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <Table>
-            <Table.Body animation='fade'>
-              <Table.Row className='fade-in'>
-                <Table.Cell width={1}></Table.Cell>
-                <Table.Cell width={12}>
-                  <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0, marginLeft: '-1em' }}>
-                    <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
-                      <Input
-                        fluid
-                        type='text'
-                        name='title'
-                        value={this.state.taskTitle}
-                        placeholder='Add a new task...'
-                        onFocus={this.handleTaskFormFocus}
-                        onBlur={this.handleTaskFormBlur}
-                        style={{ padding: '0.5em 0' }}
-                      />
-                    </Form.Field>
-                  </Form>
-                </Table.Cell>
-                <Table.Cell width={3} textAlign='right'>
-                  <Button.Group basic className='desktop-only action-buttons'>
-                    <Button primary icon onClick={this.handleTaskSubmit} disabled={!this.state.taskTitle}>
-                      <Icon name='plus' />
-                    </Button>
-                  </Button.Group>
-                </Table.Cell>
-              </Table.Row>
-              {filteredTasks.map((x) => {
-                return (
-                  <Table.Row className='fade-in' key={x.id}>
-                    <Table.Cell width={1} collapsing>
-                      <Button.Group basic className='desktop-only action-buttons' style={{ marginLeft: '3px' }}>
-                        <Popup
-                          content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
-                          trigger={
-                            <Button
-                              icon
-                              onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
-                              color={x.completed_at ? 'green' : undefined}
-                              className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
-                            >
-                              <Icon name='check' />
-                            </Button>
-                          }
-                          position='top center'
-                          size='tiny'
-                        />
-                      </Button.Group>
-                    </Table.Cell>
+        <Card fluid>
+          <Card.Content>
+            <Segment>
+              <div style={{ flexShrink: 0 }}>
+                <h2><Icon name="settings" style={{ float: 'right', cursor: 'pointer' }} />Tasks</h2>
+                <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
+              </div>
+            </Segment>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}> 
+              <Table>
+                <Table.Body animation='fade'>
+                  <Table.Row className='fade-in'>
+                    <Table.Cell width={1}></Table.Cell>
                     <Table.Cell width={12}>
-                      {this.state.editingTaskId === x.id ? (
-                        <Input
-                          fluid
-                          value={this.state.editingTaskTitle}
-                          onChange={this.handleEditChange}
-                          onKeyDown={this.handleEditSubmit}
-                          onBlur={this.handleEditBlur}
-                          autoFocus
-                        />
-                      ) : (
-                        <div
-                          onClick={() => x.can_edit && this.handleEditStart(x)}
-                          style={{
-                            cursor: x.can_edit ? 'pointer' : 'default',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5em',
-                            padding: '0.5em 0'
-                          }}
-                          className="task-title-container"
-                        >
-                          <Link to={`/tasks/${x.id}`}>{x.title}</Link>
-                          {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
-                        </div>
-                      )}
-                    </Table.Cell>
-                    <Table.Cell width={3} collapsing textAlign='right'>
-                      <Button.Group basic className='desktop-only action-buttons'>
-                        {(x.can_edit) ? (
-                          <Popup
-                            content='Edit task'
-                            trigger={
-                              <Button
-                                icon
-                                as={Link}
-                                to={`/tasks/${x.id}?edit=title`}
-                              >
-                                <Icon name='pencil' />
-                              </Button>
-                            }
-                            position='top center'
-                            size='tiny'
+                      <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0, marginLeft: '-1em' }}>
+                        <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
+                          <Input
+                            fluid
+                            type='text'
+                            name='title'
+                            value={this.state.taskTitle}
+                            placeholder='Add a new task...'
+                            onFocus={this.handleTaskFormFocus}
+                            onBlur={this.handleTaskFormBlur}
+                            style={{ padding: '0.5em 0' }}
                           />
-                        ) : null}
-                        <Popup
-                          content='Archive task'
-                          trigger={
-                            <Button
-                              icon
-                              onClick={() => this.handleArchiveClick(x)}
-                            >
-                              <Icon name='archive' />
-                            </Button>
-                          }
-                          position='top center'
-                          size='tiny'
-                        />
-                        <Popup
-                          content='Begin work'
-                          trigger={
-                            <Button
-                              icon
-                              onClick={() => this.handleWorkClick(x)}
-                            >
-                              <Icon name='play' />
-                            </Button>
-                          }
-                          position='top center'
-                          size='tiny'
-                        />
+                        </Form.Field>
+                      </Form>
+                    </Table.Cell>
+                    <Table.Cell width={3} textAlign='right'>
+                      <Button.Group basic className='desktop-only action-buttons'>
+                        <Button primary icon onClick={this.handleTaskSubmit} disabled={!this.state.taskTitle}>
+                          <Icon name='plus' />
+                        </Button>
                       </Button.Group>
                     </Table.Cell>
                   </Table.Row>
-                );
-              })}
-              {/* Empty row for new task creation */}
-              <Table.Row className='fade-in'>
-                <Table.Cell width={1}></Table.Cell>
-                <Table.Cell width={12}>
-                  <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0 }}>
-                    <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
-                      <Input
-                        fluid
-                        type='text'
-                        name='title'
-                        value={this.state.taskTitle}
-                        placeholder='Add a new task...'
-                        onFocus={this.handleTaskFormFocus}
-                        onBlur={this.handleTaskFormBlur}
-                        style={{ padding: '0.5em 0' }}
-                      />
-                    </Form.Field>
-                  </Form>
-                </Table.Cell>
-                <Table.Cell width={3} textAlign='right'>
-                  <Button.Group basic className='desktop-only action-buttons'>
-                    <Button
-                      primary
-                      icon
-                      onClick={this.handleTaskSubmit}
-                      disabled={!this.state.taskTitle}
-                    >
-                      <Icon name='plus' />
-                    </Button>
-                  </Button.Group>
-                </Table.Cell>
-              </Table.Row>
-            </Table.Body>
-          </Table>
-          <ChatBox {...this.props} context={{ tasks: tasks?.tasks }} placeholder='Ask about these tasks...' />
-        </div>
+                  {filteredTasks.map((x) => {
+                    return (
+                      <Table.Row className='fade-in' key={x.id}>
+                        <Table.Cell width={1} collapsing>
+                          <Button.Group basic className='desktop-only action-buttons' style={{ marginLeft: '3px' }}>
+                            <Popup
+                              content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
+                              trigger={
+                                <Button
+                                  icon
+                                  onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
+                                  color={x.completed_at ? 'green' : undefined}
+                                  className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
+                                >
+                                  <Icon name='check' />
+                                </Button>
+                              }
+                              position='top center'
+                              size='tiny'
+                            />
+                          </Button.Group>
+                        </Table.Cell>
+                        <Table.Cell width={12}>
+                          {this.state.editingTaskId === x.id ? (
+                            <Input
+                              fluid
+                              value={this.state.editingTaskTitle}
+                              onChange={this.handleEditChange}
+                              onKeyDown={this.handleEditSubmit}
+                              onBlur={this.handleEditBlur}
+                              autoFocus
+                            />
+                          ) : (
+                            <div
+                              onClick={() => x.can_edit && this.handleEditStart(x)}
+                              style={{
+                                cursor: x.can_edit ? 'pointer' : 'default',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5em',
+                                padding: '0.5em 0'
+                              }}
+                              className="task-title-container"
+                            >
+                              <Link to={`/tasks/${x.id}`}>{x.title}</Link>
+                              {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
+                            </div>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell width={3} collapsing textAlign='right'>
+                          <Button.Group basic className='desktop-only action-buttons'>
+                            {(x.can_edit) ? (
+                              <Popup
+                                content='Edit task'
+                                trigger={
+                                  <Button
+                                    icon
+                                    as={Link}
+                                    to={`/tasks/${x.id}?edit=title`}
+                                  >
+                                    <Icon name='pencil' />
+                                  </Button>
+                                }
+                                position='top center'
+                                size='tiny'
+                              />
+                            ) : null}
+                            <Popup
+                              content='Archive task'
+                              trigger={
+                                <Button
+                                  icon
+                                  onClick={() => this.handleArchiveClick(x)}
+                                >
+                                  <Icon name='archive' />
+                                </Button>
+                              }
+                              position='top center'
+                              size='tiny'
+                            />
+                            <Popup
+                              content='Begin work'
+                              trigger={
+                                <Button
+                                  icon
+                                  onClick={() => this.handleWorkClick(x)}
+                                >
+                                  <Icon name='play' />
+                                </Button>
+                              }
+                              position='top center'
+                              size='tiny'
+                            />
+                          </Button.Group>
+                        </Table.Cell>
+                      </Table.Row>
+                    );
+                  })}
+                  {/* Empty row for new task creation */}
+                  <Table.Row className='fade-in'>
+                    <Table.Cell width={1}></Table.Cell>
+                    <Table.Cell width={12}>
+                      <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0 }}>
+                        <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
+                          <Input
+                            fluid
+                            type='text'
+                            name='title'
+                            value={this.state.taskTitle}
+                            placeholder='Add a new task...'
+                            onFocus={this.handleTaskFormFocus}
+                            onBlur={this.handleTaskFormBlur}
+                            style={{ padding: '0.5em 0' }}
+                          />
+                        </Form.Field>
+                      </Form>
+                    </Table.Cell>
+                    <Table.Cell width={3} textAlign='right'>
+                      <Button.Group basic className='desktop-only action-buttons'>
+                        <Button
+                          primary
+                          icon
+                          onClick={this.handleTaskSubmit}
+                          disabled={!this.state.taskTitle}
+                        >
+                          <Icon name='plus' />
+                        </Button>
+                      </Button.Group>
+                    </Table.Cell>
+                  </Table.Row>
+                </Table.Body>
+              </Table>
+              <ChatBox {...this.props} context={{ tasks: tasks?.tasks }} placeholder='Ask about these tasks...' />
+            </div>
+          </Card.Content>
+        </Card>
+
         {/* <GeneratedResponse
           request={{
             query: 'Suggest next steps for completing the list of tasks.  Respond directly to the user.',

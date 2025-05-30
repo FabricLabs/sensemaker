@@ -161,6 +161,7 @@ class Agent extends Service {
     this.fabric = new Peer({
       name: 'fabric',
       description: 'The Fabric agent, which manages a Fabric node for the AI agent.  Fabric is peer-to-peer network for running applications which store and exchange information paid in Bitcoin.',
+      key: this.settings.key,
       type: 'Peer',
       listen: this.settings.fabric.listen
     });

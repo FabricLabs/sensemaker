@@ -78,7 +78,8 @@ class ChatBox extends React.Component {
       uploadedFileId: null,
       loading: false, // Added loading state
       signingKey: null, // Add signing key to state
-      isRecording: false
+      isRecording: false,
+      fileMetadataCache: {}, // file ID -> metadata
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -593,7 +594,16 @@ class ChatBox extends React.Component {
   handleAttachmentIntent = (value) => {
     console.debug('attaching file:', value);
     this.setState({ attachingFile: true, loading: true });
-    document.querySelector('#input-control-form input[type="file"]').click();
+    const fileInput = document.querySelector('#input-control-form input[type="file"]');
+    if (fileInput) {
+      fileInput.click();
+      // Add a timeout to clear loading if no file is selected after 1 second
+      setTimeout(() => {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          this.setState({ loading: false });
+        }
+      }, 1000);
+    }
   };
 
   handleEditClick = (currentTitle) => {
@@ -681,7 +691,8 @@ class ChatBox extends React.Component {
       attachmentExists: false,
       uploadProgress: 0,
       isUploading: false,
-      uploadedFileId: null
+      uploadedFileId: null,
+      loading: false
     });
     // Reset the file input
     const fileInput = document.querySelector('#input-control-form input[type="file"]');
@@ -712,6 +723,26 @@ class ChatBox extends React.Component {
   isValidFileType (fileType) {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
+
+  // Fetch file metadata and cache it
+  fetchFileMetadata = async (fileId) => {
+    if (!fileId) return;
+    if (this.state.fileMetadataCache[fileId]) return; // already cached
+    try {
+      const response = await fetch(`/files/${fileId}`);
+      if (response.ok) {
+        const data = await response.json();
+        this.setState((prevState) => ({
+          fileMetadataCache: {
+            ...prevState.fileMetadataCache,
+            [fileId]: data,
+          },
+        }));
+      }
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   render () {
     const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
@@ -847,6 +878,13 @@ class ChatBox extends React.Component {
               message = group.messages[0];
             }
 
+            if (message.attachments && message.attachments.length > 0) {
+              message.attachments.forEach((attachment) => {
+                const fileId = typeof attachment === 'string' ? attachment : (attachment.id || attachment.file_id);
+                if (fileId) this.fetchFileMetadata(fileId);
+              });
+            }
+
             return (
               <Feed.Event key={message.id} data-message-id={message.id}>
                 <Feed.Content>
@@ -938,6 +976,29 @@ class ChatBox extends React.Component {
                     )}
                   </Feed.Summary>
                   <Feed.Extra text>
+                    {/* Attachments rendering */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div style={{ marginTop: '0.5em' }}>
+                        <ul style={{ marginTop: '0.5em', paddingLeft: '1.5em' }}>
+                          {message.attachments.map((attachment, index) => {
+                            let fileId, url, name;
+                            if (typeof attachment === 'string') {
+                              fileId = attachment;
+                            } else if (attachment && typeof attachment === 'object') {
+                              fileId = attachment.id || attachment.file_id;
+                            }
+                            const meta = fileId ? this.state.fileMetadataCache[fileId] : null;
+                            url = meta ? `/files/${meta.id}` : (fileId ? `/files/${fileId}` : '#');
+                            name = meta ? (meta.filename || meta.name || meta.originalname || meta.id) : (fileId || '');
+                            return (
+                              <li key={index}>
+                                <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                     {message.status !== "computing" && (
                       <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
                     )}

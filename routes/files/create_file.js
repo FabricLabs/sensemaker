@@ -25,18 +25,6 @@ async function http_create_file (req, res, next) {
       return;
     }
 
-    // // TODO: allow duplicate file upload
-    // const documentExist = await this.db('documents')
-    //   .where('filename', req.file.originalname)
-    //   .andWhere('owner', '=', req.user.id)
-    //   .first();
-
-    // if (documentExist) {
-    //   res.status(400);
-    //   res.send({ status: 'error', message: 'Document already exists. Please upload a different one.' });
-    //   return;
-    // }
-
     // TODO: standardize the file upload logic into core (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);
     const userDir = path.join(this.settings.files.userstore, req.user.id);
@@ -81,15 +69,26 @@ async function http_create_file (req, res, next) {
         }
 
         try {
+          const actor = new Actor({ name: req.file.originalname, content: data.toString('utf8') });
           const preimage = crypto.createHash('sha256').update(data).digest('hex');
-          const doubleHash = crypto.createHash('sha256').update(preimage).digest('hex');
-          const actor = new Actor({ content: data.toString('utf8') });
+          const hash = crypto.createHash('sha256').update(preimage).digest('hex');
+          const existingBlob = await this.db('blobs').where({ preimage_sha256: hash }).first();
+          if (!existingBlob) {
+            await this.db('blobs').insert({
+              fabric_id: actor.id,
+              content: data.toString('utf8'),
+              mime_type: mimeType,
+              preimage: preimage,
+              preimage_sha256: hash
+            });
+          }
 
           // Update the file record with the fabric_id
           await this.db('files')
             .where({ id: savedFile[0] })
             .update({
               fabric_id: actor.id,
+              blob_id: hash,
               updated_at: new Date(),
               status: 'uploaded'
             });
@@ -113,17 +112,24 @@ async function http_create_file (req, res, next) {
 
           // Queue jobs
           // TODO: fix / troubleshoot ingestion of large files
-          this.queue.addJob({
+          /* this.queue.addJob({
             method: 'IngestFile',
             params: [savedFile[0]],
             attempts: 3
-          });
+          }); */
 
           /* this.queue.addJob({
             method: 'IngestDocument',
             params: [insertedDocument[0]],
             attempts: 3
           }); */
+
+          await this.trainer.ingestDocument({
+            content: data.toString('utf8'),
+            metadata: {
+              owner: req.user.id
+            }
+          });
 
           res.send({ status: 'success', message: 'Successfully uploaded file!', document_id: actor.id, file_id: savedFile[0], fabric_id: actor.id, id: actor.id });
         } catch (updateError) {
