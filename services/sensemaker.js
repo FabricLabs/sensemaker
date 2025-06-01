@@ -520,13 +520,18 @@ class Sensemaker extends Hub {
         database: this.settings.db.database
       },
       pool: {
-        min: 8,
-        max: 128,
+        min: 2,
+        max: 20,
+        acquireTimeoutMillis: 10000,
+        createTimeoutMillis: 10000,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
         afterCreate: (conn, done) => {
           // console.debug('[SENSEMAKER:CORE]', '[DB]', 'Connection created.');
           done(null, conn);
         }
-      }
+      },
+      acquireConnectionTimeout: 10000
     });
 
     // Attach pagination plugin
