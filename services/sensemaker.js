@@ -419,6 +419,7 @@ class Sensemaker extends Hub {
     this.healths = {};
     this.services = {};
     this.sources = {};
+    this.tools = {};
     this.workers = [];
     this.changes = new Logger({
       name: 'sensemaker',
@@ -452,6 +453,7 @@ class Sensemaker extends Hub {
       prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.'
     });
 
+    // TODO: use qwen3:0.6b
     this.summarizer = new Agent({
       name: this.settings.name,
       listen: false,
@@ -536,6 +538,15 @@ class Sensemaker extends Hub {
 
     // Attach pagination plugin
     attachPaginate();
+
+    // Test database connection
+    this.db.raw('SELECT 1').then(() => {
+      console.log('[SENSEMAKER:CORE]', '[DB]', 'Database connection established successfully');
+    }).catch((error) => {
+      console.error('[SENSEMAKER:CORE]', '[DB]', 'Failed to connect to database:', error);
+      console.error('[SENSEMAKER:CORE]', '[DB]', 'Please check your database configuration');
+      // Don't exit, let the app continue and handle errors gracefully
+    });
 
     this.cache = {
       _data: new Map(),
@@ -1822,6 +1833,34 @@ class Sensemaker extends Hub {
       res.send();
     });
 
+    // TODO: set this as default behavior in @fabric/http
+    this.http._addRoute('OPTIONS', '/documents', async (req, res) => {
+      const types = [
+        // TODO: declare all Document types
+        { name: 'Text', code: ((v) => v).toString() },
+        { name: 'Markdown', code: ((v) => v).toString(), description: 'Markdown formatted text.' },
+        // { name: 'Image', code: ((v) => v).toString() }
+      ];
+
+      const options = {
+        type: 'Resource',
+        content: {
+          name: 'Documents',
+          description: 'List of all documents in the system.',
+          methods: ['GET', 'POST'],
+          properties: {
+            id: { type: 'string', description: 'Unique identifier for the document.' },
+            title: { type: 'string', description: 'Title of the document.' },
+            owner: { type: 'string', description: 'Owner of the document.' },
+            created_at: { type: 'string', format: 'date-time', description: 'Creation date of the document.' }
+          },
+          types: types,
+        }
+      };
+
+      res.send(options);
+    });
+
     // API
     this.http._addRoute('POST', '/v1/chat/completions', ROUTES.messages.createCompletion.bind(this));
 
@@ -1911,6 +1950,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
 
     // Services
+    // TODO: finish Fabric service workup
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin', this._handleBitcoinStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin/blocks', this._handleBitcoinBlockListRequest.bind(this));
@@ -1944,14 +1984,8 @@ class Sensemaker extends Hub {
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
 
-    // Help chat
-    // TODO: rework help system into standardized pop-out chat
-    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
-    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
-    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
-    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
-    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
-
+    // Redis Queue
+    // TODO: remap to /services/queue
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
 
@@ -1962,6 +1996,7 @@ class Sensemaker extends Hub {
 
     // Invitations
     // TODO: review this
+    // TODO: remap to /tokens/:tokenHash#token=:invitationToken (where client handles POST to users after confirming token with server)
     this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -3391,7 +3426,7 @@ class Sensemaker extends Hub {
     }
   }
 
-  async _summarizeMessages (messages, max = 512) {
+  async _summarizeMessages (messages, max = 256) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a paragraph.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
@@ -3399,7 +3434,7 @@ class Sensemaker extends Hub {
     });
   }
 
-  async _summarizeMessagesToTitle (messages, max = 100) {
+  async _summarizeMessagesToTitle (messages, max = 64) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };

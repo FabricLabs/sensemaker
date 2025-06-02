@@ -19,7 +19,9 @@ const {
   Divider,
   Icon,
   Form,
-  Search
+  Search,
+  Modal,
+  Dropdown
 } = require('semantic-ui-react');
 
 // Components
@@ -47,7 +49,13 @@ class Conversations extends React.Component {
       editedTitle: '', // Temporary state for the input value
       editLoading: false,
       searchQuery: '', // Add search query to state
-      isGlobalHovered: false
+      isGlobalHovered: false,
+      newConversationModalOpen: false,
+      newConversationTitle: '',
+      documentSearchQuery: '',
+      selectedDocuments: [], // Array of selected documents
+      documentSearchResults: [], // Search results for documents
+      documentSearchLoading: false // Loading state for document search
     };
   }
 
@@ -124,9 +132,85 @@ class Conversations extends React.Component {
     });
   };
 
+  handleNewConversationOpen = () => {
+    this.props.resetChat(); // Reset chat state before opening modal
+    this.setState({ newConversationModalOpen: true });
+  }
+
+  handleNewConversationClose = () => {
+    this.setState({
+      newConversationModalOpen: false,
+      newConversationTitle: ''
+    });
+  }
+
+  handleNewConversationTitleChange = (e, { value }) => {
+    this.setState({ newConversationTitle: value });
+  }
+
+  handleNewConversationSubmit = async () => {
+    const { newConversationTitle } = this.state;
+
+    try {
+      const response = await fetch('/conversations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.props.auth.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newConversationTitle || 'New Conversation'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create conversation');
+      }
+
+      const data = await response.json();
+      this.handleNewConversationClose();
+      this.props.fetchConversations();
+
+      // Navigate to the new conversation
+      this.props.navigate(`/conversations/${data.id}`);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    }
+  }
+
+  handleDocumentSearchChange = async (e, { value }) => {
+    this.setState({ documentSearchQuery: value, documentSearchLoading: true });
+
+    try {
+      const response = await fetch('/documents', {
+        method: 'SEARCH',
+        headers: {
+          'Authorization': `Bearer ${this.props.auth.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: value }),
+      });
+
+      if (!response.ok) throw new Error('Search failed');
+
+      const data = await response.json();
+      this.setState({
+        documentSearchResults: data.results || [],
+        documentSearchLoading: false
+      });
+    } catch (error) {
+      console.error('Document search error:', error);
+      this.setState({ documentSearchLoading: false });
+    }
+  };
+
+  handleDocumentSelect = (e, { value }) => {
+    this.setState({ selectedDocuments: value });
+  };
+
   render () {
     const { loading, error, conversations, users } = this.props;
-    const { currentPage, windowWidth, windowHeight, editLoading, searchQuery } = this.state;
+    const { currentPage, windowWidth, windowHeight, editLoading, searchQuery, newConversationModalOpen, newConversationTitle, documentSearchQuery, selectedDocuments, documentSearchResults, documentSearchLoading } = this.state;
 
     if (loading) {
       return <div>Loading...</div>;
@@ -179,7 +263,15 @@ class Conversations extends React.Component {
                 content={<Icon name='globe' />}
                 popup={{ content: 'Global chat', position: 'bottom center' }}
               />}
-              <Button icon color='green' labelPosition='right'>New Conversation<Icon name='right chevron' /></Button>
+              <Button
+                icon
+                color='green'
+                labelPosition='right'
+                onClick={this.handleNewConversationOpen}
+              >
+                New Conversation
+                <Icon name='right chevron' />
+              </Button>
             </Button.Group>
           </div>
           <p>
@@ -330,6 +422,69 @@ class Conversations extends React.Component {
               style={{ margin: '0' }}
             />
           ) : null}
+          <Modal
+            open={newConversationModalOpen}
+            onClose={this.handleNewConversationClose}
+            size='large'
+          >
+            <Modal.Header>New Conversation</Modal.Header>
+            <Modal.Content>
+              <Form>
+                <Form.Input
+                  fluid
+                  label='Title'
+                  placeholder='Enter conversation title...'
+                  value={newConversationTitle}
+                  onChange={this.handleNewConversationTitleChange}
+                />
+                <Form.Dropdown
+                  fluid
+                  multiple
+                  search
+                  selection
+                  label='Add Documents to Context'
+                  placeholder='Search for documents...'
+                  options={documentSearchResults.map(doc => ({
+                    key: doc.id,
+                    text: doc.title || `Document ${doc.id}`,
+                    value: doc.id,
+                    description: doc.content ? doc.content.substring(0, 100) + '...' : ''
+                  }))}
+                  value={selectedDocuments}
+                  onSearchChange={this.handleDocumentSearchChange}
+                  onChange={this.handleDocumentSelect}
+                  loading={documentSearchLoading}
+                  noResultsMessage="Type to search documents..."
+                />
+                <ChatBox
+                  {...this.props}
+                  messagesEndRef={this.messagesEndRef}
+                  includeAttachments={true}
+                  includeFeed={true}
+                  placeholder='Start your conversation...'
+                  resetInformationSidebar={this.props.resetInformationSidebar}
+                  messageInfo={this.props.messageInfo}
+                  thumbsUp={this.props.thumbsUp}
+                  thumbsDown={this.props.thumbsDown}
+                  style={{ margin: '1em 0' }}
+                  chat={{ messages: [] }} // Force empty messages array
+                  context={{ documents: selectedDocuments }} // Pass selected documents to context
+                />
+              </Form>
+            </Modal.Content>
+            <Modal.Actions>
+              <Button color='black' onClick={this.handleNewConversationClose}>
+                Cancel
+              </Button>
+              <Button
+                positive
+                icon='checkmark'
+                labelPosition='right'
+                content='Create'
+                onClick={this.handleNewConversationSubmit}
+              />
+            </Modal.Actions>
+          </Modal>
         </Segment>
       </sensemaker-conversations>
     );

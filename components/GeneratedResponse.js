@@ -22,6 +22,7 @@ class GeneratedResponse extends React.Component {
     super(settings);
 
     this.state = {
+      context: {},
       loading: false,
       request: {
         query: 'Introduce yourself.'
@@ -30,41 +31,45 @@ class GeneratedResponse extends React.Component {
   }
 
   componentDidMount () {
-    const { request, context } = this.props;
-    // Only fetch response if we have meaningful context data
-    if (context && Object.keys(context).length > 0) {
-      this.props.fetchResponse(request);
-    }
+    // Context will be set by an outside component after mounting
+    // The componentDidUpdate method will handle the initial request
   }
 
   componentDidUpdate (prevProps) {
-    const { request, context } = this.props;
+    const { request, context, chat } = this.props;
     const prevContext = prevProps.context;
 
     // Check if context changed meaningfully
     const hasContext = context && Object.keys(context).length > 0;
     const hadContext = prevContext && Object.keys(prevContext).length > 0;
 
+    // Check if we already have a response
+    const hasResponse = chat?.response?.choices?.length > 0;
+
     // Fetch response if:
     // 1. We didn't have context before but now we do
     // 2. Context data has changed
-    if ((!hadContext && hasContext) ||
-        (JSON.stringify(prevContext) !== JSON.stringify(context))) {
+    // 3. AND we don't already have a response
+    if (!hasResponse && ((!hadContext && hasContext) || (JSON.stringify(prevContext) !== JSON.stringify(context)))) {
       this.props.fetchResponse(request);
     }
   }
 
   render () {
     const { network, chat } = this.props;
+    const response = chat?.response?.choices?.[0]?.message;
     return (
       <Segment className='fade-in' loading={network?.loading}>
-        {(chat?.loading || !chat.response || !chat.response.choices) ? <h3>{BRAND_NAME} is thinking...</h3> : (
+        {(chat?.loading || !response || !response.choices) ? <h3>{BRAND_NAME} is thinking...</h3> : (
           <sensemaker-response>
             <h3>{BRAND_NAME} says...</h3>
-            <div dangerouslySetInnerHTML={{ __html: marked.parse((chat.response) ? chat.response.choices[0].message.content : '') }}></div>
+            <div dangerouslySetInnerHTML={{ __html: marked.parse((response) ? response.content : '') }}></div>
             <ChatBox
               {...this.props}
-              context={ this.props.context }
+              context={{
+                ...this.props.context,
+                message: response
+              }}
               messagesEndRef={this.messagesEndRef}
               includeFeed={true}
               placeholder={this.props.placeholder || `Your response...`}

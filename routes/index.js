@@ -38,6 +38,7 @@ module.exports = {
     view: require('./blobs/view_blob')
   },
   conversations: {
+    create: require('./conversations/create_conversation'),
     list: require('./conversations/list_conversations'),
     view: require('./conversations/view_conversation'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),

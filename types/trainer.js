@@ -232,26 +232,36 @@ class Trainer extends Agent {
     });
   }
 
-  async query (request) {
+  async query (request, timeoutMs = 30000) {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
-      let store = null;
-      if (request.user) {
-        const messages = (request.messages) ? request.messages.map((m) => {
-          return new Document({ pageContent: m.content });
-        }) : [];
 
-        store = await this.getStoreForOwner(request.user.id);
-        store.addDocuments(messages);
-      } else {
-        store = this.embeddings;
-      }
+      // Create timeout handler
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Query timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
 
-      // TODO: replace with `createRetrievalChain`
-      RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
-        messages: request.messages,
-        query: request.query
-      }).catch(reject).then((answer) => {
+      try {
+        let store = null;
+        if (request.user) {
+          const messages = (request.messages) ? request.messages.map((m) => {
+            return new Document({ pageContent: m.content });
+          }) : [];
+
+          // TODO: change to ingestDocument call
+          store = await this.getStoreForOwner(request.user.id);
+          store.addDocuments(messages);
+        } else {
+          store = this.embeddings;
+        }
+
+        const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
+          messages: request.messages,
+          query: request.query
+        });
+
+        clearTimeout(timeoutId);
+
         if (this.settings.debug) console.debug('[TRAINER]', 'Answer:', answer);
         if (!answer || !answer.text) return reject(new Error('No answer provided.'));
         resolve({
@@ -260,7 +270,10 @@ class Trainer extends Agent {
           messages: request.messages,
           query: request.query
         });
-      });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
     });
   }
 

@@ -93,7 +93,8 @@ const HelpBox = require('./HelpBox');
 const GlobalChat = require('./Global');
 
 // Fabric Bridge
-const Bridge = require('./Bridge');
+// const Bridge = require('./Bridge');
+const Bridge = require('@fabric/hub/components/Bridge')
 
 // Services
 const BitcoinHome = require('./services/bitcoin/BitcoinHome');

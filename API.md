@@ -19,9 +19,6 @@
 <dt><a href="#SPA">SPA</a></dt>
 <dd><p>Fully-managed HTML application.</p>
 </dd>
-<dt><a href="#InMemoryVectorStore">InMemoryVectorStore</a></dt>
-<dd><p>Simple in-memory vector store for testing and development.</p>
-</dd>
 <dt><a href="#Trainer">Trainer</a></dt>
 <dd><p>Implements document ingestion.</p>
 </dd>
@@ -85,6 +82,12 @@ Query the agent with some text.
 Builder for [Fabric](Fabric)-based applications.
 
 **Kind**: global class  
+
+* [Bundler](#Bundler)
+    * [new Bundler([settings])](#new_Bundler_new)
+    * [.generateCacheManifest(outputPath)](#Bundler+generateCacheManifest)
+    * [.generateWebManifest(outputPath)](#Bundler+generateWebManifest)
+
 <a name="new_Bundler_new"></a>
 
 ### new Bundler([settings])
@@ -95,6 +98,28 @@ Create an instance of the bundler.
 | --- | --- | --- |
 | [settings] | <code>Object</code> | Map of settings. |
 | [settings.document] | <code>HTTPComponent</code> | Document to use. |
+
+<a name="Bundler+generateCacheManifest"></a>
+
+### bundler.generateCacheManifest(outputPath)
+Generate a cache.manifest file listing all static assets for offline support.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| outputPath | <code>string</code> | Path to the manifest file (default: 'assets/cache.manifest') |
+
+<a name="Bundler+generateWebManifest"></a>
+
+### bundler.generateWebManifest(outputPath)
+Generate a manifest.json file for PWA support.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| outputPath | <code>string</code> | Path to the manifest file (default: 'assets/manifest.json') |
 
 <a name="Clock"></a>
 
@@ -143,12 +168,6 @@ Creates an instance of the [Site](#Site), which provides general statistics cove
 
 ## SPA
 Fully-managed HTML application.
-
-**Kind**: global class  
-<a name="InMemoryVectorStore"></a>
-
-## InMemoryVectorStore
-Simple in-memory vector store for testing and development.
 
 **Kind**: global class  
 <a name="Trainer"></a>

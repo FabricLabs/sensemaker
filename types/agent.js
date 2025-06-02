@@ -90,7 +90,7 @@ class Agent extends Service {
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
       ],
       timeout: {
-        tolerance: 0.5 * 1000 // tolerance in seconds
+        tolerance: 30 * 1000 // tolerance in seconds
       },
       constraints: {
         max_tokens: AGENT_MAX_TOKENS,
@@ -283,96 +283,104 @@ class Agent extends Service {
       if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Querying:', request);
       if (!request.messages) request.messages = [];
 
-      // Prepare messages
-      let messages = null;
+      // Create timeout handler
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Query timed out after ${this.settings.timeout.tolerance}ms`));
+      }, this.settings.timeout.tolerance);
 
-      // Ensure system message is first
-      if (!request.messages[0] || request.messages[0].role !== 'system') {
-        messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
-      } else {
-        messages = [].concat(request.messages);
-      }
+      try {
+        // Prepare messages
+        let messages = null;
 
-      // Check for local agent
-      if (this.settings.host) {
-        // Happy Path
-        if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
-        const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
+        // Ensure system message is first
+        if (!request.messages[0] || request.messages[0].role !== 'system') {
+          messages = [{ role: 'system', content: this.prompt }].concat(request.messages);
+        } else {
+          messages = [].concat(request.messages);
+        }
 
-        // Clean up extraneous appearance of "agent" role
-        messages = messages.map((x) => {
-          if (x.role === 'agent') x.role = 'assistant';
-          return x;
-        });
+        // Check for local agent
+        if (this.settings.host) {
+          // Happy Path
+          if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
+          const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
 
-        let response = null;
-        let text = null;
-        let base = null;
+          // Clean up extraneous appearance of "agent" role
+          messages = messages.map((x) => {
+            if (x.role === 'agent') x.role = 'assistant';
+            return x;
+          });
 
-        try {
+          let response = null;
+          let text = null;
+          let base = null;
+          let format = null;
+
+          if (request.format === 'json' || request.json) {
+            format = 'json';
+          } else if (request.format) {
+            try {
+              format = JSON.parse(request.format);
+            } catch {
+              console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not parse format as JSON:', request.format);
+              clearTimeout(timeoutId);
+              return reject(new Error('Invalid format specified.'));
+            }
+          }
+
           const sample = messages.concat([
             { role: 'user', username: request.username, content: request.query }
           ]);
 
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
-          // Core Request
-          fetch(endpoint, {
-            method: 'POST',
-            headers: merge({
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            }, this.settings.headers),
-            body: JSON.stringify({
-              model: this.settings.model,
-              keep_alive: (this.settings.keepalive) ? -1 : undefined,
-              messages: sample,
-              format: (request.format === 'json' || request.json) ? 'json' : undefined,
-              options: {
-                temperature: this.settings.temperature,
-                max_tokens: this.settings.max_tokens
-              },
-              tools: (request.tools) ? this.tools : undefined,
-              stream: false
-            })
-          }).catch((exception) => {
-            console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Could not send request:', exception);
-            return reject(exception);
-          }).then(async (response) => {
-            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', response);
-            if (!response) return reject(new Error('No response from agent.'));
+          // Core Request with AbortController for timeout
+          const controller = new AbortController();
+          const signal = controller.signal;
 
-            try {
-              text = await response.text();
-            } catch (exception) {
-              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, 'Could not parse response as text:', exception);
-              return reject(exception);
+          try {
+            response = await fetch(endpoint, {
+              method: 'POST',
+              headers: merge({
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }, this.settings.headers),
+              body: JSON.stringify({
+                model: this.settings.model,
+                keep_alive: (this.settings.keepalive) ? -1 : undefined,
+                messages: sample,
+                format: format,
+                options: {
+                  temperature: this.settings.temperature,
+                  max_tokens: this.settings.max_tokens
+                },
+                tools: (request.tools) ? this.tools : undefined,
+                stream: false
+              }),
+              signal
+            });
+
+            if (!response) {
+              clearTimeout(timeoutId);
+              return reject(new Error('No response from agent.'));
             }
 
-            try {
-              base = JSON.parse(text);
-            } catch (exception) {
-              console.error('[AGENT]', `[${this.settings.name.toLocaleUpperCase()}]`, endpoint, 'Could not parse response:', text, exception);
-              // console.debug('[AGENT]', 'Response body:', await response.text());
-              // console.debug('[AGENT]', 'Response body:', response.body.text());
-              // return reject(exception);
-              return resolve({
-                type: 'AgentResponse',
-                name: this.settings.name,
-                status: 'error',
-                query: request.query,
-                response: { content: text },
-                content: text,
-                messages: messages
-              }); // TODO: remove this...
+            text = await response.text();
+            base = JSON.parse(text);
+
+            if (!base) {
+              clearTimeout(timeoutId);
+              return reject(new Error('No response from agent.'));
             }
 
-            // console.debug('messages:', messages);
-            if (this.settings.debug) console.debug('[!!!]', `[${this.settings.name.toLocaleUpperCase()}]`, 'base:', base);
-            if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Response:', base);
-            if (!base) return reject(new Error('No response from agent.'));
-            if (base.error) return reject(base.error);
+            if (base.error) {
+              clearTimeout(timeoutId);
+              return reject(base.error);
+            }
+
             const choice = base.choices[0];
+
+            // TODO: refactor this to use `this.tools` and implement `registerTool(name, method)
             if (choice.finish_reason && choice.finish_reason === 'tool_calls') {
               const tool = choice.message.tool_calls[0];
               const args = JSON.parse(tool.function.arguments);
@@ -396,20 +404,26 @@ class Agent extends Service {
                     messages.push(choice.message);
                     messages.push({ role: 'tool', content: obj.content, tool_call_id: tool.id });
                   } catch (exception) {
+                    clearTimeout(timeoutId);
                     reject(exception);
                   }
 
+                  clearTimeout(timeoutId);
                   return this.query({ query: request.query, messages: messages }).then(resolve).catch(reject);
               }
             }
 
-            if (!base.choices) return reject(new Error('No choices in response.'));
+            if (!base.choices) {
+              clearTimeout(timeoutId);
+              return reject(new Error('No choices in response.'));
+            }
 
             // Emit completion event
             this.emit('completion', base);
             if (this.settings.debug) console.trace('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Emitted completion:', base);
 
-            // Resolve with response
+            // Clear timeout and resolve with response
+            clearTimeout(timeoutId);
             return resolve({
               type: 'AgentResponse',
               name: this.settings.name,
@@ -419,67 +433,78 @@ class Agent extends Service {
               content: base.choices[0].message.content,
               messages: messages
             });
-          });
-        } catch (exception) {
-          console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
-          return resolve({
-            type: 'AgentResponse',
-            name: this.settings.name,
-            status: 'error',
-            query: request.query,
-            response: null,
-            content: text,
-          });
-        }
-      } else {
-        console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
 
-        // Failure Path
-        const responses = {
-          alpha: null,
-          beta: null,
-          gamma: null,
-          mistral: null,
-          openai: (this.settings.openai.enable) ? await this.services.openai._streamConversationRequest({
-            messages:  messages.concat([
-              { role: 'user', content: request.query }
-            ]),
-            tools: (this.settings.tools) ? this.tools : undefined,
-            json: request.json
-          }) : null,
-          rag: null,
-          sensemaker: null
-        };
-
-        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
-
-        // Wait for all responses to resolve or reject.
-        await Promise.allSettled(Object.values(responses));
-        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Prompt:', this.prompt);
-        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Query:', request.query);
-        console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
-
-        let response = '';
-
-        if (FAILURE_PROBABILTY > Math.random()) {
-          response = 'I am sorry, I do not understand.';
-        } else if (responses.llama) {
-          response = responses.llama.content;
-        } else if (responses.openai && responses.openai.content) {
-          response = responses.openai.content;
+          } catch (exception) {
+            clearTimeout(timeoutId);
+            console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
+            return resolve({
+              type: 'AgentResponse',
+              name: this.settings.name,
+              status: 'error',
+              query: request.query,
+              response: null,
+              content: text,
+            });
+          }
         } else {
-          console.debug('[AGENT]', 'No response:', responses);
-          response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
-        }
+          console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
 
-        return resolve({
-          type: 'AgentResponse',
-          name: this.settings.name,
-          status: 'success',
-          query: request.query,
-          response: response,
-          content: response
-        });
+          try {
+            // Failure Path
+            const responses = {
+              alpha: null,
+              beta: null,
+              gamma: null,
+              mistral: null,
+              openai: (this.settings.openai.enable) ? await this.services.openai._streamConversationRequest({
+                messages:  messages.concat([
+                  { role: 'user', content: request.query }
+                ]),
+                tools: (this.settings.tools) ? this.tools : undefined,
+                json: request.json
+              }) : null,
+              rag: null,
+              sensemaker: null
+            };
+
+            console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
+
+            // Wait for all responses to resolve or reject.
+            await Promise.allSettled(Object.values(responses));
+            console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Prompt:', this.prompt);
+            console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Query:', request.query);
+            console.debug('[AGENT]',`[${this.settings.name.toUpperCase()}]`, '[FALLBACK]', 'Responses:', responses);
+
+            let response = '';
+
+            if (FAILURE_PROBABILTY > Math.random()) {
+              response = 'I am sorry, I do not understand.';
+            } else if (responses.llama) {
+              response = responses.llama.content;
+            } else if (responses.openai && responses.openai.content) {
+              response = responses.openai.content;
+            } else {
+              console.debug('[AGENT]', 'No response:', responses);
+              response = 'I couldn\'t find enough resources to respond to that.  Try again later?';
+            }
+
+            clearTimeout(timeoutId);
+            return resolve({
+              type: 'AgentResponse',
+              name: this.settings.name,
+              status: 'success',
+              query: request.query,
+              response: response,
+              content: response
+            });
+          } catch (exception) {
+            clearTimeout(timeoutId);
+            return reject(exception);
+          }
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        reject(error);
       }
     });
   }

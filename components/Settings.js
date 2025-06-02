@@ -1,5 +1,11 @@
 'use strict';
 
+// Constants
+const {
+  ENABLE_DISCORD,
+  ENABLE_FABRIC
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
 const { Link } = require('react-router-dom');
@@ -99,26 +105,30 @@ class SensemakerUserSettings extends React.Component {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                <Table.Row className='settings-row'>
-                  <Table.Cell>
-                    <Header as='h4'>Fabric</Header>
-                    <Button.Group>
-                      <Button>Connect</Button>
-                      <Button>Disconnect</Button>
-                    </Button.Group>
-                  </Table.Cell>
-                </Table.Row>
-                <Table.Row className='settings-row'>
-                  <Table.Cell>
-                    {(user_discord) ? <Button.Group>
-                      <div className='ui left labeled button'>
-                        <Label color='blue' pointing='right'><Icon name='discord' /></Label>
-                        <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
-                      </div>
-                      <Icon name='remove' />
-                    </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
-                  </Table.Cell>
-                </Table.Row>
+                {ENABLE_FABRIC && (
+                  <Table.Row className='settings-row'>
+                    <Table.Cell>
+                      <Header as='h4'>Fabric</Header>
+                      <Button.Group>
+                        <Button>Connect</Button>
+                        <Button>Disconnect</Button>
+                      </Button.Group>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+                {ENABLE_DISCORD && (
+                  <Table.Row className='settings-row'>
+                    <Table.Cell>
+                      {(user_discord) ? <Button.Group>
+                        <div className='ui left labeled button'>
+                          <Label color='blue' pointing='right'><Icon name='discord' /></Label>
+                          <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
+                        </div>
+                        <Icon name='remove' />
+                      </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
+                    </Table.Cell>
+                  </Table.Row>
+                )}
               </Table.Body>
             </Table>
             <Table>

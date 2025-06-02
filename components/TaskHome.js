@@ -31,6 +31,7 @@ const ChatBox = require('./ChatBox');
 const GeneratedResponse = require('./GeneratedResponse');
 const HeaderBar = require('./HeaderBar');
 const UserProfileSection = require('./UserProfileSection');
+const TaskSettingsModal = require('./TaskSettingsModal');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
@@ -55,7 +56,9 @@ class TaskHomePage extends React.Component {
       showUncompleteConfirm: false,
       taskToUncomplete: null,
       sortBy: 'created_at',
-      showCompleted: false
+      sortDirection: 'desc',
+      showCompleted: false,
+      showSettingsModal: false
     };
   }
 
@@ -218,26 +221,48 @@ class TaskHomePage extends React.Component {
     }
   }
 
-  handleSortChange = (e, { value }) => {
-    this.setState({ sortBy: value });
+  handleSortChange = (field) => {
+    // If clicking the same field, toggle direction
+    if (field === this.state.sortBy) {
+      this.setState(prevState => ({
+        sortDirection: prevState.sortDirection === 'asc' ? 'desc' : 'asc'
+      }));
+    } else {
+      // If clicking a new field, set it with default direction
+      this.setState({
+        sortBy: field,
+        sortDirection: 'desc' // Default to descending for new sort fields
+      });
+    }
+  }
+
+  handleShowCompletedChange = (checked) => {
+    this.setState({ showCompleted: checked });
   }
 
   filterTasks = (tasks) => {
-    const { sortBy } = this.state;
+    const { sortBy, sortDirection, showCompleted } = this.state;
     let filteredTasks = tasks;
 
-    // Filter out completed tasks by default
-    filteredTasks = tasks.filter(task => !task.completed_at);
+    // Filter completed tasks based on showCompleted setting
+    filteredTasks = tasks.filter(task => showCompleted ? true : !task.completed_at);
 
     // Apply sorting
     filteredTasks.sort((a, b) => {
+      const multiplier = sortDirection === 'asc' ? 1 : -1;
+
       if (sortBy === 'created_at') {
-        return new Date(b.created_at) - new Date(a.created_at);
+        return multiplier * (new Date(b.created_at) - new Date(a.created_at));
       } else if (sortBy === 'due_date') {
         if (!a.due_date && !b.due_date) return 0;
-        if (!a.due_date) return 1;
-        if (!b.due_date) return -1;
-        return new Date(a.due_date) - new Date(b.due_date);
+        if (!a.due_date) return multiplier;
+        if (!b.due_date) return -multiplier;
+        return multiplier * (new Date(a.due_date) - new Date(b.due_date));
+      } else if (sortBy === 'completed_at') {
+        if (!a.completed_at && !b.completed_at) return 0;
+        if (!a.completed_at) return multiplier;
+        if (!b.completed_at) return -multiplier;
+        return multiplier * (new Date(b.completed_at) - new Date(a.completed_at));
       }
       return 0;
     });
@@ -300,6 +325,14 @@ class TaskHomePage extends React.Component {
     this.props.fetchTasks();
   }
 
+  handleSettingsClick = () => {
+    this.setState({ showSettingsModal: true });
+  }
+
+  handleSettingsClose = () => {
+    this.setState({ showSettingsModal: false });
+  }
+
   render () {
     const { agents, network, tasks, response } = this.props;
     const filteredTasks = tasks ? this.filterTasks(tasks.tasks) : [];
@@ -310,7 +343,7 @@ class TaskHomePage extends React.Component {
           <Card.Content>
             <Segment>
               <div style={{ flexShrink: 0 }}>
-                <h2><Icon name="settings" style={{ float: 'right', cursor: 'pointer' }} />Tasks</h2>
+                <h2><Icon name="settings" style={{ float: 'right', cursor: 'pointer' }} onClick={this.handleSettingsClick} />Tasks</h2>
                 <p>{BRAND_NAME} will monitor active tasks and perform background work to assist you in completing them.</p>
               </div>
             </Segment>
@@ -549,6 +582,16 @@ class TaskHomePage extends React.Component {
             </Button>
           </Modal.Actions>
         </Modal>
+
+        <TaskSettingsModal
+          isOpen={this.state.showSettingsModal}
+          onClose={this.handleSettingsClose}
+          sortBy={this.state.sortBy}
+          sortDirection={this.state.sortDirection}
+          onSortChange={this.handleSortChange}
+          showCompleted={this.state.showCompleted}
+          onShowCompletedChange={this.handleShowCompletedChange}
+        />
 
         <style>{`
           .task-title-container:hover .edit-icon {

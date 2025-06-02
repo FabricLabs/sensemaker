@@ -13,7 +13,8 @@ const {
   Header,
   Icon,
   List,
-  Segment
+  Segment,
+  Popup
 } = require('semantic-ui-react');
 
 // Hub Components
@@ -95,8 +96,20 @@ class Home extends React.Component {
           {(conversations && conversations.length) ? (
               <Card key={conversations[0].slug} as={Link} to={'/conversations/' + conversations[0].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Card.Content style={{ flex: '1 1 auto' }}>
-                  <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].title}</Card.Header>
-                  <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
+                  <Popup
+                    content={conversations[0].title}
+                    trigger={
+                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].title}</Card.Header>
+                    }
+                    position='top left'
+                  />
+                  <Popup
+                    content={conversations[0].summary}
+                    trigger={
+                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
+                    }
+                    position='bottom left'
+                  />
                 </Card.Content>
                 <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
                   <Button color='black' as={Link} to={'/conversations/' + conversations[0].slug}>Resume &raquo;</Button>
@@ -108,8 +121,20 @@ class Home extends React.Component {
             {(conversations && conversations.length) ? (
               <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Card.Content style={{ flex: '1 1 auto' }}>
-                  <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].title}</Card.Header>
-                  <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].summary}</Card.Description>
+                  <Popup
+                    content={conversations[1].title}
+                    trigger={
+                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].title}</Card.Header>
+                    }
+                    position='top left'
+                  />
+                  <Popup
+                    content={conversations[1].summary}
+                    trigger={
+                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].summary}</Card.Description>
+                    }
+                    position='bottom left'
+                  />
                 </Card.Content>
                 <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
                   <Button color='black' as={Link} to={'/conversations/' + conversations[1].slug}>Resume &raquo;</Button>
@@ -126,7 +151,13 @@ class Home extends React.Component {
                     <List.Item key={conversation.slug}>
                       <List.Icon name='chevron right' />
                       <List.Content>
-                        <List.Header title={conversation.summary} as={Link} to={`/conversations/${conversation.slug}`}>{conversation.title}</List.Header>
+                        <Popup
+                          content={conversation.summary}
+                          trigger={
+                            <List.Header title={conversation.summary} as={Link} to={`/conversations/${conversation.slug}`}>{conversation.title}</List.Header>
+                          }
+                          position='right center'
+                        />
                       </List.Content>
                     </List.Item>
                   ))}

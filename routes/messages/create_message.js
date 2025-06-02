@@ -3,6 +3,8 @@
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
+const toRelativeTime = require('../../functions/toRelativeTime');
+
 module.exports = async function (req, res, next) {
   const now = new Date();
 
@@ -21,7 +23,7 @@ module.exports = async function (req, res, next) {
 
   if (!conversation_id) {
     isNew = true;
-    const name = `Conversation Started ${now.toISOString()}`;
+    const name = `Conversation started ${toRelativeTime(now.toISOString())}`;
     const created = await this.db('conversations').insert({
       creator_id: req.user.id,
       log: JSON.stringify([]),
@@ -96,7 +98,7 @@ module.exports = async function (req, res, next) {
     }).catch((exception) => {
       console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Created text request:', request);
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Handled text request:', request);
       // TODO: emit message
 
       if (!request || !request.content) {

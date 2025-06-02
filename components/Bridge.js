@@ -3,7 +3,6 @@
 // Dependencies
 const React = require('react');
 const WebSocket = require('isomorphic-ws');
-const Key = require('@fabric/core/types/key');
 
 // Semantic
 const {
@@ -12,7 +11,7 @@ const {
 
 // Fabric Types
 const Message = require('@fabric/core/types/message');
-// const Key = require('@fabric/core/types/key');
+const Key = require('@fabric/core/types/key');
 
 /**
  * Manages a WebSocket connection to a remote server.
@@ -351,6 +350,9 @@ class Bridge extends React.Component {
       switch (message.type) {
         default:
           console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+          break;
+        case 'JSONCall':
+          console.debug('[BRIDGE]', 'Received JSONCall:', message.body);
           break;
         case 'PATCH':
           // Handle state updates
