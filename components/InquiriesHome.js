@@ -111,7 +111,7 @@ class InquiriesHome extends React.Component {
       <sensemaker-inquiries>
         <fabric-component className="ui primary action fluid container">
           <HeaderBar showBrand={false} showButtons={false} />
-          <Grid centered width='100%' style={{ marginTop: '2em' }}>
+          <Grid centered width='100%' style={{ marginTop: '2em', padding: '1em' }}>
             <Grid.Column mobile={16} tablet={8} computer={8}>
               <Card fluid style={{ textAlign: 'left' }}>
                 <Card.Content>

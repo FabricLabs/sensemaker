@@ -957,9 +957,19 @@ class Sensemaker extends Hub {
         }
       }
 
+      let contextString = '';
+
       if (request.context) {
         const localContext = { ...request.context, created: created, owner: this.id };
-        const contextCall = new Actor(localContext);
+        contextString = JSON.stringify(localContext);
+        const contextBlob = JSON.stringify(localContext, '  ', null);
+        /* messages.unshift({
+          role: 'user',
+          content: 'The context for our conversation is contained in the following object:\n\n' +
+            '```js\n' +
+            contextBlob + '\n' +
+            '```'
+        }); */
 
         /* messages.unshift({
           role: 'tool',
@@ -1110,9 +1120,16 @@ class Sensemaker extends Hub {
           return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content }
         });
 
+        for (let i = 0; i < settled.length; i++) {
+          const response = settled[i];
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
+          messages.push({ role: 'assistant', content: response.content });
+        }
+
         this.sensemaker.query({
           prompt: prompt,
-          query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`,
+          messages: messages,
+          query: `${request.query}`,
           tools: request.tools
         }).then(async (summary) => {
           // Update database with completed response
