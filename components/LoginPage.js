@@ -20,7 +20,7 @@ class LoginPage extends React.Component {
       <sensemaker-login-page class="fade-in">
         <fabric-component class="ui primary action fluid container">
           <HeaderBar showBrand={false} showButtons={false} />
-          <Grid centered width="100%">
+          <Grid centered width="100%" style={{ padding: '1em' }}>
             <Grid.Column mobile={16} tablet={8} computer={8}>
               <Card fluid>
                 <Card.Content>

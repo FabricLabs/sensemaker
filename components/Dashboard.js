@@ -178,7 +178,6 @@ class Dashboard extends React.Component {
     // $('.ui.sidebar').sidebar();
 
     this.props.fetchConversations();
-    this.props.fetchHelpConversations();
 
     // Simulate a loading delay
     setTimeout(() => {
