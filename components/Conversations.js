@@ -1,6 +1,7 @@
 'use strict';
 
 const {
+  ENABLE_CONTACTS,
   ENABLE_FABRIC
 } = require('../constants');
 
@@ -21,7 +22,8 @@ const {
   Form,
   Search,
   Modal,
-  Dropdown
+  Dropdown,
+  Popup
 } = require('semantic-ui-react');
 
 // Components
@@ -280,29 +282,29 @@ class Conversations extends React.Component {
               `Tracking ${conversations.length} conversations.`
             }
           </p>
-          <Divider />
-          <div className='desktop-only'>
-            <h3>Contacts</h3>
-            <Card.Group>
-              <Card as={Link} to={`/users/sensemaker` + ''}>
-                <Card.Content>
-                  <Card.Header>sensemaker</Card.Header>
-                  <Card.Meta>Joined in 2021</Card.Meta>
-                  <Card.Description></Card.Description>
-                </Card.Content>
-              </Card>
-              {users && users.users.slice(0, 2).map(user => {
-                <Card key={user.id} as={Link} to={`/users/${user.username}`}>
+          {ENABLE_CONTACTS && (
+            <div className='desktop-only'>
+              <h3>Contacts</h3>
+              <Card.Group>
+                <Card as={Link} to={`/users/sensemaker` + ''}>
                   <Card.Content>
-                    <Card.Header>{user.username}</Card.Header>
-                    <Card.Meta>Joined in {new Date(user.created_at).getFullYear()}</Card.Meta>
+                    <Card.Header>sensemaker</Card.Header>
+                    <Card.Meta>Joined in 2021</Card.Meta>
                     <Card.Description></Card.Description>
                   </Card.Content>
                 </Card>
-              })}
-            </Card.Group>
-          </div>
-          <Divider />
+                {users && users.users.slice(0, 2).map(user => {
+                  <Card key={user.id} as={Link} to={`/users/${user.username}`}>
+                    <Card.Content>
+                      <Card.Header>{user.username}</Card.Header>
+                      <Card.Meta>Joined in {new Date(user.created_at).getFullYear()}</Card.Meta>
+                      <Card.Description></Card.Description>
+                    </Card.Content>
+                  </Card>
+                })}
+              </Card.Group>
+            </div>
+          )}
           {/* <div className='right floated'>
             <Button.Group>
               <Button><Icon name='asterisk' /> All</Button>
@@ -368,7 +370,14 @@ class Conversations extends React.Component {
                       ) : (
                         <Card.Header>
                           <Link to={'/conversations/' + conversation.slug} className='ui right floated icon blue button'>Resume <Icon name='right chevron' /></Link>
-                          <Link to={'/conversations/' + conversation.slug} as='h4' title={conversation.summary} onClick={() => this.props.resetChat()}>{conversation.title}</Link>
+                          <Popup
+                            content={conversation.summary || 'No summary available'}
+                            trigger={
+                              <Link to={'/conversations/' + conversation.slug} as='h4' onClick={() => this.props.resetChat()}>{conversation.title}</Link>
+                            }
+                            position='top left'
+                            hoverable
+                          />
                           <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                         </Card.Header>
                       )}

@@ -122,15 +122,6 @@ class DocumentHome extends React.Component {
             </div>
           </fabric-search>
           <List as={Card.Group} doubling loading={loading} style={{ marginTop: '1em', marginBottom: '1em' }}>
-            {displayDocuments && displayDocuments.documents && displayDocuments.documents.length === 0 && (
-              <List.Item as={Card} key='create-new-document' onClick={this.initiateDocumentCreation} style={{ cursor: 'pointer', background: '#f9f9f9', minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Card.Content textAlign='center'>
-                  <Icon name='add circle' size='huge' color='green' />
-                  <Header as='h3' color='green' style={{ marginTop: '0.5em' }}>Create New Document</Header>
-                  <p>Start a new document from scratch</p>
-                </Card.Content>
-              </List.Item>
-            )}
             {(searching || documents.loading) ? (
               <Loader active inline='centered' /> // Display loading icon if searching is true
             ) : (displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (

@@ -23,7 +23,8 @@ const {
   Segment,
   Select,
   Table,
-  Transition
+  Transition,
+  Calendar
 } = require('semantic-ui-react');
 
 // Local Components
@@ -52,13 +53,14 @@ class TaskHomePage extends React.Component {
       archiveTransitionVisible: true,
       showVisibilityModal: false,
       taskToMakePublic: null,
-      selectedDueDate: null,
       showUncompleteConfirm: false,
       taskToUncomplete: null,
       sortBy: 'created_at',
       sortDirection: 'desc',
       showCompleted: false,
-      showSettingsModal: false
+      showIncomplete: true,
+      showSettingsModal: false,
+      sortPopupOpen: false
     };
   }
 
@@ -71,7 +73,7 @@ class TaskHomePage extends React.Component {
     const { tasks } = this.props;
   }
 
-  handleTaskCompletionChange = (e) => {
+  handleTaskCompletionChange = async (e) => {
     const taskId = e.target.id;
     const task = this.props.tasks.tasks.find(t => t.id === taskId);
 
@@ -84,9 +86,9 @@ class TaskHomePage extends React.Component {
     } else {
       // If task is not completed, complete it immediately
       const now = new Date();
-      this.props.updateTask(taskId, { completed_at: now });
+      await this.props.updateTask(taskId, { completed_at: now });
       this.setState({ taskCompletion: now });
-      this.props.fetchTasks();
+      await this.props.fetchTasks();
     }
   }
 
@@ -225,34 +227,52 @@ class TaskHomePage extends React.Component {
     // If clicking the same field, toggle direction
     if (field === this.state.sortBy) {
       this.setState(prevState => ({
-        sortDirection: prevState.sortDirection === 'asc' ? 'desc' : 'asc'
+        sortDirection: prevState.sortDirection === 'asc' ? 'desc' : 'asc',
+        sortPopupOpen: false
       }));
     } else {
       // If clicking a new field, set it with default direction
       this.setState({
         sortBy: field,
-        sortDirection: 'desc' // Default to descending for new sort fields
+        sortDirection: 'desc', // Default to descending for new sort fields
+        sortPopupOpen: false
       });
     }
   }
 
   handleShowCompletedChange = (checked) => {
-    this.setState({ showCompleted: checked });
+    this.setState({
+      showCompleted: checked,
+      sortPopupOpen: false
+    });
+  }
+
+  handleShowIncompleteChange = (checked) => {
+    this.setState({
+      showIncomplete: checked,
+      sortPopupOpen: false
+    });
   }
 
   filterTasks = (tasks) => {
-    const { sortBy, sortDirection, showCompleted } = this.state;
-    let filteredTasks = tasks;
+    const { sortBy, sortDirection, showCompleted, showIncomplete } = this.state;
+    let filteredTasks = [...tasks]; // Create a copy to avoid mutating the original
 
-    // Filter completed tasks based on showCompleted setting
-    filteredTasks = tasks.filter(task => showCompleted ? true : !task.completed_at);
+    // Filter tasks based on completion status
+    filteredTasks = filteredTasks.filter(task => {
+      if (task.completed_at) {
+        return showCompleted;
+      } else {
+        return showIncomplete;
+      }
+    });
 
-    // Apply sorting
+    // Apply sorting based on user selection
     filteredTasks.sort((a, b) => {
       const multiplier = sortDirection === 'asc' ? 1 : -1;
 
       if (sortBy === 'created_at') {
-        return multiplier * (new Date(b.created_at) - new Date(a.created_at));
+        return multiplier * (new Date(a.created_at) - new Date(b.created_at));
       } else if (sortBy === 'due_date') {
         if (!a.due_date && !b.due_date) return 0;
         if (!a.due_date) return multiplier;
@@ -349,10 +369,10 @@ class TaskHomePage extends React.Component {
             </Segment>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}> 
               <Table>
-                <Table.Body animation='fade'>
+                <Table.Header animation='fade'>
                   <Table.Row className='fade-in'>
-                    <Table.Cell width={1}></Table.Cell>
-                    <Table.Cell width={12}>
+                    <Table.Cell></Table.Cell>
+                    <Table.Cell>
                       <Form fluid onSubmit={this.handleTaskSubmit} style={{ margin: 0, marginLeft: '-1em' }}>
                         <Form.Field fluid onChange={this.handleTaskInputChange} loading={this.state.loading} style={{ marginBottom: 0 }} className={`task-form ${this.state.isTaskFormFocused || this.state.taskTitle ? 'focused' : ''}`}>
                           <Input
@@ -364,41 +384,93 @@ class TaskHomePage extends React.Component {
                             onFocus={this.handleTaskFormFocus}
                             onBlur={this.handleTaskFormBlur}
                             style={{ padding: '0.5em 0' }}
+                            className="header-task-input"
                           />
                         </Form.Field>
                       </Form>
                     </Table.Cell>
-                    <Table.Cell width={3} textAlign='right'>
-                      <Button.Group basic className='desktop-only action-buttons'>
-                        <Button primary icon onClick={this.handleTaskSubmit} disabled={!this.state.taskTitle}>
-                          <Icon name='plus' />
-                        </Button>
+                    <Table.Cell textAlign='right'>
+                      <Button.Group basic className='desktop-only sort-buttons'>
+                        <Popup
+                          trigger={
+                            <Button icon>
+                              <Icon name={this.state.sortDirection === 'asc' ? 'sort amount up' : 'sort amount down'} />
+                            </Button>
+                          }
+                          on='click'
+                          position='bottom right'
+                          wide
+                          open={this.state.sortPopupOpen}
+                          onOpen={() => this.setState({ sortPopupOpen: true })}
+                          onClose={() => this.setState({ sortPopupOpen: false })}
+                          content={
+                            <div style={{ padding: '0.5em' }}>
+                              <div style={{ marginBottom: '1em' }}>
+                                <div style={{ display: 'flex', gap: '0.5em' }}>
+                                  <Select
+                                    fluid
+                                    value={this.state.sortBy}
+                                    onChange={(e, data) => {
+                                      this.handleSortChange(data.value);
+                                    }}
+                                    options={[
+                                      { key: 'created_at', text: 'Creation Date', value: 'created_at' },
+                                      { key: 'due_date', text: 'Due Date', value: 'due_date' },
+                                      { key: 'completed_at', text: 'Completion Date', value: 'completed_at' }
+                                    ]}
+                                  />
+                                  <Button
+                                    icon
+                                    onClick={() => {
+                                      this.handleSortChange(this.state.sortBy);
+                                    }}
+                                  >
+                                    <Icon name={this.state.sortDirection === 'asc' ? 'sort amount up' : 'sort amount down'} />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div style={{ marginBottom: '0.5em' }}>
+                                <Form.Checkbox
+                                  label="Show incomplete tasks"
+                                  checked={this.state.showIncomplete}
+                                  onChange={(e, data) => {
+                                    this.handleShowIncompleteChange(data.checked);
+                                  }}
+                                />
+                              </div>
+                              <div>
+                                <Form.Checkbox
+                                  label="Show completed tasks"
+                                  checked={this.state.showCompleted}
+                                  onChange={(e, data) => {
+                                    this.handleShowCompletedChange(data.checked);
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          }
+                        />
                       </Button.Group>
                     </Table.Cell>
                   </Table.Row>
+                </Table.Header>
+                <Table.Body animation='fade'>
                   {filteredTasks.map((x) => {
                     return (
                       <Table.Row className='fade-in' key={x.id}>
-                        <Table.Cell width={1} collapsing>
+                        <Table.Cell>
                           <Button.Group basic className='desktop-only action-buttons' style={{ marginLeft: '3px' }}>
-                            <Popup
-                              content={x.completed_at ? 'Mark as incomplete' : 'Mark as complete'}
-                              trigger={
-                                <Button
-                                  icon
-                                  onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
-                                  color={x.completed_at ? 'green' : undefined}
-                                  className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
-                                >
-                                  <Icon name='check' />
-                                </Button>
-                              }
-                              position='top center'
-                              size='tiny'
-                            />
+                            <Button
+                              icon
+                              onClick={() => this.handleTaskCompletionChange({ target: { id: x.id } })}
+                              color={x.completed_at ? 'green' : undefined}
+                              className={`complete-button ${x.completed_at ? 'completed' : 'incomplete'}`}
+                            >
+                              <Icon name='check' />
+                            </Button>
                           </Button.Group>
                         </Table.Cell>
-                        <Table.Cell width={12}>
+                        <Table.Cell>
                           {this.state.editingTaskId === x.id ? (
                             <Input
                               fluid
@@ -420,12 +492,50 @@ class TaskHomePage extends React.Component {
                               }}
                               className="task-title-container"
                             >
-                              <Link to={`/tasks/${x.id}`}>{x.title}</Link>
+                              <Popup
+                                trigger={
+                                  <Link to={`/tasks/${x.id}`}>{x.title}</Link>
+                                }
+                                hoverable
+                                position='bottom left'
+                                wide
+                              >
+                                <Popup.Content>
+                                  <div style={{ padding: '0.5em' }}>
+                                    <div style={{ marginBottom: '0.5em' }}>
+                                      <strong>Created:</strong> {toRelativeTime(x.created_at)}
+                                    </div>
+                                    <div style={{ marginBottom: '0.5em' }}>
+                                      {!x.completed_at ? (
+                                        <div
+                                          style={{ cursor: 'pointer' }}
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            this.props.navigate(`/tasks/${x.id}?edit=due_date`);
+                                          }}
+                                        >
+                                          <strong>Due Date:</strong>{' '}
+                                          {x.due_date ? toRelativeTime(x.due_date) : 'Click to set'}
+                                        </div>
+                                      ) : (
+                                        <div>
+                                          <strong>Due Date:</strong>{' '}
+                                          <abbr title={x.due_date}>{x.due_date ? toRelativeTime(x.due_date) : 'Not set'}</abbr>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div style={{ marginBottom: '0.5em' }}>
+                                      <strong>Status:</strong> {x.completed_at ? 'Completed' : 'In Progress'}
+                                    </div>
+                                  </div>
+                                </Popup.Content>
+                              </Popup>
                               {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
                             </div>
                           )}
                         </Table.Cell>
-                        <Table.Cell width={3} collapsing textAlign='right'>
+                        <Table.Cell textAlign='right'>
                           <Button.Group basic className='desktop-only action-buttons'>
                             {(x.can_edit) ? (
                               <Popup
@@ -594,6 +704,12 @@ class TaskHomePage extends React.Component {
         />
 
         <style>{`
+          @media (max-width: 960px) {
+            .desktop-only {
+              display: none !important;
+            }
+          }
+
           .task-title-container:hover .edit-icon {
             opacity: 1 !important;
             transition: opacity 0.2s ease;
@@ -651,14 +767,30 @@ class TaskHomePage extends React.Component {
           }
 
           /* Add proper spacing for table cells */
-          .ui.table td {
+          .ui.table thead td {
+            padding: 0.8em 1em !important;
+          }
+
+          /* Add proper spacing for table cells */
+          .ui.table tbody td {
             padding: 0.8em 0.5em !important;
             vertical-align: middle;
+            font-weight: bold;
           }
 
           /* Add proper spacing for the task title cell */
           .ui.table td:nth-child(2) {
             padding-left: 1em !important;
+          }
+
+          /* Add task input styling */
+          .header-task-input input {
+            border: 1px solid transparent !important;
+            transition: border-color 0.2s ease;
+          }
+
+          .header-task-input input:focus {
+            border: 1px solid rgba(34, 36, 38, 0.15) !important;
           }
         `}</style>
       </sensemaker-task-home>

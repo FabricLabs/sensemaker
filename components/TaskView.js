@@ -36,7 +36,10 @@ class TaskPage extends React.Component {
       editedTitle: '',
       isTitleHovered: false,
       isDescriptionHovered: false,
-      action: null
+      action: null,
+      isEditingDueDate: false,
+      selectedDueDate: null,
+      selectedDueTime: null
     };
 
     this.handleDescriptionEdit = this.handleDescriptionEdit.bind(this);
@@ -47,6 +50,8 @@ class TaskPage extends React.Component {
     this.toggleTitleEdit = this.toggleTitleEdit.bind(this);
     this.handleTitleHover = this.handleTitleHover.bind(this);
     this.handleDescriptionHover = this.handleDescriptionHover.bind(this);
+    this.handleDueDateSelect = this.handleDueDateSelect.bind(this);
+    this.handleDueDateSubmit = this.handleDueDateSubmit.bind(this);
 
     return this;
   }
@@ -55,10 +60,28 @@ class TaskPage extends React.Component {
     console.debug('[SENSEMAKER:TASK]', 'TaskPage mounted!');
     this.props.fetchResource();
 
-    // Check for action parameter
+    // Check for action and edit parameters
     const searchParams = new URLSearchParams(window.location.search);
     const action = searchParams.get('action');
-    this.setState({ action });
+    const edit = searchParams.get('edit');
+
+    // Set default date to tomorrow at 3 PM
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 15, 0, 0, 0);
+
+    let dueDate;
+    if (this.props.api?.resource?.due_date) {
+      dueDate = new Date(this.props.api.resource.due_date);
+    } else {
+      dueDate = tomorrow;
+    }
+
+    this.setState({
+      action,
+      isEditingDueDate: edit === 'due_date',
+      selectedDueDate: dueDate.toISOString().split('T')[0],
+      selectedDueTime: dueDate.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5)
+    });
   }
 
   handleDescriptionEdit (e) {
@@ -111,6 +134,60 @@ class TaskPage extends React.Component {
 
   handleDescriptionHover (isHovered) {
     this.setState({ isDescriptionHovered: isHovered });
+  }
+
+  async handleDueDateSelect (event) {
+    const { name, value } = event.target;
+    this.setState({ [name]: value });
+  }
+
+  async handleDueDateSubmit () {
+    const { selectedDueDate, selectedDueTime } = this.state;
+
+    // Create date in local timezone
+    const [year, month, day] = selectedDueDate.split('-').map(Number);
+    const [hours, minutes] = selectedDueTime.split(':').map(Number);
+    const combinedDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+    this.setState({ loading: true });
+    await this.props.updateTask(this.props.api.resource.id, { due_date: combinedDateTime });
+    await this.props.fetchResource();
+    this.setState({
+      isEditingDueDate: false,
+      loading: false,
+      selectedDueDate: null,
+      selectedDueTime: null
+    });
+
+    // Remove the edit parameter from URL
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.delete('edit');
+    window.history.replaceState({}, '', `${window.location.pathname}${searchParams.toString() ? '?' + searchParams.toString() : ''}`);
+  }
+
+  formatDate (dateStr) {
+    if (!dateStr) return '';
+
+    const date = new Date(dateStr);
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+    const timeOptions = { hour: 'numeric', minute: 'numeric' };
+    const formattedDate = date.toLocaleDateString('en-US', dateOptions);
+    const formattedTime = date.toLocaleTimeString('en-US', timeOptions);
+    const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const isWithinDay = dateOnly.getTime() === tomorrowOnly.getTime();
+
+    if (isWithinDay) {
+      return (
+        <span style={{ color: 'red' }}>
+          {formattedDate} at {formattedTime} (tomorrow!)
+        </span>
+      );
+    }
+
+    return `${formattedDate} at ${formattedTime}`;
   }
 
   render () {
@@ -198,7 +275,64 @@ class TaskPage extends React.Component {
             )}
           </Header>
           {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
-          {(api?.resource?.due_date) ? <p>Due <abbr title={api?.resource?.due_date}>{toRelativeTime(api?.resource?.due_date)}</abbr></p> : null}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1em' }}>
+            <p style={{ margin: 0 }}>
+              Due: {api?.resource?.due_date ? (
+                this.formatDate(api.resource.due_date)
+              ) : (
+                <span style={{ color: '#999', fontStyle: 'italic' }}>Not set</span>
+              )}
+            </p>
+            {!api?.resource?.completed_at && (
+              <Button
+                icon
+                basic
+                size='tiny'
+                style={{ marginLeft: '0.5em' }}
+                onClick={() => this.setState({ isEditingDueDate: true })}
+              >
+                <Icon name='calendar' />
+              </Button>
+            )}
+          </div>
+          {this.state.isEditingDueDate && (
+            <div style={{ marginBottom: '1em' }}>
+              <div style={{ display: 'flex', gap: '1em', alignItems: 'center' }}>
+                <input
+                  type="date"
+                  name="selectedDueDate"
+                  value={this.state.selectedDueDate}
+                  onChange={this.handleDueDateSelect}
+                  style={{
+                    padding: '0.5em',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    fontSize: '1em'
+                  }}
+                />
+                <input
+                  type="time"
+                  name="selectedDueTime"
+                  value={this.state.selectedDueTime}
+                  onChange={this.handleDueDateSelect}
+                  style={{
+                    padding: '0.5em',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                    fontSize: '1em'
+                  }}
+                />
+                <Button
+                  primary
+                  size='tiny'
+                  onClick={() => this.handleDueDateSubmit()}
+                  loading={this.state.loading}
+                >
+                  Set Due Date
+                </Button>
+              </div>
+            </div>
+          )}
           <Divider />
           <Header as='h2'
             style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}

@@ -45,9 +45,7 @@ const Actor = require('@fabric/core/types/actor');
 // Sensemaker Types
 const Agent = require('./agent');
 
-/**
- * Simple in-memory vector store for testing and development.
- */
+// Simple in-memory vector store for testing purposes
 class InMemoryVectorStore {
   constructor() {
     this.documents = [];

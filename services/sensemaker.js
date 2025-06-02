@@ -1000,16 +1000,63 @@ class Sensemaker extends Hub {
         prompt = this.settings.prompt;
       }
 
+      if (request.user) {
+        const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at')
+          .where({ creator_id: request.user.id })
+          .orderBy('created_at', 'desc')
+          .limit(5);
+
+        if (recentConversations.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My recent conversations:\n\n` + recentConversations.map((conv) => {
+              return `- [ ] ${conv.title} (${conv.created_at})`;
+            }).join('\n')
+          });
+        }
+
+        const oldestTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+          .where({ creator: request.user.id })
+          .whereNull('completed_at')
+          .orderBy('created_at', 'asc')
+          .limit(5);
+
+        if (oldestTasks.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My oldest tasks:\n\n` + oldestTasks.map((task) => {
+              return `- [ ] ${task.title} (created: ${task.created_at})`;
+            }).join('\n')
+          });
+        }
+
+        const urgentTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+          .where({ creator: request.user.id })
+          .whereNull('completed_at')
+          .whereNotNull('due_date')
+          .orderBy('due_date', 'asc')
+          .limit(5);
+
+        if (urgentTasks.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My urgent tasks:\n\n` + urgentTasks.map((task) => {
+              return `- [ ] ${task.title} (due: ${task.due_date})`;
+            }).join('\n')
+          });
+        }
+      }
+
       // Prompt
       messages.unshift({
         role: 'system',
         content: prompt
       });
 
-      const forethought = {
+      /* const forethought = {
         context: request.context || {},
         requestor: requestor || {}
-      };
+      }; */
 
       const template = {
         prompt: prompt,
@@ -2006,9 +2053,7 @@ class Sensemaker extends Hub {
     });
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
-    this.http._addRoute('POST', '/invitations', ROUTES.invitations.createInvitations.bind(this) );
-
-    //this endponint resends invitations to the ones created before
+    this.http._addRoute('POST', '/invitations', ROUTES.invitations.create.bind(this) );
     this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
     this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
       // TODO: render page for accepting invitation
@@ -2017,7 +2062,7 @@ class Sensemaker extends Hub {
       // - create help conversation
     });
 
-    this.http._addRoute('GET', '/invitations', ROUTES.invitations.getInvitations.bind(this));
+    this.http._addRoute('GET', '/invitations', ROUTES.invitations.list.bind(this));
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
     //endpoint to change the status of an invitation when its accepted

@@ -22,6 +22,7 @@ const { Rating } = require('react-simple-star-rating');
 const store = require('../stores/redux');
 
 const InfoSidebarDocument = require('./InfoSidebarDocument');
+const toRelativeTime = require('../functions/toRelativeTime');
 
 class InformationSidebar extends React.Component {
   constructor (props) {
@@ -269,7 +270,8 @@ class InformationSidebar extends React.Component {
                   </Form.Field>
                 </div>) : (
                   <div className='info-sidebar'>
-                    <Header inverted>Message Detail</Header>
+                    <Header inverted>Information</Header>
+                    <p>This message was written <abbr title={this.props.message?.created_at}>{toRelativeTime(this.props.message?.created_at || '')}</abbr> by {this.props.message?.author || 'Unknown'}.</p>
                     {
                       // TODO: implement message->data API
                       // All data returned by the search against the message ID (inline = true)
