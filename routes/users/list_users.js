@@ -20,7 +20,6 @@ module.exports = function (req, res, next) {
           'display_name',
           'first_name',
           'last_name',
-          'firm_name',
           'is_beta',
           'created_at',
           'updated_at'
