@@ -17,7 +17,7 @@ const {
 } = require('semantic-ui-react');
 
 class SignUpForm extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
 
     this.state = {
@@ -44,7 +44,6 @@ class SignUpForm extends React.Component {
   componentDidMount = async () => {
     //NOTE: I DON'T LIKE THIS TITLE SETTING
     document.title = "sensemaker · digital intelligence";
-
     const { invitationToken, invitation, invitationErro, adminPanel } = this.props;
 
     if (!adminPanel) {
@@ -54,12 +53,16 @@ class SignUpForm extends React.Component {
       } catch (error) {
         this.setState({ loading: false, tokenError: true, errorContent: 'Internal server error, please try again later.' });
       }
-    } else {this.setState({loading :false, tokenError:false})}
-
+    } else {
+      this.setState({
+        loading: false,
+        tokenError: false
+      });
+    }
   };
 
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     const {adminPanel} = this.props
     if (!adminPanel) {
       //it goes here when the invitation reducer changes
@@ -88,8 +91,9 @@ class SignUpForm extends React.Component {
       if (auth.emailAvailable && this.state.email) {
         this.setState({ isEmailValid: true, emailError: '' });
       } else {
-        this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose a differnt one.' });
+        this.setState({ isEmailValid: false, emailError: 'Email already registered, please choose another.' });
       }
+
       //checks if the state.registering is true (because we pressed submit and started handleSubmit)
       //and auth.registering is false when the reducer finished processing actions
       if (this.state.registering && !auth.registering) {
@@ -98,6 +102,10 @@ class SignUpForm extends React.Component {
           this.setState({ registerSuccess: true, registerError: false, errorContent: '' });
           if (!adminPanel) {
             this.props.acceptInvitation(this.props.invitationToken);
+            // Initiate login with the newly registered credentials after a short delay
+            setTimeout(() => {
+              this.props.login(this.state.username, this.state.password);
+            }, 1500);
           }
         } else {
           this.setState({ registerSuccess: false, registerError: true, errorContent: auth.error });
@@ -173,7 +181,6 @@ class SignUpForm extends React.Component {
     const hasEightCharacters = password.length >= 8;
     const hasCapitalLetter = /[A-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-
     return hasEightCharacters && hasCapitalLetter && hasNumber;
   };
 
@@ -181,8 +188,7 @@ class SignUpForm extends React.Component {
     return (this.state.password && this.state.confirmedPassword && this.state.password === this.state.confirmedPassword);
   }
 
-  render() {
-
+  render () {
     const {
       password,
       confirmedPassword,
@@ -230,138 +236,104 @@ class SignUpForm extends React.Component {
 
     return (
       <div className={'fade-in signup-form'}>
-        <Segment>
-          <Form id='signup-form' loading={loading} centered style={{width:'500px'}}>
-            {(!tokenError && !registerSuccess) && (
-              <section>
-                {
-                  !this.props.adminPanel &&
-                  <>
-                    <Header as='h3' textAlign="center">Sign Up</Header>
-                    <p>Complete your registration to access Sensemaker.</p>
-                  </>
-                }
-                <Form.Group className='signup-form-group'>
-                  <Form.Input
-                    size='small'
-                    label='First name'
-                    type='text'
-                    name='firstName'
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={firstName}
-                    required
-                  />
-                  <Form.Input
-                    size='small'
-                    label='Last name'
-                    type='text'
-                    name='lastName'
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={lastName}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className='signup-form-group'>
-                  <Form.Input
-                    size='small'
-                    label='Username'
-                    type='text'
-                    name='username'
-                    error={userErrorMsg}
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={username}
-                    required
-                  />
-                  <Form.Input
-                    size='small'
-                    label='Email'
-                    type='email'
-                    name='email'
-                    error={emailError ? emailErrorMsg : null}
-                    onChange={this.handleInputChange}
-                    autoComplete="off"
-                    value={email}
-                    required
-                  />
-                </Form.Group>
-
-                <p>Password must have at least 8 characters, a capital letter and a number.</p>
-                <Form.Group className='signup-form-group'>
-                  <Form.Input
-                    size='small'
-                    label='Password'
-                    type='password'
-                    name='password'
-                    error={passwordErrorMessage}
-                    onChange={this.handleInputChange}
-                    autoComplete="new-password"
-                    value={password}
-                    required
-                  />
-                  <Form.Input
-                    size='small'
-                    label='Confirm Password'
-                    type='password'
-                    name='confirmedPassword'
-                    error={passwordNotMatchErrorMsg}
-                    onChange={this.handleInputChange}
-                    autoComplete="new-password"
-                    value={confirmedPassword}
-                    required
-                  />
-                </Form.Group>
-                {(registerError) && (
-                  <Message negative>
-                    <p>{errorContent}</p>
-                  </Message>
-                )}
-                <Button
-                  content='Submit'
-                  icon='checkmark'
-                  loading={registering}
-                  onClick={this.handleSubmit}
-                  fluid
-                  primary
-                  disabled={
-                    passwordError || !passwordMatch ||
-                    !isNewUserValid || usernameError ||
-                    !isEmailValid || emailError
-                  }//the button submit is disabled until all requiriments and validations are correct
-                />
-              </section>
-            )}
-            {(tokenError) && (
-              <Message negative>
-                <Message.Header style={{ marginBottom: '1rem' }}>Something went wrong.</Message.Header>
-                <p>{errorContent}</p>
-              </Message>
-            )}
-            {registerSuccess && !this.props.adminPanel ? (
-              <Message positive centered>
-                <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
-                <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
-                <p>Please log in to access your account and start utilizing our services.</p>
-                <div style={{ margintop: '1.5rem', textAlign: 'center' }}>
-                  <Button primary href="/sessions">Log In</Button>
-                </div>
-              </Message>
-            ) : registerSuccess && this.props.adminPanel && (
-              <Message positive centered>
-                <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
-                <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
-              </Message>
-            )}
-          </Form>
-        </Segment>
+        <Form id='signup-form' loading={loading}>
+          {(!tokenError && !registerSuccess) && (
+            <section>
+              {!this.props.adminPanel &&
+                <>
+                  <Header as='h3'>Sign Up</Header>
+                  <p>Complete the form to register with this node.</p>
+                </>
+              }
+              <Form.Input
+                size='small'
+                label='Username'
+                type='text'
+                name='username'
+                error={userErrorMsg}
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                value={username}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Email'
+                type='email'
+                name='email'
+                error={emailError ? emailErrorMsg : null}
+                onChange={this.handleInputChange}
+                autoComplete="off"
+                value={email}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Password'
+                type='password'
+                name='password'
+                error={passwordErrorMessage}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                value={password}
+                required
+              />
+              <Form.Input
+                size='small'
+                label='Confirm Password'
+                type='password'
+                name='confirmedPassword'
+                error={passwordNotMatchErrorMsg}
+                onChange={this.handleInputChange}
+                autoComplete="new-password"
+                value={confirmedPassword}
+                required
+              />
+              {(registerError) && (
+                <Message negative>
+                  <p>{errorContent}</p>
+                </Message>
+              )}
+              <Button
+                content='Submit'
+                icon='checkmark'
+                loading={registering}
+                onClick={this.handleSubmit}
+                fluid
+                primary
+                disabled={
+                  passwordError || !passwordMatch ||
+                  !isNewUserValid || usernameError ||
+                  !isEmailValid || emailError
+                }//the button submit is disabled until all requiriments and validations are correct
+              />
+            </section>
+          )}
+          {(tokenError) && (
+            <Message negative>
+              <Message.Header style={{ marginBottom: '1rem' }}>Something went wrong.</Message.Header>
+              <p>{errorContent}</p>
+            </Message>
+          )}
+          {registerSuccess && !this.props.adminPanel ? (
+            <Message positive centered>
+              <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
+              <p>Your account has been successfully created.</p>
+              <p>Logging you in...</p>
+            </Message>
+          ) : registerSuccess && this.props.adminPanel && (
+            <Message positive centered>
+              <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
+              <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
+            </Message>
+          )}
+        </Form>
       </div>
     );
   }
 }
 
-function SignUp(props) {
+function SignUp (props) {
   const { invitationToken } = useParams();
   return <SignUpForm invitationToken={invitationToken} {...props} />;
 }

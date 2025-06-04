@@ -14,12 +14,6 @@ module.exports = async function (req, res, next) {
       return res.status(409).json({ message: "You're already on the waitlist!" });
     }
 
-    //checks if there is an user with that email already
-    const existingEmailUser = await this.db('users').where('email', email).first();
-    if (existingEmailUser) {
-      return res.status(409).json({ message: "This email is already registered for an User, please use another one." });
-    }
-
     // Insert the new user into the database
     const newInquiry = await this.db('inquiries').insert({
       email: email

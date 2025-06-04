@@ -20,7 +20,7 @@ const { createClient, createCluster } = require('redis');
 const { Ollama } = require('@langchain/community/llms/ollama');
 
 // Text Splitter
-const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
+const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
 
 // Loaders
 const { DirectoryLoader } = require('langchain/document_loaders/fs/directory');
@@ -32,27 +32,55 @@ const { TextLoader } = require('langchain/document_loaders/fs/text');
 
 // Langchains
 const { RetrievalQAChain } = require('langchain/chains');
+const { createRetrievalChain } = require('langchain/chains/retrieval');
 // const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { RedisVectorStore } = require('@langchain/redis');
 const { OllamaEmbeddings } = require('@langchain/ollama');
 const { Document } = require('@langchain/core/documents');
+const { VectorStore } = require('@langchain/core/vectorstores');
 
 // Fabric Types
 const Actor = require('@fabric/core/types/actor');
-const Service = require('@fabric/core/types/service');
 
 // Sensemaker Types
 const Agent = require('./agent');
 
+// Simple in-memory vector store for testing purposes
+class InMemoryVectorStore {
+  constructor() {
+    this.documents = [];
+    this.embeddings = [];
+  }
+
+  async addDocuments (docs) {
+    this.documents = this.documents.concat(docs);
+    return true;
+  }
+
+  async similaritySearch (query, k = 4, filter = null) {
+    // For testing, just return all documents that match the filter
+    let results = this.documents;
+    if (filter) {
+      results = results.filter(doc => {
+        for (const [key, value] of Object.entries(filter)) {
+          if (doc.metadata[key] !== value) return false;
+        }
+        return true;
+      });
+    }
+    return results.slice(0, k);
+  }
+}
+
 /**
  * Implements document ingestion.
  */
-class Trainer extends Service {
+class Trainer extends Agent {
   constructor (settings = {}) {
     super(settings);
 
     this.settings = merge({
-      name: 'TRAINED',
+      name: 'TRAINER',
       debug: true,
       model: 'llama2',
       ollama: {
@@ -70,7 +98,7 @@ class Trainer extends Service {
       }
     }, settings);
 
-    this.agent = new Agent();
+    this.agent = new Agent({ key: this.settings.key });
     this.embeddings = null;
     this.ollama = new Ollama(this.settings.ollama);
     this.langchain = null;
@@ -90,60 +118,14 @@ class Trainer extends Service {
     this.loader = new DirectoryLoader(this.settings.store.path, this.loaders);
 
     // Redis Client
-    this.redis = createClient({
-      username: this.settings.redis.username,
-      password: this.settings.redis.password,
-      socket: {
-        host: this.settings.redis.host,
-        port: this.settings.redis.port,
-        enable_offline_queue: false,
-        timeout: 5000, // Add this line to set a timeout of 5000 ms
-        retry_strategy: function (options) { // And this function to control the retry strategy
-          if (options.error && options.error.code === 'ECONNREFUSED') {
-            // End reconnecting on a specific error and flush all commands with
-            // a individual error
-            return new Error('The server refused the connection');
-          }
-          if (options.total_retry_time > 1000 * 60 * 60) {
-            // End reconnecting after a specific timeout and flush all commands
-            // with a individual error
-            return new Error('Retry time exhausted');
-          }
-          if (options.attempt > 10) {
-            // End reconnecting with built in error
-            return undefined;
-          }
-          // reconnect after
-          return Math.min(options.attempt * 100, 3000);
-        }
-      }
-    });
-
-    // Cluster
-    /* this.redis = createCluster({
-      rootNodes: [
-        {
-          host: this.settings.redis.host,
-          port: this.settings.redis.port
-        }
-      ],
-      defaults: {
-        password: this.settings.redis.password
-      }
-    }); */
-
-    // Events
-    /*
-     * In Node Redis, if you handle add the on('error') stuff it will queue up your commands and then in the background try to reconnect. When it does reconnect, it will then run the queued commands. [7:30 PM] It actually follows a retry_strategy to attempt to reconnect. You can read all about it on the old README at https://www.npmjs.com/package/redis/v/3.1.2
-     * You need to set the enable_offline_queue option to false to turn off this queueing and get an error.
-     */
-    // this.redis.on('error', (err) => console.error('Redis Client Error', err));
+    this.redis = null;
 
     // Splitter for large documents
     this.splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 500,
-      chunkOverlap: 20
-     });
+      chunkSize: 4096,
+      chunkOverlap: 200,
+      separators: ["\n\n", "\n", " ", ""]
+    });
 
     // Web Loader
     // this.ui = new CheerioWebBaseLoader(REFERENCE_URL);
@@ -154,6 +136,13 @@ class Trainer extends Service {
 
   attachDatabase (db) {
     this.db = db;
+  }
+
+  async ingestActor (actor) {
+    // TODO: ingest actor
+    return new Promise((resolve, reject) => {
+      resolve({});
+    });
   }
 
   /**
@@ -179,6 +168,17 @@ class Trainer extends Service {
     });
   }
 
+  async getStoreForOwner (id) {
+    const name = new Actor({ name: `sensemaker/owners/${id}` });
+    const reference = new Document({ pageContent: JSON.stringify(name.toGenericMessage()) });
+    const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings(), {
+      redisClient: this.redis,
+      indexName: `sensemaker:owners:${id}`
+    });
+
+    return embeddings;
+  }
+
   /**
    * Ingest a well-formed document.
    * @param {Object} document Well-formed document object.
@@ -186,50 +186,32 @@ class Trainer extends Service {
    * @returns {Promise} Resolves with the result of the operation.
    */
   async ingestDocument (document, type = 'text') {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
       console.debug('[TRAINER]', 'Ingesting document:', document);
-      const actor = new Actor({ content: document.content });
-      const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
-      fetch(endpoint, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          model: EMBEDDING_MODEL,
-          prompt: document.content
-        })
-      }).catch((exception) => {
-        console.error('[TRAINER]', 'Error ingesting document:', exception);
-        reject(exception);
-      }).then(async (response) => {
-        const json = await response.json();
-        if (this.settings.debug) console.debug('[TRAINER]', endpoint, 'got embedding json:', json);
-        const inserted = await this.db('embeddings').insert({
-          fabric_id: actor.id,
-          // text: document.content, // TODO: re-work storage, use document ID instead
-          content: JSON.stringify(json.embedding)
-        });
 
-        if (!inserted || !inserted.length) return reject(new Error('No embeddings inserted.'));
-        if (this.settings.debug) console.debug('[TRAINER]', 'Inserted:', inserted);
+      try {
+        // Split document into chunks
+        const doc = new Document({ pageContent: document.content, metadata: document.metadata });
+        const chunks = await this.splitter.splitDocuments([doc]);
+        console.debug('[TRAINER]', `Split document into ${chunks.length} chunks`);
 
-        // Old Embeddings (specific to Langchain)
-        const element = new Document({ pageContent: document.content, metadata: document.metadata });
-        this.embeddings.addDocuments([element]).catch(reject).then(() => {
-          // TODO: check for `embedding` and fail if not present
-          const object = { type: EMBEDDING_MODEL, content: json.embedding };
-          // TODO: receive event in core service and correctly create blob, confirm ID matches
-          this.emit('TrainerDocument', {
-            id: actor.id,
-            metadata: document.metadata,
-            content: document.content
-          });
-          resolve({ type: 'Embedding', content: object });
-        });
-      });
+        let embeddings = null;
+
+        // Segment embeddings by user
+        if (document.metadata.owner) {
+          embeddings = await this.getStoreForOwner(document.metadata.owner);
+        } else {
+          embeddings = this.embeddings;
+        }
+
+        await embeddings.addDocuments(chunks);
+        resolve({ type: 'EmbeddingBatch', content: [] });
+      } catch (error) {
+        console.error('[TRAINER]', 'Error ingesting document:', error);
+        reject(error);
+      }
     });
   }
 
@@ -242,21 +224,42 @@ class Trainer extends Service {
           this.embeddings.addDocuments(chunks).then(() => {
             resolve({ type: 'IngestedURL', content: chunks });
           });
+
         });
       }); */
     });
   }
 
-  async query (request) {
+  async query (request, timeoutMs = 30000) {
     return new Promise(async (resolve, reject) => {
-      /* const embedded = await this.embeddings.embedQuery(request.query);
-      console.debug('Embedded query:', embedded); */
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
-      // TODO: replace with `createRetrievalChain`
-      RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
-        messages: request.messages,
-        query: request.query
-      }).catch(reject).then((answer) => {
+
+      // Create timeout handler
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Query timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+
+      try {
+        let store = null;
+        if (request.user) {
+          const messages = (request.messages) ? request.messages.map((m) => {
+            return new Document({ pageContent: m.content });
+          }) : [];
+
+          // TODO: change to ingestDocument call
+          store = await this.getStoreForOwner(request.user.id);
+          store.addDocuments(messages);
+        } else {
+          store = this.embeddings;
+        }
+
+        const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
+          messages: request.messages,
+          query: request.query
+        });
+
+        clearTimeout(timeoutId);
+
         if (this.settings.debug) console.debug('[TRAINER]', 'Answer:', answer);
         if (!answer || !answer.text) return reject(new Error('No answer provided.'));
         resolve({
@@ -265,7 +268,10 @@ class Trainer extends Service {
           messages: request.messages,
           query: request.query
         });
-      });
+      } catch (error) {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
     });
   }
 
@@ -276,24 +282,41 @@ class Trainer extends Service {
    */
   async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
-      console.debug('[TRAINER]', 'searching:', request);
-      let filter = null;
+      Promise.all([
+        this.searchGlobal(request, limit),
+        this.searchByOwner(request, limit)
+      ]).then((results) => {
+        const globalResults = results[0].content || [];
+        const ownerResults = results[1].content || [];
+
+        // Combine results, ensuring unique IDs
+        const combinedResults = {};
+        [...globalResults, ...ownerResults].forEach((x) => {
+          if (!combinedResults[x.id]) {
+            combinedResults[x.id] = x;
+          }
+        });
+
+        resolve({
+          type: 'TrainerSearchResponse',
+          content: Object.values(combinedResults)
+        });
+      });
+    });
+  }
+
+  async searchGlobal (request, limit = 100) {
+    return new Promise((resolve, reject) => {
       if (!request.query) return reject(new Error('No query provided.'));
-      /* if (request.filter) {
-        for (const [key, value] of Object.entries(request.filter)) {
-          if (key === 'type') filter = x => x.metadata.type === value;
-        }
-      } */
-      filter = request.filter;
-
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
+        console.error('[TRAINER]', 'Error searching:', error);
+        reject(error);
+      }).then((results) => {
         const map = {};
-
         results.forEach((x) => {
           const actor = new Actor({ content: x.pageContent });
           map[actor.id] = { id: actor.id, content: x.pageContent };
         });
-
         resolve({
           type: 'TrainerSearchResponse',
           content: Object.values(map)
@@ -302,96 +325,162 @@ class Trainer extends Service {
     });
   }
 
-  async ingestReferences () {
-    return new Promise((resolve, reject) => {
-      fs.readFile('./contracts/terms-of-use.md', async (error, terms) => {
-        if (error) {
-          console.error('[TRAINER]', 'Error reading terms:', error);
-          return;
-        }
-
-        // Store Documents
-        // Web Application
-        // const spa = await this.ui.load();
-        // console.debug('[TRAINER]', 'SPA:', spa);
-
-        // Terms of Use
-        // const contract = new Document({ pageContent: terms.toString('utf8'), metadata: { type: 'text/markdown' } });
-        // const contractChunks = await this.splitter.splitDocuments([contract]);
-        // const chunks = await this.splitter.splitDocuments(spa);
-        // const allDocs = [contract].concat(spa, contractChunks, chunks);
-        // const allDocs = contractChunks.concat(chunks);
-
-        const stub = new Document({ pageContent: 'Hello, world!', metadata: { type: 'text/plain' } });
-        const allDocs = [ stub ];
-
-        // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
-        if (this.settings.debug) console.debug('[SENSEMAKER]', '[TRAINER]', '[GENESIS]', allDocs);
-
-        // Return the documents
-        resolve(allDocs);
+  async searchByOwner (request, limit = 100) {
+    return new Promise(async (resolve, reject) => {
+      if (!request.query) return reject(new Error('No query provided.'));
+      const embeddings = await this.getStoreForOwner(request.user.id);
+      embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
+        reject(error);
+      }).then((results) => {
+        const map = {};
+        results.forEach((x) => {
+          const actor = new Actor({ content: x.pageContent });
+          map[actor.id] = { id: actor.id, content: x.pageContent };
+        });
+        resolve({
+          type: 'TrainerSearchResponse',
+          content: Object.values(map)
+        });
       });
     });
   }
 
   async start () {
     return new Promise(async (resolve, reject) => {
+      console.debug('[TRAINER] Starting service...');
       this._state.content.status = this._state.status = 'STARTING';
 
-      // Start Services
-      // Redis
-      console.debug('[SENSEMAKER]', '[TRAINER]', 'Starting Redis...');
+      this.redis = createClient({
+        username: this.settings.redis.username,
+        password: this.settings.redis.password,
+        socket: {
+          host: this.settings.redis.host,
+          port: this.settings.redis.port,
+          enable_offline_queue: false,
+          timeout: 10000, // Increased timeout to 10 seconds
+          reconnectStrategy: (retries) => {
+            if (retries > 10) {
+              console.error('[TRAINER] Redis connection failed after 10 retries');
+              return new Error('Redis connection failed after 10 retries');
+            }
+            const delay = Math.min(retries * 100, 3000);
+            console.debug(`[TRAINER] Redis reconnecting in ${delay}ms...`);
+            return delay;
+          }
+        }
+      });
 
-      this.redis.on('connect', async () => {
-        console.debug('[SENSEMAKER]', '[TRAINER]', 'Redis connected.');
-        const allDocs = await this.ingestReferences();
-        // console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references:', allDocs);
-        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
-          redisClient: this.redis,
-          indexName: this.settings.redis.name || 'sensemaker-embeddings'
+      // Add Redis event handlers
+      this.redis.on('error', (err) => {
+        console.error('[TRAINER] Redis Client Error:', err);
+      });
+
+      this.redis.on('connect', () => {
+        console.debug('[TRAINER] Redis Client Connected');
+      });
+
+      this.redis.on('reconnecting', () => {
+        console.debug('[TRAINER] Redis Client Reconnecting...');
+      });
+
+      this.redis.on('end', () => {
+        console.debug('[TRAINER] Redis Client Connection Closed');
+      });
+
+      // Connect to Redis with timeout
+      const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {
+        const timeout = setTimeout(() => {
+          rejectRedis(new Error('Redis connection timeout'));
+        }, 15000); // 15 second timeout
+
+        // Attempt Redis connection
+        this.redis.connect().then(() => {
+          clearTimeout(timeout);
+          resolveRedis();
+        }).catch((error) => {
+          clearTimeout(timeout);
+          rejectRedis(error);
         });
-
-        // console.debug('[SENSEMAKER]', '[TRAINER]', 'Embeddings:', this.embeddings);
-        console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references!');
-
-        /* try {
-          const docs = await this.loader.load();
-          if (this.settings.debug) console.debug('[TRAINER]', 'Loaded documents:', docs);
-        } catch (exception) {
-          if (this.settings.debug) console.error('[TRAINER]', 'Error loading documents:', exception);
-        } */
-
-        // const check = await this.langchain.call({ query: QUERY_FIXTURE });
-        // if (this.settings.debug) console.debug('[TRAINER]', 'Trainer ready with checkstate:', check);
-        // this._state.content.checkstate = check.text;
-        // this._state.content.checksum = crypto.createHash('sha256').update(check.text, 'utf8').digest('hex');
-        this._state.content.status = this._state.status = 'STARTED';
-
-        this.commit();
-
-        resolve(this);
       });
 
       try {
-        await this.redis.connect();
-      } catch (exception) {
-        console.error('[TRAINER]', 'Error starting Redis:', exception);
-        // process.exit(); // TODO: look at exit codes
+        await connectWithTimeout;
+        console.debug('[TRAINER] Redis connected successfully');
+
+        try {
+          // Initialize vector store
+          const allDocs = await this.ingestReferences();
+          console.debug('[TRAINER] References loaded, creating vector store...');
+
+          this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
+            redisClient: this.redis,
+            indexName: this.settings.redis.name || 'sensemaker-embeddings'
+          });
+
+          console.debug('[TRAINER] Vector store initialized successfully');
+          this._state.content.status = this._state.status = 'STARTED';
+          this.commit();
+          resolve(this);
+        } catch (error) {
+          console.error('[TRAINER] Error initializing vector store:', error);
+          throw error;
+        }
+      } catch (error) {
+        console.error('[TRAINER] Error during start:', error);
+        this._state.content.status = this._state.status = 'ERROR';
+        reject(error);
       }
     });
   }
 
   async stop () {
-    this._state.content.status = this._state.status = 'STOPPING';
+    try {
+      this._state.content.status = this._state.status = 'STOPPING';
 
-    // Stop Services
-    await this.redis.quit();
+      // Stop Redis if connected
+      if (this.redis) {
+        const redisClose = new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            console.warn('[TRAINER]', 'Timeout closing Redis, forcing close');
+            this.redis = null;
+            resolve();
+          }, 5000);
 
-    // Commit
-    this.commit();
-    this._state.content.status = this._state.status = 'STOPPED';
+          this.redis.quit().then(() => {
+            clearTimeout(timeout);
+            console.debug('[TRAINER]', 'Redis connection closed');
+            this.redis = null;
+            resolve();
+          }).catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[TRAINER]', 'Error closing Redis:', error);
+            }
+            this.redis = null;
+            resolve();
+          });
+        });
 
-    return this;
+        await redisClose;
+      }
+
+      // Clear in-memory store
+      if (this.embeddings instanceof InMemoryVectorStore) {
+        this.embeddings.documents = [];
+        this.embeddings.embeddings = [];
+      }
+
+      // Cleanup
+      this.embeddings = null;
+
+      this.commit();
+      this._state.content.status = this._state.status = 'STOPPED';
+
+      return this;
+    } catch (error) {
+      console.error('[TRAINER]', 'Error during stop:', error);
+      throw error;
+    }
   }
 }
 

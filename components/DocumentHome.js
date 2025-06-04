@@ -29,6 +29,9 @@ const {
 // Local Components
 const ChatBox = require('./ChatBox');
 const DocumentUploader = require('./DocumentUploader');
+const UserProfileSection = require('./UserProfileSection');
+const FileUploadModal = require('./FileUploadModal');
+const CreateDocumentModal = require('./CreateDocumentModal');
 
 // Functions
 const formatDate = require('../functions/formatDate');
@@ -39,7 +42,9 @@ class DocumentHome extends React.Component {
     this.state = {
       searchQuery: '', // Initialize search query state
       filteredDocuments: [], // Initialize filtered documents state
-      searching: false // Boolean to show a spinner icon while fetching
+      searching: false, // Boolean to show a spinner icon while fetching
+      createModalOpen: false, // Add state for create modal visibility
+      uploadModalOpen: false // Add state for upload modal visibility
     };
   }
 
@@ -63,29 +68,25 @@ class DocumentHome extends React.Component {
     this.props.searchDocument(query);
   }, 1000);
 
-  initiateDocumentCreation = async () => {
-    const created = await fetch('/documents', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ' + this.props.token,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        // title: 'Untitled Document',
-      })
-    });
+  initiateDocumentCreation = () => {
+    this.setState({ createModalOpen: true });
+  }
 
-    const document = await created.json();
+  initiateFileUpload = () => {
+    this.setState({ uploadModalOpen: true });
+  }
 
-    // TODO: use `id` not `@id`
-    console.debug('history:', this.props.history);
-    this.props.navigate('/documents/' + document['@id'] + '?mode=edit');
+  handleCreateModalClose = () => {
+    this.setState({ createModalOpen: false });
+  }
+
+  handleUploadModalClose = () => {
+    this.setState({ uploadModalOpen: false });
   }
 
   render () {
     const { loading, documents } = this.props;
-    const { filteredDocuments, searchQuery, searching } = this.state;
+    const { filteredDocuments, searchQuery, searching, createModalOpen, uploadModalOpen } = this.state;
     const displayDocuments = searchQuery ? filteredDocuments : documents;
 
     return (
@@ -94,33 +95,32 @@ class DocumentHome extends React.Component {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems:'center' }}>
             <h1 style={{ marginTop: '0' }}>Library</h1>
             <Button.Group>
-              <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stop' /></Button>
-              <Button icon color='green' onClick={this.initiateDocumentCreation.bind(this)}>Create Document <Icon name='add' /></Button>
+              {/* <Button icon onClick={this.props.fetchDocuments} disabled title='Local library is disabled.  No documents will be loaded from the working directory.'><Icon name='stop' /></Button> */}
+              <Button icon color='blue' onClick={this.initiateFileUpload}><Icon name='upload' /></Button>
+              <Button icon color='green' onClick={this.initiateDocumentCreation}>Create Document <Icon name='add' /></Button>
             </Button.Group>
           </div>
           <p>Search, upload, and manage files.</p>
-          <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} navigate={this.props.navigate} />
-          {(displayDocuments && displayDocuments.documents && displayDocuments.documents.length > 0 ? (
-            <fabric-search fluid placeholder='Find...' className='ui search'>
-              <div className='ui huge icon fluid input'>
-                <input
-                  name='query'
-                  autoComplete='off'
-                  placeholder='Find...'
-                  type='text'
-                  tabIndex='0'
-                  className='prompt'
-                  //value={searchQuery}
-                  onChange={(e) => {
-                    const query = e.target.value;
-                    this.setState({ searchQuery: query });
-                    this.handleSearchChange(query); // Call the debounce function with the query
-                  }}
-                />
-                <i aria-hidden='true' className="search icon"></i>
-              </div>
-            </fabric-search>
-          ) : null)}
+          {/* <DocumentUploader files={this.props.files} uploadFile={this.props.uploadFile} resetChat={this.props.resetChat} fetchDocuments={this.props.fetchDocuments} navigate={this.props.navigate} /> */}
+          <fabric-search fluid placeholder='Find...' className='ui search'>
+            <div className='ui huge icon fluid input'>
+              <input
+                name='query'
+                autoComplete='off'
+                placeholder='Find...'
+                type='text'
+                tabIndex='0'
+                className='prompt'
+                //value={searchQuery}
+                onChange={(e) => {
+                  const query = e.target.value;
+                  this.setState({ searchQuery: query });
+                  this.handleSearchChange(query); // Call the debounce function with the query
+                }}
+              />
+              <i aria-hidden='true' className="search icon"></i>
+            </div>
+          </fabric-search>
           <List as={Card.Group} doubling loading={loading} style={{ marginTop: '1em', marginBottom: '1em' }}>
             {(searching || documents.loading) ? (
               <Loader active inline='centered' /> // Display loading icon if searching is true
@@ -163,6 +163,20 @@ class DocumentHome extends React.Component {
             />
           ) : null)}
         </Segment>
+
+        <CreateDocumentModal
+          open={createModalOpen}
+          onClose={this.handleCreateModalClose}
+          token={this.props.token}
+          navigate={this.props.navigate}
+        />
+
+        <FileUploadModal
+          open={uploadModalOpen}
+          onClose={this.handleUploadModalClose}
+          uploadFile={this.props.uploadFile}
+          navigate={this.props.navigate}
+        />
       </fabric-document-home>
     );
   }

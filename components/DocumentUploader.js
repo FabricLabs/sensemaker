@@ -95,7 +95,13 @@ class DocumentUploader extends React.Component {
         <Form.Field>
           <div style={{ maxWidth: '500px', gap: '0.5em', display: 'flex' }}>
             <Input type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} style={{ cursor: 'pointer' }} />
-            <Button icon='upload' disabled={!this.state.file} onClick={() => this.handleUpload()} loading={files.loading}>Upload</Button>
+            <Button
+              icon='upload'
+              content='Upload'
+              disabled={!this.state.file}
+              onClick={() => this.handleUpload()}
+              loading={files.loading}
+            />
           </div>
         </Form.Field>
         {this.state.formatError &&

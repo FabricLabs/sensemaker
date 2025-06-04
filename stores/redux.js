@@ -5,9 +5,12 @@ const { createStore, combineReducers, applyMiddleware } = require('redux');
 const thunkMiddleware = require('redux-thunk').default;
 
 // Reducers
+const apiReducer = require('../reducers/apiReducer');
 const accountsReducer = require('../reducers/accountsReducer');
 const adminReducer = require('../reducers/adminReducer');
 const agentReducer = require('../reducers/agentReducer');
+const alertReducer = require('../reducers/alertReducer');
+const announcementReducer = require('../reducers/announcementReducer');
 const authReducer = require('../reducers/authReducer');
 const bitcoinReducer = require('../reducers/bitcoinReducer');
 const bridgeReducer = require('../reducers/bridgeReducer');
@@ -36,8 +39,11 @@ const walletReducer = require('../reducers/walletReducer');
 
 // Root
 const rootReducer = combineReducers({
+  api: apiReducer,
   accounts: accountsReducer,
   agents: agentReducer,
+  alerts: alertReducer,
+  announcements: announcementReducer,
   auth: authReducer,
   bitcoin: bitcoinReducer,
   bridge: bridgeReducer,

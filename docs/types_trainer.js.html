@@ -29,11 +29,9 @@ const {
 } = require('../constants');
 
 // Dependencies
-require('@tensorflow/tfjs-node');
-
 const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+// const path = require('path');
+// const crypto = require('crypto');
 const merge = require('lodash.merge');
 const fetch = require('cross-fetch');
 
@@ -55,8 +53,7 @@ const { TextLoader } = require('langchain/document_loaders/fs/text');
 const { RetrievalQAChain } = require('langchain/chains');
 // const { MemoryVectorStore } = require('langchain/vectorstores/memory');
 const { RedisVectorStore } = require('@langchain/redis');
-// const { CheerioWebBaseLoader } = require('langchain/document_loaders/web/cheerio');
-const { TensorFlowEmbeddings } = require('@langchain/community/embeddings/tensorflow');
+const { OllamaEmbeddings } = require('@langchain/ollama');
 const { Document } = require('@langchain/core/documents');
 
 // Fabric Types
@@ -74,6 +71,7 @@ class Trainer extends Service {
     super(settings);
 
     this.settings = merge({
+      name: 'TRAINED',
       debug: true,
       model: 'llama2',
       ollama: {
@@ -177,6 +175,13 @@ class Trainer extends Service {
     this.db = db;
   }
 
+  async ingestActor (actor) {
+    // TODO: ingest actor
+    return new Promise((resolve, reject) => {
+      resolve({});
+    });
+  }
+
   /**
    * Ingest a directory of files.
    * @param {String} directory Path to ingest.
@@ -211,6 +216,9 @@ class Trainer extends Service {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
       console.debug('[TRAINER]', 'Ingesting document:', document);
+
+      // TODO: measure size, split, reduce, etc.
+
       const actor = new Actor({ content: document.content });
       const endpoint = `http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/embeddings`;
       fetch(endpoint, {
@@ -240,22 +248,16 @@ class Trainer extends Service {
         // Old Embeddings (specific to Langchain)
         const element = new Document({ pageContent: document.content, metadata: document.metadata });
         this.embeddings.addDocuments([element]).catch(reject).then(() => {
-          console.debug('[TRAINER]', 'Ingested document:', element);
-          // resolve({ type: 'IngestedDocument', content: element });
+          // TODO: check for `embedding` and fail if not present
+          const object = { type: EMBEDDING_MODEL, content: json.embedding };
+          // TODO: receive event in core service and correctly create blob, confirm ID matches
+          this.emit('TrainerDocument', {
+            id: actor.id,
+            metadata: document.metadata,
+            content: document.content
+          });
+          resolve({ type: 'Embedding', content: object });
         });
-
-        // TODO: check for `embedding` and fail if not present
-        const object = { type: EMBEDDING_MODEL, content: json.embedding };
-        console.debug('[TRAINER]', 'Ollama Object:', object);
-
-        // TODO: receive event in core service and correctly create blob, confirm ID matches
-        this.emit('TrainerDocument', {
-          id: actor.id,
-          metadata: document.metadata,
-          content: document.content
-        });
-
-        resolve({ type: 'Embedding', content: object });
       });
     });
   }
@@ -278,7 +280,8 @@ class Trainer extends Service {
     return new Promise(async (resolve, reject) => {
       /* const embedded = await this.embeddings.embedQuery(request.query);
       console.debug('Embedded query:', embedded); */
-      if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
+      console.debug('[TRAINER]', 'Handling request:', request);
+      // TODO: replace with `createRetrievalChain`
       RetrievalQAChain.fromLLM(this.ollama, this.embeddings.asRetriever()).call({
         messages: request.messages,
         query: request.query
@@ -312,7 +315,10 @@ class Trainer extends Service {
       } */
       filter = request.filter;
 
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).then((results) => {
+      this.embeddings.similaritySearch(request.query, (request.limit || limit), filter || { type: 'case' }).catch((error) => {
+        console.error('[TRAINER]', 'Error searching:', error);
+        reject(error);
+      }).then((results) => {
         const map = {};
 
         results.forEach((x) => {
@@ -372,7 +378,7 @@ class Trainer extends Service {
         console.debug('[SENSEMAKER]', '[TRAINER]', 'Redis connected.');
         const allDocs = await this.ingestReferences();
         // console.debug('[SENSEMAKER]', '[TRAINER]', 'Ingested references:', allDocs);
-        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new TensorFlowEmbeddings(), {
+        this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
           redisClient: this.redis,
           indexName: this.settings.redis.name || 'sensemaker-embeddings'
         });

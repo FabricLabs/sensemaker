@@ -93,6 +93,20 @@
   }
 }
 
+.fade-out {
+  opacity: 1;
+  animation: fadeOut 1.5s forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* .splash {
   margin-top: 2rem;
   display: flex;
@@ -117,7 +131,6 @@
   max-width: 500px;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 #signup-form .signup-form-group .field{
@@ -157,97 +170,6 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-}
-
-/* HELP CHAT CSS */
-#help-box {
-  position: fixed;
-  bottom: 80px;
-  right: 30px;
-  background-color: #fff;
-  /* border-radius: 50%; */
-  /* display: inline-flex; */
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  z-index: 1000000;
-  background: linear-gradient(to bottom, var(--sidebar-black), white);
-  border-radius: 20px;
-  border: none;
-}
-
-.help-chat-feed{
-  flex: 1;
-  padding: 0 0.5em 1em 0.5em;
-}
-
-.help-user-msg{
-  color: white;
-  margin-left: auto;
-  width: fit-content;
-  max-width: 70%;
-  padding: 1em;
-  background-color: var(--primary-color);
-  border-radius: 10px;
-}
-
-.help-admin-msg{
-  margin-right: auto;
-  width: fit-content;
-  max-width: 70%;
-  padding: 1em;
-  background-color: #d8d8d8;
-  border-radius: 10px;
-}
-
-.help-welcome-msg {
-	margin-right: auto;
-	width: fit-content;
-	max-width: 70%;
-	padding: 1em;
-	background-color: #d8d8d8;
-	border-radius: 10px;
-	text-align: center;
-	font-weight: 600;
-	position: absolute;
-	top: 15%;
-}
-
-#help-box .ui.buttons .ui.button{
-  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-  background-color: white;
-  padding-top:0.5em;
-  font-weight: 400;
-  color: var(--sidebar-black);
-
-}
-
-#help-box .ui.buttons .ui.button:hover{
-
-  background-color: rgb(165, 159, 159) !important;
-}
-
-#help-conversations, #faq-themes, .help-adm-conversation{
-  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-}
-
-/* #faq-themes{
-  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-}
-
-.help-adm-conversation{
-  font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
-} */
-
-.help-section-head {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 1em;
-  align-items: center;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
 }
 
 @keyframes jiggle {
@@ -342,6 +264,12 @@ sensemaker-dashboard #main-sidebar {
 
 sensemaker-dashboard #collapse-sidebar {
   z-index: 500;
+  position: fixed;
+  left: 90px;
+  top: 0;
+  bottom: 0;
+  background-color: #1b1c1d;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .left.sidebar.menu .label {
@@ -560,8 +488,6 @@ fabric-motd {
   /* inset: 1em !important; */
   margin-right: 1em;
 }
-
-
 
 #site .card {
   background: rgba(0, 0, 0, 0.5);
@@ -884,12 +810,6 @@ fabric-motd {
   margin-top: 2em;
 }
 
-.users-section-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 /* Conversations CSS */
 .conversationItem div .editIcon {
   display: none !important;
@@ -923,41 +843,6 @@ fabric-motd {
   width: 90%;
   margin-right: 1em;
   margin-left: 0.5em;
-}
-
-/* Matters CSS */
-
-.new-matter-form {
-  min-width: 650px;
-}
-
-.matter-label {
-  font-size: 1em !important;
-}
-
-@media (max-width: 500px) {
-  .new-matter-form {
-    min-width: 0;
-  }
-}
-
-@media (min-width: 1441px) {
-  .new-matter-form {
-    min-width: 750px;
-  }
-}
-
-.matter-details {
-  max-width: 80vw;
-  margin-top: 2em;
-}
-
-.matter-details-font {
-  font-size: 1.5em;
-}
-
-.matter-header {
-  max-width: 80vw;
 }
 
 .attach-file-area {
@@ -1022,7 +907,7 @@ fabric-motd {
 }
 
 .brand span.brand {
-  font-size: 1.5em;
+  /* font-size: 1.5em; */
 }
 
 .splash-page .buttons {

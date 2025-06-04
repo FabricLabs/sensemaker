@@ -12,7 +12,7 @@ const {
 } = require('react-router-dom');
 
 // Functions
-const truncateMiddle = require('../../functions/truncateMiddle');
+const truncateMiddle = require('../../../functions/truncateMiddle');
 
 // Components
 // Semantic UI

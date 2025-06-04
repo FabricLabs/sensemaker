@@ -28,6 +28,13 @@ module.exports = async function (req, res, next) {
     owner: req.user.id
   });
 
+  const task = await this.db('tasks').where('fabric_id', actor.id).first();
+
+  this.trainer.ingestDocument({
+    content: JSON.stringify(task),
+    metadata: { owner: req.user.id }
+  });
+
   res.format({
     json: function () {
       res.send({ id: actor.id });

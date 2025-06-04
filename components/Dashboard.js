@@ -42,10 +42,13 @@ const {
   RELEASE_NAME,
   RELEASE_DESCRIPTION,
   ENABLE_AGENTS,
+  ENABLE_ALERTS,
   ENABLE_CHANGELOG,
+  ENABLE_CHAT,
   ENABLE_DOCUMENTS,
   ENABLE_FEEDBACK_BUTTON,
   ENABLE_GROUPS,
+  ENABLE_JOBS,
   ENABLE_NETWORK,
   ENABLE_SOURCES,
   ENABLE_TASKS,
@@ -59,9 +62,12 @@ const {
 const Home = require('./Home');
 const AgentHome = require('./AgentHome');
 const AgentView = require('./AgentView');
+const AlertsBar = require('./AlertsBar');
+const AlertsHome = require('./AlertsHome');
 const FeaturesHome = require('./FeaturesHome');
 const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
+const JobHome = require('./JobHome');
 const NetworkHome = require('./NetworkHome');
 const Library = require('./Library');
 const ContractHome = require('./ContractHome');
@@ -69,9 +75,8 @@ const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
 const PeopleHome = require('./PeopleHome');
 const Conversations = require('./Conversations');
-const ConversationsList = require('./ConversationsList');
-const LibraryList = require('./LibraryList');
 const SourceHome = require('./SourceHome');
+const SourceView = require('./SourceView');
 const TaskHome = require('./TaskHome');
 const TaskView = require('./TaskView');
 const UploadHome = require('./UploadHome');
@@ -85,16 +90,18 @@ const TermsOfUse = require('./TermsOfUse');
 const InformationSidebar = require('./InformationSidebar');
 const FeedbackBox = require('./FeedbackBox');
 const HelpBox = require('./HelpBox');
+const GlobalChat = require('./Global');
 
 // Fabric Bridge
-const Bridge = require('./Bridge');
+// const Bridge = require('./Bridge');
+const Bridge = require('@fabric/hub/components/Bridge')
 
 // Services
-const BitcoinHome = require('./services/BitcoinHome');
-const BitcoinBlockList = require('./services/BitcoinBlockList');
-const BitcoinBlockView = require('./services/BitcoinBlockView');
-const BitcoinTransactionList = require('./services/BitcoinTransactionList');
-const BitcoinTransactionView = require('./services/BitcoinTransactionView');
+const BitcoinHome = require('./services/bitcoin/BitcoinHome');
+const BitcoinBlockList = require('./services/bitcoin/BitcoinBlockList');
+const BitcoinBlockView = require('./services/bitcoin/BitcoinBlockView');
+const BitcoinTransactionList = require('./services/bitcoin/BitcoinTransactionList');
+const BitcoinTransactionView = require('./services/bitcoin/BitcoinTransactionView');
 const DiskHome = require('./services/DiskHome');
 const DiskPath = require('./services/DiskPath');
 const DiscordHome = require('./services/DiscordHome');
@@ -106,7 +113,6 @@ const DiscordUser = require('./services/discord/DiscordUser');
 const DiscordUsers = require('./services/discord/DiscordUserList');
 const FabricHome = require('./services/FabricHome');
 const GitHubHome = require('./services/GitHubHome');
-const MatrixHome = require('./services/MatrixHome');
 
 /**
  * The main dashboard component.
@@ -130,9 +136,7 @@ class Dashboard extends React.Component {
         openConversations: false,
         openSectionBar: false,
         helpBoxOpen: false,
-        helpConversationUpdate: 0, //this value is used to tell the help admin chat which conversation got a new message from user (from bridge), to update the conversation
-
-        //iformation Sidebar states
+        helpConversationUpdate: 0,
         informationSidebarOpen: false,
         checkingMessageID: 0,
         documentSection: false,
@@ -174,7 +178,6 @@ class Dashboard extends React.Component {
     // $('.ui.sidebar').sidebar();
 
     this.props.fetchConversations();
-    this.props.fetchHelpConversations();
 
     // Simulate a loading delay
     setTimeout(() => {
@@ -256,8 +259,6 @@ class Dashboard extends React.Component {
       helpBoxOpen: !prevState.helpBoxOpen,
     }));
   };
-
-  //========= Sidebar Functions ==========//
 
   //closes the right panel, informationSidebar and resets its states
   toggleInformationSidebar = () => {
@@ -429,63 +430,14 @@ class Dashboard extends React.Component {
   }
 
   responseCapture = (action) => {
-    const { id, isAdmin } = this.props.auth;
-    const sound = new Audio(helpMessageSound);
-
-    if (id == action.creator) {
-      if (action.type == 'HelpMsgAdmin') {
-        this.props.fetchHelpConversations();
-        if (this.state.helpBoxOpen) {
-          this.props.fetchHelpMessages(action.conversation_id);
-        }
-        //emit toast for user
-        sound.play().catch((error) => { console.error('Failed to play sound: ', error); });
-        toast('You have a message from an assistant!', helpMessageToastEmitter);
-      }
-
-      if (action.type == 'IngestFile') {
-        if (action.completed) {
-          toast(<p>Your file <b>{action.filename}</b> has been ingested! </p>, helpMessageToastEmitter);
-        }
-        this.props.fetchUserFiles(id);
-      }
-
-      if (action.type == 'IngestDocument' && isAdmin) {
-        toast(<p>Your document "{action.title}"" has been ingested!  You can check it <a href={`${window.location.protocol}//${window.location.hostname}:${window.location.port}/documents/${action.fabric_id}`}>Here</a></p>, helpMessageToastEmitter);
-      }
-    }
-
-    if (action.type == 'HelpMsgUser' && isAdmin) {
-      this.setState({ helpConversationUpdate: action.conversation_id });
-      this.props.fetchAdminHelpConversations();
-      //emit toast for admin
-      if (this.props.location.pathname !== '/settings/admin') {
-        sound.play().catch((error) => { console.error('Failed to play sound: ', error); });
-        toast(`An user sent a message asking for assistance`, helpMessageToastEmitter);
-      }
-    }
-
-    if (action.type == 'takenJob') {
-      this.props.lastJobTaken(action.job);
-      if (isAdmin) {
-        this.props.syncRedisQueue();
-      }
-    }
-
-    if (action.type == 'completedJob') {
-      action.job.status = action.status;
-      this.props.lastJobCompleted(action.job);
-      if (isAdmin) {
-        this.props.syncRedisQueue();
-      }
+    if (this.props.responseCapture) {
+      this.props.responseCapture(action);
     }
   }
 
   captureFileUpload = (action) => {
     toast('a file has finishing uploading', helpMessageToastEmitter);
   }
-
-  //====================================================//
 
   render () {
     // TODO: prompt user for external links replacing current application
@@ -520,9 +472,10 @@ class Dashboard extends React.Component {
 
     const containerStyle = {
       margin: '1em 1em 0 1em',
-      marginLeft: openSectionBar ? '1em' : 'calc(-300px + 1em)',
+      marginLeft: 'calc(90px + 1em)',
       transition: 'margin-left 0.5s ease-in-out',
       maxHeight: '97vh',
+      width: 'calc(100% - 90px - 2em)', // Account for sidebar width and margins
     };
 
     return (
@@ -530,35 +483,41 @@ class Dashboard extends React.Component {
         {/* <LoadingBar color="#f11946" progress={this.state.progress} /> */}
         {/* <Joyride steps={this.state.steps} /> */}
         {/* <div id="sidebar" attached="bottom" style={{ overflow: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#eee' }}> */}
-        <div attached='bottom' style={{ overflowX: 'hidden', borderRadius: 0, height: '100vh', backgroundColor: '#ffffff', display: 'flex' }}>
-          {/* Small sidebar to the left, with the icons, always visible */}
-          <Sidebar as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
+        <div style={{
+          display: 'flex',
+          height: '100vh',
+          backgroundColor: '#eee'
+        }}>
+          <Sidebar className='fade-in' as={Menu} id='main-sidebar' animation='overlay' icon='labeled' inverted vertical visible size='huge' style={{ overflow: 'hidden' }} onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
             <div>
               <Menu.Item as={Link} to='/' onClick={() => this.handleMenuItemClick('home')}>
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && USER_IS_ALPHA && (
+              {ENABLE_TASKS && USER_IS_BETA && (
                 <Menu.Item as={Link} to='/tasks' onClick={this.closeSidebars}>
                   <Icon name='tasks' size='large'/>
                   <p className='icon-label'>Tasks</p>
                 </Menu.Item>
               )}
-              {ENABLE_AGENTS && USER_IS_ALPHA && (
-                <Menu.Item as={Link} to='/agents' onClick={this.closeSidebars}>
-                  <Icon name='user' size='large'/>
-                  <p className='icon-label'>Agents</p>
+              {ENABLE_SOURCES && USER_IS_ADMIN && (
+                <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
+                  <Icon name='globe' size='large'/>
+                  <p className='icon-label'>Sources</p>
                 </Menu.Item>
               )}
-              <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
-                <div className='col-center'>
-                  <Icon name='comment alternate' size='large' />
-                  <p className='icon-label'>Chat</p>
-                </div>
-                <div className='expand-icon'>
-                  {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
-                </div>
-              </Menu.Item>
+              {ENABLE_CHAT && (
+                // <Menu.Item as={Link} to='/conversations' onClick={() => this.handleMenuItemClick('conversations')} className='expand-menu'>
+                <Menu.Item as={Link} to='/conversations' onClick={this.closeSidebars}>
+                  <div className='col-center'>
+                    <Icon name='comment alternate' size='large' />
+                    <p className='icon-label'>Chat</p>
+                  </div>
+                  <div className='expand-icon'>
+                    {(openSectionBar) ? null : <Icon name='right chevron' className='fade-in' size='small' />}
+                  </div>
+                </Menu.Item>
+              )}
               {ENABLE_NETWORK && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/peers' onClick={this.closeSidebars}>
                   <Icon name='globe' size='large'/>
@@ -571,12 +530,6 @@ class Dashboard extends React.Component {
                   <p className='icon-label'>Groups</p>
                 </Menu.Item>
               )}
-              {ENABLE_SOURCES && USER_IS_ADMIN && (
-                <Menu.Item as={Link} to='/sources' onClick={this.closeSidebars}>
-                  <Icon name='globe' size='large'/>
-                  <p className='icon-label'>Sources</p>
-                </Menu.Item>
-              )}
               {ENABLE_WALLET && USER_IS_ADMIN && (
                 <Menu.Item as={Link} to='/keys' onClick={this.closeSidebars}>
                   <Icon name='bitcoin' size='large' />
@@ -587,6 +540,12 @@ class Dashboard extends React.Component {
                 <Menu.Item as={Link} to='/documents' onClick={this.closeSidebars}>
                   <Icon name='book' size='large'/>
                   <p className='icon-label'>Library</p>
+                </Menu.Item>
+              )}
+              {ENABLE_JOBS && (
+                <Menu.Item as={Link} to='/jobs' onClick={this.closeSidebars}>
+                  <Icon name='tasks' size='large'/>
+                  <p className='icon-label'>Jobs</p>
                 </Menu.Item>
               )}
             </div>
@@ -611,67 +570,13 @@ class Dashboard extends React.Component {
               </div>
             </div>
           </Sidebar>
-          {/*SectionBar: bigger left sidebar that opens when we click on some of the sections */}
-          <Sidebar as={Menu} animation='overlay' id="collapse-sidebar" icon='labeled' inverted vertical visible={openSectionBar} style={sidebarStyle} size='huge' onClick={() => { this.toggleInformationSidebar(); this.closeHelpBox(); }}>
-            <div className='collapse-sidebar-arrow'>
-              <Icon name='caret left' size='large' className='fade-in' style={{ cursor: 'pointer' }} onClick={() => this.setState({ openSectionBar: false })} />
-            </div>
-            <Menu.Item as={Link} to="/" style={{ paddingBottom: '0em', marginTop: '-1.5em' }} onClick={() => { this.setState({ openSectionBar: false }); this.props.resetChat() }}>
-              <Header className='dashboard-header'>
-                <div>
-                  <div>
-                    <Popup trigger={<Icon name='help' className='dashboard-help' onClick={this.toggleHelpBox} />}>
-                      <Popup.Header>Need Help?</Popup.Header>
-                      <Popup.Content>
-                        <p>Send us an email: <a href="mailto:support@sensemaker.io">support@sensemaker.io</a></p>
-                      </Popup.Content>
-                    </Popup>
-                    {/* <Image src="/images/sensemaker-icon.png" style={{ height: 'auto', width: '45%', verticalAlign: 'top' }} /> */}
-                  </div>
-                  <div>
-                    <Popup trigger={<Icon name='circle' color='green' size='tiny' />}>
-                      <Popup.Content>disconnected</Popup.Content>
-                    </Popup>
-                    <Popup trigger={<Label color='black' style={{ borderColor: 'transparent', backgroundColor: 'transparent' }}>{RELEASE_NAME}</Label>}>
-                      <Popup.Content>{RELEASE_DESCRIPTION}</Popup.Content>
-                    </Popup>
-                  </div>
-                </div>
-              </Header>
-            </Menu.Item>
-            {this.state.openConversations && (
-              <section className='fade-in'>
-                <ConversationsList
-                  resetChat={this.props.resetChat}
-                  fetchConversations={this.props.fetchConversations}
-                  auth={this.props.auth}
-                  conversations={this.props.conversations}
-                />
-              </section>
-            )}
-            {this.state.openLibrary && (
-              <section className='fade-in'>
-                <LibraryList
-                  resetChat={this.props.resetChat}
-                  fetchConversations={this.props.fetchConversations}
-                  auth={this.props.auth}
-                  conversations={this.props.conversations}
-                  searchGlobal={this.props.searchGlobal}
-                  search={this.props.search}
-                  closeSidebars={this.closeSidebars}
-                />
-              </section>
-            )}
-            <div style={{ flexGrow: 1 }}></div> {/* Spacer */}
-            <section>
-              <Menu.Item style={{ borderBottom: 0 }}>
-                <Bridge responseCapture={this.responseCapture} />
-                <p style={{ marginTop: '2em' }}><small className="subtle">@FabricLabs</small></p>
-                {this.state.debug && <p><Label><strong>Status:</strong> {this.props.status || 'disconnected'}</Label></p>}
-              </Menu.Item>
-            </section>
-          </Sidebar>
-          <Container fluid style={containerStyle} onClick={this.closeSidebars}>
+          <Container fluid style={{
+            marginLeft: '0',
+            padding: '1em',
+            width: 'calc(100% - 90px)',
+            height: '100vh',
+            overflow: 'auto'
+          }} onClick={this.closeSidebars}>
             {this.state.debug ? (
               <div>
                 <strong><code>isAdmin</code>:</strong> <span>{(this.props.isAdmin) ? 'yes' : 'no'}</span><br />
@@ -682,9 +587,10 @@ class Dashboard extends React.Component {
             {this.state.isLoading ? null : (
               <Routes>
                 {/* TODO: add a nice 404 page */}
-                <Route path="*" element={<Navigate to='/' replace />} />
-                <Route path="/" element={
+                <Route path='*' element={<Navigate to='/' replace />} />
+                <Route path='/' element={
                   <Home
+                    api={this.props.api}
                     auth={this.props.auth}
                     conversations={this.props.conversations}
                     fetchConversations={this.props.fetchConversations}
@@ -701,12 +607,14 @@ class Dashboard extends React.Component {
                     thumbsDown={this.thumbsDown}
                     uploadFile={this.props.uploadFile}
                     uploadDocument={this.props.uploadDocument}
+                    {...this.props}
                   />
                 } />
                 <Route path='/settings/library' element={<Library />} />
                 <Route path='/updates' element={<Changelog {...this.props} />} />
                 <Route path='/agents' element={<AgentHome {...this.props} />} />
                 <Route path='/agents/:id' element={<AgentView {...this.props} />} />
+                <Route path='/alerts' element={<AlertsHome {...this.props} />} />
                 <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
                 <Route path='/features' element={<FeaturesHome />} />
@@ -716,22 +624,11 @@ class Dashboard extends React.Component {
                 <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/sources' element={<SourceHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
-                <Route path='/tasks' element={<TaskHome chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
-                <Route path='/tasks/:id' element={<TaskView task={this.props.task} />} />
+                <Route path='/sources/:id' element={<SourceView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} fetchSources={this.props.fetchSources} createSource={this.props.createSource} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} {...this.props} />} />
+                <Route path='/tasks' element={<TaskHome {...this.props} chat={this.props.chat} fetchResponse={this.props.fetchResponse} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} getMessageInformation={this.props.getMessageInformation} tasks={this.props.tasks} fetchTasks={this.props.fetchTasks} createTask={this.props.createTask} updateTask={this.props.updateTask} />} />
+                <Route path='/tasks/:id' element={<TaskView {...this.props} task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
                 <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
-                {/* TODO: fix these routes */}
-                {/* /settings/admin should render the overview */}
-                {/* /settings/admin#users should load the user tab */}
-                <Route path='/settings/admin/overview' element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/announcements' element={<AdminSettings {...this.props} activeIndex={1} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/settings' element={<AdminSettings {...this.props} activeIndex={2} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/users' element={<AdminSettings {...this.props} activeIndex={3} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/growth' element={<AdminSettings {...this.props} activeIndex={4} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/conversations' element={<AdminSettings {...this.props} activeIndex={5} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/services' element={<AdminSettings {...this.props} activeIndex={6} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                <Route path='/settings/admin/design' element={<AdminSettings {...this.props} activeIndex={7} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
-                {/* END TODO */}
                 <Route path='/settings/admin' element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
                 <Route path='/settings' element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path='/keys' element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
@@ -754,9 +651,10 @@ class Dashboard extends React.Component {
                 <Route path='/services/disk' element={<DiskHome {...this.props} disk={this.props.disk} />} />
                 <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
-                <Route path='/services/matrix' element={<MatrixHome {...this.props} />} />
+                <Route path='/topics/global' element={<GlobalChat {...this.props} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
+                <Route path='/jobs' element={<JobHome {...this.props} />} />
               </Routes>
             )}
           </Container>
@@ -812,6 +710,7 @@ class Dashboard extends React.Component {
           documentInfo={documentInfo}
           documentSections={documentSections}
           onClick={() => { this.setState({ openSectionBar: false }); this.closeHelpBox(); }}
+          message={this.props.chat?.messages?.find(m => m.id === checkingMessageID)}
         />
         <ToastContainer />
       </sensemaker-dashboard>

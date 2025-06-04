@@ -85,7 +85,7 @@ class GroupHome extends React.Component {
               </Card>
             ))}
           </Card.Group>
-          <ChatBox {...this.props} context={{ groups: groups?.groups }} placeholder='Ask about these groups...' />
+          <ChatBox {...this.props} context={{ groups: groups?.groups }} placeholder='Ask about these groups...' style={{ marginTop: '1em' }} />
         </div>
       </Segment>
     );

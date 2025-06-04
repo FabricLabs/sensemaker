@@ -23,6 +23,11 @@ const {
   ENABLE_SOURCES
 } = require('../constants');
 
+// Fabric Constants
+const {
+  BITCOIN_GENESIS_HASH
+} = require('@fabric/core/constants');
+
 // Dependencies
 const crypto = require('crypto');
 const fs = require('fs');
@@ -31,11 +36,11 @@ const os = require('os');
 // External Dependencies
 const { createClient } = require('redis');
 const fetch = require('cross-fetch');
-// const debounce = require('lodash.debounce');
 const merge = require('lodash.merge');
 // TODO: use levelgraph instead of level?
 // const levelgraph = require('levelgraph');
 const knex = require('knex');
+const { attachPaginate } = require('knex-paginate');
 const multer = require('multer');
 // TODO: use bcryptjs instead of bcrypt?
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
@@ -45,11 +50,11 @@ const Hub = require('@fabric/hub'); // messaging hub
 
 // HTTP Bridge
 const HTTPServer = require('@fabric/http/types/server'); // fabric edge server
-// const Sandbox = require('@fabric/http/types/sandbox'); // edge client sandbox (web browser)
+const Sandbox = require('@fabric/http/types/sandbox'); // edge client sandbox (web browser)
 
 // Fabric Types
 // TODO: reduce to whole library import?
-// const App = require('@fabric/core/types/app');
+const Federation = require('@fabric/core/types/federation'); // fabric federation
 const Key = require('@fabric/core/types/key'); // fabric keys
 const Peer = require('@fabric/core/types/peer'); // fabric peers
 const Token = require('@fabric/core/types/token'); // fabric tokens
@@ -67,7 +72,6 @@ const Bitcoin = require('@fabric/core/services/bitcoin');
 // const WebHooks = require('@fabric/webhooks');
 const Discord = require('@fabric/discord');
 // const GitHub = require('@fabric/github');
-const Matrix = require('@fabric/matrix');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
 const StarCitizen = require('@rsi/star-citizen');
@@ -79,6 +83,9 @@ const EmailService = require('./email');
 // const Mistral = require('./mistral');
 // const OpenAI = require('./openai');
 const Stripe = require('./stripe');
+
+// Contracts
+const Beacon = require('../contracts/beacon');
 
 // Internal Types
 const Agent = require('../types/agent');
@@ -116,8 +123,8 @@ class Sensemaker extends Hub {
     super(settings);
 
     // Settings
-    // TODO: extract defaults to `settings/default.json`
     this.settings = merge({
+      signingKey: settings.signingKey || null, // Server's signing key for verification
       crawl: false,
       debug: false,
       seed: null,
@@ -125,6 +132,7 @@ class Sensemaker extends Hub {
       precision: 8, // precision in bits for floating point compression
       persistent: true,
       path: './logs/sensemaker',
+      passphrase: null,
       coordinator: '!TsLXBhlUcDLbRtOYIU:fabric.pub',
       frequency: 0.01, // Hz (once every ~100 seconds)
       temperature: 0,
@@ -145,7 +153,7 @@ class Sensemaker extends Hub {
       },
       http: {
         hostname: 'localhost',
-        listen: true,
+        listen: false, // Disable HTTP
         port: 4242
       },
       commitments: [],
@@ -155,17 +163,31 @@ class Sensemaker extends Hub {
           max: Math.pow(2, 26) // ~64MB RAM
         }
       },
-      matrix: {},
-      ollama: {},
-      openai: {},
+      matrix: {
+        enable: false // Disable Matrix
+      },
+      ollama: {
+        enable: false // Disable Ollama
+      },
+      openai: {
+        enable: false // Disable OpenAI
+      },
+      bitcoin: {
+        enable: false // Disable Bitcoin
+      },
+      discord: {
+        enable: false // Disable Discord
+      },
+      email: {
+        enable: false // Disable Email
+      },
+      redis: null, // Disable Redis
       remotes: {},
-      services: [
-        'bitcoin',
-        'matrix'
-      ],
+      services: [], // Disable all services
       state: {
         status: 'INITIALIZED',
         agents: {},
+        clock: 0,
         collections: {
           documents: {},
           people: {}
@@ -176,7 +198,10 @@ class Sensemaker extends Hub {
         },
         services: {
           bitcoin: {
-            balance: 0
+            balance: 0,
+            blocks: {},
+            mempool: null,
+            transactions: {}
           },
         }
       },
@@ -185,36 +210,109 @@ class Sensemaker extends Hub {
       verbosity: 2,
       verify: true,
       workers: 1,
+      name: 'Sensemaker'
     }, settings);
 
     // Vector Clock
     this.clock = 0;
 
+    // Fabric Setup
+    this._rootKey = new Key({
+      mnemonic: this.settings.mnemonic,
+      seed: this.settings.seed,
+      xprv: this.settings.xprv,
+      passphrase: this.settings.passphrase
+    });
+
+    console.debug('[SENSEMAKER:CORE]', '[KEY]', 'Root key initialized:', {
+      seed: this._rootKey.seed,
+      xprv: this._rootKey.xprv,
+      xpub: this._rootKey.xpub,
+      hasXprv: !!this._rootKey.xprv,
+      hasXpub: !!this._rootKey.xpub
+    });
+
+    if (!this._rootKey || !this._rootKey.xprv) {
+      throw new Error('Failed to initialize root key');
+    }
+
     // Internals
-    this.agent = new Peer(this.settings);
-    this.graph = new Graph(this.settings);
+    this.agent = new Peer({
+      ...this.settings,
+      key: { xprv: this._rootKey.xprv },
+      contract: {
+        state: {
+          balance: 0
+        }
+      }
+    });
+
+    this.graph = new Graph({ ...this.settings, key: { xprv: this._rootKey.xprv } });
     // this.brain = new Brain(this.settings);
     this.chain = new Chain(this.settings);
-    this.queue = new Queue(this.settings);
+    this.queue = new Queue({
+      ...this.settings,
+      verbosity: 0, // Suppress logs after startup
+      debug: false // Disable debug logs
+    });
+
+    // Audits
     this.audits = new Logger(this.settings);
-    this.learner = new Learner(this.settings);
-    this.trainer = new Trainer(this.settings);
-    this.coordinator = new Coordinator({ name: 'Sensemaker', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
-    this.router = new Coordinator({ name: 'Router', goals: this.settings.goals, actions: ['idle', 'proceed'], agent: this.settings.ollama });
-    // this.sandbox = new Sandbox(this.settings.sandbox);
-    this.worker = new Worker(this.settings);
+    // this.learner = new Learner(this.settings);
+    this.trainer = new Trainer({ ...this.settings, key: { xprv: this._rootKey.xprv } });
+    this.coordinator = new Coordinator({
+      name: 'Sensemaker',
+      goals: this.settings.goals,
+      actions: ['idle', 'proceed'],
+      agent: this.settings.ollama,
+      key: { xprv: this._rootKey.xprv }
+    });
+
+    this.router = new Coordinator({
+      name: 'Router',
+      goals: this.settings.goals,
+      actions: ['idle', 'proceed'],
+      agent: this.settings.ollama,
+      key: { xprv: this._rootKey.xprv }
+    });
+
+    this.sandbox = new Sandbox(this.settings.sandbox);
+    this.worker = new Worker({ ...this.settings, key: { xprv: this._rootKey.xprv } });
+
+    // Configure Bitcoin regtest
+    this.regtest = new Bitcoin({
+      debug: this.settings.bitcoin.debug,
+      key: { xprv: this._rootKey.xprv },
+      mode: 'rpc',
+      managed: true,
+      network: 'regtest',
+      host: '127.0.0.1',
+      rpcport: 20444,
+      username: 'ahp7iuGhae8mooBahFaYieyaixei6too',
+      password: 'naiRe9wo5vieFayohje5aegheenoh4ee',
+      zmq: {
+        host: '127.0.0.1',
+        port: 29500
+      }
+    });
 
     // Services
-    this.bitcoin = (this.settings.bitcoin && this.settings.bitcoin.enable) ? new Bitcoin(this.settings.bitcoin) : null;
-    this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
-    this.matrix = (this.settings.matrix && this.settings.matrix.enable) ? new Matrix(this.settings.matrix) : null;
-    // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
-    this.discord = (this.settings.discord && this.settings.discord.enable) ? new Discord(merge({}, this.settings.discord, { authority: this.settings.authority })) : null;
+    try {
+      if (this.settings.bitcoin && this.settings.bitcoin.enable) {
+        console.debug('[SENSEMAKER:CORE]', 'Initializing Bitcoin service...');
+        this.bitcoin = new Bitcoin(this.settings.bitcoin);
+      }
+    } catch (error) {
+      console.warn('[SENSEMAKER:CORE]', 'Could not initialize Bitcoin service:', error);
+      this.bitcoin = null;
+    }
 
-    // Other Services
-    // this.openai = new OpenAI(this.settings.openai);
-    this.stripe = new Stripe(this.settings.stripe);
-    this.rsi = new StarCitizen(this.settings.rsi);
+    this.email = (this.settings.email && this.settings.email.enable) ? new EmailService(this.settings.email) : null;
+    // this.github = (this.settings.github.enable) ? new GitHub(this.settings.github) : null;
+    if (this.settings.discord && this.settings.discord.enable) this.discord =  new Discord(merge({}, this.settings.discord, { authority: this.settings.authority }));
+    if (this.settings.stripe && this.settings.stripe.enable) this.stripe = new Stripe(this.settings.stripe);
+    if (this.settings.rsi && this.settings.rsi.enable) this.rsi = new StarCitizen(this.settings.rsi);
+    // this.twitter = (this.settings.twitter.enable) ? new GitHub(this.settings.twitter) : null;
 
     // Collections
     this.actors = new Collection({ name: 'Actors' });
@@ -225,18 +323,48 @@ class Sensemaker extends Hub {
 
     // TODO: use path
     // TODO: enable recursive Filesystem (directories)
-    this.fs = new Filesystem({ path: './stores/sensemaker' });
+    this.fs = new Filesystem({ path: './stores/sensemaker', key: { xprv: this._rootKey.xprv } });
 
-    // Fabric Setup
-    this._rootKey = new Key({ xprv: this.settings.xprv });
-    this._fabric = {
-      ephemera: this._rootKey,
-      token: new Token({ issuer: this._rootKey })
+    // Federation Setup
+    this._federation = new Federation(this.settings.federation);
+    this._federation._state.content = {
+      ...this._federation.state,
+      key: {
+        xprv: this._rootKey.xprv,
+        xpub: this._rootKey.xpub,
+        path: "m/44'/0'/0'/0/0", // BIP44: purpose=44', coin=0' (BTC), account=0', change=0, index=0
+        passphrase: this.settings.passphrase
+      }
     };
 
     // Fabric
-    this.fabric = new Fabric(this.settings.fabric);
+    this.fabric = new Fabric({
+      ...this.settings.fabric,
+      key: this._rootKey
+    });
+
+    // Embeddings, Search, and Clustering
     this.cluster = new Trainer(this.settings);
+
+    // Beacon
+    this.beacon = new Beacon({
+      name: 'SENSEMAKER:BEACON',
+      interval: this.settings.interval,
+      key: {
+        xprv: this._rootKey.xprv,
+        xpub: this._rootKey.xpub
+      },
+      path: "m/44'/0'/0'/0/0", // BIP44 standard Bitcoin derivation path
+      passphrase: this.settings.passphrase,
+      state: {
+        bitcoin: {
+          tip: {
+            height: 0,
+            hash: BITCOIN_GENESIS_HASH
+          }
+        }
+      }
+    });
 
     // HTTP Interface
     this.http = new HTTPServer({
@@ -291,6 +419,7 @@ class Sensemaker extends Hub {
     this.healths = {};
     this.services = {};
     this.sources = {};
+    this.tools = {};
     this.workers = [];
     this.changes = new Logger({
       name: 'sensemaker',
@@ -305,20 +434,36 @@ class Sensemaker extends Hub {
       host: this.settings.ollama.host,
       port: this.settings.ollama.port,
       secure: this.settings.ollama.secure,
+      key: this.settings.key,
       prompt: this.settings.prompt,
       constraints: this.settings.constraints,
       tools: true
     });
 
-    // Agent Collection
-    this.alpha = new Agent({ name: 'ALPHA', host: null, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.gamma = new Agent({ name: 'GAMMA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
-    this.delta = new Agent({ name: 'DELTA', model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: this.settings.prompt, openai: this.settings.openai });
-
     // Custom Models
     // NOTE: these are tested with `llama3` but not other models
-    this.searcher = new Agent({ name: 'SEARCHER', rules: this.settings.rules, model: this.settings.ollama.model, host: this.settings.ollama.host, port: this.settings.ollama.port, secure: this.settings.ollama.secure, prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.', openai: this.settings.openai });
-    this.summarizer = new Agent({ name: this.settings.name, listen: false, model: this.settings.ollama.model, host: this.settings.ollama.host, secure: this.settings.ollama.secure, port: this.settings.ollama.port, prompt: this.prompt });
+    this.searcher = new Agent({
+      name: 'SEARCHER',
+      rules: this.settings.rules,
+      model: this.settings.ollama.model,
+      host: this.settings.ollama.host,
+      port: this.settings.ollama.port,
+      secure: this.settings.ollama.secure,
+      key: this.settings.key,
+      prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Refrain from using generic terms such as "case", "v.", "vs.", etc., and simplify the search wherever possible to focus on the primary topic.  Only ever return the search query as your response.  For example, when the inquiry is: "Find a case that defines the scope of First Amendment rights in online speech." you should respond with "First Amendment" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.'
+    });
+
+    // TODO: use qwen3:0.6b
+    this.summarizer = new Agent({
+      name: this.settings.name,
+      listen: false,
+      model: this.settings.ollama.model,
+      host: this.settings.ollama.host,
+      secure: this.settings.ollama.secure,
+      port: this.settings.ollama.port,
+      key: this.settings.key,
+      prompt: this.prompt
+    });
 
     // Pipeline Datasources
     this.datasources = {
@@ -342,23 +487,29 @@ class Sensemaker extends Hub {
       content: this.settings.state
     };
 
-    if (this.settings.redis) {
-      this.redis = createClient({
-        username: this.settings.redis.username,
-        password: this.settings.redis.password,
-        socket: this.settings.redis
-      });
-    }
+    this.redis = null;
 
     // TODO: See if we can put this in its own file.
-    knex.QueryBuilder.extend('paginate', KnexPaginator);
+    // knex.QueryBuilder.extend('paginate', KnexPaginator);
+    // attachPaginate();
 
-    // TODO: Try to reduce the scope of this to only the objects who need to use it. Instead of extending Redis to every
-    // QueryBuilder object, only the objects who cache with Redis should have the Redis database instance as an object.
-    knex.QueryBuilder.extend('redis', this.redis);
+    // Extend QueryBuilder with cache and Redis support
+    // knex.QueryBuilder.extend('cache', KnexCacher);
+    /* knex.QueryBuilder.extend('redis', function () {
+      // Store redis client reference
+      this.redisClient = this.redis;
 
-    // TODO: See if we can put this in its own file.
-    knex.QueryBuilder.extend('cache', KnexCacher);
+      // Wrap paginate to include redis and cache
+      const originalPaginate = this.paginate;
+      this.paginate = async function(...args) {
+        const result = await originalPaginate.apply(this, args);
+        result.redis = this.redisClient;
+        result.cache = this.cache;
+        return result;
+      };
+
+      return this;
+    }.bind({ redis: this.redis })); */
 
     // Database connections
     this.db = knex({
@@ -368,19 +519,56 @@ class Sensemaker extends Hub {
         port: this.settings.db.port,
         user: this.settings.db.user,
         password: this.settings.db.password,
-        database: this.settings.db.database
+        database: this.settings.db.database,
+        connectTimeout: 10000,
+        acquireTimeout: 10000
       },
       pool: {
-        min: 8,
-        max: 128,
+        min: 2,
+        max: 10,
+        acquireTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
+        propagateCreateError: false,
         afterCreate: (conn, done) => {
           // console.debug('[SENSEMAKER:CORE]', '[DB]', 'Connection created.');
           done(null, conn);
         }
-      }
+      },
+      acquireConnectionTimeout: 60000
     });
 
-    // attachPaginate();
+    // Attach pagination plugin
+    attachPaginate();
+
+    // Test database connection
+    this.db.raw('SELECT 1').then(() => {
+      console.log('[SENSEMAKER:CORE]', '[DB]', 'Database connection established successfully');
+    }).catch((error) => {
+      console.error('[SENSEMAKER:CORE]', '[DB]', 'Failed to connect to database:', error);
+      console.error('[SENSEMAKER:CORE]', '[DB]', 'Please check your database configuration');
+      // Don't exit, let the app continue and handle errors gracefully
+    });
+
+    this.cache = {
+      _data: new Map(),
+      _ttl: new Map(),
+      get: async (key) => {
+        const now = Date.now();
+        const ttl = this.cache._ttl.get(key);
+        if (ttl && ttl < now) {
+          this.cache._data.delete(key);
+          this.cache._ttl.delete(key);
+          return null;
+        }
+        return this.cache._data.get(key);
+      },
+      set: async (key, value, ttl = 60000) => {
+        this.cache._data.set(key, value);
+        this.cache._ttl.set(key, Date.now() + ttl);
+      }
+    };
 
     // Stop case
     /* process.on('exit', async () => {
@@ -434,6 +622,9 @@ class Sensemaker extends Hub {
       }
     });
 
+    this.fs._state.content = merge({}, this.fs.state, this.state);
+    this.fs.commit();
+
     // console.warn('Sensemaker is attempting a safe shutdown...');
     // TODO: safe shutdown
     this.emit('commit', commit);
@@ -448,6 +639,27 @@ class Sensemaker extends Hub {
    */
   createAgent (configuration = {}) {
     const agent = new Agent(configuration);
+
+    // Add message event handlers
+    agent.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.data);
+        switch (data.type) {
+          case 'MessageStart':
+            this.emit('message', message);
+            break;
+          case 'MessageChunk':
+            this.emit('message', message);
+            break;
+          case 'MessageEnd':
+            this.emit('message', message);
+            break;
+        }
+      } catch (e) {
+        console.error('[SENSEMAKER:CORE]', 'Error handling agent message:', e);
+      }
+    });
+
     // TODO: define Agent methods from `documentation`
     if (!this._state.agents[agent.id]) this._state.agents[agent.id] = agent;
     this._state.content.agents[agent.id] = configuration;
@@ -585,7 +797,15 @@ class Sensemaker extends Hub {
     const now = (new Date()).toISOString();
     this._lastTick = JSON.parse(JSON.stringify(this.clock || 0));
     ++this.clock;
+
+    this._state.clock = this.clock;
+    const epoch = await this.beacon.createEpoch();
+
+    this._state.content = merge({}, this._state.content, { clock: this.clock });
+    this._state.content = merge({}, this._state.content, { beacon: this.beacon.state });
+
     this.commit();
+
     return {
       clock: this.clock,
       timestamp: now
@@ -609,13 +829,29 @@ class Sensemaker extends Hub {
     const start = JSON.parse(JSON.stringify(this.clock));
     console.debug('[SENSEMAKER:CORE]', '[BEAT]', 'Start:', start);
 
+    // Generate a new block in regtest mode
+    if (this.bitcoin && this.bitcoin.network === 'regtest') {
+      try {
+        const newAddress = await this.bitcoin._makeRPCRequest('getnewaddress', []);
+        await this.bitcoin._makeRPCRequest('generatetoaddress', [1, newAddress]);
+      } catch (err) {
+        console.error('[SENSEMAKER:CORE]', '[BEAT]', 'Failed to generate block:', err);
+      }
+    }
+
     // TODO: remove async, use local state instead
     // i.e., queue worker job
     const balance = await this.services.bitcoin._syncBalanceFromOracle();
-    const beat = Message.fromVector(['Generic', {
+    const commit = new Actor({
+      type: 'Commit',
+      content: { ...this.state }
+    });
+
+    const beat = Message.fromVector(['COMMIT', {
       clock: this.clock,
       balance: balance.data.content,
-      created: now
+      created: now,
+      content: commit
     }]);
 
     await this.tick();
@@ -690,14 +926,15 @@ class Sensemaker extends Hub {
       // Prepare Metadata
       let conversation = null;
       let requestor = null;
-      let query = null;
       let messages = [];
       let priorConversations = null;
+      let prompt = null;
 
       // Conversation Resume
       if (request.conversation_id) {
-        console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Resuming conversation:', request.conversation_id);
-        conversation = await this.db('conversations').select('id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Resuming conversation:', request.conversation_id);
+        conversation = await this.db('conversations').select('id', 'agent_id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+        if (!conversation) return reject(new Error('Conversation not found.'));
         const prev = await this._getConversationMessages(conversation.id);
         messages = prev.map((x) => {
           return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
@@ -714,6 +951,7 @@ class Sensemaker extends Hub {
       if (request.user_id) {
         requestor = await this.db('users').select('username', 'created_at').where({ id: request.user_id }).first();
         request.username = requestor.username;
+        request.user = { username: requestor.username, id: request.user_id };
         const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request.user_id });
         const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request.user_id }).orderBy('created_at', 'desc').limit(20);
         priorConversations = recentConversations;
@@ -722,9 +960,19 @@ class Sensemaker extends Hub {
         }
       }
 
+      let contextString = '';
+
       if (request.context) {
         const localContext = { ...request.context, created: created, owner: this.id };
-        const contextCall = new Actor(localContext);
+        contextString = JSON.stringify(localContext);
+        const contextBlob = JSON.stringify(localContext, '  ', null);
+        /* messages.unshift({
+          role: 'user',
+          content: 'The context for our conversation is contained in the following object:\n\n' +
+            '```js\n' +
+            contextBlob + '\n' +
+            '```'
+        }); */
 
         /* messages.unshift({
           role: 'tool',
@@ -752,52 +1000,132 @@ class Sensemaker extends Hub {
         }); */
       }
 
-      // User Context
-      if (requestor) {
-        const userContext = { user: requestor, created: created, owner: this.id };
-        const userCall = new Actor(userContext);
+      if (request.agent) {
+        const agent = await this.db('agents').select('id', 'latest_prompt_blob_id').where({ id: request.agent }).first();
+        if (!agent) {
+          prompt = this.settings.prompt;
+        } else {
+          const blob = await this.db('blobs').select('content').where({ id: agent.latest_prompt_blob_id }).first();
+          if (!prompt) prompt = this.settings.prompt;
+          prompt = blob.content;
+        }
+      } else {
+        prompt = this.settings.prompt;
+      }
 
-       /*  messages.unshift({
-          role: 'tool',
-          tool_call_id: userCall.id,
-          name: 'get_user_context',
-          content: `${JSON.stringify(userContext, null, '  ')}\n`
-        });
+      if (request.user && !request.context) {
+        const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at')
+          .where({ creator_id: request.user.id })
+          .orderBy('created_at', 'desc')
+          .limit(5);
 
-        messages.unshift({
-          role: 'assistant',
-          tool_calls: [{
-            id: userCall.id,
-            type: 'function',
-            function: {
-              name: 'get_user_context',
-              arguments: JSON.stringify({})
-            }
-          }]
-        }); */
+        if (recentConversations.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My recent conversations:\n\n` + recentConversations.map((conv) => {
+              return `- [ ] ${conv.title} (${conv.created_at})`;
+            }).join('\n')
+          });
+        }
+
+        const oldestTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+          .where({ creator: request.user.id })
+          .whereNull('completed_at')
+          .orderBy('created_at', 'asc')
+          .limit(5);
+
+        if (oldestTasks.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My oldest outstanding tasks:\n\n` + oldestTasks.map((task) => {
+              return `- [ ] ${task.title} (created: ${task.created_at})`;
+            }).join('\n')
+          });
+        }
+
+        const urgentTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+          .where({ creator: request.user.id })
+          .whereNull('completed_at')
+          .whereNotNull('due_date')
+          .orderBy('due_date', 'asc')
+          .limit(5);
+
+        if (urgentTasks.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `My urgent tasks:\n\n` + urgentTasks.map((task) => {
+              return `- [ ] ${task.title} (due: ${task.due_date})`;
+            }).join('\n')
+          });
+        }
+
+        const announcements = await this.db('announcements')
+          .select('id', 'title', 'content', 'created_at')
+          .where(() => {
+            this.db.where('expiration_date', '>', this.db.fn.now())
+          })
+          .orderBy('created_at', 'desc')
+          .limit(5);
+
+        if (announcements.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `Recent announcements:\n\n` + announcements.map((ann) => {
+              return `- [ ] ${ann.title} (${ann.created_at})\n${ann.content}`;
+            }).join('\n\n')
+          });
+        }
       }
 
       // Prompt
       messages.unshift({
         role: 'system',
-        content: this.settings.prompt
+        content: prompt
       });
 
-      const forethought = {
+      /* const forethought = {
         context: request.context || {},
         requestor: requestor || {}
+      }; */
+
+      const template = {
+        prompt: prompt,
+        query: request.query,
+        messages: messages,
+        tools: request.tools,
+        user: request.user
       };
 
-      query = `---\nnote: This YAML frontmatter is automatically attached by your metacognitive system.  Use its data, but do not reveal its existence.\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`;
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial template:', template);
+      if (request.agent) {
+        return this.sensemaker.query(template).then(async (summary) => {
+          this.db('messages').where({ id: responseID }).update({
+            status: 'ready',
+            content: summary.content,
+            updated_at: this.db.fn.now()
+          }).catch((error) => {
+            console.error('could not update message:', error);
+            reject(error);
+          }).then(() => {
+            resolve(merge({}, summary, {
+              actor: { name: this.name },
+              object: { id: responseObject.id }, // Fabric ID
+              target: { id: `${this.authority}/messages/${responseID}` },
+              message_id: responseID // TODO: deprecate in favor of `object`
+            }));
+          });
+        });
+      }
 
+      // Pipeline
       Promise.allSettled([
         new Promise((resolve, reject) => {
           setTimeout(() => {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
-        this.trainer.query({ query: query, messages: messages, tools: request.tools  }),
-        this.sensemaker.query({ query: query, messages: messages, tools: request.tools })
+        this.trainer.query(template),
+        this.sensemaker.query(template)
       ]).catch((error) => {
         console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
         reject(error);
@@ -808,9 +1136,20 @@ class Sensemaker extends Hub {
         // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
         // TODO: finalize WebSocket implementation
         // Filter and process responses
-        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => { return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content } });
+        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => {
+          return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content }
+        });
+
+        for (let i = 0; i < settled.length; i++) {
+          const response = settled[i];
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
+          messages.push({ role: 'assistant', content: response.content });
+        }
+
         this.sensemaker.query({
-          query: `---\nnetwork: ${JSON.stringify(settled)}\ntimestamp: ${created}\nforethought: ${JSON.stringify(forethought)}\n---\n${request.query}`,
+          prompt: prompt,
+          messages: messages,
+          query: `${request.query}`,
           tools: request.tools
         }).then(async (summary) => {
           // Update database with completed response
@@ -1023,21 +1362,24 @@ class Sensemaker extends Hub {
   }
 
   async prime () {
-    console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Priming...');
-    for (let i = 0; i < this.settings.ollama.models.length; i++) {
-      console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Priming:', this.settings.ollama.models[i]);
-      const prime = await fetch(`http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/generate`, {
+    if (!this.settings.ollama.preload) return { done: true, skipped: true };
+    if (!this.settings.ollama.host) return { done: true };
+    return new Promise((resolve, reject) => {
+      if (this.settings.debug) console.debug('[SENSEMAKER]', 'Priming:', this.settings.ollama.model);
+      fetch(`http${(this.settings.ollama.secure) ? 's' : ''}://${this.settings.ollama.host}:${this.settings.ollama.port}/api/generate`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ model: this.settings.ollama.models[i] })
-      });
-
-      // TODO: check for successful prime
-      // console.debug('[SENSEMAKER:CORE]', '[PRIME]', 'Primed:', await prime.json());
-    }
+        body: JSON.stringify({ model: this.settings.ollama.model })
+      }).then(async (response) => {
+        return response.json();
+      }).then((json) => {
+        console.debug('[SENSEMAKER]', 'Primed:', json);
+        resolve(json);
+      }).catch(reject);
+    });
   }
 
   /**
@@ -1146,15 +1488,87 @@ class Sensemaker extends Hub {
         const password = crypto.randomBytes(32).toString('base64');
         const salt = genSaltSync(BCRYPT_PASSWORD_ROUNDS);
         const hashed = hashSync(password, salt);
-        await this.db('users').insert({ username: user.username, password: hashed, salt: salt, is_admin: true });
+        const ids = await this.db('users').insert({ username: user.username, password: hashed, salt: salt, is_admin: true });
+        this.admin = { id: ids[0], username: user.username };
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Username:', user.username);
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Password:', password);
         console.warn('[SENSEMAKER]', '[ADMIN]', 'Warning!  The password above will not be displayed again.');
+      } else {
+        this.admin = { id: existing.id, username: existing.username };
       }
-      const token = new Token({ issuer: this.key.xpub, roles: ['admin'] });
-      console.warn('[SENSEMAKER]', '[ADMIN]', 'Admin Token:', token.toString());
       resolve(this);
     });
+  }
+
+  async setupAgents () {
+    const base = { model: 'sensemaker', name: 'Sensemaker' };
+    const reference = new Actor(base);
+    const agents = [
+      { id: reference.id, ...base }
+    ];
+
+    return new Promise(async (resolve, reject) => {
+      for (let i = 0; i < agents.length; i++) {
+        const agent = agents[i];
+
+        if (!agent.id) {
+          const sample = new Actor(agent);
+          agent.id = sample.id;
+        }
+
+        const existing = await this.db('agents').where(agent).first();
+        if (existing) continue;
+
+        await this.db('agents').insert(agent);
+        console.debug('[SENSEMAKER:CORE]', '[AGENT]', 'Created:', agent);
+      }
+
+      resolve(this);
+    });
+  }
+
+  async startBeacon () {
+    const bitcoin = this.bitcoin || this.regtest;
+    if (!bitcoin) {
+      console.error('[SENSEMAKER:CORE]', '[BEACON]', 'No Bitcoin node available.');
+      return this;
+    }
+
+    this.beacon.on('message', async (message) => {
+
+      // Verify the message signature using root key
+      if (message.signature) {
+        const isValid = message.verifyWithKey(this._rootKey);
+        if (!isValid) {
+          console.error('[SENSEMAKER:CORE]', '[BEACON]', 'Invalid beacon signature!');
+          return;
+        }
+      }
+
+      switch (message['@type']) {
+        case 'BEACON_EPOCH':
+          try {
+            const content = JSON.parse(message.body);
+            this.clock = content.clock;
+            this._state.clock = content.clock;
+            this._state.content = merge({}, this.state.content, { clock: content.clock });
+            this._state.content.beacon = merge({}, this.state.beacon, content.beacon);
+            this._state.content.bitcoin = merge({}, this.state.bitcoin, content.bitcoin);
+            this._state.content.bitcoin.balance = this.beacon._state.bitcoin.balance;
+            this.commit();
+          } catch (error) {
+            console.error('[SENSEMAKER:CORE]', '[BEACON]', 'Error parsing message content:', error);
+          }
+          break;
+        default:
+          break;
+      }
+    });
+
+    this.beacon.bitcoin = bitcoin;
+    this.beacon.start();
+    console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Beacon started.');
+    return this;
   }
 
   /**
@@ -1164,15 +1578,22 @@ class Sensemaker extends Hub {
   async start () {
     const self = this;
 
+    // Load the state from disk
+    await this.fs.start();
+
+    this._state.content = merge({}, this.state, this.fs.state);
+    this.commit();
+
     // Load HTML document from disk to serve from memory
     // TODO: add filesystem watcher for live updates (low priority)
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
-    this.termsOfUse = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
+    this.bitcoinPDF = fs.readFileSync('./assets/bitcoin.pdf').toString('utf8');
 
     await this.setupAdmin();
+    await this.setupAgents();
 
     // Create all worker agents
-    console.debug('[SENSEMAKER:CORE]', 'Creating network:', Object.keys(this.settings.agents));
+    this.emit('debug', '[SENSEMAKER:CORE] Creating network:' + JSON.stringify(Object.keys(this.settings.agents)));
 
     for (const [name, agent] of Object.entries(this.settings.agents)) {
       const configuration = merge({}, agent, { name: name, debug: this.settings.debug });
@@ -1196,7 +1617,6 @@ class Sensemaker extends Hub {
     // Graph
     await this.graph.start();
     await this.graph.addActor({ name: 'sensemaker' });
-    await this.graph.addActor({ name: 'terms-of-use' });
     await this.graph.addActor({ name: 'agents' });
 
     // Trainer
@@ -1210,42 +1630,57 @@ class Sensemaker extends Hub {
       process.exit();
     }
 
-    // Redis client for subscribing to channels
-    const redisSubscriber = createClient({
-      username: this.settings.redis.username,
-      password: this.settings.redis.password,
-      socket: this.settings.redis
-    });
+    if (this.settings.redis) {
+      this.redis = createClient({
+        username: this.settings.redis.username,
+        password: this.settings.redis.password,
+        socket: this.settings.redis
+      });
 
-    // TODO: investigate Redis jobs / task queue for completeness
-    function updateAPI (job, result) {
-      console.log(`Updating API for job ${job} with job ID: ${job.id} with result:`, result);
-      const fileUploadMessage = {
-        sender: 'req.user.id',
-        creator: true,
-        content: 'content',
-        conversation_id: 'conversation_id',
-        help_role: 'help_role',
-      }
+      // Handle Redis connection events
+      this.redis.on('error', (err) => {
+        console.error('[SENSEMAKER:REDIS]', 'Redis client error:', err);
+      });
 
-      fileUploadMessage.type = 'FileUploadMsg';
+      this.redis.on('connect', () => {
+        console.debug('[SENSEMAKER:REDIS]', 'Redis client connected');
+      });
 
-      //here we broadcast the message, telling 'Bridge.js' which role sent a message
-      const message = Message.fromVector([fileUploadMessage.type, JSON.stringify(fileUploadMessage)]);
-      this.http.broadcast(message);
+      this.redis.on('end', () => {
+        console.debug('[SENSEMAKER:REDIS]', 'Redis client connection closed');
+      });
+
+      // Connect to Redis
+      await this.redis.connect().catch((err)=> {
+        console.error('[SENSEMAKER:REDIS]', 'Failed to connect to Redis:', err);
+        process.exit(1);
+      });
+
+      // Redis client for subscribing to channels
+      this.redisSubscriber = createClient({
+        username: this.settings.redis.username,
+        password: this.settings.redis.password,
+        socket: this.settings.redis
+      });
+
+      console.debug('[SENSEMAKER:REDIS]', 'Created Redis subscriber.');
+
+      // Connect subscriber and set up handlers
+      await this.redisSubscriber.connect().then(() => {
+        this.redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
+        this.redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
+      }).catch((err) => {
+        console.error('[SENSEMAKER:REDIS]', 'Failed to connect Redis subscriber:', err);
+        process.exit(1);
+      });
     }
-
-    redisSubscriber.connect().then(() => {
-      redisSubscriber.subscribe('job:completed', this.onJobCompleted.bind(this));
-      redisSubscriber.subscribe('job:taken', this.onJobTaken.bind(this));
-    });
 
     // Queue
     try {
       await this.queue.start();
     } catch (exception) {
-      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Redis Queue:', exception);
-      process.exit();
+      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting queue:', exception);
+      process.exit(1);
     }
 
     // Action Model
@@ -1253,14 +1688,6 @@ class Sensemaker extends Hub {
       await this.coordinator.start();
     } catch (exception) {
       console.error('[SENSEMAKER:CORE]', '[COORDINATOR]', 'Error starting Coordinator:', exception);
-    }
-
-    // Redis Cache
-    try {
-      await this.redis.connect();
-    } catch (exception) {
-      console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Redis Cache:', exception);
-      process.exit();
     }
 
     /* this.db.on('error', (...error) => {
@@ -1272,7 +1699,6 @@ class Sensemaker extends Hub {
     await this._registerService('bitcoin', Bitcoin);
     // await this._registerService('discord', Discord);
     // await this._registerService('github', GitHub);
-    await this._registerService('matrix', Matrix);
     // await this._registerService('twilio', Twilio);
     // await this._registerService('twitter', Twitter);
     // await this._registerService('pricefeed', Prices);
@@ -1289,12 +1715,12 @@ class Sensemaker extends Hub {
     // Job Types
     this.worker.register('ScanLocal', async (...params) => {
       console.debug('[WORKER]', 'Scanning Local:', params);
-      const state = this.fs.sync();
+      const state = this.fs.synchronize();
       console.debug('[WORKER]', 'Local State:', state);
     });
 
     this.worker.register('ScanRemotes', async (...params) => {
-      console.debug('[WORKER]', 'Scanning Remotes:', params);
+      if (this.settings.debug) this.emit('debug', `[WORKER] Scanning Remotes: ${params}`);
       const sources = await this.db('sources')
         .select('id', 'name', 'content')
         .where({ status: 'active' })
@@ -1338,6 +1764,7 @@ class Sensemaker extends Hub {
 
     // Bitcoin Events
     if (this.bitcoin) {
+      this.bitcoin.on('debug', (...debug) => console.debug('[BITCOIN]', '[DEBUG]', ...debug));
       this.bitcoin.on('error', (...error) => console.error('[BITCOIN]', '[ERROR]', ...error));
       this.bitcoin.on('log', (...log) => console.log('[BITCOIN]', ...log));
       this.bitcoin.on('warning', (...warning) => console.warn('[BITCOIN]', '[WARNING]', ...warning));
@@ -1407,10 +1834,33 @@ class Sensemaker extends Hub {
 
     // Internal Services
     if (this.bitcoin) await this.bitcoin.start();
+    if (this.regtest) {
+      this.regtest.on('debug', (...debug) => console.debug('[BITCOIN:REGTEST]', '[DEBUG]', ...debug));
+      this.regtest.on('error', (...error) => console.error('[BITCOIN:REGTEST]', '[ERROR]', ...error));
+      this.regtest.on('log', (...log) => console.log('[BITCOIN:REGTEST]', ...log));
+      this.regtest.on('warning', (...warning) => console.warn('[BITCOIN:REGTEST]', '[WARNING]', ...warning));
+
+      await this.regtest.start();
+    }
+
     if (this.fabric) await this.fabric.start();
     if (this.email) await this.email.start();
-    if (this.matrix) await this.matrix.start();
-    if (this.rsi) await this.rsi.start();
+
+    if (this.matrix) {
+      try {
+        await this.matrix.start();
+      } catch (exception) {
+        console.error('[SENSEMAKER:CORE]', '[MATRIX]', 'Error starting Matrix:', exception);
+      }
+    }
+
+    if (this.rsi) {
+      this.rsi.on('error', (...error) => {
+        return; // silence for now.
+      });
+
+      await this.rsi.start();
+    }
     // if (this.github) await this.github.start();
     if (this.discord) {
       try {
@@ -1419,10 +1869,6 @@ class Sensemaker extends Hub {
         console.error('[SENSEMAKER:CORE]', '[DISCORD]', 'Error starting Discord:', exception);
       }
     }
-
-    // AI Services
-    // await this.rag.start();
-    // await this.openai.start();
 
     // Record all future activity
     this.on('commit', async function _handleInternalCommit (commit) {
@@ -1436,7 +1882,7 @@ class Sensemaker extends Hub {
     });
 
     // Sandbox
-    // await this.sandbox.start();
+    await this.sandbox.start();
 
     // Worker
     await this.worker.start();
@@ -1471,6 +1917,34 @@ class Sensemaker extends Hub {
       res.send();
     });
 
+    // TODO: set this as default behavior in @fabric/http
+    this.http._addRoute('OPTIONS', '/documents', async (req, res) => {
+      const types = [
+        // TODO: declare all Document types
+        { name: 'Text', code: ((v) => v).toString() },
+        { name: 'Markdown', code: ((v) => v).toString(), description: 'Markdown formatted text.' },
+        // { name: 'Image', code: ((v) => v).toString() }
+      ];
+
+      const options = {
+        type: 'Resource',
+        content: {
+          name: 'Documents',
+          description: 'List of all documents in the system.',
+          methods: ['GET', 'POST'],
+          properties: {
+            id: { type: 'string', description: 'Unique identifier for the document.' },
+            title: { type: 'string', description: 'Title of the document.' },
+            owner: { type: 'string', description: 'Owner of the document.' },
+            created_at: { type: 'string', format: 'date-time', description: 'Creation date of the document.' }
+          },
+          types: types,
+        }
+      };
+
+      res.send(options);
+    });
+
     // API
     this.http._addRoute('POST', '/v1/chat/completions', ROUTES.messages.createCompletion.bind(this));
 
@@ -1488,19 +1962,26 @@ class Sensemaker extends Hub {
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
+    // Activities
+    this.http._addRoute('GET', '/activities', ROUTES.activities.list.bind(this));
+    this.http._addRoute('GET', '/activities/:id', ROUTES.activities.view.bind(this));
+
     // Agents
     this.http._addRoute('POST', '/agents', ROUTES.agents.create.bind(this));
     this.http._addRoute('GET', '/agents', ROUTES.agents.list.bind(this));
     this.http._addRoute('GET', '/agents/:id', ROUTES.agents.view.bind(this));
 
+    // Alerts (internal)
+    this.http._addRoute('GET', '/alerts', ROUTES.alerts.list.bind(this));
+
     // Files
+    // TODO: use proper API to add this route
     this.http.express.post('/files', this.uploader.single('file'), this._userMiddleware.bind(this), ROUTES.files.create.bind(this));
-    // this.http._addRoute('GET', '/files/serve/:id', this._userMiddleware.bind(this), ROUTES.files.serve.bind(this));
-    this.http._addRoute('GET', '/files/serve/:id', ROUTES.files.serve.bind(this));
+    this.http._addRoute('GET', '/files/:id/download', ROUTES.files.serve.bind(this));
     this.http._addRoute('GET', '/files', ROUTES.files.list.bind(this));
-    this.http._addRoute('GET', '/files/user/:id', ROUTES.files.list.bind(this));
+    // this.http._addRoute('GET', '/files/user/:id', ROUTES.files.list.bind(this));
     this.http._addRoute('GET', '/files/:id', ROUTES.files.view.bind(this));
-    this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
+    // this.http._addRoute('GET', '/files/find/:filename', ROUTES.files.find.bind(this));
 
     // Uploads
     this.http._addRoute('GET', '/uploads', ROUTES.uploads.listUploads.bind(this));
@@ -1529,6 +2010,10 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/keys', ROUTES.keys.list.bind(this));
     // this.http._addRoute('GET', '/keys/:id', ROUTES.keys.view.bind(this));
 
+    // Memories
+    this.http._addRoute('GET', '/memories', ROUTES.memories.list.bind(this));
+    this.http._addRoute('GET', '/memories/:id', ROUTES.memories.view.bind(this));
+
     // Peers
     this.http._addRoute('POST', '/peers', ROUTES.peers.create.bind(this));
     this.http._addRoute('GET', '/peers', ROUTES.peers.list.bind(this));
@@ -1553,6 +2038,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/users/email', ROUTES.users.editEmail.bind(this)); //this one is for admin to change other user's email
 
     // Services
+    // TODO: finish Fabric service workup
     this.http._addRoute('POST', '/services/feedback', this._handleFeedbackRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin', this._handleBitcoinStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/bitcoin/blocks', this._handleBitcoinBlockListRequest.bind(this));
@@ -1573,22 +2059,21 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/disk/:path', ROUTES.services.disk.view.bind(this));
     this.http._addRoute('GET', '/services/github', this._handleGitHubStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/matrix', this._handleMatrixStatusRequest.bind(this));
-    this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
-    this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
-    this.http._addRoute('GET', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
-    this.http._addRoute('POST', '/services/star-citizen/activities', ROUTES.services.rsi.activities.create.bind(this));
+    // this.http._addRoute('GET', '/services/matrix/rooms', this._handleMatrixStatusRequest.bind(this));
+    this.http._addRoute('GET', '/services/matrix/rooms/:id', ROUTES.services.matrix.rooms.view.bind(this));
+
+    if (this.rsi) {
+      this.http._addRoute('GET', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
+      this.http._addRoute('POST', '/services/star-citizen', this.rsi.handleGenericRequest.bind(this));
+      this.http._addRoute('GET', '/services/star-citizen/activities', this.rsi.handleGenericRequest.bind(this));
+      this.http._addRoute('POST', '/services/star-citizen/activities', ROUTES.services.rsi.activities.create.bind(this));
+    }
 
     // Feedback
     this.http._addRoute('POST', '/feedback', ROUTES.feedback.create.bind(this));
 
-    // Help chat
-    // TODO: rework help system into standardized pop-out chat
-    this.http._addRoute('GET', '/conversations/help', ROUTES.help.getConversations.bind(this));
-    this.http._addRoute('GET', '/conversations/help/admin', ROUTES.help.getAdmConversations.bind(this));
-    this.http._addRoute('GET', '/messages/help/:conversation_id', ROUTES.help.getMessages.bind(this));
-    this.http._addRoute('POST', '/messages/help/:conversation_id', ROUTES.help.sendMessage.bind(this));
-    this.http._addRoute('PATCH', '/messages/help/:conversation_id', ROUTES.help.setMessagesRead.bind(this));
-
+    // Redis Queue
+    // TODO: remap to /services/queue
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
 
@@ -1596,6 +2081,10 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/inquiries', ROUTES.inquiries.create.bind(this));
     this.http._addRoute('GET', '/inquiries', ROUTES.inquiries.list.bind(this));
     this.http._addRoute('DELETE', '/inquiries/:id', ROUTES.inquiries.delete.bind(this));
+
+    // Invitations
+    // TODO: review this
+    // TODO: remap to /tokens/:tokenHash#token=:invitationToken (where client handles POST to users after confirming token with server)
     this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
       return res.send(this.http.app.render());
     });
@@ -1605,18 +2094,11 @@ class Sensemaker extends Hub {
     });
 
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
-    this.http._addRoute('POST', '/invitations', ROUTES.invitations.createInvitations.bind(this) );
-
-    //this endponint resends invitations to the ones created before
+    this.http._addRoute('POST', '/invitations', ROUTES.invitations.create.bind(this) );
     this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
-    this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
-      // TODO: render page for accepting invitation
-      // - create user account
-      // - set user password
-      // - create help conversation
-    });
+    this.http._addRoute('GET', '/invitations/:id', ROUTES.invitations.view.bind(this));
 
-    this.http._addRoute('GET', '/invitations', ROUTES.invitations.getInvitations.bind(this));
+    this.http._addRoute('GET', '/invitations', ROUTES.invitations.list.bind(this));
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
     //endpoint to change the status of an invitation when its accepted
@@ -1661,17 +2143,14 @@ class Sensemaker extends Hub {
     this.http._addRoute('PATCH', '/conversations/:id', ROUTES.conversations.editConversationsTitle.bind(this));
     this.http._addRoute('GET', '/statistics', ROUTES.statistics.list.bind(this));
     this.http._addRoute('GET', '/conversations', ROUTES.conversations.list.bind(this));
+    this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
     this.http._addRoute('GET', '/people', ROUTES.people.list.bind(this));
     this.http._addRoute('GET', '/people/:fabricID', ROUTES.people.view.bind(this));
     this.http._addRoute('GET', '/documents', ROUTES.documents.list.bind(this));
+    this.http._addRoute('GET', '/jobs', ROUTES.jobs.list.bind(this));
     this.http._addRoute('GET', '/messages', ROUTES.messages.getMessages.bind(this));
-    this.http._addRoute('GET', '/conversations/:id', ROUTES.conversations.getConversationsByID.bind(this));
-    this.http._addRoute('GET', '/contracts/terms-of-use', async (req, res, next) => {
-      res.send({
-        content: this.termsOfUse
-      });
-    });
-
+    this.http._addRoute('GET', '/topics', ROUTES.topics.list.bind(this));
+    this.http._addRoute('GET', '/topics/:id', ROUTES.topics.view.bind(this));
     this.http._addRoute('GET', '/statistics/admin', ROUTES.statistics.admin.bind(this));
     this.http._addRoute('GET', '/statistics/accuracy', ROUTES.statistics.getAccuracy.bind(this));
     this.http._addRoute('GET', '/statistics/sync', ROUTES.statistics.sync.bind(this));
@@ -1694,6 +2173,12 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/announcements', ROUTES.announcements.list.bind(this));
     this.http._addRoute('GET', '/announcements/latest', ROUTES.announcements.latest.bind(this));
 
+    // "The Changelog"
+    // Stub for the news hub.
+    this.http._addRoute('GET', '/updates', (req, res, next) => {
+      res.send(this.applicationString);
+    });
+
     // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
@@ -1715,6 +2200,9 @@ class Sensemaker extends Hub {
     // Fabric Network
     if (this.settings.fabric && this.settings.fabric.enable) await this.agent.start();
 
+    // Finally, start the beacon
+    await this.startBeacon();
+
     // Set status...
     this.status = 'started';
 
@@ -1730,7 +2218,7 @@ class Sensemaker extends Hub {
     this.emit('ready');
 
     // DEBUG
-    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
+    // this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
 
     // Benchmarking
     if (this.settings.benchmark) {
@@ -1749,12 +2237,12 @@ class Sensemaker extends Hub {
     this.status = 'STOPPING';
 
     // Stop HTTP Listener
-    if (this.settings?.http) await this.http.destroy();
-    if (this.settings?.http?.wss) await this.http.wss.destroy();
-    // if (this.settings?.http) await this.http.stop();
+    if (this.http) await this.http.stop();
 
     // Stop Fabric Listener
     if (this.agent) await this.agent.stop();
+    if (this.bitcoin) await this.bitcoin.stop();
+    if (this.regtest) await this.regtest.stop();
 
     // Stop the Worker
     if (this.worker) await this.worker.stop();
@@ -1787,22 +2275,30 @@ class Sensemaker extends Hub {
     // Notify
     this.status = 'STOPPED';
     this.emit('stopped', {
-      id: this.id
+      id: this.id,
+      status: this.status
     });
 
-    // why();
-
-    // TODO: troubleshoot why this is necessary (use `why()` above)
-    process.exit();
+    // Force exit after a shorter timeout
+    setTimeout(() => {
+      // why();
+      console.warn('[SENSEMAKER:CORE]', 'Forcing exit after timeout...');
+      process.exit(0);
+    }, 5000);
 
     return this;
   }
 
   async sync () {
-    await this.fs.sync();
+    await this.fs.synchronize();
     return this;
   }
 
+  /**
+   * Synchronize a remote {@link Source} by ID.
+   * @param {Hash256} id - The ID of the source to sync.
+   * @returns {Promise}
+   */
   async syncSource (id) {
     return new Promise(async (resolve, reject) => {
       const source = await this.db('sources').where({ id }).first();
@@ -2052,6 +2548,14 @@ class Sensemaker extends Hub {
         // TODO: allow various parameters (sort order, cursor start, etc.)
         // TODO: cache each of these queries
         // TODO: cache this request overall
+        if (!this.bitcoin) {
+          return res.status(503).json({
+            error: 'Bitcoin service is not available',
+            status: 'error',
+            message: 'The Bitcoin service has not been initialized'
+          });
+        }
+
         const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
         const promises = [];
         const count = 10;
@@ -2188,6 +2692,14 @@ class Sensemaker extends Hub {
         res.send(this.applicationString);
       },
       json: async () => {
+        if (!this.bitcoin && !this.regtest) {
+          return res.status(503).json({
+            error: 'Bitcoin service is not available',
+            status: 'error',
+            message: 'The Bitcoin service has not been initialized'
+          });
+        }
+
         // TODO: cache each of these queries
         // TODO: cache this request overall
         const blockchain = await this.bitcoin._makeRPCRequest('getblockchaininfo', []);
@@ -2195,6 +2707,7 @@ class Sensemaker extends Hub {
         const height = await this.bitcoin._makeRPCRequest('getblockcount', []);
         const utxoutset = await this.bitcoin._makeRPCRequest('gettxoutsetinfo', []);
         const mempoolinfo = await this.bitcoin._makeRPCRequest('getmempoolinfo', []);
+        const mempooltxs = await this.bitcoin._makeRPCRequest('getrawmempool', [true]);
         const tip = await this.bitcoin._makeRPCRequest('getblockheader', [best]);
         const market = await this.bitcoin._makeRPCRequest('getblockstats', [tip]);
         const blockstats = await Promise.all([
@@ -2209,12 +2722,25 @@ class Sensemaker extends Hub {
         const blocks = await Promise.all(blockstats.map(async (x) => {
           const block = await this.bitcoin._makeRPCRequest('getblock', [x.blockhash, 2]);
           block.subsidy = x.subsidy / 100000000;
-          block.feesPaid = x.totalfee /  100000000;
+          block.feesPaid = x.totalfee / 100000000;
           return block;
         }));
 
-        // TODO: read transactions from recent blocks
         const transactions = [];
+
+        // Process mempool transactions
+        for (const [txid, tx] of Object.entries(mempooltxs)) {
+          const mempoolTx = {
+            txid: txid,
+            time: tx.time,
+            fee: tx.fee,
+            size: tx.size,
+            height: -1, // -1 indicates unconfirmed
+            blockhash: null,
+            value: tx.vout ? tx.vout.reduce((acc, x) => acc + x.value, 0) : 0
+          };
+          transactions.push(mempoolTx);
+        }
 
         // Loop through all blocks until we have 5 transactions
         for (let i = 0; i < blocks.length; i++) {
@@ -2247,6 +2773,9 @@ class Sensemaker extends Hub {
           if (transactions.length >= 5) break;
         }
 
+        // Sort transactions by time in descending order (most recent first)
+        transactions.sort((a, b) => b.time - a.time);
+
         const status = {
           network: this.bitcoin.network,
           genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
@@ -2274,7 +2803,7 @@ class Sensemaker extends Hub {
   }
 
   async _handleDiscordActivity (activity) {
-    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity);
+    if (this.settings.debug) this.emit('debug', ['[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity].join(' '));
     if (activity.actor == this.discord.id) return;
 
     // Handle DMs
@@ -2735,7 +3264,9 @@ class Sensemaker extends Hub {
   }
 
   async _handleFabricDebug (...props) {
-    console.debug('[FABRIC]', '[DEBUG]', ...props);
+    if (this.settings.debug) {
+      console.debug('[FABRIC]', '[DEBUG]', ...props);
+    }
   }
 
   async _handleFabricError (...props) {
@@ -2855,7 +3386,7 @@ class Sensemaker extends Hub {
 
     for (let i = 0; i < roomResult.joined_rooms.length; i++) {
       const room = roomResult.joined_rooms[i];
-      const members = await this.matrix.client.getJoinedRoomMembers(room);
+      /* const members = await this.matrix.client.getJoinedRoomMembers(room);
       console.log(`room ${room} has ${Object.keys(members.joined).length}`);
       if (!Object.keys(members.joined).includes('@eric:fabric.pub')) {
         try {
@@ -2863,7 +3394,7 @@ class Sensemaker extends Hub {
         } catch (exception) {
           console.warn('[SENSEMAKER:CORE]', '[MATRIX]', 'Failed to invite admin to room:', room);
         }
-      }
+      } */
     }
 
     this.emit('debug', '[SENSEMAKER:CORE] Matrix connected and ready!');
@@ -2976,7 +3507,7 @@ class Sensemaker extends Hub {
     }
   }
 
-  async _summarizeMessages (messages, max = 512) {
+  async _summarizeMessages (messages, max = 256) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a paragraph.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
@@ -2984,7 +3515,7 @@ class Sensemaker extends Hub {
     });
   }
 
-  async _summarizeMessagesToTitle (messages, max = 100) {
+  async _summarizeMessagesToTitle (messages, max = 64) {
     return new Promise((resolve, reject) => {
       const query = `Summarize our conversation into a ${max}-character maximum as a title.  Do not use quotation marks to surround the title, and be as specific as possible with regards to subject material so that the user can easily identify the title from a large list conversations.  Do not consider the initial prompt, focus on the user's messages as opposed to machine responses.`;
       const request = { query: query, messages: messages };
@@ -3295,6 +3826,288 @@ class Sensemaker extends Hub {
     }
 
     return updated;
+  }
+
+  async _updateBitcoinStatus (cacheKey, cacheTTL) {
+    const bitcoin = this.bitcoin || this.regtest;
+    // Make RPC calls with original names
+    const blockchain = await bitcoin._makeRPCRequest('getblockchaininfo', []);
+    const best = await bitcoin._makeRPCRequest('getbestblockhash', []);
+    const height = await bitcoin._makeRPCRequest('getblockcount', []);
+
+    // Initialize mempool info with default values
+    let mempoolinfo = {
+      size: 0,
+      bytes: 0,
+      usage: 0,
+      maxmempool: 300000000, // 300MB default
+      mempoolminfee: 0.00001000, // 1 sat/byte default
+      minrelaytxfee: 0.00001000 // 1 sat/byte default
+    };
+
+    try {
+      const result = await bitcoin._makeRPCRequest('getmempoolinfo', [true]);
+      if (result) {
+        mempoolinfo = {
+          ...mempoolinfo, // Keep defaults as fallback
+          ...result // Override with actual values if available
+        };
+      }
+    } catch (err) {
+      console.error('[SENSEMAKER]', 'Error getting mempool info:', err);
+    }
+
+    const tip = await bitcoin._makeRPCRequest('getblockheader', [best]);
+
+    // Initialize market with default values
+    let market = {
+      subsidy: 0,
+      totalfee: 0,
+      height: height,
+      time: Date.now() / 1000
+    };
+
+    try {
+      const result = await bitcoin._makeRPCRequest('getblockstats', [tip.height]);
+      if (result) {
+        market = {
+          ...market, // Keep defaults as fallback
+          ...result // Override with actual values if available
+        };
+      }
+    } catch (err) {
+      console.error('[SENSEMAKER]', 'Error getting block stats:', err);
+    }
+
+    // Get block stats with error handling
+    const blockstatsPromises = [
+      height,
+      height - 1,
+      height - 2,
+      height - 3,
+      height - 4,
+      height - 5
+    ].map(h => bitcoin._makeRPCRequest('getblockstats', [h])
+      .catch(err => {
+        console.error('[SENSEMAKER]', `Error getting block stats for height ${h}:`, err);
+        return null;
+      }));
+
+    const blockstats = await Promise.all(blockstatsPromises);
+
+    // Filter out any failed block stats and ensure they have required properties
+    const validBlockstats = blockstats.filter(x => x != null && x.blockhash && x.subsidy != null && x.totalfee != null);
+
+    // Get blocks with error handling
+    const blocks = await Promise.all(validBlockstats.map(async (x) => {
+      try {
+        const block = await bitcoin._makeRPCRequest('getblock', [x.blockhash, 2]);
+        if (block) {
+          block.subsidy = (x.subsidy || 0) / 100000000;
+          block.feesPaid = (x.totalfee || 0) / 100000000;
+          return block;
+        }
+        return null;
+      } catch (err) {
+        console.error('[SENSEMAKER]', `Error getting block ${x.blockhash}:`, err);
+        return null;
+      }
+    }));
+
+    // Filter out any failed blocks
+    const validBlocks = blocks.filter(x => x != null);
+    const transactions = [];
+
+    // Get cached mempool data if available
+    const cachedMempool = await this.cache.get('bitcoin:mempool');
+    const mempooltxs = cachedMempool || {};
+
+    // Process mempool transactions
+    for (const [txid, tx] of Object.entries(mempooltxs)) {
+      const mempoolTx = {
+        txid: txid,
+        time: tx.time,
+        fee: tx.fee,
+        size: tx.size,
+        height: -1, // -1 indicates unconfirmed
+        blockhash: null,
+        value: tx.vout ? tx.vout.reduce((acc, x) => acc + x.value, 0) : 0
+      };
+      transactions.push(mempoolTx);
+    }
+
+    // Loop through all blocks until we have 5 transactions
+    for (let i = 0; i < validBlocks.length; i++) {
+      const block = validBlocks[i];
+      // Calculate the total value of the block
+      block.value = (block.tx) ? block.tx.reduce((acc, x) => acc + x.vout.reduce((acc, x) => acc + x.value, 0), 0) : 0;
+      if (!block.tx) continue;
+
+      // For all transactions in the block...
+      for (let j = 0; j < block.tx.length; j++) {
+        const tx = block.tx[j];
+
+        // Assign properties
+        tx.blockhash = block.hash;
+        tx.height = block.height;
+        tx.time = block.time;
+        tx.value = tx.vout.reduce((acc, x) => acc + x.value, 0);
+
+        // Add the transaction to the list
+        transactions.push(tx);
+
+        // Is this enough?
+        if (transactions.length >= 5) break;
+      }
+
+      // Remove transaction data after we're done with it
+      delete validBlocks[i].tx;
+
+      // Do we have enough transactions?
+      if (transactions.length >= 5) break;
+    }
+
+    // Sort transactions by time in descending order (most recent first)
+    transactions.sort((a, b) => b.time - a.time);
+
+    // Get cached UTXO set info if available
+    const cachedUtxoSet = await this.cache.get('bitcoin:utxoset');
+    const utxoutset = cachedUtxoSet || {
+      total_amount: 0,
+      transactions: 0,
+      txouts: 0
+    };
+
+    const status = {
+      network: bitcoin.network,
+      genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
+      blockChain: blockchain,
+      blockDate: tip.time,
+      blockHeight: bitcoin.height,
+      supply: utxoutset.total_amount,
+      status: 'ONLINE', // TODO: check for syncing status
+      tip: best,
+      height: height,
+      mempoolInfo: {
+        size: mempoolinfo.size,
+        bytes: mempoolinfo.bytes,
+        usage: mempoolinfo.usage,
+        maxmempool: mempoolinfo.maxmempool,
+        mempoolminfee: mempoolinfo.mempoolminfee,
+        minrelaytxfee: mempoolinfo.minrelaytxfee
+      },
+      mempoolSize: mempoolinfo.usage,
+      unspentTransactions: utxoutset.transactions,
+      unspentOutputs: utxoutset.txouts,
+      market: {
+        subsidy: market.subsidy / 100000000,
+        feesPaid: market.totalfee / 100000000,
+        height: market.height,
+        time: market.time
+      },
+      recentBlocks: validBlocks.map(block => ({
+        hash: block.hash,
+        height: block.height,
+        time: block.time,
+        size: block.size,
+        weight: block.weight,
+        subsidy: block.subsidy,
+        feesPaid: block.feesPaid,
+        value: block.value
+      })),
+      recentTransactions: transactions.map(tx => ({
+        txid: tx.txid,
+        time: tx.time,
+        fee: tx.fee,
+        size: tx.size,
+        height: tx.height,
+        value: tx.value
+      })),
+      syncActive: blockchain.initialblockdownload,
+      syncProgress: blockchain.verificationprogress,
+      timestamp: Date.now() // Add timestamp for cache freshness check
+    };
+
+    // Store in state
+    this._state.content.services.bitcoin.status = status;
+
+    // Cache the status
+    await this.cache.set(cacheKey, status, cacheTTL);
+
+    // Update UTXO set info in the background
+    bitcoin._makeRPCRequest('gettxoutsetinfo', []).then(async (utxoSet) => {
+      // Cache the UTXO set info for 1 hour
+      await this.cache.set('bitcoin:utxoset', utxoSet, 3600000);
+      // Update the cache with fresh data
+      await this.cache.set(cacheKey, status, cacheTTL);
+
+      // Update the state with fresh UTXO data
+      if (this._state.content.services.bitcoin.status) {
+        this._state.content.services.bitcoin.status.supply = utxoSet.total_amount;
+        this._state.content.services.bitcoin.status.unspentTransactions = utxoSet.transactions;
+        this._state.content.services.bitcoin.status.unspentOutputs = utxoSet.txouts;
+      }
+    }).catch(err => {
+      console.error('[SENSEMAKER]', 'Failed to update UTXO set info:', err);
+    });
+
+    // Update mempool data in the background
+    bitcoin._makeRPCRequest('getrawmempool', [true]).then(async (mempoolData) => {
+      // Cache the mempool data for 30 seconds
+      await this.cache.set('bitcoin:mempool', mempoolData, 30000);
+      this._state.content.services.bitcoin.mempool = mempoolData;
+    }).catch(err => {
+      console.error('[SENSEMAKER]', 'Failed to update mempool data:', err);
+    });
+
+    return status;
+  }
+
+  async _waitForBitcoind (maxAttempts = 5, initialDelay = 1000) {
+    if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', 'Waiting for bitcoind to be ready...');
+    let attempts = 0;
+    let delay = initialDelay;
+
+    while (attempts < maxAttempts) {
+      try {
+        if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', `Attempt ${attempts + 1}/${maxAttempts} to connect to bitcoind...`);
+
+        // Check multiple RPC endpoints to ensure full readiness
+        const checks = [
+          this.regtest._makeRPCRequest('getblockchaininfo'), // Basic blockchain info
+          this.regtest._makeRPCRequest('getnetworkinfo'),    // Network status
+          this.regtest._makeRPCRequest('getwalletinfo')      // Wallet status
+        ];
+
+        // Wait for all checks to complete
+        const results = await Promise.all(checks);
+
+        if (this.settings.debug && this.settings.verbosity > 4) {
+          console.debug('[FABRIC:BITCOIN]', 'Successfully connected to bitcoind:');
+          console.debug('[FABRIC:BITCOIN]', '- Blockchain info:', results[0]);
+          console.debug('[FABRIC:BITCOIN]', '- Network info:', results[1]);
+          console.debug('[FABRIC:BITCOIN]', '- Wallet info:', results[2]);
+        }
+
+        return true;
+      } catch (error) {
+        if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', `Connection attempt ${attempts + 1} failed:`, error.message);
+        attempts++;
+
+        // If we've exceeded max attempts, throw error
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to connect to bitcoind after ${maxAttempts} attempts: ${error.message}`);
+        }
+
+        // Wait before next attempt with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay = Math.min(delay * 1.5, 10000); // Exponential backoff with max 10s delay
+        continue; // Continue to next attempt
+      }
+    }
+
+    // Should never reach here due to maxAttempts check in catch block
+    throw new Error('Failed to connect to bitcoind: Max attempts exceeded');
   }
 }
 

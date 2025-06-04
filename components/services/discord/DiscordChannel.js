@@ -61,7 +61,7 @@ class DiscordChannel extends React.Component {
   componentDidMount () {
     this.props.fetchDiscordChannel(this.props.id);
     this.watcher = setInterval(() => {
-      this.props.fetchDiscordChannel();
+      this.props.fetchDiscordChannel(this.props.id);
     }, 60000);
   }
 

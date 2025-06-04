@@ -7,6 +7,10 @@ class Changelog extends React.Component {
     super(settings);
   }
 
+  componentDidMount () {
+    this.props.fetchAnnouncements();
+  }
+
   render () {
     const {
       announcements,

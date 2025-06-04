@@ -14,8 +14,8 @@ const {
   Popup,
 
 } = require('semantic-ui-react');
-const store = require('../stores/redux');
 
+const SignUpForm = require('./SignUpForm');
 const UsernameEditModal = require('./AdminSettingsUsernameModal');
 const EmailEditModal = require('./AdminSettingsEmailModal');
 //const { email } = require('../settings/local');
@@ -33,6 +33,7 @@ class AdminUsers extends React.Component {
       reseting: false,
       emailEditing: null,
       editEmailOpen: false,
+      createUserModalOpen: false
     };
   }
 
@@ -76,6 +77,12 @@ class AdminUsers extends React.Component {
     }));
   };
 
+  toggleCreateUserModal = () => {
+    this.setState(prevState => ({
+      createUserModalOpen: !prevState.createUserModalOpen
+    }));
+  };
+
   changeUsername = (oldUsername, id) => {
     this.setState({ usernameEditing: oldUsername, userIdEditing: id, usernameEditModal: true });
     // this.toggleUsernameModal;
@@ -116,6 +123,30 @@ class AdminUsers extends React.Component {
     )
   }
 
+  renderCreateUserModal = () => {
+    return (
+      <Modal
+        open={this.state.createUserModalOpen}
+        onClose={this.toggleCreateUserModal}
+        size="small"
+      >
+        <Modal.Header>Create New User</Modal.Header>
+        <Modal.Content>
+          <SignUpForm
+            adminPanel={true}
+            checkInvitationToken={this.props.checkInvitationToken}
+            checkUsernameAvailable={this.props.checkUsernameAvailable}
+            checkEmailAvailable={this.props.checkEmailAvailable}
+            auth={this.props.auth}
+            invitation={this.props.invitation}
+            fullRegister={this.props.fullRegister}
+            onSuccess={this.toggleCreateUserModal}
+          />
+        </Modal.Content>
+      </Modal>
+    );
+  };
+
   render () {
     const { accounts, users, stats } = this.props;
     const {
@@ -133,23 +164,24 @@ class AdminUsers extends React.Component {
 
     return (
       <section className='fade-in users-section'>
-        <div className='users-section-head'>
-          <Header as='h3'>Users</Header>
+        <div>
+          <Header as='h4'>Metrics</Header>
           <div>
-            <Header as='h4'>Metrics</Header>
-            <div>
-              <Statistic>
-                <Statistic.Value>{usersTotal}</Statistic.Value>
-                <Statistic.Label>Users</Statistic.Label>
-              </Statistic>
-              <Statistic>
-                <Statistic.Value>{inquiriesTotal}</Statistic.Value>
-                <Statistic.Label>Waitlisted</Statistic.Label>
-              </Statistic>
-            </div>
+            <Statistic>
+              <Statistic.Value>{usersTotal}</Statistic.Value>
+              <Statistic.Label>Users</Statistic.Label>
+            </Statistic>
+            <Statistic>
+              <Statistic.Value>{inquiriesTotal}</Statistic.Value>
+              <Statistic.Label>Waitlisted</Statistic.Label>
+            </Statistic>
           </div>
+        </div>
+        <div className='users-section-head'>
+          <Header as='h4'>Users</Header>
           <br style={{ clear: 'both' }} />
           <div>
+            <Button primary onClick={this.toggleCreateUserModal}>Create User</Button>
             <Button
               icon='redo'
               title='Update users'
@@ -168,7 +200,7 @@ class AdminUsers extends React.Component {
           </div>
         </div>
         <Segment style={{ overflow: 'auto', maxHeight: '40vh', padding: '0' }} loading={this.props.accounts.loading}>
-          <Table celled striped>
+          <Table celled striped compact>
             <Table.Header>
               <Table.Row>
                 <Table.HeaderCell textAlign="center" width={1}>ID</Table.HeaderCell>
@@ -176,12 +208,11 @@ class AdminUsers extends React.Component {
                 <Table.HeaderCell textAlign="center" width={1}>Is Admin</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={2}>Email</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={3}>Created</Table.HeaderCell>
-                <Table.HeaderCell textAlign="center" width={3}>Modified</Table.HeaderCell>
                 <Table.HeaderCell textAlign="center" width={4}>Actions</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {accounts && accounts.users && accounts.users
+              {accounts && Array.isArray(accounts.users) && accounts.users
                 .filter(instance =>
                   (instance.email ? (instance.email.toLowerCase().includes(searchQuery.toLowerCase())) : (searchQuery ? false : true)) ||
                   (instance.username.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -194,47 +225,48 @@ class AdminUsers extends React.Component {
                       <Table.Cell textAlign="center">{instance.is_admin ? 'Yes' : 'No'}</Table.Cell>
                       <Table.Cell textAlign="center">{instance.email ? instance.email : null}</Table.Cell>
                       <Table.Cell textAlign="center">{this.formatDateTime(instance.created_at)}</Table.Cell>
-                      <Table.Cell textAlign="center">{this.formatDateTime(instance.updated_at)}</Table.Cell>
                       <Table.Cell textAlign="center">
-                        <Popup
-                          content="Add/Change Email"
-                          trigger={
-                            <Button
-                              icon='at'
-                              disabled={false}
-                              onClick={() => this.changeEmail(instance.email, instance.id)}
-                            />
-                          }
-                        />
-                        <Popup
-                          content="Send password reset"
-                          trigger={
-                            <Button
-                              icon='key'
-                              disabled={false}
-                              onClick={() => this.confirmResetPassword(instance.email)}
-                            />
-                          }
-                        />
-                        <Popup
-                          content="Change Username"
-                          trigger={
-                            <Button
-                              icon='user'
-                              disabled={false}
-                              onClick={() => this.changeUsername(instance.username, instance.id)}
-                            />
-                          }
-                        />
-                        {/* <Popup
-                          content="Disable User - Comming soon"
-                          trigger={
-                            <Button
-                              icon='ban'
-                              disabled={false}
-                            />
-                          }
-                        /> */}
+                        <Button.Group>
+                          <Popup
+                            content="Add/Change Email"
+                            trigger={
+                              <Button
+                                icon='at'
+                                disabled={false}
+                                onClick={() => this.changeEmail(instance.email, instance.id)}
+                              />
+                            }
+                          />
+                          <Popup
+                            content="Send password reset"
+                            trigger={
+                              <Button
+                                icon='key'
+                                disabled={false}
+                                onClick={() => this.confirmResetPassword(instance.email)}
+                              />
+                            }
+                          />
+                          <Popup
+                            content="Change Username"
+                            trigger={
+                              <Button
+                                icon='user'
+                                disabled={false}
+                                onClick={() => this.changeUsername(instance.username, instance.id)}
+                              />
+                            }
+                          />
+                          {/* <Popup
+                            content="Disable User - Comming soon"
+                            trigger={
+                              <Button
+                                icon='ban'
+                                disabled={false}
+                              />
+                            }
+                          /> */}
+                        </Button.Group>
                       </Table.Cell>
                     </Table.Row>
                   )
@@ -243,6 +275,7 @@ class AdminUsers extends React.Component {
           </Table>
         </Segment>
         {this.renderConfirmResetModal()}
+        {this.renderCreateUserModal()}
         <EmailEditModal
           {...this.props}
           open={editEmailOpen}

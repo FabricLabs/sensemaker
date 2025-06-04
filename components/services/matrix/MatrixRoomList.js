@@ -15,8 +15,8 @@ const {
   Segment
 } = require('semantic-ui-react');
 
-const toRelativeTime = require('../../functions/toRelativeTime');
-const truncateMiddle = require('../../functions/truncateMiddle');
+const toRelativeTime = require('../../../functions/toRelativeTime');
+const truncateMiddle = require('../../../functions/truncateMiddle');
 
 class MatrixRoom extends React.Component {
   constructor (props) {

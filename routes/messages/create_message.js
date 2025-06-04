@@ -3,28 +3,31 @@
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
+const toRelativeTime = require('../../functions/toRelativeTime');
+
 module.exports = async function (req, res, next) {
   const now = new Date();
 
   let isNew = false;
   let localMessageID = null;
   let localConversationID = null;
+  let localFileID = null;
   let fabricConversationID = null;
   let {
     conversation_id,
     content,
-    context
+    context,
+    file_id,
+    agent
   } = req.body;
 
   if (!conversation_id) {
     isNew = true;
-    const name = `Conversation Started ${now.toISOString()}`;
-    /* const room = await this.matrix.client.createRoom({ name: name }); */
+    const name = `Conversation started ${toRelativeTime(now.toISOString())}`;
     const created = await this.db('conversations').insert({
       creator_id: req.user.id,
       log: JSON.stringify([]),
-      title: name,
-      // matrix_room_id: room.room_id
+      title: name
     });
 
     localConversationID = created[0];
@@ -37,6 +40,19 @@ module.exports = async function (req, res, next) {
     fabricConversationID = conversation_id;
   }
 
+  if (file_id) {
+    const file = await this.db('files').where({ fabric_id: file_id }).first();
+    if (!file) throw new Error(`No such File: ${file_id}`);
+    localFileID = file.id;
+    context = {
+      ...context,
+      file: {
+        id: file_id,
+        name: file.name
+      }
+    };
+  }
+
   try {
     const conversation = await this.db('conversations').where({ fabric_id: fabricConversationID }).first();
     if (!conversation) throw new Error(`No such Conversation: ${fabricConversationID}`);
@@ -45,6 +61,7 @@ module.exports = async function (req, res, next) {
 
     // User Message
     const newMessage = await this.db('messages').insert({
+      attachments: (file_id) ? JSON.stringify([file_id]) : JSON.stringify([]),
       content: content,
       conversation_id: localConversationID,
       user_id: req.user.id
@@ -73,15 +90,15 @@ module.exports = async function (req, res, next) {
       conversation_id: fabricConversationID,
       context: {
         ...context,
-        user_id: req.user.id,
         username: req.user.username
       },
+      agent: agent,
       query: content,
       user_id: req.user.id
     }).catch((exception) => {
       console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Created text request:', request);
+      console.debug('[SENSEMAKER]', '[HTTP]', 'Handled text request:', request);
       // TODO: emit message
 
       if (!request || !request.content) {

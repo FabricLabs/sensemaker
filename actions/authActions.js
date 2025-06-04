@@ -6,9 +6,6 @@ const {
   BROWSER_DATABASE_TOKEN_TABLE
 } = require('../constants');
 
-// Dependencies
-const fetch = require('cross-fetch');
-
 // Functions
 const createTimeoutPromise = require('../functions/createTimeoutPromise');
 

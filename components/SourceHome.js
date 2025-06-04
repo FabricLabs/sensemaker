@@ -138,7 +138,7 @@ class SourceHome extends React.Component {
                   <Table.Cell textAlign='right'>
                     <Button.Group>
                       <Button icon labelPosition='left'><Icon name='sync' /> Sync</Button>
-                      <Button icon labelPosition='right'>Discuss <Icon name='right chevron' /></Button>
+                      <Button icon labelPosition='right' as={Link} to={`/sources/${source.id}`}>Discuss <Icon name='right chevron' /></Button>
                     </Button.Group>
                   </Table.Cell>
                 </Table.Row>

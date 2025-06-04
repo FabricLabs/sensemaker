@@ -19,6 +19,13 @@ module.exports = async function (req, res, next) {
     description: proposal.description
   });
 
+  if (!inserted) return res.status(500).json({ error: 'Could not create group.' });
+
+  await this.db('group_members').insert({
+    group_id: actor.id,
+    user_id: req.user.id
+  });
+
   res.format({
     html: () => {
       res.send(this.applicationString);

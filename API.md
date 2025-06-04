@@ -82,6 +82,12 @@ Query the agent with some text.
 Builder for [Fabric](Fabric)-based applications.
 
 **Kind**: global class  
+
+* [Bundler](#Bundler)
+    * [new Bundler([settings])](#new_Bundler_new)
+    * [.generateCacheManifest(outputPath)](#Bundler+generateCacheManifest)
+    * [.generateWebManifest(outputPath)](#Bundler+generateWebManifest)
+
 <a name="new_Bundler_new"></a>
 
 ### new Bundler([settings])
@@ -92,6 +98,28 @@ Create an instance of the bundler.
 | --- | --- | --- |
 | [settings] | <code>Object</code> | Map of settings. |
 | [settings.document] | <code>HTTPComponent</code> | Document to use. |
+
+<a name="Bundler+generateCacheManifest"></a>
+
+### bundler.generateCacheManifest(outputPath)
+Generate a cache.manifest file listing all static assets for offline support.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| outputPath | <code>string</code> | Path to the manifest file (default: 'assets/cache.manifest') |
+
+<a name="Bundler+generateWebManifest"></a>
+
+### bundler.generateWebManifest(outputPath)
+Generate a manifest.json file for PWA support.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| outputPath | <code>string</code> | Path to the manifest file (default: 'assets/manifest.json') |
 
 <a name="Clock"></a>
 
@@ -236,8 +264,10 @@ Sensemaker is the primary instance of the AI.
     * [.retrieveFile(id)](#Sensemaker+retrieveFile) ⇒ <code>Object</code>
     * [.start()](#Sensemaker+start) ⇒ <code>Promise</code>
     * [.stop()](#Sensemaker+stop) ⇒ <code>Promise</code>
+    * [.syncSource(id)](#Sensemaker+syncSource) ⇒ <code>Promise</code>
     * [._getRoomMessages()](#Sensemaker+_getRoomMessages) ⇒ <code>Array</code>
     * [._handleRequest(request)](#Sensemaker+_handleRequest) ⇒ <code>SensemakerResponse</code>
+    * [.verifyMessage(signedMessage)](#Sensemaker+verifyMessage) ⇒ <code>Boolean</code>
 
 <a name="new_Sensemaker_new"></a>
 
@@ -391,6 +421,17 @@ Stop the process.
 
 **Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
 **Returns**: <code>Promise</code> - Resolves once the process has been stopped.  
+<a name="Sensemaker+syncSource"></a>
+
+### sensemaker.syncSource(id) ⇒ <code>Promise</code>
+Synchronize a remote [Source](Source) by ID.
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| id | <code>Hash256</code> | The ID of the source to sync. |
+
 <a name="Sensemaker+_getRoomMessages"></a>
 
 ### sensemaker.\_getRoomMessages() ⇒ <code>Array</code>
@@ -409,4 +450,16 @@ Generate a response to a request.
 | --- | --- | --- |
 | request | <code>SensemakerRequest</code> | The request. |
 | [request.room] | <code>String</code> | Matrix room to retrieve conversation history from. |
+
+<a name="Sensemaker+verifyMessage"></a>
+
+### sensemaker.verifyMessage(signedMessage) ⇒ <code>Boolean</code>
+Verifies a signed message
+
+**Kind**: instance method of [<code>Sensemaker</code>](#Sensemaker)  
+**Returns**: <code>Boolean</code> - - Whether the signature is valid  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| signedMessage | <code>Object</code> | The signed message object |
 

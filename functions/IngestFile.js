@@ -14,7 +14,7 @@ module.exports = async function IngestFile (...params) {
 
   // TODO: check for error
   const insertedEmbedding = await this.db('embeddings').insert({
-    content: JSON.stringify(ingested.content),
+    content: JSON.stringify(ingested.content)
   });
   console.debug('[INGEST]', 'Inserted embedding:', insertedEmbedding);
 

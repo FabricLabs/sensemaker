@@ -6,4 +6,3 @@ The corpus of documents to pre-train for all contexts is located in `stores/sens
 
 ## Credits
 Fabric Labs, Inc. (2016)
-Legal Tools & Technology, Inc. (2023)

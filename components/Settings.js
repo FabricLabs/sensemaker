@@ -1,5 +1,11 @@
 'use strict';
 
+// Constants
+const {
+  ENABLE_DISCORD,
+  ENABLE_FABRIC
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
 const { Link } = require('react-router-dom');
@@ -18,6 +24,7 @@ const {
 const QueryCounter = require('./QueryCounter');
 const PasswordChangeModal = require('./SettingsPasswordModal');
 const UserChangeModal = require('./SettingsUserModal');
+const DisplayNameChangeModal = require('./SettingsDisplayNameModal');
 
 class SensemakerUserSettings extends React.Component {
   constructor(props) {
@@ -28,7 +35,9 @@ class SensemakerUserSettings extends React.Component {
       email: this.props.auth.email,
       isPasswordModalOpen: false,
       isUserModalOpen: false,
-      user_discord: this.props.auth.user_discord
+      isDisplayNameModalOpen: false,
+      user_discord: this.props.auth.user_discord,
+      displayName: this.props.auth.displayName || this.props.auth.username
     };
   }
 
@@ -52,8 +61,14 @@ class SensemakerUserSettings extends React.Component {
     }));
   };
 
+  toggleDisplayNameModal = () => {
+    this.setState(prevState => ({
+      isDisplayNameModalOpen: !prevState.isDisplayNameModalOpen
+    }));
+  };
+
   render () {
-    const { username, email, user_discord } = this.state;
+    const { username, email, user_discord, displayName } = this.state;
     return (
       <sensemaker-user-settings class='fade-in'>
         <Segment fluid style={{ marginRight: '1em' }}>
@@ -71,6 +86,11 @@ class SensemakerUserSettings extends React.Component {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
+                <Table.Row className='settings-row'>
+                  <Table.Cell textAlign='right'><Header as='h4'>Display Name:</Header></Table.Cell>
+                  <Table.Cell><p>{displayName}</p></Table.Cell>
+                  <Table.Cell onClick={this.toggleDisplayNameModal}><Button primary>Change</Button></Table.Cell>
+                </Table.Row>
                 <Table.Row className='settings-row'>
                   <Table.Cell textAlign='right'><Header as='h4'>Username:</Header></Table.Cell>
                   <Table.Cell><p>{username}</p></Table.Cell>
@@ -99,17 +119,30 @@ class SensemakerUserSettings extends React.Component {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                <Table.Row className='settings-row'>
-                  <Table.Cell>
-                    {(user_discord) ? <Button.Group>
-                      <div className='ui left labeled button'>
-                        <Label color='blue' pointing='right'><Icon name='discord' /></Label>
-                        <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
-                      </div>
-                      <Icon name='remove' />
-                    </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
-                  </Table.Cell>
-                </Table.Row>
+                {ENABLE_FABRIC && (
+                  <Table.Row className='settings-row'>
+                    <Table.Cell>
+                      <Header as='h4'>Fabric</Header>
+                      <Button.Group>
+                        <Button>Connect</Button>
+                        <Button>Disconnect</Button>
+                      </Button.Group>
+                    </Table.Cell>
+                  </Table.Row>
+                )}
+                {ENABLE_DISCORD && (
+                  <Table.Row className='settings-row'>
+                    <Table.Cell>
+                      {(user_discord) ? <Button.Group>
+                        <div className='ui left labeled button'>
+                          <Label color='blue' pointing='right'><Icon name='discord' /></Label>
+                          <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
+                        </div>
+                        <Icon name='remove' />
+                      </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
+                    </Table.Cell>
+                  </Table.Row>
+                )}
               </Table.Body>
             </Table>
             <Table>
@@ -145,6 +178,12 @@ class SensemakerUserSettings extends React.Component {
           open={this.state.isUserModalOpen}
           toggleUserModal={this.toggleUserModal}
           logout={this.props.logout}
+        />
+        <DisplayNameChangeModal
+          currentDisplayName={displayName}
+          token={this.props.auth.token}
+          open={this.state.isDisplayNameModalOpen}
+          toggleDisplayNameModal={this.toggleDisplayNameModal}
         />
       </sensemaker-user-settings>
     );

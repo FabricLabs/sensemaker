@@ -10,6 +10,8 @@ const Trainer = require('../types/trainer');
 
 describe('Trainer', function () {
   describe('API', function () {
+    this.timeout(10000);
+
     it('should be instantiable', function () {
       assert.strictEqual(typeof Trainer, 'function');
     });

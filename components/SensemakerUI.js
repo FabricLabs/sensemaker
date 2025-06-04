@@ -29,12 +29,17 @@ const {
   } = require('semantic-ui-react');
 
 // Local Components
+const FrontPage = require('./FrontPage');
 const Splash = require('./Splash');
+const InquiriesHome = require('./InquiriesHome');
+const InvitationView = require('./InvitationView');
+const FeaturesHome = require('./FeaturesHome');
 const Dashboard = require('./Dashboard');
 const TermsOfUseModal = require('./TermsOfUseModal');
 const LoginPage = require('./LoginPage');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
+const Bridge = require('./Bridge');
 
 /**
  * The Sensemaker UI.
@@ -42,6 +47,11 @@ const Waitlist = require('./Waitlist');
 class SensemakerUI extends React.Component {
   constructor (props) {
     super(props);
+
+    // Initialize bridge
+    this.bridge = new Bridge({
+      responseCapture: this.handleMessageSuccess.bind(this)
+    });
 
     this.state = {
       isAuthenticated: false,
@@ -56,9 +66,8 @@ class SensemakerUI extends React.Component {
     this.setState({ isAuthenticated: true });
   }
 
-  handleMessageSuccess = (result) => {
-    console.log('message success! result:', result);
-    this.setState({ incomingMessage: result });
+  handleMessageSuccess = (action) => {
+    const { id, isAdmin } = this.props.auth;
   }
 
   handleRegisterSuccess = () => {
@@ -169,9 +178,16 @@ class SensemakerUI extends React.Component {
     console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
   }
 
+  componentWillUnmount () {
+    // Clean up bridge connection
+    if (this.bridge) {
+      this.bridge.stop();
+    }
+  }
+
   render () {
     const { modalLogOut, loggedOut } = this.state;
-    const { login, error } = this.props;
+    const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
     return (
       <sensemaker-interface id={this.id} class='fabric-site body'>
@@ -185,23 +201,14 @@ class SensemakerUI extends React.Component {
           ) : (
             <BrowserRouter>
               {(!this.props.auth || !this.props.auth.isAuthenticated) ? (
-                <Splash
-                  onLoginSuccess={this.handleLoginSuccess}
-                  onRegisterSuccess={this.handleRegisterSuccess}
-                  login={this.props.login}
-                  register={this.props.register}
-                  error={this.props.error}
-                  checkInvitationToken={this.props.checkInvitationToken}
-                  checkUsernameAvailable={this.props.checkUsernameAvailable}
-                  checkEmailAvailable={this.props.checkEmailAvailable}
-                  invitation={this.props.invitation}
-                  auth={this.props.auth}
-                  fullRegister={this.props.fullRegister}
-                  acceptInvitation={this.props.acceptInvitation}
-                  declineInvitation={this.props.declineInvitation}
-                  createInquiry={this.props.createInquiry}
-                  inquiries={this.props.inquiries}
-                />
+                <Routes>
+                  <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+                  <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+                  <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
+                  <Route path='/features' element={<FeaturesHome />} />
+                  <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+                  <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+                </Routes>
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (
                 <TermsOfUseModal
                   {...this.props}
@@ -215,6 +222,7 @@ class SensemakerUI extends React.Component {
                   auth={this.props.auth}
                   onLogoutSuccess={this.handleLogout}
                   onMessageSuccess={this.handleMessageSuccess}
+                  responseCapture={this.handleMessageSuccess}
                   createTask={this.props.createTask}
                   fetchContract={this.props.fetchContract}
                   fetchConversation={this.props.fetchConversation}
@@ -233,6 +241,7 @@ class SensemakerUI extends React.Component {
                   uploadFile={this.props.uploadFile}
                   isAdmin={this.props.auth && this.props.auth.isAdmin}
                   isCompliant={this.props.auth && this.props.auth.isCompliant}
+                  bridge={this.bridge}
                   {...this.props}
                 />
               )}

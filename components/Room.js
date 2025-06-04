@@ -73,7 +73,6 @@ class Conversation extends React.Component {
       left: 'calc(350px + 1em)',
       height: 'calc(100vh - 2.5rem)', // Set a maximum height
       bottom: '1em',
-      paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column',

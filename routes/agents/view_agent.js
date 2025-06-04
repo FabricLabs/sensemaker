@@ -7,7 +7,7 @@ module.exports = async function (req, res, next) {
   const prompt = await this.db('blobs').where({ id: agent.latest_prompt_blob_id }).first();
   res.format({
     json: () => {
-      res.send({ agent: { ...agent, prompt: prompt.content }});
+      res.send({ agent: { ...agent, prompt: (prompt) ? prompt.content : '' }});
     },
     html: () => {
       res.send(this.applicationString);

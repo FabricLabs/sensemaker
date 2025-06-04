@@ -18,7 +18,7 @@ const initialState = {
   agents: []
 };
 
-function diskReducer (state = initialState, action) {
+function agentReducer (state = initialState, action) {
   switch (action.type) {
     case FETCH_AGENT_STATS_REQUEST:
       return { ...state }; // reset state
@@ -37,4 +37,4 @@ function diskReducer (state = initialState, action) {
   }
 }
 
-module.exports = diskReducer;
+module.exports = agentReducer;

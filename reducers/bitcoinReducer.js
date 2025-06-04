@@ -33,7 +33,8 @@ const initialState = {
   syncActive: false,
   syncStatus: '',
   transaction: {},
-  transactions: []
+  transactions: [],
+  mempoolSize: 0
 };
 
 function bitcoinReducer (state = initialState, action) {

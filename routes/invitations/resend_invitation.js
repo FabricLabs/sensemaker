@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const createInvitationEmailContent = require('../../functions/createInvitationEmailContent');
 
 module.exports = function (req, res) {
@@ -15,7 +16,7 @@ module.exports = function (req, res) {
         let uniqueTokenFound = false;
         let invitationToken = '';
         while (!uniqueTokenFound) {
-          invitationToken = crypto.randomBytes(20).toString('hex');
+          invitationToken = crypto.randomBytes(32).toString('hex');
           const tokenExists = await this.db.select('*').from('invitations').where({ token: invitationToken }).first();
           if (!tokenExists) {
             uniqueTokenFound = true;

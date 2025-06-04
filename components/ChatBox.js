@@ -68,11 +68,57 @@ class ChatBox extends React.Component {
       editLoading: false,
       editingTitle: false,
       startedChatting: false,
-      takeFocus: this.settings.takeFocus || this.props.takeFocus || false
+      takeFocus: this.settings.takeFocus || this.props.takeFocus || false,
+      // New states for file preview
+      filePreview: null,
+      showFilePreview: false,
+      attachmentExists: false,
+      uploadProgress: 0,
+      isUploading: false,
+      uploadedFileId: null,
+      loading: false, // Added loading state
+      signingKey: null, // Add signing key to state
+      isRecording: false,
+      fileMetadataCache: {}, // file ID -> metadata
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleChangeDropdown = this.handleChangeDropdown.bind(this);
+
+    // Add styles for file preview animation
+    this.filePreviewStyles = {
+      container: {
+        overflow: 'visible',
+        transition: 'max-height 0.3s ease-in-out, opacity 0.3s ease-in-out',
+        maxHeight: 'none',
+        opacity: '0',
+        marginBottom: '10px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '5px',
+        padding: '0 10px'
+      },
+      visible: {
+        maxHeight: 'none',
+        opacity: '1',
+        padding: '10px'
+      },
+      content: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px'
+      },
+      fileName: {
+        flex: 1,
+        overflow: 'visible',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap'
+      },
+      removeButton: {
+        cursor: 'pointer',
+        color: '#666',
+        marginTop: '2px'
+      }
+    };
   }
 
   componentDidMount () {
@@ -217,11 +263,11 @@ class ChatBox extends React.Component {
     this.setState({ message: null, chat: { message: null } });
   }
 
-  handleSubmit = (event) => {
+  handleSubmit = async (event) => {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { documentChat, context } = this.props;
+    const { documentChat, context, agent } = this.props;
 
     let dataToSubmit;
 
@@ -235,14 +281,18 @@ class ChatBox extends React.Component {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
-        context: context
+        context: context,
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
       }
     } else {
       //else, we are in a previous one and we already have a conversationID for this
       dataToSubmit = {
         conversation_id: this.props.conversationID,
         content: query,
-        context: context
+        context: context,
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
       }
     }
 
@@ -410,63 +460,77 @@ class ChatBox extends React.Component {
   }
 
   handleMicrophoneClick = () => {
-    console.debug('[SENSEMAKER]', 'Microphone click');
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-        console.debug('[SENSEMAKER]', 'Got audio stream:', stream);
-
-        const recorder = new MediaRecorder(stream);
-        const speaker = hark(stream, {});
-        const chunks = [];
-
-        speaker.on('silence', () => {
-          console.debug('[SENSEMAKER]', 'Silence detected');
-        });
-
-        speaker.on('speaking', () => {
-          console.debug('[SENSEMAKER]', 'Speaking detected');
-        });
-
-        speaker.on('stopped_speaking', () => {
-          console.debug('[SENSEMAKER]', 'Speaking stopped');
-          console.debug('[SENSEMAKER]', 'All chunks:', chunks);
-
-          const blob = new Blob(chunks, { type: 'audio/webm' });
-          const reader = new FileReader();
-
-          reader.onload = function () {
-            console.debug('[SENSEMAKER]', 'Reader loaded:', reader.result);
-            const recognition = new webkitSpeechRecognition();
-
-            recognition.onresult = function (event) {
-              console.debug('[SENSEMAKER]', 'Transcribed text:', event.results[0][0].transcript);
-            };
-
-            recognition.onnomatch = (event) => {
-              console.debug('[SENSEMAKER]', 'No match:', event);
-            }
-
-            recognition.start();
-            console.debug('[SENSEMAKER]', 'Recognition started...', recognition);
-          }
-
-          reader.readAsDataURL(blob);
-          console.debug('[SENSEMAKER]', 'Reader is reading...', blob);
-        });
-
-        recorder.ondataavailable = (e) => {
-          // console.debug('[SENSEMAKER]', 'Audio Chunk:', e.data);
-          chunks.push(e.data);
-        };
-
-        recorder.start(1000);
-        console.debug('[SENSEMAKER]', 'Recorder started:', recorder);
-      }).catch((err) => {
-        console.error(`The following getUserMedia error occurred: ${err}`);
-      });
-    } else {
-      console.debug('getUserMedia not supported on your browser!');
+    if (!('webkitSpeechRecognition' in window)) {
+      console.debug('Speech recognition not supported');
+      return;
     }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    // Add recording state to handle UI updates
+    this.setState({ isRecording: !this.state.isRecording });
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      const speaker = hark(stream, {
+        // Configure silence detection
+        threshold: -65,      // silence threshold in dB
+        interval: 100,       // interval for silence checks
+        timeout: 1000       // time until silence is detected
+      });
+
+      let silenceTimeout;
+      let finalTranscript = '';
+
+      speaker.on('speaking', () => {
+        console.debug('[SENSEMAKER]', 'Speaking detected');
+        // Clear any existing silence timeout
+        if (silenceTimeout) {
+          clearTimeout(silenceTimeout);
+        }
+      });
+
+      speaker.on('stopped_speaking', () => {
+        console.debug('[SENSEMAKER]', 'Silence detected');
+        // Set timeout to stop recognition after sustained silence
+        silenceTimeout = setTimeout(() => {
+          recognition.stop();
+          stream.getTracks().forEach(track => track.stop());
+          speaker.stop();
+
+          // Update UI and input field with final transcript
+          this.setState({
+            isRecording: false,
+            query: finalTranscript
+          });
+        }, 2000); // Wait 2 seconds of silence before stopping
+      });
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript = transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Update the input field with current transcript
+        this.setState({
+          query: finalTranscript || interimTranscript
+        });
+      };
+
+      recognition.start();
+    }).catch((err) => {
+      console.error('Media stream error:', err);
+      this.setState({ isRecording: false });
+    });
   }
 
   conversationTitle = (title) => {
@@ -530,7 +594,16 @@ class ChatBox extends React.Component {
   handleAttachmentIntent = (value) => {
     console.debug('attaching file:', value);
     this.setState({ attachingFile: true, loading: true });
-    document.querySelector('#input-control-form input[type="file"]').click();
+    const fileInput = document.querySelector('#input-control-form input[type="file"]');
+    if (fileInput) {
+      fileInput.click();
+      // Add a timeout to clear loading if no file is selected after 1 second
+      setTimeout(() => {
+        if (!fileInput.files || fileInput.files.length === 0) {
+          this.setState({ loading: false });
+        }
+      }, 1000);
+    }
   };
 
   handleEditClick = (currentTitle) => {
@@ -542,16 +615,96 @@ class ChatBox extends React.Component {
     const files = e.target.files;
     this.setState({ formatError: false });
 
-    if (files.length > 0) {
-      const file = files[0]; // Take only the first file
-      if (this.isValidFileType(file.type)) {
-        console.debug('File selected:', file.name, file.size, file.type); // Debugging log
-        this.setState({ file: file, formatError: false, attachmentExists: true });
-        this.handleUpload();
-      } else {
-        this.setState({ formatError: true, file: null });
-      }
+    // If no files were selected (canceled), clear loading state and return
+    if (!files || files.length === 0) {
+      this.setState({ loading: false });
+      return;
     }
+
+    const file = files[0]; // Take only the first file
+    if (this.isValidFileType(file.type)) {
+      console.debug('File selected:', file.name, file.size, file.type);
+      this.setState({
+        file: file,
+        formatError: false,
+        attachmentExists: true,
+        filePreview: {
+          name: file.name,
+          size: this.formatFileSize(file.size),
+          type: file.type
+        },
+        showFilePreview: true,
+        isUploading: true,
+        uploadProgress: 0,
+        loading: true // Set loading state when starting upload
+      });
+
+      // Start upload immediately after file selection
+      try {
+        const result = await this.props.uploadFile(file);
+
+        // Validate the upload response
+        if (!result) {
+          throw new Error('Upload failed - no response received');
+        }
+
+        // Check various possible response structures for the file ID
+        const fileId = result.id || 
+                      (result.response && result.response.id) ||
+                      (result.data && result.data.id) ||
+                      result.id;
+
+        if (!fileId) {
+          console.error('Upload response:', result);
+          throw new Error('Upload failed - no file ID received in response');
+        }
+
+        this.setState({
+          uploadProgress: 100,
+          isUploading: false,
+          uploadedFileId: fileId,
+          loading: false // Reset loading state after successful upload
+        });
+      } catch (error) {
+        console.error('Upload error:', error);
+        this.setState({
+          isUploading: false,
+          formatError: true,
+          errorMsg: error.message || 'Failed to upload file',
+          loading: false // Reset loading state on error
+        });
+      }
+    } else {
+      this.setState({
+        formatError: true,
+        file: null,
+        loading: false // Reset loading state for invalid file type
+      });
+    }
+  };
+
+  removeFile = () => {
+    this.setState({
+      file: null,
+      filePreview: null,
+      showFilePreview: false,
+      attachmentExists: false,
+      uploadProgress: 0,
+      isUploading: false,
+      uploadedFileId: null,
+      loading: false
+    });
+    // Reset the file input
+    const fileInput = document.querySelector('#input-control-form input[type="file"]');
+    if (fileInput) fileInput.value = '';
+  };
+
+  formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   handleSaveEditing = async () => {
@@ -567,30 +720,29 @@ class ChatBox extends React.Component {
     this.setState({ editingTitle: false, editedTitle: '' });
   };
 
-  handleUpload = async () => {
-    this.setState({
-      uploading: true,
-      fileExists: false,
-      file_id: null,
-      formatError: false,
-      errorMsg: '',
-      uploadSuccess: false,
-    });
-
-    console.debug('Uploading:', this.state.file);
-
-    try {
-      await this.props.uploadDocument(this.state.file);
-    } catch (exception) {
-      console.debug('Upload error:', exception);
-    }
-
-    console.debug('Upload complete:', this.props.uploadedDocument);
-  }
-
   isValidFileType (fileType) {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
+
+  // Fetch file metadata and cache it
+  fetchFileMetadata = async (fileId) => {
+    if (!fileId) return;
+    if (this.state.fileMetadataCache[fileId]) return; // already cached
+    try {
+      const response = await fetch(`/files/${fileId}`);
+      if (response.ok) {
+        const data = await response.json();
+        this.setState((prevState) => ({
+          fileMetadataCache: {
+            ...prevState.fileMetadataCache,
+            [fileId]: data,
+          },
+        }));
+      }
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
 
   render () {
     const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
@@ -662,11 +814,14 @@ class ChatBox extends React.Component {
 
     const inputStyle = {
       resize: 'none',
-      zIndex: '1'
+      zIndex: '1',
+      flex: '1',
+      width: '100%'
     };
 
     if (this.props.includeAttachments) {
       inputStyle.borderRadius = '0 5px 5px 0';
+      inputStyle.marginLeft = '0';
     }
 
     if (message?.conversation && !conversationID && !documentChat) {
@@ -721,6 +876,13 @@ class ChatBox extends React.Component {
               message = group.messages[group.activeMessageIndex];
             } else {
               message = group.messages[0];
+            }
+
+            if (message.attachments && message.attachments.length > 0) {
+              message.attachments.forEach((attachment) => {
+                const fileId = typeof attachment === 'string' ? attachment : (attachment.id || attachment.file_id);
+                if (fileId) this.fetchFileMetadata(fileId);
+              });
             }
 
             return (
@@ -814,6 +976,29 @@ class ChatBox extends React.Component {
                     )}
                   </Feed.Summary>
                   <Feed.Extra text>
+                    {/* Attachments rendering */}
+                    {message.attachments && message.attachments.length > 0 && (
+                      <div style={{ marginTop: '0.5em' }}>
+                        <ul style={{ marginTop: '0.5em', paddingLeft: '1.5em' }}>
+                          {message.attachments.map((attachment, index) => {
+                            let fileId, url, name;
+                            if (typeof attachment === 'string') {
+                              fileId = attachment;
+                            } else if (attachment && typeof attachment === 'object') {
+                              fileId = attachment.id || attachment.file_id;
+                            }
+                            const meta = fileId ? this.state.fileMetadataCache[fileId] : null;
+                            url = meta ? `/files/${meta.id}` : (fileId ? `/files/${fileId}` : '#');
+                            name = meta ? (meta.filename || meta.name || meta.originalname || meta.id) : (fileId || '');
+                            return (
+                              <li key={index}>
+                                <a href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                     {message.status !== "computing" && (
                       <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
                     )}
@@ -829,7 +1014,7 @@ class ChatBox extends React.Component {
                   </Feed.Extra>
                   <Feed.Extra text>
                     {generatingResponse &&
-                      message.id === messages[messages.length - 1].id &&
+                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
                       !reGeneratingResponse && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
@@ -886,12 +1071,49 @@ class ChatBox extends React.Component {
             );
           }) : null}
         </Feed>)}
+        {/* File Preview Component */}
+        {this.state.showFilePreview && this.state.filePreview && (
+          <div style={{
+            ...this.filePreviewStyles.container,
+            ...(this.state.showFilePreview ? this.filePreviewStyles.visible : {})
+          }}>
+            <div style={this.filePreviewStyles.content}>
+              <Icon name='file' />
+              <div style={this.filePreviewStyles.fileName}>
+                <strong>{this.state.filePreview.name}</strong>
+                <div style={{ fontSize: '0.8em', color: '#666' }}>
+                  {this.state.filePreview.size}
+                </div>
+                {this.state.isUploading && (
+                  <Progress
+                    percent={this.state.uploadProgress}
+                    size='tiny'
+                    color='blue'
+                    style={{ marginTop: '5px', marginBottom: '0' }}
+                  >
+                    {this.state.uploadProgress === 100 ? 'Upload Complete' : 'Uploading...'}
+                  </Progress>
+                )}
+                {this.state.formatError && (
+                  <Message negative size='tiny' style={{ marginTop: '5px', padding: '5px' }}>
+                    {this.state.errorMsg || 'Invalid file format'}
+                  </Message>
+                )}
+              </div>
+              <Icon
+                name='close'
+                style={this.filePreviewStyles.removeButton}
+                onClick={this.removeFile}
+              />
+            </div>
+          </div>
+        )}
         <Form
           id='input-control-form'
           size="big"
           onSubmit={this.handleSubmit.bind(this)}
           loading={loading}>
-          <Form.Input>
+          <Form.Input style={{ display: 'flex', width: '100%' }}>
             {this.props.includeAttachments && (
               <Button size='huge' basic left attached icon onClick={this.handleAttachmentIntent} loading={this.state.loading} style={{ borderBottomLeftRadius: '5px', borderTopLeftRadius: '5px' }}>
                 <input hidden type='file' name='file' accept={ALLOWED_UPLOAD_TYPES.join(',')} onChange={this.handleFileChange} />
@@ -920,11 +1142,13 @@ class ChatBox extends React.Component {
               style={inputStyle}
             />
             <Icon
-              name="microphone"
-              color="grey"
-              onClick={() => this.handleMicrophoneClick(this)}
-              //this inline style is necessary to make the icon look lighter when the textarea is not focused
-              style={{ color: this.state.isTextareaFocused ? 'grey' : 'lightgrey' }}
+              name={this.state.isRecording ? "stop" : "microphone"}
+              color={this.state.isRecording ? "red" : "grey"}
+              onClick={this.handleMicrophoneClick}
+              style={{
+                color: this.state.isTextareaFocused ? 'grey' : 'lightgrey',
+                cursor: 'pointer'
+              }}
             />
           </Form.Input>
         </Form>

@@ -18,7 +18,7 @@ class SPA extends FabricSPA {
     const hash = crypto.createHash('sha256').update(html).digest('hex');
     // TODO: move CSS to inline from webpack
     return `<!DOCTYPE html>
-<html lang="${this.settings.language}"${(this.settings.offline) ? ' manifest="cache.manifest"' : ''}>
+<html lang="${this.settings.language}" manifest="cache.manifest">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" charset="utf-8" />
     <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />

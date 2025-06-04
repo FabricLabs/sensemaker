@@ -1,35 +1,52 @@
-FROM node:18.19.1-bookworm
+# Use Node.js 22.14.0 as base
+FROM node:22.14.0-slim
 
-# Environment
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    lsb-release \
+    && rm -rf /var/lib/apt/lists/*
 
-# Dependencies
-RUN apt-get update
-RUN apt-get install -y g++ make python3
-RUN apt-get update && apt-get install gnupg wget -y && \
-  wget --quiet --output-document=- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
-  sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
-  apt-get update && \
-  apt-get install google-chrome-stable -y --no-install-recommends && \
-  rm -rf /var/lib/apt/lists/*
+# Install MySQL
+RUN wget https://dev.mysql.com/get/mysql-apt-config_0.8.28-1_all.deb \
+    && dpkg -i mysql-apt-config_0.8.28-1_all.deb \
+    && apt-get update \
+    && apt-get install -y mysql-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Storage
-# TODO: mount SSHFS / similar here
-RUN mkdir -p /media/storage
-RUN mkdir -p /opt/app
+# Install Redis Stack
+RUN wget -O- https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/redis.list \
+    && apt-get update \
+    && apt-get install -y redis-stack-server \
+    && rm -rf /var/lib/apt/lists/*
 
-# Application
-WORKDIR /opt/app
+# Install Ollama
+RUN wget https://ollama.ai/download/linux \
+    && chmod +x linux \
+    && mv linux /usr/local/bin/ollama
+
+# Create application directory
+WORKDIR /app
+
+# Copy application files
 COPY . .
 
-## Build
+# Install Node.js dependencies
 RUN npm install
-RUN npm run build
 
-## Test
-RUN npm test
+# Create startup script
+RUN echo '#!/bin/bash\n\
+service mysql start\n\
+service redis-stack-server start\n\
+ollama serve &\n\
+npm run setup\n\
+node scripts/node.js\n' > /app/start.sh \
+    && chmod +x /app/start.sh
 
-## Run
-EXPOSE 7777
-EXPOSE 3040
-CMD ["npm", "start"]
+# Expose necessary ports
+EXPOSE 3000 3306 6379 11434
+
+# Set entrypoint
+ENTRYPOINT ["/app/start.sh"]

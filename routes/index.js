@@ -8,6 +8,10 @@ module.exports = {
     checkResetToken: require('./account/check_reset_token'),
     restorePassword: require('./account/restore_password')
   },
+  activities: {
+    list: require('./activities/list_activities'),
+    view: require('./activities/view_activity')
+  },
   admin: {
     overview: require('./admin/overview'),
     settings: require('./admin/settings'),
@@ -22,6 +26,9 @@ module.exports = {
     list: require('./agents/list_agents'),
     view: require('./agents/view_agent')
   },
+  alerts: {
+    list: require('./alerts/list_alerts')
+  },
   announcements: {
     list: require('./announcements/list_announcements'),
     latest: require('./announcements/latest_announcement'),
@@ -31,6 +38,7 @@ module.exports = {
     view: require('./blobs/view_blob')
   },
   conversations: {
+    create: require('./conversations/create_conversation'),
     list: require('./conversations/list_conversations'),
     view: require('./conversations/view_conversation'),
     editConversationsTitle: require('./conversations/edit_conversations_title'),
@@ -84,17 +92,25 @@ module.exports = {
     list: require('./inquiries/list_inquiries')
   },
   invitations: {
-    createInvitations: require('./invitations/create_invitation'),
-    getInvitations: require('./invitations/get_invitations'),
+    create: require('./invitations/create_invitation'),
+    list: require('./invitations/get_invitations'),
+    view: require('./invitations/view_invitation'),
     checkInvitationToken: require('./invitations/check_invitation_token'),
     resendInvitation: require('./invitations/resend_invitation'),
     acceptInvitation: require('./invitations/accept_invitation'),
     declineInvitation: require('./invitations/decline_invitation'),
     deleteInvitation: require('./invitations/delete_invitation')
   },
+  jobs: {
+    list: require('./jobs/list_jobs')
+  },
   keys: {
     list: require('./keys/list_keys'),
     create: require('./keys/create_key')
+  },
+  memories: {
+    list: require('./memories/list_memories'),
+    view: require('./memories/view_memory')
   },
   messages: {
     list: require('./messages/list_messages'),
@@ -142,6 +158,11 @@ module.exports = {
       list: require('./services/disk/list_files'),
       view: require('./services/disk/view_path')
     },
+    matrix: {
+      rooms: {
+        view: require('./services/matrix/view_room')
+      }
+    },
     rsi: {
       activities: {
         create: require('./services/rsi/create_activity')
@@ -173,6 +194,10 @@ module.exports = {
     list: require('./tasks/list_tasks'),
     view: require('./tasks/view_task'),
     edit: require('./tasks/edit_task')
+  },
+  topics: {
+    list: require('./topics/list_topics'),
+    view: require('./topics/view_topic')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')

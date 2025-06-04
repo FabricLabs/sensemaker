@@ -2,6 +2,7 @@
 
 module.exports = async function (req, res, next) {
     const request = req.body;
+    request.user = { id: req.user.id };
     const documents = await this._searchDocuments(request);
     const result = {
       documents: documents || []

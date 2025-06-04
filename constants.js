@@ -11,6 +11,7 @@ const MAX_MEMORY_SIZE = 32 * 1024 * 1024; // 32 MB
 const SNAPSHOT_INTERVAL = 1000 * 60 * 10; // 10 minutes
 const {
   BITCOIN_NETWORK,
+  BITCOIN_GENESIS_HASH,
   FIXTURE_SEED
 } = require('@fabric/core/constants');
 
@@ -35,8 +36,10 @@ const ALLOWED_UPLOAD_TYPES = [
 
 // Flags
 const ENABLE_AGENTS = true;
-const ENABLE_BILLING = false; // TODO: enable billing
-const ENABLE_CHANGELOG = true; // TODO: enable changelog ("blog")
+const ENABLE_ALERTS = true;
+const ENABLE_BILLING = false;
+const ENABLE_BITCOIN = false;
+const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
 const ENABLE_CHAT = true;
 const ENABLE_CONTENT_TOPBAR = true;
 const ENABLE_CONTRACTS = true;
@@ -44,14 +47,17 @@ const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_DISCORD_LOGIN = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_DOCUMENTS = true;
+const ENABLE_FABRIC = false;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
-const ENABLE_GROUPS = true;
+const ENABLE_GROUPS = false;
+const ENABLE_JOBS = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_LOGIN = true;
+const ENABLE_MARKETING = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_REGISTRATION = false;
-const ENABLE_SOURCES = true;
+const ENABLE_SOURCES = false;
 const ENABLE_TASKS = true;
 const ENABLE_UPLOADS = false;
 const ENABLE_WALLET = false;
@@ -82,8 +88,9 @@ module.exports = {
   RELEASE_DESCRIPTION, // TODO: use a real release description
   SNAPSHOT_INTERVAL, // 10 minutes for snapshot interval
   MAX_RESPONSE_TIME_MS, // 60 seconds for maximum response time
-  BITCOIN_NETWORK, // Use mainnet for production
-  FIXTURE_SEED, // Use a fixture seed for development
+  BITCOIN_NETWORK,
+  BITCOIN_GENESIS_HASH,
+  FIXTURE_SEED,
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
@@ -92,14 +99,18 @@ module.exports = {
   CORE_MODEL,
   EMBEDDING_MODEL,
   ENABLE_AGENTS,
+  ENABLE_ALERTS,
+  ENABLE_BITCOIN,
   ENABLE_CONTENT_TOPBAR,
   ENABLE_CONTRACTS,
   ENABLE_CHANGELOG,
   ENABLE_CONVERSATION_SIDEBAR,
   ENABLE_DISCORD_LOGIN,
   ENABLE_DOCUMENTS,
+  ENABLE_FABRIC,
   ENABLE_FEEDBACK_BUTTON,
   ENABLE_GROUPS,
+  ENABLE_JOBS,
   ENABLE_BILLING,
   ENABLE_LOGIN,
   ENABLE_REGISTRATION,
@@ -109,6 +120,7 @@ module.exports = {
   ENABLE_PERSON_SEARCH,
   ENABLE_UPLOADS,
   ENABLE_LIBRARY,
+  ENABLE_MARKETING,
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_WALLET,

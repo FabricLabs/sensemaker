@@ -1,18 +1,19 @@
 'use strict';
 
 const React = require('react');
+const { Link } = require('react-router-dom');
 
 const {
   Button,
-  Table,
+  Checkbox,
   Message,
   Header,
-  Checkbox,
-  Segment,
+  Icon,
   Input,
+  Segment,
+  Table,
   Modal
 } = require('semantic-ui-react');
-const store = require('../stores/redux');
 
 class AdminInvitations extends React.Component {
 
@@ -220,7 +221,13 @@ class AdminInvitations extends React.Component {
                               content='Re-Send'
                             />
                           )}
-
+                          <Button
+                            size='mini'
+                            loading={sendingInvitationID === instance.id}
+                            as={Link}
+                            to={`/invitations/${instance.fabric_id}`}
+                            content={<Icon name='linkify' />}
+                          />
                         </Table.Cell>
                         <Table.Cell textAlign="center">
                           <Button

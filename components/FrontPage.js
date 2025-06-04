@@ -8,20 +8,21 @@ const { Link } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
-  Card,
+  Container,
   Header,
-  Icon,
-  Segment
+  Icon
 } = require('semantic-ui-react');
 
 // Local Components
 const HeaderBar = require('./HeaderBar');
+const KeyManagementModal = require('./KeyManagementModal');
 
 // Strings
 // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 const {
   BRAND_NAME,
   BRAND_TAGLINE,
+  ENABLE_MARKETING,
   PITCH_CTA_TEXT
 } = require('../locales/en');
 
@@ -43,50 +44,24 @@ class FrontPage extends React.Component {
     return (
       <sensemaker-front-page class='splash-page fade-in'>
         <HeaderBar showBrand={false} showButtons={false} />
-        <section class='lead'>
-          <Header as='h1' style={{ fontSize: '8em' }}>{BRAND_NAME}</Header>
-          <p style={{ fontSize: '2em' }}>{BRAND_TAGLINE}</p>
-          <p style={{ fontSize: '1.2em', marginBottom: '4em' }}>{PITCH_CTA_TEXT}</p>
-          <Button.Group floated='right' size='huge'>
-            <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
-            <Button.Or />
-            <Button as={Link} to='/inquiries' color='black'>Apply <Icon name='right chevron' /></Button>
-          </Button.Group>
-        </section>
-        {/*
-        <section style={{ marginTop: '12em' }}>
-          <Segment style={{ padding: '2em' }}>
-            <h2>Deploy Agents in Seconds</h2>
-            <p>Sensemaker enables the rapid deployment of research-grade artificial intelligence tooling into real-world scenarios.  Gain instantaneous insight into real-time data from the field, ranging from social media to physical sensors.</p>
-            <Button size='large' color='black' as={Link} to='/features' floated='right'>Learn More <Icon name='right chevron' /></Button>
-          </Segment>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Local Intelligence</Card.Header>
-              <Card.Description>
-                <p>Sensemaker's offline-first design ensures reliability under adversarial conditions.</p>
-                <Button size='large' color='black' as={Link} to='/features' floated='right' labelPosition='right' icon='right chevron'>Learn More</Button>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Global Awareness</Card.Header>
-              <Card.Description>
-                <p>Robust connectivity with a variety of networks empowers Sensemaker with real-time analytics and powerful data visualizations.</p>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-          <Card fluid>
-            <Card.Content style={{ padding: '2em' }}>
-              <Card.Header as='h2'>Your Data, Your Rules</Card.Header>
-              <Card.Description>
-                <p>Retain control over your most important information.  Sensemaker keeps all data locally, letting you choose what to share with the network.</p>
-              </Card.Description>
-            </Card.Content>
-          </Card>
-        </section>
-        */}
+        <Container text style={{ marginTop: '4em', marginBottom: '4em' }}>
+          <section className='lead' style={{ textAlign: 'center' }}>
+            <Header as='h1'>{BRAND_NAME}</Header>
+            <p>{BRAND_TAGLINE}</p>
+            <p style={{ marginBottom: '4em', color: 'rgba(0,0,0,0.6)' }}>{PITCH_CTA_TEXT}</p>
+            <Button.Group size='huge'>
+              <Button color='blue' as={Link} to='/sessions' icon labelPosition='left'><Icon name='user' />Log In</Button>
+              {ENABLE_MARKETING && (
+                <Button color='green' as={Link} to='/features' icon labelPosition='right'>Learn More<Icon name='right chevron' /></Button>
+              )}
+            </Button.Group>
+          </section>
+        </Container>
+        <KeyManagementModal
+          ref={(ref) => this.keyModal = ref}
+          onKeyGenerated={this.handleKeyGenerated}
+          onKeyImported={this.handleKeyImported}
+        />
       </sensemaker-front-page>
     );
   }

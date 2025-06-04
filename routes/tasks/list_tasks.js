@@ -1,7 +1,7 @@
 'use strict';
 
 const always = [
-  { id: 1, type: 'Task', mime: 'text/plain', title: 'DO NO HARM TO HUMANS', description: 'DO NO HARM TO HUMANS', completed_at: true }
+  // { id: 1, type: 'Task', mime: 'text/plain', title: 'DO NO HARM TO HUMANS', description: 'DO NO HARM TO HUMANS', completed_at: true }
 ];
 
 module.exports = async function (req, res, next) {
@@ -14,9 +14,9 @@ module.exports = async function (req, res, next) {
         'created_at',
         'due_date',
         'completed_at'
-      ).where('owner', req.user.id);
+      ).where('owner', req.user.id).orderBy('created_at', 'desc');
 
-      const endowments = tasks.filter(x => !x.completed_at).map((task) => {
+      const endowments = tasks.map((task) => {
         task.can_edit = true;
         task.can_delete = true;
         return task;

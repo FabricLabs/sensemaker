@@ -46,13 +46,31 @@ class HeaderBar extends React.Component {
   render () {
     const { showBrand, showButtons } = this.props;
     return (
-      <sensemaker-header-bar className='brand'>
-        {(showBrand) && <Link to='/' style={{ float: 'left', fontWeight: 'bold', textTransform: 'uppercase' }}><Icon name='eye' size='big' style={{ verticalAlign: 'bottom' }} /> <span className='brand'>{BRAND_NAME}</span></Link>}
+      <sensemaker-header-bar class='brand'>
+        <style>
+          {`
+            sensemaker-header-bar {
+              display: block;
+            }
+
+            .brand {
+              font-size: 30px;
+              font-weight: bold;
+              text-transform: uppercase;
+              /* color: #333; */
+            }
+
+            .brand:hover {
+              /* color: #000; */
+            }
+          `}
+        </style>
+        {(showBrand) && <Link to='/' style={{ float: 'left' }}><Header as='h1'><span className='brand'>{BRAND_NAME}</span></Header></Link>}
         {(showButtons) && (
           <Button.Group floated='right'>
-            <Button as={Link} to='/sessions' color='green'><Icon name='key' /> Sign In</Button>
-            <Button.Or />
-            <Button as={Link} to='/inquiries' color='black'>Apply &raquo;</Button>
+            <Button as={Link} to='/sessions' color='green'>Log In &raquo;</Button>
+            {/* <Button.Or />
+            <Button as={Link} to='/inquiries' color='black'>Apply &raquo;</Button> */}
           </Button.Group>
         )}
         <br style={{ clear: 'both' }} />
