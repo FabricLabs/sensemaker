@@ -32,6 +32,7 @@ const {
 const FrontPage = require('./FrontPage');
 const Splash = require('./Splash');
 const InquiriesHome = require('./InquiriesHome');
+const InvitationView = require('./InvitationView');
 const FeaturesHome = require('./FeaturesHome');
 const Dashboard = require('./Dashboard');
 const TermsOfUseModal = require('./TermsOfUseModal');
@@ -203,6 +204,7 @@ class SensemakerUI extends React.Component {
                 <Routes>
                   <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
+                  <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
                   <Route path='/features' element={<FeaturesHome />} />
                   <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
                   <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />

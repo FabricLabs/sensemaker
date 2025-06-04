@@ -275,6 +275,7 @@ class Agent extends Service {
    * @returns {AgentResponse} Response object.
    */
   async query (request) {
+    // TODO: streamline this method to remove await
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[AGENT]', 'Name:', this.settings.name);
       if (this.settings.debug) console.debug('[AGENT]', 'Host:', this.settings.host);
@@ -506,6 +507,27 @@ class Agent extends Service {
         clearTimeout(timeoutId);
         reject(error);
       }
+    });
+  }
+
+  async listModels () {
+    fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/models`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+      }
+      return response.json();
+    }).then((models) => {
+      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[LIST_MODELS]', 'Available models:', models);
+      return models;
+    }).catch((error) => {
+      console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[LIST_MODELS]', 'Error fetching models:', error);
+      throw error;
     });
   }
 

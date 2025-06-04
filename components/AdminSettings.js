@@ -2,21 +2,24 @@
 
 // Dependencies
 const React = require('react');
+const marked = require('marked');
 
 // Components
 const withNavigate = require('../components/Navigate');
 const AdminUsers = require('./AdminSettingsUsers');
-const SignUpForm = require('./SignUpForm');
 const AdminInquiries = require('./AdminSettingsInquiries');
 const AdminInvitations = require('./AdminSettingsInvitations');
 const AdminConversationsTab = require('./tabs/admin/conversations');
+const AdminMemoriesTab = require('./tabs/admin/memories');
 const AdminServicesTab = require('./tabs/admin/services');
 const AdminSettingsTab = require('./tabs/admin/settings');
 const AdminAgentsTab = require('./tabs/admin/agents');
+const AnnouncementCreator = require('./AnnouncementCreator');
 
 // Semantic UI
 const {
   Header,
+  Message,
   Segment,
   Menu,
   Statistic,
@@ -40,6 +43,7 @@ class AdminSettings extends React.Component {
             documents: 0
           }
         },
+        announcements: [],
         waitlistSignupCount: 0,
         currentPage: 1,
         windowWidth: window.innerWidth,
@@ -57,6 +61,7 @@ class AdminSettings extends React.Component {
 
   componentDidMount () {
     this.props.fetchAdminStats();
+    this.props.fetchAnnouncements();
     window.addEventListener('resize', this.handleResize);
     window.addEventListener('hashchange', this.handleHashChange);
   }
@@ -84,7 +89,7 @@ class AdminSettings extends React.Component {
   };
 
   renderOverviewTab () {
-    const { stats } = this.props;
+    const { stats, announcements } = this.props;
     const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
@@ -106,6 +111,21 @@ class AdminSettings extends React.Component {
             <Statistic.Label>Invited</Statistic.Label>
           </Statistic>
         </Statistic.Group>
+        <sensemaker-announcements>
+          <Header as='h4' style={{ marginTop: '2em' }}>Announcements</Header>
+          <p>Announcements are displayed to all users of this node.</p>
+          {announcements?.announcements?.map((announcement) => (
+            <Message info key={announcement.id}>
+              <Message.Header>
+                <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.title || '') }} />
+              </Message.Header>
+              <Message.Content>
+                <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.body || '') }} />
+              </Message.Content>
+            </Message>
+          ))}
+          <AnnouncementCreator />
+        </sensemaker-announcements>
       </div>
     );
   }
@@ -114,18 +134,6 @@ class AdminSettings extends React.Component {
     return (
       <div>
         <AdminUsers {...this.props} />
-        <section style={{ width: '100%', marginTop:'1em' }} className='col-center'>
-          <Header as='h3'>Create User</Header>
-          <SignUpForm
-            adminPanel={true}
-            checkInvitationToken={this.props.checkInvitationToken}
-            checkUsernameAvailable={this.props.checkUsernameAvailable}
-            checkEmailAvailable={this.props.checkEmailAvailable}
-            auth={this.props.auth}
-            invitation={this.props.invitation}
-            fullRegister={this.props.fullRegister}
-          />
-        </section>
         <AdminInquiries
           inquiries={this.props.inquiries}
           fetchInquiries={this.props.fetchInquiries}
@@ -168,6 +176,11 @@ class AdminSettings extends React.Component {
               onClick={this.handleTabClick}
             />
             <Menu.Item
+              name='memories'
+              active={this.state.activeTab === 'memories'}
+              onClick={this.handleTabClick}
+            />
+            <Menu.Item
               name='services'
               active={this.state.activeTab === 'services'}
               onClick={this.handleTabClick}
@@ -183,10 +196,10 @@ class AdminSettings extends React.Component {
               onClick={this.handleTabClick}
             />
           </Menu>
-
           {this.state.activeTab === 'overview' && this.renderOverviewTab()}
           {this.state.activeTab === 'users' && this.renderUsersTab()}
           {this.state.activeTab === 'conversations' && <AdminConversationsTab {...this.props} />}
+          {this.state.activeTab === 'memories' && <AdminMemoriesTab {...this.props} />}
           {this.state.activeTab === 'services' && <AdminServicesTab {...this.props} />}
           {this.state.activeTab === 'settings' && <AdminSettingsTab {...this.props} />}
           {this.state.activeTab === 'agents' && <AdminAgentsTab {...this.props} />}

@@ -34,9 +34,7 @@ const FrontPage = require('./FrontPage');
 const ResetPasswordForm = require('./ResetPasswordForm');
 const SignUpForm = require('./SignUpForm');
 const DeclinedInvitation = require('./DeclinedInvitation');
-const LoginPage = require('./LoginPage');
-const TermsOfUse = require('./TermsOfUse');
-const InquiriesHome = require('./InquiriesHome');
+const InvitationView = require('./InvitationView');
 
 /**
  * Home page for visitors (not yet logged in).
@@ -53,6 +51,7 @@ class Splash extends React.Component {
           <Routes>
             {/* TODO: fix these routes */}
             <Route path='/services/passwords/:resetToken' element={<ResetPasswordForm />} />
+            <Route path='/invitations/:id' element={<InvitationView />} />
             <Route path='/services/invitations/:invitationToken'
               element={
                 <SignUpForm

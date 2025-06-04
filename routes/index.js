@@ -94,6 +94,7 @@ module.exports = {
   invitations: {
     create: require('./invitations/create_invitation'),
     list: require('./invitations/get_invitations'),
+    view: require('./invitations/view_invitation'),
     checkInvitationToken: require('./invitations/check_invitation_token'),
     resendInvitation: require('./invitations/resend_invitation'),
     acceptInvitation: require('./invitations/accept_invitation'),
@@ -106,6 +107,10 @@ module.exports = {
   keys: {
     list: require('./keys/list_keys'),
     create: require('./keys/create_key')
+  },
+  memories: {
+    list: require('./memories/list_memories'),
+    view: require('./memories/view_memory')
   },
   messages: {
     list: require('./messages/list_messages'),

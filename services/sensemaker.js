@@ -519,21 +519,24 @@ class Sensemaker extends Hub {
         port: this.settings.db.port,
         user: this.settings.db.user,
         password: this.settings.db.password,
-        database: this.settings.db.database
+        database: this.settings.db.database,
+        connectTimeout: 10000,
+        acquireTimeout: 10000
       },
       pool: {
         min: 2,
-        max: 20,
-        acquireTimeoutMillis: 10000,
-        createTimeoutMillis: 10000,
+        max: 10,
+        acquireTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
         idleTimeoutMillis: 30000,
         reapIntervalMillis: 1000,
+        propagateCreateError: false,
         afterCreate: (conn, done) => {
           // console.debug('[SENSEMAKER:CORE]', '[DB]', 'Connection created.');
           done(null, conn);
         }
       },
-      acquireConnectionTimeout: 10000
+      acquireConnectionTimeout: 60000
     });
 
     // Attach pagination plugin
@@ -1010,7 +1013,7 @@ class Sensemaker extends Hub {
         prompt = this.settings.prompt;
       }
 
-      if (request.user) {
+      if (request.user && !request.context) {
         const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at')
           .where({ creator_id: request.user.id })
           .orderBy('created_at', 'desc')
@@ -1034,7 +1037,7 @@ class Sensemaker extends Hub {
         if (oldestTasks.length > 0) {
           messages.unshift({
             role: 'user',
-            content: `My oldest tasks:\n\n` + oldestTasks.map((task) => {
+            content: `My oldest outstanding tasks:\n\n` + oldestTasks.map((task) => {
               return `- [ ] ${task.title} (created: ${task.created_at})`;
             }).join('\n')
           });
@@ -1053,6 +1056,23 @@ class Sensemaker extends Hub {
             content: `My urgent tasks:\n\n` + urgentTasks.map((task) => {
               return `- [ ] ${task.title} (due: ${task.due_date})`;
             }).join('\n')
+          });
+        }
+
+        const announcements = await this.db('announcements')
+          .select('id', 'title', 'content', 'created_at')
+          .where(() => {
+            this.db.where('expiration_date', '>', this.db.fn.now())
+          })
+          .orderBy('created_at', 'desc')
+          .limit(5);
+
+        if (announcements.length > 0) {
+          messages.unshift({
+            role: 'user',
+            content: `Recent announcements:\n\n` + announcements.map((ann) => {
+              return `- [ ] ${ann.title} (${ann.created_at})\n${ann.content}`;
+            }).join('\n\n')
           });
         }
       }
@@ -1990,6 +2010,10 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/keys', ROUTES.keys.list.bind(this));
     // this.http._addRoute('GET', '/keys/:id', ROUTES.keys.view.bind(this));
 
+    // Memories
+    this.http._addRoute('GET', '/memories', ROUTES.memories.list.bind(this));
+    this.http._addRoute('GET', '/memories/:id', ROUTES.memories.view.bind(this));
+
     // Peers
     this.http._addRoute('POST', '/peers', ROUTES.peers.create.bind(this));
     this.http._addRoute('GET', '/peers', ROUTES.peers.list.bind(this));
@@ -2072,12 +2096,7 @@ class Sensemaker extends Hub {
     //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', ROUTES.invitations.create.bind(this) );
     this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
-    this.http._addRoute('GET', '/invitations/:id', async (req, res) => {
-      // TODO: render page for accepting invitation
-      // - create user account
-      // - set user password
-      // - create help conversation
-    });
+    this.http._addRoute('GET', '/invitations/:id', ROUTES.invitations.view.bind(this));
 
     this.http._addRoute('GET', '/invitations', ROUTES.invitations.list.bind(this));
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
@@ -2199,7 +2218,7 @@ class Sensemaker extends Hub {
     this.emit('ready');
 
     // DEBUG
-    this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
+    // this.alert(`Sensemaker started.  Agent ID: ${this.id}`);
 
     // Benchmarking
     if (this.settings.benchmark) {

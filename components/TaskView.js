@@ -144,25 +144,44 @@ class TaskPage extends React.Component {
   async handleDueDateSubmit () {
     const { selectedDueDate, selectedDueTime } = this.state;
 
-    // Create date in local timezone
-    const [year, month, day] = selectedDueDate.split('-').map(Number);
-    const [hours, minutes] = selectedDueTime.split(':').map(Number);
-    const combinedDateTime = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    if (!selectedDueDate || !selectedDueTime) {
+      return;
+    }
+
+    // Combine the date and time strings
+    const dateTimeStr = `${selectedDueDate}T${selectedDueTime}`;
+
+    // Create a date object in local timezone
+    const combinedDateTime = new Date(dateTimeStr);
+
+    // Ensure valid date
+    if (isNaN(combinedDateTime.getTime())) {
+      console.error('Invalid date created');
+      return;
+    }
 
     this.setState({ loading: true });
-    await this.props.updateTask(this.props.api.resource.id, { due_date: combinedDateTime });
-    await this.props.fetchResource();
-    this.setState({
-      isEditingDueDate: false,
-      loading: false,
-      selectedDueDate: null,
-      selectedDueTime: null
-    });
 
-    // Remove the edit parameter from URL
-    const searchParams = new URLSearchParams(window.location.search);
-    searchParams.delete('edit');
-    window.history.replaceState({}, '', `${window.location.pathname}${searchParams.toString() ? '?' + searchParams.toString() : ''}`);
+    try {
+      await this.props.updateTask(this.props.api.resource.id, {
+        due_date: combinedDateTime.toISOString()
+      });
+      await this.props.fetchResource();
+      this.setState({
+        isEditingDueDate: false,
+        loading: false,
+        selectedDueDate: null,
+        selectedDueTime: null
+      });
+
+      // Remove the edit parameter from URL
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.delete('edit');
+      window.history.replaceState({}, '', `${window.location.pathname}${searchParams.toString() ? '?' + searchParams.toString() : ''}`);
+    } catch (error) {
+      console.error('Error updating due date:', error);
+      this.setState({ loading: false });
+    }
   }
 
   formatDate (dateStr) {

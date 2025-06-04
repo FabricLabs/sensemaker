@@ -4,6 +4,8 @@
 const React = require('react');
 const { Link, useLocation } = require('react-router-dom');
 
+const marked = require('marked');
+
 // Components
 // Semantic UI
 const {
@@ -13,6 +15,7 @@ const {
   Header,
   Icon,
   List,
+  Message,
   Segment,
   Popup
 } = require('semantic-ui-react');
@@ -37,6 +40,7 @@ class Home extends React.Component {
   componentDidMount () {
     // Retrieve Conversations
     this.props.fetchConversations();
+    this.props.fetchAnnouncements();
   }
 
   componentDidUpdate (prevProps) {
@@ -61,7 +65,7 @@ class Home extends React.Component {
   };
 
   render () {
-    const { auth, conversations } = this.props;
+    const { auth, announcements, conversations } = this.props;
     const { isPopupOpen, isProfileModalOpen } = this.state;
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
@@ -70,6 +74,16 @@ class Home extends React.Component {
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
           <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
         </Segment>
+        {announcements?.announcements?.map((announcement) => (
+          <Message info key={announcement.id}>
+            <Message.Header>
+              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.title || '') }} />
+            </Message.Header>
+            <Message.Content>
+              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.body || '') }} />
+            </Message.Content>
+          </Message>
+        ))}
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
@@ -143,30 +157,32 @@ class Home extends React.Component {
             )  : null}
           </Grid.Column>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
-            <Card as={Link} to='/conversations' fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Card.Content style={{ flex: '1 1 auto' }}>
-                <Card.Header>Recently...</Card.Header>
-                <List>
-                  {conversations.slice(2, 5).map((conversation) => (
-                    <List.Item key={conversation.slug}>
-                      <List.Icon name='chevron right' />
-                      <List.Content>
-                        <Popup
-                          content={conversation.summary}
-                          trigger={
-                            <List.Header title={conversation.summary} as={Link} to={`/conversations/${conversation.slug}`}>{conversation.title}</List.Header>
-                          }
-                          position='right center'
-                        />
-                      </List.Content>
-                    </List.Item>
-                  ))}
-                </List>
-              </Card.Content>
-              <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
-                <Button color='black'>Explore History &raquo;</Button>
-              </Button.Group>
-            </Card>
+            {(conversations && conversations.length > 2) ? (
+              <Card as={Link} to='/conversations' fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Content style={{ flex: '1 1 auto' }}>
+                  <Card.Header>Recently...</Card.Header>
+                  <List>
+                    {conversations.slice(2, 5).map((conversation) => (
+                      <List.Item key={conversation.slug}>
+                        <List.Icon name='chevron right' />
+                        <List.Content>
+                          <Popup
+                            content={conversation.summary}
+                            trigger={
+                              <List.Header title={conversation.summary} as={Link} to={`/conversations/${conversation.slug}`}>{conversation.title}</List.Header>
+                            }
+                            position='right center'
+                          />
+                        </List.Content>
+                      </List.Item>
+                    ))}
+                  </List>
+                </Card.Content>
+                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
+                  <Button color='black'>Explore History &raquo;</Button>
+                </Button.Group>
+              </Card>
+            ) : null}
           </Grid.Column>
         </Grid>
         <ActivityStream

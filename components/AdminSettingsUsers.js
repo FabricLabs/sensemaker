@@ -14,8 +14,8 @@ const {
   Popup,
 
 } = require('semantic-ui-react');
-const store = require('../stores/redux');
 
+const SignUpForm = require('./SignUpForm');
 const UsernameEditModal = require('./AdminSettingsUsernameModal');
 const EmailEditModal = require('./AdminSettingsEmailModal');
 //const { email } = require('../settings/local');
@@ -33,6 +33,7 @@ class AdminUsers extends React.Component {
       reseting: false,
       emailEditing: null,
       editEmailOpen: false,
+      createUserModalOpen: false
     };
   }
 
@@ -76,6 +77,12 @@ class AdminUsers extends React.Component {
     }));
   };
 
+  toggleCreateUserModal = () => {
+    this.setState(prevState => ({
+      createUserModalOpen: !prevState.createUserModalOpen
+    }));
+  };
+
   changeUsername = (oldUsername, id) => {
     this.setState({ usernameEditing: oldUsername, userIdEditing: id, usernameEditModal: true });
     // this.toggleUsernameModal;
@@ -116,6 +123,30 @@ class AdminUsers extends React.Component {
     )
   }
 
+  renderCreateUserModal = () => {
+    return (
+      <Modal
+        open={this.state.createUserModalOpen}
+        onClose={this.toggleCreateUserModal}
+        size="small"
+      >
+        <Modal.Header>Create New User</Modal.Header>
+        <Modal.Content>
+          <SignUpForm
+            adminPanel={true}
+            checkInvitationToken={this.props.checkInvitationToken}
+            checkUsernameAvailable={this.props.checkUsernameAvailable}
+            checkEmailAvailable={this.props.checkEmailAvailable}
+            auth={this.props.auth}
+            invitation={this.props.invitation}
+            fullRegister={this.props.fullRegister}
+            onSuccess={this.toggleCreateUserModal}
+          />
+        </Modal.Content>
+      </Modal>
+    );
+  };
+
   render () {
     const { accounts, users, stats } = this.props;
     const {
@@ -150,6 +181,7 @@ class AdminUsers extends React.Component {
           <Header as='h4'>Users</Header>
           <br style={{ clear: 'both' }} />
           <div>
+            <Button primary onClick={this.toggleCreateUserModal}>Create User</Button>
             <Button
               icon='redo'
               title='Update users'
@@ -243,6 +275,7 @@ class AdminUsers extends React.Component {
           </Table>
         </Segment>
         {this.renderConfirmResetModal()}
+        {this.renderCreateUserModal()}
         <EmailEditModal
           {...this.props}
           open={editEmailOpen}

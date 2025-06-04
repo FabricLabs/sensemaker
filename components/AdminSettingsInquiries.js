@@ -11,7 +11,6 @@ const {
   Input,
   Modal
 } = require('semantic-ui-react');
-const store = require('../stores/redux');
 
 class AdminInquiries extends React.Component {
 
@@ -28,11 +27,11 @@ class AdminInquiries extends React.Component {
     };
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.props.fetchInquiries();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.invitation !== this.props.invitation) {
       const { invitation } = this.props;
       const { sendingInvitationID } = this.state;
@@ -111,7 +110,7 @@ class AdminInquiries extends React.Component {
     )
   }
 
-  formatDateTime(dateTimeStr) {
+  formatDateTime (dateTimeStr) {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateTimeStr).toLocaleString('en-US', options);
   }
@@ -127,7 +126,7 @@ class AdminInquiries extends React.Component {
   }
 
 
-  render() {
+  render () {
     const { sent, sendingInvitationID, errorSending } = this.state;
     const { inquiries } = this.props;
 

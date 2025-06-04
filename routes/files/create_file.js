@@ -70,7 +70,7 @@ async function http_create_file (req, res, next) {
 
         try {
           const actor = new Actor({ name: req.file.originalname, content: data.toString('utf8') });
-          const preimage = crypto.createHash('sha256').update(data).digest('hex');
+          const preimage = crypto.createHash('sha256').update(data).digest();
           const hash = crypto.createHash('sha256').update(preimage).digest('hex');
           const existingBlob = await this.db('blobs').where({ preimage_sha256: hash }).first();
           if (!existingBlob) {
@@ -78,7 +78,7 @@ async function http_create_file (req, res, next) {
               fabric_id: actor.id,
               content: data.toString('utf8'),
               mime_type: mimeType,
-              preimage: preimage,
+              preimage: preimage.toString('hex'),
               preimage_sha256: hash
             });
           }
@@ -88,8 +88,9 @@ async function http_create_file (req, res, next) {
             .where({ id: savedFile[0] })
             .update({
               fabric_id: actor.id,
-              blob_id: hash,
+              blob_id: actor.id,
               updated_at: new Date(),
+              preimage_sha256: hash,
               status: 'uploaded'
             });
 

@@ -46,7 +46,7 @@ class FeaturesHome extends React.Component {
             <Link to="/inquiries" className="ui huge primary button">Get Started <i class="right arrow icon"></i></Link>
           </div>
         </Container>
-        <Container text>
+        {/* <Container text>
           <Card fluid style={{ clear: 'both', marginTop: '4em' }}>
             <Card.Content extra>
               <a><Icon name='eye' /> OVERVIEW</a>
@@ -61,7 +61,7 @@ class FeaturesHome extends React.Component {
               <a><Icon name='linkify' /><code>c0d3b33f</code></a>
             </Card.Content>
           </Card>
-        </Container>
+        </Container> */}
         {/* <Container>
           <Card fluid style={{ clear: 'both', marginTop: '8em' }}>
             <Card.Content extra>
@@ -91,7 +91,7 @@ class FeaturesHome extends React.Component {
             </Card.Content>
           </Card>
         </Container> */}
-        <div class="ui vertical stripe inverted segment" style={{ marginBottom: '4em' }}>
+        <div style={{ marginBottom: '4em', background: 'none !important' }}>
           <div class="ui middle aligned stackable grid container">
             <div class="row">
               <div class="eight wide column"></div>

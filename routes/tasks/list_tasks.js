@@ -14,7 +14,7 @@ module.exports = async function (req, res, next) {
         'created_at',
         'due_date',
         'completed_at'
-      ).where('owner', req.user.id).orderBy('created_at', 'asc');
+      ).where('owner', req.user.id).orderBy('created_at', 'desc');
 
       const endowments = tasks.map((task) => {
         task.can_edit = true;
