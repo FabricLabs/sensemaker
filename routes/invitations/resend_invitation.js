@@ -1,6 +1,8 @@
 'use strict';
 
 const crypto = require('crypto');
+const Actor = require('@fabric/core/types/actor');
+
 const createInvitationEmailContent = require('../../functions/createInvitationEmailContent');
 
 module.exports = function (req, res) {
@@ -24,8 +26,9 @@ module.exports = function (req, res) {
         };
 
         const invitation = await this.db.select(['id', 'target']).from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `${this.authority}/invitations/${invitation.id}?token=${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/invitations/${invitation.id}?token=${invitationToken}`;
+        const actor = new Actor({ name: `sensemaker/invitations/${invitation.id}`});
+        const acceptInvitationLink = `${this.authority}/invitations/${actor.id}?token=${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/invitations/${actor.id}?token=${invitationToken}`;
         const imgSrc = "https://sensemaker.io/images/fabric-labs.png";
         const htmlContent = createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
