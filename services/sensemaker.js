@@ -1588,6 +1588,7 @@ class Sensemaker extends Hub {
     // TODO: add filesystem watcher for live updates (low priority)
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
     this.bitcoinPDF = fs.readFileSync('./assets/bitcoin.pdf').toString('utf8');
+    this.termsOfUse = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
 
     await this.setupAdmin();
     await this.setupAgents();
@@ -1993,6 +1994,10 @@ class Sensemaker extends Hub {
     // Blobs
     this.http._addRoute('GET', '/blobs/:id', ROUTES.blobs.view.bind(this));
 
+    // Contracts
+    this.http._addRoute('GET', '/contracts', ROUTES.contracts.list.bind(this));
+    this.http._addRoute('GET', '/contracts/:id', ROUTES.contracts.view.bind(this));
+
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
     this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
@@ -2083,21 +2088,9 @@ class Sensemaker extends Hub {
     this.http._addRoute('DELETE', '/inquiries/:id', ROUTES.inquiries.delete.bind(this));
 
     // Invitations
-    // TODO: review this
-    // TODO: remap to /tokens/:tokenHash#token=:invitationToken (where client handles POST to users after confirming token with server)
-    this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
-
-    this.http._addRoute('GET', '/signup/decline/:invitationToken', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
-
-    //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', ROUTES.invitations.create.bind(this) );
     this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
     this.http._addRoute('GET', '/invitations/:id', ROUTES.invitations.view.bind(this));
-
     this.http._addRoute('GET', '/invitations', ROUTES.invitations.list.bind(this));
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
