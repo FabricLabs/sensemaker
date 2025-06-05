@@ -267,39 +267,43 @@ class ChatBox extends React.Component {
     event.preventDefault();
     const { query } = this.state;
     const { message } = this.props.chat;
-    const { documentChat, context, agent, conversationID } = this.props;
+    const { documentChat, context, agent } = this.props;
 
     let dataToSubmit;
-    let activeConversationId = conversationID || message?.conversation;
-
-    if (!activeConversationId && !this.props.previousChat) {
-      console.warn('No conversation ID available for message submission');
-      return;
-    }
 
     this.stopPolling();
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
     this.props.getMessageInformation(query);
 
-    dataToSubmit = {
-      conversation_id: activeConversationId,
-      content: query,
-      context: context,
-      agent: agent,
-      file_id: this.state.uploadedFileId || null
+    //if we don't have previous chat it means this is a new conversation
+    if (!this.props.previousChat) {
+      dataToSubmit = {
+        conversation_id: message?.conversation,
+        content: query,
+        context: context,
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
+      }
+    } else {
+      //else, we are in a previous one and we already have a conversationID for this
+      dataToSubmit = {
+        conversation_id: this.props.conversationID,
+        content: query,
+        context: context,
+        agent: agent,
+        file_id: this.state.uploadedFileId || null
+      }
     }
-
-    console.debug('submitting:', { message, conversationId: activeConversationId });
 
     // dispatch submitMessage
     this.props.submitMessage(dataToSubmit).then((output) => {
       // dispatch getMessages
-      this.props.getMessages({ conversation_id: activeConversationId });
+      this.props.getMessages({ conversation_id: message?.conversation });
 
       if (!this.watcher) {
         this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: activeConversationId });
+          this.props.getMessages({ conversation_id: message?.conversation });
         }, 5000);
       }
       this.setState({ loading: false });
