@@ -5,7 +5,7 @@ const createInvitationEmailContent = require('../../functions/createInvitationEm
 
 module.exports = function (req, res) {
   res.format({
-    json:async () => {
+    json: async () => {
       try {
         const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
         if (!user || user.is_admin !== 1) {
@@ -24,8 +24,8 @@ module.exports = function (req, res) {
         };
 
         const invitation = await this.db.select('target').from('invitations').where({ id: req.params.id }).first();
-        const acceptInvitationLink = `${this.authority}/signup/${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/signup/decline/${invitationToken}`;
+        const acceptInvitationLink = `${this.authority}/invitations/${invitation.id}?token=${invitationToken}`;
+        const declineInvitationLink = `${this.authority}/invitations/${invitation.id}?token=${invitationToken}`;
         const imgSrc = "https://sensemaker.io/images/fabric-labs.png";
         const htmlContent = createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({
