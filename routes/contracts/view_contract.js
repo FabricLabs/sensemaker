@@ -6,7 +6,11 @@ module.exports = async function (req, res, next) {
       res.send(this.applicationString);
     },
     json: () => {
-      res.json({ contracts: [] });
+      if (req.params.id == 'terms-of-use') {
+        return res.json({
+          content: this.termsOfUse
+        });
+      }
     }
   });
 };

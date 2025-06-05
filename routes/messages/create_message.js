@@ -44,6 +44,19 @@ module.exports = async function (req, res, next) {
     const file = await this.db('files').where({ fabric_id: file_id }).first();
     if (!file) throw new Error(`No such File: ${file_id}`);
     localFileID = file.id;
+    // TODO: fix this (need preimage_sha256 to retrieve blob)
+    const blob = await this.db('blobs')
+      .where({ fabric_id: file.blob_id })
+      .orWhere({ preimage_sha256: file.blob_id })
+      .first();
+
+    await this.trainer.ingestDocument({
+      metadata: {
+        owner: req.user.id
+      },
+      content: blob.content
+    });
+
     context = {
       ...context,
       file: {
