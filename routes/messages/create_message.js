@@ -101,10 +101,7 @@ module.exports = async function (req, res, next) {
     // this.createTimedRequest({
     this.handleTextRequest({
       conversation_id: fabricConversationID,
-      context: {
-        ...context,
-        username: req.user.username
-      },
+      context: context,
       agent: agent,
       query: content,
       user_id: req.user.id
@@ -128,7 +125,6 @@ module.exports = async function (req, res, next) {
         this._summarizeMessagesToTitle(messages).catch((error) => {
           console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
         }).then(async (output) => {
-          if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
           if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });

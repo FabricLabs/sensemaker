@@ -26,7 +26,7 @@ const ActivityStream = require('@fabric/hub/components/ActivityStream');
 // Local Components
 const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
-// const UserProfileSection = require('./UserProfileSection');
+const UserProfileSection = require('./UserProfileSection');
 const ProfileEditModal = require('./ProfileEditModal');
 
 class Home extends React.Component {
@@ -69,6 +69,7 @@ class Home extends React.Component {
     const { isPopupOpen, isProfileModalOpen } = this.state;
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
+        {/* <UserProfileSection {...this.props} /> */}
         {/* <Icon name='user circle' style={{ marginRight: '1em', cursor: 'pointer' }} onClick={this.handleProfileClick} /> */}
         <Segment fluid="true">
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>

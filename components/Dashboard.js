@@ -494,7 +494,7 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && USER_IS_BETA && (
+              {ENABLE_TASKS && (
                 <Menu.Item as={Link} to='/tasks' onClick={this.closeSidebars}>
                   <Icon name='tasks' size='large'/>
                   <p className='icon-label'>Tasks</p>

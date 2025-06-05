@@ -1060,7 +1060,7 @@ class Sensemaker extends Hub {
         }
 
         const announcements = await this.db('announcements')
-          .select('id', 'title', 'content', 'created_at')
+          .select('id', 'title', 'body', 'created_at')
           .where(() => {
             this.db.where('expiration_date', '>', this.db.fn.now())
           })
@@ -1071,7 +1071,7 @@ class Sensemaker extends Hub {
           messages.unshift({
             role: 'user',
             content: `Recent announcements:\n\n` + announcements.map((ann) => {
-              return `- [ ] ${ann.title} (${ann.created_at})\n${ann.content}`;
+              return `- ${ann.title} (${ann.created_at}): ${ann.body}`;
             }).join('\n\n')
           });
         }
@@ -1089,6 +1089,7 @@ class Sensemaker extends Hub {
       }; */
 
       const template = {
+        context: request.context,
         prompt: prompt,
         query: request.query,
         messages: messages,
@@ -1147,6 +1148,7 @@ class Sensemaker extends Hub {
         }
 
         this.sensemaker.query({
+          context: request.context,
           prompt: prompt,
           messages: messages,
           query: `${request.query}`,

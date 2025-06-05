@@ -1,30 +1,46 @@
 'use strict';
 
-const Actor = require('@fabric/core/types/actor');
+// Dependencies
+const crypto = require('crypto');
 const mimeTypes = require('mime-types');
 
+// Fabric Types
+const Actor = require('@fabric/core/types/actor');
+
 module.exports = async function (req, res) {
+  const trx = await this.db.transaction();
   try {
     const { title, content } = req.body;
-    const prior = await this.db('documents').where('fabric_id', req.params.fabricID).first();
-    if (!prior) return res.statusCode(404).send({ status: 'error', message: 'Document not found.' });
+    const prior = await trx('documents').where('fabric_id', req.params.fabricID).first();
+    if (!prior) {
+      await trx.rollback();
+      return res.status(404).send({ status: 'error', message: 'Document not found.' });
+    }
 
     if (content) {
       const blob = new Actor({ content: content });
-      const existing = await this.db('blobs').where({ fabric_id: blob.id }).first();
+      const existing = await trx('blobs').where({ fabric_id: blob.id }).first();
       if (!existing) {
-        const inserted = await this.db('blobs').insert({
+        const preimage = crypto.createHash('sha256').update(content);
+        const hash = crypto.createHash('sha256').update(preimage).digest('hex');
+        await trx('blobs').insert({
           content: content,
           fabric_id: blob.id,
-          mime_type: prior.mime_type
+          mime_type: prior.mime_type,
+          preimage_sha256: hash
         });
+      }
+
+      // Initialize history array if it doesn't exist
+      if (!prior.history) {
+        prior.history = [];
       }
 
       if (prior.latest_blob_id !== blob.id) {
         prior.history.push(blob.id);
       }
 
-      await this.db('documents').where({ fabric_id: req.params.fabricID }).update({
+      await trx('documents').where({ fabric_id: req.params.fabricID }).update({
         content: content,
         updated_at: new Date(),
         latest_blob_id: blob.id,
@@ -33,13 +49,16 @@ module.exports = async function (req, res) {
     }
 
     if (title) {
-      await this.db('documents').where({ fabric_id: req.params.fabricID }).update({
-        title: title
+      await trx('documents').where({ fabric_id: req.params.fabricID }).update({
+        title: title,
+        updated_at: new Date()
       });
     }
 
-    const document = await this.db('documents').where('fabric_id', req.params.fabricID).orderBy('created_at', 'desc').first();
-    res.send({
+    const document = await trx('documents').where('fabric_id', req.params.fabricID).orderBy('created_at', 'desc').first();
+    await trx.commit();
+
+    return res.send({
       id: document.fabric_id,
       title: document.title,
       latest_blob_id: document.latest_blob_id,
@@ -48,11 +67,10 @@ module.exports = async function (req, res) {
       history: document.history
     });
   } catch (exception) {
-    console.debug('[SENSEMAKER]', 'Error editing document:', exception);
-    res.status(503);
-    return res.send({
+    await trx.rollback();
+    return res.status(503).send({
       type: 'EditDocumentError',
-      content: exception
+      content: exception.message || exception
     });
   }
 };
