@@ -132,7 +132,7 @@ class Home extends React.Component {
             )  : null}
           </Grid.Column>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
-            {(conversations && conversations.length) ? (
+            {(conversations && conversations.length > 1) ? (
               <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Card.Content style={{ flex: '1 1 auto' }}>
                   <Popup
