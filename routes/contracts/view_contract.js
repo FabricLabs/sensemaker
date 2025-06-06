@@ -10,6 +10,11 @@ module.exports = async function (req, res, next) {
         return res.json({
           content: this.termsOfUse
         });
+      } else {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Contract not found.'
+        });
       }
     }
   });
