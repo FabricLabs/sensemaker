@@ -24,6 +24,7 @@ const {
 const ActivityStream = require('@fabric/hub/components/ActivityStream');
 
 // Local Components
+const AnnouncementList = require('./AnnouncementList');
 const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
 const UserProfileSection = require('./UserProfileSection');
@@ -75,16 +76,7 @@ class Home extends React.Component {
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
           <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
         </Segment>
-        {announcements?.announcements?.map((announcement) => (
-          <Message info key={announcement.id}>
-            <Message.Header>
-              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.title || '') }} />
-            </Message.Header>
-            <Message.Content>
-              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.body || '') }} />
-            </Message.Content>
-          </Message>
-        ))}
+        <AnnouncementList announcements={announcements?.announcements} />
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}

@@ -93,6 +93,7 @@ const Graph = require('../types/graph');
 // const Brain = require('../types/brain');
 const Coordinator = require('../types/coordinator');
 const Learner = require('../types/learner');
+const Pool = require('../types/pool');
 const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
 const Queue = require('../types/queue');
@@ -345,10 +346,16 @@ class Sensemaker extends Hub {
 
     // Embeddings, Search, and Clustering
     this.cluster = new Trainer(this.settings);
+    this.pool = new Pool({
+      members: [
+        this.settings.ollama
+      ]
+    });
 
     // Beacon
     this.beacon = new Beacon({
       name: 'SENSEMAKER:BEACON',
+      debug: false,
       interval: this.settings.interval,
       key: {
         xprv: this._rootKey.xprv,
@@ -520,8 +527,7 @@ class Sensemaker extends Hub {
         user: this.settings.db.user,
         password: this.settings.db.password,
         database: this.settings.db.database,
-        connectTimeout: 10000,
-        acquireTimeout: 10000
+        connectTimeout: 10000
       },
       pool: {
         min: 2,
@@ -1075,6 +1081,12 @@ class Sensemaker extends Hub {
             }).join('\n\n')
           });
         }
+
+        const currentTime = (new Date()).toISOString();
+        messages.unshift({
+          role: 'user',
+          content: `The current time is: ${currentTime}`
+        });
       }
 
       // Prompt
@@ -1082,11 +1094,6 @@ class Sensemaker extends Hub {
         role: 'system',
         content: prompt
       });
-
-      /* const forethought = {
-        context: request.context || {},
-        requestor: requestor || {}
-      }; */
 
       const template = {
         context: request.context,
@@ -1125,6 +1132,8 @@ class Sensemaker extends Hub {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
+        this.pool.query({ ...template, model: 'qwen3:0.6b' }),
+        this.pool.query({ ...template, model: 'deepseek-r1:latest' }),
         this.trainer.query(template),
         this.sensemaker.query(template)
       ]).catch((error) => {
@@ -1676,6 +1685,14 @@ class Sensemaker extends Hub {
         console.error('[SENSEMAKER:REDIS]', 'Failed to connect Redis subscriber:', err);
         process.exit(1);
       });
+    }
+
+    // Pool
+    try {
+      await this.pool.start();
+    } catch (exception) {
+      console.error('[SENSEMAKER:CORE]', '[POOL]', 'Error starting pool:', exception);
+      process.exit(1);
     }
 
     // Queue

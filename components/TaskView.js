@@ -30,28 +30,25 @@ class TaskPage extends React.Component {
 
     this.state = {
       loading: false,
-      isEditingDescription: false,
-      editedDescription: '',
       isEditingTitle: false,
       editedTitle: '',
       isTitleHovered: false,
-      isDescriptionHovered: false,
       action: null,
       isEditingDueDate: false,
       selectedDueDate: null,
-      selectedDueTime: null
+      selectedDueTime: null,
+      markdownEditMode: false
     };
 
-    this.handleDescriptionEdit = this.handleDescriptionEdit.bind(this);
-    this.toggleDescriptionEdit = this.toggleDescriptionEdit.bind(this);
-    this.saveDescription = this.saveDescription.bind(this);
     this.handleTitleEdit = this.handleTitleEdit.bind(this);
     this.saveTitle = this.saveTitle.bind(this);
     this.toggleTitleEdit = this.toggleTitleEdit.bind(this);
     this.handleTitleHover = this.handleTitleHover.bind(this);
-    this.handleDescriptionHover = this.handleDescriptionHover.bind(this);
     this.handleDueDateSelect = this.handleDueDateSelect.bind(this);
     this.handleDueDateSubmit = this.handleDueDateSubmit.bind(this);
+    this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
+    this.handleMarkdownEditToggle = this.handleMarkdownEditToggle.bind(this);
+    this.handleChatResponse = this.handleChatResponse.bind(this);
 
     return this;
   }
@@ -84,24 +81,6 @@ class TaskPage extends React.Component {
     });
   }
 
-  handleDescriptionEdit (e) {
-    this.setState({ editedDescription: e.target.value });
-  }
-
-  toggleDescriptionEdit () {
-    this.setState(prevState => ({
-      isEditingDescription: !prevState.isEditingDescription,
-      editedDescription: !prevState.isEditingDescription ? this.props.api?.resource?.description : prevState.editedDescription
-    }));
-  }
-
-  async saveDescription (content) {
-    this.setState({ loading: true });
-    await this.props.updateTask(this.props.api.resource.id, { description: content });
-    await this.props.fetchResource();
-    this.setState({ isEditingDescription: false, loading: false });
-  }
-
   handleTitleEdit (e) {
     this.setState({ editedTitle: e.currentTarget.textContent });
   }
@@ -130,10 +109,6 @@ class TaskPage extends React.Component {
 
   handleTitleHover (isHovered) {
     this.setState({ isTitleHovered: isHovered });
-  }
-
-  handleDescriptionHover (isHovered) {
-    this.setState({ isDescriptionHovered: isHovered });
   }
 
   async handleDueDateSelect (event) {
@@ -184,6 +159,26 @@ class TaskPage extends React.Component {
     }
   }
 
+  handleDescriptionChange (newContent) {
+    this.setState({ loading: true });
+    this.props.updateTask(this.props.api.resource.id, { description: newContent })
+      .then(() => this.props.fetchResource())
+      .finally(() => this.setState({ loading: false }));
+  }
+
+  handleMarkdownEditToggle (newMode) {
+    this.setState({ markdownEditMode: newMode });
+  }
+
+  handleChatResponse (response) {
+    if (!response?.choices?.[0]?.message?.content) return;
+
+    this.setState({ loading: true });
+    this.props.updateTask(this.props.api.resource.id, {
+      recommendation: response.choices[0].message.content
+    }).then(() => this.props.fetchResource()).finally(() => this.setState({ loading: false }));
+  }
+
   formatDate (dateStr) {
     if (!dateStr) return '';
 
@@ -230,8 +225,7 @@ class TaskPage extends React.Component {
             <Divider />
             <GeneratedResponse
               request={{
-                query: 'Begin working on this task. What are the first steps we should take?',
-                messages: [{ role: 'user', content: `The task to complete: ${JSON.stringify(api?.resource || {})}` }]
+                query: `The task to complete: ${JSON.stringify(api?.resource || {})}` + '\n\nBegin working on this task. What are the first steps we should take?'
               }}
               context={{ task: api?.resource }}
               placeholder={'Let\'s start with...'}
@@ -353,84 +347,37 @@ class TaskPage extends React.Component {
             </div>
           )}
           <Divider />
-          <Header as='h2'
-            style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-            onMouseEnter={() => this.handleDescriptionHover(true)}
-            onMouseLeave={() => this.handleDescriptionHover(false)}
-            onClick={this.toggleDescriptionEdit}
-          >
-            Description
-            {this.state.isDescriptionHovered && (
-              <Icon
-                name='pencil'
-                style={{
-                  marginLeft: '0.5em',
-                  opacity: 0.6,
-                  fontSize: '0.7em'
-                }}
-              />
-            )}
-          </Header>
-          <MarkdownContent {...this.props} content={api?.resource?.description || ''} />
-          {this.state.isEditingDescription ? (
-            <textarea
-              value={this.state.editedDescription}
-              onChange={(e) => this.setState({ editedDescription: e.target.value })}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  this.saveDescription(e.target.value);
-                } else if (e.key === 'Escape') {
-                  this.setState({
-                    isEditingDescription: false,
-                    editedDescription: this.props.api?.resource?.description || ''
-                  });
-                }
-              }}
-              onBlur={(e) => this.saveDescription(e.target.value)}
-              style={{
-                border: '1px solid #ccc',
-                padding: '0.5em',
-                borderRadius: '4px',
-                minHeight: '1.5em',
-                outline: 'none',
-                width: '100%',
-                resize: 'vertical',
-                fontFamily: 'inherit',
-                fontSize: 'inherit'
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                minHeight: '1.5em',
-                cursor: 'pointer',
-                whiteSpace: 'pre-wrap'
-              }}
-              onClick={this.toggleDescriptionEdit}
+          <Header as='h2'>Description</Header>
+          <div style={{ position: 'relative' }}>
+            <Button
+              icon
+              labelPosition='left'
+              size='small'
+              onClick={() => this.handleMarkdownEditToggle(!this.state.markdownEditMode)}
+              style={{ position: 'absolute', right: 0, top: '-3em' }}
             >
-              {api?.resource?.description ||
-                <span style={{ color: '#999', fontStyle: 'italic' }}>
-                  Click to add description...
-                </span>
-              }
-            </div>
-          )}
-          {/* <Divider />
-          <Header as='h2'>Notes</Header>
-          <Form>
-            <Form.TextArea placeholder='Add a note...' />
-            <Button primary>Save</Button>
-          </Form> */}
+              <Icon name='edit' />
+              {this.state.markdownEditMode ? 'View' : 'Edit'}
+            </Button>
+            <MarkdownContent
+              content={api?.resource?.description || ''}
+              onContentChange={this.handleDescriptionChange}
+              editable={true}
+              hideEditButton={true}
+              externalEditMode={this.state.markdownEditMode}
+              onEditModeChange={this.handleMarkdownEditToggle}
+            />
+          </div>
           <Divider />
           <Header as='h2'>Recommendation</Header>
           <GeneratedResponse
-            request={{
-              query: 'Suggest next steps for completing the task.  Respond directly to the user.',
-              messages: [{ role: 'user', content: `The task to complete: ${JSON.stringify(api?.resource || {})}` }]
+            request={api?.resource?.recommendation != null ? null : {
+              query: `The task to complete: ${JSON.stringify(api?.resource || {})}` + '\n\nSuggest next steps for completing the task.  Respond directly to the user.'
             }}
+            initialContent={api?.resource?.recommendation}
             context={{ task: api?.resource }}
             placeholder={'Let\'s start with...'}
+            onResponse={this.handleChatResponse}
             {...this.props}
           />
         </Segment>

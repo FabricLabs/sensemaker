@@ -70,6 +70,7 @@ class Agent extends Service {
       host: defaults.ollama.host,
       port: defaults.ollama.port,
       secure: defaults.ollama.secure,
+      path: '/v1',
       database: {
         type: 'memory'
       },
@@ -81,6 +82,7 @@ class Agent extends Service {
         'Content-Type': 'application/json'
       },
       parameters: {
+        seed: 42,
         temperature: AGENT_TEMPERATURE,
         max_tokens: AGENT_MAX_TOKENS
       },
@@ -90,7 +92,7 @@ class Agent extends Service {
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
       ],
       timeout: {
-        tolerance: 30 * 1000 // tolerance in seconds
+        tolerance: 60 * 1000 // tolerance in seconds
       },
       constraints: {
         max_tokens: AGENT_MAX_TOKENS,
@@ -169,7 +171,7 @@ class Agent extends Service {
     // Assign prompts
     // this.settings.openai.model = this.settings.model;
     // TODO: add configurable rules
-    this.settings.openai.prompt = `RULES:\n- ${this.settings.rules.join('\n- ')}\n\n` + this.settings.prompt;
+    // this.settings.openai.prompt = `RULES:\n- ${this.settings.rules.join('\n- ')}\n\n` + this.settings.prompt;
 
     // Services
     this.services = {
@@ -300,11 +302,15 @@ class Agent extends Service {
           messages = [].concat(request.messages);
         }
 
+        if (request.context) {
+          messages[0].content += `\n\nThe following context is relevant to the query:\n\n${JSON.stringify(request.context, null, '  ')}`;
+        }
+
         // Check for local agent
         if (this.settings.host) {
           // Happy Path
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Fetching completions from local agent:', this.settings.host);
-          const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/v1/chat/completions`;
+          const endpoint = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}${this.settings.path}/chat/completions`;
 
           // Clean up extraneous appearance of "agent" role
           messages = messages.map((x) => {
@@ -352,8 +358,9 @@ class Agent extends Service {
                 messages: sample,
                 format: format,
                 options: {
-                  temperature: this.settings.temperature,
-                  max_tokens: this.settings.max_tokens
+                  seed: request.seed || this.settings.parameters.seed,
+                  temperature: request.temperature || this.settings.parameters.temperature,
+                  num_ctx: this.settings.parameters.max_tokens
                 },
                 tools: (request.tools) ? this.tools : undefined,
                 stream: false
@@ -511,22 +518,35 @@ class Agent extends Service {
   }
 
   async listModels () {
-    fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/models`, {
+    return fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/v1/models`, {
       method: 'GET',
-      headers: {
+      headers: merge({
         'Accept': 'application/json',
         'Content-Type': 'application/json'
-      }
+      }, this.settings.headers)
     }).then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
-      }
+      if (!response.ok) throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
       return response.json();
     }).then((models) => {
-      console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[LIST_MODELS]', 'Available models:', models);
+      return { models: models.data };
+    }).catch((error) => {
+      throw error;
+    });
+  }
+
+  async listTags () {
+    return fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/tags`, {
+      method: 'GET',
+      headers: merge({
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }, this.settings.headers)
+    }).then(async (response) => {
+      if (!response.ok) throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+      return response.json();
+    }).then((models) => {
       return models;
     }).catch((error) => {
-      console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[LIST_MODELS]', 'Error fetching models:', error);
       throw error;
     });
   }

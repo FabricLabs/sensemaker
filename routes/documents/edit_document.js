@@ -18,13 +18,15 @@ module.exports = async function (req, res) {
     }
 
     if (content) {
-      const blob = new Actor({ content: content });
+      // Ensure content is a string
+      const contentString = typeof content === 'string' ? content : String(content);
+      const blob = new Actor({ content: contentString });
       const existing = await trx('blobs').where({ fabric_id: blob.id }).first();
       if (!existing) {
-        const preimage = crypto.createHash('sha256').update(content);
+        const preimage = crypto.createHash('sha256').update(contentString).digest();
         const hash = crypto.createHash('sha256').update(preimage).digest('hex');
         await trx('blobs').insert({
-          content: content,
+          content: contentString,
           fabric_id: blob.id,
           mime_type: prior.mime_type,
           preimage_sha256: hash
@@ -41,7 +43,7 @@ module.exports = async function (req, res) {
       }
 
       await trx('documents').where({ fabric_id: req.params.fabricID }).update({
-        content: content,
+        content: contentString,
         updated_at: new Date(),
         latest_blob_id: blob.id,
         history: JSON.stringify(prior.history)
@@ -61,10 +63,13 @@ module.exports = async function (req, res) {
     return res.send({
       id: document.fabric_id,
       title: document.title,
+      summary: document.summary,
       latest_blob_id: document.latest_blob_id,
       mime_type: document.mime_type,
       content: document.content,
-      history: document.history
+      history: document.history,
+      created_at: document.created_at,
+      updated_at: document.updated_at
     });
   } catch (exception) {
     await trx.rollback();

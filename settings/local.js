@@ -251,8 +251,9 @@ module.exports = {
     port: 11434,
     secure: false,
     model: CORE_MODEL, // default model
-    models: [CORE_MODEL, 'llama3.2-vision'], // models to "prime" (preload)
-    temperature: 0
+    models: [CORE_MODEL, 'qwen3:0.6b', 'llama3.2-vision'], // models to "prime" (preload)
+    temperature: 0,
+    preload: true
   },
   openai: {
     enable: true,
@@ -260,7 +261,11 @@ module.exports = {
     model: 'gpt-4-turbo',
     temperature: 0
   },
+  openrouter: {
+    token: ''
+  },
   rsi: {
+    enable: false,
     http: {
       enable: false
     }

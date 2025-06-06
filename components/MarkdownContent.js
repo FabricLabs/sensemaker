@@ -20,7 +20,8 @@ class MarkdownContent extends React.Component {
       state: {
         status: 'INITIALIZED',
         editMode: false,
-        previewMode: false
+        previewMode: false,
+        currentContent: props.content || ''
       }
     }, props);
 
@@ -28,11 +29,27 @@ class MarkdownContent extends React.Component {
     this.editorRef = React.createRef();
 
     this.handleContentChange = debounce(this.handleContentChange.bind(this), 1000);
+    this.handleTextareaChange = this.handleTextareaChange.bind(this);
     return this;
   }
 
   componentDidMount () {
     this.setState({ status: 'READY' });
+  }
+
+  componentDidUpdate (prevProps) {
+    // Reset previewMode when switching out of edit mode (either external or internal)
+    const wasInEditMode = prevProps.externalEditMode === true || (prevProps.externalEditMode === undefined && this.state.editMode);
+    const isInEditMode = this.props.externalEditMode === true || (this.props.externalEditMode === undefined && this.state.editMode);
+
+    if (wasInEditMode && !isInEditMode) {
+      this.setState({ previewMode: false });
+    }
+
+    // Update local content state when content prop changes
+    if (prevProps.content !== this.props.content) {
+      this.setState({ currentContent: this.props.content || '' });
+    }
   }
 
   handleContentChange (event) {
@@ -41,6 +58,14 @@ class MarkdownContent extends React.Component {
       this.props.onContentChange(newContent);
     }
   }
+
+  handleTextareaChange = (event) => {
+    const newContent = event.target.value;
+    // Update local state immediately for responsive typing
+    this.setState({ currentContent: newContent });
+    // Debounce the callback to parent
+    this.handleContentChange(event);
+  };
 
   insertMarkdownSyntax = (syntax, wrapper = false) => {
     const editor = this.editorRef.current;
@@ -132,40 +157,58 @@ class MarkdownContent extends React.Component {
   }
 
   render () {
-    const { content, editable = true } = this.props;
+    const { content, editable = true, hideEditButton = false, externalEditMode, onEditModeChange } = this.props;
     const { editMode, previewMode } = this.state;
+
+    // Use external edit mode if provided, otherwise use internal state
+    const currentEditMode = externalEditMode !== undefined ? externalEditMode : editMode;
+
+    // Only use previewMode when actually in edit mode
+    const showPreview = currentEditMode && previewMode;
+    const handleEditToggle = () => {
+      if (externalEditMode !== undefined && onEditModeChange) {
+        // Use external control
+        onEditModeChange(!externalEditMode);
+      } else {
+        // Use internal state
+        this.setState(prev => ({ editMode: !prev.editMode, previewMode: false }));
+      }
+    };
 
     return (
       <fabric-markdown-content>
-        {editable && (
+        {editable && !hideEditButton && (
           <div style={{ float: 'right', marginBottom: '1em' }}>
             <Button
               icon
               labelPosition='left'
-              onClick={() => this.setState(prev => ({ editMode: !prev.editMode, previewMode: false }))}
+              onClick={handleEditToggle}
             >
               <Icon name='edit' />
-              {editMode ? 'View' : 'Edit'}
+              {currentEditMode ? 'View' : 'Edit'}
             </Button>
           </div>
         )}
-        {editMode ? (
-          <div style={{ margin: '1em 0', clear: 'both' }}>
+        {currentEditMode ? (
+          <div style={{ clear: 'both' }}>
             {this.renderEditingToolbar()}
-            {!previewMode ? (
+            {!showPreview ? (
               <TextareaAutosize
                 ref={this.editorRef}
-                defaultValue={content}
-                onChange={this.handleContentChange}
+                value={this.state.currentContent}
+                onChange={this.handleTextareaChange}
                 minRows={10}
                 style={{
                   width: '100%',
+                  boxSizing: 'border-box',
                   padding: '1em',
                   border: '1px solid #ddd',
                   borderRadius: '4px',
                   fontFamily: 'monospace',
                   fontSize: '14px',
-                  lineHeight: '1.6'
+                  lineHeight: '1.6',
+                  resize: 'vertical',
+                  marginTop: '1em'
                 }}
               />
             ) : (

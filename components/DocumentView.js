@@ -31,6 +31,7 @@ const ChatBox = require('./ChatBox');
 // Functions
 const formatDate = require('../functions/formatDate');
 const truncateMiddle = require('../functions/truncateMiddle');
+const toRelativeTime = require('../functions/toRelativeTime');
 
 class DocumentView extends React.Component {
   constructor (props) {
@@ -41,10 +42,11 @@ class DocumentView extends React.Component {
       editDocumentTitle: '',
       creationError: false,
       historyModalOpen: false,
-      selectedRevision: null
+      selectedRevision: null,
+      markdownEditMode: false,
+      editError: null
     };
 
-    this.contentRef = React.createRef();
     return this;
   }
 
@@ -62,6 +64,16 @@ class DocumentView extends React.Component {
     if (prevProps.documents != documents) {
       console.log('[SENSEMAKER]', 'Document:', this.props.documents.document);
     }
+
+    // Handle edit errors
+    if (documents.error && documents.error !== prevProps.documents.error) {
+      this.setState({ editError: documents.error });
+    }
+
+    // Clear error when edit succeeds
+    if (documents.editionSuccess && !prevProps.documents.editionSuccess) {
+      this.setState({ editError: null });
+    }
   }
 
   handleInputChange = (event) => {
@@ -72,18 +84,9 @@ class DocumentView extends React.Component {
 
   handleContentChange = (newContent) => {
     const { document } = this.props.documents;
-    const contentElement = this.contentRef.current;
-    if (contentElement) {
-      // Store the current height before the content changes
-      contentElement.style.height = `${contentElement.scrollHeight}px`;
-
-      this.props.editDocument(document.id, { content: newContent });
-
-      // Use requestAnimationFrame to ensure we get the new height after content update
-      requestAnimationFrame(() => {
-        contentElement.style.height = `${contentElement.scrollHeight}px`;
-      });
-    }
+    // Ensure content is always a string
+    const contentString = typeof newContent === 'string' ? newContent : String(newContent);
+    this.props.editDocument(document.id, { content: contentString });
   };
 
   handleTitleEdit = () => {
@@ -101,6 +104,20 @@ class DocumentView extends React.Component {
     this.setState({ historyModalOpen: false, selectedRevision: null });
   };
 
+  handleMarkdownToggle = (newMode) => {
+    if (newMode !== undefined) {
+      // Called from MarkdownContent with specific mode
+      this.setState({ markdownEditMode: newMode });
+    } else {
+      // Called from our button, toggle the current state
+      this.setState(prev => ({ markdownEditMode: !prev.markdownEditMode }));
+    }
+  };
+
+  handleDismissError = () => {
+    this.setState({ editError: null });
+  };
+
   render () {
     const { documents } = this.props;
     const { editDocument } = this.state;
@@ -109,8 +126,10 @@ class DocumentView extends React.Component {
       <div className='fade-in' style={{ height: '97vh' }} loading={documents.loading}>
         <Card fluid>
           <Card.Content extra>
-            <Icon name='file' />
-            <span style={{ textTransform: 'uppercase' }}>{documents.document.title}</span>
+            <span>
+              <Icon name='file' />
+              <span style={{ textTransform: 'uppercase' }}>{documents.document.title}</span>
+            </span>&nbsp;(<abbr title={`Last modified ${formatDate(documents.document.updated_at)}`}>{toRelativeTime(documents.document.updated_at)}</abbr>)
           </Card.Content>
           <Card.Content>
             <section>
@@ -133,6 +152,18 @@ class DocumentView extends React.Component {
                   </div>
                 ) : (
                   <div>
+                    {documents.document.mime_type === 'text/plain' && (
+                      <Button
+                        icon
+                        labelPosition='left'
+                        size='small'
+                        onClick={() => this.handleMarkdownToggle()}
+                        style={{ float: 'right', marginTop: '0.2em' }}
+                      >
+                        <Icon name='edit' />
+                        {this.state.markdownEditMode ? 'View' : 'Edit'}
+                      </Button>
+                    )}
                     <Header as='h2' style={{ margin: 0, display: 'inline-block' }}>
                       <span>{documents.document.title}</span>
                     </Header>
@@ -155,12 +186,25 @@ class DocumentView extends React.Component {
                   </Message.Content>
                 </Message>
               ) : null}
+              {this.state.editError && (
+                <Message negative size='small' onDismiss={this.handleDismissError}>
+                  <Icon name='warning sign' />
+                  <Message.Content>
+                    <Message.Header>Document Edit Error</Message.Header>
+                    <p>{this.state.editError.content || this.state.editError.message || 'An error occurred while editing the document.'}</p>
+                  </Message.Content>
+                </Message>
+              )}
               {(documents.document.mime_type === 'text/plain') ? (
-                <div ref={this.contentRef} className='document-content-transition'>
+                <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
                   <MarkdownContent
+                    key={`document-${documents.document.id}`}
                     content={documents.document.content}
                     onContentChange={this.handleContentChange}
                     editable={true}
+                    hideEditButton={true}
+                    externalEditMode={this.state.markdownEditMode}
+                    onEditModeChange={this.handleMarkdownToggle}
                   />
                 </div>
               ) : (['image/png', 'image/gif', 'image/jpeg'].includes(documents.document.mime_type)) ? (
@@ -182,7 +226,6 @@ class DocumentView extends React.Component {
               </Label>
             )}
             <Label title={`Created ${formatDate(documents.document.created_at)}`}><Icon name='calendar' />{formatDate(documents.document.created_at)}</Label>
-            <Label title={`Last modified ${formatDate(documents.document.updated_at)}`}><Icon name='calendar' />{formatDate(documents.document.updated_at)}</Label>
             <Label><Icon name='file' />File Size: {Buffer.from(documents.document.content || '').byteLength.toLocaleString()} bytes</Label>
           </Card.Content>
         </Card>
@@ -236,7 +279,6 @@ class DocumentView extends React.Component {
             <Button onClick={this.handleHistoryModalClose}>Close</Button>
           </Modal.Actions>
         </Modal>
-
         <Segment fluid>
           <ChatBox {...this.props} context={{ document: documents.document }} placeholder='Ask about this document...' />
         </Segment>

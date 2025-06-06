@@ -40,7 +40,7 @@ class GeneratedResponse extends React.Component {
     // Don't update if component is unmounted
     if (this._isUnmounted) return;
 
-    const { request, context, chat, network } = this.props;
+    const { request, context, chat, network, onResponse, initialContent } = this.props;
     const prevContext = prevProps.context;
 
     // Check if context changed meaningfully
@@ -49,17 +49,27 @@ class GeneratedResponse extends React.Component {
 
     // Check if we already have a response
     const hasResponse = chat?.response?.choices?.length > 0;
+    const hadResponse = prevProps.chat?.response?.choices?.length > 0;
 
     // Check if there's already a request in progress
     const isLoading = network?.loading;
 
+    // Check if we have initial content (existing recommendation)
+    const hasInitialContent = initialContent && initialContent.trim() !== '';
+
     // Fetch response if:
-    // 1. We didn't have context before but now we do
-    // 2. Context data has changed
-    // 3. AND we don't already have a response
-    // 4. AND there isn't already a request in progress
-    if (!isLoading && !hasResponse && ((!hadContext && hasContext) || (JSON.stringify(prevContext) !== JSON.stringify(context)))) {
+    // 1. We have a valid request object (not null)
+    // 2. We don't already have initial content
+    // 3. We didn't have context before but now we do, OR context data has changed
+    // 4. AND we don't already have a response
+    // 5. AND there isn't already a request in progress
+    if (request && !hasInitialContent && !isLoading && !hasResponse && ((!hadContext && hasContext) || (JSON.stringify(prevContext) !== JSON.stringify(context)))) {
       this.props.fetchResponse(request);
+    }
+
+    // Call onResponse callback when we receive a new response
+    if (hasResponse && !hadResponse && onResponse && chat?.response) {
+      onResponse(chat.response);
     }
   }
 
@@ -75,19 +85,23 @@ class GeneratedResponse extends React.Component {
   }
 
   render () {
-    const { network, chat } = this.props;
+    const { network, chat, initialContent } = this.props;
     const response = chat?.response?.choices?.[0]?.message;
+    const hasInitialContent = initialContent && initialContent.trim() !== '';
+    const content = hasInitialContent ? initialContent : response?.content;
+    const hasContent = hasInitialContent || response;
+
     return (
       <Segment className='fade-in' loading={network?.loading}>
-        {(chat?.loading || !response) ? <h3>{BRAND_NAME} is thinking...</h3> : (
+        {(chat?.loading || !hasContent) ? <h3>{BRAND_NAME} is thinking...</h3> : (
           <sensemaker-response>
             <h3>{BRAND_NAME} says...</h3>
-            <div dangerouslySetInnerHTML={{ __html: marked.parse(response.content || '') }}></div>
+            <div dangerouslySetInnerHTML={{ __html: marked.parse(content || '') }}></div>
             <ChatBox
               {...this.props}
               context={{
                 ...this.props.context,
-                message: response
+                message: response || { content: initialContent }
               }}
               messagesEndRef={this.messagesEndRef}
               includeFeed={true}
