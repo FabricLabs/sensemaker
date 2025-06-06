@@ -42,11 +42,7 @@ module.exports = function (req, res) {
           salt: salt,
           email: email,
           first_name: firstName,
-          last_name: lastName,
-          firm_name: firmName,
-          firm_size: firmSize,
-          firm_name: firmName ? firmName : null,
-          firm_size: firmSize || firmSize === 0 ? firmSize : null,
+          last_name: lastName
         });
 
         console.log("New user registered:", username);

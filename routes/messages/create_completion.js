@@ -6,7 +6,7 @@ const Actor = require('@fabric/core/types/actor');
 module.exports = function (req, res, next) {
   const request = req.body;
   if (!request) return res.status(400).json({ error: 'Invalid request.' });
-  if (!request.messages) return res.status(400).json({ error: 'Invalid messages.' });
+  if (!request.messages) request.messages = [];
 
   request.user_id = req.user.id;
 

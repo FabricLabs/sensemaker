@@ -18,6 +18,13 @@ class LoginPage extends React.Component {
 
     return (
       <sensemaker-login-page class="fade-in">
+        <style>
+          {`
+            html, body {
+              background-color: #1b1c1d;
+            }
+          `}
+        </style>
         <fabric-component class="ui primary action fluid container">
           <HeaderBar showBrand={false} showButtons={false} />
           <Grid centered width="100%" style={{ padding: '1em' }}>

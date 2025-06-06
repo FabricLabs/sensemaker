@@ -3,7 +3,7 @@
 module.exports = function (fullStr, strLen, separator) {
   if (fullStr.length <= strLen) return fullStr;
 
-  separator = separator || '...';
+  separator = separator || '…';
 
   var sepLen = separator.length,
     charsToShow = strLen - sepLen,

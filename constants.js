@@ -16,8 +16,8 @@ const {
 } = require('@fabric/core/constants');
 
 // Sensemaker
-const AGENT_MAX_TOKENS = 8192;
-const AGENT_TEMPERATURE = 0.5;
+const AGENT_MAX_TOKENS = 8192 * 16; // 128k tokens
+const AGENT_TEMPERATURE = 0;
 const BRAND_NAME = 'Sensemaker';
 const CORE_MODEL = 'llama3.2';
 const EMBEDDING_MODEL = 'mxbai-embed-large';

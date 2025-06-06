@@ -15,6 +15,7 @@ const AdminServicesTab = require('./tabs/admin/services');
 const AdminSettingsTab = require('./tabs/admin/settings');
 const AdminAgentsTab = require('./tabs/admin/agents');
 const AnnouncementCreator = require('./AnnouncementCreator');
+const InvitationCreator = require('./InvitationCreator');
 
 // Semantic UI
 const {
@@ -126,6 +127,9 @@ class AdminSettings extends React.Component {
           ))}
           <AnnouncementCreator />
         </sensemaker-announcements>
+        <Header as='h4' style={{ marginTop: '2em' }}>Send Invitation</Header>
+        <p>Send an invitation to a new user.</p>
+        <InvitationCreator sendInvitation={this.props.sendInvitation} />
       </div>
     );
   }

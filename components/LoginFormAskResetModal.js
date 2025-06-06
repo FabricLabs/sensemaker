@@ -133,7 +133,7 @@ class AskPasswordResetModal extends React.Component {
                             )}
                             {tokenSent && (
                                 <Message positive>
-                                    <p>Please check your email. We've sent you an email with a link to reset your password.</p>
+                                    <p>Success.  If the account exists, you should receive an email with a link to reset your password.</p>
                                 </Message>
                             )}
                             <Button

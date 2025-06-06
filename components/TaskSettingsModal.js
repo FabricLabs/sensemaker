@@ -6,7 +6,8 @@ const {
   Form,
   Modal,
   Select,
-  Icon
+  Icon,
+  Input
 } = require('semantic-ui-react');
 
 const TaskSettingsModal = ({
@@ -16,13 +17,27 @@ const TaskSettingsModal = ({
   sortDirection,
   onSortChange,
   showCompleted,
-  onShowCompletedChange
+  onShowCompletedChange,
+  defaultDueTime,
+  onDefaultDueTimeChange
 }) => {
   return (
     <Modal size="small" open={isOpen} onClose={onClose}>
       <Modal.Header>Task Settings</Modal.Header>
       <Modal.Content>
         <Form>
+          <Form.Field>
+            <label>Default Due Time</label>
+            <Input
+              type="time"
+              value={defaultDueTime}
+              onChange={(e) => onDefaultDueTimeChange(e.target.value)}
+              style={{ width: '150px' }}
+            />
+            <div style={{ marginTop: '0.5em', fontSize: '0.9em', color: 'rgba(0,0,0,0.6)' }}>
+              This time will be used as the default when setting due dates for tasks
+            </div>
+          </Form.Field>
           <Form.Field>
             <label>Sort By</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1em' }}>
