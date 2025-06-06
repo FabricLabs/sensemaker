@@ -62,9 +62,17 @@ class TaskPage extends React.Component {
     const action = searchParams.get('action');
     const edit = searchParams.get('edit');
 
-    // Set default date to tomorrow at 3 PM
+    // Get default due time from localStorage or props, fallback to 3 PM
+    const defaultDueTime = this.props.defaultDueTime ||
+                          localStorage.getItem('defaultDueTime') ||
+                          '15:00';
+
+    // Parse the default time
+    const [hours, minutes] = defaultDueTime.split(':').map(Number);
+
+    // Set default date to tomorrow at the configured time
     const now = new Date();
-    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 15, 0, 0, 0);
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, hours, minutes, 0, 0);
 
     let dueDate;
     if (this.props.api?.resource?.due_date) {

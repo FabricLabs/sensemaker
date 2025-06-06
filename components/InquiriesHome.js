@@ -109,6 +109,13 @@ class InquiriesHome extends React.Component {
     const { email, error, joined } = this.state;
     return (
       <sensemaker-inquiries>
+        <style>
+          {`
+            html, body {
+              background-color: #1b1c1d;
+            }
+          `}
+        </style>
         <fabric-component className="ui primary action fluid container">
           <HeaderBar showBrand={false} showButtons={false} />
           <Grid centered width='100%' style={{ marginTop: '2em', padding: '1em' }}>

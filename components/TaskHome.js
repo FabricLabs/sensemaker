@@ -60,7 +60,8 @@ class TaskHomePage extends React.Component {
       showCompleted: false,
       showIncomplete: true,
       showSettingsModal: false,
-      sortPopupOpen: false
+      sortPopupOpen: false,
+      defaultDueTime: localStorage.getItem('defaultDueTime') || '15:00' // Default to 3:00 PM
     };
   }
 
@@ -701,6 +702,11 @@ class TaskHomePage extends React.Component {
           onSortChange={this.handleSortChange}
           showCompleted={this.state.showCompleted}
           onShowCompletedChange={this.handleShowCompletedChange}
+          defaultDueTime={this.state.defaultDueTime}
+          onDefaultDueTimeChange={(time) => {
+            localStorage.setItem('defaultDueTime', time);
+            this.setState({ defaultDueTime: time });
+          }}
         />
 
         <style>{`
