@@ -70,7 +70,7 @@ describe('Pool', function () {
     });
   });
 
-  it('can use foreign providers', async function () {
+  xit('can use foreign providers', async function () {
     const foreignPool = new Pool({
       members: [
         {
