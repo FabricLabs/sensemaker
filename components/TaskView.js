@@ -296,26 +296,21 @@ class TaskPage extends React.Component {
             )}
           </Header>
           {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1em' }}>
-            <p style={{ margin: 0 }}>
-              Due: {api?.resource?.due_date ? (
-                this.formatDate(api.resource.due_date)
+          {!api?.resource?.completed_at && (
+            <Button
+              basic
+              onClick={() => this.setState({ isEditingDueDate: true })}
+              size='tiny'
+              style={{ marginLeft: '0.5em' }}
+            >
+              <Icon name='calendar' />
+              {api?.resource?.due_date ? (
+                <abbr title={api.resource.due_date}>{this.formatDate(api.resource.due_date)}</abbr>
               ) : (
-                <span style={{ color: '#999', fontStyle: 'italic' }}>Not set</span>
+                <span style={{ color: '#999', fontStyle: 'italic' }}>no due date</span>
               )}
-            </p>
-            {!api?.resource?.completed_at && (
-              <Button
-                icon
-                basic
-                size='tiny'
-                style={{ marginLeft: '0.5em' }}
-                onClick={() => this.setState({ isEditingDueDate: true })}
-              >
-                <Icon name='calendar' />
-              </Button>
-            )}
-          </div>
+            </Button>
+          )}
           {this.state.isEditingDueDate && (
             <div style={{ marginBottom: '1em' }}>
               <div style={{ display: 'flex', gap: '1em', alignItems: 'center' }}>
@@ -359,13 +354,11 @@ class TaskPage extends React.Component {
           <div style={{ position: 'relative' }}>
             <Button
               icon
-              labelPosition='left'
               size='small'
               onClick={() => this.handleMarkdownEditToggle(!this.state.markdownEditMode)}
               style={{ position: 'absolute', right: 0, top: '-3em' }}
             >
               <Icon name='edit' />
-              {this.state.markdownEditMode ? 'View' : 'Edit'}
             </Button>
             <MarkdownContent
               content={api?.resource?.description || ''}

@@ -13,18 +13,19 @@ module.exports = async function (req, res, next) {
     // Generate a unique token
     let uniqueTokenFound = false;
     let resetToken = '';
-    while (!uniqueTokenFound) {
-      resetToken = crypto.randomBytes(32).toString('hex');
-      const tokenExists = await this.db.select('*').from('password_resets').where({ token: resetToken }).first();
-      if (!tokenExists) {
-        uniqueTokenFound = true;
-      }
-    };
 
     if (existingUser) {
+      while (!uniqueTokenFound) {
+        resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenExists = await this.db.select('*').from('password_resets').where({ token: resetToken }).first();
+        if (!tokenExists) {
+          uniqueTokenFound = true;
+        }
+      }
+
       const newReset = await this.db('password_resets').insert({
         user_id: existingUser.id,
-        token: resetToken,
+        token: resetToken
       });
 
       // TODO: refactor this link
@@ -41,12 +42,14 @@ module.exports = async function (req, res, next) {
         });
       } catch (error) {
         console.error('Error sending email', error);
+        return res.status(500).json({ message: 'Failed to send password reset email. Please try again later.' });
       }
-
-      return res.json({
-        message: 'Success.  If the email address exists, a password reset link has been sent to it.',
-      });
     }
+
+    // Always return success message, even if email doesn't exist (for security)
+    return res.json({
+      message: 'If the email address exists, a password reset link has been sent to it.',
+    });
   } catch (error) {
     console.error('Error processing request', error);
     return res.status(500).json({ message: 'Internal server error.' });

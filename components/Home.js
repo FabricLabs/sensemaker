@@ -70,6 +70,15 @@ class Home extends React.Component {
     const { isPopupOpen, isProfileModalOpen } = this.state;
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
+        <style>
+          {`
+            @media (max-width: 768px) {
+              .ui.stackable.grid > .column:not(.row) {
+                padding-right: 0 !important;
+              }
+            }
+          `}
+        </style>
         {/* <UserProfileSection {...this.props} /> */}
         {/* <Icon name='user circle' style={{ marginRight: '1em', cursor: 'pointer' }} onClick={this.handleProfileClick} /> */}
         <Segment fluid="true">
