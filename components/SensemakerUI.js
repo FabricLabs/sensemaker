@@ -37,6 +37,7 @@ const FeaturesHome = require('./FeaturesHome');
 const Dashboard = require('./Dashboard');
 const TermsOfUseModal = require('./TermsOfUseModal');
 const LoginPage = require('./LoginPage');
+const NotFound = require('./NotFound');
 const TermsOfUse = require('./TermsOfUse');
 const Waitlist = require('./Waitlist');
 const Bridge = require('./Bridge');
@@ -202,6 +203,7 @@ class SensemakerUI extends React.Component {
             <BrowserRouter>
               {(!this.props.auth || !this.props.auth.isAuthenticated) ? (
                 <Routes>
+                  <Route path='*' element={<NotFound />} />
                   <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />

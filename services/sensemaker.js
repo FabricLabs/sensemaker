@@ -2184,6 +2184,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/announcements', ROUTES.announcements.create.bind(this));
     this.http._addRoute('GET', '/announcements', ROUTES.announcements.list.bind(this));
     this.http._addRoute('GET', '/announcements/latest', ROUTES.announcements.latest.bind(this));
+    this.http._addRoute('PATCH', '/announcements/:id', ROUTES.announcements.edit.bind(this));
 
     // "The Changelog"
     // Stub for the news hub.
@@ -2208,6 +2209,9 @@ class Sensemaker extends Hub {
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
     if (this.settings.verify) await this._runFixtures();
+
+    // Add 404 handler as the last route
+    this.http.express.use('*', ROUTES.errors.notFound.bind(this));
 
     // Fabric Network
     if (this.settings.fabric && this.settings.fabric.enable) await this.agent.start();

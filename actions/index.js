@@ -24,7 +24,8 @@ const {
 
 // ## Announcement Actions
 const {
-  fetchAnnouncements
+  fetchAnnouncements,
+  editAnnouncement
 } = require('./announcementActions');
 
 // ## Authentication (and Authorization) Actions
@@ -349,5 +350,6 @@ module.exports = {
   syncRedisQueue: syncRedisQueue,
   lastJobTaken: lastJobTaken,
   lastJobCompleted: lastJobCompleted,
-  clearQueue: clearQueue
+  clearQueue: clearQueue,
+  editAnnouncement: editAnnouncement
 };

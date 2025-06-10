@@ -9,6 +9,7 @@ const {
   Button,
   Icon,
   Message,
+  Modal,
   Segment
 } = require('semantic-ui-react');
 
@@ -16,7 +17,10 @@ class AnnouncementList extends React.Component {
   constructor (props) {
     super(props);
     this.state = {
-      currentIndex: 0
+      currentIndex: 0,
+      modalOpen: false,
+      modalLoading: false,
+      error: null
     };
   }
 
@@ -42,9 +46,43 @@ class AnnouncementList extends React.Component {
     }));
   };
 
-  render () {
-    const { announcements } = this.props;
+  handleExpireClick = () => {
+    this.setState({ modalOpen: true });
+  };
+
+  handleModalClose = () => {
+    this.setState({ modalOpen: false, modalLoading: false, error: null });
+  };
+
+  handleExpireConfirm = async () => {
+    const { announcements, editAnnouncement } = this.props;
     const { currentIndex } = this.state;
+    const currentAnnouncement = announcements[currentIndex];
+
+    this.setState({ modalLoading: true });
+
+    try {
+      const today = new Date();
+      const dateString = today.toISOString().split('T')[0]; // Get just the date portion (YYYY-MM-DD)
+
+      await editAnnouncement(currentAnnouncement.id, {
+        expiration_date: dateString
+      });
+
+      this.setState({ modalOpen: false, modalLoading: false });
+      this.fetchAnnouncements(); // Refresh announcements after expiring
+    } catch (error) {
+      console.error('Error expiring announcement:', error);
+      this.setState({
+        error: error.message || 'Failed to expire announcement. Please try again.',
+        modalLoading: false
+      });
+    }
+  };
+
+  render () {
+    const { announcements, isAdmin } = this.props;
+    const { currentIndex, modalOpen, modalLoading, error } = this.state;
     
     if (!announcements || announcements.length === 0) {
       return null;
@@ -76,6 +114,17 @@ class AnnouncementList extends React.Component {
             gap: '5px',
             zIndex: 10
           }}>
+            {isAdmin && (
+              <Button
+                icon
+                circular
+                size="mini"
+                onClick={this.handleExpireClick}
+                title="Expire Announcement"
+              >
+                <Icon name="clock" />
+              </Button>
+            )}
             <Button
               icon
               circular
@@ -111,9 +160,40 @@ class AnnouncementList extends React.Component {
             </Button>
           </div>
         )}
+        <Modal
+          open={modalOpen}
+          onClose={this.handleModalClose}
+          size="tiny"
+        >
+          <Modal.Header>
+            Expire Announcement
+          </Modal.Header>
+          <Modal.Content>
+            <p>Are you sure you want to expire this announcement? This action cannot be undone.</p>
+            {error && (
+              <Message error>
+                <Message.Header>Error</Message.Header>
+                <p>{error}</p>
+              </Message>
+            )}
+          </Modal.Content>
+          <Modal.Actions>
+            <Button onClick={this.handleModalClose} disabled={modalLoading}>
+              Cancel
+            </Button>
+            <Button
+              negative
+              onClick={this.handleExpireConfirm}
+              loading={modalLoading}
+              disabled={modalLoading}
+            >
+              Expire
+            </Button>
+          </Modal.Actions>
+        </Modal>
       </Segment>
     );
   }
 }
 
-module.exports = AnnouncementList; 
+module.exports = AnnouncementList;

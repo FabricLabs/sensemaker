@@ -81,7 +81,7 @@ class Home extends React.Component {
         </style>
         {/* <UserProfileSection {...this.props} /> */}
         {/* <Icon name='user circle' style={{ marginRight: '1em', cursor: 'pointer' }} onClick={this.handleProfileClick} /> */}
-        <Segment fluid="true">
+        <Segment fluid="true" style={{ marginTop: 0 }}>
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
           <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
         </Segment>
