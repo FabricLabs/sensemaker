@@ -892,14 +892,6 @@ fabric-motd {
   margin-bottom: 1em;
 }
 
-.document-file-header {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2em;
-}
-
 /* Document View */
 #document-editor #section-content {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
@@ -927,4 +919,9 @@ fabric-motd {
   right: 0;
   bottom: 0;
   pointer-events: none;
+}
+
+.document-content-transition {
+  transition: height 0.4s ease-out;
+  overflow: hidden;
 }

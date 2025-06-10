@@ -30,9 +30,10 @@ module.exports = {
     list: require('./alerts/list_alerts')
   },
   announcements: {
+    create: require('./announcements/create_announcement'),
     list: require('./announcements/list_announcements'),
     latest: require('./announcements/latest_announcement'),
-    create: require('./announcements/create_announcement')
+    edit: require('./announcements/edit_announcement')
   },
   blobs: {
     view: require('./blobs/view_blob')
@@ -61,6 +62,9 @@ module.exports = {
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
     newConversation: require('./documents/document_new_chat')
+  },
+  errors: {
+    notFound: require('./errors/not_found')
   },
   feedback: {
     create: require('./feedback/create_feedback')

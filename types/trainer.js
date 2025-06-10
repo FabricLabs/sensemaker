@@ -30,10 +30,10 @@ const { TextLoader } = require('langchain/document_loaders/fs/text');
 // const { MarkdownLoader } = require('langchain/document_loaders/fs/markdown');
 // const { PDFLoader } = require('langchain/document_loaders/fs/pdf');
 
-// Langchains
+// Langchain
 const { RetrievalQAChain } = require('langchain/chains');
 const { createRetrievalChain } = require('langchain/chains/retrieval');
-// const { MemoryVectorStore } = require('langchain/vectorstores/memory');
+const { PromptTemplate } = require('@langchain/core/prompts');
 const { RedisVectorStore } = require('@langchain/redis');
 const { OllamaEmbeddings } = require('@langchain/ollama');
 const { Document } = require('@langchain/core/documents');
@@ -230,7 +230,7 @@ class Trainer extends Agent {
     });
   }
 
-  async query (request, timeoutMs = 30000) {
+  async query (request, timeoutMs = 60000) {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
 
@@ -251,6 +251,12 @@ class Trainer extends Agent {
           store.addDocuments(messages);
         } else {
           store = this.embeddings;
+        }
+
+        if (request.context) {
+          request.query = `The following context is relevant to the query:\n\n${JSON.stringify(request.context, null, '  ')}\n\n` +
+            `Don't justify your answers.  Don't give information not mentioned in the CONTEXT INFORMATION.  If the answer is not in the context, say the words "Sorry, I am unable to answer your question with the information available to me."\n\n` +
+            request.query;
         }
 
         const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({

@@ -60,6 +60,7 @@ const {
 
 // Components
 const Home = require('./Home');
+const NotFound = require('./NotFound');
 const AgentHome = require('./AgentHome');
 const AgentView = require('./AgentView');
 const AlertsBar = require('./AlertsBar');
@@ -494,7 +495,7 @@ class Dashboard extends React.Component {
                 <Icon name='home' size='large' />
                 <p className='icon-label'>Home</p>
               </Menu.Item>
-              {ENABLE_TASKS && USER_IS_BETA && (
+              {ENABLE_TASKS && (
                 <Menu.Item as={Link} to='/tasks' onClick={this.closeSidebars}>
                   <Icon name='tasks' size='large'/>
                   <p className='icon-label'>Tasks</p>
@@ -586,7 +587,6 @@ class Dashboard extends React.Component {
             ) : null}
             {this.state.isLoading ? null : (
               <Routes>
-                {/* TODO: add a nice 404 page */}
                 <Route path='*' element={<Navigate to='/' replace />} />
                 <Route path='/' element={
                   <Home

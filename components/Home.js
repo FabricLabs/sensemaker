@@ -24,9 +24,10 @@ const {
 const ActivityStream = require('@fabric/hub/components/ActivityStream');
 
 // Local Components
+const AnnouncementList = require('./AnnouncementList');
 const Clock = require('./Clock');
 const QueryForm = require('./QueryForm');
-// const UserProfileSection = require('./UserProfileSection');
+const UserProfileSection = require('./UserProfileSection');
 const ProfileEditModal = require('./ProfileEditModal');
 
 class Home extends React.Component {
@@ -69,21 +70,22 @@ class Home extends React.Component {
     const { isPopupOpen, isProfileModalOpen } = this.state;
     return (
       <sensemaker-home class='fade-in' style={{ marginRight: '1em' }}>
+        <style>
+          {`
+            @media (max-width: 768px) {
+              .ui.stackable.grid > .column:not(.row) {
+                padding-right: 0 !important;
+              }
+            }
+          `}
+        </style>
+        {/* <UserProfileSection {...this.props} /> */}
         {/* <Icon name='user circle' style={{ marginRight: '1em', cursor: 'pointer' }} onClick={this.handleProfileClick} /> */}
-        <Segment fluid="true">
+        <Segment fluid="true" style={{ marginTop: 0 }}>
           <Header as='h1'>Welcome home, <abbr>{this.props.auth.username}</abbr>.</Header>
           <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
         </Segment>
-        {announcements?.announcements?.map((announcement) => (
-          <Message info key={announcement.id}>
-            <Message.Header>
-              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.title || '') }} />
-            </Message.Header>
-            <Message.Content>
-              <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.body || '') }} />
-            </Message.Content>
-          </Message>
-        ))}
+        <AnnouncementList announcements={announcements?.announcements} />
         <QueryForm
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
@@ -132,7 +134,7 @@ class Home extends React.Component {
             )  : null}
           </Grid.Column>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
-            {(conversations && conversations.length) ? (
+            {(conversations && conversations.length > 1) ? (
               <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Card.Content style={{ flex: '1 1 auto' }}>
                   <Popup

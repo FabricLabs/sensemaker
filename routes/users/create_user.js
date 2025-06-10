@@ -8,14 +8,14 @@ module.exports = function (req, res) {
       if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
       }
-      
+
       try {
         // Check if the username already exists
         const existingUser = await this.db('users').where('username', username).first();
         if (existingUser) {
           return res.status(409).json({ message: 'Username already exists.' });
         }
-      
+
         // Generate a salt and hash the password
         const saltRounds = 10;
         const salt = genSaltSync(saltRounds);

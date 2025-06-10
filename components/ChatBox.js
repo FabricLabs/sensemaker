@@ -296,8 +296,6 @@ class ChatBox extends React.Component {
       }
     }
 
-    console.debug('submitting:', message);
-
     // dispatch submitMessage
     this.props.submitMessage(dataToSubmit).then((output) => {
       // dispatch getMessages

@@ -93,6 +93,7 @@ const Graph = require('../types/graph');
 // const Brain = require('../types/brain');
 const Coordinator = require('../types/coordinator');
 const Learner = require('../types/learner');
+const Pool = require('../types/pool');
 const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
 const Queue = require('../types/queue');
@@ -345,10 +346,16 @@ class Sensemaker extends Hub {
 
     // Embeddings, Search, and Clustering
     this.cluster = new Trainer(this.settings);
+    this.pool = new Pool({
+      members: [
+        this.settings.ollama
+      ]
+    });
 
     // Beacon
     this.beacon = new Beacon({
       name: 'SENSEMAKER:BEACON',
+      debug: false,
       interval: this.settings.interval,
       key: {
         xprv: this._rootKey.xprv,
@@ -520,8 +527,7 @@ class Sensemaker extends Hub {
         user: this.settings.db.user,
         password: this.settings.db.password,
         database: this.settings.db.database,
-        connectTimeout: 10000,
-        acquireTimeout: 10000
+        connectTimeout: 10000
       },
       pool: {
         min: 2,
@@ -1060,7 +1066,7 @@ class Sensemaker extends Hub {
         }
 
         const announcements = await this.db('announcements')
-          .select('id', 'title', 'content', 'created_at')
+          .select('id', 'title', 'body', 'created_at')
           .where(() => {
             this.db.where('expiration_date', '>', this.db.fn.now())
           })
@@ -1071,10 +1077,16 @@ class Sensemaker extends Hub {
           messages.unshift({
             role: 'user',
             content: `Recent announcements:\n\n` + announcements.map((ann) => {
-              return `- [ ] ${ann.title} (${ann.created_at})\n${ann.content}`;
+              return `- ${ann.title} (${ann.created_at}): ${ann.body}`;
             }).join('\n\n')
           });
         }
+
+        const currentTime = (new Date()).toISOString();
+        messages.unshift({
+          role: 'user',
+          content: `The current time is: ${currentTime}`
+        });
       }
 
       // Prompt
@@ -1083,12 +1095,8 @@ class Sensemaker extends Hub {
         content: prompt
       });
 
-      /* const forethought = {
-        context: request.context || {},
-        requestor: requestor || {}
-      }; */
-
       const template = {
+        context: request.context,
         prompt: prompt,
         query: request.query,
         messages: messages,
@@ -1124,6 +1132,8 @@ class Sensemaker extends Hub {
             reject(new Error('Timeout'));
           }, request.timeout || USER_QUERY_TIMEOUT_MS);
         }),
+        this.pool.query({ ...template, model: 'qwen3:0.6b' }),
+        this.pool.query({ ...template, model: 'deepseek-r1:latest' }),
         this.trainer.query(template),
         this.sensemaker.query(template)
       ]).catch((error) => {
@@ -1147,6 +1157,7 @@ class Sensemaker extends Hub {
         }
 
         this.sensemaker.query({
+          context: request.context,
           prompt: prompt,
           messages: messages,
           query: `${request.query}`,
@@ -1588,6 +1599,7 @@ class Sensemaker extends Hub {
     // TODO: add filesystem watcher for live updates (low priority)
     this.applicationString = fs.readFileSync('./assets/index.html').toString('utf8');
     this.bitcoinPDF = fs.readFileSync('./assets/bitcoin.pdf').toString('utf8');
+    this.termsOfUse = fs.readFileSync('./contracts/terms-of-use.md').toString('utf8');
 
     await this.setupAdmin();
     await this.setupAgents();
@@ -1673,6 +1685,14 @@ class Sensemaker extends Hub {
         console.error('[SENSEMAKER:REDIS]', 'Failed to connect Redis subscriber:', err);
         process.exit(1);
       });
+    }
+
+    // Pool
+    try {
+      await this.pool.start();
+    } catch (exception) {
+      console.error('[SENSEMAKER:CORE]', '[POOL]', 'Error starting pool:', exception);
+      process.exit(1);
     }
 
     // Queue
@@ -1993,6 +2013,10 @@ class Sensemaker extends Hub {
     // Blobs
     this.http._addRoute('GET', '/blobs/:id', ROUTES.blobs.view.bind(this));
 
+    // Contracts
+    this.http._addRoute('GET', '/contracts', ROUTES.contracts.list.bind(this));
+    this.http._addRoute('GET', '/contracts/:id', ROUTES.contracts.view.bind(this));
+
     // Documents
     this.http._addRoute('POST', '/documents', ROUTES.documents.create.bind(this));
     this.http._addRoute('GET', '/documents/:fabricID', ROUTES.documents.view.bind(this));
@@ -2083,21 +2107,9 @@ class Sensemaker extends Hub {
     this.http._addRoute('DELETE', '/inquiries/:id', ROUTES.inquiries.delete.bind(this));
 
     // Invitations
-    // TODO: review this
-    // TODO: remap to /tokens/:tokenHash#token=:invitationToken (where client handles POST to users after confirming token with server)
-    this.http._addRoute('GET', '/signup/:invitationToken', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
-
-    this.http._addRoute('GET', '/signup/decline/:invitationToken', async (req, res, next) => {
-      return res.send(this.http.app.render());
-    });
-
-    //this endpoint creates the invitation and sends the email, for new invitations comming from inquiries
     this.http._addRoute('POST', '/invitations', ROUTES.invitations.create.bind(this) );
     this.http._addRoute('PATCH', '/invitations/:id', ROUTES.invitations.resendInvitation.bind(this));
     this.http._addRoute('GET', '/invitations/:id', ROUTES.invitations.view.bind(this));
-
     this.http._addRoute('GET', '/invitations', ROUTES.invitations.list.bind(this));
     this.http._addRoute('POST', '/checkInvitationToken/:id',ROUTES.invitations.checkInvitationToken.bind(this));
 
@@ -2172,6 +2184,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/announcements', ROUTES.announcements.create.bind(this));
     this.http._addRoute('GET', '/announcements', ROUTES.announcements.list.bind(this));
     this.http._addRoute('GET', '/announcements/latest', ROUTES.announcements.latest.bind(this));
+    this.http._addRoute('PATCH', '/announcements/:id', ROUTES.announcements.edit.bind(this));
 
     // "The Changelog"
     // Stub for the news hub.
@@ -2196,6 +2209,9 @@ class Sensemaker extends Hub {
     // Start HTTP, if enabled
     if (this.settings.http.listen) await this.http.start();
     if (this.settings.verify) await this._runFixtures();
+
+    // Add 404 handler as the last route
+    this.http.express.use('*', ROUTES.errors.notFound.bind(this));
 
     // Fabric Network
     if (this.settings.fabric && this.settings.fabric.enable) await this.agent.start();
