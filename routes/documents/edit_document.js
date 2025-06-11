@@ -65,6 +65,7 @@ module.exports = async function (req, res) {
       title: document.title,
       summary: document.summary,
       latest_blob_id: document.latest_blob_id,
+      fabric_type: document.fabric_type,
       mime_type: document.mime_type,
       content: document.content,
       history: document.history,
