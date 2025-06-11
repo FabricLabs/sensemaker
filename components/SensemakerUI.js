@@ -190,6 +190,11 @@ class SensemakerUI extends React.Component {
     const { modalLogOut, loggedOut } = this.state;
     const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
+    const isLocal = window.location.protocol === 'file:';
+    const basename = isLocal && window.location.pathname.includes('index.html')
+      ? window.location.pathname
+      : undefined;
+
     return (
       <sensemaker-interface id={this.id} class='fabric-site body'>
         <canvas id='video-background' className='ui video background' />
@@ -200,16 +205,16 @@ class SensemakerUI extends React.Component {
               <Loader active inline="centered" size='huge' />
             </div>
           ) : (
-            <BrowserRouter>
+            <BrowserRouter basename={basename}>
               {(!this.props.auth || !this.props.auth.isAuthenticated) ? (
                 <Routes>
-                  <Route path='*' element={<NotFound />} />
                   <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
                   <Route path='/features' element={<FeaturesHome />} />
                   <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
                   <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+                  <Route path='*' element={<NotFound />} />
                 </Routes>
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (
                 <TermsOfUseModal

@@ -21,12 +21,15 @@ const {
   Form,
   Popup,
   Message,
-  List
+  List,
+  Loader
 } = require('semantic-ui-react');
 
 // Local Components
-const MarkdownContent = require('./MarkdownContent');
 const ChatBox = require('./ChatBox');
+const GraphContent = require('./GraphContent');
+const MarkdownContent = require('./MarkdownContent');
+const TextContent = require('./TextContent');
 
 // Functions
 const formatDate = require('../functions/formatDate');
@@ -43,7 +46,7 @@ class DocumentView extends React.Component {
       creationError: false,
       historyModalOpen: false,
       selectedRevision: null,
-      markdownEditMode: false,
+      contentEditMode: false,
       editError: null
     };
 
@@ -104,13 +107,13 @@ class DocumentView extends React.Component {
     this.setState({ historyModalOpen: false, selectedRevision: null });
   };
 
-  handleMarkdownToggle = (newMode) => {
+  handleEditModeToggle = (newMode) => {
     if (newMode !== undefined) {
-      // Called from MarkdownContent with specific mode
-      this.setState({ markdownEditMode: newMode });
+      // Called from content components with specific mode
+      this.setState({ contentEditMode: newMode });
     } else {
       // Called from our button, toggle the current state
-      this.setState(prev => ({ markdownEditMode: !prev.markdownEditMode }));
+      this.setState(prev => ({ contentEditMode: !prev.contentEditMode }));
     }
   };
 
@@ -121,15 +124,30 @@ class DocumentView extends React.Component {
   render () {
     const { documents } = this.props;
     const { editDocument } = this.state;
-
     return (
       <div className='fade-in' style={{ height: '97vh' }} loading={documents.loading}>
         <Card fluid>
           <Card.Content extra>
-            <span>
+            {(['Text', 'Markdown', 'Graph'].includes(documents.document.fabric_type)) && (
+              <Button
+                icon
+                labelPosition='left'
+                size='mini'
+                onClick={() => this.handleEditModeToggle()}
+                style={{ float: 'right' }}
+              >
+                <Icon name='edit' />
+                {this.state.contentEditMode ? 'View' : 'Edit'}
+              </Button>
+            )}
+            <Label title='Document Type' style={{ textTransform: 'uppercase' }}>
               <Icon name='file' />
-              <span style={{ textTransform: 'uppercase' }}>{documents.document.title}</span>
-            </span>&nbsp;(<abbr title={`Last modified ${formatDate(documents.document.updated_at)}`}>{toRelativeTime(documents.document.updated_at)}</abbr>)
+              {documents.document.fabric_type}
+            </Label>&nbsp;
+            <span style={{ textTransform: 'uppercase' }}>{documents.document.title}</span>&nbsp;
+            (<abbr title={this.state.saving ? 'Document is being saved...' : `Last modified ${formatDate(documents.document.updated_at)}`}>
+              {this.state.saving ? 'Saving...' : toRelativeTime(documents.document.updated_at)}
+            </abbr>)
           </Card.Content>
           <Card.Content>
             <section>
@@ -152,18 +170,6 @@ class DocumentView extends React.Component {
                   </div>
                 ) : (
                   <div>
-                    {documents.document.mime_type === 'text/plain' && (
-                      <Button
-                        icon
-                        labelPosition='left'
-                        size='small'
-                        onClick={() => this.handleMarkdownToggle()}
-                        style={{ float: 'right', marginTop: '0.2em' }}
-                      >
-                        <Icon name='edit' />
-                        {this.state.markdownEditMode ? 'View' : 'Edit'}
-                      </Button>
-                    )}
                     <Header as='h2' style={{ margin: 0, display: 'inline-block' }}>
                       <span>{documents.document.title}</span>
                     </Header>
@@ -195,7 +201,7 @@ class DocumentView extends React.Component {
                   </Message.Content>
                 </Message>
               )}
-              {(documents.document.mime_type === 'text/plain') ? (
+              {(documents.document.fabric_type === 'Markdown') ? (
                 <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
                   <MarkdownContent
                     key={`document-${documents.document.id}`}
@@ -203,8 +209,20 @@ class DocumentView extends React.Component {
                     onContentChange={this.handleContentChange}
                     editable={true}
                     hideEditButton={true}
-                    externalEditMode={this.state.markdownEditMode}
-                    onEditModeChange={this.handleMarkdownToggle}
+                    externalEditMode={this.state.contentEditMode}
+                    onEditModeChange={this.handleEditModeToggle}
+                  />
+                </div>
+              ) : (documents.document.fabric_type === 'Graph') ? (
+                <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
+                  <GraphContent
+                    key={`document-${documents.document.id}`}
+                    content={documents.document.content}
+                    onContentChange={this.handleContentChange}
+                    editable={true}
+                    hideEditButton={true}
+                    externalEditMode={this.state.contentEditMode}
+                    onEditModeChange={this.handleEditModeToggle}
                   />
                 </div>
               ) : (['image/png', 'image/gif', 'image/jpeg'].includes(documents.document.mime_type)) ? (
@@ -214,7 +232,18 @@ class DocumentView extends React.Component {
                   <iframe src={`/blobs/${documents.document.latest_blob_id}`} />
                 </div>
               ) : (
-                <div id='focused-document'>Unhandled document type <code>{documents.document.mime_type}</code>.</div>
+                <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
+                  <TextContent
+                    key={`document-${documents.document.id}`}
+                    content={documents.document.content}
+                    onContentChange={this.handleContentChange}
+                    editable={true}
+                    hideEditButton={true}
+                    externalEditMode={this.state.contentEditMode}
+                    onEditModeChange={this.handleEditModeToggle}
+                    error={this.state.editError}
+                  />
+                </div>
               )}
             </section>
           </Card.Content>

@@ -14,7 +14,7 @@ class NotFound extends React.Component {
   render () {
     return (
       <Container text style={{ marginTop: '7em', textAlign: 'center' }}>
-        <Segment padded='very' basic>
+        <Segment padded='very' basic className='fade-in'>
           <Header as='h1' icon>
             <Icon name='compass outline' />
             404: Page Not Found
