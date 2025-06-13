@@ -16,6 +16,9 @@ const FabricSPA = require('@fabric/http/types/spa');
 class SPA extends FabricSPA {
   _renderWith (html = '') {
     const hash = crypto.createHash('sha256').update(html).digest('hex');
+    const isDevelopment = this.settings.environment === 'development' || this.settings.mode === 'development';
+    const scriptPath = isDevelopment ? '/bundles/browser.js' : '/bundles/browser.min.js';
+
     // TODO: move CSS to inline from webpack
     return `<!DOCTYPE html>
 <html lang="${this.settings.language}" manifest="cache.manifest">
@@ -40,7 +43,7 @@ class SPA extends FabricSPA {
   </head>
   <body>
     <div data-hash="${hash}" id="application-target">${html}</div>
-    <script src="/bundles/browser.min.js"></script>
+    <script src="${scriptPath}"></script>
   </body>
 </html>`;
   }
