@@ -31,7 +31,7 @@ class FeaturesHome extends React.Component {
               color: #ffffff;
             }
 
-            .brand {
+            .brand, .header {
               color: #ffffff;
             }
           `}
@@ -56,7 +56,7 @@ class FeaturesHome extends React.Component {
         </Container>
         <Container inverted text style={{ marginTop: '4em' }}>
           <Header>"Fine-Tunable" at Will</Header>
-          <p>As your relationship with SENSEMAKER grows, you are granted access to a database of "memories" that contribute to its personality.  Modify, or remove, that information as you see fit — as we janitors like to say; garbage in, garbage out.SENSEMAKER uses its entire history of interactions with the user to personalize each experience, typically leading to high-quality results from the processing pipeline.</p>
+          <p>As your relationship with SENSEMAKER grows, you are granted access to a database of "memories" that contribute to its personality.  Modify, or remove, that information as you see fit — as we janitors like to say; garbage in, garbage out.</p>
         </Container>
         {/* <Container text>
           <Card fluid style={{ clear: 'both', marginTop: '4em' }}>
