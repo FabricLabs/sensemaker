@@ -29,45 +29,44 @@ const SensemakerUI = require('../components/SensemakerUI');
 // Program Body
 async function main (input = {}) {
   try {
-    console.log(`[BUILD] Mode: ${input.mode || 'development'}`);
-
     const mode = input.mode || 'development';
     const site = new SensemakerUI(input);
+    const webpackConfig = {
+      mode: mode,
+      stats: {
+        colors: true,
+        modules: true,
+        reasons: true,
+        errorDetails: true
+      },
+      module: {
+        rules: [
+          {
+            test: /\.(js|jsx)$/,
+            exclude: /node_modules\/(?!@fabric\/hub)/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: ['@babel/preset-env', '@babel/preset-react']
+              }
+            }
+          },
+          {
+            test: /\.css$/,
+            use: [
+              { loader: 'style-loader' },
+              { loader: 'css-loader' }
+            ]
+          }
+        ]
+      },
+      target: 'web'
+    };
 
     console.log('[BUILD] Initializing bundler...');
     const compiler = new Bundler({
       document: site,
-      webpack: {
-        mode: mode,
-        stats: {
-          colors: true,
-          modules: true,
-          reasons: true,
-          errorDetails: true
-        },
-        module: {
-          rules: [
-            {
-              test: /\.(js|jsx)$/,
-              exclude: /node_modules\/(?!@fabric\/hub)/,
-              use: {
-                loader: 'babel-loader',
-                options: {
-                  presets: ['@babel/preset-env', '@babel/preset-react']
-                }
-              }
-            },
-            {
-              test: /\.css$/,
-              use: [
-                { loader: 'style-loader' },
-                { loader: 'css-loader' }
-              ]
-            }
-          ]
-        },
-        target: 'web'
-      },
+      webpack: webpackConfig,
       mode: mode,
       ...input
     });

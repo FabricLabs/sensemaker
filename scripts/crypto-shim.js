@@ -55,12 +55,32 @@ const crypto = {
 
 // Add synchronous digest method to SubtleCrypto
 window.crypto.subtle.digestSync = function (algorithm, data) {
-  const hash = new Uint8Array(32); // Default size for SHA-256
-  window.crypto.subtle.digest(algorithm, data).then(result => {
-    const hashArray = new Uint8Array(result);
-    hash.set(hashArray);
-  });
-  return hash;
+  // Create a synchronous version by using Atomics to wait for the async operation
+  const sharedArray = new SharedArrayBuffer(1);
+  const sharedInt32 = new Int32Array(sharedArray);
+  let result = null;
+  let error = null;
+
+  window.crypto.subtle.digest(algorithm, data)
+    .then(hashResult => {
+      result = new Uint8Array(hashResult);
+      Atomics.store(sharedInt32, 0, 1);
+      Atomics.notify(sharedInt32, 0);
+    })
+    .catch(err => {
+      error = err;
+      Atomics.store(sharedInt32, 0, 1);
+      Atomics.notify(sharedInt32, 0);
+    });
+
+  // Wait for the async operation to complete
+  Atomics.wait(sharedInt32, 0, 0);
+
+  if (error) {
+    throw error;
+  }
+
+  return result;
 };
 
-module.exports = crypto; 
+module.exports = crypto;

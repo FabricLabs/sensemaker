@@ -112,6 +112,10 @@ class Bundler extends HTTPCompiler {
           new webpack.ProvidePlugin({
             Buffer: ['buffer', 'Buffer']
           }),
+          new webpack.IgnorePlugin({
+            resourceRegExp: /\.wasm$/,
+            contextRegExp: /@hpcc-js\/wasm/
+          }),
           new BundleAnalyzerPlugin({
             analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
             openAnalyzer: true
@@ -216,7 +220,7 @@ class Bundler extends HTTPCompiler {
   }
 
   /**
-   * Enhanced compilation method that compiles both HTML and JavaScript bundle.
+   * Compile the HTML file to a specific target.
    * @param {string} target Path to output HTML file
    * @returns {Promise<Object>} Compilation results including bundle hash
    */

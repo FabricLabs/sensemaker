@@ -8,6 +8,10 @@ const debounce = require('lodash.debounce');
 const parser = require('dotparser');
 const { Digraph, Subgraph, Node, Edge, toDot, fromDot } = require('ts-graphviz');
 
+// D3 and D3-Graphviz imports
+const d3 = require('d3');
+const { Graphviz } = require('@hpcc-js/wasm');
+
 const {
   Button,
   Icon,
@@ -104,16 +108,20 @@ class GraphContent extends React.Component {
     if (this.props.onContentChange) this.props.onContentChange(content);
   }
 
-  initializeGraph () {
+  async initializeGraph () {
     if (!this.graphRef.current) return;
     try {
+      const graphviz = await Graphviz.load();
       const containerWidth = this.graphRef.current.parentElement.clientWidth;
+
       this.graph = d3.select(this.graphRef.current).graphviz({
         useWorker: false,
         zoom: true,
         fit: true,
         width: containerWidth,
-        height: this.state.height
+        height: this.state.height,
+        engine: 'dot',
+        graphviz: graphviz
       }).transition(() => {
         d3.transition().duration(1000).ease(d3.easeLinear);
       }).onerror((error) => {
