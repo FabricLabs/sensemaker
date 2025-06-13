@@ -137,6 +137,7 @@ class DocumentHome extends React.Component {
                     </Message> : <div>
                       <Label.Group basic>
                         <Label title='Creation date'><Icon name='calendar alternate outline' /> <abbr className='relative-time' title={instance.created_at}>{instance.created_at}</abbr></Label>
+                        <Label title='Document Type' style={{ textTransform: 'uppercase' }}><Icon name='file' /> {instance.fabric_type}</Label>
                       </Label.Group>
                       <p title={instance.summary || instance.description}>{instance.description}</p>
                     </div>}

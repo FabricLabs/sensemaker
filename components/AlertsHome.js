@@ -4,9 +4,6 @@
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
 
-// Actions
-import { fetchAlerts } from '../actions/alertActions';
-
 // Semantic UI
 const {
   Segment,

@@ -31,7 +31,7 @@ class FeaturesHome extends React.Component {
               color: #ffffff;
             }
 
-            .brand {
+            .brand, .header {
               color: #ffffff;
             }
           `}
@@ -45,6 +45,18 @@ class FeaturesHome extends React.Component {
             <p style={{ textTransform: 'none !important' }}>Sensemaker is an <abbr title="Your data, your rules.">offline-first</abbr> personal assistant with AI superpowers.</p>
             <Link to="/inquiries" className="ui huge primary button">Get Started <i class="right arrow icon"></i></Link>
           </div>
+        </Container>
+        <Container inverted text style={{ marginTop: '4em' }}>
+          <Header>Intelligence Gathering</Header>
+          <p>Set something as a subject of interest and automatically aggregate both historical and real-time information related to the topic.  Browse and analyze the collected materials using robust, offline-first reports — even if the source goes offline, your copy remains.</p>
+        </Container>
+        <Container inverted text style={{ marginTop: '4em' }}>
+          <Header>Comprehensive Context</Header>
+          <p>SENSEMAKER uses its entire history of interactions with the user to personalize each experience, typically leading to high-quality results from the processing pipeline.</p>
+        </Container>
+        <Container inverted text style={{ marginTop: '4em' }}>
+          <Header>"Fine-Tunable" at Will</Header>
+          <p>As your relationship with SENSEMAKER grows, you are granted access to a database of "memories" that contribute to its personality.  Modify, or remove, that information as you see fit — as we janitors like to say; garbage in, garbage out.</p>
         </Container>
         {/* <Container text>
           <Card fluid style={{ clear: 'both', marginTop: '4em' }}>

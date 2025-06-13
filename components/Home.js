@@ -127,9 +127,7 @@ class Home extends React.Component {
                     position='bottom left'
                   />
                 </Card.Content>
-                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
-                  <Button color='black' as={Link} to={'/conversations/' + conversations[0].slug}>Resume &raquo;</Button>
-                </Button.Group>
+                <Button attached='bottom' color='black' as={Link} to={'/conversations/' + conversations[0].slug}>Resume &raquo;</Button>
               </Card>
             )  : null}
           </Grid.Column>
@@ -152,9 +150,7 @@ class Home extends React.Component {
                     position='bottom left'
                   />
                 </Card.Content>
-                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
-                  <Button color='black' as={Link} to={'/conversations/' + conversations[1].slug}>Resume &raquo;</Button>
-                </Button.Group>
+                <Button attached='bottom' color='black' as={Link} to={'/conversations/' + conversations[1].slug}>Resume &raquo;</Button>
               </Card>
             )  : null}
           </Grid.Column>
@@ -180,9 +176,7 @@ class Home extends React.Component {
                     ))}
                   </List>
                 </Card.Content>
-                <Button.Group attached='bottom' style={{ marginTop: 'auto' }}>
-                  <Button color='black'>Explore History &raquo;</Button>
-                </Button.Group>
+                <Button attached='bottom' color='black'>Explore History &raquo;</Button>
               </Card>
             ) : null}
           </Grid.Column>

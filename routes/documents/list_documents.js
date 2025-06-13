@@ -6,7 +6,17 @@ module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('*').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
+      const documents = await this.db('documents').select([
+        'id',
+        'title',
+        'description',
+        'summary',
+        'fabric_type',
+        'mime_type',
+        'fabric_id',
+        'created_at',
+        'updated_at'
+      ]).whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
         perPage: PER_PAGE_LIMIT,
         currentPage: currentPage
       });
