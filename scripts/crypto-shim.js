@@ -55,8 +55,38 @@ const crypto = {
 
 // Add synchronous digest method to SubtleCrypto
 window.crypto.subtle.digestSync = function (algorithm, data) {
-  // Create a synchronous version by using Atomics to wait for the async operation
-  const sharedArray = new SharedArrayBuffer(1);
+  // Check if SharedArrayBuffer is available
+  if (typeof SharedArrayBuffer === 'undefined') {
+    // Fallback to synchronous implementation using regular ArrayBuffer
+    const buffer = new ArrayBuffer(4);
+    const view = new Int32Array(buffer);
+    let result = null;
+    let error = null;
+
+    window.crypto.subtle.digest(algorithm, data)
+      .then(hashResult => {
+        result = new Uint8Array(hashResult);
+        view[0] = 1;
+      })
+      .catch(err => {
+        error = err;
+        view[0] = 1;
+      });
+
+    // Simple busy wait (not ideal but works as fallback)
+    while (view[0] === 0) {
+      // Wait for the async operation to complete
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    return result;
+  }
+
+  // Original implementation using SharedArrayBuffer
+  const sharedArray = new SharedArrayBuffer(4);
   const sharedInt32 = new Int32Array(sharedArray);
   let result = null;
   let error = null;

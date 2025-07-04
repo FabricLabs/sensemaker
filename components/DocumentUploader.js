@@ -1,12 +1,6 @@
 'use strict';
 
-const ALLOWED_UPLOAD_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/tiff',
-  'image/bmp',
-  'application/pdf',
-];
+const { ALLOWED_UPLOAD_TYPES } = require('../constants');
 
 const React = require('react');
 const ReactDOMServer = require('react-dom/server');
@@ -32,6 +26,7 @@ class DocumentUploader extends React.Component {
       uploading: false,
       errorMsg: '',
       uploadSuccess: false,
+      unsupportedVideoWarning: false,
     };
   }
 
@@ -57,15 +52,23 @@ class DocumentUploader extends React.Component {
 
   handleFileChange = async (e) => {
     const files = e.target.files;
-    this.setState({ formatError: false });
+    this.setState({ formatError: false, unsupportedVideoWarning: false });
 
     if (files.length > 0) {
       const file = files[0]; // Take only the first file
       if (this.isValidFileType(file.type)) {
         console.debug('File:', file.name, file.size, file.type); // Debugging log
-        this.setState({ file: file, formatError: false });
+
+        // Check if it's an unsupported video format
+        const isUnsupportedVideo = this.isUnsupportedVideoFormat(file.type);
+
+        this.setState({
+          file: file,
+          formatError: false,
+          unsupportedVideoWarning: isUnsupportedVideo
+        });
       } else {
-        this.setState({ formatError: true, file: null });
+        this.setState({ formatError: true, file: null, unsupportedVideoWarning: false });
       }
     }
   };
@@ -88,6 +91,16 @@ class DocumentUploader extends React.Component {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
 
+  isUnsupportedVideoFormat (fileType) {
+    const unsupportedVideoFormats = [
+      'video/x-ms-wmv',
+      'video/wmv',
+      'video/x-msvideo', // Some AVI variants
+      'video/flv'        // Flash video
+    ];
+    return unsupportedVideoFormats.includes(fileType);
+  }
+
   render () {
     const { files } = this.props;
     return (
@@ -106,7 +119,18 @@ class DocumentUploader extends React.Component {
         </Form.Field>
         {this.state.formatError &&
           <Form.Field>
-            <Message negative content='File format not allowed. Please upload PNG, JPG, TIFF, BMP, PDF' />
+            <Message negative content='File format not allowed. Please upload images (PNG, JPG, TIFF, BMP), videos (MP4, AVI, MOV, MKV, WebM), audio (MP3, WAV, OGG, M4A, FLAC), or PDF files.' />
+          </Form.Field>
+        }
+        {this.state.unsupportedVideoWarning &&
+          <Form.Field>
+            <Message warning>
+              <Message.Header>Video Format Warning</Message.Header>
+              <Message.Content>
+                <p>This video format may not play in your browser.  WMV and some other formats are not supported by modern browsers.</p>
+                <p><strong>Recommendation:</strong> Convert to MP4 format using tools like VLC, HandBrake, or FFmpeg for better compatibility.</p>
+              </Message.Content>
+            </Message>
           </Form.Field>
         }
         {this.state.errorMsg &&

@@ -1,52 +1,77 @@
-# Use Node.js 22.14.0 as base
-FROM node:22.14.0-slim
+# Build stage
+FROM node:22.14.0-slim AS builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    lsb-release \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install MySQL
-RUN wget https://dev.mysql.com/get/mysql-apt-config_0.8.28-1_all.deb \
-    && dpkg -i mysql-apt-config_0.8.28-1_all.deb \
-    && apt-get update \
-    && apt-get install -y mysql-server \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Redis Stack
-RUN wget -O- https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/redis.list \
-    && apt-get update \
-    && apt-get install -y redis-stack-server \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Ollama
-RUN wget https://ollama.ai/download/linux \
-    && chmod +x linux \
-    && mv linux /usr/local/bin/ollama
-
-# Create application directory
+# Create app directory
 WORKDIR /app
 
-# Copy application files
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files first to leverage Docker cache
+COPY package*.json ./
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+# Copy source code
 COPY . .
 
-# Install Node.js dependencies
-RUN npm install
+# Production stage
+FROM node:22.14.0-slim
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-service mysql start\n\
-service redis-stack-server start\n\
-ollama serve &\n\
-npm run setup\n\
-node scripts/node.js\n' > /app/start.sh \
-    && chmod +x /app/start.sh
+WORKDIR /app
 
-# Expose necessary ports
-EXPOSE 3000 3306 6379 11434
+# Install runtime dependencies, netcat, and Bitcoin Core
+RUN apt-get update && apt-get install -y \
+    netcat-traditional \
+    curl \
+    wget \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Bitcoin Core with architecture detection
+ENV BITCOIN_VERSION=28.0
+RUN cd /tmp \
+    && ARCH=$(dpkg --print-architecture) \
+    && if [ "$ARCH" = "amd64" ]; then \
+        BITCOIN_ARCH="x86_64-linux-gnu"; \
+    elif [ "$ARCH" = "arm64" ]; then \
+        BITCOIN_ARCH="aarch64-linux-gnu"; \
+    else \
+        echo "Unsupported architecture: $ARCH" && exit 1; \
+    fi \
+    && echo "Downloading Bitcoin Core for architecture: $BITCOIN_ARCH" \
+    && wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/bitcoin-${BITCOIN_VERSION}-${BITCOIN_ARCH}.tar.gz \
+    && wget https://bitcoincore.org/bin/bitcoin-core-${BITCOIN_VERSION}/SHA256SUMS \
+    && grep bitcoin-${BITCOIN_VERSION}-${BITCOIN_ARCH}.tar.gz SHA256SUMS | sha256sum -c - \
+    && tar -xzf bitcoin-${BITCOIN_VERSION}-${BITCOIN_ARCH}.tar.gz \
+    && install -m 0755 -o root -g root -t /usr/local/bin bitcoin-${BITCOIN_VERSION}/bin/bitcoind bitcoin-${BITCOIN_VERSION}/bin/bitcoin-cli \
+    && rm -rf /tmp/bitcoin-*
+
+# Copy package files first
+COPY package*.json ./
+
+# Copy application files from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app .
+
+# Create startup script and set permissions
+COPY start.sh /app/start.sh
+RUN chmod 755 /app/start.sh
+
+# Set environment variables
+ENV NODE_ENV=production \
+    SQL_DB_HOST=db \
+    SQL_DB_USER=db_user_sensemaker \
+    REDIS_HOST=redis \
+    REDIS_CRED=null
+
+# Expose port
+EXPOSE 3040
 
 # Set entrypoint
 ENTRYPOINT ["/app/start.sh"]
