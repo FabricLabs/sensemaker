@@ -4,6 +4,10 @@ module.exports = async function (req, res, next) {
   try {
     const latestAnnouncement = await this.db('announcements')
       .select('*')
+      .where(function() {
+        this.where('expiration_date', '>', new Date())
+            .orWhereNull('expiration_date');
+      })
       .orderBy('created_at', 'desc')
       .first();
 
