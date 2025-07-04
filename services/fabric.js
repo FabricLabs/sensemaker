@@ -3,6 +3,8 @@
 // Dependencies
 // Fabric Core
 const Actor = require('@fabric/core/types/actor');
+const Message = require('@fabric/core/types/message');
+const Peer = require('@fabric/core/types/peer');
 
 // Fabric HTTP
 const Remote = require('@fabric/http/types/remote');
@@ -42,7 +44,8 @@ class FabricNetwork extends FabricHub {
       }
     }, settings);
 
-    // Set up remotes
+    // Internals
+    this.agent = new Peer(this.settings);
     this.remotes = this.settings.remotes.map(remote => new Remote(remote));
 
     // State
@@ -137,7 +140,14 @@ class FabricNetwork extends FabricHub {
 
     // Sync
     await this.sync();
+    await this.agent.start();
 
+    return this;
+  }
+
+  async stop () {
+    this.emit('debug', '[FABRIC] Stopping service...');
+    await this.agent.stop();
     return this;
   }
 

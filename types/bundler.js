@@ -116,6 +116,9 @@ class Bundler extends HTTPCompiler {
             resourceRegExp: /\.wasm$/,
             contextRegExp: /@hpcc-js\/wasm/
           }),
+          new webpack.IgnorePlugin({
+            resourceRegExp: /@hpcc-js\/wasm-graphviz/
+          }),
           new BundleAnalyzerPlugin({
             analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
             openAnalyzer: true
