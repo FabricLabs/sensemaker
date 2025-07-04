@@ -1,0 +1,100 @@
+services:
+  app:
+    build: .
+    container_name: sensemaker-app
+    environment:
+      NODE_ENV: production
+      SQL_DB_HOST: db
+      SQL_DB_USER: db_user_sensemaker
+      SQL_DB_CRED: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_CRED: null
+      OLLAMA_HOST: ollama
+      OLLAMA_PORT: 11434
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      FABRIC_MNEMONIC: ${FABRIC_MNEMONIC}
+    ports:
+      - "5050:3040"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3040/metrics/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    # Note: We don't mount .:/app here because it would override the container's 
+    # built node_modules (including native binaries) with the host's version
+    # For development, use a separate docker-compose.dev.yml with volume mounts
+
+  db:
+    image: mysql:8.0
+    container_name: sensemaker-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: db_sensemaker
+      MYSQL_USER: db_user_sensemaker
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    ports:
+      - "5053:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "db_user_sensemaker", "-p${MYSQL_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: sensemaker-redis
+    restart: unless-stopped
+    ports:
+      - "5052:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sensemaker-ollama
+    restart: unless-stopped
+    ports:
+      - "5051:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
+    # Uncomment the following lines if you have a GPU and want to use it
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  db_data:
+  redis_data:
+  ollama_data:
