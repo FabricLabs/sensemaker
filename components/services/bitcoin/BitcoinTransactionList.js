@@ -17,63 +17,164 @@ const {
   Button,
   Header,
   Icon,
+  Input,
+  Label,
   Segment,
   Table
 } = require('semantic-ui-react');
 
-class BitcoinBlockLists extends React.Component {
+class BitcoinTransactionList extends React.Component {
   constructor (props = {}) {
     super(props);
+
+    this.state = {
+      showAllTransactions: true,
+      searchQuery: ''
+    };
 
     return this;
   }
 
   componentDidMount () {
-    this.props.fetchBitcoinBlocks();
+    this.props.fetchBitcoinTransactions();
   }
+
+  handleSearchChange = (e, { value }) => {
+    this.setState({ searchQuery: value });
+  };
+
+  filterTransactions = (transactions) => {
+    const { searchQuery } = this.state;
+    if (!searchQuery) return transactions;
+
+    return transactions.filter(tx =>
+      tx.txid?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.blockhash?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.vout?.[0]?.scriptPubKey?.address?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  getTransactionType = (tx) => {
+    if (tx.vin?.[0]?.coinbase) {
+      return <Label color='orange' size='tiny'>Coinbase</Label>;
+    }
+    return <Label color='blue' size='tiny'>Transfer</Label>;
+  };
+
+  getRecipientAddress = (tx) => {
+    // Find the first non-OP_RETURN output with an address
+    const output = tx.vout?.find(out =>
+      out.scriptPubKey?.type !== 'nulldata' &&
+      out.scriptPubKey?.address
+    );
+    return output?.scriptPubKey?.address || 'No recipient address';
+  };
 
   render () {
     const { bitcoin } = this.props;
+    const { searchQuery } = this.state;
     console.debug('[BITCOIN]', 'Service:', bitcoin);
+
+    // Filter transactions based on search query
+    const filteredTransactions = bitcoin?.transactions ?
+      this.filterTransactions(bitcoin.transactions) : [];
+
     return (
       <div>
-        <div className='uppercase'>
+        {/* <div className='uppercase'>
           <Button onClick={() => { history.back(); }} icon color='black'><Icon name='left chevron' /> Back</Button>
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/services/bitcoin'>Bitcoin</Link></Breadcrumb.Section>
             <Breadcrumb.Divider />
-            <Breadcrumb.Section><Link to='/services/bitcoin/blocks'>Blocks</Link></Breadcrumb.Section>
+            <Breadcrumb.Section><Link to='/services/bitcoin/transactions'>Transactions</Link></Breadcrumb.Section>
           </Breadcrumb>
-        </div>
-        <Segment className='fade-in' loading={bitcoin?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1'>Blocks</Header>
+        </div> */}
+        <div className='fade-in' loading={bitcoin?.loading} style={{ maxHeight: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1em' }}>
+            <Header as='h1'>
+              <Link to='/services/bitcoin'>
+                <Icon name='bitcoin' color='orange' />
+              </Link>
+              Transactions
+            </Header>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1em' }}>
+            <Button.Group>
+              <Button disabled active={!this.state.showAllTransactions} onClick={() => this.setState({ showAllTransactions: false })}>
+                My Transactions
+              </Button>
+              <Button active={this.state.showAllTransactions} onClick={() => this.setState({ showAllTransactions: true })}>
+                All Transactions
+              </Button>
+            </Button.Group>
+
+            <Input
+              icon='search'
+              placeholder='Search by transaction ID, block hash, or address...'
+              value={searchQuery}
+              onChange={this.handleSearchChange}
+              style={{ minWidth: '300px' }}
+            />
+          </div>
+
           <Table>
             <Table.Header>
               <Table.Row>
-                <Table.HeaderCell>Height</Table.HeaderCell>
-                <Table.HeaderCell>Hash</Table.HeaderCell>
-                <Table.HeaderCell>Timestamp</Table.HeaderCell>
-                <Table.HeaderCell>Transactions</Table.HeaderCell>
-                <Table.HeaderCell>Size</Table.HeaderCell>
-                <Table.HeaderCell>Subsidy</Table.HeaderCell>
-                <Table.HeaderCell>Fees Paid</Table.HeaderCell>
+                <Table.HeaderCell>Type</Table.HeaderCell>
+                <Table.HeaderCell>Transaction ID</Table.HeaderCell>
+                <Table.HeaderCell>Block</Table.HeaderCell>
+                <Table.HeaderCell>Confirmations</Table.HeaderCell>
+                <Table.HeaderCell>Amount (BTC)</Table.HeaderCell>
+                <Table.HeaderCell>Recipient</Table.HeaderCell>
+                <Table.HeaderCell>Time</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
-              {bitcoin && bitcoin.blocks && bitcoin.blocks.length && bitcoin.blocks.slice(0, 14).map((block, index) => (
+              {filteredTransactions.slice(0, 14).map((tx, index) => (
                 <Table.Row key={index}>
-                  <Table.Cell>{block.height}</Table.Cell>
-                  <Table.Cell><Link to={`/services/bitcoin/blocks/` + block.hash}>{truncateMiddle(block.hash || '', 11, '…')}</Link></Table.Cell>
-                  <Table.Cell><abbr title={(new Date(block.time * 1000)).toISOString()}>{toRelativeTime(new Date(block.time * 1000))}</abbr></Table.Cell>
-                  <Table.Cell>{block.nTx}</Table.Cell>
-                  <Table.Cell>{(block.size / 1024 / 1024).toFixed(3)} MB</Table.Cell>
-                  <Table.Cell>{block.subsidy?.toFixed(8)} BTC</Table.Cell>
-                  <Table.Cell>{block.feesPaid?.toFixed(8)} BTC</Table.Cell>
+                  <Table.Cell>{this.getTransactionType(tx)}</Table.Cell>
+                  <Table.Cell>
+                    <Link to={`/services/bitcoin/transactions/` + tx.txid}>
+                      {truncateMiddle(tx.txid || '', 8, '…')}
+                    </Link>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {tx.blockhash ? (
+                      <Link to={`/services/bitcoin/blocks/` + tx.blockhash}>
+                        {truncateMiddle(tx.blockhash || '', 8, '…')}
+                      </Link>
+                    ) : (
+                      <Label size='tiny'>Unconfirmed</Label>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {tx.confirmations === 0 ? (
+                      <Label color='yellow' size='tiny'>Pending</Label>
+                    ) : tx.confirmations?.toLocaleString() || 'Unknown'}
+                  </Table.Cell>
+                  <Table.Cell>
+                    {tx.value?.toFixed(8) || '0.00000000'}
+                  </Table.Cell>
+                  <Table.Cell>
+                    <code style={{ fontSize: '0.9em' }}>{truncateMiddle(this.getRecipientAddress(tx), 20, '…')}</code>
+                  </Table.Cell>
+                  <Table.Cell>
+                    {tx.time ? toRelativeTime(tx.time * 1000) : 'Unknown'}
+                  </Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
           </Table>
-        </Segment>
+          {filteredTransactions.length === 0 && (
+            <Segment placeholder textAlign='center'>
+              <Header icon>
+                <Icon name='search' />
+                No transactions found matching your search criteria
+              </Header>
+            </Segment>
+          )}
+        </div>
       </div>
     );
   }
@@ -83,4 +184,4 @@ class BitcoinBlockLists extends React.Component {
   }
 }
 
-module.exports = BitcoinBlockLists;
+module.exports = BitcoinTransactionList;

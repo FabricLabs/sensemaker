@@ -94,6 +94,7 @@ class Conversation extends React.Component {
           previousChat={true}
           conversationID={id}
           actualConversation={this.state.actualConversation}
+          context={this.state.actualConversation?.context ? (typeof this.state.actualConversation.context === 'string' ? JSON.parse(this.state.actualConversation.context) : this.state.actualConversation.context) : null}
           documentInfo={this.state.documentInfo}
           documentSections={this.state.documentSections}
           documentInfoSidebar={this.props.documentInfoSidebar}
