@@ -1,3 +1,5 @@
+'use strict';
+
 const {
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
@@ -20,6 +22,9 @@ const {
   DELETE_DOCUMENT_REQUEST,
   DELETE_DOCUMENT_SUCCESS,
   DELETE_DOCUMENT_FAILURE,
+  FETCH_COMMIT_REQUEST,
+  FETCH_COMMIT_SUCCESS,
+  FETCH_COMMIT_FAILURE,
 } = require('../actions/documentActions');
 
 const initialState = {
@@ -36,6 +41,10 @@ const initialState = {
   creationSuccess: false,
   editionSuccess: false,
   deleteSuccess: false,
+  commits: {},
+  selectedCommit: null,
+  loadingCommit: false,
+  commitError: null,
 };
 
 function documentReducer(state = initialState, action) {
@@ -91,6 +100,22 @@ function documentReducer(state = initialState, action) {
       return { ...state, editing: false, error: null, deleteSuccess: true };
     case DELETE_DOCUMENT_FAILURE:
       return { ...state, editing: false, error: action.payload, deleteSuccess: false };
+
+    case FETCH_COMMIT_REQUEST:
+      return { ...state, loadingCommit: true, commitError: null };
+    case FETCH_COMMIT_SUCCESS:
+      return {
+        ...state,
+        loadingCommit: false,
+        selectedCommit: action.payload,
+        commits: {
+          ...state.commits,
+          [action.payload.id]: action.payload
+        },
+        commitError: null
+      };
+    case FETCH_COMMIT_FAILURE:
+      return { ...state, loadingCommit: false, commitError: action.payload, selectedCommit: null };
 
     default:
       // console.warn('Unhandled action in documents reducer:', action);

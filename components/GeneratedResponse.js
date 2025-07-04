@@ -189,6 +189,7 @@ class GeneratedResponse extends React.Component {
               messageInfo={this.props.messageInfo}
               thumbsUp={this.props.thumbsUp}
               thumbsDown={this.props.thumbsDown}
+              hideContext={this.props.hideContext}
             />
             <Modal
               size='tiny'

@@ -16,6 +16,7 @@ const { Link, Navigate, useParams } = require('react-router-dom');
 // Semantic UI
 const {
   Button,
+  Card,
   Container,
   Dropdown,
   Feed,
@@ -80,6 +81,7 @@ class ChatBox extends React.Component {
       signingKey: null, // Add signing key to state
       isRecording: false,
       fileMetadataCache: {}, // file ID -> metadata
+      unsupportedVideoWarning: false,
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -218,9 +220,18 @@ class ChatBox extends React.Component {
     this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight, });
   };
 
-  handleChange = (e, { name, value }) => {
-    this.setState({ [name]: value });
-  }
+  handleChange = (e) => {
+    const value = e.target.value;
+    if (this.props.onInputChange) {
+      // Call the parent's input change handler with a properly structured event
+      this.props.onInputChange({
+        target: {
+          value: value
+        }
+      });
+    }
+    this.setState({ query: value });
+  };
 
   handleChangeDropdown = (e, { name, value }) => {
     if (value != '') {
@@ -611,7 +622,7 @@ class ChatBox extends React.Component {
   handleFileChange = async (e) => {
     console.debug('handling file change:', e.target.files);
     const files = e.target.files;
-    this.setState({ formatError: false });
+    this.setState({ formatError: false, unsupportedVideoWarning: false });
 
     // If no files were selected (canceled), clear loading state and return
     if (!files || files.length === 0) {
@@ -622,6 +633,10 @@ class ChatBox extends React.Component {
     const file = files[0]; // Take only the first file
     if (this.isValidFileType(file.type)) {
       console.debug('File selected:', file.name, file.size, file.type);
+
+      // Check if it's an unsupported video format
+      const isUnsupportedVideo = this.isUnsupportedVideoFormat(file.type);
+
       this.setState({
         file: file,
         formatError: false,
@@ -634,7 +649,8 @@ class ChatBox extends React.Component {
         showFilePreview: true,
         isUploading: true,
         uploadProgress: 0,
-        loading: true // Set loading state when starting upload
+        loading: true, // Set loading state when starting upload
+        unsupportedVideoWarning: isUnsupportedVideo
       });
 
       // Start upload immediately after file selection
@@ -647,7 +663,7 @@ class ChatBox extends React.Component {
         }
 
         // Check various possible response structures for the file ID
-        const fileId = result.id || 
+        const fileId = result.id ||
                       (result.response && result.response.id) ||
                       (result.data && result.data.id) ||
                       result.id;
@@ -669,14 +685,16 @@ class ChatBox extends React.Component {
           isUploading: false,
           formatError: true,
           errorMsg: error.message || 'Failed to upload file',
-          loading: false // Reset loading state on error
+          loading: false, // Reset loading state on error
+          unsupportedVideoWarning: false
         });
       }
     } else {
       this.setState({
         formatError: true,
         file: null,
-        loading: false // Reset loading state for invalid file type
+        loading: false, // Reset loading state for invalid file type
+        unsupportedVideoWarning: false
       });
     }
   };
@@ -690,7 +708,8 @@ class ChatBox extends React.Component {
       uploadProgress: 0,
       isUploading: false,
       uploadedFileId: null,
-      loading: false
+      loading: false,
+      unsupportedVideoWarning: false
     });
     // Reset the file input
     const fileInput = document.querySelector('#input-control-form input[type="file"]');
@@ -722,6 +741,16 @@ class ChatBox extends React.Component {
     return ALLOWED_UPLOAD_TYPES.includes(fileType);
   }
 
+  isUnsupportedVideoFormat (fileType) {
+    const unsupportedVideoFormats = [
+      'video/x-ms-wmv',
+      'video/wmv',
+      'video/x-msvideo', // Some AVI variants
+      'video/flv'        // Flash video
+    ];
+    return unsupportedVideoFormats.includes(fileType);
+  }
+
   // Fetch file metadata and cache it
   fetchFileMetadata = async (fileId) => {
     if (!fileId) return;
@@ -740,6 +769,97 @@ class ChatBox extends React.Component {
     } catch (err) {
       // Optionally handle error
     }
+  };
+
+  renderContextCard = () => {
+    const { context } = this.props;
+    if (!context || typeof context !== 'object' || Object.keys(context).length === 0) {
+      return null;
+    }
+
+    let cardContent = [];
+
+    // Handle document context
+    if (context.document) {
+      const doc = context.document;
+      cardContent.push(
+        <Card.Description key="document-desc">
+          <Icon name="file alternate" />
+          <strong>Context</strong>
+          <div style={{ marginTop: '0.5em' }}>
+            <strong>Document:</strong> {doc.title || doc.filename}
+            {doc.fabric_type && <div><strong>Type:</strong> {doc.fabric_type}</div>}
+            {doc.summary && <div style={{ marginTop: '0.5em' }}>{doc.summary.substring(0, 150)}{doc.summary.length > 150 ? '...' : ''}</div>}
+          </div>
+        </Card.Description>
+      );
+    }
+
+    // Handle documents (plural) context
+    if (context.documents && Array.isArray(context.documents) && context.documents.length > 0) {
+      cardContent.push(
+        <Card.Description key="documents-desc">
+          <Icon name="folder open" />
+          <strong>Context</strong>
+          <div style={{ marginTop: '0.5em' }}>
+            <strong>Documents:</strong> {context.documents.length} selected
+            <div style={{ marginTop: '0.5em' }}>
+              {context.documents.slice(0, 3).map((doc, index) => (
+                <div key={index}>• {doc.title || doc.filename || `Document ${doc.id}`}</div>
+              ))}
+              {context.documents.length > 3 && <div>... and {context.documents.length - 3} more</div>}
+            </div>
+          </div>
+        </Card.Description>
+      );
+    }
+
+    // Handle group context
+    if (context.group) {
+      const group = context.group;
+      cardContent.push(
+        <Card.Description key="group-desc">
+          <Icon name="group" />
+          <strong>Context</strong>
+          <div style={{ marginTop: '0.5em' }}>
+            <strong>Group:</strong> {group.name}
+            {group.description && <div style={{ marginTop: '0.5em' }}>{group.description}</div>}
+          </div>
+        </Card.Description>
+      );
+    }
+
+    // Handle custom context
+    if (!context.document && !context.documents && !context.group) {
+      // Generic context handling - show as formatted JSON
+      cardContent.push(
+        <Card.Description key="generic-desc">
+          <Icon name="tag" />
+          <strong>Context</strong>
+          <pre style={{
+            marginTop: '0.5em',
+            backgroundColor: '#f8f9fa',
+            padding: '10px',
+            borderRadius: '4px',
+            fontSize: '0.9em',
+            overflow: 'auto',
+            maxHeight: '200px'
+          }}>
+            <code>{JSON.stringify(context, null, 2)}</code>
+          </pre>
+        </Card.Description>
+      );
+    }
+
+    return (
+      <div style={{ padding: '1px', marginBottom: '1em' }}>
+        <Card fluid style={{ marginTop: '5px' }}>
+          <Card.Content>
+            {cardContent}
+          </Card.Content>
+        </Card>
+      </div>
+    );
   };
 
   render () {
@@ -767,6 +887,9 @@ class ChatBox extends React.Component {
       context,
       documentChat
     } = this.props;
+
+    // Use controlled input value if provided
+    const inputValue = this.props.inputValue !== undefined ? this.props.inputValue : query;
 
     //this is the style of the chat container with no messages on the chat
     //the elements are on a flex-column but all together
@@ -864,6 +987,8 @@ class ChatBox extends React.Component {
               </Header>
             </div>
           )}
+          {/* Context card - displayed when context is provided */}
+          {!this.props.hideContext && this.renderContextCard()}
           {/* The chat messages start rendering here */}
           {(messages && messages.length > 0) ? this.state.groupedMessages.map((group, groupIndex) => {
             let message;
@@ -1097,6 +1222,12 @@ class ChatBox extends React.Component {
                     {this.state.errorMsg || 'Invalid file format'}
                   </Message>
                 )}
+                {this.state.unsupportedVideoWarning && (
+                  <Message warning size='tiny' style={{ marginTop: '5px', padding: '5px' }}>
+                    <Message.Header style={{ fontSize: '0.8em' }}>Video Format Warning</Message.Header>
+                    This video format may not play in browsers. Consider converting to MP4 for better compatibility.
+                  </Message>
+                )}
               </div>
               <Icon
                 name='close'
@@ -1124,10 +1255,10 @@ class ChatBox extends React.Component {
               name="query"
               required
               placeholder={placeholder}
-              onChange={(e) => this.setState({ query: e.target.value })}
+              onChange={this.handleChange}
               disabled={isSending}
               loading={isSending}
-              value={query}
+              value={inputValue}
               maxRows={5}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
