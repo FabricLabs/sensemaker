@@ -32,6 +32,7 @@ class FileUploadModal extends React.Component {
 
   handleUpload = async () => {
     const { file } = this.state;
+    const { token, onClose, navigate } = this.props;
     if (!file) {
       this.setState({ error: 'Please select a file to upload' });
       return;
@@ -40,14 +41,45 @@ class FileUploadModal extends React.Component {
     this.setState({ uploading: true, error: null });
 
     try {
+      // Step 1: Upload the file
       const uploaded = await this.props.uploadFile(file);
+      console.debug('[FileUploadModal] Upload result:', uploaded);
+
+      if (!uploaded) {
+        throw new Error('File upload failed - no response received');
+      }
+
+      const fabric_id = uploaded.fabric_id || uploaded.id;
+      if (!fabric_id) throw new Error('No fabric_id returned from upload.');
+
+      // Step 2: Create the document using the fabric_id
+      const response = await fetch('/documents', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: file.name,
+          type: 'File',
+          file_id: fabric_id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create document');
+      }
+
+      const document = await response.json();
       this.setState({ uploading: false });
-      this.props.onClose();
-      this.props.navigate('/documents/' + uploaded.document_id);
+      onClose();
+      navigate('/documents/' + (document.id || document['@id'] || fabric_id));
     } catch (error) {
-      this.setState({ 
-        uploading: false, 
-        error: error.message || 'Failed to upload file' 
+      this.setState({
+        uploading: false,
+        error: error.message || 'Failed to upload and create document'
       });
     }
   };

@@ -1,0 +1,12 @@
+services:
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    environment:
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      # Exclude node_modules to prevent overriding container's built modules
+      - /app/node_modules
+    command: npm run start
