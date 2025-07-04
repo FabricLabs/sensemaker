@@ -17,6 +17,7 @@ const AdminAgentsTab = require('./tabs/admin/agents');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AnnouncementList = require('./AnnouncementList');
 const InvitationCreator = require('./InvitationCreator');
+const InvoiceCreator = require('./InvoiceCreator');
 
 // Semantic UI
 const {
@@ -161,6 +162,9 @@ class AdminSettings extends React.Component {
         <Button primary onClick={this.handleInvitationModalOpen}>
           Create Invitation
         </Button>
+        <div style={{ marginTop: '1em', marginLeft: '1em' }}>
+          <InvoiceCreator bridge={this.props.bridge} />
+        </div>
         <Modal
           open={this.state.invitationModalOpen}
           onClose={this.handleInvitationModalClose}

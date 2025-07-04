@@ -9,7 +9,13 @@ const {
   FETCH_BITCOIN_BLOCK_FAILURE,
   FETCH_BITCOIN_BLOCKS_REQUEST,
   FETCH_BITCOIN_BLOCKS_SUCCESS,
-  FETCH_BITCOIN_BLOCKS_FAILURE
+  FETCH_BITCOIN_BLOCKS_FAILURE,
+  FETCH_BITCOIN_TRANSACTION_REQUEST,
+  FETCH_BITCOIN_TRANSACTION_SUCCESS,
+  FETCH_BITCOIN_TRANSACTION_FAILURE,
+  FETCH_BITCOIN_TRANSACTIONS_REQUEST,
+  FETCH_BITCOIN_TRANSACTIONS_SUCCESS,
+  FETCH_BITCOIN_TRANSACTIONS_FAILURE
 } = require('../actions/bitcoinActions');
 
 const initialState = {
@@ -56,6 +62,18 @@ function bitcoinReducer (state = initialState, action) {
     case FETCH_BITCOIN_BLOCKS_SUCCESS:
       return { ...state, blocks: action.payload, loading: false };
     case FETCH_BITCOIN_BLOCKS_FAILURE:
+      return { ...state, error: action.payload, loading: false };
+    case FETCH_BITCOIN_TRANSACTION_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_BITCOIN_TRANSACTION_SUCCESS:
+      return { ...state, transaction: action.payload, loading: false };
+    case FETCH_BITCOIN_TRANSACTION_FAILURE:
+      return { ...state, error: action.payload, loading: false };
+    case FETCH_BITCOIN_TRANSACTIONS_REQUEST:
+      return { ...state, loading: true };
+    case FETCH_BITCOIN_TRANSACTIONS_SUCCESS:
+      return { ...state, transactions: action.payload, loading: false };
+    case FETCH_BITCOIN_TRANSACTIONS_FAILURE:
       return { ...state, error: action.payload, loading: false };
     default:
       return state;
