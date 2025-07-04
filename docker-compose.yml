@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.3
+    container_name: sensemaker_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: db_sensemaker
+      MYSQL_USER: db_user_sensemaker
+      MYSQL_PASSWORD: sensemaker_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - sensemaker_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack-server:7.2.0-v11
+    container_name: sensemaker_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sensemaker_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: sensemaker_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - sensemaker_network
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+
+  sensemaker:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: sensemaker_app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - SQL_DB_HOST=mysql
+      - SQL_DB_USERNAME=db_user_sensemaker
+      - SQL_DB_PASSWORD=sensemaker_password
+      - REDIS_HOST=redis
+      - OLLAMA_HOST=ollama
+      - OLLAMA_PORT=11434
+    ports:
+      - "3040:3040"
+    volumes:
+      - ./settings:/app/settings
+      - ./data:/app/data
+      - app_storage:/media/storage
+    networks:
+      - sensemaker_network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  ollama_data:
+  app_storage:
+
+networks:
+  sensemaker_network:
+    driver: bridge
