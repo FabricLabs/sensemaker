@@ -110,7 +110,7 @@ class Conversations extends React.Component {
         this.props.fetchConversations();
 
       } else {
-        error('API request failed with status:', response.status);
+        console.error('API request failed with status:', response.status);
       }
     } catch (error) {
       if (error.message === 'Fetch timed out') {
@@ -125,6 +125,28 @@ class Conversations extends React.Component {
   handleCancelEditing = () => {
     // Reset editing state without saving
     this.setState({ editingID: null, editedTitle: '' });
+  };
+
+  handlePinConversation = async (conversationID, currentPinned) => {
+    try {
+      const response = await fetch(`/conversations/${conversationID}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${this.props.auth.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pinned: !currentPinned }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update pin status');
+      }
+
+      // Refresh conversations list to reflect the change
+      this.props.fetchConversations();
+    } catch (error) {
+      console.error('Error updating pin status:', error);
+    }
   };
 
   handleSearchChange = (e, { value }) => {
@@ -261,13 +283,21 @@ class Conversations extends React.Component {
                 icon
                 color='black'
                 as={Link}
-                to='/topics/global'
+                to='/services/global'
                 content={<Icon name='globe' />}
                 popup={{ content: 'Global chat', position: 'bottom center' }}
               />}
               <Button
                 icon
-                color='green'
+                color='black'
+                as={Link}
+                to='/contacts'
+                content={<Icon name='address book outline' />}
+                popup={{ content: 'Your contacts', position: 'bottom center' }}
+              />
+              <Button
+                icon
+                primary
                 labelPosition='right'
                 onClick={this.handleNewConversationOpen}
               >
@@ -330,9 +360,23 @@ class Conversations extends React.Component {
             <Card.Group style={{ marginTop: '1em', marginBottom: '1em' }}>
               {currentConversations.map(conversation => {
                 return (
-                  <Card key={conversation.id} fluid className='conversationItem' style={{ marginTop: '1em' }}>
+                  <Card key={conversation.id} fluid className='conversationItem' style={{
+                    marginTop: '1em',
+                    ...(conversation.pinned && {
+                      border: '2px solid #fbbd08',
+                      boxShadow: '0 2px 4px 0 rgba(251, 189, 8, 0.12), 0 2px 10px 0 rgba(251, 189, 8, 0.08)'
+                    })
+                  }}>
                     <Card.Content extra>
-                      <abbr className='relative-time' title={new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <abbr className='relative-time' title={new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>
+                        {conversation.pinned && (
+                          <Label size='mini' color='yellow' style={{ margin: 0 }}>
+                            <Icon name='pin' />
+                            Pinned
+                          </Label>
+                        )}
+                      </div>
                     </Card.Content>
                     <Card.Content>
                       {this.state.editingID === conversation.id ? (
@@ -377,6 +421,13 @@ class Conversations extends React.Component {
                             }
                             position='top left'
                             hoverable
+                          />
+                          <Icon
+                            name={conversation.pinned ? 'pin' : 'outline pin'}
+                            className='pinIcon'
+                            onClick={() => this.handlePinConversation(conversation.dbid, conversation.pinned)}
+                            title={conversation.pinned ? 'Unpin conversation' : 'Pin conversation'}
+                            style={{ cursor: 'pointer', color: conversation.pinned ? '#fbbd08' : 'grey', marginRight: '0.5em' }}
                           />
                           <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                         </Card.Header>

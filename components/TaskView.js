@@ -49,6 +49,7 @@ class TaskPage extends React.Component {
     this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
     this.handleMarkdownEditToggle = this.handleMarkdownEditToggle.bind(this);
     this.handleChatResponse = this.handleChatResponse.bind(this);
+    this.handleCompleteTask = this.handleCompleteTask.bind(this);
 
     return this;
   }
@@ -187,6 +188,20 @@ class TaskPage extends React.Component {
     }).then(() => this.props.fetchResource()).finally(() => this.setState({ loading: false }));
   }
 
+  async handleCompleteTask () {
+    this.setState({ loading: true });
+    try {
+      await this.props.updateTask(this.props.api.resource.id, {
+        completed_at: new Date().toISOString()
+      });
+      await this.props.fetchResource();
+    } catch (error) {
+      console.error('Error completing task:', error);
+    } finally {
+      this.setState({ loading: false });
+    }
+  }
+
   formatDate (dateStr) {
     if (!dateStr) return '';
 
@@ -255,46 +270,60 @@ class TaskPage extends React.Component {
           </Breadcrumb>
         </div>
         <Segment loading={api?.resource?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1'>
-            {this.state.isEditingTitle ? (
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                onInput={this.handleTitleEdit}
-                onKeyDown={this.saveTitle}
-                onBlur={this.saveTitle}
-                style={{
-                  border: '1px solid #ccc',
-                  padding: '0.5em',
-                  borderRadius: '4px',
-                  minHeight: '1.5em',
-                  outline: 'none',
-                  fontWeight: 'bold'
-                }}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1em' }}>
+            <Header as='h1'>
+              {this.state.isEditingTitle ? (
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={this.handleTitleEdit}
+                  onKeyDown={this.saveTitle}
+                  onBlur={this.saveTitle}
+                  style={{
+                    border: '1px solid #ccc',
+                    padding: '0.5em',
+                    borderRadius: '4px',
+                    minHeight: '1.5em',
+                    outline: 'none',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {this.state.editedTitle}
+                </div>
+              ) : (
+                <div
+                  style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                  onMouseEnter={() => this.handleTitleHover(true)}
+                  onMouseLeave={() => this.handleTitleHover(false)}
+                  onClick={this.toggleTitleEdit}
+                >
+                  <span>{api?.resource?.title}</span>
+                  {this.state.isTitleHovered && (
+                    <Icon
+                      name='pencil'
+                      style={{
+                        marginLeft: '0.5em',
+                        opacity: 0.6,
+                        fontSize: '0.7em'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </Header>
+            {!api?.resource?.completed_at && (
+              <Button
+                positive
+                icon
+                labelPosition='right'
+                onClick={this.handleCompleteTask}
+                loading={this.state.loading}
               >
-                {this.state.editedTitle}
-              </div>
-            ) : (
-              <div
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                onMouseEnter={() => this.handleTitleHover(true)}
-                onMouseLeave={() => this.handleTitleHover(false)}
-                onClick={this.toggleTitleEdit}
-              >
-                <span>{api?.resource?.title}</span>
-                {this.state.isTitleHovered && (
-                  <Icon
-                    name='pencil'
-                    style={{
-                      marginLeft: '0.5em',
-                      opacity: 0.6,
-                      fontSize: '0.7em'
-                    }}
-                  />
-                )}
-              </div>
+                Mark as Complete
+                <Icon name='check' />
+              </Button>
             )}
-          </Header>
+          </div>
           {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
           {!api?.resource?.completed_at && (
             <Button

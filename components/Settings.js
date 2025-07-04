@@ -37,8 +37,34 @@ class SensemakerUserSettings extends React.Component {
       isUserModalOpen: false,
       isDisplayNameModalOpen: false,
       user_discord: this.props.auth.user_discord,
-      displayName: this.props.auth.displayName || this.props.auth.username
+      displayName: this.props.auth.displayName || this.props.auth.username,
+      EMAIL_NOTIFICATIONS: false,
+      DISCORD_NOTIFICATIONS: false,
+      BROWSER_NOTIFICATIONS: false
     };
+  }
+
+  updateSetting = async (settingName, value) => {
+    try {
+      const response = await fetch(`/settings/${settingName}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.props.auth.token}`
+        },
+        body: JSON.stringify({ value })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update setting');
+      }
+
+      this.setState({ [settingName]: value });
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      // You might want to show an error message to the user here
+    }
   }
 
   destroySession = () => {
@@ -105,6 +131,62 @@ class SensemakerUserSettings extends React.Component {
                   <Table.Cell textAlign='right'><Header as='h4'>Password:</Header></Table.Cell>
                   <Table.Cell><code>*******</code> </Table.Cell>
                   <Table.Cell onClick={this.togglePasswordModal}><Button primary>Change</Button></Table.Cell>
+                </Table.Row>
+              </Table.Body>
+            </Table>
+            <Table>
+              <Table.Header>
+                <Table.Row className='settings-row'>
+                  <Table.HeaderCell>
+                    <Header as='h3'>Alerts</Header>
+                  </Table.HeaderCell>
+                  <Table.HeaderCell />
+                  <Table.HeaderCell />
+                </Table.Row>
+              </Table.Header>
+              <Table.Body>
+                <Table.Row className='settings-row'>
+                  <Table.Cell textAlign='right'><Header as='h4'>Email Notifications:</Header></Table.Cell>
+                  <Table.Cell>
+                    <Button.Group>
+                      <Button
+                        positive={this.state.EMAIL_NOTIFICATIONS}
+                        onClick={() => this.updateSetting('EMAIL_NOTIFICATIONS', !this.state.EMAIL_NOTIFICATIONS)}
+                      >
+                        {this.state.EMAIL_NOTIFICATIONS ? 'Enabled' : 'Disabled'}
+                      </Button>
+                    </Button.Group>
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+                <Table.Row className='settings-row'>
+                  <Table.Cell textAlign='right'><Header as='h4'>Discord Notifications:</Header></Table.Cell>
+                  <Table.Cell>
+                    <Button.Group>
+                      <Button
+                        positive={this.state.DISCORD_NOTIFICATIONS}
+                        onClick={() => this.updateSetting('DISCORD_NOTIFICATIONS', !this.state.DISCORD_NOTIFICATIONS)}
+                        disabled={!user_discord}
+                      >
+                        {this.state.DISCORD_NOTIFICATIONS ? 'Enabled' : 'Disabled'}
+                      </Button>
+                    </Button.Group>
+                  </Table.Cell>
+                  <Table.Cell />
+                </Table.Row>
+                <Table.Row className='settings-row'>
+                  <Table.Cell textAlign='right'><Header as='h4'>Browser Notifications:</Header></Table.Cell>
+                  <Table.Cell>
+                    <Button.Group>
+                      <Button
+                        positive={this.state.BROWSER_NOTIFICATIONS}
+                        onClick={() => this.updateSetting('BROWSER_NOTIFICATIONS', !this.state.BROWSER_NOTIFICATIONS)}
+                      >
+                        {this.state.BROWSER_NOTIFICATIONS ? 'Enabled' : 'Disabled'}
+                      </Button>
+                    </Button.Group>
+                  </Table.Cell>
+                  <Table.Cell />
                 </Table.Row>
               </Table.Body>
             </Table>
