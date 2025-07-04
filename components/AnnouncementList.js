@@ -89,13 +89,14 @@ class AnnouncementList extends React.Component {
     }
 
     const currentAnnouncement = announcements[currentIndex];
-    const showControls = announcements.length > 1;
+    const showNavigationControls = announcements.length > 1;
+    const showAdminControls = isAdmin && announcements.length > 0;
 
     return (
       <Segment style={{ position: 'relative', padding: 0 }}>
         <Message info style={{
           margin: 0,
-          borderRadius: showControls ? 0 : undefined
+          borderRadius: (showNavigationControls || showAdminControls) ? 0 : undefined
         }}>
           <Message.Header>
             <span>{currentAnnouncement?.title || 'Loading...'}</span>
@@ -104,7 +105,7 @@ class AnnouncementList extends React.Component {
             <span dangerouslySetInnerHTML={{ __html: marked.parse(currentAnnouncement?.body || 'Loading...') }} />
           </Message.Content>
         </Message>
-        {showControls && (
+        {(showNavigationControls || showAdminControls) && (
           <div style={{
             position: 'absolute',
             top: '10px',
@@ -114,7 +115,7 @@ class AnnouncementList extends React.Component {
             gap: '5px',
             zIndex: 10
           }}>
-            {isAdmin && (
+            {showAdminControls && (
               <Button
                 icon
                 circular
@@ -125,39 +126,43 @@ class AnnouncementList extends React.Component {
                 <Icon name="clock" />
               </Button>
             )}
-            <Button
-              icon
-              circular
-              size="mini"
-              onClick={this.handlePrevious}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)'
-              }}
-            >
-              <Icon name="chevron left" />
-            </Button>
-            <div style={{
-              fontSize: '0.8em',
-              color: '#666',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              padding: '2px 6px',
-              borderRadius: '10px',
-              minWidth: '30px',
-              textAlign: 'center'
-            }}>
-              {currentIndex + 1} / {announcements.length}
-            </div>
-            <Button
-              icon
-              circular
-              size="mini"
-              onClick={this.handleNext}
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)'
-              }}
-            >
-              <Icon name="chevron right" />
-            </Button>
+            {showNavigationControls && (
+              <>
+                <Button
+                  icon
+                  circular
+                  size="mini"
+                  onClick={this.handlePrevious}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                  }}
+                >
+                  <Icon name="chevron left" />
+                </Button>
+                <div style={{
+                  fontSize: '0.8em',
+                  color: '#666',
+                  backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                  padding: '2px 6px',
+                  borderRadius: '10px',
+                  minWidth: '30px',
+                  textAlign: 'center'
+                }}>
+                  {currentIndex + 1} / {announcements.length}
+                </div>
+                <Button
+                  icon
+                  circular
+                  size="mini"
+                  onClick={this.handleNext}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                  }}
+                >
+                  <Icon name="chevron right" />
+                </Button>
+              </>
+            )}
           </div>
         )}
         <Modal
