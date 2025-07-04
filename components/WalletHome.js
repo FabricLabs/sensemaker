@@ -49,7 +49,7 @@ class WalletHome extends React.Component {
   }
 
   render () {
-    const { network, wallet } = this.props;
+    const { network, wallet = {} } = this.props;
     console.debug('wallet:', wallet);
     // const { loading } = this.state;
     return (
@@ -63,15 +63,15 @@ class WalletHome extends React.Component {
         </div>
         <Header as='h2'>Overview</Header>
         <Statistic>
-          <StatisticValue>{wallet && wallet.balance || 0}</StatisticValue>
+          <StatisticValue>{wallet?.balance ?? 0}</StatisticValue>
           <StatisticLabel>balance</StatisticLabel>
         </Statistic>
         <Statistic>
-          <StatisticValue>{wallet && wallet.spendable || 0}</StatisticValue>
+          <StatisticValue>{wallet?.spendable ?? 0}</StatisticValue>
           <StatisticLabel>spendable</StatisticLabel>
         </Statistic>
         <Statistic>
-          <StatisticValue>{wallet && wallet.unconfirmed || 0}</StatisticValue>
+          <StatisticValue>{wallet?.unconfirmed ?? 0}</StatisticValue>
           <StatisticLabel>unconfirmed</StatisticLabel>
         </Statistic>
         <Header as='h2'>Unspent Transactions</Header>
