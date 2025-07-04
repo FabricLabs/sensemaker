@@ -88,7 +88,8 @@ async function main (input = {}) {
       help: state.help,
       redis: state.redis,
       keys: state.keys,
-      wallet: state.wallet
+      wallet: state.wallet,
+      triggers: state.triggers
     };
   };
 

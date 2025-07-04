@@ -1,5 +1,9 @@
 'use strict';
 
+const {
+  ENABLE_MARKETING
+} = require('../constants');
+
 // Dependencies
 const React = require('react');
 const { Link } = require('react-router-dom');
@@ -22,7 +26,6 @@ const KeyManagementModal = require('./KeyManagementModal');
 const {
   BRAND_NAME,
   BRAND_TAGLINE,
-  ENABLE_MARKETING,
   PITCH_CTA_TEXT
 } = require('../locales/en');
 

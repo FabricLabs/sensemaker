@@ -296,7 +296,7 @@ class Queue extends Actor {
           console.warn('[QUEUE]', 'Timeout closing main Redis connection, forcing close');
           this.redis = null;
           resolve();
-        }, 5000);
+        }, 2000);
 
         this.redis.quit()
           .then(() => {
@@ -322,7 +322,7 @@ class Queue extends Actor {
           console.warn('[QUEUE]', 'Timeout closing Redis subscriber, forcing close');
           this.subscriber = null;
           resolve();
-        }, 5000);
+        }, 2000);
 
         this.subscriber.quit()
           .then(() => {

@@ -432,13 +432,14 @@ class Agent extends Service {
 
             // Clear timeout and resolve with response
             clearTimeout(timeoutId);
+            response = stripThinkTags(base.choices[0].message.content);
             return resolve({
               type: 'AgentResponse',
               name: this.settings.name,
               status: 'success',
               query: request.query,
-              response: base,
-              content: base.choices[0].message.content,
+              response: response,
+              content: response,
               messages: messages
             });
 
@@ -497,6 +498,7 @@ class Agent extends Service {
             }
 
             clearTimeout(timeoutId);
+            response = stripThinkTags(response);
             return resolve({
               type: 'AgentResponse',
               name: this.settings.name,
@@ -604,67 +606,6 @@ class Agent extends Service {
     });
   }
 
-  async _setupRedis () {
-    // Redis Client
-    this.redis = createClient({
-      username: this.settings.redis.username,
-      password: this.settings.redis.password,
-      socket: {
-        host: this.settings.redis.host,
-        port: this.settings.redis.port,
-        enable_offline_queue: false,
-        timeout: 10000, // Increased timeout to 10 seconds
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            console.error('[AGENT] Redis connection failed after 10 retries');
-            return new Error('Redis connection failed after 10 retries');
-          }
-          const delay = Math.min(retries * 100, 3000);
-          console.debug(`[AGENT] Redis reconnecting in ${delay}ms...`);
-          return delay;
-        }
-      }
-    });
-
-    // Connect to Redis with timeout
-    const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {
-      const timeout = setTimeout(() => {
-        rejectRedis(new Error('Redis connection timeout'));
-      }, 15000); // 15 second timeout
-
-      // Attempt Redis connection
-      this.redis.connect().then(() => {
-        clearTimeout(timeout);
-        resolveRedis();
-      }).catch((error) => {
-        clearTimeout(timeout);
-        rejectRedis(error);
-      });
-    });
-
-    await connectWithTimeout;
-    console.debug('[AGENT] Redis connected successfully');
-
-    try {
-      // Initialize vector store
-      const allDocs = await this.ingestReferences();
-      console.debug('[AGENT] References loaded, creating vector store...');
-
-      this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
-        redisClient: this.redis,
-        indexName: this.settings.redis.name || 'sensemaker-embeddings'
-      });
-
-      console.debug('[AGENT] Vector store initialized successfully');
-      this._state.content.status = this._state.status = 'STARTED';
-      this.commit();
-      resolve(this);
-    } catch (error) {
-      console.error('[AGENT] Error initializing vector store:', error);
-      throw error;
-    }
-  }
-
   start () {
     return new Promise(async (resolve, reject) => {
       this._state.content.status = 'STARTING';
@@ -672,11 +613,6 @@ class Agent extends Service {
 
       // Load default prompt.
       if (!this.prompt) this.loadDefaultPrompt();
-
-      // Setup Redis
-      if (this.settings.redis) {
-        this._setupRedis();
-      }
 
       // Attach event handlers.
       // TODO: use Fabric's Service API to define and start all services.
@@ -719,40 +655,18 @@ class Agent extends Service {
 
   stop () {
     return new Promise((resolve, reject) => {
-      this.fabric.stop().then(async () => {
-        // Stop Redis if connected
-        if (this.redis) {
-          const redisClose = new Promise((resolve) => {
-          const timeout = setTimeout(() => {
-            console.warn('[AGENT]', 'Timeout closing Redis, forcing close');
-            this.redis = null;
-            resolve();
-          }, 5000);
-
-          this.redis.quit().then(() => {
-            clearTimeout(timeout);
-            console.debug('[AGENT]', 'Redis connection closed');
-            this.redis = null;
-            resolve();
-          }).catch((error) => {
-            clearTimeout(timeout);
-            if (error.message !== 'The client is closed') {
-              console.warn('[AGENT]', 'Error closing Redis:', error);
-            }
-            this.redis = null;
-            resolve();
-          });
-        });
-
-        await redisClose;
-      }
-
+      this.fabric.stop().then(() => {
         this.emit('stopped');
-
         resolve(this);
       }).catch(reject);
     });
   }
+}
+
+// Utility to strip <think>...</think> tags from model output
+function stripThinkTags (text) {
+  if (!text) return text;
+  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
 module.exports = Agent;
