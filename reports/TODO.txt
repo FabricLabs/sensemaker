@@ -10,12 +10,13 @@
 ./types/agent.js.bak: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js.bak: // TODO: consider making this a FabricMessageID
 ./types/trainer.js: // TODO: ingest actor
-./types/trainer.js: // TODO: replace with `createRetrievalChain`
+./types/trainer.js: // TODO: change to ingestDocument call
 ./types/cli.js: mode: 'rpc', // TODO: change name of mode to `rest`?
 ./types/cli.js: // TODO: clean up workaround (from https://github.com/chjj/blessed/issues/109)
 ./types/agent.js: // stop: ['\n'] // TODO: eliminate need for stop tokens
 ./types/agent.js: // TODO: add configurable rules
-./types/agent.js: }); // TODO: remove this...
+./types/agent.js: // TODO: streamline this method to remove await
+./types/agent.js: // TODO: refactor this to use `this.tools` and implement `registerTool(name, method)
 ./types/agent.js: // TODO: use @fabric/core/types/filesystem for a persistent log of changes (sidechains)
 ./types/agent.js: if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
 ./types/agent.js: // TODO: use Fabric's Service API to define and start all services.
@@ -24,6 +25,7 @@
 ./components/Clock.js: // TODO: reconcile with Fabric API
 ./components/HeaderBar.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/ChatBox.js: // TODO: when available, use WebSocket instead of polling
+./components/QueryForm.js: // TODO: Implement actual message sending logic
 ./components/SensemakerUI.js: // TODO: re-work authentication, use `seed` and `xprv` upstream (@fabric/hub)
 ./components/SensemakerUI.js: <fabric-container id='react-application'>{/* TODO: render string here */}</fabric-container>
 ./components/SourceHome.js: // TODO: reduce to a web component (no react)
@@ -40,13 +42,12 @@
 ./components/FrontPage.js: // TODO: use i18n (e.g., call i18n.t('pitch.cta.text') etc.)
 ./components/ContractHome.js: // TODO: implement this.applicationString
 ./components/DocumentHome.js: // TODO: change to `searchDocuments`
-./components/DocumentHome.js: // TODO: use `id` not `@id`
 ./components/Changelog.js: {/* TODO: populate from GitHub releases */}
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
 ./components/Dashboard.js: // TODO: prompt user for external links replacing current application
-./components/Dashboard.js: {/* TODO: add a nice 404 page */}
 ./components/SourceView.js: // TODO: reduce to a web component (no react)
 ./components/SourceView.js: // TODO: reconcile with Fabric API
+./components/SourceView.js: // TODO: Implement API call to update the source
 ./components/services/bitcoin/BitcoinHome.js: keys: {}, // TODO: add keys from this.seed, this.key, etc.,
 ./scripts/setup.sh: # TODO: consider running local DNS to resolve both IPv4 and Onion addresses
 ./scripts/trainer.js: // TODO: import these from constants file
@@ -80,6 +81,7 @@
 ./actions/groupActions.js: // TODO: pagination
 ./actions/chatActions.js: // TODO: re-evaluate this... is this safe?
 ./actions/walletActions.js: // TODO: pagination
+./functions/generateBitcoinStatus.js: status: 'ONLINE', // TODO: check for syncing status
 ./functions/IngestFile.js: // TODO: check for error
 ./functions/IngestFile.js: // TODO: check for error
 ./routes/tasks/edit_task.js: // TODO: handle errors
@@ -100,30 +102,26 @@
 ./routes/conversations/list_conversations.js: // TODO: provide state
 ./routes/conversations/view_conversation.js: // TODO: disable raw ID lookup, only allow Fabric ID lookup
 ./routes/conversations/view_conversation.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./routes/users/list_users.js: // TODO: pagination
 ./routes/people/get_people.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/people/view_person.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/files/create_file.js: // TODO: refactor to use chaining instead of try/catch
-./routes/files/create_file.js: // // TODO: allow duplicate file upload
 ./routes/files/create_file.js: // TODO: standardize the file upload logic into core (folder to look for, folder to move to, etc.)
 ./routes/files/create_file.js: // TODO: restrict file types
 ./routes/files/create_file.js: // TODO: report file for cleanup / investigation
-./routes/files/create_file.js: // TODO: preserve additional fields (ctime, mtime, etc.)
 ./routes/files/create_file.js: // TODO: fix / troubleshoot ingestion of large files
-./routes/documents/delete_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
-./routes/documents/get_document_sections.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/documents/list_documents.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./routes/documents/create_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
-./routes/documents/create_document_section.js: // TODO: parse JSON, return to object before creating Actor
-./routes/documents/create_document_section.js: // TODO: handle errors
 ./routes/documents/get_document_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/documents/create_document.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
 ./routes/documents/create_document.js: // TODO: parse JSON, return to object before creating Actor
 ./routes/documents/create_document.js: // TODO: handle errors
 ./routes/documents/create_document.js: // TODO: send with `id` not `@id`
-./routes/documents/edit_document_section.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
-./routes/documents/edit_document_section.js: // TODO: handle errors
+./routes/account/reset_password.js: // TODO: refactor this link
 ./routes/services/rsi/create_activity.js: // TODO: add sha256
+./routes/services/bitcoin/list_blocks.js: // TODO: allow various parameters (sort order, cursor start, etc.)
+./routes/services/bitcoin/list_blocks.js: // TODO: cache each of these queries
+./routes/services/bitcoin/list_blocks.js: // TODO: cache this request overall
+./routes/services/bitcoin/list_blocks.js: // TODO: evaluate TX inclusion
+./routes/services/bitcoin/list_blocks.js: // TODO: read transactions from recent blocks
 ./routes/services/disk/view_path.js: // TODO: secure this endpoint
 ./routes/reviews/create_review.js: // TODO: check token
 ./routes/invitations/create_invitation.js: // TODO: serve from assets (@nplayer89)
@@ -139,11 +137,14 @@
 ./services/sensemaker.js: // TODO: replace with Resource definitions
 ./services/sensemaker.js: // TODO: check for vulnerabilities, easy setup
 ./services/sensemaker.js: // TODO: evaluate use of temperature
+./services/sensemaker.js: // TODO: use qwen3:0.6b
 ./services/sensemaker.js: // TODO: See if we can put this in its own file.
 ./services/sensemaker.js: // TODO: safe shutdown
 ./services/sensemaker.js: // TODO: define Agent methods from `documentation`
 ./services/sensemaker.js: // TODO: move to a different method... generateBlock should only snapshot existing state
+./services/sensemaker.js: // TODO: use a proper job for this
 ./services/sensemaker.js: // TODO: remove async, use local state instead
+./services/sensemaker.js: // TODO: fetch model file
 ./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
 ./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
 ./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
@@ -152,6 +153,7 @@
 ./services/sensemaker.js: message_id: responseID // TODO: deprecate in favor of `object`
 ./services/sensemaker.js: // TODO: receive from message parameter
 ./services/sensemaker.js: // TODO: load from STATE file
+./services/sensemaker.js: // TODO: check for triggers
 ./services/sensemaker.js: documents: [], // TODO: implement
 ./services/sensemaker.js: people: [], // TODO: implement
 ./services/sensemaker.js: // TODO: add filesystem watcher for live updates (low priority)
@@ -159,32 +161,23 @@
 ./services/sensemaker.js: // TODO: remove
 ./services/sensemaker.js: // TODO: migrate these to `routes` setting
 ./services/sensemaker.js: // TODO: migrate these to @fabric/core using "Resources"
+./services/sensemaker.js: // TODO: set this as default behavior in @fabric/http
+./services/sensemaker.js: // TODO: declare all Document types
 ./services/sensemaker.js: // TODO: test each search endpoint
+./services/sensemaker.js: // TODO: use proper API to add this route
 ./services/sensemaker.js: // TODO: switch to PATCH `/users/:username`
-./services/sensemaker.js: // TODO: rework help system into standardized pop-out chat
-./services/sensemaker.js: // TODO: review this
-./services/sensemaker.js: // TODO: render page for accepting invitation
+./services/sensemaker.js: // TODO: finish Fabric service workup
+./services/sensemaker.js: // TODO: remap to /services/queue
 ./services/sensemaker.js: // TODO: change to /sessions
 ./services/sensemaker.js: // TODO: fix these routes
 ./services/sensemaker.js: // TODO: check logic of PATCH, any other routes conflict?
 ./services/sensemaker.js: // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
 ./services/sensemaker.js: // TODO: check token
-./services/sensemaker.js: // TODO: allow various parameters (sort order, cursor start, etc.)
-./services/sensemaker.js: // TODO: cache each of these queries
-./services/sensemaker.js: // TODO: cache this request overall
-./services/sensemaker.js: // TODO: evaluate TX inclusion
-./services/sensemaker.js: // TODO: read transactions from recent blocks
-./services/sensemaker.js: // TODO: allow various parameters (sort order, cursor start, etc.)
-./services/sensemaker.js: // TODO: cache each of these queries
-./services/sensemaker.js: // TODO: cache this request overall
-./services/sensemaker.js: // TODO: evaluate TX inclusion
-./services/sensemaker.js: // TODO: read transactions from recent blocks
 ./services/sensemaker.js: // TODO: add reactions
 ./services/sensemaker.js: // TODO: show error message in client
 ./services/sensemaker.js: // TODO: halt on !req.user.id
 ./services/sensemaker.js: // TODO: revoke token on Discord
 ./services/sensemaker.js: // TODO: flash disconnected message
-./services/sensemaker.js: // TODO: handle error
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: fix @fabric/core/types/message to allow custom message types
 ./services/sensemaker.js: // TODO: consider additional metadata fields
