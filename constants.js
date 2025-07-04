@@ -32,13 +32,42 @@ const ALLOWED_UPLOAD_TYPES = [
   'image/tiff',
   'image/bmp',
   'application/pdf',
+  'video/mp4',
+  'video/avi',
+  'video/mov',
+  'video/mkv',
+  'video/webm',
+  'video/wmv',
+  'video/flv',
+  'video/m4v',
+  'video/3gp',
+  'video/ogv',
+  'audio/mp3',
+  'audio/wav',
+  'audio/ogg',
+  'audio/m4a',
+  'audio/flac',
+  'audio/aac',
+  'audio/wma',
+  'audio/opus'
 ];
 
 // Flags
+const IS_CONFIGURED = false; // Set to true after initial admin setup
+
+// Configuration settings that should be saved as GLOBAL (system-wide) settings
+const GLOBAL_SETTINGS = [
+  'NODE_NAME',
+  'NODE_PERSONALITY',
+  'AI_TEMPERATURE',
+  'USER_GOALS',
+  'IS_CONFIGURED'
+];
+
 const ENABLE_AGENTS = true;
 const ENABLE_ALERTS = true;
-const ENABLE_BILLING = false;
-const ENABLE_BITCOIN = false;
+const ENABLE_BILLING = true;
+const ENABLE_BITCOIN = true;
 const ENABLE_CHANGELOG = false; // TODO: enable changelog ("blog")
 const ENABLE_CHAT = true;
 const ENABLE_CONTENT_TOPBAR = true;
@@ -47,7 +76,7 @@ const ENABLE_CONVERSATION_SIDEBAR = false;
 const ENABLE_DISCORD_LOGIN = false;
 const ENABLE_DOCUMENT_SEARCH = true;
 const ENABLE_DOCUMENTS = true;
-const ENABLE_FABRIC = false;
+const ENABLE_FABRIC = true;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_GROUPS = false;
@@ -55,11 +84,12 @@ const ENABLE_JOBS = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_LOGIN = true;
 const ENABLE_MARKETING = true;
+const ENABLE_NETWORK = true;
 const ENABLE_PERSON_SEARCH = false;
 const ENABLE_REGISTRATION = false;
 const ENABLE_SOURCES = false;
 const ENABLE_TASKS = true;
-const ENABLE_UPLOADS = false;
+const ENABLE_UPLOADS = true;
 const ENABLE_WALLET = false;
 
 // UI
@@ -94,6 +124,7 @@ module.exports = {
   AGENT_MAX_TOKENS,
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
+  IS_CONFIGURED,
   ALLOWED_UPLOAD_TYPES,
   BCRYPT_PASSWORD_ROUNDS,
   CORE_MODEL,
@@ -121,6 +152,7 @@ module.exports = {
   ENABLE_UPLOADS,
   ENABLE_LIBRARY,
   ENABLE_MARKETING,
+  ENABLE_NETWORK,
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_WALLET,
@@ -135,5 +167,6 @@ module.exports = {
   USER_QUERY_TIMEOUT_MS,
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS,
-  SYNC_EMBEDDINGS_COUNT
+  SYNC_EMBEDDINGS_COUNT,
+  GLOBAL_SETTINGS
 };

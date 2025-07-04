@@ -37,6 +37,10 @@ const DELETE_DOCUMENT_REQUEST = 'DELETE_DOCUMENT_REQUEST';
 const DELETE_DOCUMENT_SUCCESS = 'DELETE_DOCUMENT_SUCCESS';
 const DELETE_DOCUMENT_FAILURE = 'DELETE_DOCUMENT_FAILURE';
 
+const FETCH_COMMIT_REQUEST = 'FETCH_COMMIT_REQUEST';
+const FETCH_COMMIT_SUCCESS = 'FETCH_COMMIT_SUCCESS';
+const FETCH_COMMIT_FAILURE = 'FETCH_COMMIT_FAILURE';
+
 // Action creators
 const fetchDocumentsRequest = () => ({ type: FETCH_DOCUMENTS_REQUEST });
 const fetchDocumentsSuccess = (documents) => ({ type: FETCH_DOCUMENTS_SUCCESS, payload: documents });
@@ -65,6 +69,10 @@ const editDocumentFailure = (error) => ({ type: EDIT_DOCUMENT_FAILURE, payload: 
 const deleteDocumentRequest = () => ({ type: DELETE_DOCUMENT_REQUEST });
 const deleteDocumentSuccess = () => ({ type: DELETE_DOCUMENT_SUCCESS });
 const deleteDocumentFailure = (error) => ({ type: DELETE_DOCUMENT_FAILURE, payload: error });
+
+const fetchCommitRequest = () => ({ type: FETCH_COMMIT_REQUEST });
+const fetchCommitSuccess = (commit) => ({ type: FETCH_COMMIT_SUCCESS, payload: commit });
+const fetchCommitFailure = (error) => ({ type: FETCH_COMMIT_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchDocuments = () => {
@@ -121,8 +129,12 @@ const uploadDocument = (file) => {
 
       const fileAnswer = await fileCreation.json();
       dispatch(uploadDocumentSuccess(fileAnswer.fabric_id));
+
+      // Return the file answer for the FileUploadModal to use
+      return fileAnswer;
     } catch (error) {
       dispatch(uploadDocumentFailure(error.message));
+      throw error; // Re-throw so FileUploadModal can catch it
     }
   }
 }
@@ -210,13 +222,12 @@ const deleteDocument = (fabricID) => {
     dispatch(deleteDocumentRequest());
     const { token } = getState().auth;
     try {
-      const response = await fetch(`/documents/delete/${fabricID}`, {
+      const response = await fetch(`/documents/${fabricID}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        method: 'PATCH',
-        body: JSON.stringify({ fabricID })
+        method: 'DELETE'
       });
 
       if (!response.ok) {
@@ -231,6 +242,33 @@ const deleteDocument = (fabricID) => {
   }
 }
 
+const fetchCommit = (fabricID, commitID) => {
+  return async (dispatch, getState) => {
+    dispatch(fetchCommitRequest());
+    const { token } = getState().auth;
+    try {
+      const response = await fetch(`/documents/${fabricID}/commits/${commitID}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fetch commit');
+      }
+
+      const commit = await response.json();
+      dispatch(fetchCommitSuccess(commit));
+    } catch (error) {
+      console.error('Error fetching commit:', error);
+      dispatch(fetchCommitFailure(error.message));
+    }
+  }
+}
+
 module.exports = {
   fetchDocument,
   fetchDocuments,
@@ -239,6 +277,7 @@ module.exports = {
   createDocument,
   editDocument,
   deleteDocument,
+  fetchCommit,
   FETCH_DOCUMENT_REQUEST,
   FETCH_DOCUMENT_SUCCESS,
   FETCH_DOCUMENT_FAILURE,
@@ -260,4 +299,7 @@ module.exports = {
   DELETE_DOCUMENT_REQUEST,
   DELETE_DOCUMENT_SUCCESS,
   DELETE_DOCUMENT_FAILURE,
+  FETCH_COMMIT_REQUEST,
+  FETCH_COMMIT_SUCCESS,
+  FETCH_COMMIT_FAILURE,
 };

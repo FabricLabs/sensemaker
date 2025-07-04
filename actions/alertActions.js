@@ -4,7 +4,7 @@
 const { fetchFromAPI } = require('./apiActions');
 
 // Functions
-async function fetchAlertsFromAPI() {
+async function fetchAlertsFromAPI () {
   const response = await fetch('/alerts', {
     method: 'GET',
     headers: {
@@ -13,7 +13,8 @@ async function fetchAlertsFromAPI() {
     }
   });
 
-  return await response.json();
+  const data = await response.json();
+  return data;
 }
 
 // Action types
