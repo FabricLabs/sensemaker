@@ -24,11 +24,18 @@ module.exports = async function (req, res, next) {
   if (!conversation_id) {
     isNew = true;
     const name = `Conversation started ${toRelativeTime(now.toISOString())}`;
-    const created = await this.db('conversations').insert({
+    const conversationData = {
       creator_id: req.user.id,
       log: JSON.stringify([]),
       title: name
-    });
+    };
+
+    // Add context if provided
+    if (context) {
+      conversationData.context = JSON.stringify(context);
+    }
+
+    const created = await this.db('conversations').insert(conversationData);
 
     localConversationID = created[0];
 
@@ -44,24 +51,16 @@ module.exports = async function (req, res, next) {
     const file = await this.db('files').where({ fabric_id: file_id }).first();
     if (!file) throw new Error(`No such File: ${file_id}`);
     localFileID = file.id;
-    // TODO: fix this (need preimage_sha256 to retrieve blob)
-    const blob = await this.db('blobs')
-      .where({ fabric_id: file.blob_id })
-      .orWhere({ preimage_sha256: file.blob_id })
-      .first();
 
-    await this.trainer.ingestDocument({
-      metadata: {
-        owner: req.user.id
-      },
-      content: blob.content
-    });
-
+    // File is already ingested during upload, so we just need to add context
+    // Remove duplicate ingestion and just add file context
     context = {
       ...context,
       file: {
         id: file_id,
-        name: file.name
+        name: file.name,
+        fabric_id: file.fabric_id,
+        mime_type: file.type
       }
     };
   }

@@ -23,10 +23,15 @@ class Chat extends React.Component {
     this.state = {
       announTitle: '',
       announBody: '',
+      inputText: '',
+      isTyping: false
     };
 
     this.messagesEndRef = React.createRef();
     this.fetchAnnouncement = this.fetchAnnouncement.bind(this);
+    this.handleInputChange = this.handleInputChange.bind(this);
+    this.countTokens = this.countTokens.bind(this);
+    this.handleSendMessage = this.handleSendMessage.bind(this);
   }
 
   componentDidMount () {
@@ -36,6 +41,30 @@ class Chat extends React.Component {
     this.fetchAnnouncement();
   }
 
+  countTokens (text) {
+    if (!text) return 0;
+    // Simple word-based tokenization - can be replaced with more sophisticated method
+    return text.trim().split(/\s+/).length;
+  }
+
+  handleInputChange (event) {
+    const text = event.target.value;
+    this.setState({
+      inputText: text,
+      isTyping: text.trim().length > 0  // Only consider it typing if there's non-whitespace content
+    });
+  }
+
+  handleSendMessage () {
+    // TODO: Implement actual message sending logic
+    if (this.state.inputText.trim()) {
+      // Call parent component's message handler here
+      this.setState({
+        inputText: '',
+        isTyping: false
+      });
+    }
+  }
 
   fetchAnnouncement = async () => {
     const state = store.getState();
@@ -87,43 +116,61 @@ class Chat extends React.Component {
   };
 
   render () {
-    const {announTitle, announBody} = this.state;
+    const {announTitle, announBody, inputText, isTyping} = this.state;
     const { messages } = this.props.chat;
     const VERTICAL_MARGIN = '2.5';
     const componentStyle = messages.length > 0 ? {
       display: 'absolute',
       left: 'calc(350px + 1em)',
-      height: `calc(100vh - ${VERTICAL_MARGIN}rem)`, // Set a maximum height
+      height: `calc(100vh - ${VERTICAL_MARGIN}rem)`,
       paddingRight: '0em',
       inset: 0,
       display: 'flex',
       flexDirection: 'column',
       paddingBottom: '0'
     } : {
-      // height: `calc(100vh - ${VERTICAL_MARGIN}rem)`,
       height: 'auto',
       display: 'flex',
       flexDirection: 'column',
       paddingBottom: '1em'
     };
 
+    const tokenCount = this.countTokens(inputText);
+    const requestCost = this.props.requestCost || 0; // Default to 0 if not provided
+
     return (
-      <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
+      <sensemaker-query-form ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
         <ChatBox
-            {...this.props}
-            resetInformationSidebar={this.props.resetInformationSidebar}
-            messageInfo={this.props.messageInfo}
-            thumbsUp={this.props.thumbsUp}
-            thumbsDown={this.props.thumbsDown}
-            announTitle={announTitle}
-            announBody={announBody}
-            placeholder={this.props.placeholder}
-            messagesEndRef={this.messagesEndRef}
-            homePage={true}
-            size='large'
-            takeFocus={this.props.takeFocus}
-          />
-      </fabric-component>
+          {...this.props}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
+          announTitle={announTitle}
+          announBody={announBody}
+          placeholder={this.props.placeholder}
+          messagesEndRef={this.messagesEndRef}
+          homePage={true}
+          size='large'
+          takeFocus={this.props.takeFocus}
+          onInputChange={this.handleInputChange}
+          inputValue={inputText}
+        />
+        {isTyping && (
+          <div className="token-counter-wrapper" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div className={`token-counter ${isTyping ? 'slide-up' : ''}`} style={{ marginTop: '0.5em', marginBottom: '0.5em' }}>
+              <small className="token-count" style={{ marginRight: '0.5em' }}><em>{tokenCount} tokens ({requestCost} satoshi)</em></small>
+              <button
+                className="ui icon button mini primary"
+                onClick={this.handleSendMessage}
+                disabled={!inputText.trim()}
+              >
+                <i className="paper plane icon"></i>
+              </button>
+            </div>
+          </div>
+        )}
+      </sensemaker-query-form>
     );
   }
 }
