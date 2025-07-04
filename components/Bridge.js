@@ -4,6 +4,17 @@
 const React = require('react');
 const WebSocket = require('isomorphic-ws');
 
+// WebRTC via PeerJS
+let Peer = null;
+if (typeof window !== 'undefined') {
+  // Only import PeerJS on the client side
+  try {
+    Peer = require('peerjs').Peer;
+  } catch (e) {
+    console.warn('[BRIDGE]', 'PeerJS not available:', e.message);
+  }
+}
+
 // Semantic
 const {
   Label
@@ -35,15 +46,23 @@ class Bridge extends React.Component {
       error: null,
       subscriptions: new Set(),
       isConnected: false,
-      messageQueue: [],
+      webrtcConnected: false,
       currentPath: window.location.pathname
     };
 
     this.attempts = 1;
     this.messageQueue = [];
+    this.webrtcMessageQueue = [];
     this.queue = [];
     this.ws = null;
     this._heartbeat = null;
+    this._isConnected = false;  // Internal connection state
+
+    // WebRTC/PeerJS properties
+    this.peer = null;
+    this.webrtcConnection = null;
+    this._webrtcConnected = false;
+    this.peerId = null;
 
     // Initialize key if provided
     if (props.key) {
@@ -108,13 +127,21 @@ class Bridge extends React.Component {
     // Attach Event Handlers
     this.ws.onopen = () => {
       console.debug('[BRIDGE]', 'Connection established');
+      this._isConnected = true;  // Set internal state immediately
       this.setState({ isConnected: true });
       this.onSocketOpen();
 
       // Process any queued messages
       while (this.messageQueue.length > 0) {
         const message = this.messageQueue.shift();
-        this.ws.send(message);
+        try {
+          this.ws.send(message);
+        } catch (error) {
+          console.error('[BRIDGE]', 'Error sending queued message:', error);
+          // Re-queue the message if send fails
+          this.messageQueue.unshift(message);
+          break;
+        }
       }
     };
 
@@ -122,11 +149,13 @@ class Bridge extends React.Component {
 
     this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'Error:', error);
+      this._isConnected = false;
       this.setState({ error, isConnected: false });
     };
 
     this.ws.onclose = () => {
       console.debug('[BRIDGE]', 'Connection closed.');
+      this._isConnected = false;
       this.setState({ isConnected: false });
       // Clean up heartbeat interval on close
       if (this._heartbeat) {
@@ -143,6 +172,180 @@ class Bridge extends React.Component {
 
   generateInterval (attempts) {
     return Math.min(30, (Math.pow(2, attempts) - 1)) * 1000;
+  }
+
+  /**
+   * Initialize WebRTC connection using PeerJS
+   */
+  initializeWebRTC () {
+    if (!Peer) {
+      console.warn('[BRIDGE]', 'PeerJS not available, skipping WebRTC initialization');
+      return;
+    }
+
+    try {
+      // Generate a unique peer ID based on the current session
+      const sessionId = this.key ? this.key.id.slice(-8) : Math.random().toString(36).substr(2, 8);
+      this.peerId = `fabric-bridge-${sessionId}`;
+
+      console.debug('[BRIDGE]', 'Initializing WebRTC peer with ID:', this.peerId);
+
+      // Create PeerJS instance
+      this.peer = new Peer(this.peerId, {
+        host: this.settings.host,
+        port: this.settings.port,
+        path: '/services/peering',
+        secure: this.settings.secure,
+        debug: this.settings.debug ? 2 : 0
+      });
+
+      // Set up peer event handlers
+      this.peer.on('open', (id) => {
+        console.debug('[BRIDGE]', 'WebRTC peer opened with ID:', id);
+        this.peerId = id;
+        this.connectToServerWebRTC();
+      });
+
+      this.peer.on('connection', (conn) => {
+        console.debug('[BRIDGE]', 'Incoming WebRTC connection:', conn.peer);
+        this.handleIncomingWebRTCConnection(conn);
+      });
+
+      this.peer.on('error', (error) => {
+        console.error('[BRIDGE]', 'WebRTC peer error:', error);
+        this.setState(prevState => ({
+          error: prevState.error || error,
+          webrtcConnected: false
+        }));
+        this._webrtcConnected = false;
+      });
+
+      this.peer.on('close', () => {
+        console.debug('[BRIDGE]', 'WebRTC peer closed');
+        this.setState({ webrtcConnected: false });
+        this._webrtcConnected = false;
+      });
+
+    } catch (error) {
+      console.error('[BRIDGE]', 'Failed to initialize WebRTC:', error);
+    }
+  }
+
+  /**
+   * Connect to the server's WebRTC instance
+   */
+  connectToServerWebRTC () {
+    if (!this.peer) {
+      console.warn('[BRIDGE]', 'Cannot connect WebRTC: peer not initialized');
+      return;
+    }
+
+    try {
+      // Attempt to connect to the server's WebRTC instance
+      // The server peer ID should follow a predictable pattern
+      const serverPeerId = `fabric-server-${this.settings.host}`;
+
+      console.debug('[BRIDGE]', 'Attempting WebRTC connection to server:', serverPeerId);
+
+      this.webrtcConnection = this.peer.connect(serverPeerId, {
+        label: this.peerId,
+        reliable: true,
+        metadata: {
+          type: 'bridge-connection',
+          timestamp: Date.now()
+        }
+      });
+
+      this.setupWebRTCConnectionHandlers(this.webrtcConnection);
+
+    } catch (error) {
+      console.error('[BRIDGE]', 'Failed to connect WebRTC to server:', error);
+    }
+  }
+
+  /**
+   * Set up event handlers for a WebRTC connection
+   */
+  setupWebRTCConnectionHandlers (connection) {
+    connection.on('open', () => {
+      console.debug('[BRIDGE]', 'WebRTC connection opened to:', connection.peer);
+      this._webrtcConnected = true;
+      this.setState({ webrtcConnected: true });
+
+      // Process any queued messages
+      while (this.webrtcMessageQueue.length > 0) {
+        const message = this.webrtcMessageQueue.shift();
+        try {
+          connection.send(message);
+        } catch (error) {
+          console.error('[BRIDGE]', 'Error sending queued WebRTC message:', error);
+          this.webrtcMessageQueue.unshift(message);
+          break;
+        }
+      }
+    });
+
+    connection.on('data', (data) => {
+      console.debug('[BRIDGE]', 'WebRTC data received:', data);
+      this.handleWebRTCMessage(data);
+    });
+
+    connection.on('error', (error) => {
+      console.error('[BRIDGE]', 'WebRTC connection error:', error);
+      this._webrtcConnected = false;
+      this.setState({ webrtcConnected: false });
+    });
+
+    connection.on('close', () => {
+      console.debug('[BRIDGE]', 'WebRTC connection closed');
+      this._webrtcConnected = false;
+      this.setState({ webrtcConnected: false });
+    });
+  }
+
+  /**
+   * Handle incoming WebRTC connections
+   */
+  handleIncomingWebRTCConnection (connection) {
+    console.debug('[BRIDGE]', 'Setting up incoming WebRTC connection from:', connection.peer);
+    this.setupWebRTCConnectionHandlers(connection);
+
+    // Store the connection for potential use
+    this.webrtcConnection = connection;
+  }
+
+  /**
+   * Handle messages received via WebRTC
+   */
+  handleWebRTCMessage (data) {
+    try {
+      console.debug('[BRIDGE]', 'Processing WebRTC message:', data);
+
+      // Handle our structured WebRTC messages
+      if (data && typeof data === 'object' && data.type === 'fabric-message') {
+        // Decode the base64 data back to Buffer
+        const messageData = Buffer.from(data.data, 'base64');
+        this.onSocketMessage({ data: messageData });
+        return;
+      }
+
+      // Handle other data formats for compatibility
+      let messageData;
+
+      if (typeof data === 'string') {
+        messageData = Buffer.from(data, 'utf8');
+      } else if (data instanceof ArrayBuffer) {
+        messageData = Buffer.from(data);
+      } else {
+        messageData = Buffer.from(JSON.stringify(data));
+      }
+
+      // Process the message using the existing WebSocket message handler
+      this.onSocketMessage({ data: messageData });
+
+    } catch (error) {
+      console.error('[BRIDGE]', 'Error handling WebRTC message:', error);
+    }
   }
 
   addJob (type, data) {
@@ -171,7 +374,7 @@ class Bridge extends React.Component {
   }
 
   render () {
-    const { data, error } = this.state;
+    const { data, error, isConnected, webrtcConnected } = this.state;
 
     if (error && this.settings.debug) {
       return <div>Error: {error.message}</div>;
@@ -185,6 +388,14 @@ class Bridge extends React.Component {
       <fabric-bridge>
         {this.settings.debug ? (
           <div>
+            <h1>Connection Status:</h1>
+            <div>
+              <strong>WebSocket:</strong> {isConnected ? '✅ Connected' : '❌ Disconnected'}
+            </div>
+            <div>
+              <strong>WebRTC:</strong> {webrtcConnected ? '✅ Connected' : '❌ Disconnected'}
+              {this.peerId && ` (${this.peerId})`}
+            </div>
             <h1>Data Received:</h1>
             <pre>{JSON.stringify(data, null, 2)}</pre>
           </div>
@@ -195,6 +406,8 @@ class Bridge extends React.Component {
 
   start () {
     this.connect('/');
+    // Initialize WebRTC connection
+    this.initializeWebRTC();
     // Start heartbeat interval
     if (this._heartbeat) clearInterval(this._heartbeat);
     this._heartbeat = setInterval(this.tick.bind(this), this.settings.tickrate);
@@ -205,6 +418,8 @@ class Bridge extends React.Component {
       clearInterval(this._heartbeat);
       this._heartbeat = null;
     }
+
+    // Clean up WebSocket
     if (this.ws) {
       try {
         this.ws.onopen = null;
@@ -219,6 +434,28 @@ class Bridge extends React.Component {
       }
       this.ws = null;
     }
+
+    // Clean up WebRTC
+    if (this.webrtcConnection) {
+      try {
+        this.webrtcConnection.close();
+      } catch (e) {
+        console.warn('[BRIDGE]', 'Error closing WebRTC connection:', e);
+      }
+      this.webrtcConnection = null;
+    }
+
+    if (this.peer) {
+      try {
+        this.peer.destroy();
+      } catch (e) {
+        console.warn('[BRIDGE]', 'Error destroying WebRTC peer:', e);
+      }
+      this.peer = null;
+    }
+
+    this._webrtcConnected = false;
+    this.setState({ webrtcConnected: false });
   }
 
   tick () {
@@ -253,26 +490,49 @@ class Bridge extends React.Component {
   }
 
   /**
-   * Sends a signed message over the WebSocket connection
+   * Sends a signed message over WebSocket or WebRTC connection
    * @param {Buffer} message - The message to send
+   * @param {Boolean} preferWebRTC - Whether to prefer WebRTC over WebSocket
    */
-  sendSignedMessage (message) {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      this.messageQueue.push(message);
-      return;
-    }
-
+  sendSignedMessage (message, preferWebRTC = false) {
     const signedMessage = this.signMessage(message);
-    this.ws.send(signedMessage.toBuffer());
+    const signedBuffer = signedMessage.toBuffer ? signedMessage.toBuffer() : signedMessage;
+
+    this.sendMessage(signedBuffer, preferWebRTC);
   }
 
-  sendMessage (message) {
-    if (!this.state.isConnected) {
+  sendMessage (message, preferWebRTC = false) {
+    // Try WebRTC first if preferred and available
+    if (preferWebRTC && this._webrtcConnected && this.webrtcConnection) {
+      try {
+        // Convert Buffer to appropriate format for WebRTC
+        const data = Buffer.isBuffer(message) ? message.toString('base64') : message;
+        this.webrtcConnection.send({
+          type: 'fabric-message',
+          data: data,
+          timestamp: Date.now()
+        });
+        console.debug('[BRIDGE]', 'Message sent via WebRTC');
+        return;
+      } catch (error) {
+        console.warn('[BRIDGE]', 'WebRTC send failed, falling back to WebSocket:', error);
+      }
+    }
+
+    // Fallback to WebSocket
+    if (!this._isConnected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
       this.messageQueue.push(message);
       return;
     }
 
-    this.ws.send(message);
+    try {
+      this.ws.send(message);
+      console.debug('[BRIDGE]', 'Message sent via WebSocket');
+    } catch (error) {
+      console.error('[BRIDGE]', 'Error sending message via WebSocket:', error);
+      // Queue the message if send fails
+      this.messageQueue.push(message);
+    }
   }
 
   /**
@@ -309,6 +569,54 @@ class Bridge extends React.Component {
 
     this.state.subscriptions.delete(path);
     console.debug('[BRIDGE]', 'Unsubscribed from:', path);
+  }
+
+  /**
+   * Get the current connection status for both WebSocket and WebRTC
+   * @returns {Object} Connection status object
+   */
+  getConnectionStatus () {
+    return {
+      websocket: {
+        connected: this._isConnected,
+        readyState: this.ws ? this.ws.readyState : null
+      },
+      webrtc: {
+        connected: this._webrtcConnected,
+        peerId: this.peerId,
+        serverConnection: this.webrtcConnection ? this.webrtcConnection.peer : null
+      },
+      preferredProtocol: this._webrtcConnected ? 'webrtc' : 'websocket'
+    };
+  }
+
+  /**
+   * Send a message preferring WebRTC if available
+   * @param {Buffer|String} message - The message to send
+   */
+  sendViaWebRTC (message) {
+    this.sendMessage(message, true);
+  }
+
+  /**
+   * Send a message preferring WebSocket
+   * @param {Buffer|String} message - The message to send
+   */
+  sendViaWebSocket (message) {
+    this.sendMessage(message, false);
+  }
+
+  /**
+   * Reconnect WebRTC if connection is lost
+   */
+  reconnectWebRTC () {
+    if (this.peer && !this._webrtcConnected) {
+      console.debug('[BRIDGE]', 'Attempting to reconnect WebRTC...');
+      this.connectToServerWebRTC();
+    } else if (!this.peer) {
+      console.debug('[BRIDGE]', 'Reinitializing WebRTC peer...');
+      this.initializeWebRTC();
+    }
   }
 
   async onSocketMessage (msg) {
@@ -353,6 +661,20 @@ class Bridge extends React.Component {
           break;
         case 'JSONCall':
           console.debug('[BRIDGE]', 'Received JSONCall:', message.body);
+
+          // Parse JSONCall and handle JSONCallResult responses
+          try {
+            const jsonCall = JSON.parse(message.body);
+            if (jsonCall.method === 'JSONCallResult') {
+              // Convert JSONCallResult to GenericMessage format for consumption by components
+              this.props.responseCapture({
+                type: 'GenericMessage',
+                content: message.body
+              });
+            }
+          } catch (parseError) {
+            console.debug('[BRIDGE]', 'JSONCall body is not valid JSON, skipping parse');
+          }
           break;
         case 'PATCH':
           // Handle state updates
@@ -364,7 +686,7 @@ class Bridge extends React.Component {
           if (path.startsWith('/services/bitcoin')) {
             this.emit('bitcoin:status', { [path]: value });
           }
-          
+
           this.props.responseCapture({
             type: 'PATCH',
             path,
