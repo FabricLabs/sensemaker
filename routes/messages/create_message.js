@@ -1,8 +1,10 @@
 'use strict';
 
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
+// Functions
 const toRelativeTime = require('../../functions/toRelativeTime');
 
 module.exports = async function (req, res, next) {
@@ -96,25 +98,32 @@ module.exports = async function (req, res, next) {
       id: localConversationID
     });
 
-    // Core Pipeline
-    // this.createTimedRequest({
+    const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
+    await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });
+
+    // Send immediate response
+    res.json({
+      message: 'Message sent.',
+      object: {
+        id: localMessage.id,
+        conversation: fabricConversationID
+      }
+    });
+
+    // Process AI generation in background
     this.handleTextRequest({
       conversation_id: fabricConversationID,
       context: context,
       agent: agent,
       query: content,
       user_id: req.user.id
-    }).catch((exception) => {
-      console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Handled text request:', request);
-      // TODO: emit message
-
       if (!request || !request.content) {
-        console.debug('[SENSEMAKER]', '[HTTP]', 'No request content:', request);
+        console.error('[MESSAGE_CREATE]', 'No response from handleTextRequest');
         return;
       }
 
+      // Handle conversation summarization asynchronously
       const history = await this._getConversationMessages(conversation.id);
       const messages = history.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
@@ -144,21 +153,8 @@ module.exports = async function (req, res, next) {
         const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
         this.http.broadcast(message);
       });
-    }).then(async () => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Finished processing message');
-    });
-    // End Core Pipeline
-
-    const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
-    await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });
-
-    return res.json({
-      message: 'Message sent.',
-      object: {
-        id: localMessage.id,
-        conversation: fabricConversationID,
-        // cards: request.cards
-      }
+    }).catch((exception) => {
+      console.error('[MESSAGE_CREATE]', 'Error in handleTextRequest:', exception);
     });
   } catch (error) {
     console.error('ERROR:', error);

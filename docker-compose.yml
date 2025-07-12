@@ -30,9 +30,6 @@ services:
       retries: 3
       start_period: 40s
     restart: unless-stopped
-    # Note: We don't mount .:/app here because it would override the container's 
-    # built node_modules (including native binaries) with the host's version
-    # For development, use a separate docker-compose.dev.yml with volume mounts
 
   db:
     image: mysql:8.0
@@ -79,6 +76,7 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -93,7 +91,6 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
-
 volumes:
   db_data:
   redis_data:

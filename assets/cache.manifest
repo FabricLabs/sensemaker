@@ -1,10 +1,9 @@
 CACHE MANIFEST
-# Hash: 1749825854673
+# Hash: 1752291189519
 
 CACHE:
 bitcoin.pdf
-bundles/873e754d6c7c6e9361f1.module.wasm
-bundles/953.browser.min.js
+bundles/0e086c2e452911d5a634.module.wasm
 bundles/browser.min.js
 bundles/browser.min.js.LICENSE.txt
 docs.tmpl

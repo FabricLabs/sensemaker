@@ -63,13 +63,6 @@ COPY --from=builder /app .
 COPY start.sh /app/start.sh
 RUN chmod 755 /app/start.sh
 
-# Set environment variables
-ENV NODE_ENV=production \
-    SQL_DB_HOST=db \
-    SQL_DB_USER=db_user_sensemaker \
-    REDIS_HOST=redis \
-    REDIS_CRED=null
-
 # Expose port
 EXPOSE 3040
 

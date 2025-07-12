@@ -1126,7 +1126,9 @@ class Sensemaker extends Hub {
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial template:', template);
       if (request.agent) {
-        return this.sensemaker.query(template).then(async (summary) => {
+        return this.sensemaker.query(template).catch((error) => {
+          throw error;
+        }).then(async (summary) => {
           this.db('messages').where({ id: responseID }).update({
             status: 'ready',
             content: summary.content,

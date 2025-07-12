@@ -386,6 +386,11 @@ class Agent extends Service {
               return reject(base.error);
             }
 
+            if (response.status !== 200) {
+              clearTimeout(timeoutId);
+              return reject(new Error(`Ollama returned status ${response.status}: ${text.substring(0, 200)}`));
+            }
+
             const choice = base.choices[0];
 
             // TODO: refactor this to use `this.tools` and implement `registerTool(name, method)
@@ -418,8 +423,8 @@ class Agent extends Service {
 
                   clearTimeout(timeoutId);
                   return this.query({ query: request.query, messages: messages }).then(resolve).catch(reject);
+                }
               }
-            }
 
             if (!base.choices) {
               clearTimeout(timeoutId);
