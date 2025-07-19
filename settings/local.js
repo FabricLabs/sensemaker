@@ -103,10 +103,10 @@ module.exports = {
   db: {
     type: 'mysql',
     host: process.env.SQL_DB_HOST || '127.0.0.1',
-    port: 3306,
-    user: 'your_sql_user',
+    port: process.env.SQL_DB_PORT || 3306,
+    user: process.env.SQL_DB_USER || 'your_sql_user',
     password: process.env.SQL_DB_CRED || 'your sql password',
-    database: 'db_sensemaker'
+    database: process.env.SQL_DB_NAME || 'db_sensemaker'
   },
   discord: {
     enable: false,
@@ -197,7 +197,7 @@ module.exports = {
     }
   },
   bitcoin: {
-    enable: true,
+    enable: false,
     fullnode: false,
     network: 'mainnet',
     interval: 60000,

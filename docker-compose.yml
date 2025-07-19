@@ -7,6 +7,8 @@ services:
       SQL_DB_HOST: db
       SQL_DB_USER: db_user_sensemaker
       SQL_DB_CRED: ${MYSQL_PASSWORD}
+      SQL_DB_NAME: db_sensemaker
+      SQL_DB_PORT: 3306
       REDIS_HOST: redis
       REDIS_CRED: null
       OLLAMA_HOST: ollama
