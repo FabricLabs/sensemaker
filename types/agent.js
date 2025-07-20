@@ -370,6 +370,7 @@ class Agent extends Service {
 
             if (!response) {
               clearTimeout(timeoutId);
+              controller.abort();
               return reject(new Error('No response from agent.'));
             }
 
@@ -378,16 +379,19 @@ class Agent extends Service {
 
             if (!base) {
               clearTimeout(timeoutId);
+              controller.abort();
               return reject(new Error('No response from agent.'));
             }
 
             if (base.error) {
               clearTimeout(timeoutId);
+              controller.abort();
               return reject(base.error);
             }
 
             if (response.status !== 200) {
               clearTimeout(timeoutId);
+              controller.abort();
               return reject(new Error(`Ollama returned status ${response.status}: ${text.substring(0, 200)}`));
             }
 
@@ -418,16 +422,19 @@ class Agent extends Service {
                     messages.push({ role: 'tool', content: obj.content, tool_call_id: tool.id });
                   } catch (exception) {
                     clearTimeout(timeoutId);
+                    controller.abort();
                     reject(exception);
                   }
 
                   clearTimeout(timeoutId);
+                  controller.abort();
                   return this.query({ query: request.query, messages: messages }).then(resolve).catch(reject);
                 }
               }
 
             if (!base.choices) {
               clearTimeout(timeoutId);
+              controller.abort();
               return reject(new Error('No choices in response.'));
             }
 
@@ -437,6 +444,7 @@ class Agent extends Service {
 
             // Clear timeout and resolve with response
             clearTimeout(timeoutId);
+            controller.abort();
             response = stripThinkTags(base.choices[0].message.content);
             return resolve({
               type: 'AgentResponse',
@@ -450,6 +458,7 @@ class Agent extends Service {
 
           } catch (exception) {
             clearTimeout(timeoutId);
+            controller.abort();
             console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, endpoint, 'Could not fetch completions:', exception);
             return resolve({
               type: 'AgentResponse',
@@ -660,7 +669,12 @@ class Agent extends Service {
 
   stop () {
     return new Promise((resolve, reject) => {
+      // Clean up any pending operations
+      this._state.content.status = 'STOPPING';
+
+      // Stop the fabric peer
       this.fabric.stop().then(() => {
+        this._state.content.status = 'STOPPED';
         this.emit('stopped');
         resolve(this);
       }).catch(reject);
