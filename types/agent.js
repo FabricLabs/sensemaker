@@ -353,7 +353,7 @@ class Agent extends Service {
                 'Content-Type': 'application/json'
               }, this.settings.headers),
               body: JSON.stringify({
-                model: this.settings.model,
+                model: request.model || this.settings.model,
                 keep_alive: (this.settings.keepalive) ? -1 : undefined,
                 messages: sample,
                 format: format,
