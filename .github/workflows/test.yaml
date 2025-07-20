@@ -53,7 +53,7 @@ jobs:
       run: |
         echo "Waiting for Ollama to start..."
         for i in {1..30}; do
-          if curl -f http://127.0.0.1:11434/api/v1/tags >/dev/null 2>&1; then
+          if curl -f http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
             echo "Ollama is ready!"
             break
           fi
@@ -61,8 +61,13 @@ jobs:
           sleep 2
         done
         echo "Testing Ollama API..."
-        curl -f http://127.0.0.1:11434/api/v1/tags || (echo "Ollama failed to start" && exit 1)
+        curl -f http://127.0.0.1:11434/api/tags || (echo "Ollama failed to start" && exit 1)
         echo "Ollama API is responding!"
+        echo "Available endpoints:"
+        curl -s http://127.0.0.1:11434/api/tags | jq '.' || echo "Could not parse tags response"
+        echo "Testing other endpoints:"
+        curl -s http://127.0.0.1:11434/api/v1/models 2>/dev/null | jq '.' || echo "Models endpoint not available"
+        curl -s http://127.0.0.1:11434/api/version 2>/dev/null | jq '.' || echo "Version endpoint not available"
     - name: Pull Qwen model
       run: |
         echo "Pulling Qwen model..."
@@ -70,7 +75,7 @@ jobs:
         echo "Available models:"
         ollama list
         echo "Testing model availability..."
-        curl -f http://127.0.0.1:11434/api/v1/tags | jq '.models[] | select(.name | contains("qwen"))' || echo "Warning: Qwen model not found in API response"
+        curl -f http://127.0.0.1:11434/api/tags | jq '.models[] | select(.name | contains("qwen"))' || echo "Warning: Qwen model not found in API response"
         echo "Testing model loading..."
         ollama show qwen3:0.6b | head -20 || echo "Warning: Could not show model details"
     - name: Generate coverage report
