@@ -67,6 +67,7 @@ const {
 const {
   resetChat,
   submitMessage,
+  submitStreamingMessage,
   fetchResponse,
   regenAnswer,
   getMessages,
@@ -342,6 +343,7 @@ module.exports = {
   editEmail: editEmail,
   resetChat: resetChat,
   submitMessage: submitMessage,
+  submitStreamingMessage: submitStreamingMessage,
   regenAnswer: regenAnswer,
   getMessages: getMessages,
   getMessageInformation: getMessageInformation,

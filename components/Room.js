@@ -49,6 +49,11 @@ class Conversation extends React.Component {
 
   componentWillUnmount () {
     window.removeEventListener('resize', this.handleResize);
+
+    // Unsubscribe from conversation path when component unmounts
+    if (this.props.bridge && this.props.id) {
+      this.props.bridge.unsubscribe(`/conversations/${this.props.id}`);
+    }
   }
 
   fetchData = async (id) => {
@@ -58,6 +63,12 @@ class Conversation extends React.Component {
     await this.props.resetChat();
     // Fetch new conversation details and messages
     await this.props.getMessages({ conversation_id: id });
+
+    // Subscribe to conversation updates via Bridge
+    if (this.props.bridge && id) {
+      console.debug('[CONVERSATION]', 'Subscribing to conversation path:', `/conversations/${id}`);
+      this.props.bridge.subscribe(`/conversations/${id}`);
+    }
   }
 
   handleResize = () => {

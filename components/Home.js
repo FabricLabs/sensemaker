@@ -229,6 +229,7 @@ class Home extends React.Component {
           fetchConversations={this.props.fetchConversations}
           getMessages={this.props.getMessages}
           submitMessage={this.props.submitMessage}
+          submitStreamingMessage={this.props.submitStreamingMessage}
           onMessageSuccess={this.props.onMessageSuccess}
           regenAnswer={this.props.regenAnswer}
           resetChat={this.props.resetChat}
@@ -244,6 +245,7 @@ class Home extends React.Component {
           thumbsDown={this.props.thumbsDown}
           uploadDocument={this.props.uploadDocument}
           uploadFile={this.props.uploadFile}
+          bridge={this.props.bridge}
           style={{ marginBottom: 0 }}
         />
         <Grid columns={3} stackable equal style={{ display: 'flex', alignItems: 'stretch', marginTop: '-1em', marginLeft: 0 }}>
@@ -324,7 +326,7 @@ class Home extends React.Component {
           includeHeader={false}
           api={this.props.api}
           fetchResource={this.props.fetchResource}
-          {...this.props} 
+          {...this.props}
         />
         <Clock style={{ position: 'fixed', bottom: '1em', right: '1em' }} />
         <ProfileEditModal

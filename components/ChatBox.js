@@ -40,7 +40,7 @@ const toRelativeTime = require('../functions/toRelativeTime');
 // Components
 const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
 // const InformationSidebar = require('./InformationSidebar');
-const Typewriter = require('./Typewriter');
+// const Typewriter = require('./Typewriter');
 
 class ChatBox extends React.Component {
   constructor(props) {
@@ -49,6 +49,12 @@ class ChatBox extends React.Component {
     this.settings = Object.assign({
       takeFocus: false
     }, props);
+
+    // Global state is now managed by Bridge component
+    this.globalState = this.props.bridge ? this.props.bridge.getGlobalState() : {};
+
+    // Track if bridge message handler is set up
+    this.bridgeMessageHandlerSet = false;
 
     this.state = {
       query: '',
@@ -82,6 +88,10 @@ class ChatBox extends React.Component {
       isRecording: false,
       fileMetadataCache: {}, // file ID -> metadata
       unsupportedVideoWarning: false,
+      // Streaming states
+      streamingMessageId: null,
+      streamingContent: '',
+      isStreaming: false,
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -127,11 +137,29 @@ class ChatBox extends React.Component {
     if (this.props.takeFocus) $('#primary-query').focus();
 
     //this.props.resetChat();
-    if (this.props.conversationID) {
-      this.startPolling(this.props.conversationID);
+    // No longer using polling - WebSocket handles real-time updates
+
+    // Set up Bridge message handler for JSON-PATCH updates
+    if (this.props.bridge) {
+      this.setupBridgeMessageHandler();
+    }
+
+    // Subscribe to current conversation and messages
+    if (this.props.conversationID && this.props.bridge) {
+      this.subscribeToConversation(this.props.conversationID);
     }
 
     window.addEventListener('resize', this.handleResize);
+
+    // Listen for global state updates from Bridge
+    this.globalStateUpdateHandler = this.handleGlobalStateUpdate.bind(this);
+    window.addEventListener('globalStateUpdate', this.globalStateUpdateHandler);
+
+    // Disable timer to prevent infinite re-render loops
+    // Streaming updates are now handled through global state update events
+    // this.streamingCheckInterval = setInterval(() => {
+    //   // Timer code removed to prevent infinite loops
+    // }, 500);
   }
 
   componentDidUpdate (prevProps, prevState) {
@@ -141,10 +169,47 @@ class ChatBox extends React.Component {
     const currentLastMessage = messages[messages.length - 1];
     if (this.props.conversationID)
       if (this.props.conversationID !== prevProps.conversationID) {
-        // TODO: when available, use WebSocket instead of polling
-        this.stopPolling();
-        this.startPolling(this.props.conversationID);
+        // Unsubscribe from old conversation and subscribe to new one
+        if (prevProps.conversationID && this.props.bridge) {
+          this.unsubscribeFromConversation(prevProps.conversationID);
+        }
+        if (this.props.conversationID && this.props.bridge) {
+          this.subscribeToConversation(this.props.conversationID);
+        }
+
+        // Clear streaming state when conversation changes
+        this.setState({
+          streamingMessageId: null,
+          streamingContent: '',
+          isStreaming: false,
+          generatingResponse: false
+        });
       }
+
+    // Subscribe to all messages in the conversation for real-time updates
+    if (messages && messages.length > 0 && this.props.bridge) {
+      messages.forEach(message => {
+        if (message.id) {
+          this.subscribeToMessage(message.id);
+        }
+      });
+    }
+
+    // Check for new messages and subscribe to them
+    if (prevProps.chat.messages.length !== messages.length && this.props.bridge) {
+      const newMessages = messages.slice(prevProps.chat.messages.length);
+      newMessages.forEach(message => {
+        if (message.id) {
+          console.debug('[CHATBOX]', 'Subscribing to new message:', message.id);
+          this.subscribeToMessage(message.id);
+        }
+      });
+    }
+
+    // Subscribe to conversation updates
+    if (this.props.conversationID && this.props.bridge) {
+      this.subscribeToConversation(this.props.conversationID);
+    }
 
     // we go this way if we have more messages than before or if the content of the last message
     // changed, this happens when the last message from assistant changes from "Agent is researching..." to the actual answer
@@ -159,6 +224,10 @@ class ChatBox extends React.Component {
           this.setState({ generatingResponse: false });
           this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
+        } else if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status === 'computing') {
+          // Keep generatingResponse true when message is in computing status (placeholder state)
+          console.debug('[CHATBOX]', 'componentDidUpdate: Keeping generatingResponse true for computing message:', lastMessage.id);
+          this.setState({ generatingResponse: true });
         } else {
           //this is to add generating reponse after an user submitted message but not when you are in a historic conversation with last message from user
           this.setState({ generatingResponse: true });
@@ -172,7 +241,16 @@ class ChatBox extends React.Component {
   }
 
   componentWillUnmount () {
-    this.stopPolling();
+    // Clear the streaming check interval (if it exists)
+    if (this.streamingCheckInterval) {
+      clearInterval(this.streamingCheckInterval);
+    }
+
+    // Remove global state update listener
+    if (this.globalStateUpdateHandler) {
+      window.removeEventListener('globalStateUpdate', this.globalStateUpdateHandler);
+    }
+
     this.setState({
       chat: {
         message: null,
@@ -183,28 +261,390 @@ class ChatBox extends React.Component {
       messages: [],
     });
 
+    // Unsubscribe from message paths
+    if (this.props.bridge && this.subscribedMessagePaths) {
+      this.subscribedMessagePaths.forEach(path => {
+        this.props.bridge.unsubscribe(path);
+      });
+    }
+
     window.removeEventListener('resize', this.handleResize);
   }
 
-  //stops the watcher, important when we switch conversations
-  stopPolling = () => {
-    if (this.watcher) {
-      clearInterval(this.watcher);
-      this.watcher = null;
+  // Set up Bridge message handler for JSON-PATCH updates
+  setupBridgeMessageHandler = () => {
+    if (!this.props.bridge) return;
+
+    if (this.bridgeMessageHandlerSet) {
+      console.debug('[CHATBOX]', 'Bridge message handler already set up');
+      return;
+    }
+
+    // Check if bridge has props and responseCapture (for test compatibility)
+    if (!this.props.bridge.props || typeof this.props.bridge.props.responseCapture !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge does not have responseCapture method, skipping message handler setup');
+      return;
+    }
+
+    // Store subscribed message paths
+    this.subscribedMessagePaths = new Set();
+
+    // Set up message handler
+    const originalHandler = this.props.bridge.props.responseCapture;
+    this.props.bridge.props.responseCapture = (msg) => {
+      this.handleBridgeMessage(msg);
+      if (originalHandler) originalHandler(msg);
+    };
+
+    this.bridgeMessageHandlerSet = true;
+    console.debug('[CHATBOX]', 'Bridge message handler set up successfully');
+  };
+
+  // Handle Bridge messages (JSON-PATCH updates)
+  handleBridgeMessage = async (msg) => {
+    if (!msg) return;
+
+    console.debug('[CHATBOX]', 'Received Bridge message:', {
+      type: msg.type,
+      hasPath: !!msg.path,
+      hasValue: !!msg.value,
+      path: msg.path,
+      valueKeys: msg.value ? Object.keys(msg.value) : null,
+      streamingMessageId: this.state.streamingMessageId,
+      fullMessage: msg
+    });
+
+    // Handle JSON-PATCH messages for conversation updates
+    if (msg.type === 'PATCH') {
+      console.debug('[CHATBOX]', 'Processing PATCH message:', msg);
+
+      // Extract path and value from the message
+      const path = msg.path;
+      const value = msg.value;
+
+      console.debug('[CHATBOX]', 'Extracted PATCH data:', { path, value });
+
+      // Handle conversation updates
+      if (path && path.startsWith('/conversations/')) {
+        console.debug('[CHATBOX]', 'Received conversation PATCH:', path, value);
+        // Refresh conversation data
+        if (this.props.conversationID) {
+          this.props.getMessages({ conversation_id: this.props.conversationID });
+        }
+      }
+
+      // Handle message updates
+      if (path && path.startsWith('/messages/')) {
+        console.debug('[CHATBOX]', 'Received message PATCH:', path, value);
+        const messageId = path.split('/')[2];
+        console.debug('[CHATBOX]', 'Message ID from path:', messageId);
+        console.debug('[CHATBOX]', 'Current streaming message ID:', this.state.streamingMessageId);
+        console.debug('[CHATBOX]', 'Message IDs match:', messageId === this.state.streamingMessageId);
+
+        // Handle initial computing status (placeholder message)
+        if (value && value.status === 'computing') {
+          console.debug('[CHATBOX]', 'Message in computing status (placeholder):', {
+            messageId: messageId,
+            currentStreamingId: this.state.streamingMessageId,
+            currentIsStreaming: this.state.isStreaming,
+            content: value.content ? value.content.substring(0, 100) + '...' : 'no content'
+          });
+
+          // Set generatingResponse to true to show placeholder
+          if (!this.state.streamingMessageId || this.state.streamingMessageId === messageId) {
+            console.debug('[CHATBOX]', 'Setting generatingResponse for computing message:', messageId);
+
+            this.setState({
+              streamingMessageId: messageId,
+              isStreaming: false,
+              streamingContent: '',
+              generatingResponse: true  // Show placeholder while computing
+            }, () => {
+              console.debug('[CHATBOX]', 'State updated for computing - generatingResponse:', this.state.generatingResponse);
+              this.forceUpdate();
+              // Scroll to bottom when computing status is set
+              this.scrollToBottom();
+            });
+          }
+        } else if (value && value.status === 'streaming') {
+          console.debug('[CHATBOX]', 'Message transitioned to streaming:', {
+            messageId: messageId,
+            currentStreamingId: this.state.streamingMessageId,
+            currentIsStreaming: this.state.isStreaming,
+            content: value.content ? value.content.substring(0, 100) + '...' : 'no content'
+          });
+
+          // Set streaming state if we don't have a streaming message ID yet, or if this is the same message
+          if (!this.state.streamingMessageId) {
+            console.debug('[CHATBOX]', 'Setting initial streaming state for message:', messageId);
+
+            // Create a temporary streaming message to show in the UI
+            const streamingMessage = {
+              id: messageId,
+              fabric_id: messageId,
+              content: value.content || '',
+              status: 'streaming',
+              role: 'assistant',
+              author: 'Sensemaker',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            console.debug('[CHATBOX]', 'About to set streaming state:', {
+              streamingMessageId: messageId,
+              isStreaming: true,
+              streamingContent: value.content || '',
+              generatingResponse: value.content ? false : true
+            });
+
+            // Use setState to properly trigger React updates, then force update for immediate rendering
+            this.setState({
+              streamingMessageId: messageId,
+              isStreaming: true,
+              streamingContent: value.content || '',
+              generatingResponse: value.content ? false : true  // Keep generatingResponse true if no content yet
+            }, () => {
+              console.debug('[CHATBOX]', 'State updated - streamingMessageId:', this.state.streamingMessageId, 'isStreaming:', this.state.isStreaming);
+              // Force additional re-render to ensure streaming content is displayed
+              this.forceUpdate();
+              // Scroll to bottom when streaming starts
+              this.scrollToBottom();
+            });
+          } else if (this.state.streamingMessageId === messageId) {
+            console.debug('[CHATBOX]', 'Updating streaming state for existing message:', messageId);
+
+            // Use setState to properly trigger React updates, then force update for immediate rendering
+            this.setState({
+              streamingContent: value.content || '',
+              isStreaming: true,
+              generatingResponse: false  // Stop showing "generating response" once we have content
+            }, () => {
+              console.debug('[CHATBOX]', 'Streaming content updated:', this.state.streamingContent?.substring(0, 50) + '...');
+              // Force additional re-render to ensure streaming content is displayed
+              this.forceUpdate();
+              // Scroll to bottom when streaming content updates
+              this.scrollToBottom();
+            });
+          }
+
+          // Fallback: If state still isn't set after a short delay, force it
+          setTimeout(() => {
+            if (!this.state.streamingMessageId && value && value.status === 'streaming') {
+              console.debug('[CHATBOX]', 'Fallback: Forcing streaming state for message:', messageId);
+
+              // Use setState to properly trigger React updates, then force update for immediate rendering
+              this.setState({
+                streamingMessageId: messageId,
+                isStreaming: true,
+                streamingContent: value.content || '',
+                generatingResponse: value.content ? false : true
+              }, () => {
+                console.debug('[CHATBOX]', 'Fallback state updated - streamingMessageId:', this.state.streamingMessageId);
+                // Force additional re-render to ensure streaming content is displayed
+                this.forceUpdate();
+                // Scroll to bottom when fallback streaming state is set
+                this.scrollToBottom();
+              });
+            }
+          }, 100);
+        }
+
+        // Note: Streaming content updates are now handled in the streaming status check above
+
+        // If message is complete, refresh messages and stop streaming
+        if (value && value.status === 'ready') {
+          console.debug('[CHATBOX]', 'Message completed:', messageId);
+
+          // Check if we have the complete content in the value
+          if (value.content && value.content.length > 25) {
+            console.debug('[CHATBOX]', 'Message ready with complete content:', {
+              messageId: messageId,
+              contentLength: value.content.length,
+              contentPreview: value.content.substring(0, 50) + '...'
+            });
+
+            // Update the global state with the complete content immediately
+            if (this.globalState && this.globalState.messages) {
+              this.globalState.messages[messageId] = {
+                ...this.globalState.messages[messageId],
+                content: value.content,
+                status: 'ready',
+                updated_at: value.updated_at
+              };
+              console.debug('[CHATBOX]', 'Updated global state with complete content');
+            }
+
+            // Keep streaming content until the message refresh completes
+            // Don't clear streaming state immediately
+          } else {
+            console.debug('[CHATBOX]', 'Message ready but content seems incomplete:', {
+              messageId: messageId,
+              contentLength: value.content?.length || 0,
+              contentPreview: value.content?.substring(0, 50) + '...'
+            });
+          }
+
+          // Refresh messages to get final content for any completed message
+          if (this.props.conversationID) {
+            console.debug('[CHATBOX]', 'Refreshing messages for completed message:', messageId);
+            try {
+              await this.props.getMessages({ conversation_id: this.props.conversationID });
+              console.debug('[CHATBOX]', 'Successfully refreshed messages for completed message:', messageId);
+
+              // After refreshing, clear streaming state if this was the streaming message
+              if (this.state.streamingMessageId === messageId) {
+                console.debug('[CHATBOX]', 'Clearing streaming state after message refresh');
+                // Add a small delay to ensure the message refresh has time to update the UI
+                setTimeout(() => {
+                  this.setState({
+                    isStreaming: false,
+                    streamingMessageId: null,
+                    streamingContent: '',
+                    generatingResponse: false
+                  }, () => {
+                    // Scroll to bottom when streaming completes
+                    this.scrollToBottom();
+                  });
+                }, 200); // Increased delay to ensure content is preserved
+              }
+            } catch (error) {
+              console.error('[CHATBOX]', 'Failed to refresh messages for completed message:', messageId, error);
+            }
+          }
+        }
+      }
     }
   };
 
-  //starts the watchear again
-  startPolling = (id) => {
-    // Ensure any existing polling is stopped before starting a new one
-    this.stopPolling();
+  // Subscribe to a specific message path
+  subscribeToMessage = (messageId) => {
+    if (!this.props.bridge || !messageId) {
+      console.debug('[CHATBOX]', 'Cannot subscribe to message:', {
+        hasBridge: !!this.props.bridge,
+        messageId: messageId
+      });
+      return;
+    }
 
-    // Start polling for messages in the current conversation
-    this.watcher = setInterval(() => {
-      this.props.getMessages({ conversation_id: id });
-    }, 5000);
+    // Check if bridge has subscribe method (for test compatibility)
+    if (typeof this.props.bridge.subscribe !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge does not have subscribe method, skipping subscription');
+      return;
+    }
+
+    // Initialize subscribedMessagePaths if not already done
+    if (!this.subscribedMessagePaths) {
+      this.subscribedMessagePaths = new Set();
+    }
+
+    const path = `/messages/${messageId}`;
+    if (!this.subscribedMessagePaths.has(path)) {
+      console.debug('[CHATBOX]', 'Subscribing to message path:', path);
+      this.props.bridge.subscribe(path);
+      this.subscribedMessagePaths.add(path);
+      console.debug('[CHATBOX]', 'Successfully subscribed to message path:', path);
+    } else {
+      console.debug('[CHATBOX]', 'Already subscribed to message path:', path);
+    }
   };
 
+  // Unsubscribe from a specific message path
+  unsubscribeFromMessage = (messageId) => {
+    if (!this.props.bridge || !messageId) return;
+
+    // Check if bridge has unsubscribe method (for test compatibility)
+    if (typeof this.props.bridge.unsubscribe !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge does not have unsubscribe method, skipping unsubscription');
+      return;
+    }
+
+    // Initialize subscribedMessagePaths if not already done
+    if (!this.subscribedMessagePaths) {
+      this.subscribedMessagePaths = new Set();
+    }
+
+    const path = `/messages/${messageId}`;
+    if (this.subscribedMessagePaths.has(path)) {
+      this.props.bridge.unsubscribe(path);
+      this.subscribedMessagePaths.delete(path);
+      console.debug('[CHATBOX]', 'Unsubscribed from message path:', path);
+    }
+  };
+
+  // Subscribe to conversation updates
+  subscribeToConversation = (conversationId) => {
+    if (!this.props.bridge || !conversationId) return;
+
+    // Check if bridge has subscribe method (for test compatibility)
+    if (typeof this.props.bridge.subscribe !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge does not have subscribe method, skipping conversation subscription');
+      return;
+    }
+
+    // Initialize subscribedMessagePaths if not already done
+    if (!this.subscribedMessagePaths) {
+      this.subscribedMessagePaths = new Set();
+    }
+
+    const path = `/conversations/${conversationId}`;
+    if (!this.subscribedMessagePaths.has(path)) {
+      console.debug('[CHATBOX]', 'Subscribing to conversation path:', path);
+      this.props.bridge.subscribe(path);
+      this.subscribedMessagePaths.add(path);
+      console.debug('[CHATBOX]', 'Successfully subscribed to conversation path:', path);
+    }
+  };
+
+  // Setup streaming listener for a specific message (for testing compatibility)
+  setupStreamingListener = (messageId) => {
+    if (!this.props.bridge || !messageId) {
+      console.debug('[CHATBOX]', 'Cannot setup streaming listener:', {
+        hasBridge: !!this.props.bridge,
+        messageId: messageId
+      });
+      return;
+    }
+
+    console.debug('[CHATBOX]', 'Setting up streaming listener for message:', messageId);
+
+    // Subscribe to the message path
+    this.subscribeToMessage(messageId);
+
+    // Set up streaming state
+    this.setState({
+      streamingMessageId: messageId,
+      isStreaming: true,
+      streamingContent: ''
+    });
+
+    // Set up Bridge message handler if not already done
+    if (!this.bridgeMessageHandlerSet) {
+      this.setupBridgeMessageHandler();
+    }
+  };
+
+  // Unsubscribe from conversation updates
+  unsubscribeFromConversation = (conversationId) => {
+    if (!this.props.bridge || !conversationId) return;
+
+    // Check if bridge has unsubscribe method (for test compatibility)
+    if (typeof this.props.bridge.unsubscribe !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge does not have unsubscribe method, skipping conversation unsubscription');
+      return;
+    }
+
+    // Initialize subscribedMessagePaths if not already done
+    if (!this.subscribedMessagePaths) {
+      this.subscribedMessagePaths = new Set();
+    }
+
+    const path = `/conversations/${conversationId}`;
+    if (this.subscribedMessagePaths.has(path)) {
+      this.props.bridge.unsubscribe(path);
+      this.subscribedMessagePaths.delete(path);
+      console.debug('[CHATBOX]', 'Unsubscribed from conversation path:', path);
+    }
+  };
 
   //these 2 works for the microphone icon color, they are necessary
   handleTextareaFocus = () => {
@@ -233,7 +673,7 @@ class ChatBox extends React.Component {
     this.setState({ query: value });
   };
 
-  handleChangeDropdown = (e, { name, value }) => {
+  handleChangeDropdown = async (e, { name, value }) => {
     if (value != '') {
       this.setState({ query: value });
       const { message } = this.props.chat;
@@ -246,22 +686,38 @@ class ChatBox extends React.Component {
         content: value,
       }
 
-      // dispatch submitMessage
-      this.props.submitMessage(
-        dataToSubmit
-      ).then((output) => {
+      try {
+        console.debug('[CHATBOX]', 'Submitting dropdown streaming message:', dataToSubmit);
 
-        // dispatch getMessages
-        this.props.getMessages({ conversation_id: message?.conversation });
+        const result = await this.props.submitStreamingMessage(dataToSubmit);
 
-        if (!this.watcher) {
-          this.watcher = setInterval(() => {
-            this.props.getMessages({ conversation_id: message?.conversation });
-          }, 5000);
-        }
+        console.debug('[CHATBOX]', 'Dropdown streaming message submitted:', result);
 
-        this.setState({ loading: false });
-      });
+        this.setState({
+          streamingMessageId: result.assistant_message_id,
+          isStreaming: true,
+          streamingContent: '',
+          loading: false
+        });
+
+        // Subscribe to the message path for real-time updates
+        this.subscribeToMessage(result.assistant_message_id);
+
+        // Streaming is handled through Bridge's responseCapture mechanism
+
+      } catch (error) {
+        console.error('[CHATBOX]', 'Dropdown streaming message submission failed:', error);
+
+        this.setState({
+          loading: false,
+          error: 'Failed to send message. Please try again.'
+        });
+
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          this.setState({ error: null });
+        }, 5000);
+      }
 
       // Clear the input after sending the message
       this.setState({ query: '' });
@@ -280,15 +736,17 @@ class ChatBox extends React.Component {
     const { message } = this.props.chat;
     const { documentChat, context, agent } = this.props;
 
-    let dataToSubmit;
+    if (!query.trim()) return;
 
-    this.stopPolling();
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
     this.props.getMessageInformation(query);
 
-    //if we don't have previous chat it means this is a new conversation
+    let dataToSubmit;
+
+    // Prepare data for submission
     if (!this.props.previousChat) {
+      // New conversation
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: query,
@@ -297,7 +755,7 @@ class ChatBox extends React.Component {
         file_id: this.state.uploadedFileId || null
       }
     } else {
-      //else, we are in a previous one and we already have a conversationID for this
+      // Existing conversation
       dataToSubmit = {
         conversation_id: this.props.conversationID,
         content: query,
@@ -307,24 +765,54 @@ class ChatBox extends React.Component {
       }
     }
 
-    // dispatch submitMessage
-    this.props.submitMessage(dataToSubmit).then((output) => {
-      // dispatch getMessages
-      this.props.getMessages({ conversation_id: message?.conversation });
+    try {
+      console.debug('[CHATBOX]', 'Submitting streaming message:', {
+        dataToSubmit: dataToSubmit,
+        query: query,
+        queryType: typeof query,
+        queryLength: query ? query.length : 0,
+        contentValue: dataToSubmit.content,
+        contentType: typeof dataToSubmit.content
+      });
+      const result = await this.props.submitStreamingMessage(dataToSubmit);
+      console.debug('[CHATBOX]', 'Streaming message submitted:', result);
 
-      if (!this.watcher) {
-        this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: message?.conversation });
-        }, 5000);
-      }
-      this.setState({ loading: false });
-    });
+      this.setState({
+        streamingMessageId: result.assistant_message_id,
+        isStreaming: true,
+        streamingContent: '',
+        loading: false,
+        generatingResponse: true  // Show "generating response" message until we get streaming content
+      }, () => {
+        // Scroll to bottom when new message is submitted
+        this.scrollToBottom();
+      });
+
+      // Subscribe to the message path for real-time updates
+      this.subscribeToMessage(result.assistant_message_id);
+
+      // Streaming is handled through Bridge's responseCapture mechanism
+
+    } catch (error) {
+      console.error('[CHATBOX]', 'Streaming message submission failed:', error);
+
+      // Show error to user
+      this.setState({
+        loading: false,
+        error: 'Failed to send message. Please try again.'
+      });
+
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        this.setState({ error: null });
+      }, 5000);
+    }
 
     // Clear the input after sending the message
     this.setState({ query: '' });
-    if (this.props.conversationID && this.props.fetchData) {
-      this.props.fetchData(this.props.conversationID);
-    }
+
+    // Don't call fetchData here as it resets the streaming state
+    // The Bridge will handle real-time updates via JSON-PATCH messages
   }
 
   regenerateAnswer = (event) => {
@@ -334,8 +822,6 @@ class ChatBox extends React.Component {
     const { message } = this.props.chat;
     const { documentChat } = this.props;
 
-    this.stopPolling();
-
     let dataToSubmit;
     this.setState({ reGeneratingResponse: true, loading: true, previousFlag: true, startedChatting: true });
 
@@ -344,14 +830,13 @@ class ChatBox extends React.Component {
     //scrolls so it shows the regenerating message
     this.scrollToBottom();
 
-    //if we don't have previous chat it means this is a new conversation
+    // Prepare data for regeneration
     if (!this.props.previousChat) {
       dataToSubmit = {
         conversation_id: message?.conversation,
         content: messageRegen.content,
         id: messageRegen.id
       }
-      //else, we are in a previous one and we already have a conversationID for this
     } else {
       dataToSubmit = {
         conversation_id: this.props.conversationID,
@@ -362,19 +847,48 @@ class ChatBox extends React.Component {
 
     const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
 
-    // dispatch submitMessage
-    this.props.regenAnswer(dataToSubmit, null, fileFabricID).then((output) => {
-      // dispatch getMessages
-      this.props.getMessages({ conversation_id: message?.conversation });
+    // Use streaming for regeneration
+    try {
+      console.debug('[CHATBOX]', 'Regenerating answer with streaming:', dataToSubmit);
 
-      if (!this.watcher) {
-        this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: message?.conversation });
+      this.props.regenAnswer(dataToSubmit, null, fileFabricID).then((result) => {
+        console.debug('[CHATBOX]', 'Regeneration streaming started:', result);
+
+        this.setState({
+          streamingMessageId: result.assistant_message_id,
+          isStreaming: true,
+          streamingContent: '',
+          loading: false
+        });
+
+        // Subscribe to the message path for real-time updates
+        this.subscribeToMessage(result.assistant_message_id);
+
+        // Streaming is handled through Bridge's responseCapture mechanism
+      }).catch((error) => {
+        console.error('[CHATBOX]', 'Regeneration streaming failed:', error);
+        this.setState({
+          loading: false,
+          error: 'Failed to regenerate answer. Please try again.'
+        });
+
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          this.setState({ error: null });
         }, 5000);
-      }
+      });
+    } catch (error) {
+      console.error('[CHATBOX]', 'Regeneration failed:', error);
+      this.setState({
+        loading: false,
+        error: 'Failed to regenerate answer. Please try again.'
+      });
 
-      this.setState({ loading: false });
-    });
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        this.setState({ error: null });
+      }, 5000);
+    }
 
     // Clear the input after sending the message
     this.setState({ query: '' });
@@ -771,6 +1285,190 @@ class ChatBox extends React.Component {
     }
   };
 
+  // Get current global state from Bridge
+  getGlobalState = () => {
+    return this.props.bridge ? this.props.bridge.getGlobalState() : {};
+  };
+
+  // Handle global state updates from Bridge
+  handleGlobalStateUpdate = (event) => {
+    const { operation, globalState } = event.detail;
+
+    console.debug('[CHATBOX]', 'Received global state update:', {
+      operation,
+      globalStateKeys: Object.keys(globalState),
+      messagesCount: Object.keys(globalState.messages || {}).length,
+      streamingMessages: Object.entries(globalState.messages || {}).filter(([id, msg]) => msg.status === 'streaming').length,
+      operationPath: operation?.path,
+      operationOp: operation?.op,
+      operationValue: operation?.value ? {
+        status: operation.value.status,
+        hasContent: !!operation.value.content,
+        contentLength: operation.value.content?.length || 0
+      } : null
+    });
+
+    // Preserve streaming content before updating global state
+    const currentStreamingContent = this.state.streamingContent;
+    const currentStreamingMessageId = this.state.streamingMessageId;
+
+    // Update local reference to global state
+    this.globalState = globalState;
+
+    // If we have streaming content but it's not in the new global state, preserve it
+    if (currentStreamingContent && currentStreamingMessageId &&
+        (!globalState.messages || !globalState.messages[currentStreamingMessageId])) {
+      console.debug('[CHATBOX]', 'Preserving streaming content during global state update:', {
+        messageId: currentStreamingMessageId,
+        contentLength: currentStreamingContent.length
+      });
+
+      // Ensure the streaming message exists in global state
+      if (!this.globalState.messages) {
+        this.globalState.messages = {};
+      }
+      this.globalState.messages[currentStreamingMessageId] = {
+        content: currentStreamingContent,
+        status: 'streaming',
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    // Sync global state streaming messages to component state
+    this.syncGlobalStateToComponentState();
+
+    // Don't force update here - React will handle re-renders automatically
+    // this.forceUpdate();
+  };
+
+  syncGlobalStateToComponentState = () => {
+    try {
+      // Use the local globalState reference that was updated in handleGlobalStateUpdate
+      const globalState = this.globalState || {};
+
+      console.debug('[CHATBOX]', 'syncGlobalStateToComponentState called:', {
+        globalStateMessages: Object.keys(globalState.messages || {}),
+        globalStateMessageDetails: Object.entries(globalState.messages || {}).map(([id, msg]) => ({
+          id,
+          status: msg.status,
+          hasContent: !!msg.content,
+          contentLength: msg.content?.length || 0
+        }))
+      });
+
+      // Check if there are any streaming messages in global state
+      if (globalState.messages) {
+        const streamingMessages = Object.entries(globalState.messages)
+          .filter(([id, message]) => message.status === 'streaming' && message.content)
+          .sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+
+        console.debug('[CHATBOX]', 'Filtered streaming messages:', streamingMessages.map(([id, msg]) => ({
+          id,
+          status: msg.status,
+          hasContent: !!msg.content,
+          contentLength: msg.content?.length || 0
+        })));
+
+        // Also log all messages for debugging
+        console.debug('[CHATBOX]', 'All messages in global state:', Object.entries(globalState.messages || {}).map(([id, msg]) => ({
+          id,
+          status: msg.status,
+          hasContent: !!msg.content,
+          contentLength: msg.content?.length || 0
+        })));
+
+        if (streamingMessages.length > 0) {
+          const [latestStreamingId, latestStreamingMessage] = streamingMessages[0];
+
+          console.debug('[CHATBOX]', 'Syncing streaming message to component state:', {
+            messageId: latestStreamingId,
+            content: latestStreamingMessage.content?.substring(0, 50) + '...',
+            status: latestStreamingMessage.status
+          });
+
+          this.setState({
+            streamingMessageId: latestStreamingId,
+            streamingContent: latestStreamingMessage.content,
+            isStreaming: true,  // Set to true since we have a streaming message
+            generatingResponse: false  // Stop showing placeholder when streaming starts
+          }, () => {
+            console.debug('[CHATBOX]', 'State updated for streaming message:', {
+              streamingMessageId: this.state.streamingMessageId,
+              streamingContent: this.state.streamingContent?.substring(0, 50) + '...',
+              isStreaming: this.state.isStreaming,
+              generatingResponse: this.state.generatingResponse
+            });
+
+            // Scroll to bottom when streaming content updates
+            this.scrollToBottom();
+          });
+        } else {
+          // Check for computing messages (placeholder state)
+          const computingMessages = Object.entries(globalState.messages)
+            .filter(([id, message]) => message.status === 'computing')
+            .sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+
+          if (computingMessages.length > 0) {
+            const [latestComputingId, latestComputingMessage] = computingMessages[0];
+
+            console.debug('[CHATBOX]', 'Syncing computing message to component state:', {
+              messageId: latestComputingId,
+              content: latestComputingMessage.content,
+              status: latestComputingMessage.status
+            });
+
+            this.setState({
+              streamingMessageId: latestComputingId,
+              streamingContent: latestComputingMessage.content || '',
+              isStreaming: false,
+              generatingResponse: true  // Show placeholder while computing
+            });
+          } else {
+            // Check if our current streaming message is now ready in global state
+            if (this.state.streamingMessageId && globalState.messages?.[this.state.streamingMessageId]) {
+              const currentMessage = globalState.messages[this.state.streamingMessageId];
+              if (currentMessage.status === 'ready' && currentMessage.content) {
+                console.debug('[CHATBOX]', 'Current streaming message is now ready in global state:', {
+                  messageId: this.state.streamingMessageId,
+                  contentLength: currentMessage.content.length,
+                  status: currentMessage.status
+                });
+
+                // Keep the streaming content until the message refresh completes
+                // Don't clear streaming state here - let the message completion handler do it
+                return;
+              }
+            }
+
+            // No streaming, computing, or ready messages that match our streaming ID
+            // Only clear streaming state if we're not currently streaming a specific message
+            // AND we have no streaming content to preserve
+            if ((this.state.isStreaming || this.state.generatingResponse) &&
+                !this.state.streamingMessageId &&
+                !this.state.streamingContent) {
+              console.debug('[CHATBOX]', 'No streaming or computing messages found, stopping streaming state');
+              this.setState({
+                streamingMessageId: null,
+                streamingContent: '',
+                isStreaming: false,
+                generatingResponse: false
+              });
+            } else if (this.state.streamingMessageId && this.state.streamingContent) {
+              // We have streaming content but no matching message in global state
+              // This could be a timing issue - preserve the content for now
+              console.debug('[CHATBOX]', 'Preserving streaming content despite no matching global state message:', {
+                streamingMessageId: this.state.streamingMessageId,
+                streamingContentLength: this.state.streamingContent.length
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[CHATBOX]', 'Error syncing global state to component state:', error);
+    }
+  };
+
   renderContextCard = () => {
     const { context } = this.props;
     if (!context || typeof context !== 'object' || Object.keys(context).length === 0) {
@@ -863,33 +1561,42 @@ class ChatBox extends React.Component {
   };
 
   render () {
-    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
-    const { messages, message } = this.props.chat;
+    // Use local globalState reference instead of calling getGlobalState() on every render
+    const globalState = this.globalState || {};
+    // Remove excessive debug logging that was causing console spam
+    // console.log('[CHATBOX] [RENDER] Render method called with state:', {
+    //   generatingResponse: this.state.generatingResponse,
+    //   isStreaming: this.state.isStreaming,
+    //   streamingContent: this.state.streamingContent ? 'has content' : 'no content',
+    //   streamingMessageId: this.state.streamingMessageId,
+    //   globalStateMessagesCount: Object.keys(globalState.messages || {}).length
+    // });
 
-    const {
-      loading,
-      generatingResponse,
-      reGeneratingResponse,
-      query,
-      windowWidth,
-      windowHeight,
-      checkingMessageID,
-    } = this.state;
+    const { isSending, placeholder, homePage, announTitle, announBody, conversationID, actualConversation, context, documentChat } = this.props;
+    const { conversations } = this.props;
+    const { loading, editLoading, isUploading, uploadProgress, formatError, errorMsg, unsupportedVideoWarning, attachingFile, editingTitle, showFilePreview, filePreview, generatingResponse, reGeneratingResponse, groupedMessages, query, windowWidth, windowHeight, checkingMessageID } = this.state;
 
-    const {
-      isSending,
-      placeholder,
-      homePage,
-      announTitle,
-      announBody,
-      conversationID,
-      actualConversation,
-      context,
-      documentChat
-    } = this.props;
+    // Get messages from the correct source
+    const messages = this.props.chat?.messages || [];
+
+    // Ensure messages are always an array
+    const safeMessages = Array.isArray(messages) ? messages : [];
+    const allMessages = safeMessages;
+
+    // Remove excessive debug logging that was causing console spam
+    // console.debug('[CHATBOX]', 'Render - messages state:', {
+    //   isStreaming: this.state.isStreaming,
+    //   streamingMessageId: this.state.streamingMessageId,
+    //   allMessagesCount: allMessages?.length,
+    //   generatingResponse: this.state.generatingResponse,
+    //   streamingContent: this.state.streamingContent?.substring(0, 50) + '...',
+    //   shouldShowDirectStreaming: this.state.isStreaming && !!this.state.streamingContent
+    // });
 
     // Use controlled input value if provided
     const inputValue = this.props.inputValue !== undefined ? this.props.inputValue : query;
+
+    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
 
     //this is the style of the chat container with no messages on the chat
     //the elements are on a flex-column but all together
@@ -905,7 +1612,7 @@ class ChatBox extends React.Component {
     //and we put normally justify-content space-between, wich pushes the prompt bar to bottom
     //in cases where the screen is really tall (height > 1200px) and the screen is taller than wider
     //then we dont use space-between, this makes the prompt bar sticks to the last message of the chat
-    if (messages.length > 0) {
+    if (safeMessages.length > 0) {
       chatContainerStyle = {
         ...chatContainerStyle,
         height: '98%',
@@ -945,8 +1652,8 @@ class ChatBox extends React.Component {
       inputStyle.marginLeft = '0';
     }
 
-    if (message?.conversation && !conversationID && !documentChat) {
-      return <Navigate to={`/conversations/${message.conversation}`} replace />;
+    if (this.props.chat?.message?.conversation && !conversationID && !documentChat) {
+      return <Navigate to={`/conversations/${this.props.chat.message.conversation}`} replace />;
     }
 
     return (
@@ -989,8 +1696,10 @@ class ChatBox extends React.Component {
           )}
           {/* Context card - displayed when context is provided */}
           {!this.props.hideContext && this.renderContextCard()}
+
+
           {/* The chat messages start rendering here */}
-          {(messages && messages.length > 0) ? this.state.groupedMessages.map((group, groupIndex) => {
+          {(allMessages && allMessages.length > 0) ? this.groupMessages(allMessages).map((group, groupIndex) => {
             let message;
 
             //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
@@ -1007,6 +1716,25 @@ class ChatBox extends React.Component {
                 if (fileId) this.fetchFileMetadata(fileId);
               });
             }
+
+            // Skip rendering messages with status "computing" when we're showing the placeholder
+            if (message.role === "assistant" && message.status === "computing" && this.state.generatingResponse) {
+              console.debug('[CHATBOX]', 'Skipping computing message:', message.id);
+              return null;
+            }
+
+            // Remove excessive debug logging that was causing console spam
+            // console.debug('[CHATBOX]', 'Rendering message:', {
+            //   messageId: message.id,
+            //   role: message.role,
+            //   status: message.status,
+            //   hasContent: !!message.content,
+            //   contentLength: message.content?.length || 0,
+            //   generatingResponse: this.state.generatingResponse,
+            //   isStreaming: this.state.isStreaming,
+            //   globalStateMessage: this.globalState.messages?.[message.id],
+            //   hasGlobalStateContent: !!this.globalState.messages?.[message.id]?.content
+            // });
 
             return (
               <Feed.Event key={message.id} data-message-id={message.id}>
@@ -1122,8 +1850,72 @@ class ChatBox extends React.Component {
                         </ul>
                       </div>
                     )}
-                    {message.status !== "computing" && (
-                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
+                    {(message.status !== "computing" || this.state.streamingContent || globalState.messages?.[message.id]?.content) && (
+                      (() => {
+                        // Unified content rendering logic
+                        let contentToRender = message.content;
+
+                        // Check if this is the streaming message and we have streaming content
+                        const isStreamingMessage = (
+                          this.state.streamingMessageId === message.id ||
+                          this.state.streamingMessageId === message.fabric_id ||
+                          this.state.streamingMessageId === message.message_id ||
+                          this.state.streamingMessageId === message.local_id
+                        );
+
+                        // Priority: streaming content > global state content > message content
+                        if (isStreamingMessage && this.state.streamingContent) {
+                          contentToRender = this.state.streamingContent;
+                        } else if (globalState.messages?.[message.id]?.content) {
+                          // Use global state content (which should be the most up-to-date)
+                          contentToRender = globalState.messages[message.id].content;
+                        } else {
+                          // Fallback to message content
+                          contentToRender = message.content;
+                        }
+
+                        // Additional safety check: if we're streaming and have content, use it regardless
+                        if (this.state.isStreaming && this.state.streamingContent &&
+                            (this.state.streamingMessageId === message.id ||
+                             this.state.streamingMessageId === message.fabric_id ||
+                             this.state.streamingMessageId === message.message_id ||
+                             this.state.streamingMessageId === message.local_id)) {
+                          contentToRender = this.state.streamingContent;
+                          // Remove excessive debug logging that was causing console spam
+                          // console.debug('[CHATBOX]', 'Using streaming content for message:', {
+                          //   messageId: message.id,
+                          //   contentLength: contentToRender.length
+                          // });
+                        }
+
+                        // If we have content but message status is still computing,
+                        // treat it as if it has content (to avoid flickering)
+                        if (message.status === 'computing' && contentToRender && contentToRender.length > 25) {
+                          // Don't log every render - this was causing console spam
+                          // console.debug('[CHATBOX]', 'Message has content but status is computing, treating as ready:', {
+                          //   messageId: message.id,
+                          //   contentLength: contentToRender.length,
+                          //   status: message.status
+                          // });
+
+                          // Don't force update here - it causes infinite re-renders
+                          // this.forceUpdate();
+                        }
+
+                        // Remove excessive debug logging that was causing console spam
+                        // console.debug('[CHATBOX]', 'Rendering message content:', {
+                        //   messageId: message.id,
+                        //   status: message.status,
+                        //   hasContent: !!contentToRender,
+                        //   contentLength: contentToRender?.length || 0,
+                        //   isStreamingMessage: isStreamingMessage,
+                        //   hasStreamingContent: !!this.state.streamingContent
+                        // });
+
+                        return (
+                          <span dangerouslySetInnerHTML={{ __html: marked.parse(contentToRender?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
+                        );
+                      })()
                     )}
                     {/* DO NOT DELETE THIS BLOCK */}
                     {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
@@ -1138,10 +1930,17 @@ class ChatBox extends React.Component {
                   <Feed.Extra text>
                     {generatingResponse &&
                       group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                      !reGeneratingResponse && (
+                      !reGeneratingResponse && !this.state.isStreaming && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
                           {BRAND_NAME} is generating a response...
+                        </Header>
+                      )}
+                    {this.state.isStreaming &&
+                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
+                        <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                          <Icon name="spinner" loading />
+                          {BRAND_NAME} is thinking...
                         </Header>
                       )}
                     {reGeneratingResponse &&
@@ -1193,6 +1992,42 @@ class ChatBox extends React.Component {
               </Feed.Event>
             );
           }) : null}
+
+          {/* Placeholder for computing messages or empty conversations */}
+          {(() => {
+            const lastMessage = allMessages.length > 0 ? allMessages[allMessages.length - 1] : null;
+            const shouldShow = this.state.generatingResponse && (
+              !allMessages ||
+              allMessages.length === 0 ||
+              (lastMessage && lastMessage.role === 'assistant' && lastMessage.status === 'computing')
+            );
+            // Remove excessive debug logging that was causing console spam
+            // console.log('[CHATBOX]', '[RENDER] Placeholder check:', {
+            //   allMessagesLength: allMessages?.length || 0,
+            //   generatingResponse: this.state.generatingResponse,
+            //   lastMessageRole: lastMessage?.role,
+            //   lastMessageStatus: lastMessage?.status,
+            //   shouldShow: shouldShow
+            // });
+            return shouldShow && (
+              <Feed.Event>
+                <Feed.Content>
+                  <Feed.Summary className='info-assistant-header'>
+                    <Feed.User>
+                      <Link to={'/users/sensemaker'}>sensemaker</Link>{" "}
+                    </Feed.User>
+                    <Feed.Date as='abbr' title={new Date().toISOString()} className='relative'>now</Feed.Date>
+                  </Feed.Summary>
+                  <Feed.Extra text>
+                    <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                      <Icon name="spinner" loading />
+                      {BRAND_NAME} is thinking...
+                    </Header>
+                  </Feed.Extra>
+                </Feed.Content>
+              </Feed.Event>
+            );
+          })()}
         </Feed>)}
         {/* File Preview Component */}
         {this.state.showFilePreview && this.state.filePreview && (
@@ -1286,17 +2121,9 @@ class ChatBox extends React.Component {
   }
 
   scrollToBottom = () => {
-    //this timeout is used to make sure the scroll is done AFTER the component its updated and rendered, this fixes problems with generating reponse message
-    setTimeout(() => {
-      if (this.props.messagesEndRef.current) {
-        const feedElement = this.props.messagesEndRef.current.querySelector('.chat-feed');
-        const lastMessage = feedElement.lastElementChild;
-
-        if (lastMessage) {
-          lastMessage.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-    }, 0);
+    if (this.props.messagesEndRef && this.props.messagesEndRef.current) {
+      this.props.messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 }
 

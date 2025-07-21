@@ -89,6 +89,19 @@ class SensemakerUI extends React.Component {
 
   handleMessageSuccess = (action) => {
     const { id, isAdmin } = this.props.auth;
+
+    // If we have a conversation ID in the response, navigate to it
+    if (action && action.payload && action.payload.message && action.payload.message.object) {
+      const result = action.payload.message.object;
+
+      // Check if this is a new conversation (has conversation ID but no previous chat)
+      if (result.conversation && !this.props.chat?.message?.conversation) {
+        console.debug('[SENSEMAKER_UI]', 'Navigating to new conversation:', result.conversation);
+
+        // Navigate to the new conversation
+        window.location.href = `/conversations/${result.conversation}`;
+      }
+    }
   }
 
   handleRegisterSuccess = () => {
@@ -371,6 +384,7 @@ class SensemakerUI extends React.Component {
                   register={this.props.register}
                   resetChat={this.props.resetChat}
                   submitMessage={this.props.submitMessage}
+                  submitStreamingMessage={this.props.submitStreamingMessage}
                   contracts={this.props.contracts}
                   conversations={this.props.conversations}
                   conversation={this.props.conversation}
