@@ -63,7 +63,6 @@ async function main (input = {}) {
       target: 'web'
     };
 
-    console.log('[BUILD] Initializing bundler...');
     const compiler = new Bundler({
       document: site,
       webpack: webpackConfig,

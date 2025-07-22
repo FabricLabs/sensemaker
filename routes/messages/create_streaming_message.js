@@ -10,13 +10,6 @@ const toRelativeTime = require('../../functions/toRelativeTime');
 module.exports = async function (req, res, next) {
   const now = new Date();
 
-  // Debug: Log the raw request body
-  console.debug('[STREAMING_MESSAGE]', 'Raw request body:', {
-    body: req.body,
-    contentType: req.get('Content-Type'),
-    contentLength: req.get('Content-Length')
-  });
-
   // Handle JSON parsing errors - this should not happen if body-parser is working correctly
   if (!req.body || typeof req.body !== 'object') {
     console.error('[STREAMING_MESSAGE]', 'Invalid request body:', req.body);

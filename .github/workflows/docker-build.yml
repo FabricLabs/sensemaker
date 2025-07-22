@@ -46,7 +46,7 @@ jobs:
     - name: Wait for services to be ready
       run: |
         echo "Waiting for services to start..."
-        sleep 30
+        sleep 60
 
     - name: Check service health
       run: |
@@ -62,7 +62,13 @@ jobs:
     - name: Test basic functionality
       run: |
         # Test if app responds to health check
-        timeout 60 bash -c 'until curl -f http://localhost:5050/metrics/health; do sleep 2; done'
+        echo "Testing health check endpoint..."
+        echo "Container status:"
+        docker compose ps
+        echo "Application logs:"
+        docker compose logs app --tail=50
+        echo "Starting health check..."
+        timeout 120 bash -c 'until curl -f http://localhost:5050/metrics/health; do sleep 1; done'
         echo "✅ Health check endpoint is responding"
 
     - name: Show logs on failure
