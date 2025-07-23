@@ -27,7 +27,16 @@ module.exports = {
     view: require('./agents/view_agent')
   },
   alerts: {
-    list: require('./alerts/list_alerts')
+    list: require('./alerts/list_alerts'),
+    create: require('./alerts/create_alert'),
+    update: require('./alerts/update_alert'),
+    delete: require('./alerts/delete_alert')
+  },
+  triggers: {
+    list: require('./triggers/list_triggers'),
+    create: require('./triggers/create_trigger'),
+    update: require('./triggers/update_trigger'),
+    delete: require('./triggers/delete_trigger')
   },
   announcements: {
     create: require('./announcements/create_announcement'),
@@ -36,13 +45,14 @@ module.exports = {
     edit: require('./announcements/edit_announcement')
   },
   blobs: {
-    view: require('./blobs/view_blob')
+    view: require('./blobs/view_blob'),
+    meta: require('./blobs/meta_blob')
   },
   conversations: {
     create: require('./conversations/create_conversation'),
     list: require('./conversations/list_conversations'),
     view: require('./conversations/view_conversation'),
-    editConversationsTitle: require('./conversations/edit_conversations_title'),
+    edit: require('./conversations/edit_conversation'),
     getConversationsByID: require('./conversations/view_conversation')
   },
   contracts: {
@@ -61,7 +71,8 @@ module.exports = {
     // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
-    newConversation: require('./documents/document_new_chat')
+    newConversation: require('./documents/document_new_chat'),
+    getCommit: require('./documents/get_commit')
   },
   errors: {
     notFound: require('./errors/not_found')
@@ -121,7 +132,8 @@ module.exports = {
     create: require('./messages/create_message'),
     createCompletion: require('./messages/create_completion'),
     getMessages: require('./messages/list_messages'),
-    regenerate: require('./messages/regenerate_message')
+    regenerate: require('./messages/regenerate_message'),
+    stream: require('./messages/create_streaming_message')
   },
   peers: {
     list: require('./peers/list_peers'),
@@ -144,6 +156,16 @@ module.exports = {
     create: require('./reviews/create_review')
   },
   services: {
+    bitcoin: {
+      blocks: {
+        list: require('./services/bitcoin/list_blocks'),
+        view: require('./services/bitcoin/view_block')
+      },
+      transactions: {
+        list: require('./services/bitcoin/list_transactions'),
+        view: require('./services/bitcoin/view_transaction')
+      }
+    },
     discord: {
       guilds: {
         list: require('./services/discord/list_guilds'),
@@ -180,7 +202,9 @@ module.exports = {
   },
   settings: {
     updateCompliance: require('./settings/update_compliance'),
-    list: require('./settings/list_settings')
+    list: require('./settings/list_settings'),
+    get: require('./settings/get_setting'),
+    edit: require('./settings/edit_setting')
   },
   sources: {
     create: require('./sources/create_source'),

@@ -4,7 +4,8 @@
 const {
   BRAND_NAME,
   BROWSER_DATABASE_NAME,
-  BROWSER_DATABASE_TOKEN_TABLE
+  BROWSER_DATABASE_TOKEN_TABLE,
+  IS_CONFIGURED
 } = require('../constants');
 
 // Dependencies
@@ -25,8 +26,9 @@ const {
   Modal,
   Button,
   Header,
+  Icon,
   Loader
-  } = require('semantic-ui-react');
+} = require('semantic-ui-react');
 
 // Local Components
 const FrontPage = require('./FrontPage');
@@ -39,8 +41,10 @@ const TermsOfUseModal = require('./TermsOfUseModal');
 const LoginPage = require('./LoginPage');
 const NotFound = require('./NotFound');
 const TermsOfUse = require('./TermsOfUse');
+const Onboarding = require('./Onboarding');
 const Waitlist = require('./Waitlist');
 const Bridge = require('./Bridge');
+const Store = require('./Store');
 
 /**
  * The Sensemaker UI.
@@ -54,21 +58,50 @@ class SensemakerUI extends React.Component {
       responseCapture: this.handleMessageSuccess.bind(this)
     });
 
+    // Initialize store
+    this.store = new Store({
+      debug: false
+    });
+
+    // Create ref for onboarding component
+    this.onboardingRef = React.createRef();
+
     this.state = {
       isAuthenticated: false,
       isLoading: true,
       modalLogOut: false,
       loggedOut: false,
+      isConfigured: IS_CONFIGURED, // Track configuration status dynamically
+      configurationLoading: true, // Loading state for configuration check
     };
   }
 
   handleLoginSuccess = () => {
     console.log('setting isAuthenticated = true ...');
     this.setState({ isAuthenticated: true });
+
+    // Fetch configuration status when user logs in
+    if (this.props.token) {
+      this.setState({ configurationLoading: true });
+      this.fetchConfigurationStatus();
+    }
   }
 
   handleMessageSuccess = (action) => {
     const { id, isAdmin } = this.props.auth;
+
+    // If we have a conversation ID in the response, navigate to it
+    if (action && action.payload && action.payload.message && action.payload.message.object) {
+      const result = action.payload.message.object;
+
+      // Check if this is a new conversation (has conversation ID but no previous chat)
+      if (result.conversation && !this.props.chat?.message?.conversation) {
+        console.debug('[SENSEMAKER_UI]', 'Navigating to new conversation:', result.conversation);
+
+        // Navigate to the new conversation
+        window.location.href = `/conversations/${result.conversation}`;
+      }
+    }
   }
 
   handleRegisterSuccess = () => {
@@ -99,7 +132,7 @@ class SensemakerUI extends React.Component {
     }, 2000);
   }
 
-  handleModalClose = () =>{
+  handleModalClose = () => {
     this.setState({
       isAuthenticated: false,
       isLoading: false,
@@ -130,7 +163,66 @@ class SensemakerUI extends React.Component {
     }
   }
 
+  handleConfigurationComplete = () => {
+    // Configuration completed successfully - update state to reflect this
+    console.log('[SENSEMAKER:UI] Configuration completed, updating state...');
+    this.setState({
+      isConfigured: true,
+      configurationLoading: false
+    });
+  }
+
+  handleOpenConfiguration = () => {
+    // Open the configuration modal using the ref
+    if (this.onboardingRef.current) {
+      this.onboardingRef.current.handleOpen();
+    }
+  }
+
+  fetchConfigurationStatus = async () => {
+    try {
+      const response = await fetch('/settings/IS_CONFIGURED', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${this.props.token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[SENSEMAKER:UI] Fetched configuration status:', data);
+
+        // Update state with the server's configuration status
+        this.setState({
+          isConfigured: data.value === true || data.value === 'true',
+          configurationLoading: false
+        });
+      } else {
+        console.warn('[SENSEMAKER:UI] Failed to fetch configuration status:', response.status);
+        // Fall back to the constant value if the request fails
+        this.setState({
+          isConfigured: IS_CONFIGURED,
+          configurationLoading: false
+        });
+      }
+    } catch (error) {
+      console.error('[SENSEMAKER:UI] Error fetching configuration status:', error);
+      // Fall back to the constant value if there's an error
+      this.setState({
+        isConfigured: IS_CONFIGURED,
+        configurationLoading: false
+      });
+    }
+  }
+
   componentDidMount () {
+    // Start the bridge connection
+    if (this.bridge) {
+      console.debug('[SENSEMAKER:UI]', 'Starting bridge connection...');
+      this.bridge.start();
+    }
+
     // Set the application instance
     window.application = this;
 
@@ -149,24 +241,24 @@ class SensemakerUI extends React.Component {
     };
 
     dbRequest.onsuccess = (event) => {
-        const db = event.target.result;
-        const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
-        const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
-        const request = objectStore.get('authToken');
+      const db = event.target.result;
+      const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
+      const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
+      const request = objectStore.get('authToken');
 
-        request.onsuccess = (event) => {
-          if (request.result) {
-            this.setState({ isAuthenticated: true });
-            this.props.reLogin(request.result.value);
-          }
-        };
+      request.onsuccess = (event) => {
+        if (request.result) {
+          this.setState({ isAuthenticated: true });
+          this.props.reLogin(request.result.value);
+        }
+      };
 
-        request.onerror = (event) => {
-          console.error("IndexedDB error:", event.target.errorCode);
-        };
+      request.onerror = (event) => {
+        console.error("IndexedDB error:", event.target.errorCode);
+      };
     };
 
-    dbRequest.onerror = function(event) {
+    dbRequest.onerror = function (event) {
       console.error("IndexedDB error:", event.target.errorCode);
     };
 
@@ -177,6 +269,30 @@ class SensemakerUI extends React.Component {
     document.body.appendChild(graph);
 
     console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
+
+    // Fetch configuration status if we already have a token
+    if (this.props.token) {
+      this.fetchConfigurationStatus();
+    } else {
+      // If we don't have a token, we can't check configuration status, so stop loading
+      console.debug('[SENSEMAKER:UI]', 'No token available, stopping configuration loading...');
+      this.setState({ configurationLoading: false });
+    }
+  }
+
+  componentDidUpdate (prevProps) {
+    // Fetch configuration status when token becomes available
+    if (!prevProps.token && this.props.token) {
+      console.debug('[SENSEMAKER:UI]', 'Token became available, fetching configuration status...');
+      this.setState({ configurationLoading: true });
+      this.fetchConfigurationStatus();
+    }
+
+    // Stop configuration loading if token is lost
+    if (prevProps.token && !this.props.token) {
+      console.debug('[SENSEMAKER:UI]', 'Token lost, stopping configuration loading...');
+      this.setState({ configurationLoading: false });
+    }
   }
 
   componentWillUnmount () {
@@ -190,6 +306,11 @@ class SensemakerUI extends React.Component {
     const { modalLogOut, loggedOut } = this.state;
     const { auth, login, register, error, onLoginSuccess, onRegisterSuccess } = this.props;
 
+    const isLocal = window.location.protocol === 'file:';
+    const basename = isLocal && window.location.pathname.includes('index.html')
+      ? window.location.pathname
+      : undefined;
+
     return (
       <sensemaker-interface id={this.id} class='fabric-site body'>
         <canvas id='video-background' className='ui video background' />
@@ -200,16 +321,16 @@ class SensemakerUI extends React.Component {
               <Loader active inline="centered" size='huge' />
             </div>
           ) : (
-            <BrowserRouter>
+            <BrowserRouter basename={basename}>
               {(!this.props.auth || !this.props.auth.isAuthenticated) ? (
                 <Routes>
-                  <Route path='*' element={<NotFound />} />
                   <Route path='/' element={<FrontPage login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/inquiries' element={<InquiriesHome login={login} error={error} onLoginSuccess={onLoginSuccess} createInquiry={this.props.createInquiry} inquiries={this.props.inquiries} />} />
                   <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
                   <Route path='/features' element={<FeaturesHome />} />
                   <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
                   <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+                  <Route path='*' element={<NotFound />} />
                 </Routes>
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (
                 <TermsOfUseModal
@@ -219,6 +340,34 @@ class SensemakerUI extends React.Component {
                   logout={this.props.logout}
                   isCompliant={this.props.isCompliant}
                 />
+              ) : (this.props.auth && this.props.auth.isAdmin && this.state.configurationLoading) ? (
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <Loader active inline="centered" size='huge' />
+                </div>
+              ) : (this.props.auth && this.props.auth.isAdmin && !this.state.configurationLoading && !this.state.isConfigured) ? (
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                  <Onboarding
+                    ref={this.onboardingRef}
+                    autoOpen={false}
+                    auth={this.props.auth}
+                    onConfigurationComplete={this.handleConfigurationComplete}
+                    bridge={this.bridge}
+                  />
+                  <div style={{ marginTop: '2em', textAlign: 'center' }}>
+                    <p>You must first configure this node before you can use it.</p>
+                    <Button color='green' icon labelPosition='right' onClick={this.handleOpenConfiguration}>
+                      Configure Node <Icon name='right chevron' />
+                    </Button>
+                  </div>
+                </div>
+              ) : (this.props.auth && this.state.configurationLoading) ? (
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <Loader active inline="centered" size='huge' />
+                </div>
+              ) : (this.props.auth && !this.state.configurationLoading && !this.state.isConfigured) ? (
+                <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                  <p>This node has not yet been configured.  Ask the node operator to complete the setup process.</p>
+                </div>
               ) : (
                 <Dashboard
                   auth={this.props.auth}
@@ -235,6 +384,7 @@ class SensemakerUI extends React.Component {
                   register={this.props.register}
                   resetChat={this.props.resetChat}
                   submitMessage={this.props.submitMessage}
+                  submitStreamingMessage={this.props.submitStreamingMessage}
                   contracts={this.props.contracts}
                   conversations={this.props.conversations}
                   conversation={this.props.conversation}
@@ -244,6 +394,7 @@ class SensemakerUI extends React.Component {
                   isAdmin={this.props.auth && this.props.auth.isAdmin}
                   isCompliant={this.props.auth && this.props.auth.isCompliant}
                   bridge={this.bridge}
+                  store={this.store}
                   {...this.props}
                 />
               )}

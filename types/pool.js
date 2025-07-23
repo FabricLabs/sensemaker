@@ -25,6 +25,7 @@ class Pool extends Service {
       model: CORE_MODEL,
       models: {},
       timeout: 60000, // 60 second default timeout
+      initTimeout: 30000, // 30 second timeout for member initialization
       state: {
         jobs: {},
         members: {},
@@ -38,7 +39,8 @@ class Pool extends Service {
       members: {},
       models: {},
       names: {},
-      outstanding: {}
+      outstanding: {},
+      memberStatus: {} // Track member health/status
     };
 
     return this;
@@ -55,19 +57,57 @@ class Pool extends Service {
   async addMember (member) {
     const actor = new Actor(member);
     if (this._state.content.members[actor.id]) throw new Error(`Member with ID ${actor.id} already exists.`);
+
+    // Add member immediately to allow for parallel initialization
     this._state.content.members[actor.id] = member;
     this._state.members[actor.id] = new Agent(member);
+    this._state.memberStatus[actor.id] = 'initializing';
+    this._state.models[actor.id] = []; // Initialize with empty models list
 
+    // Initialize member with timeout
+    this._initializeMember(actor.id).catch(error => {
+      console.warn(`[SENSEMAKER] [POOL] Failed to initialize member ${actor.id}:`, error.message);
+      this._state.memberStatus[actor.id] = 'failed';
+    });
+
+    return this;
+  }
+
+  async _initializeMember (memberId) {
+    let timeoutId = null;
     try {
-      const models = await this._state.members[actor.id].listTags();
-      this._state.models[actor.id] = models.models.map((x) => x.name);
+      const initPromise = (async () => {
+        try {
+          const models = await this._state.members[memberId].listTags();
+          this._state.models[memberId] = models.models.map((x) => x.name);
+        } catch (error) {
+          try {
+            const alt = await this._state.members[memberId].listModels();
+            this._state.models[memberId] = alt.models.map((x) => x.id);
+          } catch (altError) {
+            throw new Error(`Failed to list models: ${altError.message}`);
+          }
+        }
+        this._state.memberStatus[memberId] = 'ready';
+        this.emit('debug', `[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, this._state.models[memberId]);
+      })();
+
+      // Race against timeout
+      await Promise.race([
+        initPromise,
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error(`Member initialization timed out after ${this.settings.initTimeout}ms`));
+          }, this.settings.initTimeout);
+        })
+      ]);
     } catch (error) {
-      try {
-        const alt = await this._state.members[actor.id].listModels();
-        this._state.models[actor.id] = alt.models.map((x) => x.id);
-      } catch (altError) {
-        // Add member anyway but mark as having no verified models
-        this._state.models[actor.id] = [];
+      this._state.memberStatus[memberId] = 'failed';
+      throw error;
+    } finally {
+      // Clean up timeout if it was set
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
     }
   }
@@ -109,14 +149,15 @@ class Pool extends Service {
     if (!request.model) request.model = this.settings.model;
     if (!request.query) throw new Error('Query is required for the request');
 
-    // Find members that can handle the request
+    // Find members that can handle the request and are healthy
     const candidateMembers = Object.keys(this._state.members).filter(memberID => {
       const memberModels = this._state.models[memberID] || [];
-      return memberModels.includes(request.model);
+      const isHealthy = this._state.memberStatus[memberID] === 'ready';
+      return isHealthy && memberModels.includes(request.model);
     });
 
     if (candidateMembers.length === 0) {
-      throw new Error('No suitable member found for the request');
+      throw new Error('No suitable healthy member found for the request');
     }
 
     // Find available member (not currently processing a request)
@@ -135,11 +176,12 @@ class Pool extends Service {
       }, this.settings.timeout)
     };
 
+    let queryTimeoutId = null;
     try {
       const result = await Promise.race([
         this._state.members[availableMember].query(request),
         new Promise((_, reject) => {
-          setTimeout(() => {
+          queryTimeoutId = setTimeout(() => {
             reject(new Error(`Request timed out after ${this.settings.timeout}ms`));
           }, this.settings.timeout);
         })
@@ -152,6 +194,11 @@ class Pool extends Service {
       // Clean up request tracking
       this._cleanupRequest(availableMember);
       throw error;
+    } finally {
+      // Clean up query timeout if it was set
+      if (queryTimeoutId) {
+        clearTimeout(queryTimeoutId);
+      }
     }
   }
 
@@ -182,18 +229,62 @@ class Pool extends Service {
   }
 
   async start () {
-    const agentPromises = this.settings.members.map(async (member) => {
-      await this.addMember(member);
+    // Start adding members in parallel without waiting
+    this.settings.members.forEach(member => {
+      this.addMember(member).catch(error => {
+        console.warn('[SENSEMAKER] [POOL] Failed to add member:', error.message);
+      });
     });
 
-    await Promise.all(agentPromises);
-
+    // Set status to started immediately
+    this._state.content.status = 'STARTED';
     this.emit('started', this._state.content);
+
+    return this;
   }
 
   async stop () {
+    // Cancel any pending initialization timeouts
+    Object.keys(this._state.memberStatus).forEach(memberId => {
+      if (this._state.memberStatus[memberId] === 'initializing') {
+        this._state.memberStatus[memberId] = 'stopped';
+      }
+    });
+
+    // Clean up all outstanding requests
+    Object.keys(this._state.outstanding).forEach(memberId => {
+      this._cleanupRequest(memberId);
+    });
+
+    // Stop all member agents
+    const stopPromises = Object.keys(this._state.members).map(async (memberId) => {
+      try {
+        await this._state.members[memberId].stop();
+      } catch (error) {
+        console.warn(`[SENSEMAKER] [POOL] Failed to stop member ${memberId}:`, error.message);
+      }
+    });
+
+    await Promise.allSettled(stopPromises);
+
     this._state.content.status = 'STOPPED';
     return this;
+  }
+
+  // Add method to check pool health
+  getPoolHealth () {
+    const total = Object.keys(this._state.members).length;
+    const ready = Object.values(this._state.memberStatus).filter(status => status === 'ready').length;
+    const failed = Object.values(this._state.memberStatus).filter(status => status === 'failed').length;
+    const initializing = Object.values(this._state.memberStatus).filter(status => status === 'initializing').length;
+
+    return {
+      total,
+      ready,
+      failed,
+      initializing,
+      isHealthy: ready > 0
+    };
   }
 }
 

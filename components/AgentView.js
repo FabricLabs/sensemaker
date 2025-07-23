@@ -78,6 +78,26 @@ class AgentPage extends React.Component {
   render () {
     const { agents } = this.props;
     console.debug('[AGENTS]', 'State:', agents);
+
+    // Safely extract agent data and ensure they are strings
+    const agentName = (agents?.agent?.name && typeof agents.agent.name === 'string') ? agents.agent.name : 'Loading...';
+    const agentDescription = (agents?.agent?.description && typeof agents.agent.description === 'string') ? agents.agent.description : 'Loading...';
+
+    // Handle prompt - it might be a Buffer object
+    let agentPrompt = 'Loading...';
+    if (agents?.agent?.prompt) {
+      if (typeof agents.agent.prompt === 'string') {
+        agentPrompt = agents.agent.prompt || 'No prompt configured';
+      } else if (Buffer.isBuffer(agents.agent.prompt)) {
+        agentPrompt = agents.agent.prompt.toString('utf8') || 'No prompt configured';
+      } else if (agents.agent.prompt.type === 'Buffer' && Array.isArray(agents.agent.prompt.data)) {
+        // Handle serialized Buffer object
+        agentPrompt = Buffer.from(agents.agent.prompt.data).toString('utf8') || 'No prompt configured';
+      }
+    }
+
+    const agentId = (agents?.agent?.id && (typeof agents.agent.id === 'string' || typeof agents.agent.id === 'number')) ? agents.agent.id : null;
+
     return (
       <div className='fade-in'>
         <div className='uppercase'>
@@ -85,28 +105,28 @@ class AgentPage extends React.Component {
           <Breadcrumb style={{ marginLeft: '1em' }}>
             <Breadcrumb.Section><Link to='/agents'>Agents</Link></Breadcrumb.Section>
             <Breadcrumb.Divider icon='right chevron' />
-            <Breadcrumb.Section active>{agents.agent?.name || 'Loading...'}</Breadcrumb.Section>
+            <Breadcrumb.Section active>{agentName}</Breadcrumb.Section>
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={agents?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}><Icon name='user' />{agents.agent?.name || 'Loading...'}</Header>
-          <p>{agents.agent?.description || 'Loading...'}</p>
+          <Header as='h1' style={{ marginTop: 0 }}><Icon name='user' />{agentName}</Header>
+          <p>{agentDescription}</p>
           <Header as='h3'>Prompt</Header>
           <div>
-            <div>{agents.agent?.prompt || 'Loading...'}</div>
+            <div>{agentPrompt}</div>
           </div>
         </Segment>
         <ChatBox
-              {...this.props}
-              ref={this.chatBoxRef}
-              agent={agents?.agent.id}
-              messagesEndRef={this.messagesEndRef}
-              includeFeed={true}
-              placeholder={`Your request for ${agents?.agent.name}...`}
-              resetInformationSidebar={this.props.resetInformationSidebar}
-              messageInfo={this.props.messageInfo}
-              thumbsUp={this.props.thumbsUp}
-              thumbsDown={this.props.thumbsDown}
+          {...this.props}
+          ref={this.chatBoxRef}
+          agent={agentId}
+          messagesEndRef={this.messagesEndRef}
+          includeFeed={true}
+          placeholder={`Your request for ${agentName}...`}
+          resetInformationSidebar={this.props.resetInformationSidebar}
+          messageInfo={this.props.messageInfo}
+          thumbsUp={this.props.thumbsUp}
+          thumbsDown={this.props.thumbsDown}
             />
       </div>
     );
