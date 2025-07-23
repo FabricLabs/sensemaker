@@ -1,0 +1,61 @@
+# See https://docs.docker.com/engine/reference/builder/#dockerignore-file
+# Put files here that you don't want copied into your bundle image
+.git
+.gitignore
+.gitattributes
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+coverage
+*.log
+
+# Environment and config
+.env
+.env.*
+*.env
+config.local.js
+
+# Docker
+Dockerfile
+docker-compose.yml
+template.Dockerfile
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+docs
+*.md
+LICENSE
+
+# Test files
+test
+tests
+__tests__
+*.test.js
+*.spec.js
+
+# Temporary files
+tmp
+temp
+.tmp
+.temp
+
+# New additions from the code block
+README.md
+.nyc_output
+.cache
+
+# Ollama models directory (when using local models)
+empty-ollama-models/

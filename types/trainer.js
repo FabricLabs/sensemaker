@@ -30,10 +30,10 @@ const { TextLoader } = require('langchain/document_loaders/fs/text');
 // const { MarkdownLoader } = require('langchain/document_loaders/fs/markdown');
 // const { PDFLoader } = require('langchain/document_loaders/fs/pdf');
 
-// Langchains
+// Langchain
 const { RetrievalQAChain } = require('langchain/chains');
 const { createRetrievalChain } = require('langchain/chains/retrieval');
-// const { MemoryVectorStore } = require('langchain/vectorstores/memory');
+const { PromptTemplate } = require('@langchain/core/prompts');
 const { RedisVectorStore } = require('@langchain/redis');
 const { OllamaEmbeddings } = require('@langchain/ollama');
 const { Document } = require('@langchain/core/documents');
@@ -84,7 +84,8 @@ class Trainer extends Agent {
       debug: true,
       model: 'llama2',
       ollama: {
-        host: 'localhost',
+        host: process.env.OLLAMA_HOST || 'localhost',
+        port: parseInt(process.env.OLLAMA_PORT) || 11434,
         secure: false
       },
       redis: {
@@ -171,7 +172,10 @@ class Trainer extends Agent {
   async getStoreForOwner (id) {
     const name = new Actor({ name: `sensemaker/owners/${id}` });
     const reference = new Document({ pageContent: JSON.stringify(name.toGenericMessage()) });
-    const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings(), {
+    const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings({
+      baseUrl: `http://${this.settings.ollama.host}:${this.settings.ollama.port}`,
+      model: EMBEDDING_MODEL
+    }), {
       redisClient: this.redis,
       indexName: `sensemaker:owners:${id}`
     });
@@ -197,6 +201,16 @@ class Trainer extends Agent {
         const chunks = await this.splitter.splitDocuments([doc]);
         console.debug('[TRAINER]', `Split document into ${chunks.length} chunks`);
 
+        // Ensure all chunks retain the original metadata including file IDs
+        chunks.forEach((chunk, index) => {
+          chunk.metadata = {
+            ...document.metadata,
+            chunk_index: index,
+            total_chunks: chunks.length,
+            chunk_id: `${document.metadata.file_id || 'doc'}_chunk_${index}`
+          };
+        });
+
         let embeddings = null;
 
         // Segment embeddings by user
@@ -206,8 +220,8 @@ class Trainer extends Agent {
           embeddings = this.embeddings;
         }
 
-        await embeddings.addDocuments(chunks);
-        resolve({ type: 'EmbeddingBatch', content: [] });
+        embeddings.addDocuments(chunks);
+        resolve({ type: 'EmbeddingBatch', content: chunks.length });
       } catch (error) {
         console.error('[TRAINER]', 'Error ingesting document:', error);
         reject(error);
@@ -230,7 +244,7 @@ class Trainer extends Agent {
     });
   }
 
-  async query (request, timeoutMs = 30000) {
+  async query (request, timeoutMs = 60000) {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
 
@@ -253,9 +267,54 @@ class Trainer extends Agent {
           store = this.embeddings;
         }
 
+        // Enhanced context handling for file-based conversations
+        let enhancedQuery = request.query;
+        if (request.context) {
+          const contextInfo = [];
+
+          // Handle file context
+          if (request.context.file) {
+            const file = request.context.file;
+            contextInfo.push(`File: ${file.name} (${file.mime_type || 'unknown type'})`);
+
+            // Add file-specific search terms to improve retrieval
+            enhancedQuery = `[Context: This query relates to the attached file "${file.name}"] ${request.query}`;
+          }
+
+          // Handle document context
+          if (request.context.document) {
+            const doc = request.context.document;
+            contextInfo.push(`Document: ${doc.title || doc.filename}`);
+            enhancedQuery = `[Context: This query relates to the document "${doc.title || doc.filename}"] ${request.query}`;
+          }
+
+          // Handle documents (multiple) context
+          if (request.context.documents && Array.isArray(request.context.documents)) {
+            const docNames = request.context.documents.map(d => d.title || d.filename).join(', ');
+            contextInfo.push(`Documents: ${docNames}`);
+            enhancedQuery = `[Context: This query relates to these documents: ${docNames}] ${request.query}`;
+          }
+
+          // Build context prefix for the query
+          if (contextInfo.length > 0) {
+            const contextPrefix = `The following context is relevant to this query:\n${contextInfo.join('\n')}\n\n`;
+            enhancedQuery = `${contextPrefix}${enhancedQuery}\n\nPlease answer based on the provided context and the attached files/documents. If the information is not available in the context, clearly state that.`;
+          } else {
+            // Fallback to original context handling
+            enhancedQuery = `The following context is relevant to the query:\n\n${JSON.stringify(request.context, null, '  ')}\n\n` +
+              `Don't justify your answers. Don't give information not mentioned in the CONTEXT INFORMATION. If the answer is not in the context, say the words "Sorry, I am unable to answer your question with the information available to me."\n\n` +
+              request.query;
+          }
+        }
+
+        const promptTemplate = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n\n` +
+          `{context}\n\n` +
+          `Question: {question}\n\n` +
+          `Answer:`;
+        const prompt = PromptTemplate.fromTemplate(promptTemplate);
         const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
           messages: request.messages,
-          query: request.query
+          query: enhancedQuery
         });
 
         clearTimeout(timeoutId);
@@ -266,7 +325,8 @@ class Trainer extends Agent {
           type: 'TrainerQueryResponse',
           content: answer.text,
           messages: request.messages,
-          query: request.query
+          query: request.query,
+          enhancedQuery: enhancedQuery
         });
       } catch (error) {
         clearTimeout(timeoutId);
@@ -412,7 +472,10 @@ class Trainer extends Agent {
           const allDocs = await this.ingestReferences();
           console.debug('[TRAINER] References loaded, creating vector store...');
 
-          this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings(), {
+          this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings({
+            baseUrl: `http://${this.settings.ollama.host}:${this.settings.ollama.port}`,
+            model: EMBEDDING_MODEL
+          }), {
             redisClient: this.redis,
             indexName: this.settings.redis.name || 'sensemaker-embeddings'
           });
@@ -444,7 +507,7 @@ class Trainer extends Agent {
             console.warn('[TRAINER]', 'Timeout closing Redis, forcing close');
             this.redis = null;
             resolve();
-          }, 5000);
+          }, 2000);
 
           this.redis.quit().then(() => {
             clearTimeout(timeout);

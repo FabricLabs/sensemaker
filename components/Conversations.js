@@ -110,7 +110,7 @@ class Conversations extends React.Component {
         this.props.fetchConversations();
 
       } else {
-        error('API request failed with status:', response.status);
+        console.error('API request failed with status:', response.status);
       }
     } catch (error) {
       if (error.message === 'Fetch timed out') {
@@ -125,6 +125,28 @@ class Conversations extends React.Component {
   handleCancelEditing = () => {
     // Reset editing state without saving
     this.setState({ editingID: null, editedTitle: '' });
+  };
+
+  handlePinConversation = async (conversationID, currentPinned) => {
+    try {
+      const response = await fetch(`/conversations/${conversationID}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${this.props.auth.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pinned: !currentPinned }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update pin status');
+      }
+
+      // Refresh conversations list to reflect the change
+      this.props.fetchConversations();
+    } catch (error) {
+      console.error('Error updating pin status:', error);
+    }
   };
 
   handleSearchChange = (e, { value }) => {
@@ -261,13 +283,21 @@ class Conversations extends React.Component {
                 icon
                 color='black'
                 as={Link}
-                to='/topics/global'
+                to='/services/global'
                 content={<Icon name='globe' />}
                 popup={{ content: 'Global chat', position: 'bottom center' }}
               />}
               <Button
                 icon
-                color='green'
+                color='black'
+                as={Link}
+                to='/contacts'
+                content={<Icon name='address book outline' />}
+                popup={{ content: 'Your contacts', position: 'bottom center' }}
+              />
+              <Button
+                icon
+                primary
                 labelPosition='right'
                 onClick={this.handleNewConversationOpen}
               >
@@ -330,9 +360,23 @@ class Conversations extends React.Component {
             <Card.Group style={{ marginTop: '1em', marginBottom: '1em' }}>
               {currentConversations.map(conversation => {
                 return (
-                  <Card key={conversation.id} fluid className='conversationItem' style={{ marginTop: '1em' }}>
+                  <Card key={conversation.id} fluid className='conversationItem' style={{
+                    marginTop: '1em',
+                    ...(conversation.pinned && {
+                      border: '2px solid #fbbd08',
+                      boxShadow: '0 2px 4px 0 rgba(251, 189, 8, 0.12), 0 2px 10px 0 rgba(251, 189, 8, 0.08)'
+                    })
+                  }}>
                     <Card.Content extra>
-                      <abbr className='relative-time' title={new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <abbr className='relative-time' title={new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}>{new Date(conversation.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>
+                        {conversation.pinned && (
+                          <Label size='mini' color='yellow' style={{ margin: 0 }}>
+                            <Icon name='pin' />
+                            Pinned
+                          </Label>
+                        )}
+                      </div>
                     </Card.Content>
                     <Card.Content>
                       {this.state.editingID === conversation.id ? (
@@ -378,6 +422,13 @@ class Conversations extends React.Component {
                             position='top left'
                             hoverable
                           />
+                          <Icon
+                            name={conversation.pinned ? 'pin' : 'outline pin'}
+                            className='pinIcon'
+                            onClick={() => this.handlePinConversation(conversation.dbid, conversation.pinned)}
+                            title={conversation.pinned ? 'Unpin conversation' : 'Pin conversation'}
+                            style={{ cursor: 'pointer', color: conversation.pinned ? '#fbbd08' : 'grey', marginRight: '0.5em' }}
+                          />
                           <Icon name='edit' className='editIcon' onClick={() => this.handleEditClick(conversation.id, conversation.title)} title='Edit' />
                         </Card.Header>
                       )}
@@ -389,14 +440,6 @@ class Conversations extends React.Component {
           ) : <div ref={this.messagesEndRef} style={componentStyle}>
             {/* <div style={{marginBottom: '2em'}}>We haven't had any conversations yet.</div> */}
             {/* <Button as={Link} to='/conversations/new' primary>Ask a Question</Button> */}
-            {(conversations.length > itemsPerPage) ? <Pagination
-              size='tiny'
-              activePage={currentPage}
-              totalPages={Math.ceil(conversations.length / itemsPerPage)}
-              onPageChange={this.handlePaginationChange}
-              ellipsisItem={(windowWidth > 480) ? undefined : null}
-              boundaryRange={(windowWidth > 480) ? 1 : 0}
-            /> : null}
             <ChatBox
               {...this.props}
               messagesEndRef={this.messagesEndRef}
@@ -406,16 +449,60 @@ class Conversations extends React.Component {
               messageInfo={this.props.messageInfo}
               thumbsUp={this.props.thumbsUp}
               thumbsDown={this.props.thumbsDown}
+              hideContext={true}
             />
           </div>}
-          {(conversations.length > itemsPerPage) ? <Pagination
-            size='tiny'
-            activePage={currentPage}
-            totalPages={Math.ceil(conversations.length / itemsPerPage)}
-            onPageChange={this.handlePaginationChange}
-            ellipsisItem={(windowWidth > 480) ? undefined : null}
-            boundaryRange={(windowWidth > 480) ? 1 : 0}
-          /> : null}
+          {/* Full-width Pagination Controls */}
+          {(conversations.length > itemsPerPage) ? (
+            <div style={{
+              width: '100%',
+              marginTop: '1em',
+              marginBottom: '1em'
+            }}>
+              <style>
+                {`
+                  .full-width-pagination.ui.pagination.menu {
+                    width: 100% !important;
+                    display: flex !important;
+                  }
+                  .full-width-pagination.ui.pagination.menu .item:last-child {
+                    margin-left: auto !important;
+                  }
+                `}
+              </style>
+              <Pagination
+                className="full-width-pagination"
+                activePage={currentPage}
+                totalPages={Math.ceil(conversations.length / itemsPerPage)}
+                onPageChange={this.handlePaginationChange}
+                boundaryRange={Math.ceil(conversations.length / itemsPerPage) <= 10 ? Math.ceil(conversations.length / itemsPerPage) : 2}
+                siblingRange={Math.ceil(conversations.length / itemsPerPage) <= 15 ? Math.ceil(conversations.length / itemsPerPage) : 3}
+                showEllipsis={Math.ceil(conversations.length / itemsPerPage) > 15}
+                showFirstAndLastNav={true}
+                showPreviousAndNextNav={true}
+                firstItem={{
+                  'aria-label': 'First item',
+                  content: '«',
+                  disabled: currentPage === 1
+                }}
+                prevItem={{
+                  'aria-label': 'Previous item',
+                  content: '‹',
+                  disabled: currentPage === 1
+                }}
+                nextItem={{
+                  'aria-label': 'Next item',
+                  content: '›',
+                  disabled: currentPage === Math.ceil(conversations.length / itemsPerPage)
+                }}
+                lastItem={{
+                  'aria-label': 'Last item',
+                  content: '»',
+                  disabled: currentPage === Math.ceil(conversations.length / itemsPerPage)
+                }}
+              />
+            </div>
+          ) : null}
           {(currentConversations && currentConversations.length) ? (
             <ChatBox
               {...this.props}

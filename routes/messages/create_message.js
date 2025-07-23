@@ -1,8 +1,10 @@
 'use strict';
 
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 const Message = require('@fabric/core/types/message');
 
+// Functions
 const toRelativeTime = require('../../functions/toRelativeTime');
 
 module.exports = async function (req, res, next) {
@@ -24,11 +26,18 @@ module.exports = async function (req, res, next) {
   if (!conversation_id) {
     isNew = true;
     const name = `Conversation started ${toRelativeTime(now.toISOString())}`;
-    const created = await this.db('conversations').insert({
+    const conversationData = {
       creator_id: req.user.id,
       log: JSON.stringify([]),
       title: name
-    });
+    };
+
+    // Add context if provided
+    if (context) {
+      conversationData.context = JSON.stringify(context);
+    }
+
+    const created = await this.db('conversations').insert(conversationData);
 
     localConversationID = created[0];
 
@@ -44,11 +53,16 @@ module.exports = async function (req, res, next) {
     const file = await this.db('files').where({ fabric_id: file_id }).first();
     if (!file) throw new Error(`No such File: ${file_id}`);
     localFileID = file.id;
+
+    // File is already ingested during upload, so we just need to add context
+    // Remove duplicate ingestion and just add file context
     context = {
       ...context,
       file: {
         id: file_id,
-        name: file.name
+        name: file.name,
+        fabric_id: file.fabric_id,
+        mime_type: file.type
       }
     };
   }
@@ -84,28 +98,32 @@ module.exports = async function (req, res, next) {
       id: localConversationID
     });
 
-    // Core Pipeline
-    // this.createTimedRequest({
+    const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
+    await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });
+
+    // Send immediate response
+    res.json({
+      message: 'Message sent.',
+      object: {
+        id: localMessage.id,
+        conversation: fabricConversationID
+      }
+    });
+
+    // Process AI generation in background
     this.handleTextRequest({
       conversation_id: fabricConversationID,
-      context: {
-        ...context,
-        username: req.user.username
-      },
+      context: context,
       agent: agent,
       query: content,
       user_id: req.user.id
-    }).catch((exception) => {
-      console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
     }).then(async (request) => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Handled text request:', request);
-      // TODO: emit message
-
       if (!request || !request.content) {
-        console.debug('[SENSEMAKER]', '[HTTP]', 'No request content:', request);
+        console.error('[MESSAGE_CREATE]', 'No response from handleTextRequest');
         return;
       }
 
+      // Handle conversation summarization asynchronously
       const history = await this._getConversationMessages(conversation.id);
       const messages = history.map((x) => {
         return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
@@ -115,7 +133,6 @@ module.exports = async function (req, res, next) {
         this._summarizeMessagesToTitle(messages).catch((error) => {
           console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
         }).then(async (output) => {
-          if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Got title output:', output);
           let title = output?.content || 'broken content title';
           if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
           if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
@@ -136,21 +153,8 @@ module.exports = async function (req, res, next) {
         const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
         this.http.broadcast(message);
       });
-    }).then(async () => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Finished processing message');
-    });
-    // End Core Pipeline
-
-    const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
-    await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });
-
-    return res.json({
-      message: 'Message sent.',
-      object: {
-        id: localMessage.id,
-        conversation: fabricConversationID,
-        // cards: request.cards
-      }
+    }).catch((exception) => {
+      console.error('[MESSAGE_CREATE]', 'Error in handleTextRequest:', exception);
     });
   } catch (error) {
     console.error('ERROR:', error);

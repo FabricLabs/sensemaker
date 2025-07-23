@@ -1,13 +1,52 @@
 'use strict';
 
-const {PER_PAGE_LIMIT} = require('../../constants')
+const { PER_PAGE_LIMIT } = require('../../constants')
 
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
       const currentPage = req.query.page || 1;
-      const documents = await this.db('documents').select('*').whereNotNull('fabric_id').andWhere('deleted', '=', 0).orderBy('created_at', 'desc').paginate({
-        perPage: PER_PAGE_LIMIT,
+      let query = this.db('documents').select([
+        'id',
+        'title',
+        'description',
+        'summary',
+        'fabric_type',
+        'mime_type',
+        'fabric_id',
+        'created_at',
+        'updated_at',
+        'latest_blob_id',
+        'pinned',
+        'folders'
+      ]).whereNotNull('fabric_id').andWhere('status', '!=', 'deleted').andWhere(function () {
+        return this.where('creator', '=', req.user.id).orWhere('owner', '=', req.user.id);
+      });
+
+      // Apply filter if provided
+      if (req.query.filter) {
+        try {
+          const filter = JSON.parse(req.query.filter);
+
+          if (filter.type) {
+            query = query.andWhere('fabric_type', filter.type);
+          }
+
+          // Handle status filter
+          if (filter.status) {
+            query = query.andWhere('status', filter.status);
+          }
+        } catch (error) {
+          console.error('[DOCUMENTS:LIST] Invalid filter JSON:', req.query.filter, error);
+          return res.status(400).json({
+            status: 'error',
+            message: 'Invalid filter format. Must be valid JSON.'
+          });
+        }
+      }
+
+      const documents = await query.orderBy('pinned', 'desc').orderBy('created_at', 'desc').paginate({
+        perPage: 24,
         currentPage: currentPage
       });
 

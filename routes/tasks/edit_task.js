@@ -25,6 +25,7 @@ module.exports = async function (req, res, next) {
     if (body.notes) delta.notes = body.notes;
     if (body.completed_at) { delta.completed_at = toMySQLDatetime(new Date(body.completed_at)) };
     if (body.completed_by) delta.completed_by = body.completed_by;
+    if (body.recommendation) delta.recommendation = body.recommendation;
 
     // TODO: handle errors
     await this.db('tasks').where({ fabric_id: id }).update(delta);

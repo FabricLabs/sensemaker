@@ -29,7 +29,7 @@ const {
 const {
   CORE_MODEL,
   EMBEDDING_MODEL
-} = require('../constants');
+} = require(require.resolve('../constants'));
 
 // Prompts
 const promptPath = path.join(__dirname, '../prompts/sensemaker.txt');
@@ -49,10 +49,11 @@ module.exports = {
   moniker: NAME,
   release: 'beta',
   name: 'Sensemaker',
-  mode: 'production',
+  mode: process.env.NODE_ENV || 'production',
   expander: true,
   crawl: true,
   debug: false, // environment.readVariable('DEBUG') || false,
+  mnemonic:  environment.readVariable('FABRIC_MNEMONIC') || environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   seed:  environment.readVariable('FABRIC_SEED') || FIXTURE_SEED,
   temperature: 0,
   constraints: {
@@ -85,8 +86,11 @@ module.exports = {
   },
   fabric: {
     enable: true,
-    listen: false,
-    peers: ['hub.fabric.pub:7777', 'hub.sensemaker.io:7777', 'beta.jeeves.dev:7777'],
+    listen: true,
+    peers: [
+      'sensemaker.io:7777',
+      'hub.fabric.pub:7777'
+    ],
     port: 7777,
     remotes: [
       { host: 'sensemaker.io', port: 443, secure: true, collections: ['documents'] },
@@ -99,10 +103,10 @@ module.exports = {
   db: {
     type: 'mysql',
     host: process.env.SQL_DB_HOST || '127.0.0.1',
-    port: 3306,
-    user: 'your_sql_user',
+    port: process.env.SQL_DB_PORT || 3306,
+    user: process.env.SQL_DB_USER || 'your_sql_user',
     password: process.env.SQL_DB_CRED || 'your sql password',
-    database: 'db_sensemaker'
+    database: process.env.SQL_DB_NAME || 'db_sensemaker'
   },
   discord: {
     enable: false,
@@ -193,10 +197,19 @@ module.exports = {
     }
   },
   bitcoin: {
-    enable: true,
+    enable: false,
     fullnode: false,
     network: 'mainnet',
     interval: 60000,
+    port: 18333,
+    rpcport: 18332,
+    peers: [
+      // 'localhost:8332'
+    ],
+    zmq: {
+      host: 'localhost',
+      port: 29500
+    },
     nodes: [
       { name: 'BITCOIN_LOCAL_MAINNET_WALLET', network: 'mainnet', url: 'http://localhost:8332', roles: ['wallet', 'blockchain', 'mempool'] },
       { name: 'BITCOIN_LOCAL_MAINNET_BOUNDARY', network: 'mainnet', url: 'http://localhost:8332', roles: ['blockchain', 'mempool'] },
@@ -209,9 +222,11 @@ module.exports = {
       storage: {
         size: 550 // size in MB
       }
-    }
+    },
+    verbosity: 3
   },
   github: {
+    enable: false,
     interval: 10000,
     targets: [
       'bitcoin/bitcoin',
@@ -228,7 +243,7 @@ module.exports = {
     authority: 'unix:/SOME_PATH/lightning.sock'
   },
   linkedin: {
-    enable: true,
+    enable: false,
     id: 'get from linkedin',
     secret: 'get from linkedin'
   },
@@ -248,19 +263,24 @@ module.exports = {
   },
   ollama: {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
-    port: 11434,
+    port: parseInt(process.env.OLLAMA_PORT) || 11434,
     secure: false,
     model: CORE_MODEL, // default model
-    models: [CORE_MODEL, 'llama3.2-vision'], // models to "prime" (preload)
-    temperature: 0
+    models: [CORE_MODEL, 'qwen3:0.6b', 'llama3.2-vision'], // models to "prime" (preload)
+    temperature: 0,
+    preload: true
   },
   openai: {
-    enable: true,
+    enable: false,
     key: process.env.OPENAI_API_KEY || 'set to your own API key',
     model: 'gpt-4-turbo',
     temperature: 0
   },
+  openrouter: {
+    token: ''
+  },
   rsi: {
+    enable: false,
     http: {
       enable: false
     }

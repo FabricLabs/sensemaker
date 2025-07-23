@@ -109,7 +109,6 @@ class AnnouncementCreator extends React.Component {
   }
 
   handleModalSend = async () => {
-
     const { title, body, expirationDate} = this.state;
     const state = store.getState();
     const token = state.auth.token;
@@ -157,6 +156,19 @@ class AnnouncementCreator extends React.Component {
           connectionProblem: false,
         });
 
+        // Clear form and close modal after successful send
+        setTimeout(() => {
+          this.setState({
+            title: '',
+            body: '',
+            expirationDate: '',
+            announSent: false,
+            modalOpen: false
+          });
+          if (this.props.onClose) {
+            this.props.onClose();
+          }
+        }, 2000);
       } else {
         this.setState({
           announSent: false,

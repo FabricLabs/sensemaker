@@ -93,6 +93,59 @@
   }
 }
 
+/* Toast-specific fade and slide in animation */
+.toast-fade-slide-in {
+  opacity: 0;
+  transform: translateX(100px);
+  animation: toastFadeSlideIn 0.25s ease-out forwards;
+}
+
+@keyframes toastFadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Toast exit animation - slide out to the right */
+.toast-slide-out-right {
+  animation: toastSlideOutRight 0.2s ease-in forwards;
+}
+
+@keyframes toastSlideOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Progress bar scale to zero animation */
+.progress-scale-out {
+  animation: progressScaleOut 0.15s ease-out forwards;
+}
+
+@keyframes progressScaleOut {
+  0% {
+    transform: scaleX(1);
+    transform-origin: left center;
+  }
+
+  100% {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+}
+
 .fade-out {
   opacity: 1;
   animation: fadeOut 1.5s forwards;
@@ -102,6 +155,7 @@
   0% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
   }
@@ -133,7 +187,7 @@
   flex-direction: column;
 }
 
-#signup-form .signup-form-group .field{
+#signup-form .signup-form-group .field {
   width: 100%;
 }
 
@@ -176,9 +230,11 @@
   0% {
     transform: rotate(-5deg);
   }
+
   50% {
     transform: rotate(5deg);
   }
+
   100% {
     transform: rotate(-5deg);
   }
@@ -190,13 +246,15 @@
 
 @keyframes backgroundFade {
   0% {
-      background-color: white;
+    background-color: white;
   }
+
   50% {
-      background-color: var(--primary-color);
+    background-color: var(--primary-color);
   }
+
   100% {
-      background-color: white;
+    background-color: white;
   }
 }
 
@@ -257,7 +315,7 @@ sensemaker-dashboard #main-sidebar {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  position: relative;
+  position: fixed;
   /* border-right: 1px solid grey; */
   z-index: 1000;
 }
@@ -276,14 +334,14 @@ sensemaker-dashboard #collapse-sidebar {
   vertical-align: text-top;
 }
 
-#main-sidebar .expand-icon{
+#main-sidebar .expand-icon {
   position: absolute;
   top: 30%;
   right: 5%;
   display: none;
 }
 
-#main-sidebar .expand-menu:hover .expand-icon{
+#main-sidebar .expand-menu:hover .expand-icon {
   display: block;
 }
 
@@ -892,14 +950,6 @@ fabric-motd {
   margin-bottom: 1em;
 }
 
-.document-file-header {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2em;
-}
-
 /* Document View */
 #document-editor #section-content {
   font-family: 'Avant Garde Book BT', Arial, sans-serif !important;
@@ -927,4 +977,84 @@ fabric-motd {
   right: 0;
   bottom: 0;
   pointer-events: none;
+}
+
+.document-content-transition {
+  transition: height 0.4s ease-out;
+  overflow: hidden;
+}
+
+/* Onboarding Modal */
+.ui.modal .onboarding-modal-content.content {
+  padding: 0 !important;
+}
+
+/* Responsive Button Styles */
+.responsive-button.ui.button {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5em !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: auto !important;
+}
+
+.responsive-dropdown.ui.dropdown.button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  min-width: auto !important;
+}
+
+.responsive-button.ui.button .button-label {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease-in-out 0.1s,
+    margin-left 0.3s ease-in-out 0.1s !important;
+  max-width: 200px !important;
+  opacity: 1 !important;
+  margin-left: 0.5em !important;
+}
+
+.responsive-dropdown.ui.dropdown.button .text {
+  transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease-in-out 0.1s !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  max-width: 200px !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 960px) {
+  .responsive-button.ui.button {
+    padding: 0.75em !important;
+    min-width: 2.5em !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    transition: min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s !important;
+  }
+
+  .responsive-button.ui.button .button-label {
+    max-width: 0 !important;
+    opacity: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .responsive-button.ui.button i.icon {
+    margin: 0 !important;
+  }
+
+  .responsive-dropdown.ui.dropdown.button {
+    padding: 0.75em !important;
+    min-width: 2.5em !important;
+    transition: min-width 0.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s !important;
+  }
+
+  .responsive-dropdown.ui.dropdown.button .text {
+    max-width: 0 !important;
+    opacity: 0 !important;
+  }
+
+  .responsive-dropdown.ui.dropdown.button i.dropdown.icon {
+    margin: 0 !important;
+  }
 }

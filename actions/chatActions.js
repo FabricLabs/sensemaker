@@ -22,6 +22,8 @@ const GET_INFORMATION_FAILURE = 'GET_INFORMATION_FAILURE';
 const RESET_CHAT_STATE = 'RESET_CHAT_STATE';
 const RESET_CHAT_SUCCESS = 'RESET_CHAT_SUCCESS';
 
+const UPDATE_MESSAGE = 'UPDATE_MESSAGE';
+
 // Sync Action Creators
 const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
 const messageSuccess = (message) => ({ type: CHAT_SUCCESS, payload: { message }, isSending: false });
@@ -40,6 +42,8 @@ const getMessageInformationSuccess = (info) => ({ type: GET_INFORMATION_SUCCESS,
 const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error });
 
 const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
+
+const updateMessage = (messageId, updates) => ({ type: UPDATE_MESSAGE, payload: { messageId, updates } });
 
 // Async Action Creator (Thunk)
 const resetChat = (message) => {
@@ -73,6 +77,39 @@ const submitMessage = (message, collection_id = null) => {
       dispatch(messageSuccess(result));
     } catch (error) {
       dispatch(messageFailure(error.message));
+    }
+  };
+};
+
+const submitStreamingMessage = (message, collection_id = null) => {
+  return async (dispatch, getState) => {
+    dispatch(messageRequest());
+    const token = getState().auth.token;
+
+    try {
+      let requestBody = { ...message, streaming: true };
+      const response = await fetch('/messages/stream', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      dispatch(messageSuccess(result));
+
+      // Return the conversation ID for streaming setup
+      return result.object;
+    } catch (error) {
+      dispatch(messageFailure(error.message));
+      throw error;
     }
   };
 };
@@ -205,10 +242,12 @@ const getMessageInformation = (request) => {
 module.exports = {
   resetChat,
   submitMessage,
+  submitStreamingMessage,
   fetchResponse,
   getMessages,
   regenAnswer,
   getMessageInformation,
+  updateMessage,
   CHAT_SUCCESS,
   CHAT_FAILURE,
   CHAT_REQUEST,
@@ -219,5 +258,6 @@ module.exports = {
   FETCH_RESPONSE_SUCCESS,
   FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
-  RESET_CHAT_SUCCESS
+  RESET_CHAT_SUCCESS,
+  UPDATE_MESSAGE
 };
