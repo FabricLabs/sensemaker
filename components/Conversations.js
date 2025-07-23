@@ -449,6 +449,7 @@ class Conversations extends React.Component {
               messageInfo={this.props.messageInfo}
               thumbsUp={this.props.thumbsUp}
               thumbsDown={this.props.thumbsDown}
+              hideContext={true}
             />
           </div>}
           {/* Full-width Pagination Controls */}
