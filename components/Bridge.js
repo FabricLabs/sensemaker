@@ -3,6 +3,7 @@
 // Dependencies
 const React = require('react');
 const WebSocket = require('isomorphic-ws');
+const { applyPatch } = require('fast-json-patch');
 
 // WebRTC via PeerJS
 let Peer = null;
@@ -50,6 +51,15 @@ class Bridge extends React.Component {
       currentPath: window.location.pathname
     };
 
+    // Global state for JSON-PATCH updates
+    this.globalState = {
+      conversations: {},
+      messages: {},
+      users: {},
+      documents: {},
+      tasks: {}
+    };
+
     this.attempts = 1;
     this.messageQueue = [];
     this.webrtcMessageQueue = [];
@@ -74,6 +84,47 @@ class Bridge extends React.Component {
 
   get authority () {
     return ((this.settings.secure) ? `wss` : `ws`) + `://${this.settings.host}:${this.settings.port}`;
+  }
+
+  // Global state management methods
+  getGlobalState () {
+    return this.globalState;
+  }
+
+  updateGlobalState (patchMessage) {
+    try {
+      const jsonPatch = [patchMessage];
+      const result = applyPatch(this.globalState, jsonPatch, true, false);
+
+      if (result.newDocument) {
+        this.globalState = result.newDocument;
+
+        // Emit a custom event to notify components of state changes
+        const event = new CustomEvent('globalStateUpdate', {
+          detail: {
+            operation: patchMessage,
+            globalState: this.globalState
+          }
+        });
+
+        window.dispatchEvent(event);
+      } else {
+        console.error('[BRIDGE]', 'Failed to apply JSON-Patch:', result);
+      }
+
+    } catch (error) {
+      console.error('[BRIDGE]', 'Error updating global state:', error);
+    }
+  }
+
+  resetGlobalState () {
+    this.globalState = {
+      conversations: {},
+      messages: {},
+      users: {},
+      documents: {},
+      tasks: {}
+    };
   }
 
   componentDidMount () {
@@ -120,7 +171,7 @@ class Bridge extends React.Component {
       this.ws = null;
     }
 
-    console.debug('[BRIDGE]', 'Opening connection...');
+    console.debug('[BRIDGE]', 'Opening connection to:', `${this.authority}${path}`);
     this.ws = new WebSocket(`${this.authority}${path}`);
     this.ws.binaryType = 'arraybuffer';
 
@@ -148,25 +199,27 @@ class Bridge extends React.Component {
     this.ws.onmessage = this.onSocketMessage.bind(this);
 
     this.ws.onerror = (error) => {
-      console.error('[BRIDGE]', 'Error:', error);
+      console.error('[BRIDGE]', 'WebSocket error:', error);
       this._isConnected = false;
       this.setState({ error, isConnected: false });
     };
 
-    this.ws.onclose = () => {
-      console.debug('[BRIDGE]', 'Connection closed.');
+    this.ws.onclose = (event) => {
+      console.debug('[BRIDGE]', 'WebSocket closed:', event.code, event.reason);
       this._isConnected = false;
       this.setState({ isConnected: false });
-      // Clean up heartbeat interval on close
-      if (this._heartbeat) {
-        clearInterval(this._heartbeat);
-        this._heartbeat = null;
+
+      // Attempt to reconnect after a delay
+      if (this.attempts < 5) {
+        const delay = this.generateInterval(this.attempts);
+        console.debug('[BRIDGE]', `Reconnecting in ${delay}ms (attempt ${this.attempts})`);
+        setTimeout(() => {
+          this.attempts++;
+          this.connect(path);
+        }, delay);
+      } else {
+        console.error('[BRIDGE]', 'Max reconnection attempts reached');
       }
-      const time = this.generateInterval(this.attempts);
-      setTimeout(() => {
-        this.attempts++;
-        this.connect(path);
-      }, time);
     };
   }
 
@@ -676,39 +729,29 @@ class Bridge extends React.Component {
             console.debug('[BRIDGE]', 'JSONCall body is not valid JSON, skipping parse');
           }
           break;
-        case 'PATCH':
-          // Handle state updates
-          const path = message['@data'].path;
-          const value = message['@data'].value;
-          console.debug('[BRIDGE]', 'Received PATCH for path:', path, 'value:', value);
-
-          // Emit bitcoin status updates
-          if (path.startsWith('/services/bitcoin')) {
-            this.emit('bitcoin:status', { [path]: value });
-          }
-
+        case 'GenericMessage':
+          // Pass through GenericMessage as-is
           this.props.responseCapture({
-            type: 'PATCH',
-            path,
-            value
+            type: 'GenericMessage',
+            content: message.body
           });
           break;
-        case 'GenericMessage':
+        case 'JSONPatch':
+          // Handle JSONPatch messages (canonical path)
           try {
-            // Try to parse as JSON first
-            try {
-              const chunk = JSON.parse(message.body);
-              this.props.responseCapture(chunk);
-            } catch (jsonError) {
-              // If not JSON, pass the raw body
-              this.props.responseCapture({
-                type: 'GenericMessage',
-                content: message.body
-              });
-            }
-          } catch (exception) {
-            console.error('[BRIDGE]', 'Could not process message:', exception);
-            console.error('[BRIDGE]', 'Raw body:', message.body);
+            const patchData = JSON.parse(message.body);
+
+            // Update global state
+            this.updateGlobalState(patchData);
+
+            // Emit as PATCH format for components
+            this.props.responseCapture({
+              type: 'PATCH',
+              path: patchData.path,
+              value: patchData.value
+            });
+          } catch (parseError) {
+            console.error('[BRIDGE]', 'Could not parse JSONPatch message body:', parseError);
           }
           break;
         case 'MessageStart':

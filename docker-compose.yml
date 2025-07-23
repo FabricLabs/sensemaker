@@ -1,7 +1,7 @@
 services:
-  app:
+  core:
     build: .
-    container_name: sensemaker-app
+    container_name: sensemaker-core
     environment:
       NODE_ENV: production
       SQL_DB_HOST: db
@@ -16,6 +16,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FABRIC_MNEMONIC: ${FABRIC_MNEMONIC}
+      DEBUG: "true"
     ports:
       - "5050:3040"
     depends_on:
@@ -28,9 +29,9 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3040/metrics/health", "||", "exit", "1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      timeout: 30s
+      retries: 10
+      start_period: 600s
     restart: unless-stopped
 
   db:

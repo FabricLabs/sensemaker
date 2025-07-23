@@ -132,7 +132,8 @@ module.exports = {
     create: require('./messages/create_message'),
     createCompletion: require('./messages/create_completion'),
     getMessages: require('./messages/list_messages'),
-    regenerate: require('./messages/regenerate_message')
+    regenerate: require('./messages/regenerate_message'),
+    stream: require('./messages/create_streaming_message')
   },
   peers: {
     list: require('./peers/list_peers'),

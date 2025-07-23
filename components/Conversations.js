@@ -440,14 +440,6 @@ class Conversations extends React.Component {
           ) : <div ref={this.messagesEndRef} style={componentStyle}>
             {/* <div style={{marginBottom: '2em'}}>We haven't had any conversations yet.</div> */}
             {/* <Button as={Link} to='/conversations/new' primary>Ask a Question</Button> */}
-            {(conversations.length > itemsPerPage) ? <Pagination
-              size='tiny'
-              activePage={currentPage}
-              totalPages={Math.ceil(conversations.length / itemsPerPage)}
-              onPageChange={this.handlePaginationChange}
-              ellipsisItem={(windowWidth > 480) ? undefined : null}
-              boundaryRange={(windowWidth > 480) ? 1 : 0}
-            /> : null}
             <ChatBox
               {...this.props}
               messagesEndRef={this.messagesEndRef}
@@ -457,16 +449,60 @@ class Conversations extends React.Component {
               messageInfo={this.props.messageInfo}
               thumbsUp={this.props.thumbsUp}
               thumbsDown={this.props.thumbsDown}
+              hideContext={true}
             />
           </div>}
-          {(conversations.length > itemsPerPage) ? <Pagination
-            size='tiny'
-            activePage={currentPage}
-            totalPages={Math.ceil(conversations.length / itemsPerPage)}
-            onPageChange={this.handlePaginationChange}
-            ellipsisItem={(windowWidth > 480) ? undefined : null}
-            boundaryRange={(windowWidth > 480) ? 1 : 0}
-          /> : null}
+          {/* Full-width Pagination Controls */}
+          {(conversations.length > itemsPerPage) ? (
+            <div style={{
+              width: '100%',
+              marginTop: '1em',
+              marginBottom: '1em'
+            }}>
+              <style>
+                {`
+                  .full-width-pagination.ui.pagination.menu {
+                    width: 100% !important;
+                    display: flex !important;
+                  }
+                  .full-width-pagination.ui.pagination.menu .item:last-child {
+                    margin-left: auto !important;
+                  }
+                `}
+              </style>
+              <Pagination
+                className="full-width-pagination"
+                activePage={currentPage}
+                totalPages={Math.ceil(conversations.length / itemsPerPage)}
+                onPageChange={this.handlePaginationChange}
+                boundaryRange={Math.ceil(conversations.length / itemsPerPage) <= 10 ? Math.ceil(conversations.length / itemsPerPage) : 2}
+                siblingRange={Math.ceil(conversations.length / itemsPerPage) <= 15 ? Math.ceil(conversations.length / itemsPerPage) : 3}
+                showEllipsis={Math.ceil(conversations.length / itemsPerPage) > 15}
+                showFirstAndLastNav={true}
+                showPreviousAndNextNav={true}
+                firstItem={{
+                  'aria-label': 'First item',
+                  content: '«',
+                  disabled: currentPage === 1
+                }}
+                prevItem={{
+                  'aria-label': 'Previous item',
+                  content: '‹',
+                  disabled: currentPage === 1
+                }}
+                nextItem={{
+                  'aria-label': 'Next item',
+                  content: '›',
+                  disabled: currentPage === Math.ceil(conversations.length / itemsPerPage)
+                }}
+                lastItem={{
+                  'aria-label': 'Last item',
+                  content: '»',
+                  disabled: currentPage === Math.ceil(conversations.length / itemsPerPage)
+                }}
+              />
+            </div>
+          ) : null}
           {(currentConversations && currentConversations.length) ? (
             <ChatBox
               {...this.props}

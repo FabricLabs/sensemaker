@@ -2296,6 +2296,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('PUT', '/settings/:setting', ROUTES.settings.edit.bind(this));
     this.http._addRoute('POST', '/reviews', ROUTES.reviews.create.bind(this));
     this.http._addRoute('POST', '/messages', ROUTES.messages.create.bind(this));
+    this.http._addRoute('POST', '/messages/stream', ROUTES.messages.stream.bind(this));
 
     // TODO: attach old message ID to a new message ID, send `regenerate_requested` to true
     this.http._addRoute('PATCH', '/messages/:id', ROUTES.messages.regenerate.bind(this));
@@ -3928,6 +3929,421 @@ class Sensemaker extends Hub {
 
     // Should never reach here due to maxAttempts check in catch block
     throw new Error('Failed to connect to bitcoind: Max attempts exceeded');
+  }
+
+  /**
+   * Prepare a text request using the same logic as handleTextRequest
+   * @param {Object} request Request object
+   * @returns {Promise<Object>} Prepared request with context, messages, and user data
+   */
+  async prepareTextRequest (request) {
+    const now = new Date();
+    const created = now.toISOString();
+
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STREAMING]', 'Preparing request:', request);
+
+    // Prepare Metadata
+    let conversation = null;
+    let requestor = null;
+    let messages = [];
+    let priorConversations = null;
+    let prompt = null;
+
+    // Conversation Resume
+    if (request.conversation_id) {
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STREAMING]', 'Resuming conversation:', request.conversation_id);
+      conversation = await this.db('conversations').select('id', 'agent_id', 'title', 'summary', 'created_at').where({ fabric_id: request.conversation_id }).first();
+      if (!conversation) throw new Error('Conversation not found.');
+      const prev = await this._getConversationMessages(conversation.id);
+      messages = prev.map((x) => {
+        return { role: (x.user_id == 1) ? 'assistant' : 'user', name: (x.user_id == 1) ? '': undefined, content: x.content }
+      });
+    }
+
+    if (request.user_id) {
+      requestor = await this.db('users').select('username', 'created_at').where({ id: request.user_id }).first();
+      request.username = requestor.username;
+      request.user = { username: requestor.username, id: request.user_id };
+      const conversationStats = await this.db('conversations').count('id as total').groupBy('creator_id').where({ creator_id: request.user_id });
+      const recentConversations = await this.db('conversations').select('fabric_id as id', 'title', 'summary', 'created_at').where({ creator_id: request.user_id }).orderBy('created_at', 'desc').limit(20);
+      priorConversations = recentConversations;
+      if (conversationStats.total > 20) {
+        priorConversations.push(`<...${conversationStats.total - 20} more conversations>`);
+      }
+    }
+
+    let contextString = '';
+
+    if (request.context) {
+      const localContext = { ...request.context, created: created, owner: this.id };
+      contextString = JSON.stringify(localContext);
+    }
+
+    if (request.agent) {
+      const agent = await this.db('agents').select('id', 'latest_prompt_blob_id').where({ id: request.agent }).first();
+      if (!agent) {
+        prompt = this.settings.prompt;
+      } else {
+        const blob = await this.db('blobs').select('content').where({ id: agent.latest_prompt_blob_id }).first();
+        if (!prompt) prompt = this.settings.prompt;
+        prompt = blob.content;
+      }
+    } else {
+      prompt = this.settings.prompt;
+    }
+
+    if (request.user && !request.context) {
+      const recentConversations = await this.db('conversations').select('id', 'title', 'summary', 'created_at')
+        .where({ creator_id: request.user.id })
+        .orderBy('created_at', 'desc')
+        .limit(5);
+
+      if (recentConversations.length > 0) {
+        messages.unshift({
+          role: 'user',
+          content: `My recent conversations:\n\n` + recentConversations.map((conv) => {
+            return `- [ ] ${conv.title} (${conv.created_at})`;
+          }).join('\n')
+        });
+      }
+
+      const oldestTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+        .where({ creator: request.user.id })
+        .whereNull('completed_at')
+        .orderBy('created_at', 'asc')
+        .limit(5);
+
+      if (oldestTasks.length > 0) {
+        messages.unshift({
+          role: 'user',
+          content: `My oldest outstanding tasks:\n\n` + oldestTasks.map((task) => {
+            return `- [ ] ${task.title} (created: ${task.created_at})`;
+          }).join('\n')
+        });
+      }
+
+      const urgentTasks = await this.db('tasks').select('id', 'title', 'created_at', 'due_date')
+        .where({ creator: request.user.id })
+        .whereNull('completed_at')
+        .whereNotNull('due_date')
+        .orderBy('due_date', 'asc')
+        .limit(5);
+
+      if (urgentTasks.length > 0) {
+        messages.unshift({
+          role: 'user',
+          content: `My urgent tasks:\n\n` + urgentTasks.map((task) => {
+            return `- [ ] ${task.title} (due: ${task.due_date})`;
+          }).join('\n')
+        });
+      }
+
+      const announcements = await this.db('announcements')
+        .select('id', 'title', 'body', 'created_at')
+        .where(() => {
+          this.db.where('expiration_date', '>', this.db.fn.now())
+        })
+        .orderBy('created_at', 'desc')
+        .limit(5);
+
+      if (announcements.length > 0) {
+        messages.unshift({
+          role: 'user',
+          content: `Recent announcements:\n\n` + announcements.map((ann) => {
+            return `- ${ann.title} (${ann.created_at}): ${ann.body}`;
+          }).join('\n\n')
+        });
+      }
+
+      const currentTime = (new Date()).toISOString();
+      messages.unshift({
+        role: 'user',
+        content: `The current time is: ${currentTime}`
+      });
+    }
+
+    // Prompt
+    messages.unshift({
+      role: 'system',
+      content: prompt
+    });
+
+    const template = {
+      context: request.context,
+      prompt: prompt,
+      query: request.query,
+      messages: messages,
+      tools: request.tools,
+      user: request.user
+    };
+
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STREAMING]', 'Prepared template:', template);
+    return template;
+  }
+
+  /**
+   * Stream a text response using the prepared request
+   * @param {Object} preparedRequest Prepared request from prepareTextRequest
+   * @param {String} assistantMessageId Assistant message ID for updates
+   * @param {String} fabricConversationID Conversation ID
+   * @param {Boolean} isNew Whether this is a new conversation
+   * @param {Number} localConversationID Local conversation ID
+   */
+  async streamTextResponse (preparedRequest, assistantMessageId, fabricConversationID, isNew, localConversationID) {
+    const now = new Date();
+
+    // First, run the same preprocessing pipeline as handleTextRequest
+    console.debug('[STREAMING_MESSAGE]', 'Running preprocessing pipeline...');
+
+    // Pipeline with Promise.allSettled (same as handleTextRequest)
+    const pipelineResponses = await Promise.allSettled([
+      new Promise((resolve, reject) => {
+        setTimeout(() => {
+          reject(new Error('Timeout'));
+        }, preparedRequest.timeout || 30000); // Default timeout
+      }),
+      this.pool.query({ ...preparedRequest, model: 'deepseek-r1:latest' }),
+      this.trainer.query(preparedRequest),
+      this.sensemaker.query(preparedRequest)
+    ]);
+
+    console.debug('[STREAMING_MESSAGE]', 'Pipeline responses:', pipelineResponses);
+
+    // Filter and process responses (same as handleTextRequest)
+    const settled = pipelineResponses.filter((x) => x.status === 'fulfilled').map((x) => {
+      return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content }
+    });
+
+    // Add the pipeline responses to the messages
+    const enhancedRequest = { ...preparedRequest };
+    if (enhancedRequest.messages) {
+      for (let i = 0; i < settled.length; i++) {
+        const response = settled[i];
+        if (this.settings.debug) console.debug('[STREAMING_MESSAGE]', 'Pipeline response:', response);
+        enhancedRequest.messages.push({ role: 'assistant', content: response.content });
+      }
+    }
+
+    // Use the summarizer agent for streaming (now with enhanced context)
+    const streamingAgent = this.sensemaker;
+
+    console.debug('[STREAMING_MESSAGE]', 'Agent configuration:', {
+      name: streamingAgent.settings.name,
+      host: streamingAgent.settings.host,
+      port: streamingAgent.settings.port,
+      model: streamingAgent.settings.model,
+      hasHost: !!streamingAgent.settings.host,
+      hasQueryStream: typeof streamingAgent.queryStream === 'function'
+    });
+
+    // Test if agent has queryStream method
+    if (typeof streamingAgent.queryStream !== 'function') {
+      console.error('[STREAMING_MESSAGE]', 'Agent does not have queryStream method, falling back to regular query');
+      // Fall back to regular query
+      const response = await streamingAgent.query(enhancedRequest);
+
+      // Update message with response
+      await this.db('messages').update({
+        content: response.content,
+        status: 'ready'
+      }).where({ fabric_id: assistantMessageId });
+
+      // Emit JSON-PATCH for message completion
+      const messageEndPatch = {
+        op: 'replace',
+        path: `/messages/${assistantMessageId}`,
+        value: {
+          content: response.content,
+          status: 'ready',
+          updated_at: now.toISOString()
+        }
+      };
+      const messageEndPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(messageEndPatch)]);
+      console.debug('[STREAMING_MESSAGE]', 'Broadcasting fallback message PATCH');
+      this.http.broadcast(messageEndPatchMessage);
+      return;
+    }
+
+    // Set up streaming with JSON-PATCH emission
+    streamingAgent.on('message', (fabricMessage) => {
+      console.debug('[STREAMING_MESSAGE]', 'Agent emitted message:', {
+        type: fabricMessage.type,
+        body: fabricMessage.body ? fabricMessage.body.substring(0, 200) + '...' : 'no body',
+        fullMessage: fabricMessage.toObject()
+      });
+      // Broadcast the streaming message to all connected clients
+      console.debug('[STREAMING_MESSAGE]', 'Broadcasting agent message via HTTP server');
+      this.http.broadcast(fabricMessage);
+    });
+
+    // Start streaming query
+    console.debug('[STREAMING_MESSAGE]', 'About to call queryStream on agent:', streamingAgent.settings.name);
+
+    try {
+      const streamResult = await streamingAgent.queryStream({
+        ...enhancedRequest,
+        messageId: assistantMessageId, // Pass the canonical message ID
+        onStart: async (startData) => {
+          console.debug('[STREAMING_MESSAGE]', 'Stream started:', startData);
+          // Transition from computing to streaming status
+          await this.db('messages').update({
+            status: 'streaming',
+            content: ''
+          }).where({ fabric_id: assistantMessageId });
+
+          // Emit JSON-PATCH for message start (transition from computing to streaming)
+          const messageStartPatch = {
+            op: 'replace',
+            path: `/messages/${assistantMessageId}`,
+            value: {
+              status: 'streaming',
+              content: '',
+              updated_at: now.toISOString()
+            }
+          };
+          const messageStartPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(messageStartPatch)]);
+          console.debug('[STREAMING_MESSAGE]', 'Broadcasting message start PATCH (computing -> streaming)');
+          this.http.broadcast(messageStartPatchMessage);
+        },
+        onChunk: async (chunkData) => {
+          console.debug('[STREAMING_MESSAGE]', 'Received chunk:', chunkData.value?.content);
+          // Update message content with accumulated chunks (for database persistence)
+          await this.db('messages').update({
+            content: chunkData.value?.content || '',
+            status: 'streaming'
+          }).where({ fabric_id: assistantMessageId });
+
+          // Emit JSON-PATCH for content updates during streaming
+          // This ensures the ChatBox receives real-time content updates
+          const messageChunkPatch = {
+            op: 'replace',
+            path: `/messages/${assistantMessageId}`,
+            value: {
+              content: chunkData.value?.content || '',
+              status: 'streaming',
+              updated_at: now.toISOString()
+            }
+          };
+          const messageChunkPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(messageChunkPatch)]);
+          console.debug('[STREAMING_MESSAGE]', 'Broadcasting content chunk PATCH:', chunkData.value?.content?.substring(0, 50) + '...');
+          this.http.broadcast(messageChunkPatchMessage);
+        },
+        onEnd: async (endData) => {
+          console.debug('[STREAMING_MESSAGE]', 'Stream ended:', endData);
+          // Finalize message
+          await this.db('messages').update({
+            content: endData.content,
+            status: 'ready'
+          }).where({ fabric_id: assistantMessageId });
+
+          // Emit JSON-PATCH for message completion
+          const messageEndPatch = {
+            op: 'replace',
+            path: `/messages/${assistantMessageId}`,
+            value: {
+              content: endData.content,
+              status: 'ready',
+              updated_at: now.toISOString()
+            }
+          };
+          const messageEndPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(messageEndPatch)]);
+          console.debug('[STREAMING_MESSAGE]', 'Broadcasting message end PATCH');
+          this.http.broadcast(messageEndPatchMessage);
+
+          // Handle conversation summarization asynchronously
+          const history = await this._getConversationMessages(fabricConversationID);
+          const finalMessages = history.map((x) => {
+            return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
+          });
+
+          if (isNew) {
+            this._summarizeMessagesToTitle(finalMessages).catch((error) => {
+              console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
+            }).then(async (output) => {
+              let title = output?.content || 'broken content title';
+              if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
+              if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
+
+              // Emit JSON-PATCH for conversation title update
+              const titlePatch = {
+                op: 'replace',
+                path: `/conversations/${fabricConversationID}`,
+                value: {
+                  title: title,
+                  updated_at: now.toISOString()
+                }
+              };
+              const titlePatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(titlePatch)]);
+              this.http.broadcast(titlePatchMessage);
+            });
+          }
+
+          this._summarizeMessages(finalMessages).catch((error) => {
+            console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
+          }).then(async (output) => {
+            if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Summarized conversation:', output);
+            let summary = output?.content || 'broken content summary';
+            if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
+            if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
+
+            // Emit JSON-PATCH for conversation summary update
+            const summaryPatch = {
+              op: 'replace',
+              path: `/conversations/${fabricConversationID}`,
+              value: {
+                summary: summary,
+                updated_at: now.toISOString()
+              }
+            };
+            const summaryPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(summaryPatch)]);
+            this.http.broadcast(summaryPatchMessage);
+          });
+        }
+      }).catch((exception) => {
+        console.error('[STREAMING_MESSAGE]', 'Error in streaming query:', exception);
+
+        // Update message with error status
+        this.db('messages').update({
+          content: 'Sorry, I encountered an error while processing your request.',
+          status: 'error'
+        }).where({ fabric_id: assistantMessageId });
+
+        // Emit JSON-PATCH for error status
+        const errorPatch = {
+          op: 'replace',
+          path: `/messages/${assistantMessageId}`,
+          value: {
+            content: 'Sorry, I encountered an error while processing your request.',
+            status: 'error',
+            updated_at: now.toISOString()
+          }
+        };
+        const errorPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(errorPatch)]);
+        this.http.broadcast(errorPatchMessage);
+      });
+
+    } catch (exception) {
+      console.error('[STREAMING_MESSAGE]', 'Error in streaming query:', exception);
+
+      // Update message with error status
+      this.db('messages').update({
+        content: 'Sorry, I encountered an error while processing your request.',
+        status: 'error'
+      }).where({ fabric_id: assistantMessageId });
+
+      // Emit JSON-PATCH for error status
+      const errorPatch = {
+        op: 'replace',
+        path: `/messages/${assistantMessageId}`,
+        value: {
+          content: 'Sorry, I encountered an error while processing your request.',
+          status: 'error',
+          updated_at: now.toISOString()
+        }
+      };
+      const errorPatchMessage = Message.fromVector(['JSONPatch', JSON.stringify(errorPatch)]);
+      this.http.broadcast(errorPatchMessage);
+    }
   }
 }
 
