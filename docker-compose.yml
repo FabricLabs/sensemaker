@@ -1,7 +1,7 @@
 services:
-  app:
+  core:
     build: .
-    container_name: sensemaker-app
+    container_name: sensemaker-core
     environment:
       NODE_ENV: production
       SQL_DB_HOST: db
