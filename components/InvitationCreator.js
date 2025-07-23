@@ -42,10 +42,13 @@ class InvitationCreator extends React.Component {
         errorSending: false 
       });
       
-      // Reset success message after delay
+      // Reset success message and close modal after delay
       setTimeout(() => {
         this.setState({ sent: false });
-      }, 3000);
+        if (this.props.onClose) {
+          this.props.onClose();
+        }
+      }, 2000);
     } catch (error) {
       this.setState({ errorSending: true });
     } finally {

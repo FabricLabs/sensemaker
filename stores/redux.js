@@ -32,6 +32,7 @@ const personReducer = require('../reducers/personReducer');
 const searchReducer = require('../reducers/searchReducer');
 const sourcesReducer = require('../reducers/sourcesReducer');
 const tasksReducer = require('../reducers/tasksReducer');
+const triggerReducer = require('../reducers/triggerReducer');
 const feedbackReducer = require('../reducers/feedbackReducer');
 const helpReducer = require('../reducers/helpReducer');
 const redisReducer = require('../reducers/redisReducer');
@@ -69,6 +70,7 @@ const rootReducer = combineReducers({
   redis: redisReducer,
   sources: sourcesReducer,
   tasks: tasksReducer,
+  triggers: triggerReducer,
   users: accountsReducer,
   wallet: walletReducer
 });

@@ -49,6 +49,7 @@ class TaskPage extends React.Component {
     this.handleDescriptionChange = this.handleDescriptionChange.bind(this);
     this.handleMarkdownEditToggle = this.handleMarkdownEditToggle.bind(this);
     this.handleChatResponse = this.handleChatResponse.bind(this);
+    this.handleCompleteTask = this.handleCompleteTask.bind(this);
 
     return this;
   }
@@ -187,6 +188,20 @@ class TaskPage extends React.Component {
     }).then(() => this.props.fetchResource()).finally(() => this.setState({ loading: false }));
   }
 
+  async handleCompleteTask () {
+    this.setState({ loading: true });
+    try {
+      await this.props.updateTask(this.props.api.resource.id, {
+        completed_at: new Date().toISOString()
+      });
+      await this.props.fetchResource();
+    } catch (error) {
+      console.error('Error completing task:', error);
+    } finally {
+      this.setState({ loading: false });
+    }
+  }
+
   formatDate (dateStr) {
     if (!dateStr) return '';
 
@@ -255,67 +270,76 @@ class TaskPage extends React.Component {
           </Breadcrumb>
         </div>
         <Segment loading={api?.resource?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1'>
-            {this.state.isEditingTitle ? (
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                onInput={this.handleTitleEdit}
-                onKeyDown={this.saveTitle}
-                onBlur={this.saveTitle}
-                style={{
-                  border: '1px solid #ccc',
-                  padding: '0.5em',
-                  borderRadius: '4px',
-                  minHeight: '1.5em',
-                  outline: 'none',
-                  fontWeight: 'bold'
-                }}
-              >
-                {this.state.editedTitle}
-              </div>
-            ) : (
-              <div
-                style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
-                onMouseEnter={() => this.handleTitleHover(true)}
-                onMouseLeave={() => this.handleTitleHover(false)}
-                onClick={this.toggleTitleEdit}
-              >
-                <span>{api?.resource?.title}</span>
-                {this.state.isTitleHovered && (
-                  <Icon
-                    name='pencil'
-                    style={{
-                      marginLeft: '0.5em',
-                      opacity: 0.6,
-                      fontSize: '0.7em'
-                    }}
-                  />
-                )}
-              </div>
-            )}
-          </Header>
-          {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1em' }}>
-            <p style={{ margin: 0 }}>
-              Due: {api?.resource?.due_date ? (
-                this.formatDate(api.resource.due_date)
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1em' }}>
+            <Header as='h1'>
+              {this.state.isEditingTitle ? (
+                <div
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={this.handleTitleEdit}
+                  onKeyDown={this.saveTitle}
+                  onBlur={this.saveTitle}
+                  style={{
+                    border: '1px solid #ccc',
+                    padding: '0.5em',
+                    borderRadius: '4px',
+                    minHeight: '1.5em',
+                    outline: 'none',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {this.state.editedTitle}
+                </div>
               ) : (
-                <span style={{ color: '#999', fontStyle: 'italic' }}>Not set</span>
+                <div
+                  style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                  onMouseEnter={() => this.handleTitleHover(true)}
+                  onMouseLeave={() => this.handleTitleHover(false)}
+                  onClick={this.toggleTitleEdit}
+                >
+                  <span>{api?.resource?.title}</span>
+                  {this.state.isTitleHovered && (
+                    <Icon
+                      name='pencil'
+                      style={{
+                        marginLeft: '0.5em',
+                        opacity: 0.6,
+                        fontSize: '0.7em'
+                      }}
+                    />
+                  )}
+                </div>
               )}
-            </p>
+            </Header>
             {!api?.resource?.completed_at && (
               <Button
+                positive
                 icon
-                basic
-                size='tiny'
-                style={{ marginLeft: '0.5em' }}
-                onClick={() => this.setState({ isEditingDueDate: true })}
+                labelPosition='right'
+                onClick={this.handleCompleteTask}
+                loading={this.state.loading}
               >
-                <Icon name='calendar' />
+                Mark as Complete
+                <Icon name='check' />
               </Button>
             )}
           </div>
+          {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
+          {!api?.resource?.completed_at && (
+            <Button
+              basic
+              onClick={() => this.setState({ isEditingDueDate: true })}
+              size='tiny'
+              style={{ marginLeft: '0.5em' }}
+            >
+              <Icon name='calendar' />
+              {api?.resource?.due_date ? (
+                <abbr title={api.resource.due_date}>{this.formatDate(api.resource.due_date)}</abbr>
+              ) : (
+                <span style={{ color: '#999', fontStyle: 'italic' }}>no due date</span>
+              )}
+            </Button>
+          )}
           {this.state.isEditingDueDate && (
             <div style={{ marginBottom: '1em' }}>
               <div style={{ display: 'flex', gap: '1em', alignItems: 'center' }}>
@@ -359,13 +383,11 @@ class TaskPage extends React.Component {
           <div style={{ position: 'relative' }}>
             <Button
               icon
-              labelPosition='left'
               size='small'
               onClick={() => this.handleMarkdownEditToggle(!this.state.markdownEditMode)}
               style={{ position: 'absolute', right: 0, top: '-3em' }}
             >
               <Icon name='edit' />
-              {this.state.markdownEditMode ? 'View' : 'Edit'}
             </Button>
             <MarkdownContent
               content={api?.resource?.description || ''}

@@ -3,17 +3,25 @@
 module.exports = function (req, res)  {
   const fabricID = req.params.fabricID;
   res.format({
-    json:async() => {
+    json: async () => {
       try {
-        const document = await this.db.select('*').from('documents').where({ fabric_id: req.params.fabricID }).first();
+        const document = await this.db('documents')
+          .where({ fabric_id: req.params.fabricID })
+          .andWhere(function() {
+            this.where('creator', '=', req.user.id).orWhere('owner', '=', req.user.id);
+          })
+          .first();
 
         if (!document) {
-          return res.status(404).json({ message: 'Invalid document' });
+          return res.status(404).json({ message: 'Document not found or access denied.' });
         }
 
         // update the document status to deleted from the documents list
         const documentDeleteStatus = await this.db('documents')
           .where({ fabric_id: req.params.fabricID })
+          .andWhere(function() {
+            this.where('creator', '=', req.user.id).orWhere('owner', '=', req.user.id);
+          })
           .update({
             updated_at: new Date(),
             status: 'deleted',

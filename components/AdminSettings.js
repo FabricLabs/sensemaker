@@ -15,7 +15,9 @@ const AdminServicesTab = require('./tabs/admin/services');
 const AdminSettingsTab = require('./tabs/admin/settings');
 const AdminAgentsTab = require('./tabs/admin/agents');
 const AnnouncementCreator = require('./AnnouncementCreator');
+const AnnouncementList = require('./AnnouncementList');
 const InvitationCreator = require('./InvitationCreator');
+const InvoiceCreator = require('./InvoiceCreator');
 
 // Semantic UI
 const {
@@ -24,6 +26,8 @@ const {
   Segment,
   Menu,
   Statistic,
+  Button,
+  Modal
 } = require('semantic-ui-react');
 
 class AdminSettings extends React.Component {
@@ -48,7 +52,9 @@ class AdminSettings extends React.Component {
         waitlistSignupCount: 0,
         currentPage: 1,
         windowWidth: window.innerWidth,
-        activeTab: this.getInitialTab()
+        activeTab: this.getInitialTab(),
+        announcementModalOpen: false,
+        invitationModalOpen: false
       }
     }, props);
 
@@ -89,8 +95,24 @@ class AdminSettings extends React.Component {
     this.setState({ activeTab: name });
   };
 
+  handleAnnouncementModalOpen = () => {
+    this.setState({ announcementModalOpen: true });
+  }
+
+  handleAnnouncementModalClose = () => {
+    this.setState({ announcementModalOpen: false });
+  }
+
+  handleInvitationModalOpen = () => {
+    this.setState({ invitationModalOpen: true });
+  }
+
+  handleInvitationModalClose = () => {
+    this.setState({ invitationModalOpen: false });
+  }
+
   renderOverviewTab () {
-    const { stats, announcements } = this.props;
+    const { stats, announcements, editAnnouncement } = this.props;
     const inquiriesWaiting = stats?.inquiries?.waiting ?? 0;
     const invitationsTotal = stats?.invitations?.total ?? 0;
     const usersTotal = stats?.users?.total ?? 0;
@@ -115,21 +137,47 @@ class AdminSettings extends React.Component {
         <sensemaker-announcements>
           <Header as='h4' style={{ marginTop: '2em' }}>Announcements</Header>
           <p>Announcements are displayed to all users of this node.</p>
-          {announcements?.announcements?.map((announcement) => (
-            <Message info key={announcement.id}>
-              <Message.Header>
-                <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.title || '') }} />
-              </Message.Header>
-              <Message.Content>
-                <span dangerouslySetInnerHTML={{ __html: marked.parse(announcement?.body || '') }} />
-              </Message.Content>
-            </Message>
-          ))}
-          <AnnouncementCreator />
+          <AnnouncementList
+            {...this.props}
+            announcements={announcements?.announcements}
+            isAdmin={true}
+            editAnnouncement={editAnnouncement}
+          />
+          <Button primary onClick={this.handleAnnouncementModalOpen}>
+            Create Announcement
+          </Button>
+          <Modal
+            open={this.state.announcementModalOpen}
+            onClose={this.handleAnnouncementModalClose}
+            size="large"
+          >
+            <Modal.Header>Create Announcement</Modal.Header>
+            <Modal.Content>
+              <AnnouncementCreator onClose={this.handleAnnouncementModalClose} />
+            </Modal.Content>
+          </Modal>
         </sensemaker-announcements>
         <Header as='h4' style={{ marginTop: '2em' }}>Send Invitation</Header>
         <p>Send an invitation to a new user.</p>
-        <InvitationCreator sendInvitation={this.props.sendInvitation} />
+        <Button primary onClick={this.handleInvitationModalOpen}>
+          Create Invitation
+        </Button>
+        <div style={{ marginTop: '1em', marginLeft: '1em' }}>
+          <InvoiceCreator bridge={this.props.bridge} />
+        </div>
+        <Modal
+          open={this.state.invitationModalOpen}
+          onClose={this.handleInvitationModalClose}
+          size="small"
+        >
+          <Modal.Header>Send Invitation</Modal.Header>
+          <Modal.Content>
+            <InvitationCreator
+              sendInvitation={this.props.sendInvitation}
+              onClose={this.handleInvitationModalClose}
+            />
+          </Modal.Content>
+        </Modal>
       </div>
     );
   }

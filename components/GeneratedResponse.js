@@ -1,5 +1,7 @@
 'use strict';
 
+import toRelativeTime from '../functions/toRelativeTime';
+
 // Constants
 const { BRAND_NAME } = require('../constants');
 
@@ -72,6 +74,15 @@ class GeneratedResponse extends React.Component {
     // Check if we have initial content (existing recommendation)
     const hasInitialContent = initialContent && initialContent.trim() !== '';
 
+    // Reset isRegenerating when new content arrives
+    if (this.state.isRegenerating) {
+      // Reset regenerating state if we got new initial content or a new response
+      if ((hasInitialContent && initialContent !== prevProps.initialContent) ||
+          (hasResponse && !hadResponse)) {
+        this.setState({ isRegenerating: false });
+      }
+    }
+
     // Fetch response if:
     // 1. We have a valid request object (not null)
     // 2. We don't already have initial content
@@ -138,6 +149,7 @@ class GeneratedResponse extends React.Component {
 
     // Hide content if we're regenerating
     const showContent = hasContent && !this.state.isRegenerating;
+    const timestamp = response?.created || new Date().toISOString();
 
     return (
       <Segment className='fade-in' loading={isLoading}>
@@ -149,7 +161,19 @@ class GeneratedResponse extends React.Component {
         ) : (
           <sensemaker-response>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <h3>{BRAND_NAME} says...</h3>
+              <div>
+                <h3 style={{ marginBottom: 0 }}>{BRAND_NAME} says...</h3>
+                <abbr title={timestamp}>{toRelativeTime(timestamp)}</abbr>
+              </div>
+              <Button
+                icon
+                basic
+                size='small'
+                onClick={this.handleRegenerateClick}
+                title="Regenerate response"
+              >
+                <Icon name='refresh' />
+              </Button>
             </div>
             <div style={{ marginTop: '1em' }} dangerouslySetInnerHTML={{ __html: marked.parse(content || '') }}></div>
             <ChatBox
@@ -165,6 +189,7 @@ class GeneratedResponse extends React.Component {
               messageInfo={this.props.messageInfo}
               thumbsUp={this.props.thumbsUp}
               thumbsDown={this.props.thumbsDown}
+              hideContext={this.props.hideContext}
             />
             <Modal
               size='tiny'

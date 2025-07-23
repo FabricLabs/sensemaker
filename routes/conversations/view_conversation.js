@@ -3,7 +3,7 @@
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log').from('conversations')
+      const conversation = await this.db.select('id', 'title', 'created_at', 'log', 'context').from('conversations')
         .where(function () {
           // TODO: disable raw ID lookup, only allow Fabric ID lookup
           this.where('id', req.params.id).orWhere('fabric_id', req.params.id);

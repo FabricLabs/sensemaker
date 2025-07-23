@@ -24,7 +24,8 @@ const {
 
 // ## Announcement Actions
 const {
-  fetchAnnouncements
+  fetchAnnouncements,
+  editAnnouncement
 } = require('./announcementActions');
 
 // ## Authentication (and Authorization) Actions
@@ -66,6 +67,7 @@ const {
 const {
   resetChat,
   submitMessage,
+  submitStreamingMessage,
   fetchResponse,
   regenAnswer,
   getMessages,
@@ -116,6 +118,7 @@ const {
   deleteDocument,
   fetchDocumentSections,
   deleteDocumentSection,
+  fetchCommit,
 } = require('./documentActions');
 
 // # Fabric Actions
@@ -224,6 +227,13 @@ const {
   updateTask
 } = require('./taskActions');
 
+// ## Trigger Actions
+const {
+  fetchTriggers,
+  createTrigger,
+  updateTrigger
+} = require('./triggerActions');
+
 // ## Upload Actions
 const {
   fetchUploads,
@@ -280,6 +290,7 @@ module.exports = {
   editDocumentSection: editDocumentSection,
   editDocument: editDocument,
   deleteDocument: deleteDocument,
+  fetchCommit: fetchCommit,
   fetchFiles: fetchFiles,
   fetchFile: fetchFile,
   uploadFile: uploadFile,
@@ -332,6 +343,7 @@ module.exports = {
   editEmail: editEmail,
   resetChat: resetChat,
   submitMessage: submitMessage,
+  submitStreamingMessage: submitStreamingMessage,
   regenAnswer: regenAnswer,
   getMessages: getMessages,
   getMessageInformation: getMessageInformation,
@@ -349,5 +361,9 @@ module.exports = {
   syncRedisQueue: syncRedisQueue,
   lastJobTaken: lastJobTaken,
   lastJobCompleted: lastJobCompleted,
-  clearQueue: clearQueue
+  clearQueue: clearQueue,
+  editAnnouncement: editAnnouncement,
+  fetchTriggers,
+  createTrigger,
+  updateTrigger
 };
