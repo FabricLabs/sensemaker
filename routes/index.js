@@ -127,6 +127,9 @@ module.exports = {
     list: require('./memories/list_memories'),
     view: require('./memories/view_memory')
   },
+  models: {
+    list: require('./models/list_models')
+  },
   messages: {
     list: require('./messages/list_messages'),
     create: require('./messages/create_message'),

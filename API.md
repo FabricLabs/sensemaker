@@ -10,6 +10,9 @@
 <dt><a href="#Clock">Clock</a> : <code>Object</code></dt>
 <dd><p>Simple clock.  Emits <code>tick</code> events at a specified interval.</p>
 </dd>
+<dt><a href="#Pool">Pool</a></dt>
+<dd><p>Manage a pool of member Agents to reliably queries.</p>
+</dd>
 <dt><a href="#Queue">Queue</a></dt>
 <dd><p>A <code>Queue</code> is a simple job queue for managing asynchronous tasks.</p>
 </dd>
@@ -85,6 +88,10 @@ Builder for [Fabric](Fabric)-based applications.
 
 * [Bundler](#Bundler)
     * [new Bundler([settings])](#new_Bundler_new)
+    * [.compileJavaScriptBundle()](#Bundler+compileJavaScriptBundle) ⇒ <code>Promise.&lt;Object&gt;</code>
+    * [.calculateBundleHash(bundlePath)](#Bundler+calculateBundleHash) ⇒ <code>string</code>
+    * [.getBundleStats()](#Bundler+getBundleStats) ⇒ <code>Object</code>
+    * [.compileTo(target)](#Bundler+compileTo) ⇒ <code>Promise.&lt;Object&gt;</code>
     * [.generateCacheManifest(outputPath)](#Bundler+generateCacheManifest)
     * [.generateWebManifest(outputPath)](#Bundler+generateWebManifest)
 
@@ -98,6 +105,44 @@ Create an instance of the bundler.
 | --- | --- | --- |
 | [settings] | <code>Object</code> | Map of settings. |
 | [settings.document] | <code>HTTPComponent</code> | Document to use. |
+
+<a name="Bundler+compileJavaScriptBundle"></a>
+
+### bundler.compileJavaScriptBundle() ⇒ <code>Promise.&lt;Object&gt;</code>
+Compile the JavaScript bundle using webpack.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+**Returns**: <code>Promise.&lt;Object&gt;</code> - Webpack compilation results  
+<a name="Bundler+calculateBundleHash"></a>
+
+### bundler.calculateBundleHash(bundlePath) ⇒ <code>string</code>
+Calculate the sha256 hash of the generated JavaScript bundle.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+**Returns**: <code>string</code> - SHA256 hash of the bundle  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| bundlePath | <code>string</code> | Path to the bundle file |
+
+<a name="Bundler+getBundleStats"></a>
+
+### bundler.getBundleStats() ⇒ <code>Object</code>
+Get bundle statistics.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+**Returns**: <code>Object</code> - Bundle statistics  
+<a name="Bundler+compileTo"></a>
+
+### bundler.compileTo(target) ⇒ <code>Promise.&lt;Object&gt;</code>
+Compile the HTML file to a specific target.
+
+**Kind**: instance method of [<code>Bundler</code>](#Bundler)  
+**Returns**: <code>Promise.&lt;Object&gt;</code> - Compilation results including bundle hash  
+
+| Param | Type | Default | Description |
+| --- | --- | --- | --- |
+| target | <code>string</code> | <code>&quot;assets/index.html&quot;</code> | Path to output HTML file |
 
 <a name="Bundler+generateCacheManifest"></a>
 
@@ -125,6 +170,12 @@ Generate a manifest.json file for PWA support.
 
 ## Clock : <code>Object</code>
 Simple clock.  Emits `tick` events at a specified interval.
+
+**Kind**: global class  
+<a name="Pool"></a>
+
+## Pool
+Manage a pool of member Agents to reliably queries.
 
 **Kind**: global class  
 <a name="Queue"></a>

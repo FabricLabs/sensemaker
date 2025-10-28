@@ -18,6 +18,7 @@ const AnnouncementCreator = require('./AnnouncementCreator');
 const AnnouncementList = require('./AnnouncementList');
 const InvitationCreator = require('./InvitationCreator');
 const InvoiceCreator = require('./InvoiceCreator');
+const BenchmarkManager = require('./BenchmarkManager');
 
 // Semantic UI
 const {
@@ -247,6 +248,11 @@ class AdminSettings extends React.Component {
               active={this.state.activeTab === 'agents'}
               onClick={this.handleTabClick}
             />
+            <Menu.Item
+              name='benchmark'
+              active={this.state.activeTab === 'benchmark'}
+              onClick={this.handleTabClick}
+            />
           </Menu>
           {this.state.activeTab === 'overview' && this.renderOverviewTab()}
           {this.state.activeTab === 'users' && this.renderUsersTab()}
@@ -255,6 +261,7 @@ class AdminSettings extends React.Component {
           {this.state.activeTab === 'services' && <AdminServicesTab {...this.props} />}
           {this.state.activeTab === 'settings' && <AdminSettingsTab {...this.props} />}
           {this.state.activeTab === 'agents' && <AdminAgentsTab {...this.props} />}
+          {this.state.activeTab === 'benchmark' && <BenchmarkManager {...this.props} />}
         </Segment>
       </sensemaker-admin-settings>
     );

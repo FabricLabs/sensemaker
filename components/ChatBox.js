@@ -791,6 +791,7 @@ class ChatBox extends React.Component {
             {doc.fabric_type && <div><strong>Type:</strong> {doc.fabric_type}</div>}
             {doc.summary && <div style={{ marginTop: '0.5em' }}>{doc.summary.substring(0, 150)}{doc.summary.length > 150 ? '...' : ''}</div>}
           </div>
+          <Button as={Link} to={`/documents/${doc.id}`} icon labelPosition='right'>View Document <Icon name='right chevron' /></Button>
         </Card.Description>
       );
     }

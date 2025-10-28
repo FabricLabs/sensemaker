@@ -116,7 +116,6 @@
     "jsdom": "=22.1.0",
     "knex": "=2.4.2",
     "knex-paginate": "=3.2.0",
-    "langchain": "=0.3.13",
     "levelgraph": "=3.0.0",
     "lodash.debounce": "=4.0.8",
     "lodash.merge": "=4.6.2",

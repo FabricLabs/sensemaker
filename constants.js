@@ -91,6 +91,7 @@ const ENABLE_SOURCES = false;
 const ENABLE_TASKS = true;
 const ENABLE_UPLOADS = true;
 const ENABLE_WALLET = false;
+const ENABLE_BENCHMARK = true;
 
 // UI
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
@@ -156,6 +157,7 @@ module.exports = {
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_WALLET,
+  ENABLE_BENCHMARK,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   BROWSER_DATABASE_NAME,
