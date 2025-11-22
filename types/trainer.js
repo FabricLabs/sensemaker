@@ -17,7 +17,7 @@ const merge = require('lodash.merge');
 const fetch = require('cross-fetch');
 
 const { createClient, createCluster } = require('redis');
-const { Ollama } = require('@langchain/community/llms/ollama');
+const { Ollama } = require('@langchain/ollama');
 
 // Text Splitter
 const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
@@ -211,6 +211,11 @@ class Trainer extends Agent {
           };
         });
 
+        console.debug('[TRAINER]', 'Chunks with metadata:', chunks.map(c => ({
+          content: c.pageContent.substring(0, 100) + '...',
+          metadata: c.metadata
+        })));
+
         let embeddings = null;
 
         // Segment embeddings by user
@@ -312,6 +317,12 @@ class Trainer extends Agent {
           `Question: {question}\n\n` +
           `Answer:`;
         const prompt = PromptTemplate.fromTemplate(promptTemplate);
+
+        console.debug('[TRAINER]', 'Running QA chain with enhanced query:', enhancedQuery);
+        console.debug('[TRAINER]', 'Original query:', request.query);
+        console.debug('[TRAINER]', 'Context:', request.context);
+        console.debug('[TRAINER]', 'Messages:', request.messages);
+
         const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
           messages: request.messages,
           query: enhancedQuery
@@ -342,6 +353,7 @@ class Trainer extends Agent {
    */
   async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
+      console.debug('[TRAINER]', 'Searching:', request);
       Promise.all([
         this.searchGlobal(request, limit),
         this.searchByOwner(request, limit)
@@ -367,6 +379,7 @@ class Trainer extends Agent {
 
   async searchGlobal (request, limit = 100) {
     return new Promise((resolve, reject) => {
+      console.debug('[TRAINER]', 'Searching global:', request);
       if (!request.query) return reject(new Error('No query provided.'));
       this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
         console.error('[TRAINER]', 'Error searching:', error);
@@ -387,9 +400,11 @@ class Trainer extends Agent {
 
   async searchByOwner (request, limit = 100) {
     return new Promise(async (resolve, reject) => {
+      console.debug('[TRAINER]', 'Searching by owner:', request);
       if (!request.query) return reject(new Error('No query provided.'));
       const embeddings = await this.getStoreForOwner(request.user.id);
       embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
+        console.error('[TRAINER]', 'Error searching:', error);
         reject(error);
       }).then((results) => {
         const map = {};
@@ -429,6 +444,19 @@ class Trainer extends Agent {
           }
         }
       });
+
+      // Cluster
+      /* this.redis = createCluster({
+        rootNodes: [
+          {
+            host: this.settings.redis.host,
+            port: this.settings.redis.port
+          }
+        ],
+        defaults: {
+          password: this.settings.redis.password
+        }
+      }); */
 
       // Add Redis event handlers
       this.redis.on('error', (err) => {
