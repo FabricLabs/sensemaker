@@ -94,6 +94,13 @@ module.exports = {
     view: require('./groups/view_group'),
     add_group_member: require('./groups/add_group_member')
   },
+  goals: {
+    create: require('./goals/create'),
+    list: require('./goals/list'),
+    view: require('./goals/view'),
+    update: require('./goals/update'),
+    delete: require('./goals/delete')
+  },
   help: {
     getConversations: require('./help/get_conversations'),
     getAdmConversations: require('./help/get_conversations_adm'),
