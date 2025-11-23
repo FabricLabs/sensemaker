@@ -2089,6 +2089,9 @@ class Sensemaker extends Hub {
     // Health
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
+    // Models
+    this.http._addRoute('GET', '/models', ROUTES.models.list.bind(this));
+
     // Activities
     this.http._addRoute('GET', '/activities', ROUTES.activities.list.bind(this));
     this.http._addRoute('GET', '/activities/:id', ROUTES.activities.view.bind(this));
