@@ -36,6 +36,7 @@ class NetworkHome extends React.Component {
       connectingPeer: false,
       fabricPeers: [],
       peerStats: {},
+      activeTabIndex: 0,
       localPeer: {
         id: null,
         pubkey: null,
@@ -48,6 +49,16 @@ class NetworkHome extends React.Component {
 
     // Bind methods
     this.handleBridgeMessage = this.handleBridgeMessage.bind(this);
+    this.handleHashChange = this.handleHashChange.bind(this);
+    this.handleTabChange = this.handleTabChange.bind(this);
+  }
+
+  getInitialTabIndex () {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'web') {
+      return 1; // Web tab is at index 1
+    }
+    return 0; // Default to Fabric tab (index 0)
   }
 
   componentDidMount () {
@@ -61,6 +72,13 @@ class NetworkHome extends React.Component {
     if (this.props.bridge) {
       this.props.bridge.onMessage = this.handleBridgeMessage;
     }
+
+    // Set initial tab from hash
+    const initialTabIndex = this.getInitialTabIndex();
+    this.setState({ activeTabIndex: initialTabIndex });
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', this.handleHashChange);
   }
 
   componentWillUnmount () {
@@ -68,6 +86,9 @@ class NetworkHome extends React.Component {
     if (this.props.bridge) {
       this.props.bridge.onMessage = null;
     }
+
+    // Clean up hash change listener
+    window.removeEventListener('hashchange', this.handleHashChange);
   }
 
   componentDidUpdate (prevProps) {
@@ -153,6 +174,20 @@ class NetworkHome extends React.Component {
     }
   }
 
+  handleHashChange = () => {
+    const newTabIndex = this.getInitialTabIndex();
+    if (newTabIndex !== this.state.activeTabIndex) {
+      this.setState({ activeTabIndex: newTabIndex });
+    }
+  }
+
+  handleTabChange = (e, { activeIndex }) => {
+    // Update hash based on tab index
+    const hash = activeIndex === 1 ? 'web' : 'fabric';
+    window.location.hash = hash;
+    this.setState({ activeTabIndex: activeIndex });
+  }
+
   connectToPeer = async (connectionString) => {
     if (!this.props.bridge) {
       console.error('[NETWORK:HOME]', 'Bridge not available for peer connection');
@@ -197,7 +232,7 @@ class NetworkHome extends React.Component {
 
   render () {
     const { network, auth } = this.props;
-    const { fabricPeers, connectingPeer, loading, peerStats } = this.state;
+    const { fabricPeers, connectingPeer, loading, peerStats, activeTabIndex } = this.state;
 
     // Check if user is admin
     const isAdmin = auth && auth.isAdmin;
@@ -377,22 +412,55 @@ class NetworkHome extends React.Component {
                 </Table.Row>
               </Table.Header>
               <Table.Body>
-                {Array.isArray(this.props.sources?.sources) ? this.props.sources.sources.map((source) => {
-                  return (<Table.Row key={source.id}>
-                    <Table.Cell><code><Link to={"/sources/" + source.id}>{source.content}</Link></code></Table.Cell>
-                    <Table.Cell>{source.status === 'active' ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
-                    <Table.Cell>{source.created ? new Date(source.created).toLocaleString() : 'Never'}</Table.Cell>
-                    <Table.Cell>
-                      <Button.Group>
-                        <Button icon='play' disabled={source.status === 'active'} onClick={() => this.props.startSource(source.id)} />
-                        <Button icon='stop' disabled={source.status !== 'active'} onClick={() => this.props.stopSource(source.id)} />
-                      </Button.Group>
-                    </Table.Cell>
-                  </Table.Row>)
-                }) : (
+                {this.props.sources?.loading ? (
                   <Table.Row>
-                    <Table.Cell colSpan="5" textAlign="center">
+                    <Table.Cell colSpan="4" textAlign="center">
                       <Loader active inline='centered'>Loading sources...</Loader>
+                    </Table.Cell>
+                  </Table.Row>
+                ) : Array.isArray(this.props.sources?.sources) && this.props.sources.sources.length > 0 ? (
+                  this.props.sources.sources.map((source) => {
+                    const lastUpdated = source.last_retrieved || source.updated_at || source.created_at;
+                    const hasError = source.last_error;
+                    return (<Table.Row key={source.id}>
+                      <Table.Cell><code><Link to={"/sources/" + source.id}>{source.content}</Link></code></Table.Cell>
+                      <Table.Cell>
+                        {hasError ? (
+                          <Label color='red' title={source.last_error}>
+                            <Icon name='warning circle' />
+                            Failed
+                          </Label>
+                        ) : source.status === 'active' ? (
+                          <Icon name='check' color='green' />
+                        ) : (
+                          <Icon name='close' color='red' />
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {lastUpdated ? (
+                          <abbr title={lastUpdated}>{new Date(lastUpdated).toLocaleString()}</abbr>
+                        ) : (
+                          <span style={{ color: '#999' }}>Never</span>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Button.Group>
+                          <Button icon='play' disabled={source.status === 'active'} onClick={() => {
+                            // TODO: Implement startSource action
+                            console.warn('startSource not yet implemented');
+                          }} />
+                          <Button icon='stop' disabled={source.status !== 'active'} onClick={() => {
+                            // TODO: Implement stopSource action
+                            console.warn('stopSource not yet implemented');
+                          }} />
+                        </Button.Group>
+                      </Table.Cell>
+                    </Table.Row>)
+                  })
+                ) : (
+                  <Table.Row>
+                    <Table.Cell colSpan="4" textAlign="center">
+                      No sources configured. Add one below.
                     </Table.Cell>
                   </Table.Row>
                 )}
@@ -409,10 +477,11 @@ class NetworkHome extends React.Component {
                   onChange={(e) => this.setState({ sourceContent: e.target.value })}
                   action={
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (this.state.sourceContent) {
-                          this.props.createSource({ content: this.state.sourceContent });
+                          await this.props.createSource({ content: this.state.sourceContent });
                           this.setState({ sourceContent: '' });
+                          // Sources will be automatically refetched by the createSource action
                         }
                       }}
                     >
@@ -446,7 +515,11 @@ class NetworkHome extends React.Component {
               </Message.Content>
           </Message>
         ))}
-        <Tab panes={panes} />
+        <Tab
+          panes={panes}
+          activeIndex={activeTabIndex}
+          onTabChange={this.handleTabChange}
+        />
       </div>
     );
   }

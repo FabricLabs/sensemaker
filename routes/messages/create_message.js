@@ -129,6 +129,7 @@ module.exports = async function (req, res, next) {
           if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
           const msg = { id: fabricConversationID, messages: messages, title: title };
           const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
+          if (this.key && this.key.private) message.signWithKey(this.key);
           this.http.broadcast(message);
         });
       }
@@ -142,6 +143,7 @@ module.exports = async function (req, res, next) {
         if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
         const msg = { id: fabricConversationID, messages: messages, summary: summary };
         const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
+        if (this.key && this.key.private) message.signWithKey(this.key);
         this.http.broadcast(message);
       });
     }).then(async () => {

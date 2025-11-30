@@ -32,12 +32,6 @@ module.exports = {
     update: require('./alerts/update_alert'),
     delete: require('./alerts/delete_alert')
   },
-  triggers: {
-    list: require('./triggers/list_triggers'),
-    create: require('./triggers/create_trigger'),
-    update: require('./triggers/update_trigger'),
-    delete: require('./triggers/delete_trigger')
-  },
   announcements: {
     create: require('./announcements/create_announcement'),
     list: require('./announcements/list_announcements'),
@@ -67,8 +61,6 @@ module.exports = {
     delete: require('./documents/delete_document'),
     list: require('./documents/list_documents'),
     edit: require('./documents/edit_document'),
-    getDocumentByID: require('./documents/get_document_by_id'),
-    // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
     newConversation: require('./documents/document_new_chat'),
@@ -218,7 +210,8 @@ module.exports = {
   sources: {
     create: require('./sources/create_source'),
     list: require('./sources/list_sources'),
-    view: require('./sources/view_source')
+    view: require('./sources/view_source'),
+    history: require('./sources/source_history')
   },
   statistics: {
     admin: require('./statistics/admin_statistics'),
@@ -231,6 +224,12 @@ module.exports = {
     list: require('./tasks/list_tasks'),
     view: require('./tasks/view_task'),
     edit: require('./tasks/edit_task')
+  },
+  triggers: {
+    list: require('./triggers/list_triggers'),
+    create: require('./triggers/create_trigger'),
+    update: require('./triggers/update_trigger'),
+    delete: require('./triggers/delete_trigger')
   },
   topics: {
     list: require('./topics/list_topics'),

@@ -37,7 +37,8 @@ class Pool extends Service {
       content: this.settings.state,
       methods: {},
       members: {},
-      models: {},
+      models: {}, // Top-level model tracking: { modelName: [{ provider: memberId, status: 'ready' }, ...] }
+      memberModels: {}, // Legacy: models per member for backward compatibility
       names: {},
       outstanding: {},
       memberStatus: {} // Track member health/status
@@ -62,7 +63,7 @@ class Pool extends Service {
     this._state.content.members[actor.id] = member;
     this._state.members[actor.id] = new Agent(member);
     this._state.memberStatus[actor.id] = 'initializing';
-    this._state.models[actor.id] = []; // Initialize with empty models list
+    this._state.memberModels[actor.id] = []; // Initialize with empty models list for backward compatibility
 
     // Initialize member with timeout
     this._initializeMember(actor.id).catch(error => {
@@ -76,19 +77,43 @@ class Pool extends Service {
   async _initializeMember (memberId) {
     try {
       const initPromise = (async () => {
+        let modelNames = [];
         try {
           const models = await this._state.members[memberId].listTags();
-          this._state.models[memberId] = models.models.map((x) => x.name);
+          modelNames = models.models.map((x) => x.name);
         } catch (error) {
           try {
             const alt = await this._state.members[memberId].listModels();
-            this._state.models[memberId] = alt.models.map((x) => x.id);
+            modelNames = alt.models.map((x) => x.id);
           } catch (altError) {
             throw new Error(`Failed to list models: ${altError.message}`);
           }
         }
-        this._state.memberStatus[memberId] = 'ready';
-        console.debug(`[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, this._state.models[memberId]);
+
+        // Update member->models mapping (for backward compatibility)
+        this._state.memberModels[memberId] = modelNames;
+
+        // Update top-level model->providers mapping
+        const memberStatus = 'ready';
+        this._state.memberStatus[memberId] = memberStatus;
+
+        for (const modelName of modelNames) {
+          if (!this._state.models[modelName]) {
+            this._state.models[modelName] = [];
+          }
+          // Check if provider already exists for this model
+          const existingProvider = this._state.models[modelName].find(p => p.provider === memberId);
+          if (!existingProvider) {
+            this._state.models[modelName].push({
+              provider: memberId,
+              status: memberStatus
+            });
+          } else {
+            existingProvider.status = memberStatus;
+          }
+        }
+
+        console.debug(`[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, modelNames);
       })();
 
       // Race against timeout
@@ -144,18 +169,22 @@ class Pool extends Service {
     if (!request.query) throw new Error('Query is required for the request');
 
     // Find members that can handle the request and are healthy
-    const candidateMembers = Object.keys(this._state.members).filter(memberID => {
-      const memberModels = this._state.models[memberID] || [];
-      const isHealthy = this._state.memberStatus[memberID] === 'ready';
-      return isHealthy && memberModels.includes(request.model);
-    });
+    // Use top-level model tracking to find providers
+    const modelProviders = this._state.models[request.model] || [];
+    const candidateMembers = modelProviders
+      .filter(provider => provider.status === 'ready')
+      .map(provider => provider.provider)
+      .filter(memberID => {
+        const isHealthy = this._state.memberStatus[memberID] === 'ready';
+        return isHealthy && !this._state.outstanding[memberID];
+      });
 
     if (candidateMembers.length === 0) {
       throw new Error('No suitable healthy member found for the request');
     }
 
-    // Find available member (not currently processing a request)
-    const availableMember = candidateMembers.find(memberID => !this._state.outstanding[memberID]);
+    // Find available member (already filtered above, but take first available)
+    const availableMember = candidateMembers[0];
     if (!availableMember) {
       throw new Error('All suitable members are currently busy');
     }
@@ -208,8 +237,35 @@ class Pool extends Service {
   async syncModels () {
     for (const memberID in this._state.members) {
       try {
-        const models = await this._state.members[memberID].listModels();
-        this._state.models[memberID] = models.models.map((x) => x.name);
+        let modelNames = [];
+        try {
+          const models = await this._state.members[memberID].listTags();
+          modelNames = models.models.map((x) => x.name);
+        } catch (error) {
+          const alt = await this._state.members[memberID].listModels();
+          modelNames = alt.models.map((x) => x.name);
+        }
+
+        // Update member->models mapping (for backward compatibility)
+        this._state.memberModels[memberID] = modelNames;
+
+        // Update top-level model->providers mapping
+        const memberStatus = this._state.memberStatus[memberID] || 'ready';
+        for (const modelName of modelNames) {
+          if (!this._state.models[modelName]) {
+            this._state.models[modelName] = [];
+          }
+          // Check if provider already exists for this model
+          const existingProvider = this._state.models[modelName].find(p => p.provider === memberID);
+          if (!existingProvider) {
+            this._state.models[modelName].push({
+              provider: memberID,
+              status: memberStatus
+            });
+          } else {
+            existingProvider.status = memberStatus;
+          }
+        }
       } catch (error) {
         console.warn(`[SENSEMAKER] [POOL] Failed to sync models for member ${memberID}:`, error.message);
       }

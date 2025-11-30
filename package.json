@@ -65,9 +65,7 @@
   "homepage": "https://sensemaker.io",
   "dependencies": {
     "@bitcoinerlab/secp256k1": "=1.2.0",
-    "@fabric/core": "FabricLabs/fabric#feature/lightning-update",
     "@fabric/discord": "FabricLabs/fabric-discord#feature/v0.1.0-RC1",
-    "@fabric/http": "FabricLabs/fabric-http#feature/v0.1.0-RC1",
     "@fabric/hub": "FabricLabs/hub.fabric.pub#feature/sensemaker",
     "@google/generative-ai": "=0.21.0",
     "@hpcc-js/wasm": "=2.23.0",

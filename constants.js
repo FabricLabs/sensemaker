@@ -80,6 +80,7 @@ const ENABLE_FABRIC = true;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_GROUPS = false;
+const ENABLE_GOALS = true;
 const ENABLE_JOBS = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_LOGIN = true;
@@ -141,6 +142,7 @@ module.exports = {
   ENABLE_DOCUMENTS,
   ENABLE_FABRIC,
   ENABLE_FEEDBACK_BUTTON,
+  ENABLE_GOALS,
   ENABLE_GROUPS,
   ENABLE_JOBS,
   ENABLE_BILLING,

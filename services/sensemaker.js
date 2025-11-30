@@ -859,6 +859,8 @@ class Sensemaker extends Hub {
       content: commit
     }]);
 
+    if (this.key && this.key.private) beat.signWithKey(this.key);
+
     await this.tick();
 
     this.worker.addJob({
@@ -1310,6 +1312,7 @@ class Sensemaker extends Hub {
       };
 
       const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      if (this.key && this.key.private) messageTook.signWithKey(this.key);
       this.http.broadcast(messageTook);
     }
 
@@ -1328,6 +1331,7 @@ class Sensemaker extends Hub {
             queueMessage.creator = file.creator;
             queueMessage.filename = file.name;
             const messageFile = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+            if (this.key && this.key.private) messageFile.signWithKey(this.key);
             this.http.broadcast(messageFile);
             break;
           case 'IngestDocument':
@@ -1338,6 +1342,7 @@ class Sensemaker extends Hub {
             queueMessage.fabric_id = document.fabric_id;
             queueMessage.title = document.title;
             const messageDocument = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+            if (this.key && this.key.private) messageDocument.signWithKey(this.key);
             this.http.broadcast(messageDocument);
             break;
           default:
@@ -1359,6 +1364,7 @@ class Sensemaker extends Hub {
       };
 
       const messageTook = Message.fromVector([queueMessage.type, JSON.stringify(queueMessage)]);
+      if (this.key && this.key.private) messageTook.signWithKey(this.key);
       this.http.broadcast(messageTook);
     }
   }
@@ -2161,6 +2167,7 @@ class Sensemaker extends Hub {
     this.http._addRoute('POST', '/sources', ROUTES.sources.create.bind(this));
     this.http._addRoute('GET', '/sources', ROUTES.sources.list.bind(this));
     this.http._addRoute('GET', '/sources/:id', ROUTES.sources.view.bind(this));
+    this.http._addRoute('GET', '/sources/:id/history', ROUTES.sources.history.bind(this));
 
     // Tasks
     this.http._addRoute('POST', '/tasks', ROUTES.tasks.create.bind(this));
@@ -2438,21 +2445,62 @@ class Sensemaker extends Hub {
    */
   async syncSource (id) {
     return new Promise(async (resolve, reject) => {
-      const source = await this.db('sources').where({ id }).first();
-      if (!source) throw new Error('Source not found.');
-      const link = source.content;
-      fetch(link).catch((exception) => {
-        reject(exception);
-      }).then(async (response) => {
-        if (!response) return reject(new Error('No response from source.'));
+      try {
+        const source = await this.db('sources').where({ id }).first();
+        if (!source) {
+          throw new Error('Source not found.');
+        }
+        const link = source.content;
         const now = new Date();
+
+        let response;
+        try {
+          response = await fetch(link);
+        } catch (exception) {
+          const errorMessage = `Failed to fetch: ${exception.message}`;
+          console.error('[SENSEMAKER:CORE]', '[SYNC]', 'Fetch error:', errorMessage);
+
+          // Update source with error
+          await this.db('sources').update({
+            updated_at: toMySQLDatetime(now),
+            last_error: errorMessage
+          }).where({ id });
+
+          return reject(exception);
+        }
+
+        console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Response:', response);
+
+        if (!response) {
+          const errorMessage = 'No response from source.';
+          await this.db('sources').update({
+            updated_at: toMySQLDatetime(now),
+            last_error: errorMessage
+          }).where({ id });
+          return reject(new Error(errorMessage));
+        }
+
+        // Check if response is successful
+        if (!response.ok) {
+          const errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          console.error('[SENSEMAKER:CORE]', '[SYNC]', 'HTTP error:', errorMessage);
+
+          // Update source with error
+          await this.db('sources').update({
+            updated_at: toMySQLDatetime(now),
+            last_error: errorMessage
+          }).where({ id });
+
+          return reject(new Error(errorMessage));
+        }
+
         const proposal = {
           created: now.toISOString(),
           creator: this.id,
           body: await response.text()
         };
 
-        const mimeType = response.headers.get('Content-Type').split(';')[0];
+        const mimeType = response.headers.get('Content-Type')?.split(';')[0] || 'text/plain';
         const blob = new Actor({ content: proposal.body });
         const existingBlob = await this.db('blobs').where({ fabric_id: blob.id }).first();
 
@@ -2473,8 +2521,16 @@ class Sensemaker extends Hub {
               metadata: { id: blob.id, origin: link }
             }, 'hypertext');
           } catch (exception) {
-            console.error('[SENSEMAKER:CORE]', '[SYNC]', 'Error ingesting document:', exception);
-            reject(exception);
+            const errorMessage = `Error ingesting document: ${exception.message}`;
+            console.error('[SENSEMAKER:CORE]', '[SYNC]', errorMessage, exception);
+
+            // Update source with error
+            await this.db('sources').update({
+              updated_at: toMySQLDatetime(now),
+              last_error: errorMessage
+            }).where({ id });
+
+            return reject(exception);
           }
 
           // Determine fabric_type based on MIME type
@@ -2502,7 +2558,7 @@ class Sensemaker extends Hub {
             summary: `Automatically captured snapshot from source: ${link}`,
             content: proposal.body,
             status: 'published',
-            latest_blob_id: blob.id,
+            latest_blob_id: blob.id, // Absolute blob reference (fabric_id from Actor)
             history: JSON.stringify([blob.id]),
             mime_type: mimeType,
             fabric_type: fabricType,
@@ -2513,11 +2569,34 @@ class Sensemaker extends Hub {
           console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Content unchanged, no new document created. Blob ID:', blob.id);
         }
 
-        await this.db('sources').update({
+        // Track blob fabric_id in source's history for exact reference
+        // Get existing blob history or initialize empty array
+        const sourceUpdate = {
           updated_at: toMySQLDatetime(now),
           last_retrieved: toMySQLDatetime(now),
-          latest_blob_id: blob.id
-        }).where({ id });
+          latest_blob_id: blob.id, // Absolute reference: blob's fabric_id
+          last_error: null // Clear any previous errors on successful sync
+        };
+
+        // Maintain history of blob fabric_ids from this source
+        // This allows querying all documents that reference blobs from this source
+        const existingSource = await this.db('sources').where({ id }).select('blob_history').first();
+        let blobHistory = [];
+        if (existingSource && existingSource.blob_history) {
+          try {
+            blobHistory = JSON.parse(existingSource.blob_history);
+          } catch (e) {
+            blobHistory = [];
+          }
+        }
+
+        // Add current blob fabric_id to history if not already present
+        if (!blobHistory.includes(blob.id)) {
+          blobHistory.push(blob.id);
+          sourceUpdate.blob_history = JSON.stringify(blobHistory);
+        }
+
+        await this.db('sources').update(sourceUpdate).where({ id });
 
         const actor = new Actor(proposal);
         resolve({
@@ -2526,7 +2605,22 @@ class Sensemaker extends Hub {
           id: actor.id,
           type: 'SourceSnapshot'
         });
-      });
+      } catch (exception) {
+        // Catch any unexpected errors and update the database
+        const errorMessage = exception.message || String(exception);
+        console.error('[SENSEMAKER:CORE]', '[SYNC]', 'Unexpected error:', errorMessage, exception);
+
+        try {
+          await this.db('sources').update({
+            updated_at: toMySQLDatetime(new Date()),
+            last_error: errorMessage
+          }).where({ id });
+        } catch (dbError) {
+          console.error('[SENSEMAKER:CORE]', '[SYNC]', 'Failed to update error in database:', dbError);
+        }
+
+        reject(exception);
+      }
     });
   }
 
@@ -3161,6 +3255,7 @@ class Sensemaker extends Hub {
     // TODO: fix @fabric/core/types/message to allow custom message types
     start.type = 'MessageStart';
     const message = Message.fromVector(['MessageStart', JSON.stringify(start)]);
+    if (this.key && this.key.private) message.signWithKey(this.key);
     this.http.broadcast(message);
   }
 
@@ -3168,6 +3263,7 @@ class Sensemaker extends Hub {
     // TODO: fix @fabric/core/types/message to allow custom message types
     chunk.type = 'MessageChunk';
     const broadcast = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
+    if (this.key && this.key.private) broadcast.signWithKey(this.key);
     this.http.broadcast(broadcast);
 
     const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);

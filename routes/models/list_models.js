@@ -6,19 +6,20 @@ module.exports = async function (req, res, next) {
     const poolModels = [];
     const poolHealth = this.pool.getPoolHealth();
 
-    // Collect models from all pool members
-    for (const memberId in this.pool._state.members) {
-      const member = this.pool._state.members[memberId];
-      const memberStatus = this.pool._state.memberStatus[memberId];
-      const memberModels = this.pool._state.models[memberId] || [];
-
-      if (memberStatus === 'ready') {
-        for (const modelName of memberModels) {
+    // Collect models from top-level model tracking with providers
+    for (const modelName in this.pool._state.models) {
+      const providers = this.pool._state.models[modelName] || [];
+      for (const provider of providers) {
+        if (provider.status === 'ready') {
           poolModels.push({
             name: modelName,
             source: 'pool',
-            memberId: memberId,
-            status: memberStatus
+            memberId: provider.provider,
+            status: provider.status,
+            providers: providers.map(p => ({
+              provider: p.provider,
+              status: p.status
+            }))
           });
         }
       }
@@ -44,32 +45,54 @@ module.exports = async function (req, res, next) {
       console.warn('[BENCHMARK] Could not fetch Ollama models:', error.message);
     }
 
-    // Combine and deduplicate models
-    const allModels = [...poolModels, ...ollamaModels];
-    const uniqueModels = [];
-    const seenNames = new Set();
+    // Group models by name and aggregate providers (Ollama API format with provider annotation)
+    const modelMap = new Map();
 
-    for (const model of allModels) {
-      if (!seenNames.has(model.name)) {
-        seenNames.add(model.name);
-        uniqueModels.push(model);
+    // Add pool models
+    for (const model of poolModels) {
+      if (!modelMap.has(model.name)) {
+        modelMap.set(model.name, {
+          name: model.name,
+          providers: []
+        });
+      }
+      const modelEntry = modelMap.get(model.name);
+      if (!modelEntry.providers.find(p => p.provider === model.memberId)) {
+        modelEntry.providers.push({
+          provider: model.memberId,
+          status: model.status
+        });
       }
     }
 
-    res.json({
-      status: 'success',
-      data: {
-        models: uniqueModels,
-        pool: {
-          health: poolHealth,
-          memberCount: Object.keys(this.pool._state.members).length,
-          readyMembers: Object.values(this.pool._state.memberStatus).filter(status => status === 'ready').length
-        },
-        ollama: {
-          available: ollamaModels.length > 0,
-          modelCount: ollamaModels.length
-        }
+    // Add Ollama models
+    for (const model of ollamaModels) {
+      if (!modelMap.has(model.name)) {
+        modelMap.set(model.name, {
+          name: model.name,
+          size: model.size,
+          modified_at: model.modified_at
+        });
       }
+      const modelEntry = modelMap.get(model.name);
+      // Ollama models don't have explicit providers, but we can mark them
+      if (!modelEntry.providers) {
+        modelEntry.providers = [];
+      }
+      if (!modelEntry.providers.find(p => p.provider === 'ollama')) {
+        modelEntry.providers.push({
+          provider: 'ollama',
+          status: 'available'
+        });
+      }
+    }
+
+    // Convert to array matching Ollama format
+    const allModels = Array.from(modelMap.values());
+
+    // Return in Ollama API format: { models: [...] }
+    res.json({
+      models: allModels
     });
 
   } catch (error) {
