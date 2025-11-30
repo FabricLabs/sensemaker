@@ -93,13 +93,6 @@ module.exports = {
     update: require('./goals/update'),
     delete: require('./goals/delete')
   },
-  help: {
-    getConversations: require('./help/get_conversations'),
-    getAdmConversations: require('./help/get_conversations_adm'),
-    getMessages: require('./help/get_messages'),
-    sendMessage: require('./help/send_message'),
-    setMessagesRead: require('./help/set_messages_read')
-  },
   inquiries: {
     create: require('./inquiries/create_inquiry'),
     delete: require('./inquiries/delete_inquiry'),
