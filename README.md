@@ -1,8 +1,8 @@
 `SENSEMAKER`
 ============
-`self-hosted artificial intelligence.`
+`defensive intelligence.`
 
-**`SENSEMAKER`** is a suite of tools for creating and managing artificially-intelligent assistants in a secure, private environment.
+**`SENSEMAKER`** is a suite of tools for **defensive intelligence** — proactive intelligence gathering and analysis.
 
 ## Core Features
 - **Personalized per-instance** (set goals, tasks, and more)
@@ -65,9 +65,6 @@ const Agent = require('sensemaker/types/agent');
 ```
 
 ## Graveyard
-## Quick Start
-Sensemaker runs locally, on your machine, unless configured to do otherwise.  First, clone the repository:
-
 ```
 git clone git@github.com:FabricLabs/sensemaker.git
 ```
@@ -91,7 +88,7 @@ A basic web interface should now be provided at http://localhost:3040
 
 If you'd like to avoid the web components, you can use `npm run demo` to skip straight to the networking demo.
 
-**Important!**  
+**Important!**
 When using the Docker setup, your admin username and password are automatically generated and stored in the `.env` file. When using manual setup, your username and password will be displayed in the logs **for the first boot only**.  This is your administrative account, with full access to managing your node.  Secure it somewhere safely!
 
 ## Next Steps
