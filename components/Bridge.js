@@ -505,13 +505,8 @@ class Bridge extends React.Component {
     // Try WebRTC first if preferred and available
     if (preferWebRTC && this._webrtcConnected && this.webrtcConnection) {
       try {
-        // Convert Buffer to appropriate format for WebRTC
-        const data = Buffer.isBuffer(message) ? message.toString('base64') : message;
-        this.webrtcConnection.send({
-          type: 'fabric-message',
-          data: data,
-          timestamp: Date.now()
-        });
+        const data = Buffer.isBuffer(message) ? message : Buffer.from(message);
+        this.webrtcConnection.send(data);
         console.debug('[BRIDGE]', 'Message sent via WebRTC');
         return;
       } catch (error) {
@@ -547,7 +542,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['SUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.add(path);
     console.debug('[BRIDGE]', 'Subscribed to:', path);
@@ -565,7 +560,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['UNSUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.delete(path);
     console.debug('[BRIDGE]', 'Unsubscribed from:', path);
@@ -736,7 +731,7 @@ class Bridge extends React.Component {
     const now = Date.now();
     const message = Message.fromVector(['Ping', now.toString()]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
   }
 }
 

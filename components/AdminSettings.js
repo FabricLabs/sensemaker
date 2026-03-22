@@ -210,7 +210,7 @@ class AdminSettings extends React.Component {
     return (
       <sensemaker-admin-settings class='fade-in' style={{ height: '100%' }}>
         <Segment fluid style={{ height: '100%', overflowX: 'hidden'}}>
-          <Header as='h2'>Admin</Header>
+          <Header as='h2'>Administration</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Menu pointing secondary>
             <Menu.Item

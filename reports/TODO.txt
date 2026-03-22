@@ -45,6 +45,8 @@
 ./components/Changelog.js: {/* TODO: populate from GitHub releases */}
 ./components/Dashboard.js: // TODO: review and determine what to do with this function
 ./components/Dashboard.js: // TODO: prompt user for external links replacing current application
+./components/NetworkHome.js: // TODO: Implement startSource action
+./components/NetworkHome.js: // TODO: Implement stopSource action
 ./components/SourceView.js: // TODO: reduce to a web component (no react)
 ./components/SourceView.js: // TODO: reconcile with Fabric API
 ./components/SourceView.js: // TODO: Implement API call to update the source
@@ -82,8 +84,6 @@
 ./actions/chatActions.js: // TODO: re-evaluate this... is this safe?
 ./actions/walletActions.js: // TODO: pagination
 ./functions/generateBitcoinStatus.js: status: 'ONLINE', // TODO: check for syncing status
-./functions/IngestFile.js: // TODO: check for error
-./functions/IngestFile.js: // TODO: check for error
 ./routes/tasks/edit_task.js: // TODO: handle errors
 ./routes/messages/create_message.js: // TODO: ensure no LocalConversation is shared externally
 ./routes/messages/create_message.js: // TODO: emit message
@@ -108,9 +108,7 @@
 ./routes/files/create_file.js: // TODO: standardize the file upload logic into core (folder to look for, folder to move to, etc.)
 ./routes/files/create_file.js: // TODO: restrict file types
 ./routes/files/create_file.js: // TODO: report file for cleanup / investigation
-./routes/files/create_file.js: // TODO: fix / troubleshoot ingestion of large files
 ./routes/documents/list_documents.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
-./routes/documents/get_document_by_id.js: // TODO: pre-render application with request token, then send that string to the application's `_renderWith` function
 ./routes/documents/create_document.js: // TODO: make error messages nicer, use both HTML and JSON depending on header
 ./routes/documents/create_document.js: // TODO: parse JSON, return to object before creating Actor
 ./routes/documents/create_document.js: // TODO: handle errors

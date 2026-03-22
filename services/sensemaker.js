@@ -75,7 +75,7 @@ const Discord = require('@fabric/discord');
 // const GitHub = require('@fabric/github');
 // const Twilio = require('@fabric/twilio');
 // const Twitter = require('@fabric/twitter');
-const StarCitizen = require('@rsi/star-citizen');
+// const StarCitizen = require('@rsi/star-citizen');
 
 // Services
 const Fabric = require('./fabric');
@@ -123,6 +123,18 @@ class Sensemaker extends Hub {
    */
   constructor (settings = {}) {
     super(settings);
+
+    // Handle SIGINT (Ctrl+C)
+    process.on('SIGINT', async () => {
+      console.debug('[SENSEMAKER:CORE]', 'Received SIGINT, shutting down...');
+      await this.stop();
+    });
+
+    // Handle SIGTERM
+    process.on('SIGTERM', async () => {
+      console.debug('[SENSEMAKER:CORE]', 'Received SIGTERM, shutting down...');
+      await this.stop();
+    });
 
     // Settings
     this.settings = merge({
@@ -516,15 +528,17 @@ class Sensemaker extends Hub {
         user: this.settings.db.user,
         password: this.settings.db.password,
         database: this.settings.db.database,
-        connectTimeout: 10000
+        connectTimeout: 20000
       },
       pool: {
-        min: 2,
-        max: 10,
-        acquireTimeoutMillis: 30000,
-        createTimeoutMillis: 30000,
-        idleTimeoutMillis: 30000,
+        min: parseInt(process.env.DB_POOL_MIN) || 1,
+        max: parseInt(process.env.DB_POOL_MAX) || 5,
+        acquireTimeoutMillis: 60000,
+        createTimeoutMillis: 60000,
+        destroyTimeoutMillis: 5000,
+        idleTimeoutMillis: 60000,
         reapIntervalMillis: 1000,
+        createRetryIntervalMillis: 200,
         propagateCreateError: false,
         afterCreate: (conn, done) => {
           // console.debug('[SENSEMAKER:CORE]', '[DB]', 'Connection created.');
@@ -544,6 +558,22 @@ class Sensemaker extends Hub {
       console.error('[SENSEMAKER:CORE]', '[DB]', 'Failed to connect to database:', error);
       console.error('[SENSEMAKER:CORE]', '[DB]', 'Please check your database configuration');
       // Don't exit, let the app continue and handle errors gracefully
+    });
+
+    // Add database error handler
+    this.db.on('error', (error) => {
+      console.error('[SENSEMAKER:CORE]', '[DB]', 'Database error:', error);
+      if (error.code === 'PROTOCOL_CONNECTION_LOST') {
+        console.error('[SENSEMAKER:CORE]', '[DB]', 'Database connection was closed.');
+      }
+
+      if (error.code === 'ER_CON_COUNT_ERROR') {
+        console.error('[SENSEMAKER:CORE]', '[DB]', 'Database has too many connections.');
+      }
+
+      if (error.code === 'ECONNREFUSED') {
+        console.error('[SENSEMAKER:CORE]', '[DB]', 'Database connection was refused.');
+      }
     });
 
     this.cache = {
