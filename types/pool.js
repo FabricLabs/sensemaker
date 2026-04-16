@@ -20,6 +20,7 @@ class Pool extends Service {
     super(settings);
 
     this.settings = Object.assign({
+      debug: false,
       members: [],
       methods: {},
       model: CORE_MODEL,
@@ -113,7 +114,7 @@ class Pool extends Service {
           }
         }
 
-        console.debug(`[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, modelNames);
+        if (this.settings.debug) console.debug(`[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, modelNames);
       })();
 
       // Race against timeout
@@ -284,7 +285,7 @@ class Pool extends Service {
     this._state.content.status = 'STARTED';
     this.emit('started', this._state.content);
 
-    console.debug('pool started, initializing members in background');
+    if (this.settings.debug) console.debug('[SENSEMAKER] [POOL] pool started, initializing members in background');
     return this;
   }
 

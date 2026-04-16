@@ -56,13 +56,10 @@ class Chat extends React.Component {
   }
 
   handleSendMessage () {
-    // TODO: Implement actual message sending logic
-    if (this.state.inputText.trim()) {
-      // Call parent component's message handler here
-      this.setState({
-        inputText: '',
-        isTyping: false
-      });
+    if (!this.state.inputText.trim()) return;
+    const form = typeof document !== 'undefined' && document.getElementById('input-control-form');
+    if (form && typeof form.requestSubmit === 'function') {
+      form.requestSubmit();
     }
   }
 
@@ -88,11 +85,12 @@ class Chat extends React.Component {
       const response = await Promise.race([timeoutPromise, fetchPromise]);
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `HTTP ${response.status}`);
       }
 
       const announcement = await response.json();
+      if (!announcement) return;
       const today = new Date();
       const expirationDate = announcement.expiration_date ? new Date(announcement.expiration_date) : null;
       const createdAt = new Date(announcement.created_at);

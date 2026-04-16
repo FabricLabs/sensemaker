@@ -23,6 +23,7 @@ const ChatBox = require('../ChatBox');
 
 const toRelativeTime = require('../../functions/toRelativeTime');
 const truncateMiddle = require('../../functions/truncateMiddle');
+const { ENABLE_NETWORK } = require('../../constants');
 
 class FabricHome extends React.Component {
   constructor (props) {
@@ -40,7 +41,8 @@ class FabricHome extends React.Component {
 
     // React State
     this.state = {
-      ...this.settings.state
+      ...this.settings.state,
+      peerContent: ''
     };
 
     // Fabric State
@@ -54,6 +56,9 @@ class FabricHome extends React.Component {
 
   componentDidMount () {
     this.props.fetchFabricStats();
+    if (typeof this.props.fetchPeers === 'function') {
+      this.props.fetchPeers();
+    }
     this.watcher = setInterval(() => {
       this.props.fetchFabricStats();
     }, 60000);
@@ -63,8 +68,28 @@ class FabricHome extends React.Component {
     clearInterval(this.watcher);
   }
 
+  handlePeerInputChange = (e) => {
+    this.setState({ peerContent: e.target.value });
+  };
+
+  handlePeerSubmit = async () => {
+    const raw = (this.state.peerContent || '').trim();
+    if (!raw || typeof this.props.createPeer !== 'function') return;
+    const addr = raw.replace(/^fabric:/i, '').trim();
+    try {
+      await this.props.createPeer({ address: addr });
+      this.setState({ peerContent: '' });
+      if (typeof this.props.fetchPeers === 'function') this.props.fetchPeers();
+    } catch (err) {
+      console.error('[FABRIC]', 'Add peer failed:', err);
+    }
+  };
+
   render () {
-    const { fabric, network } = this.props;
+    const { fabric, peers: peersState, auth } = this.props;
+    const reduxPeers = (peersState && Array.isArray(peersState.peers) && peersState.peers) || [];
+    const isAdmin = !!(auth && auth.isAdmin);
+    const canManagePeers = ENABLE_NETWORK && isAdmin;
     console.debug('[FABRIC]', 'Service:', fabric);
     return (
       <div>
@@ -91,12 +116,24 @@ class FabricHome extends React.Component {
           </ul>
         </Segment>
         <Header as='h2'>Peers</Header>
-        <Form huge fluid>
-          <Form.Field fluid>
-            <label>Address</label>
-            <Input fluid placeholder='fabric:10.0.0.1:7777' value={this.state.peerContent} onChange={this.handlePeerInputChange} action={<Button onClick={this.handlePeerSubmit} labelPosition='right'>Add Peer <Icon name='add' /></Button>} />
-          </Form.Field>
-        </Form>
+        {canManagePeers ? (
+          <Form huge fluid>
+            <Form.Field fluid>
+              <label>Address</label>
+              <Input
+                fluid
+                placeholder='host:7777 or pubkey@host:7777'
+                value={this.state.peerContent}
+                onChange={this.handlePeerInputChange}
+                action={<Button type='button' onClick={this.handlePeerSubmit} labelPosition='right'>Add Peer <Icon name='add' /></Button>}
+              />
+            </Form.Field>
+          </Form>
+        ) : (
+          <p style={{ color: '#666', marginBottom: '1rem' }}>
+            Adding Fabric peers from this page requires an administrator account (use Network in the sidebar when available).
+          </p>
+        )}
         <Table>
           <Table.Header>
             <Table.Row>
@@ -109,17 +146,26 @@ class FabricHome extends React.Component {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {network && network.peers && network.peers
-              .map(instance => {
-                return (<Table.Row>
-                  <Table.Cell><Link to={"/peers/" + instance.id}>{instance.title}</Link></Table.Cell>
-                  <Table.Cell>{instance.address}</Table.Cell>
-                  <Table.Cell>{instance.port}</Table.Cell>
-                  <Table.Cell>{instance.protocol}</Table.Cell>
-                  <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
-                  <Table.Cell><Button><Icon name='stop' /></Button></Table.Cell>
-                </Table.Row>)
-              })}
+            {reduxPeers.map(instance => {
+              return (<Table.Row key={instance.id}>
+                <Table.Cell>
+                  {canManagePeers ? (
+                    <Link to={'/peers/' + instance.id}>{instance.title}</Link>
+                  ) : (
+                    <span title='Open Network (admin) for peer details and controls.'>{instance.title}</span>
+                  )}
+                </Table.Cell>
+                <Table.Cell>{instance.address}</Table.Cell>
+                <Table.Cell>{instance.port}</Table.Cell>
+                <Table.Cell>{instance.protocol}</Table.Cell>
+                <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
+                <Table.Cell>
+                  <Button disabled title='Disconnect controls are managed from Network (admin).'>
+                    <Icon name='stop' />
+                  </Button>
+                </Table.Cell>
+              </Table.Row>);
+            })}
           </Table.Body>
         </Table>
         <ChatBox {...this.props} context={{ fabric: fabric }} placeholder='Ask about Fabric...' />

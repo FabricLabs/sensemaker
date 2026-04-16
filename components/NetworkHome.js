@@ -22,8 +22,6 @@ const {
   Message
 } = require('semantic-ui-react');
 
-const FabricMessage = require('@fabric/core/types/message');
-
 class NetworkHome extends React.Component {
   constructor (settings = {}) {
     super(settings);
@@ -36,15 +34,8 @@ class NetworkHome extends React.Component {
       connectingPeer: false,
       fabricPeers: [],
       peerStats: {},
-      activeTabIndex: 0,
-      localPeer: {
-        id: null,
-        pubkey: null,
-        address: '127.0.0.1',
-        port: '7771', // Fabric P2P port from settings
-        protocol: 'tcp',
-        connected: true
-      }
+      federation: null,
+      activeTabIndex: 0
     };
 
     // Bind methods
@@ -125,7 +116,8 @@ class NetworkHome extends React.Component {
       if (data.success) {
         this.setState({
           fabricPeers: data.peers || [],
-          peerStats: data.stats || {}
+          peerStats: data.stats || {},
+          federation: data.federation || null
         });
         console.log('[NETWORK:HOME]', 'Peer list loaded successfully:', data.peers.length, 'peers');
       } else {
@@ -189,41 +181,36 @@ class NetworkHome extends React.Component {
   }
 
   connectToPeer = async (connectionString) => {
-    if (!this.props.bridge) {
-      console.error('[NETWORK:HOME]', 'Bridge not available for peer connection');
-      return;
-    }
-
     this.setState({ connectingPeer: true });
 
     try {
-      // Parse connection string format: pubkey@host:port or host:port
-      const parts = connectionString.split('@');
-      let pubkey = null;
-      let address = connectionString;
+      const token = this.props.auth && this.props.auth.token;
+      const headers = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
 
-      if (parts.length === 2) {
-        pubkey = parts[0];
-        address = parts[1];
+      const response = await fetch('/peers', {
+        method: 'POST',
+        headers,
+        credentials: 'same-origin',
+        body: JSON.stringify({ connectionString })
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.success) {
+        console.error('[NETWORK:HOME]', 'Peer connection failed:', data.error || response.statusText);
+        this.setState({ connectingPeer: false });
+        return;
       }
 
-      const [host, port] = address.split(':');
-
-      // Create the RPC call payload for peer connection
-      const message = FabricMessage.fromVector(['JSONCall', JSON.stringify({
-        method: 'connectPeer',
-        params: [{
-          host: host,
-          port: parseInt(port) || 7777,
-          pubkey: pubkey
-        }]
-      })]);
-
-      // Send message via bridge
-      console.debug('[NETWORK:HOME]', 'Sending connectPeer message:', message);
-      this.props.bridge.sendMessage(message.toBuffer());
-
-      // The response will be handled by handleBridgeMessage
+      await this.loadFabricPeers();
+      this.setState({
+        connectingPeer: false,
+        showConnectModal: false,
+        connectionString: ''
+      });
     } catch (error) {
       console.error('[NETWORK:HOME]', 'Error connecting to peer:', error);
       this.setState({ connectingPeer: false });
@@ -231,8 +218,8 @@ class NetworkHome extends React.Component {
   }
 
   render () {
-    const { network, auth } = this.props;
-    const { fabricPeers, connectingPeer, loading, peerStats, activeTabIndex } = this.state;
+    const { auth } = this.props;
+    const { fabricPeers, connectingPeer, loading, peerStats, federation, activeTabIndex } = this.state;
 
     // Check if user is admin
     const isAdmin = auth && auth.isAdmin;
@@ -257,6 +244,21 @@ class NetworkHome extends React.Component {
               </Card.Content>
             </Card>
             <Divider />
+            {federation && Array.isArray(federation.members) && federation.members.length > 0 && (
+              <Message info>
+                <Message.Header>Sensemaker federation (Fabric P2P)</Message.Header>
+                <p>
+                  This node is <strong>{federation.self || 'unlabeled'}</strong>. Configured roster (Fabric P2P TCP port 7777): dial targets appear in the table below; production Hub HTTPS document sync uses port 443 separately.
+                </p>
+                <List bulleted>
+                  {federation.members.map((m) => (
+                    <List.Item key={m.id}>
+                      <strong>{m.label}</strong> — <code>{m.host}:{m.port}</code>
+                    </List.Item>
+                  ))}
+                </List>
+              </Message>
+            )}
             <Header as='h2'>
               Peers
               <Button
@@ -277,6 +279,7 @@ class NetworkHome extends React.Component {
                 <Table.Header>
                   <Table.Row>
                     <Table.HeaderCell>Peer</Table.HeaderCell>
+                    <Table.HeaderCell>Federation</Table.HeaderCell>
                     <Table.HeaderCell>Alias</Table.HeaderCell>
                     <Table.HeaderCell>Address</Table.HeaderCell>
                     <Table.HeaderCell>Port</Table.HeaderCell>
@@ -292,6 +295,18 @@ class NetworkHome extends React.Component {
                       <Table.Cell>
                         <Link to={"/peers/" + instance.id}>{instance.title}</Link>
                         {instance.isLocal && <Label size='mini' color='blue'>Local</Label>}
+                        {instance.sensemakerAgent && instance.sensemakerAgent.fabricPeerId && (
+                          <div style={{ marginTop: '0.35em', fontSize: '0.85em', color: '#666' }}>
+                            Agent Fabric ID: <code style={{ wordBreak: 'break-all' }}>{instance.sensemakerAgent.fabricPeerId}</code>
+                          </div>
+                        )}
+                      </Table.Cell>
+                      <Table.Cell>
+                        {instance.federationLabel ? (
+                          <Label size='small'>{instance.federationLabel}</Label>
+                        ) : (
+                          <span style={{ color: '#999' }}>—</span>
+                        )}
                       </Table.Cell>
                       <Table.Cell>
                         {instance.alias ? (
@@ -313,28 +328,9 @@ class NetworkHome extends React.Component {
                       </Table.Cell>
                     </Table.Row>)
                   })}
-                  {/* Display network peers if available */}
-                  {network && network.peers && network.peers
-                    .map(instance => {
-                      return (<Table.Row key={instance.id}>
-                        <Table.Cell><Link to={"/peers/" + instance.id}>{instance.title}</Link></Table.Cell>
-                        <Table.Cell>
-                          {instance.alias ? (
-                            <strong>{instance.alias}</strong>
-                          ) : (
-                            <span style={{color: '#999'}}>-</span>
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>{instance.address}</Table.Cell>
-                        <Table.Cell>{instance.port}</Table.Cell>
-                        <Table.Cell>{instance.protocol}</Table.Cell>
-                        <Table.Cell>{instance.connected ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</Table.Cell>
-                        <Table.Cell><Button size='small'><Icon name='stop' /></Button></Table.Cell>
-                      </Table.Row>)
-                    })}
-                  {fabricPeers.length === 0 && (!network || !network.peers || network.peers.length === 0) && (
+                  {fabricPeers.length === 0 && (
                     <Table.Row>
-                      <Table.Cell colSpan="7" textAlign="center">
+                      <Table.Cell colSpan="8" textAlign="center">
                         No peers found. {loading ? 'Loading...' : 'Click Refresh to reload.'}
                       </Table.Cell>
                     </Table.Row>
@@ -445,14 +441,16 @@ class NetworkHome extends React.Component {
                       </Table.Cell>
                       <Table.Cell>
                         <Button.Group>
-                          <Button icon='play' disabled={source.status === 'active'} onClick={() => {
-                            // TODO: Implement startSource action
-                            console.warn('startSource not yet implemented');
-                          }} />
-                          <Button icon='stop' disabled={source.status !== 'active'} onClick={() => {
-                            // TODO: Implement stopSource action
-                            console.warn('stopSource not yet implemented');
-                          }} />
+                          <Button
+                            icon='play'
+                            disabled
+                            title='Start source (not wired yet)'
+                          />
+                          <Button
+                            icon='stop'
+                            disabled
+                            title='Stop source (not wired yet)'
+                          />
                         </Button.Group>
                       </Table.Cell>
                     </Table.Row>)
@@ -497,24 +495,8 @@ class NetworkHome extends React.Component {
     ];
 
     return (
-      <div loading={network.loading}>
+      <div>
         <Header as='h1'>Network</Header>
-        {network && network.offers && network.offers.map((offer) => (
-          <Message key={offer.id}>
-            <Message.Header>0.00000000 BTC</Message.Header>
-            <Message.Content>
-                <code>{offer.id}</code>
-                <code>{offer.id}</code>
-                <code>{offer.type}</code>
-                <code>{offer.status === 'active' ? <Icon name='check' color='green' /> : <Icon name='close' color='red' />}</code>
-                <code>{offer.created ? new Date(offer.created).toLocaleString() : 'Never'}</code>
-                <Button.Group>
-                  <Button icon='play' disabled={offer.status === 'active'} onClick={() => this.props.startOffer(offer.id)} />
-                  <Button icon='stop' disabled={offer.status !== 'active'} onClick={() => this.props.stopOffer(offer.id)} />
-                </Button.Group>
-              </Message.Content>
-          </Message>
-        ))}
         <Tab
           panes={panes}
           activeIndex={activeTabIndex}

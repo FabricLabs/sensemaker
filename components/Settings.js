@@ -167,6 +167,7 @@ class SensemakerUserSettings extends React.Component {
                         positive={this.state.DISCORD_NOTIFICATIONS}
                         onClick={() => this.updateSetting('DISCORD_NOTIFICATIONS', !this.state.DISCORD_NOTIFICATIONS)}
                         disabled={!user_discord}
+                        title={!user_discord ? 'Link Discord in Integrations below to enable' : undefined}
                       >
                         {this.state.DISCORD_NOTIFICATIONS ? 'Enabled' : 'Disabled'}
                       </Button>
@@ -206,8 +207,8 @@ class SensemakerUserSettings extends React.Component {
                     <Table.Cell>
                       <Header as='h4'>Fabric</Header>
                       <Button.Group>
-                        <Button>Connect</Button>
-                        <Button>Disconnect</Button>
+                        <Button disabled title='Fabric connect is not wired in Settings yet'>Connect</Button>
+                        <Button disabled title='Fabric disconnect is not wired in Settings yet'>Disconnect</Button>
                       </Button.Group>
                     </Table.Cell>
                   </Table.Row>
@@ -221,7 +222,7 @@ class SensemakerUserSettings extends React.Component {
                           <a href={ 'https://discordapp.com/users/' + user_discord.id } className='ui blue button'>{user_discord.username}</a>
                         </div>
                         <Icon name='remove' />
-                      </Button.Group> : <a href='/services/discord/authorize' class='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
+                      </Button.Group> : <a href='/services/discord/authorize' className='ui violet button'><Icon name='discord' /> Link Discord &raquo;</a>}
                     </Table.Cell>
                   </Table.Row>
                 )}

@@ -27,6 +27,12 @@ async function main (input = {}) {
     ...keySettings
   };
 
+  if (config.debug) {
+    console.log('[SENSEMAKER]', `Debug setting: ${config.debug} (type: ${typeof config.debug})`);
+    console.log('[SENSEMAKER]', `Ollama host: ${config.ollama?.host || 'undefined'}`);
+    console.log('[SENSEMAKER]', `Ollama port: ${config.ollama?.port || 'undefined'}`);
+  }
+
   // Create Node
   const start = new Date();
   const sensemaker = new Sensemaker(config);

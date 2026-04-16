@@ -14,6 +14,7 @@ const AdminMemoriesTab = require('./tabs/admin/memories');
 const AdminServicesTab = require('./tabs/admin/services');
 const AdminSettingsTab = require('./tabs/admin/settings');
 const AdminAgentsTab = require('./tabs/admin/agents');
+const AdminDiscordTab = require('./tabs/admin/AdminDiscordTab');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AnnouncementList = require('./AnnouncementList');
 const InvitationCreator = require('./InvitationCreator');
@@ -239,6 +240,12 @@ class AdminSettings extends React.Component {
               onClick={this.handleTabClick}
             />
             <Menu.Item
+              name='discord'
+              content='Discord'
+              active={this.state.activeTab === 'discord'}
+              onClick={this.handleTabClick}
+            />
+            <Menu.Item
               name='settings'
               active={this.state.activeTab === 'settings'}
               onClick={this.handleTabClick}
@@ -259,6 +266,7 @@ class AdminSettings extends React.Component {
           {this.state.activeTab === 'conversations' && <AdminConversationsTab {...this.props} />}
           {this.state.activeTab === 'memories' && <AdminMemoriesTab {...this.props} />}
           {this.state.activeTab === 'services' && <AdminServicesTab {...this.props} />}
+          {this.state.activeTab === 'discord' && <AdminDiscordTab {...this.props} />}
           {this.state.activeTab === 'settings' && <AdminSettingsTab {...this.props} />}
           {this.state.activeTab === 'agents' && <AdminAgentsTab {...this.props} />}
           {this.state.activeTab === 'benchmark' && <BenchmarkManager {...this.props} />}

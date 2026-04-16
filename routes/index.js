@@ -119,6 +119,12 @@ module.exports = {
     list: require('./memories/list_memories'),
     view: require('./memories/view_memory')
   },
+  ollama: {
+    tags: require('./ollama/api_tags'),
+    version: require('./ollama/api_version'),
+    chat: require('./ollama/api_chat'),
+    generate: require('./ollama/api_generate')
+  },
   models: {
     list: require('./models/list_models')
   },
@@ -168,6 +174,9 @@ module.exports = {
       channels: {
         list: require('./services/discord/list_channels'),
         view: require('./services/discord/view_channel')
+      },
+      voice: {
+        snapshot: require('./services/discord/voice_snapshot')
       },
       users: {
         list: require('./services/discord/list_users'),
@@ -230,6 +239,11 @@ module.exports = {
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')
+  },
+  workers: {
+    state: require('./workers/state'),
+    playnetReceiveAddress: require('./workers/playnetReceiveAddress'),
+    donatePlaynet: require('./workers/donatePlaynet')
   },
   users: {
     list: require('./users/list_users'),

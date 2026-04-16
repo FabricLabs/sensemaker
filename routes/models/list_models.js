@@ -28,7 +28,11 @@ module.exports = async function (req, res, next) {
     // Get models directly from Ollama
     const ollamaModels = [];
     try {
-      const ollamaResponse = await fetch(`${this.settings.ollama.host || 'http://localhost'}:${this.settings.ollama.port || 11434}/api/tags`);
+      const scheme = this.settings.ollama.secure ? 'https' : 'http';
+      const host = String(this.settings.ollama.host || '127.0.0.1').replace(/^https?:\/\//, '');
+      const port = this.settings.ollama.port || 11434;
+      const ollamaBase = `${scheme}://${host}:${port}`;
+      const ollamaResponse = await fetch(`${ollamaBase}/api/tags`);
       if (ollamaResponse.ok) {
         const ollamaData = await ollamaResponse.json();
         for (const model of ollamaData.models || []) {

@@ -26,8 +26,8 @@ module.exports = function (req, res) {
         const existingEmail = await this.db("users")
           .where("email", email)
           .first();
-        if (existingUser) {
-          return res.status(409).json({ message: "Email already registered." });
+        if (existingEmail) {
+          return res.status(409).json({ message: 'Email already registered.' });
         }
 
         // Generate a salt and hash the password
@@ -35,8 +35,7 @@ module.exports = function (req, res) {
         const salt = genSaltSync(saltRounds);
         const hashedPassword = hashSync(password, salt);
 
-        // Insert the new user into the database
-        const newUser = await this.db("users").insert({
+        await this.db('users').insert({
           username: username,
           password: hashedPassword,
           salt: salt,
@@ -45,9 +44,9 @@ module.exports = function (req, res) {
           last_name: lastName
         });
 
-        console.log("New user registered:", username);
+        console.log('New user registered:', username);
 
-        return res.json({ message: "User registered successfully." });
+        return res.json({ message: 'User registered successfully.' });
       } catch (error) {
         console.error("Error registering user: ", error);
         return res.status(500).json({ message: "Internal server error." });

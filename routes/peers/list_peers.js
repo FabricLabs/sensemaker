@@ -1,5 +1,25 @@
 'use strict';
 
+function normalizeAddressPort (host, port) {
+  const p = port != null && String(port).length ? String(port) : '7777';
+  return `${host}:${p}`;
+}
+
+function tagPeerRow (row, federationMembers) {
+  if (!federationMembers || !federationMembers.length) return row;
+  const key = normalizeAddressPort(row.address, row.port);
+  const match = federationMembers.find((m) => {
+    const addr = m.address || normalizeAddressPort(m.host, m.port);
+    return addr === key;
+  });
+  if (!match) return row;
+  return {
+    ...row,
+    federationId: match.id,
+    federationLabel: match.label
+  };
+}
+
 module.exports = async function (req, res, next) {
   res.format({
     html: () => {
@@ -20,6 +40,12 @@ module.exports = async function (req, res, next) {
 
       try {
         const peer = this.fabric.agent;
+        const fabricSettings = this.settings.fabric || {};
+        const federationMembers = Array.isArray(fabricSettings.federationMembers)
+          ? fabricSettings.federationMembers
+          : [];
+        const selfNode = fabricSettings.selfNode || null;
+
         const connectedPeers = [];
         const configuredPeers = [];
 
@@ -34,7 +60,7 @@ module.exports = async function (req, res, next) {
           const peerID = peerInfo?.publicKey || peerInfo?.id || null;
           const peerAlias = connection?._alias || peerInfo?.alias || null;
 
-          connectedPeers.push({
+          connectedPeers.push(tagPeerRow({
             id: connectionId.replace(/[:.]/g, '-'),
             peerID: peerID, // Actual peer ID (public key)
             alias: peerAlias, // Published alias if available
@@ -45,7 +71,7 @@ module.exports = async function (req, res, next) {
             connected: true,
             description: `Active connection to ${connectionId}`,
             connectionId: connectionId
-          });
+          }, federationMembers));
         }
 
         // Get configured peers (from settings)
@@ -65,7 +91,7 @@ module.exports = async function (req, res, next) {
               displayHost = actualHost;
             }
 
-            configuredPeers.push({
+            configuredPeers.push(tagPeerRow({
               id: peerAddress.replace(/[:.@]/g, '-'),
               peerID: peerID, // Peer ID if specified in config
               alias: null, // No alias for unconnected peers
@@ -76,7 +102,7 @@ module.exports = async function (req, res, next) {
               connected: false,
               description: `Configured peer: ${peerAddress}`,
               connectionId: peerAddress
-            });
+            }, federationMembers));
           }
         }
 
@@ -92,7 +118,15 @@ module.exports = async function (req, res, next) {
           connected: true,
           description: 'Local Fabric node',
           isLocal: true,
-          pubkey: peer.identity?.id || peer.id || null
+          pubkey: peer.identity?.id || peer.id || null,
+          federationId: selfNode || undefined,
+          federationLabel: selfNode
+            ? (federationMembers.find((m) => m.id === selfNode) || {}).label || 'This federation node'
+            : undefined,
+          sensemakerAgent: {
+            name: this.settings.name || 'Sensemaker',
+            fabricPeerId: peer.identity?.id || peer.id || null
+          }
         };
 
         const allPeers = [localPeer, ...connectedPeers, ...configuredPeers];
@@ -104,6 +138,10 @@ module.exports = async function (req, res, next) {
             connected: connectedPeers.length + 1, // +1 for local
             configured: configuredPeersList.length,
             active_connections: connections.length
+          },
+          federation: {
+            self: selfNode,
+            members: federationMembers
           },
           timestamp: new Date().toISOString()
         };

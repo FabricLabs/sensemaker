@@ -22,6 +22,9 @@ const GET_INFORMATION_FAILURE = 'GET_INFORMATION_FAILURE';
 const RESET_CHAT_STATE = 'RESET_CHAT_STATE';
 const RESET_CHAT_SUCCESS = 'RESET_CHAT_SUCCESS';
 
+const CHAT_STREAM_CHUNK = 'CHAT_STREAM_CHUNK';
+const CHAT_STREAM_RESET = 'CHAT_STREAM_RESET';
+
 // Sync Action Creators
 const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
 const messageSuccess = (message) => ({ type: CHAT_SUCCESS, payload: { message }, isSending: false });
@@ -40,6 +43,9 @@ const getMessageInformationSuccess = (info) => ({ type: GET_INFORMATION_SUCCESS,
 const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE, payload: error, error: error });
 
 const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
+
+const chatStreamChunk = (payload) => ({ type: CHAT_STREAM_CHUNK, payload });
+const chatStreamReset = () => ({ type: CHAT_STREAM_RESET });
 
 // Async Action Creator (Thunk)
 const resetChat = (message) => {
@@ -71,8 +77,10 @@ const submitMessage = (message, collection_id = null) => {
 
       const result = await response.json();
       dispatch(messageSuccess(result));
+      return result;
     } catch (error) {
       dispatch(messageFailure(error.message));
+      throw error;
     }
   };
 };
@@ -148,11 +156,21 @@ const getMessages = (params = {}) => {
     const state = getState();
     const token = state.auth.token;
 
-    // TODO: re-evaluate this... is this safe?
-    if (!params.conversation_id) params.conversation_id = state.chat.message.conversation;
+    const p = { ...params };
+    const fromState = state.chat.message && typeof state.chat.message === 'object'
+      ? state.chat.message.conversation
+      : undefined;
+    if (!p.conversation_id || p.conversation_id === 'undefined') {
+      p.conversation_id = fromState;
+    }
+
+    const usp = new URLSearchParams();
+    if (p.conversation_id != null && String(p.conversation_id) !== 'undefined') {
+      usp.set('conversation_id', String(p.conversation_id));
+    }
 
     try {
-      const response = await fetch('/messages?' + new URLSearchParams(params), {
+      const response = await fetch('/messages?' + usp.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -203,6 +221,8 @@ const getMessageInformation = (request) => {
 }
 
 module.exports = {
+  chatStreamChunk,
+  chatStreamReset,
   resetChat,
   submitMessage,
   fetchResponse,
@@ -219,5 +239,7 @@ module.exports = {
   FETCH_RESPONSE_SUCCESS,
   FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
-  RESET_CHAT_SUCCESS
+  RESET_CHAT_SUCCESS,
+  CHAT_STREAM_CHUNK,
+  CHAT_STREAM_RESET
 };

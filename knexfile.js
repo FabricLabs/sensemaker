@@ -8,6 +8,9 @@ module.exports = {
     connection: settings.db,
     migrations: {
       directory: './migrations'
+    },
+    seeds: {
+      directory: './seeds'
     }
   },
   production: {
@@ -21,6 +24,9 @@ module.exports = {
     },
     migrations: {
       directory: './migrations'
+    },
+    seeds: {
+      directory: './seeds'
     },
     pool: {
       min: 2,

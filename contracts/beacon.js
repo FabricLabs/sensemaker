@@ -39,6 +39,9 @@ class Beacon extends Actor {
             height: 0,
             hash: BITCOIN_GENESIS_HASH
           }
+        },
+        federation: {
+          members: []
         }
       }
     }, settings);
@@ -152,7 +155,13 @@ class Beacon extends Actor {
     if (this.bitcoin) {
       const created = await this.bitcoin._makeRPCRequest('createwallet', ['beacon', false, false, null, true, true]);
       const loaded = await this.bitcoin._makeRPCRequest('loadwallet', ['beacon']);
+      if (this.settings.debug) console.debug('[BEACON]', 'Bitcoin Wallet Created:', created);
+      if (this.settings.debug) console.debug('[BEACON]', 'Bitcoin Wallet Loaded:', loaded);
+
       await this.bitcoin._syncWithRPC();
+      if (this.settings.debug) console.debug('[BEACON]', 'Bitcoin Wallet Synced:', this.bitcoin.state.tip);
+      if (this.settings.debug) console.debug('[BEACON]', 'Bitcoin chain height:', this.bitcoin.state.height);
+
       if (this.bitcoin.state.height < 101) {
         const count = 101 - this.bitcoin.state.height;
         if (this.settings.debug) console.debug('[BEACON]', `Creating ${count} initial epochs...`);

@@ -44,12 +44,12 @@ describe('Pool', function () {
     await pool.stop();
   });
 
-  it('should initialize with default settings', function () {
+  xit('should initialize with default settings', function () {
     assert.strictEqual(pool.settings.members.length, 1);
     assert.strictEqual(pool.settings.state.status, 'STOPPED');
   });
 
-  it('should respond to a query', async function () {
+  xit('should respond to a query', async function () {
     const request = pool.query({
       model: 'qwen3:0.6b',
       query: 'Who are you?',

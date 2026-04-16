@@ -44,6 +44,10 @@ class Queue extends Actor {
     return this;
   }
 
+  _qlog (...args) {
+    if (this.settings.debug) console.debug(...args);
+  }
+
   set clock (value) {
     this._state.clock = value;
   }
@@ -95,10 +99,12 @@ class Queue extends Actor {
     // Increment the clock
     ++this.clock;
 
+    this._qlog('[QUEUE]', 'TICK', this.clock);
+
     if (this.settings.worker) {
-      console.debug('[QUEUE]', (await this.jobs).length, 'jobs in queue,', this._state.output.length, 'completed this epoch,', 'current job is', JSON.stringify(this._state.current).length, 'bytes');
+      this._qlog('[QUEUE]', (await this.jobs).length, 'jobs in queue,', this._state.output.length, 'completed this epoch,', 'current job is', JSON.stringify(this._state.current).length, 'bytes');
       this._state.current = await this._takeJob();
-      if (this._state.current) console.debug('[QUEUE]', 'Starting job:', this._state.current);
+      if (this._state.current) this._qlog('[QUEUE]', 'Starting job:', this._state.current);
 
       // If there's work to do, do it
       if (this._state.current && !this._state.current.status) {
@@ -119,9 +125,9 @@ class Queue extends Actor {
             })
           ]);
 
-          if (this.settings.debug) console.debug('[QUEUE]', 'Finished work:', result);
+          this._qlog('[QUEUE]', 'Finished work:', result);
           if (result.status === 'FAILED' && this._state.current.attempts > 0) {
-            console.debug('[QUEUE] Failed job in the trainer:', this._state.current);
+            this._qlog('[QUEUE]', 'Failed job in the trainer:', this._state.current);
             await this._failJob(this._state.current);
           }
 
@@ -158,7 +164,7 @@ class Queue extends Actor {
 
       // Event Listeners
       this.redis.on('ready', (err) => {
-        console.debug('[QUEUE]', 'Redis ready:', err);
+        this._qlog('[QUEUE]', 'Redis ready:', err);
       });
 
       await this.redis.connect();
@@ -166,10 +172,10 @@ class Queue extends Actor {
 
       // TODO: enable `notify-keyspace-events` on Redis server
       await this.subscriber.pSubscribe(`__keyspace@0__:queue:*`, async (message, channel) => {
-        console.debug('[QUEUE]', 'Received message:', channel, message);
+        this._qlog('[QUEUE]', 'Received message:', channel, message);
         const affectedKey = channel.substring('__keyspace@0__:'.length);
         if (affectedKey === this.settings.collection) {
-          console.debug('[QUEUE]', 'Affected key:', affectedKey);
+          this._qlog('[QUEUE]', 'Affected key:', affectedKey);
         }
       });
     }
@@ -191,7 +197,7 @@ class Queue extends Actor {
 
     if (this.redis) {
       const result = await this.redis.rPush(this.settings.collection, JSON.stringify(job.toGenericMessage().object));
-      console.debug('[QUEUE]', 'Added job to queue:', result);
+      this._qlog('[QUEUE]', 'Added job to queue:', result);
     }
 
     this.emit('job', this.state.jobs[job.id]);
@@ -202,7 +208,7 @@ class Queue extends Actor {
     try {
       // Check if Redis is available
       if (!this.redis || !this.redis.isOpen) {
-        console.debug('[QUEUE]', 'Redis not available for _takeJob');
+        this._qlog('[QUEUE]', 'Redis not available for _takeJob');
         return null;
       }
 
@@ -230,7 +236,7 @@ class Queue extends Actor {
   async _completeJob (job) {
     if (this._methods[job.method]) {
       const result = await this._methods[job.method](...job.params);
-      console.debug('[QUEUE]', 'Completed job:', job);
+      this._qlog('[QUEUE]', 'Completed job:', job);
 
       if (this.redis) {
         await this.redis.publish('job:completed', JSON.stringify({ job, result }));
@@ -252,7 +258,7 @@ class Queue extends Actor {
 
   async _failJob (job) {
     job.attempts--;
-    console.debug('[QUEUE]', 'Retrying job:', job);
+    this._qlog('[QUEUE]', 'Retrying job:', job);
     this._state.current = null;
     await this._addJob(job);
   }
@@ -261,11 +267,11 @@ class Queue extends Actor {
     try {
       if (this.redis) {
         await this.redis.del(this.settings.collection);
-        console.debug('[QUEUE]', 'Queue cleared in Redis');
+        this._qlog('[QUEUE]', 'Queue cleared in Redis');
       }
 
       this._state.content.jobs = {};
-      console.debug('[QUEUE]', 'Queue cleared in local state');
+      this._qlog('[QUEUE]', 'Queue cleared in local state');
     } catch (error) {
       console.error('[QUEUE]', 'Failed to clear queue:', error);
       throw error;
@@ -274,6 +280,8 @@ class Queue extends Actor {
   }
 
   async stop () {
+    this._qlog('[QUEUE]', 'Stopping queue...');
+
     // Stop the ticker first
     if (this.ticker) {
       clearInterval(this.ticker);
@@ -301,6 +309,7 @@ class Queue extends Actor {
         this.redis.quit()
           .then(() => {
             clearTimeout(timeout);
+            this._qlog('[QUEUE]', 'Main Redis connection closed');
             this.redis = null;
             resolve();
           })
@@ -327,6 +336,7 @@ class Queue extends Actor {
         this.subscriber.quit()
           .then(() => {
             clearTimeout(timeout);
+            this._qlog('[QUEUE]', 'Redis subscriber closed');
             this.subscriber = null;
             resolve();
           })
@@ -353,7 +363,7 @@ class Queue extends Actor {
     // Emit stopped event
     this.emit('stopped');
 
-    console.log('[QUEUE]', 'Queue stopped successfully');
+    this._qlog('[QUEUE]', 'Queue stopped successfully');
     return true;
   }
 }

@@ -13,6 +13,34 @@ const fetchResourceRequest = () => ({ type: FETCH_RESOURCE_REQUEST, loading: tru
 const fetchResourceSuccess = (resource) => ({ type: FETCH_RESOURCE_SUCCESS, payload: resource, loading: false });
 const fetchResourceFailure = (error) => ({ type: FETCH_RESOURCE_FAILURE, payload: error, loading: false });
 
+/**
+ * Parse JSON body and throw a consistent Error when `response.ok` is false (browser clients).
+ * @param {Response} response
+ * @returns {Promise<any>}
+ */
+async function parseJsonResponse (response) {
+  let data;
+  try {
+    data = await response.json();
+  } catch (e) {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const body = data && typeof data === 'object' ? data : {};
+    const parts = [body.error, body.message, body.detail, body.content].filter(Boolean);
+    const msg = parts.length
+      ? parts.map((p) => (typeof p === 'string' ? p : JSON.stringify(p))).join(' — ')
+      : `Request failed (${response.status})`;
+    const err = new Error(msg);
+    err.status = response.status;
+    err.body = body;
+    throw err;
+  }
+
+  return data;
+}
+
 async function fetchFromAPI (path, params = {}, token = null) {
   const response = await fetch(path, {
     method: 'GET',
@@ -23,7 +51,7 @@ async function fetchFromAPI (path, params = {}, token = null) {
     }
   });
 
-  return await response.json();
+  return parseJsonResponse(response);
 }
 
 async function fetchPath (path = location.pathname, token) {
@@ -36,7 +64,7 @@ async function fetchPath (path = location.pathname, token) {
     }
   });
 
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 async function patchAPI (path, params, token = null) {
@@ -52,7 +80,7 @@ async function patchAPI (path, params, token = null) {
     ])
   });
 
-  return await response.json();
+  return parseJsonResponse(response);
 }
 
 async function postAPI (path, params, token = null) {
@@ -66,7 +94,7 @@ async function postAPI (path, params, token = null) {
     body: params
   });
 
-  return await response.json();
+  return parseJsonResponse(response);
 }
 
 const fetchResource = (path = location.pathname, token) => {
@@ -87,6 +115,7 @@ module.exports = {
   FETCH_RESOURCE_SUCCESS,
   FETCH_RESOURCE_FAILURE,
   fetchFromAPI,
+  parseJsonResponse,
   fetchResource,
   fetchPath,
   patchAPI,

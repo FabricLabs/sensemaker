@@ -57,8 +57,8 @@ async function fetchGuildFromAPI (id, token) {
   return await response.json();
 }
 
-async function fetchGuildsFromAPI (id, token) {
-  const response = await fetch(`/services/discord/guilds/${id}`, {
+async function fetchGuildsFromAPI (token) {
+  const response = await fetch('/services/discord/guilds', {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -83,8 +83,8 @@ async function fetchUserFromAPI (id, token) {
   return await response.json();
 }
 
-async function fetchUsersFromAPI (id, token) {
-  const response = await fetch(`/services/discord/users`, {
+async function fetchUsersFromAPI (token) {
+  const response = await fetch('/services/discord/users', {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -94,6 +94,26 @@ async function fetchUsersFromAPI (id, token) {
   });
 
   return await response.json();
+}
+
+async function fetchDiscordVoiceFromAPI (token) {
+  const response = await fetch('/services/discord/voice', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(body.error || `HTTP ${response.status}`);
+    err.status = response.status;
+    err.body = body;
+    throw err;
+  }
+  return body;
 }
 
 // Action types
@@ -118,6 +138,9 @@ const FETCH_DISCORD_USER_FAILURE = 'FETCH_DISCORD_USER_FAILURE';
 const FETCH_DISCORD_USERS_REQUEST = 'FETCH_DISCORD_USERS_REQUEST';
 const FETCH_DISCORD_USERS_SUCCESS = 'FETCH_DISCORD_USERS_SUCCESS';
 const FETCH_DISCORD_USERS_FAILURE = 'FETCH_DISCORD_USERS_FAILURE';
+const FETCH_DISCORD_VOICE_REQUEST = 'FETCH_DISCORD_VOICE_REQUEST';
+const FETCH_DISCORD_VOICE_SUCCESS = 'FETCH_DISCORD_VOICE_SUCCESS';
+const FETCH_DISCORD_VOICE_FAILURE = 'FETCH_DISCORD_VOICE_FAILURE';
 
 // Action creators
 const fetchDiscordStatsRequest = () => ({ type: FETCH_DISCORD_STATS_REQUEST });
@@ -141,6 +164,9 @@ const fetchDiscordUserFailure = (error) => ({ type: FETCH_DISCORD_USER_FAILURE, 
 const fetchDiscordUsersRequest = () => ({ type: FETCH_DISCORD_USERS_REQUEST });
 const fetchDiscordUsersSuccess = (stats) => ({ type: FETCH_DISCORD_USERS_SUCCESS, payload: stats });
 const fetchDiscordUsersFailure = (error) => ({ type: FETCH_DISCORD_USERS_FAILURE, payload: error });
+const fetchDiscordVoiceRequest = () => ({ type: FETCH_DISCORD_VOICE_REQUEST });
+const fetchDiscordVoiceSuccess = (payload) => ({ type: FETCH_DISCORD_VOICE_SUCCESS, payload });
+const fetchDiscordVoiceFailure = (error) => ({ type: FETCH_DISCORD_VOICE_FAILURE, payload: error });
 
 // Thunk action creator
 const fetchDiscordStats = () => {
@@ -200,8 +226,8 @@ const fetchDiscordGuilds = () => {
     dispatch(fetchDiscordGuildsRequest());
     const { token } = getState().auth;
     try {
-      const guilds = await fetchGuildsFromAPI(token);
-      dispatch(fetchDiscordGuildsSuccess(guilds));
+      const data = await fetchGuildsFromAPI(token);
+      dispatch(fetchDiscordGuildsSuccess(data));
     } catch (error) {
       dispatch(fetchDiscordGuildsFailure(error));
     }
@@ -234,6 +260,22 @@ const fetchDiscordUsers = () => {
   };
 };
 
+const fetchDiscordVoice = () => {
+  return async (dispatch, getState) => {
+    dispatch(fetchDiscordVoiceRequest());
+    const { token } = getState().auth;
+    try {
+      const data = await fetchDiscordVoiceFromAPI(token);
+      dispatch(fetchDiscordVoiceSuccess(data));
+    } catch (error) {
+      const payload = error && typeof error === 'object'
+        ? { message: error.message || String(error), status: error.status, body: error.body }
+        : { message: String(error) };
+      dispatch(fetchDiscordVoiceFailure(payload));
+    }
+  };
+};
+
 module.exports = {
   fetchDiscordStats,
   fetchDiscordChannel,
@@ -242,13 +284,26 @@ module.exports = {
   fetchDiscordGuilds,
   fetchDiscordUser,
   fetchDiscordUsers,
+  fetchDiscordVoice,
   FETCH_DISCORD_STATS_REQUEST,
   FETCH_DISCORD_STATS_SUCCESS,
   FETCH_DISCORD_STATS_FAILURE,
+  FETCH_DISCORD_CHANNEL_REQUEST,
+  FETCH_DISCORD_CHANNEL_SUCCESS,
+  FETCH_DISCORD_CHANNEL_FAILURE,
+  FETCH_DISCORD_CHANNELS_REQUEST,
+  FETCH_DISCORD_CHANNELS_SUCCESS,
+  FETCH_DISCORD_CHANNELS_FAILURE,
   FETCH_DISCORD_GUILD_REQUEST,
   FETCH_DISCORD_GUILD_SUCCESS,
   FETCH_DISCORD_GUILD_FAILURE,
+  FETCH_DISCORD_GUILDS_REQUEST,
+  FETCH_DISCORD_GUILDS_SUCCESS,
+  FETCH_DISCORD_GUILDS_FAILURE,
   FETCH_DISCORD_USER_REQUEST,
   FETCH_DISCORD_USER_SUCCESS,
-  FETCH_DISCORD_USER_FAILURE
+  FETCH_DISCORD_USER_FAILURE,
+  FETCH_DISCORD_VOICE_REQUEST,
+  FETCH_DISCORD_VOICE_SUCCESS,
+  FETCH_DISCORD_VOICE_FAILURE
 };

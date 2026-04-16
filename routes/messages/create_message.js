@@ -1,11 +1,14 @@
 'use strict';
 
 const Actor = require('@fabric/core/types/actor');
-const Message = require('@fabric/core/types/message');
 
 const toRelativeTime = require('../../functions/toRelativeTime');
 
 module.exports = async function (req, res, next) {
+  if (!req.user || req.user.id == null) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
   const now = new Date();
 
   let isNew = false;
@@ -69,6 +72,10 @@ module.exports = async function (req, res, next) {
     const conversation = await this.db('conversations').where({ fabric_id: fabricConversationID }).first();
     if (!conversation) throw new Error(`No such Conversation: ${fabricConversationID}`);
 
+    if (!isNew && !(await this._userCanAccessConversation(req, conversation))) {
+      return res.status(403).json({ message: 'Not allowed to post to this conversation.' });
+    }
+
     localConversationID = conversation.id;
 
     // User Message
@@ -96,60 +103,53 @@ module.exports = async function (req, res, next) {
       id: localConversationID
     });
 
-    // Core Pipeline
-    // this.createTimedRequest({
-    this.handleTextRequest({
-      conversation_id: fabricConversationID,
-      context: context,
-      agent: agent,
-      query: content,
-      user_id: req.user.id
-    }).catch((exception) => {
-      console.error('[SENSEMAKER]', '[HTTP]', 'Error creating timed request:', exception);
-    }).then(async (request) => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Handled text request:', request);
-      // TODO: emit message
-
-      if (!request || !request.content) {
-        console.debug('[SENSEMAKER]', '[HTTP]', 'No request content:', request);
-        return;
-      }
-
-      const history = await this._getConversationMessages(conversation.id);
-      const messages = history.map((x) => {
-        return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content }
-      });
-
-      if (isNew) {
-        this._summarizeMessagesToTitle(messages).catch((error) => {
-          console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
-        }).then(async (output) => {
-          let title = output?.content || 'broken content title';
-          if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
-          if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
-          const msg = { id: fabricConversationID, messages: messages, title: title };
-          const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
-          if (this.key && this.key.private) message.signWithKey(this.key);
-          this.http.broadcast(message);
-        });
-      }
-
-      this._summarizeMessages(messages).catch((error) => {
-        console.error('[SENSEMAKER]', '[HTTP]', 'Error summarizing messages:', error);
-      }).then(async (output) => {
-        if (this.settings.debug) console.debug('[SENSEMAKER]', '[HTTP]', 'Summarized conversation:', output);
-        let summary = output?.content || 'broken content summary';
-        if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
-        if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
-        const msg = { id: fabricConversationID, messages: messages, summary: summary };
-        const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
-        if (this.key && this.key.private) message.signWithKey(this.key);
-        this.http.broadcast(message);
-      });
-    }).then(async () => {
-      console.debug('[SENSEMAKER]', '[HTTP]', 'Finished processing message');
+    const placeholderContent = `Waiting in queue… (${this.settings.name} will reply shortly.)`;
+    const assistantRow = await this.db('messages').insert({
+      conversation_id: localConversationID,
+      user_id: 1,
+      status: 'queued',
+      content: placeholderContent
     });
-    // End Core Pipeline
+    const responseMessageId = assistantRow[0];
+    const assistantActor = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseMessageId}`, created: now });
+    await this.db('messages').update({ fabric_id: assistantActor.id }).where({ id: responseMessageId });
+
+    conversation.log.push(responseMessageId);
+    await this.db('conversations').update({
+      log: JSON.stringify(conversation.log)
+    }).where({ id: localConversationID });
+
+    if (this.activeWorkerQueue) {
+      await this.activeWorkerQueue.enqueue({
+        type: 'conversation_turn',
+        conversation_fabric_id: fabricConversationID,
+        local_conversation_id: localConversationID,
+        user_id: req.user.id,
+        query: content,
+        context: context,
+        agent: agent,
+        response_message_id: responseMessageId,
+        is_new: isNew
+      });
+    } else {
+      console.error('[SENSEMAKER]', '[HTTP]', 'activeWorkerQueue missing; falling back to inline handleTextRequest');
+      this.handleTextRequest({
+        conversation_id: fabricConversationID,
+        context: context,
+        agent: agent,
+        query: content,
+        user_id: req.user.id,
+        existing_response_message_id: responseMessageId
+      }).then(async () => {
+        await this._finalizeConversationAfterReply({
+          localConversationID: localConversationID,
+          fabricConversationID: fabricConversationID,
+          isNew: isNew
+        });
+      }).catch((exception) => {
+        console.error('[SENSEMAKER]', '[HTTP]', 'Inline text request failed:', exception);
+      });
+    }
 
     const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${localMessageID}`, created: now });
     await this.db('messages').update({ fabric_id: localMessage.id }).where({ id: localMessageID });

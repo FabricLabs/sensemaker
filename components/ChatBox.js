@@ -150,12 +150,15 @@ class ChatBox extends React.Component {
     // changed, this happens when the last message from assistant changes from "Agent is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
       //if the previous last message is different than the current last message, we call the groupMessages function again
-      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
+      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content) ||
+      (prevLastMessage && currentLastMessage && prevLastMessage.status !== currentLastMessage.status)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
+        const assistantSettled = lastMessage && lastMessage.role === 'assistant' &&
+          (lastMessage.status === 'ready' || lastMessage.status === 'error');
+        if (assistantSettled) {
           this.setState({ generatingResponse: false });
           this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
@@ -167,6 +170,10 @@ class ChatBox extends React.Component {
           // }
         }
       }
+      this.scrollToBottom();
+    }
+
+    if (prevProps.chat.streamBuffer !== this.props.chat.streamBuffer && this.props.chat.streamBuffer) {
       this.scrollToBottom();
     }
   }
@@ -276,7 +283,13 @@ class ChatBox extends React.Component {
 
   handleSubmit = async (event) => {
     event.preventDefault();
-    const { query } = this.state;
+    const controlled = this.props.inputValue;
+    const queryText = (controlled !== undefined && controlled !== null)
+      ? String(controlled)
+      : this.state.query;
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+
     const { message } = this.props.chat;
     const { documentChat, context, agent } = this.props;
 
@@ -285,13 +298,13 @@ class ChatBox extends React.Component {
     this.stopPolling();
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
-    this.props.getMessageInformation(query);
+    this.props.getMessageInformation(trimmed);
 
     //if we don't have previous chat it means this is a new conversation
     if (!this.props.previousChat) {
       dataToSubmit = {
         conversation_id: message?.conversation,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
@@ -300,28 +313,36 @@ class ChatBox extends React.Component {
       //else, we are in a previous one and we already have a conversationID for this
       dataToSubmit = {
         conversation_id: this.props.conversationID,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
       }
     }
 
-    // dispatch submitMessage
-    this.props.submitMessage(dataToSubmit).then((output) => {
-      // dispatch getMessages
-      this.props.getMessages({ conversation_id: message?.conversation });
-
-      if (!this.watcher) {
-        this.watcher = setInterval(() => {
-          this.props.getMessages({ conversation_id: message?.conversation });
-        }, 5000);
+    // dispatch submitMessage — use API result for conversation id (stale closure used to pass undefined → GET /messages?conversation_id=undefined → 404)
+    this.props.submitMessage(dataToSubmit).then((apiResult) => {
+      const conv =
+        (apiResult && apiResult.object && apiResult.object.conversation) ||
+        this.props.chat.message?.conversation;
+      if (conv) {
+        this.props.getMessages({ conversation_id: conv });
+        if (!this.watcher) {
+          this.watcher = setInterval(() => {
+            this.props.getMessages({ conversation_id: conv });
+          }, 5000);
+        }
       }
+      this.setState({ loading: false });
+    }).catch(() => {
       this.setState({ loading: false });
     });
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+    if (this.props.onInputChange) {
+      this.props.onInputChange({ target: { value: '' } });
+    }
     if (this.props.conversationID && this.props.fetchData) {
       this.props.fetchData(this.props.conversationID);
     }
@@ -1123,7 +1144,7 @@ class ChatBox extends React.Component {
                         </ul>
                       </div>
                     )}
-                    {message.status !== "computing" && (
+                    {!(message.role === 'assistant' && ['computing', 'processing', 'queued'].includes(message.status)) && (
                       <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
                     )}
                     {/* DO NOT DELETE THIS BLOCK */}
@@ -1140,10 +1161,31 @@ class ChatBox extends React.Component {
                     {generatingResponse &&
                       group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
                       !reGeneratingResponse && (
-                        <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
-                          <Icon name="spinner" loading />
-                          {BRAND_NAME} is generating a response...
-                        </Header>
+                        <>
+                          <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                            <Icon name="spinner" loading />
+                            {(() => {
+                              const g = this.state.groupedMessages[this.state.groupedMessages.length - 1];
+                              const a = g && g.messages && g.messages.length ? g.messages[g.messages.length - 1] : null;
+                              if (a && a.role === 'assistant') {
+                                if (a.status === 'queued') return 'Waiting in queue…';
+                                if (a.status === 'processing') return 'Sensemaker is working on your reply…';
+                              }
+                              return `${BRAND_NAME} is generating a response...`;
+                            })()}
+                          </Header>
+                          {this.props.chat.streamBuffer ? (
+                            <div
+                              className="chat-stream-preview fade-in"
+                              style={{ marginTop: '0.75em', fontSize: '0.95em', lineHeight: 1.45 }}
+                              dangerouslySetInnerHTML={{
+                                __html: marked.parse(
+                                  (this.props.chat.streamBuffer || '').replace('https://sensemaker.io', AUTHORITY)
+                                )
+                              }}
+                            />
+                          ) : null}
+                        </>
                       )}
                     {reGeneratingResponse &&
                       group ===

@@ -16,8 +16,13 @@ Local settings should be provided by environment variables wherever possible, in
 - `SQL_DB_PASSWORD` — password for the SQL user
 - `OLLAMA_HOST` — HTTP host for Ollama server
 - `OLLAMA_PORT` — HTTP port for Ollama server
+- Docker Compose — `make up` runs `scripts/docker-compose.sh`, which sets `COMPOSE_FILE` to include `docker-compose.ollama-host.yml` when `~/.ollama` exists (reuse host models). Use `USE_HOST_OLLAMA=0` or `OLLAMA_HOST_DATA` to override.
 - `REDIS_HOST` — host of the Redis server
-- `REDIS_PORT` — port of the Redis server
+- `REDIS_PORT` — port of the Redis server (defaults to **6379** in `settings/local.js`)
+
+**Host Sensemaker + Redis in Docker (Redis Stack):** start Docker Desktop, then run `make redis-local` (see `docker-compose.redis-local.yml`). That publishes **127.0.0.1:6379**, matching the default `redis.host` / `redis.port` with no env vars. Stop with `make redis-local-down`.
+
+If you use the **full** compose stack (`make up`) but still run Node on the host, Redis is mapped to host port **5052** — use `REDIS_HOST=127.0.0.1` and `REDIS_PORT=5052` for that process (you do not need `redis-local` in that case).
 
 Settings can be configured locally through `settings/local.js` — care should be taken not to commit secrets; **again, prefer environment variables**.
 

@@ -9,6 +9,8 @@
 // Prepare transpilation
 require('@babel/register');
 
+// const why = require('why-is-node-running');
+
 // Package
 const definition = require('../package');
 const {
@@ -19,6 +21,8 @@ const {
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   USER_QUERY_TIMEOUT_MS,
+  PIPELINE_PARALLEL_MS,
+  PIPELINE_FINAL_SUMMARY_MS,
   SYNC_EMBEDDINGS_COUNT,
   ENABLE_SOURCES
 } = require('../constants');
@@ -32,6 +36,7 @@ const {
 const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
+const path = require('path');
 
 // External Dependencies
 const { createClient } = require('redis');
@@ -58,6 +63,8 @@ const Federation = require('@fabric/core/types/federation'); // fabric federatio
 const Key = require('@fabric/core/types/key'); // fabric keys
 const Peer = require('@fabric/core/types/peer'); // fabric peers
 const Token = require('@fabric/core/types/token'); // fabric tokens
+const fabricAuth = require('@fabric/http/middlewares/auth');
+const nodeSessionToken = require('./nodeSessionToken');
 const Actor = require('@fabric/core/types/actor'); // fabric actors
 const Chain = require('@fabric/core/types/chain'); // fabric chains
 const Logger = require('@fabric/core/types/logger');
@@ -80,6 +87,8 @@ const Discord = require('@fabric/discord');
 // Services
 const Fabric = require('./fabric');
 const EmailService = require('./email');
+const { buildPipelineFanOut } = require('./textRequestPipeline');
+const chatStreamBridge = require('./chatStreamBridge');
 // const Gemini = require('./gemini');
 // const Mistral = require('./mistral');
 // const OpenAI = require('./openai');
@@ -98,6 +107,8 @@ const Pool = require('../types/pool');
 const Trainer = require('../types/trainer');
 const Worker = require('../types/worker');
 const Queue = require('../types/queue');
+const ActiveWorkerQueue = require('./activeWorkerQueue');
+const { getRegistry } = require('../types/ServiceUIRegistry');
 
 // Functions
 const toMySQLDatetime = require('../functions/toMySQLDatetime');
@@ -126,13 +137,13 @@ class Sensemaker extends Hub {
 
     // Handle SIGINT (Ctrl+C)
     process.on('SIGINT', async () => {
-      console.debug('[SENSEMAKER:CORE]', 'Received SIGINT, shutting down...');
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received SIGINT, shutting down...');
       await this.stop();
     });
 
     // Handle SIGTERM
     process.on('SIGTERM', async () => {
-      console.debug('[SENSEMAKER:CORE]', 'Received SIGTERM, shutting down...');
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received SIGTERM, shutting down...');
       await this.stop();
     });
 
@@ -221,7 +232,9 @@ class Sensemaker extends Hub {
       verbosity: 2,
       verify: true,
       workers: 1,
-      name: 'Sensemaker'
+      name: 'Sensemaker',
+      /** Absolute site origin for emailed links (e.g. http://127.0.0.1:3040). Falls back to `authority`. */
+      baseUrl: null
     }, settings);
 
     // Vector Clock
@@ -235,7 +248,7 @@ class Sensemaker extends Hub {
       passphrase: this.settings.passphrase
     });
 
-    console.debug('[SENSEMAKER:CORE]', '[KEY]', 'Root key initialized:', {
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[KEY]', 'Root key initialized:', {
       seed: this._rootKey.seed,
       xprv: this._rootKey.xprv,
       xpub: this._rootKey.xpub,
@@ -256,6 +269,15 @@ class Sensemaker extends Hub {
       verbosity: 0, // Suppress logs after startup
       debug: false // Disable debug logs
     });
+
+    /** One serial NLP / conversation worker + FIFO queue (see {@link ActiveWorkerQueue}). */
+    this.activeWorkerQueue = new ActiveWorkerQueue(this);
+
+    /** Per-task cooldown so idle background work does not hammer the same row. */
+    this._lastBackgroundTaskAtById = new Map();
+
+    /** `'conversation' | 'background' | null` while the active worker runs a job. */
+    this._workerJobKind = null;
 
     // Audits
     this.audits = new Logger(this.settings);
@@ -280,27 +302,74 @@ class Sensemaker extends Hub {
     this.sandbox = new Sandbox(this.settings.sandbox);
     this.worker = new Worker({ ...this.settings, key: { xprv: this._rootKey.xprv } });
 
-    // Configure Bitcoin regtest
-    this.regtest = new Bitcoin({
-      debug: this.settings.bitcoin.debug,
-      key: { xprv: this._rootKey.xprv },
-      mode: 'rpc',
-      managed: true,
-      network: 'regtest',
-      host: '127.0.0.1',
-      rpcport: 20444,
-      username: 'ahp7iuGhae8mooBahFaYieyaixei6too',
-      password: 'naiRe9wo5vieFayohje5aegheenoh4ee',
-      zmq: {
+    // Optional managed regtest (separate bitcoind). Off by default so Sensemaker can run
+    // next to Hub or another local bitcoind without port conflicts. Enable with
+    // settings.bitcoin.regtest === true or BITCOIN_REGTEST=1 / SENSEMAKER_REGTEST=1.
+    if (this.settings.bitcoin && this.settings.bitcoin.regtest === true) {
+      this.regtest = new Bitcoin({
+        debug: this.settings.bitcoin.debug,
+        key: { xprv: this._rootKey.xprv },
+        mode: 'rpc',
+        managed: true,
+        network: 'regtest',
         host: '127.0.0.1',
-        port: 29500
-      }
-    });
+        rpcport: 20444,
+        username: 'ahp7iuGhae8mooBahFaYieyaixei6too',
+        password: 'naiRe9wo5vieFayohje5aegheenoh4ee',
+        zmq: {
+          host: '127.0.0.1',
+          port: 29500
+        }
+      });
+    } else {
+      this.regtest = null;
+    }
+
+    /**
+     * Permanent playnet facet: a {@link Hub} wired to regtest RPC (defaults to 127.0.0.1:18443).
+     * Used for playnet-only flows (e.g. host donations) independent of mainnet / `this.bitcoin.enable`.
+     * Does not start Fabric P2P or HTTP; only its Bitcoin client is started in {@link Sensemaker#start}.
+     */
+    this._playnetDonationAddress = null;
+    try {
+      const playnetP2PPort = (Number(this.settings.port) || 7777) + 11111;
+      this.playnet = new Hub({
+        name: `${this.settings.name}:playnet`,
+        key: {
+          xprv: this._rootKey.xprv,
+          xpub: this._rootKey.xpub,
+          seed: this.settings.seed,
+          mnemonic: this.settings.mnemonic,
+          passphrase: this.settings.passphrase
+        },
+        port: playnetP2PPort,
+        http: { listen: false, port: 0, hostname: '127.0.0.1' },
+        peers: [],
+        peersDb: path.join(process.cwd(), 'stores/sensemaker/playnet-hub-peers'),
+        beacon: { enable: false },
+        services: ['bitcoin'],
+        verbosity: 0,
+        debug: false,
+        bitcoin: {
+          enable: true,
+          managed: false,
+          network: 'regtest',
+          host: process.env.SENSEMAKER_PLAYNET_RPC_HOST || process.env.FABRIC_BITCOIN_HOST || '127.0.0.1',
+          rpcport: Number(process.env.SENSEMAKER_PLAYNET_RPC_PORT || 18443),
+          username: process.env.SENSEMAKER_PLAYNET_RPC_USER || process.env.FABRIC_BITCOIN_USERNAME || process.env.BITCOIN_RPC_USER || '',
+          password: process.env.SENSEMAKER_PLAYNET_RPC_PASSWORD || process.env.FABRIC_BITCOIN_PASSWORD || process.env.BITCOIN_RPC_PASS || '',
+          startTimeoutMs: Number(process.env.SENSEMAKER_PLAYNET_START_TIMEOUT_MS || 12000)
+        }
+      });
+    } catch (playnetErr) {
+      console.warn('[SENSEMAKER:CORE]', '[PLAYNET]', 'Playnet Hub not created:', playnetErr.message || playnetErr);
+      this.playnet = null;
+    }
 
     // Services
     try {
       if (this.settings.bitcoin && this.settings.bitcoin.enable) {
-        console.debug('[SENSEMAKER:CORE]', 'Initializing Bitcoin service...');
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Initializing Bitcoin service...');
         this.bitcoin = new Bitcoin(this.settings.bitcoin);
       }
     } catch (error) {
@@ -347,8 +416,31 @@ class Sensemaker extends Hub {
     // Embeddings, Search, and Clustering
     this.cluster = new Trainer(this.settings);
     this.pool = new Pool({
+      debug: !!this.settings.debug,
       members: [
-        this.settings.ollama
+        this.settings.ollama,
+        { ...this.settings.ollama, name: 'MARTINDALE', host: '192.168.50.5', model: 'llama3.2' },
+        // { ...this.settings.ollama, name: 'GOLIATH:QWEN', host: '10.0.0.1', model: 'qwen3:0.6b' },
+        // { ...this.settings.ollama, name: 'GOLIATH:BASE', host: '10.0.0.1', model: 'llama3.2' },
+        // { ...this.settings.ollama, name: 'GOLIATH:DEEPSEEK:LATEST', host: '10.0.0.1', model: 'deepseek-r1:latest' },
+        // { ...this.settings.ollama, name: 'GOLIATH:DEEPSEEK:32B', host: '10.0.0.1', model: 'deepseek-r1:32b' },
+        // To enable concurrency, assign a name:
+        // { ...this.settings.ollama, name: 'namedPool0' },
+        // { ...this.settings.ollama, name: 'namedPool1' },
+        // { ...this.settings.ollama, name: 'namedPool2' },
+        // Example usage of OpenRouter
+        /* {
+          ...settings.ollama,
+          model: 'deepseek/deepseek-r1-0528:free',
+          host: 'openrouter.ai',
+          port: 443,
+          secure: true,
+          path: '/api/v1',
+          headers: {
+            'Authorization': `Bearer ${this.settings.openrouter.token}`,
+            'Content-Type': 'application/json'
+          }
+        } */
       ]
     });
 
@@ -427,6 +519,9 @@ class Sensemaker extends Hub {
     this.services = {};
     this.sources = {};
     this.tools = {};
+
+    // Service UI Registry
+    this.uiRegistry = getRegistry();
     this.workers = [];
     this.changes = new Logger({
       name: 'sensemaker',
@@ -548,12 +643,16 @@ class Sensemaker extends Hub {
       acquireConnectionTimeout: 60000
     });
 
-    // Attach pagination plugin
-    attachPaginate();
+    // Attach pagination plugin (extends Knex QueryBuilder prototype; only once per process).
+    // knex.QueryBuilder is the { extend } API, not the builder class — do not use .prototype there.
+    const KnexQueryBuilder = require('knex/lib/query/querybuilder');
+    if (typeof KnexQueryBuilder.prototype.paginate !== 'function') {
+      attachPaginate();
+    }
 
     // Test database connection
     this.db.raw('SELECT 1').then(() => {
-      console.log('[SENSEMAKER:CORE]', '[DB]', 'Database connection established successfully');
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DB]', 'Database connection established successfully');
     }).catch((error) => {
       console.error('[SENSEMAKER:CORE]', '[DB]', 'Failed to connect to database:', error);
       console.error('[SENSEMAKER:CORE]', '[DB]', 'Please check your database configuration');
@@ -784,7 +883,7 @@ class Sensemaker extends Hub {
             subject: `[ALERT] [SENSEMAKER:CORE] Sensemaker Alert`,
             html: message
         });
-        console.debug('Alert email sent successfully!');
+        if (this.settings.debug) console.debug('Alert email sent successfully!');
       } catch (error) {
         console.error('Error sending alert email:', error);
       }
@@ -794,6 +893,7 @@ class Sensemaker extends Hub {
   }
 
   async syncTriggers () {
+    if (this.settings.debug) console.debug('syncing triggers...');
     const triggers = await this.db('triggers').select('*', this.db.raw('fabric_id as id')).where({ status: 'active', type: 'keyword' });
     for (const trigger of triggers) {
       this._state.triggers[trigger.id] = trigger;
@@ -802,8 +902,11 @@ class Sensemaker extends Hub {
 
   async generateBlock () {
     return new Promise(async (resolve, reject) => {
+      if (this.settings.debug) console.trace('generating block:', this.clock);
       // Sync Health First
       const health = await this.checkHealth();
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Health:', health);
+
       // Jobs
       // TODO: move to a different method... generateBlock should only snapshot existing state
       // Scan Remotes
@@ -814,7 +917,7 @@ class Sensemaker extends Hub {
 
       if (this.settings.embeddings.enable) {
         /* this._syncEmbeddings(SYNC_EMBEDDINGS_COUNT).then((output) => {
-          console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Embedding sync complete:', output);
         }); */
       }
 
@@ -824,6 +927,8 @@ class Sensemaker extends Hub {
       };
 
       const block = new Actor(object);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Block:', block);
+
       resolve(block);
     });
   }
@@ -835,6 +940,7 @@ class Sensemaker extends Hub {
 
     this._state.clock = this.clock;
     const epoch = await this.beacon.createEpoch();
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[TICK]', 'Epoch:', epoch);
 
     this._state.content = merge({}, this._state.content, { clock: this.clock });
     this._state.content = merge({}, this._state.content, { beacon: this.beacon.state });
@@ -862,13 +968,17 @@ class Sensemaker extends Hub {
   async beat () {
     const now = (new Date()).toISOString();
     const start = JSON.parse(JSON.stringify(this.clock));
-    console.debug('[SENSEMAKER:CORE]', '[BEAT]', 'Start:', start);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEAT]', 'Start:', start);
 
     // Generate a new block in regtest mode
     if (this.bitcoin && this.bitcoin.network === 'regtest') {
       try {
+        // Always generate a new address for each block
         const newAddress = await this.bitcoin._makeRPCRequest('getnewaddress', []);
+
+        // Generate a new block to the new address
         await this.bitcoin._makeRPCRequest('generatetoaddress', [1, newAddress]);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEAT]', 'Generated new block to address:', newAddress);
       } catch (err) {
         console.error('[SENSEMAKER:CORE]', '[BEAT]', 'Failed to generate block:', err);
       }
@@ -921,7 +1031,7 @@ class Sensemaker extends Hub {
   }
 
   async bootstrap () {
-    console.debug('[SENSEMAKER:CORE]', '[BOOTSTRAP]', 'Bootstrapping Sensemaker...');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BOOTSTRAP]', 'Bootstrapping Sensemaker...');
     return new Promise((resolve, reject) => {
       // Check for Models
       this.sensemaker.listModels().then((models) => {
@@ -930,7 +1040,7 @@ class Sensemaker extends Hub {
           // TODO: fetch model file
           resolve();
         } else {
-          console.debug('[SENSEMAKER:CORE]', '[BOOTSTRAP]', 'Models found:', models);
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BOOTSTRAP]', 'Models found:', models);
           resolve(models);
         }
       }).catch((error) => {
@@ -940,9 +1050,163 @@ class Sensemaker extends Hub {
     });
   }
 
+  /**
+   * After a conversation reply is stored via handleTextRequest, refresh title/summary and broadcast.
+   * @param {object} opts
+   * @param {number} opts.localConversationID
+   * @param {string} opts.fabricConversationID
+   * @param {boolean} opts.isNew
+   */
+  async _finalizeConversationAfterReply ({ localConversationID, fabricConversationID, isNew }) {
+    const history = await this._getConversationMessages(localConversationID);
+    const messages = history.map((x) => {
+      return { role: (x.user_id == 1) ? 'assistant' : 'user', content: x.content };
+    });
+
+    if (isNew) {
+      this._summarizeMessagesToTitle(messages).catch((error) => {
+        console.error('[SENSEMAKER]', '[WORKER]', 'Error summarizing title:', error);
+      }).then(async (output) => {
+        let title = output?.content || 'broken content title';
+        if (title && title.length > 100) title = title.split(/\s+/)[0].slice(0, 100).trim();
+        if (title) await this.db('conversations').update({ title }).where({ id: localConversationID });
+        const msg = { id: fabricConversationID, messages: messages, title: title };
+        const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
+        if (this.key && this.key.private) message.signWithKey(this.key);
+        this.http.broadcast(message);
+      });
+    }
+
+    this._summarizeMessages(messages).catch((error) => {
+      console.error('[SENSEMAKER]', '[WORKER]', 'Error summarizing conversation:', error);
+    }).then(async (output) => {
+      if (this.settings.debug) console.debug('[SENSEMAKER]', '[WORKER]', 'Summarized conversation:', output);
+      let summary = output?.content || 'broken content summary';
+      if (summary && summary.length > 512) summary = summary.split(/\s+/)[0].slice(0, 512).trim();
+      if (summary) await this.db('conversations').update({ summary }).where({ id: localConversationID });
+      const msg = { id: fabricConversationID, messages: messages, summary: summary };
+      const message = Message.fromVector(['Conversation', JSON.stringify(msg)]);
+      if (this.key && this.key.private) message.signWithKey(this.key);
+      this.http.broadcast(message);
+    });
+  }
+
+  /**
+   * Start only the playnet {@link Hub} Bitcoin RPC client (no Fabric P2P, beacon, or HTTP listener).
+   */
+  async _startPlaynetBitcoinIfPresent () {
+    if (!this.playnet || !this.playnet.bitcoin) return;
+    try {
+      await this.playnet.bitcoin.start();
+      if (typeof this.playnet._collectBitcoinStatus === 'function') {
+        await this.playnet._collectBitcoinStatus({ force: true }).catch(() => {});
+      }
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PLAYNET]', 'Playnet Bitcoin RPC ready.');
+    } catch (e) {
+      console.warn('[SENSEMAKER:CORE]', '[PLAYNET]', 'Playnet Bitcoin not available:', e.message || e);
+    }
+  }
+
+  /**
+   * Cached playnet receive address for donations to this host (regtest).
+   * @returns {Promise<string|null>}
+   */
+  async _ensurePlaynetDonationAddress () {
+    if (this._playnetDonationAddress) return this._playnetDonationAddress;
+    const btc = this.playnet && this.playnet.bitcoin;
+    if (!btc) return null;
+    try {
+      this._playnetDonationAddress = await btc.getUnusedAddress();
+      return this._playnetDonationAddress;
+    } catch (e) {
+      console.warn('[SENSEMAKER:CORE]', '[PLAYNET]', 'Could not allocate donation address:', e.message || e);
+      return null;
+    }
+  }
+
+  /**
+   * Oldest incomplete task that is not in a recent background cooldown window.
+   * @returns {Promise<object|undefined>}
+   */
+  async _pickOldestBackgroundTask () {
+    const cooldownMs = 15 * 60 * 1000;
+    const now = Date.now();
+    const rows = await this.db('tasks').whereNull('completed_at').orderBy('created_at', 'asc').limit(40);
+    for (const row of rows) {
+      const last = this._lastBackgroundTaskAtById.get(row.id);
+      if (last && now - last < cooldownMs) continue;
+      return row;
+    }
+    return null;
+  }
+
+  /**
+   * Refresh `tasks.recommendation` when the node is otherwise idle.
+   * @param {object} taskRow
+   */
+  async _processBackgroundTaskJob (taskRow) {
+    this._workerJobKind = 'background';
+    try {
+      const prompt = this.settings.prompt;
+      const query = `Given this task, write a short actionable recommendation (2–5 sentences). Be concrete.\n\nTitle: ${taskRow.title}\nDescription: ${taskRow.description || '(none)'}`;
+      const summary = await this.sensemaker.query({
+        prompt,
+        messages: [{ role: 'user', content: query }],
+        query,
+        tools: false,
+        stream: false
+      });
+      if (summary && typeof summary.content === 'string') {
+        await this.db('tasks').where({ id: taskRow.id }).update({
+          recommendation: summary.content,
+          updated_at: this.db.fn.now()
+        });
+      }
+      this._lastBackgroundTaskAtById.set(taskRow.id, Date.now());
+    } finally {
+      this._workerJobKind = null;
+    }
+  }
+
+  /**
+   * Run one queued chat turn: single-flight worker entry point.
+   * @param {object} job
+   */
+  async _processConversationTurnJob (job) {
+    this._workerJobKind = 'conversation';
+    try {
+      const conversation = await this.db('conversations').where({ id: job.local_conversation_id }).first();
+      if (!conversation) throw new Error('Conversation not found');
+
+      await this.db('messages').where({ id: job.response_message_id }).update({
+        status: 'processing',
+        content: 'Sensemaker is working on your reply...',
+        updated_at: this.db.fn.now()
+      });
+
+      await this.handleTextRequest({
+        conversation_id: job.conversation_fabric_id,
+        context: job.context,
+        agent: job.agent,
+        query: job.query,
+        user_id: job.user_id,
+        existing_response_message_id: job.response_message_id
+      });
+
+      await this._finalizeConversationAfterReply({
+        localConversationID: job.local_conversation_id,
+        fabricConversationID: job.conversation_fabric_id,
+        isNew: !!job.is_new
+      });
+    } finally {
+      this._workerJobKind = null;
+    }
+  }
+
   async checkHealth () {
     const CHAT_QUERY = 'Health check!  Tell me some status values.';
-    const poolHealth = this.sensemaker.getPoolHealth();
+    const poolHealth = this.pool.getPoolHealth();
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[HEALTH]', 'Pool health:', poolHealth);
 
     return new Promise(async (resolve, reject) => {
       const now = new Date();
@@ -956,10 +1220,15 @@ class Sensemaker extends Hub {
         this.summarizer.query({ query: `Initial input: ${CHAT_QUERY}\nNetwork responses: ${JSON.stringify(results)}`, prompt: this.settings.prompt }),
       ]);
 
+      const poolSummary = {
+        status: poolHealth.isHealthy ? 'fulfilled' : 'rejected',
+        value: { kind: 'pool', ...poolHealth }
+      };
+
       resolve({
         created: now.toISOString(),
         duration: (new Date()) - now,
-        results: results.concat(poolHealth).concat(summaries)
+        results: results.concat([poolSummary]).concat(summaries)
       });
     });
   }
@@ -977,7 +1246,6 @@ class Sensemaker extends Hub {
       const created = now.toISOString();
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Handling request:', request);
-      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial query:', request.query);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial messages:', request.messages);
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial timeout:', request.timeout);
 
@@ -999,12 +1267,34 @@ class Sensemaker extends Hub {
         });
       }
 
-      // Store user request
-      const localMessageIDs = await this.db('messages').insert({ conversation_id: conversation?.id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
-      const responseID = localMessageIDs[0];
-      const responseName = `sensemaker/messages/${responseID}`;
-      const responseObject = new Actor({ name: responseName });
-      const localMessage = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: now });
+      let responseID;
+      /** @type {{ id: string }} */
+      let responseObject;
+
+      if (request.existing_response_message_id) {
+        const existing = await this.db('messages').where({ id: request.existing_response_message_id }).first();
+        if (!existing) return reject(new Error('Response message not found.'));
+        responseID = existing.id;
+        let fabricId = existing.fabric_id;
+        const createdForActor = existing.created_at ? new Date(existing.created_at) : now;
+        if (!fabricId) {
+          const a = new Actor({ type: 'LocalMessage', name: `sensemaker/messages/${responseID}`, created: createdForActor });
+          fabricId = a.id;
+          await this.db('messages').where({ id: responseID }).update({ fabric_id: fabricId });
+        }
+        responseObject = { id: fabricId };
+
+        await this.db('messages').where({ id: responseID }).update({
+          status: 'computing',
+          content: `${this.settings.name} is researching your question...`,
+          updated_at: this.db.fn.now()
+        });
+      } else {
+        const localMessageIDs = await this.db('messages').insert({ conversation_id: conversation?.id, user_id: 1, status: 'computing', content: `${this.settings.name} is researching your question...` });
+        responseID = localMessageIDs[0];
+        const responseName = `sensemaker/messages/${responseID}`;
+        responseObject = new Actor({ name: responseName });
+      }
 
       if (request.user_id) {
         requestor = await this.db('users').select('username', 'created_at').where({ id: request.user_id }).first();
@@ -1024,6 +1314,7 @@ class Sensemaker extends Hub {
         const localContext = { ...request.context, created: created, owner: this.id };
         contextString = JSON.stringify(localContext);
         const contextBlob = JSON.stringify(localContext, '  ', null);
+        // const contextCall = new Actor(localContext);
         /* messages.unshift({
           role: 'user',
           content: 'The context for our conversation is contained in the following object:\n\n' +
@@ -1059,6 +1350,7 @@ class Sensemaker extends Hub {
       }
 
       if (request.agent) {
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Agent:', request.agent);
         const agent = await this.db('agents').select('id', 'latest_prompt_blob_id').where({ id: request.agent }).first();
         if (!agent) {
           prompt = this.settings.prompt;
@@ -1125,6 +1417,7 @@ class Sensemaker extends Hub {
           .orderBy('created_at', 'desc')
           .limit(5);
 
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Recent announcements:', announcements);
         if (announcements.length > 0) {
           messages.unshift({
             role: 'user',
@@ -1139,6 +1432,70 @@ class Sensemaker extends Hub {
           role: 'user',
           content: `The current time is: ${currentTime}`
         });
+      }
+
+      // Step A — optional document context (Searcher + vector search). Skipped when pipeline.skipDocumentRetrieval.
+      const skipDocs = !!(this.settings.pipeline && this.settings.pipeline.skipDocumentRetrieval);
+      if (!skipDocs) {
+        const docRetrievalMs = Math.min(30000, Number(request.timeout) > 0 ? Number(request.timeout) : PIPELINE_PARALLEL_MS);
+        try {
+          await Promise.race([
+            (async () => {
+              if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Formulating search query...');
+              const searchQueryResponse = await this.searcher.query({
+                prompt: this.searcher.settings.prompt,
+                query: request.query,
+                messages: messages,
+                tools: false
+              });
+
+              const searchQuery = searchQueryResponse.content.trim();
+              if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Generated search query:', searchQuery);
+
+              const documentSearchResults = await this._searchDocuments({
+                query: searchQuery,
+                user: request.user,
+                limit: 5
+              });
+
+              if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Found documents:', documentSearchResults.length);
+              if (this.settings.debug && documentSearchResults.length > 0) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Sample document:', {
+                id: documentSearchResults[0].id,
+                title: documentSearchResults[0].title,
+                fabric_type: documentSearchResults[0].fabric_type,
+                filename: documentSearchResults[0].filename,
+                name: documentSearchResults[0].name
+              });
+
+              if (documentSearchResults && documentSearchResults.length > 0) {
+                const documentSummaries = documentSearchResults.slice(0, 5).map((doc, index) => {
+                  const title = doc.title || doc.filename || doc.name || 'Untitled Document';
+                  const docType = doc.fabric_type || 'Document';
+                  const summary = doc.summary ? ': ' + doc.summary : '';
+                  return `${index + 1}. "${title}" (${docType})${summary}`;
+                }).join('\n');
+
+                const documentMessage = {
+                  role: 'user',
+                  content: `Relevant documents found for this query:\n\n${documentSummaries}\n\nPlease consider these documents when formulating your response.`
+                };
+
+                messages.push(documentMessage);
+
+                if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Added document context to conversation');
+              } else {
+                if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'No relevant documents found');
+              }
+            })(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('DOC_RETRIEVAL_TIMEOUT')), docRetrievalMs))
+          ]);
+        } catch (error) {
+          if (error.message === 'DOC_RETRIEVAL_TIMEOUT') {
+            console.warn('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', `Skipped after ${docRetrievalMs}ms (timeout).`);
+          } else {
+            console.error('[SENSEMAKER:CORE]', '[DOCUMENT-RETRIEVAL]', 'Error in document retrieval:', error);
+          }
+        }
       }
 
       // Prompt
@@ -1158,80 +1515,288 @@ class Sensemaker extends Hub {
 
       if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[PIPELINE]', 'Initial template:', template);
       if (request.agent) {
-        return this.sensemaker.query(template).then(async (summary) => {
-          this.db('messages').where({ id: responseID }).update({
+        const sse = request._openAiStream;
+        const streamAgent = !request.tools && !!sse;
+        const openAiMetaAgent = sse ? {
+          id: sse.completionId,
+          model: sse.model || this.settings.ollama?.model || 'sensemaker',
+          created: sse.created || Math.floor(Date.now() / 1000)
+        } : null;
+
+        if (streamAgent) {
+          chatStreamBridge.fabricStreamStart(this, { id: responseObject.id, conversation_id: request.conversation_id });
+          chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+            id: openAiMetaAgent.id,
+            model: openAiMetaAgent.model,
+            created: openAiMetaAgent.created,
+            delta: { role: 'assistant' }
+          }));
+        }
+
+        return this.sensemaker.query({
+          ...template,
+          stream: streamAgent,
+          onStreamChunk: streamAgent ? (delta) => {
+            chatStreamBridge.fabricStreamChunk(this, {
+              id: responseObject.id,
+              conversation_id: request.conversation_id,
+              content: delta
+            });
+            chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+              id: openAiMetaAgent.id,
+              model: openAiMetaAgent.model,
+              created: openAiMetaAgent.created,
+              delta: { content: delta }
+            }));
+          } : undefined
+        }).then(async (summary) => {
+          await this.db('messages').where({ id: responseID }).update({
             status: 'ready',
             content: summary.content,
             updated_at: this.db.fn.now()
           }).catch((error) => {
             console.error('could not update message:', error);
             reject(error);
-          }).then(() => {
-            resolve(merge({}, summary, {
-              actor: { name: this.name },
-              object: { id: responseObject.id }, // Fabric ID
-              target: { id: `${this.authority}/messages/${responseID}` },
-              message_id: responseID // TODO: deprecate in favor of `object`
-            }));
           });
+          if (streamAgent && openAiMetaAgent && !sse.res.writableEnded) {
+            chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+              id: openAiMetaAgent.id,
+              model: openAiMetaAgent.model,
+              created: openAiMetaAgent.created,
+              delta: {},
+              finishReason: 'stop'
+            }));
+            chatStreamBridge.writeSseDone(sse.res);
+            sse.res.end();
+          }
+          resolve(merge({}, summary, {
+            actor: { name: this.name },
+            object: { id: responseObject.id },
+            target: { id: `${this.authority}/messages/${responseID}` },
+            message_id: responseID
+          }));
+        }).catch((err) => {
+          if (streamAgent && sse && !sse.res.writableEnded) {
+            try {
+              chatStreamBridge.writeSseEvent(sse.res, { error: { message: err.message || String(err), type: 'api_error' } });
+            } catch (e) { /* ignore */ }
+            chatStreamBridge.writeSseDone(sse.res);
+            sse.res.end();
+          }
+          reject(err);
         });
       }
 
-      // Pipeline
-      Promise.allSettled([
-        new Promise((resolve, reject) => {
-          setTimeout(() => {
-            reject(new Error('Timeout'));
-          }, request.timeout || USER_QUERY_TIMEOUT_MS);
-        }),
-        this.pool.query({ ...template, model: 'deepseek-r1:latest' }),
-        this.trainer.query(template),
-        this.sensemaker.query(template)
-      ]).catch((error) => {
-        console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Pipeline error:', error);
+      // Normal Request
+      /* console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Sensemaker request:', template);
+      return this.sensemaker.query(template).then(async (response) => {
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Sensemaker response:', response);
+        // Update database with completed response
+        this.db('messages').where({ id: responseID }).update({
+          status: 'ready',
+          content: response.content,
+          updated_at: this.db.fn.now()
+        }).catch((error) => {
+          console.error('could not update message:', error);
+          reject(error);
+        }).then(() => {
+          resolve(merge({}, response, {
+            actor: { name: this.name },
+            object: { id: responseObject.id }, // Fabric ID
+            target: { id: `${this.authority}/messages/${responseID}` },
+            message_id: responseID // TODO: deprecate in favor of `object`
+          }));
+        });
+      }).catch((error) => {
+        console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Trainer error:', error);
         reject(error);
-      }).then(async (responses) => {
-        if (!responses) return reject(new Error('No responses from network.'));
+      }); */
+
+      /* console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Trainer request:', template);
+      return this.trainer.query(template).then(async (response) => {
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Trainer response:', response);
+        // Update database with completed response
+        this.db('messages').where({ id: responseID }).update({
+          status: 'ready',
+          content: response.content,
+          updated_at: this.db.fn.now()
+        }).catch((error) => {
+          console.error('could not update message:', error);
+          reject(error);
+        }).then(() => {
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Trainer response updated in database:', responseID);
+          resolve(merge({}, response, {
+            actor: { name: this.name },
+            object: { id: responseObject.id }, // Fabric ID
+            target: { id: `${this.authority}/messages/${responseID}` },
+            message_id: responseID // TODO: deprecate in favor of `object`
+          }));
+        });
+      }).catch((error) => {
+        console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Trainer error:', error);
+        reject(error);
+      }); */
+
+      /*
+        { ...this.settings.ollama, name: 'GOLIATH:QWEN', host: '10.0.0.1', model: 'qwen3:0.6b' },
+        { ...this.settings.ollama, name: 'GOLIATH:BASE', host: '10.0.0.1', model: 'llama3.2' },
+        { ...this.settings.ollama, name: 'GOLIATH:DEEPSEEK:LATEST', host: '10.0.0.1', model: 'deepseek-r1:latest' },
+        { ...this.settings.ollama, name: 'GOLIATH:DEEPSEEK:32B', host: '10.0.0.1', model: 'deepseek-r1:32b' },
+      */
+
+      // Step B — parallel fan-out (Pool × N models, optional Trainer, primary Agent). Wall time capped by race below.
+      const pipelineMs = Math.min(
+        Number(request.timeout) > 0 ? Number(request.timeout) : PIPELINE_PARALLEL_MS,
+        MAX_RESPONSE_TIME_MS
+      );
+      const pipelineTasks = buildPipelineFanOut(this, template, this.settings.pipeline || {});
+      let responses = await Promise.race([
+        Promise.allSettled(pipelineTasks),
+        new Promise((resolve) => setTimeout(() => resolve(null), pipelineMs))
+      ]);
+
+      if (!responses) {
+        console.warn('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', `Pipeline timed out after ${pipelineMs}ms; completing with primary agent only.`);
+        try {
+          const solo = await this.sensemaker.query({ ...template, stream: false });
+          responses = [{ status: 'fulfilled', value: solo }];
+        } catch (soloErr) {
+          console.error('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Fallback sensemaker.query failed:', soloErr);
+          return reject(soloErr);
+        }
+      }
+
+      try {
+        if (!responses || !responses.length) return reject(new Error('No responses from network.'));
         if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Responses:', responses);
         // Final Summary (actual answer)
         // TODO: stream answer as it comes back from backend (to clients subscribed to the conversation)
         // TODO: finalize WebSocket implementation
         // Filter and process responses
-        const settled = responses.filter((x) => x.status === 'fulfilled').map((x) => {
-          return { name: `ACTOR:${x.value.name}`, role: 'assistant', content: x.value.content }
+        const settled = responses.filter((x) => {
+          return x.status === 'fulfilled' && x.value && typeof x.value.content === 'string';
+        }).map((x) => {
+          return { name: `ACTOR:${x.value.name || this.name}`, role: 'assistant', content: x.value.content };
         });
 
         for (let i = 0; i < settled.length; i++) {
           const response = settled[i];
           if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', 'Response:', response);
+          // Add to messages
           messages.push({ role: 'assistant', content: response.content });
         }
 
-        this.sensemaker.query({
+        // Step C — streamed final answer: signed Fabric frames + optional OpenAI SSE on request._openAiStream.
+        const streamFinal = !request.tools;
+        const sse = request._openAiStream;
+        const openAiMeta = sse ? {
+          id: sse.completionId,
+          model: sse.model || this.settings.ollama?.model || 'sensemaker',
+          created: sse.created || Math.floor(Date.now() / 1000)
+        } : null;
+
+        if (streamFinal) {
+          const startPayload = { id: responseObject.id, conversation_id: request.conversation_id };
+          chatStreamBridge.fabricStreamStart(this, startPayload);
+          if (sse && openAiMeta) {
+            chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+              id: openAiMeta.id,
+              model: openAiMeta.model,
+              created: openAiMeta.created,
+              delta: { role: 'assistant' }
+            }));
+          }
+        }
+
+        const finalSummaryMs = Math.min(PIPELINE_FINAL_SUMMARY_MS, MAX_RESPONSE_TIME_MS);
+        const summaryPromise = this.sensemaker.query({
           context: request.context,
           prompt: prompt,
           messages: messages,
           query: `${request.query}`,
-          tools: request.tools
-        }).then(async (summary) => {
-          // Update database with completed response
-          this.db('messages').where({ id: responseID }).update({
-            status: 'ready',
-            content: summary.content,
-            updated_at: this.db.fn.now()
-          }).catch((error) => {
-            console.error('could not update message:', error);
-            reject(error);
-          }).then(() => {
-            resolve(merge({}, summary, {
-              actor: { name: this.name },
-              object: { id: responseObject.id }, // Fabric ID
-              target: { id: `${this.authority}/messages/${responseID}` },
-              message_id: responseID // TODO: deprecate in favor of `object`
-            }));
-          });
+          tools: request.tools,
+          stream: streamFinal,
+          onStreamChunk: streamFinal ? (delta) => {
+            const chunk = { id: responseObject.id, conversation_id: request.conversation_id, content: delta };
+            chatStreamBridge.fabricStreamChunk(this, chunk);
+            if (sse && openAiMeta) {
+              chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+                id: openAiMeta.id,
+                model: openAiMeta.model,
+                created: openAiMeta.created,
+                delta: { content: delta }
+              }));
+            }
+          } : undefined
         });
-      });
+
+        let summary;
+        try {
+          summary = await Promise.race([
+            summaryPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('PIPELINE_FINAL_TIMEOUT')), finalSummaryMs))
+          ]);
+        } catch (finalErr) {
+          if (finalErr && finalErr.message === 'PIPELINE_FINAL_TIMEOUT') {
+            console.warn('[SENSEMAKER:CORE]', '[REQUEST:TEXT]', `Final summary timed out after ${finalSummaryMs}ms; using parallel responses only.`);
+            const stitched = settled.map((s) => s.content).filter(Boolean).join('\n\n---\n\n');
+            summary = {
+              content: stitched || `${this.settings.name} could not finish in time. Please try again or shorten your question.`
+            };
+            if (streamFinal && sse && openAiMeta && summary.content) {
+              chatStreamBridge.fabricStreamChunk(this, {
+                id: responseObject.id,
+                conversation_id: request.conversation_id,
+                content: summary.content
+              });
+              chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+                id: openAiMeta.id,
+                model: openAiMeta.model,
+                created: openAiMeta.created,
+                delta: { content: summary.content }
+              }));
+              chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+                id: openAiMeta.id,
+                model: openAiMeta.model,
+                created: openAiMeta.created,
+                delta: {},
+                finishReason: 'stop'
+              }));
+              chatStreamBridge.writeSseDone(sse.res);
+              sse.res.end();
+            }
+          } else {
+            throw finalErr;
+          }
+        }
+
+        await this.db('messages').where({ id: responseID }).update({
+          status: 'ready',
+          content: summary.content,
+          updated_at: this.db.fn.now()
+        });
+
+        if (streamFinal && sse && openAiMeta && !sse.res.writableEnded) {
+          chatStreamBridge.writeSseEvent(sse.res, chatStreamBridge.openAiChatCompletionChunk({
+            id: openAiMeta.id,
+            model: openAiMeta.model,
+            created: openAiMeta.created,
+            delta: {},
+            finishReason: 'stop'
+          }));
+          chatStreamBridge.writeSseDone(sse.res);
+          sse.res.end();
+        }
+
+        resolve(merge({}, summary, {
+          actor: { name: this.name },
+          object: { id: responseObject.id },
+          target: { id: `${this.authority}/messages/${responseID}` },
+          message_id: responseID
+        }));
+      } catch (pipeErr) {
+        reject(pipeErr);
+      }
     });
   }
 
@@ -1252,15 +1817,31 @@ class Sensemaker extends Hub {
   }
 
   async _getState () {
+    if (this.settings.debug) console.debug('getting state...');
     // WARNING: this loads the int32 for every entity in the database
-    const conversations = await this.db('conversations').select('id').from('conversations');
-    const documents = await this.db('documents').select('id').from('documents');
-    const inquiries = await this.db('inquiries').select('id', 'created_at', 'email').from('inquiries');
-    const invitations = await this.db('invitations').select('id', 'created_at', 'updated_at', 'status').from('invitations');
-    const messages = await this.db('messages').select('id').from('messages');
+    const conversations = [] || await this.db('conversations').select('id');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Conversations:', conversations.length);
+    const documents = [] || await this.db('documents').select('id');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Documents:', documents.length);
+
+    // Replace the problematic query with a count query instead of fetching all records
+    const inquiriesCount = { total: 0 } || await this.db('inquiries').count('id as total').first();
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Inquiries:', inquiriesCount.total);
+
+    // Only fetch a limited number of inquiries if you need the actual records
+    const recentInquiries = [] || await this.db('inquiries')
+      .select('id', 'created_at', 'email')
+      .orderBy('created_at', 'desc')
+      .limit(100);
+
+    const invitations = [] || await this.db('invitations').select('id', 'created_at', 'updated_at', 'status');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Invitations:', invitations.length);
+    const messages = [] || await this.db('messages').select('id');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Messages:', messages.length);
 
     // User Analytics
-    const users = await this.db('users').select('id', 'username');
+    const users = [] || await this.db('users').select('id', 'username');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[STATE]', 'Users:', users.length);
 
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
@@ -1281,8 +1862,8 @@ class Sensemaker extends Hub {
         // content: documents.map(x => x.id)
       },
       inquiries: {
-        total: inquiries.length,
-        content: inquiries
+        total: inquiriesCount.total,
+        content: recentInquiries
       },
       invitations: {
         total: invitations.length,
@@ -1308,27 +1889,27 @@ class Sensemaker extends Hub {
     // const other = await this._getUnprocessedDocumentStats();
     // const chunk = await this._getUnprocessedDocuments(limit);
 
-    console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Stats:', other, stats);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Stats:', other, stats);
 
     const start = new Date();
     for (let i = 0; i < chunk.length; i++) {
       const instance = chunk[i];
-      console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Processing case:', instance.title, `[${instance.id}]`);
       // const nativeEmbedding = await this._generateEmbedding(`[sensemaker/documents/${instance.id}] ${instance.title}`);
       const titleEmbedding = await this._generateEmbedding(instance.title);
       await this.db('documents').where('id', instance.id).update({ title_embedding_id: titleEmbedding.id });
       stats.processed++;
     }
 
-    console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
-    console.debug('[SENSEMAKER:CORE]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[ETL]', 'Complete in ', (new Date().getTime() - now.getTime()) / 1000, 'seconds.');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[ETL]', `Generated ${stats.processed} embeddings in ${(new Date().getTime() - start.getTime()) / 1000} seconds. (${stats.processed / ((new Date().getTime() - start.getTime()) / 1000)} embeddings per second)`);
     */
     return this;
   }
 
   async onJobCompleted (message) {
     const { job, result } = JSON.parse(message);
-    console.debug('[SENSEMAKER:CORE] Job completed:', job, result);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE] Job completed:', job, result);
 
     //job.method gives the job type, like 'IngestFile'
     //job.params[0] will give us the file/document id
@@ -1376,7 +1957,7 @@ class Sensemaker extends Hub {
             this.http.broadcast(messageDocument);
             break;
           default:
-            console.log('[SENSEMAKER:CORE] Unhandled complete Job Method: ', job.method);
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE] Unhandled complete Job Method:', job.method);
             break;
         }
       } catch (exception) {
@@ -1400,7 +1981,7 @@ class Sensemaker extends Hub {
   }
 
   async query (query) {
-    console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Received query:', query);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Received query:', query);
     const collections = {
       documents: {}
     };
@@ -1412,7 +1993,7 @@ class Sensemaker extends Hub {
       this._searchDocuments(query)
     ]);
 
-    console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Candidates:', candidates);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[QUERY]', 'Candidates:', candidates);
 
     return candidates;
   }
@@ -1424,6 +2005,8 @@ class Sensemaker extends Hub {
   }
 
   async ingest (data) {
+    // TODO: check for triggers
+
     await this.queue._addJob('ingest', [data]);
   }
 
@@ -1442,7 +2025,7 @@ class Sensemaker extends Hub {
       }).then(async (response) => {
         return response.json();
       }).then((json) => {
-        console.debug('[SENSEMAKER]', 'Primed:', json);
+        if (this.settings.debug) console.debug('[SENSEMAKER]', 'Primed:', json);
         resolve(json);
       }).catch(reject);
     });
@@ -1468,9 +2051,14 @@ class Sensemaker extends Hub {
   }
 
   async search (request) {
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Received search request:', request);
-    const redisResults = await this.trainer.search(request);
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Redis Results:', redisResults);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Received search request:', request);
+    let redisResults = { content: [] };
+    try {
+      redisResults = await this.trainer.search(request);
+    } catch (error) {
+      console.warn('[SENSEMAKER:CORE]', '[SEARCH]', 'Trainer vector search failed:', error.message || error);
+    }
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Redis Results:', redisResults);
     const documents = await this._searchDocuments(request);
     // const people = await this._searchPeople(request);
 
@@ -1509,7 +2097,7 @@ class Sensemaker extends Hub {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       const results = await this.db('messages').where('content', 'like', `%${token}%`);
-      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found results:', results);
     }
 
     const messages = await this.db('messages').select('id').where('content', 'like', `%${request.query}%`);
@@ -1518,7 +2106,7 @@ class Sensemaker extends Hub {
       currentPage: 1
     });
 
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found conversations:', conversations);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', '[CONVERSATIONS]', 'Found conversations:', conversations);
 
     // Result Constructor
     const elements = [];
@@ -1552,6 +2140,7 @@ class Sensemaker extends Hub {
       const adminUsername = process.env.ADMIN_USERNAME || user.username;
       const existing = await this.db('users').where({ username: adminUsername }).first();
       if (!existing) {
+        // Use provided admin password or generate a random one
         const password = process.env.ADMIN_PASSWORD || crypto.randomBytes(32).toString('base64');
         const salt = genSaltSync(BCRYPT_PASSWORD_ROUNDS);
         const hashed = hashSync(password, salt);
@@ -1566,6 +2155,7 @@ class Sensemaker extends Hub {
         }
       } else {
         this.admin = { id: existing.id, username: existing.username };
+        console.warn('[SENSEMAKER]', '[ADMIN]', 'Using existing admin user:', adminUsername);
       }
       resolve(this);
     });
@@ -1591,7 +2181,7 @@ class Sensemaker extends Hub {
         if (existing) continue;
 
         await this.db('agents').insert(agent);
-        console.debug('[SENSEMAKER:CORE]', '[AGENT]', 'Created:', agent);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[AGENT]', 'Created:', agent);
       }
 
       resolve(this);
@@ -1606,6 +2196,8 @@ class Sensemaker extends Hub {
     }
 
     this.beacon.on('message', async (message) => {
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Emitted message:', message);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Current Beacon state:', this.beacon.state);
 
       // Verify the message signature using root key
       if (message.signature) {
@@ -1620,6 +2212,7 @@ class Sensemaker extends Hub {
         case 'BEACON_EPOCH':
           try {
             const content = JSON.parse(message.body);
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Parsed content:', content);
             this.clock = content.clock;
             this._state.clock = content.clock;
             this._state.content = merge({}, this.state.content, { clock: content.clock });
@@ -1638,7 +2231,7 @@ class Sensemaker extends Hub {
 
     this.beacon.bitcoin = bitcoin;
     this.beacon.start();
-    console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Beacon started.');
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[BEACON]', 'Beacon started.');
     return this;
   }
 
@@ -1665,11 +2258,11 @@ class Sensemaker extends Hub {
     await this.setupAgents();
 
     // Create all worker agents
-    this.emit('debug', '[SENSEMAKER:CORE] Creating network:' + JSON.stringify(Object.keys(this.settings.agents)));
+    if (this.settings.debug) this.emit('debug', '[SENSEMAKER:CORE] Creating network:' + JSON.stringify(Object.keys(this.settings.agents)));
 
     for (const [name, agent] of Object.entries(this.settings.agents)) {
       const configuration = merge({}, agent, { name: name, debug: this.settings.debug });
-      console.debug('[SENSEMAKER:CORE]', 'Creating network agent:', `[${(configuration.fabric) ? 'FABRIC' : (configuration.secure) ? 'HTTPS' : 'HTTP' }]`, name, configuration.host, configuration.port, configuration.secure);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Creating network agent:', `[${(configuration.fabric) ? 'FABRIC' : (configuration.secure) ? 'HTTPS' : 'HTTP' }]`, name, configuration.host, configuration.port, configuration.secure);
       this.agents[name] = this.createAgent(configuration);
     }
 
@@ -1677,9 +2270,20 @@ class Sensemaker extends Hub {
     // TODO: define these with a map / loop
     // Document Ingest
     this.queue._registerMethod('IngestDocument', async (...params) => {
-      console.debug('[SENSEMAKER:CORE]', '[QUEUE]', 'Ingesting document...', params);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[QUEUE]', 'Ingesting document...', params);
       const document = await this.db('documents').where('id', params[0]).first();
-      const ingested = await this.trainer.ingestDocument({ content: JSON.stringify(document.content), metadata: { id: document.id }}, 'document');
+      const ingested = await this.trainer.ingestDocument({
+        content: JSON.stringify(document.content),
+        metadata: {
+          id: document.id,
+          document_id: document.id,
+          source_document_id: document.id,
+          fabric_id: document.fabric_id,
+          owner: document.owner,
+          creator: document.creator,
+          type: 'document'
+        }
+      }, 'document');
       return { status: 'COMPLETED', ingested };
     });
 
@@ -1699,7 +2303,8 @@ class Sensemaker extends Hub {
       await this.trainer.start();
     } catch (exception) {
       console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting Trainer:', exception);
-      process.exit();
+      console.warn('[SENSEMAKER:CORE]', '[REDIS]', 'Continuing without Trainer - embedding features will be unavailable');
+      // Don't exit - allow system to run without trainer/embeddings
     }
 
     if (this.settings.redis) {
@@ -1715,11 +2320,11 @@ class Sensemaker extends Hub {
       });
 
       this.redis.on('connect', () => {
-        console.debug('[SENSEMAKER:REDIS]', 'Redis client connected');
+        if (this.settings.debug) console.debug('[SENSEMAKER:REDIS]', 'Redis client connected');
       });
 
       this.redis.on('end', () => {
-        console.debug('[SENSEMAKER:REDIS]', 'Redis client connection closed');
+        if (this.settings.debug) console.debug('[SENSEMAKER:REDIS]', 'Redis client connection closed');
       });
 
       // Connect to Redis
@@ -1735,7 +2340,7 @@ class Sensemaker extends Hub {
         socket: this.settings.redis
       });
 
-      console.debug('[SENSEMAKER:REDIS]', 'Created Redis subscriber.');
+      if (this.settings.debug) console.debug('[SENSEMAKER:REDIS]', 'Created Redis subscriber.');
 
       // Connect subscriber and set up handlers
       await this.redisSubscriber.connect().then(() => {
@@ -1797,9 +2402,9 @@ class Sensemaker extends Hub {
     // Primary Worker
     // Job Types
     this.worker.register('ScanLocal', async (...params) => {
-      console.debug('[WORKER]', 'Scanning Local:', params);
+      if (this.settings.debug) console.debug('[WORKER]', 'Scanning Local:', params);
       const state = this.fs.synchronize();
-      console.debug('[WORKER]', 'Local State:', state);
+      if (this.settings.debug) console.debug('[WORKER]', 'Local State:', state);
     });
 
     this.worker.register('ScanRemotes', async (...params) => {
@@ -1816,6 +2421,7 @@ class Sensemaker extends Hub {
         })
         .orderBy('last_retrieved', 'asc');
 
+      if (this.settings.debug) this.emit('debug', `remotes to scan: ${JSON.stringify(sources)}`);
       for (let i = 0; i < sources.length; i++) {
         const source = sources[i];
         await this.syncSource(source.id).catch((exception) => {
@@ -1829,34 +2435,81 @@ class Sensemaker extends Hub {
 
         for (let i = 0; i < this.discord.guilds.length; i++) {
           const guild = this.discord.guilds[i];
+          // console.debug('[WORKER]', 'Server has Discord guild:', guild);
           const members = await this.discord.listGuildMembers(guild.id);
+          // console.debug('[WORKER]', 'Guild Members:', members);
         }
 
         for (let i = 0; i < this.discord.channels.length; i++) {
           const channel = this.discord.channels[i];
-          const members = await this.discord.listChannelMembers(channel.id);
+          let members = [];
+          // console.debug('[WORKER]', 'Server has Discord channel:', channel);
+          try {
+            const candidates = await this.discord.listChannelMembers(channel.id);
+            // console.debug('[WORKER]', 'Channel Members:', candidates);
+          } catch (exception) {
+            console.error('[WORKER]', 'Error listing channel members:', exception);
+          }
         }
       }
     });
 
     // Worker Events
-    this.worker.on('debug', (...debug) => console.debug(...debug));
-    this.worker.on('log', (...log) => console.log(...log));
+    this.worker.on('debug', (...debug) => { if (this.settings.debug) console.debug(...debug); });
+    this.worker.on('log', (...log) => { if (this.settings.debug) console.log(...log); });
     this.worker.on('warning', (...warning) => console.warn(...warning));
     this.worker.on('error', (...error) => console.error(...error));
+
+    this.sensemaker.on('document', this._handleLocalDocument.bind(this));
 
     // Bitcoin Events
     if (this.bitcoin) {
       if (this.settings.debug) this.bitcoin.on('debug', (...debug) => console.debug('[BITCOIN]', '[DEBUG]', ...debug));
       this.bitcoin.on('error', (...error) => console.error('[BITCOIN]', '[ERROR]', ...error));
-      this.bitcoin.on('log', (...log) => console.log('[BITCOIN]', ...log));
+      this.bitcoin.on('log', (...log) => { if (this.settings.debug) console.log('[BITCOIN]', ...log); });
       this.bitcoin.on('warning', (...warning) => console.warn('[BITCOIN]', '[WARNING]', ...warning));
+      this.bitcoin.on('transaction', (transaction) => {
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received Bitcoin transaction:', transaction);
+        switch (transaction.type) {
+          case 'hash':
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received Bitcoin transaction hash:', transaction.content);
+            // Create message for WebSocket clients
+            const txidMessage = {
+              type: 'BitcoinTXID',
+              content: transaction.content,
+              timestamp: Date.now()
+            };
+
+            // Broadcast TXID to all connected clients
+            const hashMessage = Message.fromVector(['BitcoinTXID', JSON.stringify(txidMessage)]);
+            if (this.key && this.key.private) hashMessage.signWithKey(this.key);
+            this.http.broadcast(hashMessage);
+            break;
+          case 'raw':
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received raw Bitcoin transaction:', transaction.content);
+              // Create message for WebSocket clients
+              const bitcoinMessage = {
+                type: 'BitcoinTransaction',
+                content: transaction.content,
+                timestamp: Date.now()
+              };
+
+              // Broadcast to all connected clients
+              const message = Message.fromVector(['BitcoinTransaction', JSON.stringify(bitcoinMessage)]);
+              if (this.key && this.key.private) message.signWithKey(this.key);
+              this.http.broadcast(message);
+            break;
+          default:
+            console.warn('[SENSEMAKER:CORE]', 'Unknown Bitcoin transaction type:', transaction.type);
+            break;
+        }
+      });
     }
 
     // Email Events
     if (this.email) {
       if (this.settings.debug) this.email.on('debug', (...debug) => console.debug('[EMAIL]', ...debug));
-      this.email.on('log', (...log) => console.log('[EMAIL]', ...log));
+      this.email.on('log', (...log) => { if (this.settings.debug) console.log('[EMAIL]', ...log); });
       this.email.on('warning', (...warning) => console.warn('[EMAIL]', ...warning));
       this.email.on('error', (...error) => console.error('[EMAIL]', ...error));
     }
@@ -1909,11 +2562,49 @@ class Sensemaker extends Hub {
 
     // Internal Services
     if (this.bitcoin) await this.bitcoin.start();
+    await this._startPlaynetBitcoinIfPresent();
     if (this.regtest) {
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[REGTEST]', 'Starting regtest...');
       if (this.settings.debug) this.regtest.on('debug', (...debug) => console.debug('[BITCOIN:REGTEST]', '[DEBUG]', ...debug));
       this.regtest.on('error', (...error) => console.error('[BITCOIN:REGTEST]', '[ERROR]', ...error));
-      this.regtest.on('log', (...log) => console.log('[BITCOIN:REGTEST]', ...log));
+      this.regtest.on('log', (...log) => { if (this.settings.debug) console.log('[BITCOIN:REGTEST]', ...log); });
       this.regtest.on('warning', (...warning) => console.warn('[BITCOIN:REGTEST]', '[WARNING]', ...warning));
+      this.regtest.on('transaction', (transaction) => {
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received Bitcoin transaction:', transaction);
+        switch (transaction.type) {
+          case 'hash':
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received Bitcoin transaction hash:', transaction.content);
+            // Create message for WebSocket clients
+            const txidMessage = {
+              type: 'BitcoinTXID',
+              content: transaction.content,
+              timestamp: Date.now()
+            };
+
+            // Broadcast TXID to all connected clients
+            const hashMessage = Message.fromVector(['BitcoinTXID', JSON.stringify(txidMessage)]);
+            if (this.key && this.key.private) hashMessage.signWithKey(this.key);
+            this.http.broadcast(hashMessage);
+            break;
+          case 'raw':
+            if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', 'Received raw Bitcoin transaction:', transaction.content);
+              // Create message for WebSocket clients
+              const regtestMessage = {
+                type: 'BitcoinTransaction',
+                content: transaction.content,
+                timestamp: Date.now()
+              };
+
+              // Broadcast to all connected clients
+              const message = Message.fromVector(['BitcoinTransaction', JSON.stringify(regtestMessage)]);
+              if (this.key && this.key.private) message.signWithKey(this.key);
+              this.http.broadcast(message);
+            break;
+          default:
+            console.warn('[SENSEMAKER:CORE]', 'Unknown Bitcoin transaction type:', transaction.type);
+            break;
+        }
+      });
 
       await this.regtest.start();
 
@@ -1936,11 +2627,12 @@ class Sensemaker extends Hub {
         }
       };
 
+      if (this.settings.debug) console.debug('lightning config:', lconfig);
       this.lightning = new Lightning(lconfig);
 
       if (this.settings.debug) this.lightning.on('debug', (...debug) => console.debug('[LIGHTNING]', ...debug));
       this.lightning.on('error', (...error) => console.error('[LIGHTNING]', ...error));
-      this.lightning.on('log', (...log) => console.log('[LIGHTNING]', ...log));
+      this.lightning.on('log', (...log) => { if (this.settings.debug) console.log('[LIGHTNING]', ...log); });
       this.lightning.on('warning', (...warning) => console.warn('[LIGHTNING]', '[WARNING]', ...warning));
 
       try {
@@ -1957,6 +2649,7 @@ class Sensemaker extends Hub {
 
       const address = await bitcoin.getUnusedAddress();
       if (!address) throw new Error('No unused address available.');
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[HTTP]', 'Generated unused address:', address);
 
       const response = {
         address: address,
@@ -1972,6 +2665,8 @@ class Sensemaker extends Hub {
       const { pubkey, host, port } = request.params && request.params[0] ? request.params[0] : {};
       if (!host) throw new Error('Host is required for peer connection.');
 
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[HTTP]', 'Attempting to connect to peer:', { host, port, pubkey });
+
       try {
         // Format the connection string for Fabric peer
         const targetPort = port || 7777; // Default Fabric P2P port
@@ -1979,6 +2674,7 @@ class Sensemaker extends Hub {
 
         // Use the Fabric peer's _connect method
         this.fabric._connect(connectionString);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[HTTP]', 'Successfully initiated connection to peer:', connectionString);
 
         const response = {
           success: true,
@@ -1994,6 +2690,8 @@ class Sensemaker extends Hub {
 
         return response;
       } catch (error) {
+        console.error('[SENSEMAKER:CORE]', '[HTTP]', 'Failed to connect to peer:', error);
+
         const response = {
           success: false,
           error: error.message || 'Failed to connect to peer',
@@ -2111,6 +2809,12 @@ class Sensemaker extends Hub {
     // API
     this.http._addRoute('POST', '/v1/chat/completions', ROUTES.messages.createCompletion.bind(this));
 
+    // Ollama-native HTTP mirror (drop-in for clients expecting Ollama's /api/*)
+    this.http._addRoute('GET', '/api/tags', ROUTES.ollama.tags.bind(this));
+    this.http._addRoute('GET', '/api/version', ROUTES.ollama.version.bind(this));
+    this.http._addRoute('POST', '/api/chat', ROUTES.ollama.chat.bind(this));
+    this.http._addRoute('POST', '/api/generate', ROUTES.ollama.generate.bind(this));
+
     // Search
     // TODO: test each search endpoint
     // - [ ] /
@@ -2122,7 +2826,8 @@ class Sensemaker extends Hub {
     this.http._addRoute('SEARCH', '/conversations', this._handleConversationSearchRequest.bind(this));
     this.http._addRoute('SEARCH', '/people', this._handlePeopleSearchRequest.bind(this));
 
-    // Health
+    // Health (deep checks — may be slow; use /metrics/live for load balancers / Docker)
+    this.http._addRoute('GET', '/metrics/live', this._handleLiveRequest.bind(this));
     this.http._addRoute('GET', '/metrics/health', this._handleHealthRequest.bind(this));
 
     // Models
@@ -2225,10 +2930,12 @@ class Sensemaker extends Hub {
     this.http._addRoute('GET', '/services/discord/guilds/:guildid', ROUTES.services.discord.guilds.view.bind(this));
     this.http._addRoute('GET', '/services/discord/channels', ROUTES.services.discord.channels.list.bind(this));
     this.http._addRoute('GET', '/services/discord/channels/:id', ROUTES.services.discord.channels.view.bind(this));
+    this.http._addRoute('GET', '/services/discord/voice', ROUTES.services.discord.voice.snapshot.bind(this));
     this.http._addRoute('GET', '/services/discord/users', ROUTES.services.discord.users.list.bind(this));
     this.http._addRoute('GET', '/services/discord/users/:id', ROUTES.services.discord.users.view.bind(this));
     this.http._addRoute('GET', '/services/discord/authorize', this._handleDiscordAuthorizeRequest.bind(this));
     this.http._addRoute('GET', '/services/discord/revoke', this._handleDiscordRevokeRequest.bind(this));
+    this.http._addRoute('GET', '/services/fabric/documents/:fabricID', ROUTES.documents.view.bind(this));
     this.http._addRoute('GET', '/services/fabric', this._handleFabricStatusRequest.bind(this));
     this.http._addRoute('GET', '/services/disk', ROUTES.services.disk.list.bind(this));
     this.http._addRoute('GET', '/services/disk/:path', ROUTES.services.disk.view.bind(this));
@@ -2248,6 +2955,11 @@ class Sensemaker extends Hub {
     // TODO: remap to /services/queue
     this.http._addRoute('GET', '/redis/queue', ROUTES.redis.listQueue.bind(this));
     this.http._addRoute('PATCH', '/redis/queue', ROUTES.redis.clearQueue.bind(this));
+
+    // Workers API: local queue + future Fabric work contracts (paid parallel execution)
+    this.http._addRoute('GET', '/workers/state', ROUTES.workers.state.bind(this));
+    this.http._addRoute('GET', '/workers/playnet-receive-address', ROUTES.workers.playnetReceiveAddress.bind(this));
+    this.http._addRoute('POST', '/workers/donate-playnet', ROUTES.workers.donatePlaynet.bind(this));
 
     // Inquiries
     this.http._addRoute('POST', '/inquiries', ROUTES.inquiries.create.bind(this));
@@ -2348,6 +3060,11 @@ class Sensemaker extends Hub {
       res.send(this.applicationString);
     });
 
+    // Alias: UI "Network" uses /peers; some links or bookmarks use /network.
+    this.http._addRoute('GET', '/network', (req, res) => {
+      res.send(this.applicationString);
+    });
+
     // await this._startAllServices();
 
     // Listen for HTTP events, if enabled
@@ -2408,11 +3125,14 @@ class Sensemaker extends Hub {
   async stop () {
     this.status = 'STOPPING';
 
+    if (this.activeWorkerQueue) this.activeWorkerQueue.stop();
+
     // Stop HTTP Listener
     if (this.http) await this.http.stop();
 
     // Stop Fabric Listener
     if (this.fabric) await this.fabric.stop();
+    if (this.playnet && this.playnet.bitcoin) await this.playnet.bitcoin.stop();
     if (this.bitcoin) await this.bitcoin.stop();
     if (this.regtest) {
       if (this.lightning) await this.lightning.stop();
@@ -2453,12 +3173,14 @@ class Sensemaker extends Hub {
       status: this.status
     });
 
-    // Force exit after a shorter timeout
-    setTimeout(() => {
-      // why();
-      console.warn('[SENSEMAKER:CORE]', 'Forcing exit after timeout...');
-      process.exit(0);
-    }, 5000);
+    // Force exit after a shorter timeout (skip under test so Mocha can report failures)
+    if (process.env.NODE_ENV !== 'test') {
+      setTimeout(() => {
+        // why();
+        console.warn('[SENSEMAKER:CORE]', 'Forcing exit after timeout...');
+        process.exit(0);
+      }, 5000);
+    }
 
     return this;
   }
@@ -2499,7 +3221,7 @@ class Sensemaker extends Hub {
           return reject(exception);
         }
 
-        console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Response:', response);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Response:', response);
 
         if (!response) {
           const errorMessage = 'No response from source.';
@@ -2580,6 +3302,9 @@ class Sensemaker extends Hub {
           });
 
           // Create new document for this unique content
+          // blob.id (fabric_id) is the absolute reference for the content (deterministic from Actor)
+          // Documents created from sources have creator: null, owner: null
+          // latest_blob_id stores the blob's fabric_id for exact reference
           await this.db('documents').insert({
             creator: null, // System-generated from source
             owner: null,   // System-generated from source
@@ -2595,8 +3320,10 @@ class Sensemaker extends Hub {
             created_at: toMySQLDatetime(now),
             updated_at: toMySQLDatetime(now)
           });
+
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SYNC]', `Created new ${fabricType} document for unique content from source:`, documentActor.id);
         } else {
-          console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Content unchanged, no new document created. Blob ID:', blob.id);
+          if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SYNC]', 'Content unchanged, no new document created. Blob ID:', blob.id);
         }
 
         // Track blob fabric_id in source's history for exact reference
@@ -2662,6 +3389,7 @@ class Sensemaker extends Hub {
   }
 
   async _createBlob (content) {
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENTS]', 'Creating blob from content:', content);
     const preimage = crypto.createHash('sha256').update(content).digest('hex');
     const hash = crypto.createHash('sha256').update(preimage).digest('hex');
     const existingBlob = await this.db('blobs').where({ preimage_sha256: hash }).first();
@@ -2690,6 +3418,7 @@ class Sensemaker extends Hub {
   }
 
   async _createDocumentFromFile (path) {
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENTS]', 'Creating document from file:', path);
     const file = await this.fs.stat(path);
     if (!file) throw new Error('File not found.');
 
@@ -2742,10 +3471,10 @@ class Sensemaker extends Hub {
 
   async _handleGenericSearchRequest (req, res, next) {
     const request = req.body;
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Generic search request:', request);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Generic search request:', request);
 
     this.search(request).then((results) => {
-      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
 
       res.setHeader('X-Fabric-Type', 'SearchResults');
       res.setHeader('X-Pagination', true);
@@ -2762,7 +3491,7 @@ class Sensemaker extends Hub {
   }
 
   async _handleRAGQuery (query) {
-    console.debug('[SENSEMAKER:CORE]', '[RAG]', 'Query:', query);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[RAG]', 'Query:', query);
     const result = await this.fabric.search({
       query: query,
       model: 'sensemaker-0.2.0-RC1'
@@ -2773,10 +3502,10 @@ class Sensemaker extends Hub {
 
   async _handleConversationSearchRequest (req, res, next) {
     const request = req.body;
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Conversation search request:', request);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Conversation search request:', request);
 
     this.searchConversations(request).then((results) => {
-      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Results:', results);
 
       res.setHeader('X-Fabric-Type', 'SearchResults');
       res.setHeader('X-Pagination', true);
@@ -2917,6 +3646,13 @@ class Sensemaker extends Hub {
     if (this.settings.debug) this.emit('debug', ['[SENSEMAKER:CORE]', '[DISCORD]', 'Discord activity:', activity].join(' '));
     if (activity.actor == this.discord.id) return;
 
+    if (activity.type === 'DiscordMessage') {
+      if (this.settings.debug) console.debug('got discord message:', activity.object);
+    }
+
+    const identity = await this._ensureDiscordUser(activity.actor);
+    if (this.settings.debug) console.debug('ensured identity:', identity);
+
     // Handle DMs
     if (activity.target.type === 'dm') {
       let conversationID = null;
@@ -3000,11 +3736,11 @@ class Sensemaker extends Hub {
         platform: 'discord',
         username: activity.actor.username
       }).then((response) => {
-        console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Response:', response);
+        if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Response:', response);
         this.discord._sendToChannel(activity.target.ref, response.content);
       });
 
-      console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Request:', request);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Request:', request);
     }
   }
 
@@ -3133,19 +3869,19 @@ class Sensemaker extends Hub {
   }
 
   async _handleDiscordMessage (message) {
-    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message:', message);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Message:', message);
   }
 
   async _handleDiscordLog (message) {
-    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Log Event:', message);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Log Event:', message);
   }
 
   async _handleDiscordDebug (message) {
-    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Debug Event:', message);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Debug Event:', message);
   }
 
   async _handleDiscordReady (message) {
-    console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Ready:', message);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DISCORD]', 'Ready:', message);
   }
 
   async _handleDiscordStatusRequest (req, res, next) {
@@ -3154,12 +3890,22 @@ class Sensemaker extends Hub {
         res.send(this.applicationString);
       },
       json: async () => {
-        const guilds = await this.discord._listGuilds();
-        const status = {
-          guilds: guilds
-        };
-
-        res.send(status);
+        if (!this.discord || !this.discord.client) {
+          return res.status(503).json({
+            enabled: false,
+            guilds: [],
+            error: 'Discord integration is disabled or not connected.'
+          });
+        }
+        const guilds = this.discord.client.guilds.cache.map((g) => ({
+          id: g.id,
+          name: g.name,
+          icon: g.icon,
+          description: g.description,
+          memberCount: g.memberCount,
+          approximateMemberCount: g.approximateMemberCount
+        }));
+        res.json({ enabled: true, guilds });
       }
     });
   }
@@ -3188,6 +3934,10 @@ class Sensemaker extends Hub {
     });
   }
 
+  _handleLiveRequest (req, res) {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+  }
+
   async _handleHealthRequest (req, res, next) {
     try {
       const health = await this.checkHealth();
@@ -3202,7 +3952,7 @@ class Sensemaker extends Hub {
       res.status(503);
       return res.send({
         status: 'unhealthy',
-        content: exception
+        content: exception && exception.message ? { message: exception.message } : String(exception)
       });
     }
   }
@@ -3230,7 +3980,7 @@ class Sensemaker extends Hub {
   }
 
   async _handleFabricActivity (activity) {
-    console.debug('[FABRIC]', '[ACTIVITY]', activity);
+    if (this.settings.debug) console.debug('[FABRIC]', '[ACTIVITY]', activity);
   }
 
   async _handleFabricDebug (...props) {
@@ -3244,23 +3994,23 @@ class Sensemaker extends Hub {
   }
 
   async _handleFabricDocument (document) {
-    console.error('[FABRIC]', '[DOCUMENT]', '[INSERT]', document);
+    if (this.settings.debug) console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', document);
     const inserted = await this.db('documents').insert({
       fabric_id: document.id,
       description: document.description,
       created_at: document.created_at
     });
-    console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', `${inserted.length} documents inserted:`, inserted);
+    if (this.settings.debug) console.debug('[FABRIC]', '[DOCUMENT]', '[INSERT]', `${inserted.length} documents inserted:`, inserted);
   }
 
   async _handleFabricMessage (activity) {
-    console.debug('[FABRIC]', '[ACTIVITY]', activity);
+    if (this.settings.debug) console.debug('[FABRIC]', '[ACTIVITY]', activity);
   }
 
   async _handleFabricPerson (person) {
-    console.debug('[FABRIC]', '[PERSON]', person);
+    if (this.settings.debug) console.debug('[FABRIC]', '[PERSON]', person);
     const target = await this.db('people').where({ fabric_id: person.id }).first();
-    console.debug('[FABRIC]', '[PERSON]', '[TARGET]', target);
+    if (this.settings.debug) console.debug('[FABRIC]', '[PERSON]', '[TARGET]', target);
     if (!target) {
       const inserted = await this.db('people').insert({
         fabric_id: person.id,
@@ -3273,8 +4023,12 @@ class Sensemaker extends Hub {
         date_of_death: person.date_of_death
       });
 
-      console.debug('[FABRIC]', '[PERSON]', '[INSERTED]', inserted);
+      if (this.settings.debug) console.debug('[FABRIC]', '[PERSON]', '[INSERTED]', inserted);
     }
+  }
+
+  async _handleLocalDocument (document) {
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[DOCUMENT]', '[SELF]', document);
   }
 
   async _handleOpenAIError (error) {
@@ -3282,22 +4036,13 @@ class Sensemaker extends Hub {
   }
 
   async _handleOpenAIMessageStart (start) {
-    // TODO: fix @fabric/core/types/message to allow custom message types
     start.type = 'MessageStart';
-    const message = Message.fromVector(['MessageStart', JSON.stringify(start)]);
-    if (this.key && this.key.private) message.signWithKey(this.key);
-    this.http.broadcast(message);
+    chatStreamBridge.fabricStreamStart(this, start);
   }
 
   async _handleOpenAIMessageChunk (chunk) {
-    // TODO: fix @fabric/core/types/message to allow custom message types
     chunk.type = 'MessageChunk';
-    const broadcast = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
-    if (this.key && this.key.private) broadcast.signWithKey(this.key);
-    this.http.broadcast(broadcast);
-
-    const message = Message.fromVector(['MessageChunk', JSON.stringify(chunk)]);
-    // this.http.deliver('', message);
+    chatStreamBridge.fabricStreamChunk(this, chunk);
   }
 
   async _handleOpenAIMessageEnd (end) {
@@ -3340,13 +4085,13 @@ class Sensemaker extends Hub {
    * @returns {SensemakerResponse}
    */
   async _handleRequest (request) {
-    this.emit('debug', `[SENSEMAKER:CORE] Handling request: ${JSON.stringify(request)}`);
+    if (this.settings.debug) this.emit('debug', `[SENSEMAKER:CORE] Handling request: ${JSON.stringify(request)}`);
 
     let messages = [];
 
     if (request.room) {
       // Matrix request
-      console.debug('request has room:', request.room);
+      if (this.settings.debug) console.debug('request has room:', request.room);
       const matrixMessages = await this._getRoomMessages(request.room);
       messages = messages.concat(matrixMessages);
     } else if (request.conversation_id) {
@@ -3453,7 +4198,9 @@ class Sensemaker extends Hub {
   }
 
   async _generateEmbedding (text = '', model = 'text-embedding-ada-002') {
-    const embeddings = await this.openai.generateEmbedding(text, model);
+    const maxChars = parseInt(process.env.SENSEMAKER_EMBED_MAX_CHARS || '6000', 10);
+    const safe = text && text.length > maxChars ? text.slice(0, maxChars) : text;
+    const embeddings = await this.openai.generateEmbedding(safe, model);
     if (embeddings.length !== 1) throw new Error('Embedding length mismatch!');
 
     const embedding = embeddings[0].embedding;
@@ -3475,7 +4222,7 @@ class Sensemaker extends Hub {
 
   async _searchDocuments (request) {
     return new Promise((resolve, reject) => {
-      console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching documents:', request);
+      if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching documents:', request);
       if (!request) throw new Error('No request provided.');
       if (!request.query) throw new Error('No query provided.');
 
@@ -3486,7 +4233,7 @@ class Sensemaker extends Hub {
       const searchLimit = request.limit || 1;
       this.trainer.search(request, searchLimit).then(async (results) => {
         let response = [];
-        console.debug('search results:', results.content);
+        if (this.settings.debug) console.debug('search results:', results.content);
         for (let i = 0; i < results.content.length; i++) {
           const result = results.content[i];
           switch (result.metadata?.type) {
@@ -3506,17 +4253,20 @@ class Sensemaker extends Hub {
               break;
             case 'file':
               const file = await this.db('files').where({ id: result.metadata.id }).first();
-              console.debug('[SEARCH]', '[DOCUMENTS]', 'File:', file);
+              if (this.settings.debug) console.debug('[SEARCH]', '[DOCUMENTS]', 'File:', file);
               response.push(file);
               break;
             default:
-              console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result?.metadata?.type);
+              if (this.settings.debug) console.debug('[SEARCH]', '[DOCUMENTS]', 'Unknown result type:', result?.metadata?.type);
               response.push({ content: result.content, metadata: { type: 'unknown', id: null }, object: result });
               break;
           }
         }
 
         resolve(response);
+      }).catch((error) => {
+        console.warn('[SENSEMAKER:CORE]', '[SEARCH]', 'Vector document search failed (continuing without Redis hits):', error.message || error);
+        resolve([]);
       });
 
       // Direct keyword search (expensive)
@@ -3529,7 +4279,7 @@ class Sensemaker extends Hub {
   }
 
   async _searchPeople (request) {
-    console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching people:', request);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[SEARCH]', 'Searching people:', request);
     if (!request) throw new Error('No request provided.');
     if (!request.query) throw new Error('No query provided.');
 
@@ -3568,7 +4318,7 @@ class Sensemaker extends Hub {
     }));
 
     const result = await this.openai.generateAnswer(query, embeddings);
-    console.debug('got answer:', result);
+    if (this.settings.debug) console.debug('got answer:', result);
 
     return result;
   }
@@ -3637,13 +4387,26 @@ class Sensemaker extends Hub {
       }
     }
 
+    // Register UI components if service provides them
+    if (typeof service.getUIConfig === 'function') {
+      try {
+        const uiConfig = service.getUIConfig();
+        if (uiConfig) {
+          this.uiRegistry.register(name, uiConfig);
+          this.emit('log', `[SERVICE-UI] Registered UI components for service "${name}"`);
+        }
+      } catch (error) {
+        this.emit('warning', `[SERVICE-UI] Error registering UI for service "${name}": ${error.message}`);
+      }
+    }
+
     await this.commit();
 
     return this;
   }
 
   async _syncEmbeddings (limit = 100) {
-    console.debug('[SENSEMAKER:CORE]', '[VECTOR]', `Syncing ${limit} embeddings...`);
+    if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[VECTOR]', `Syncing ${limit} embeddings...`);
     return new Promise((resolve, reject) => {
       Promise.all([
         /* new Promise((resolve, reject) => {
@@ -3655,14 +4418,23 @@ class Sensemaker extends Hub {
             resolve(files);
           });
         }), */
-        this.db('documents').select(['id', 'description', 'content']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
+        this.db('documents').select(['id', 'description', 'content', 'fabric_id', 'owner']).whereNotNull('content').orderByRaw('RAND()').limit(limit).then(async (documents) => {
           for (let i = 0; i < documents.length; i++) {
             const element = documents[i];
             const actor = { name: `sensemaker/documents/${element.id}` };
             // TODO: consider additional metadata fields
             const document = { name: `sensemaker/documents/${element.id}`, content: element };
-            const embedding = await this.trainer.ingestDocument({ content: JSON.stringify(document), metadata: document }, 'document');
-            if (this.settings.verbosity > 4) console.debug('[SENSEMAKER:CORE]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
+            const embedding = await this.trainer.ingestDocument({
+              content: JSON.stringify(document),
+              metadata: {
+                ...document,
+                source_document_id: element.id,
+                fabric_id: element.fabric_id,
+                owner: element.owner,
+                type: 'document'
+              }
+            }, 'document');
+            if (this.settings.verbosity > 4) if (this.settings.debug) console.debug('[SENSEMAKER:CORE]', '[VECTOR]', '[DOCUMENTS]', 'Ingested:', embedding);
           }
         })
       ]).catch(reject).then(resolve);
@@ -3698,18 +4470,17 @@ class Sensemaker extends Hub {
   }
 
   _userMiddleware (req, res, next) {
-    // Initialize user object (null id = anonymous)
     req.user = {
-      id: null
+      id: null,
+      roles: [],
+      caps: [],
+      state: {},
+      sessionTrust: 'none',
+      is_admin: false
     };
 
-    // TODO: use response signing (`X-Fabric-HTTP-Signature`, etc.)
-    // const ephemera = new Key();
-    let token = null;
-
-    // Does the request have a cookie?
+    let cookieToken = null;
     if (req.headers.cookie) {
-      // has cookie, parse it
       req.cookies = req.headers.cookie
         .split(';')
         .map((x) => x.trim().split(/=(.+)/))
@@ -3718,43 +4489,109 @@ class Sensemaker extends Hub {
           return acc;
         }, {});
 
-      token = req.cookies['token'];
+      cookieToken = req.cookies.token;
     }
 
-    // no cookie, has authorization header
-    if (!token && req.headers.authorization) {
-      if (this.settings.debug) console.debug('found authorization header:', req.headers.authorization);
-      const header = req.headers.authorization.split(' ');
-      if (header[0] == 'Bearer' && header[1]) {
-        token = header[1];
+    const authzHeader = (req.headers.authorization && req.headers.authorization.startsWith('Bearer '))
+      ? req.headers.authorization
+      : (cookieToken ? `Bearer ${cookieToken}` : null);
+
+    if (authzHeader && this.key) {
+      const merged = nodeSessionToken.mergeVerifiedBearerTokens(authzHeader, this.key);
+      if (merged && merged.id != null) {
+        req.user.id = merged.id;
+        req.user.roles = merged.roles;
+        req.user.caps = merged.caps;
+        req.user.sessionTrust = merged.sessionTrust;
+        req.user.state = { roles: merged.roles };
+        req.user.is_admin = nodeSessionToken.capsIncludeAdmin(merged.caps);
+        if (this.settings.audit) {
+          this.emit('debug', `[AUTH] node-signed session user=${req.user.id} caps=${merged.caps.join(',')}`);
+        }
+        return next();
       }
     }
 
-    // read token
-    if (token) {
-      const parts = token.split('.');
-      if (parts && parts.length == 3) {
-        // Named parts
-        const headers = parts[0]; // TODO: check headers
-        const payload = parts[1];
-        const signature = parts[2]; // TODO: check signature
+    const legacyWire = (req.headers.authorization && req.headers.authorization.startsWith('Bearer '))
+      ? req.headers.authorization.slice(7).trim()
+      : cookieToken;
 
-        // Decode the payload
-        const inner = Token.base64UrlDecode(payload);
-
-        try {
-          const obj = JSON.parse(inner);
-          if (this.settings.audit) this.emit('debug', `[AUTH] Bearer Token: ${JSON.stringify(obj)}`);
-          req.user.id = obj.sub;
-          req.user.role = obj.role || 'asserted';
-          req.user.state = obj.state || {};
-        } catch (exception) {
-          console.error('Invalid Bearer Token:', inner)
+    const allowLegacy = process.env.SENSEMAKER_LEGACY_SESSION_TOKENS === '1'
+      || process.env.SENSEMAKER_LEGACY_SESSION_TOKENS === 'true';
+    if (allowLegacy && legacyWire) {
+      const dotCount = (legacyWire.match(/\./g) || []).length;
+      if (dotCount === 2) {
+        const secret = this.settings.tokenSecret || this.settings.seed;
+        const verification = fabricAuth.verifyBearerToken(legacyWire, secret);
+        if (verification.valid && verification.payload) {
+          const p = verification.payload;
+          const sid = p.sub != null ? parseInt(String(p.sub), 10) : NaN;
+          if (Number.isFinite(sid)) {
+            req.user.id = sid;
+            req.user.sessionTrust = 'legacy-hmac';
+            req.user.state = p.state && typeof p.state === 'object' ? p.state : {};
+            req.user.roles = Array.isArray(req.user.state.roles) ? req.user.state.roles.slice() : [];
+            req.user.caps = [nodeSessionToken.CAP_IDENTITY];
+            req.user.is_admin = false;
+            if (this.settings.audit) {
+              this.emit('debug', `[AUTH] legacy HMAC session user=${req.user.id} (admin capability withheld — re-login for node-signed token)`);
+            }
+          }
         }
       }
     }
 
     next();
+  }
+
+  /**
+   * Node-signed session with {@link nodeSessionToken.CAP_ADMIN} and DB `is_admin`.
+   * Legacy HMAC sessions never satisfy this (forged bearer tokens could otherwise claim admin).
+   */
+  async _userHasAdminAccess (req) {
+    if (!req.user || req.user.id == null) return false;
+    if (req.user.sessionTrust !== 'node-signed') return false;
+    if (!nodeSessionToken.capsIncludeAdmin(req.user.caps)) return false;
+    try {
+      const row = await this.db('users').where({ id: req.user.id }).select('is_admin').first();
+      return !!(row && (row.is_admin === true || row.is_admin === 1));
+    } catch (err) {
+      console.error('[SENSEMAKER]', 'Admin capability check failed:', err.message);
+      return false;
+    }
+  }
+
+  /**
+   * Single JSON body for failed admin checks (DRY for routes).
+   */
+  _sendSensemakerAdminRequiredJson (req, res) {
+    if (!req.user || req.user.id == null) {
+      res.status(401).json({ error: 'Authentication required' });
+    } else {
+      res.status(403).json({
+        error: 'Administrator privileges required',
+        detail: 'Use a session token issued and signed by this node (includes CAP_ADMIN). Re-login after deploy or key rotation. Legacy HMAC session tokens cannot grant admin.'
+      });
+    }
+  }
+
+  /**
+   * Require node-signed CAP_ADMIN + DB admin for JSON API handlers.
+   * @returns {Promise<boolean>} false if response was sent with an error status
+   */
+  async _assertSensemakerAdminJson (req, res) {
+    if (await this._userHasAdminAccess(req)) return true;
+    this._sendSensemakerAdminRequiredJson(req, res);
+    return false;
+  }
+
+  /**
+   * Conversation row must include `creator_id`. Admins may access any; others only their own.
+   */
+  async _userCanAccessConversation (req, conversation) {
+    if (!conversation || req.user == null || req.user.id == null) return false;
+    if (Number(conversation.creator_id) === Number(req.user.id)) return true;
+    return this._userHasAdminAccess(req);
   }
 
   //redis channel subscriber handlers
@@ -3783,6 +4620,7 @@ class Sensemaker extends Hub {
   }
 
   async _updateBitcoinStatus (cacheKey, cacheTTL) {
+    if (this.settings.debug) console.debug('[SENSEMAKER]', 'Updating Bitcoin status...');
     const bitcoin = this.bitcoin || this.regtest;
     // Make RPC calls with original names
     const blockchain = await bitcoin._makeRPCRequest('getblockchaininfo', []);
@@ -3812,6 +4650,7 @@ class Sensemaker extends Hub {
     }
 
     const tip = await bitcoin._makeRPCRequest('getblockheader', [best]);
+    if (this.settings.debug) console.debug('got tip:', tip);
 
     // Initialize market with default values
     let market = {
@@ -3833,6 +4672,8 @@ class Sensemaker extends Hub {
       console.error('[SENSEMAKER]', 'Error getting block stats:', err);
     }
 
+    if (this.settings.debug) console.debug('got block stats:', market);
+
     // Get block stats with error handling
     const blockstatsPromises = [
       height,
@@ -3848,6 +4689,7 @@ class Sensemaker extends Hub {
       }));
 
     const blockstats = await Promise.all(blockstatsPromises);
+    if (this.settings.debug) console.debug('got all blockstats:', blockstats);
 
     // Filter out any failed block stats and ensure they have required properties
     const validBlockstats = blockstats.filter(x => x != null && x.blockhash && x.subsidy != null && x.totalfee != null);
@@ -3934,7 +4776,9 @@ class Sensemaker extends Hub {
 
     const status = {
       network: bitcoin.network,
+      // genesisHash: '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f',
       chain: blockchain,
+      // blockDate: tip.time,
       supply: utxoutset.total_amount,
       status: 'ONLINE', // TODO: check for syncing status
       tip: best,
@@ -4010,7 +4854,67 @@ class Sensemaker extends Hub {
     return status;
   }
 
+  /**
+   * Verifies a signed message
+   * @param {Object} signedMessage - The signed message object
+   * @returns {Boolean} - Whether the signature is valid
+   */
+  verifyMessage (signedMessage) {
+    if (!this.settings.signingKey) {
+      console.warn('[SENSEMAKER]', 'No signing key configured, skipping verification');
+      return true;
+    }
+
+    try {
+      const { message, signature, timestamp } = signedMessage;
+      const hmac = crypto.createHmac('sha256', this.settings.signingKey);
+      hmac.update(message);
+      hmac.update(timestamp.toString());
+      const expectedSignature = hmac.digest('hex');
+
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+    } catch (error) {
+      console.error('[SENSEMAKER]', 'Error verifying message:', error);
+      return false;
+    }
+  }
+
+  async _handleWebSocketMessage (message) {
+    try {
+      // Parse the signed message
+      const signedMessage = JSON.parse(message);
+
+      // Verify the signature
+      if (!this.verifyMessage(signedMessage)) {
+        console.warn('[SENSEMAKER]', 'Invalid message signature');
+        return;
+      }
+
+      // Process the original message
+      const originalMessage = Message.fromBuffer(signedMessage.message);
+      switch (originalMessage.type) {
+        case 'SUBSCRIBE':
+          // Handle subscription
+          break;
+        case 'UNSUBSCRIBE':
+          // Handle unsubscription
+          break;
+        case 'Ping':
+          // Handle ping
+          break;
+      }
+    } catch (error) {
+      console.error('[SENSEMAKER]', 'Error handling WebSocket message:', error);
+    }
+  }
+
   async _waitForBitcoind (maxAttempts = 5, initialDelay = 1000) {
+    const chain = this.bitcoin || this.regtest;
+    if (!chain) return true;
+
     if (this.settings.debug) console.debug('[FABRIC:BITCOIN]', 'Waiting for bitcoind to be ready...');
     let attempts = 0;
     let delay = initialDelay;
@@ -4021,9 +4925,9 @@ class Sensemaker extends Hub {
 
         // Check multiple RPC endpoints to ensure full readiness
         const checks = [
-          this.regtest._makeRPCRequest('getblockchaininfo'), // Basic blockchain info
-          this.regtest._makeRPCRequest('getnetworkinfo'),    // Network status
-          this.regtest._makeRPCRequest('getwalletinfo')      // Wallet status
+          chain._makeRPCRequest('getblockchaininfo'), // Basic blockchain info
+          chain._makeRPCRequest('getnetworkinfo'),    // Network status
+          chain._makeRPCRequest('getwalletinfo')      // Wallet status
         ];
 
         // Wait for all checks to complete

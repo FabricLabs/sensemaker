@@ -12,7 +12,7 @@ module.exports = async function (req, res, next) {
       .first();
 
     if (!latestAnnouncement) {
-      return res.status(404).json({ message: 'No announcement found.' });
+      return res.status(200).json(null);
     }
 
     res.json(latestAnnouncement);

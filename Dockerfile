@@ -4,11 +4,13 @@ FROM node:22.14.0-slim AS builder
 # Create app directory
 WORKDIR /app
 
-# Install build dependencies
+# Install build dependencies (git: npm ci resolves github: deps like FabricLabs/fabric#branch)
 RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
+    git \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files first to leverage Docker cache

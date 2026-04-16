@@ -6,46 +6,74 @@ set -e  # Exit on any error
 check_database_initialized() {
     echo "Checking if database is initialized..."
 
-    # Try to query a basic table to see if database is set up
-    if node -e "
-        const mysql = require('mysql2/promise');
-        (async () => {
-            try {
-                const connection = await mysql.createConnection({
-                    host: 'db',
-                    user: 'db_user_sensemaker',
-                    password: process.env.SQL_DB_CRED,
-                    database: 'db_sensemaker'
-                });
+    # Retry logic for database connection
+    local retry_count=0
+    local max_retries=3
 
-                const [rows] = await connection.execute('SHOW TABLES LIKE \"users\"');
-                await connection.end();
+    while [ $retry_count -lt $max_retries ]; do
+        # Try to query a basic table to see if database is set up
+        if node -e "
+            const mysql = require('mysql2/promise');
+            (async () => {
+                try {
+                    const connection = await mysql.createConnection({
+                        host: 'db',
+                        user: 'db_user_sensemaker',
+                        password: process.env.SQL_DB_CRED,
+                        database: 'db_sensemaker',
+                        connectTimeout: 10000
+                    });
 
-                if (rows.length > 0) {
-                    console.log('Database appears to be initialized.');
-                    process.exit(0);
-                } else {
-                    console.log('Database tables not found.');
+                    const [rows] = await connection.execute('SHOW TABLES LIKE \"users\"');
+                    await connection.end();
+
+                    if (rows.length > 0) {
+                        console.log('Database appears to be initialized.');
+                        process.exit(0);
+                    } else {
+                        console.log('Database tables not found.');
+                        process.exit(1);
+                    }
+                } catch (error) {
+                    console.log('Database check failed:', error.message);
+                    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+                        console.log('Access denied. This might be a timing issue with MySQL permissions.');
+                    }
                     process.exit(1);
                 }
-            } catch (error) {
-                console.log('Database check failed:', error.message);
-                process.exit(1);
-            }
-        })();
-    " 2>/dev/null; then
-        return 0  # Database is initialized
-    else
-        return 1  # Database needs initialization
-    fi
+            })();
+        " 2>&1; then
+            return 0  # Database is initialized
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                echo "Database check failed, retrying in 5 seconds... (attempt $retry_count of $max_retries)"
+                sleep 5
+            else
+                echo "Database check failed after $max_retries attempts"
+                return 1  # Database needs initialization
+            fi
+        fi
+    done
 }
 
 # Wait for MySQL to be ready
 echo "Waiting for MySQL to be ready..."
+MYSQL_WAIT_COUNT=0
+MYSQL_MAX_WAIT=60
 while ! nc -z db 3306; do
   sleep 1
+  MYSQL_WAIT_COUNT=$((MYSQL_WAIT_COUNT + 1))
+  if [ $MYSQL_WAIT_COUNT -ge $MYSQL_MAX_WAIT ]; then
+    echo "ERROR: MySQL failed to start after ${MYSQL_MAX_WAIT} seconds"
+    exit 1
+  fi
 done
 echo "MySQL is ready!"
+
+# Give MySQL a bit more time to fully initialize user permissions
+echo "Waiting for MySQL user permissions to be set..."
+sleep 5
 
 # Wait for Redis to be ready
 echo "Waiting for Redis to be ready..."
@@ -74,6 +102,10 @@ if ! check_database_initialized; then
     npm run setup:seed || echo "Warning: Seeding failed, continuing..."
 
     echo "Database initialization complete!"
+
+    # Give database time to close migration connections
+    echo "Waiting for database connections to settle..."
+    sleep 10
 else
     echo "Database already initialized, skipping migrations."
 fi
@@ -81,8 +113,15 @@ fi
 # Ensure required Ollama models are available
 echo "Checking for required Ollama models..."
 
-# Required models for Sensemaker
-REQUIRED_MODELS=("mxbai-embed-large" "llama3.2" "qwen3:0.6b")
+# Comma-separated list; smallest sensible defaults to limit disk use (override in .env / Compose)
+if [ -n "$OLLAMA_PULL_MODELS" ]; then
+  IFS=',' read -ra REQUIRED_MODELS <<< "$OLLAMA_PULL_MODELS"
+  for i in "${!REQUIRED_MODELS[@]}"; do
+    REQUIRED_MODELS[$i]=$(echo "${REQUIRED_MODELS[$i]}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  done
+else
+  REQUIRED_MODELS=("llama3.2:latest" "qwen3:0.6b" "nomic-embed-text")
+fi
 
 # Function to check if model exists
 check_model_exists() {

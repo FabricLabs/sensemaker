@@ -28,6 +28,13 @@ const Message = require('@fabric/core/types/message');
 // LLM Types
 const { Document } = require('@langchain/core/documents');
 
+const {
+  requestUsesTools,
+  consumeChatCompletionStream,
+  parseChatCompletionJsonOrSse,
+  stripThinkTags
+} = require('./ollamaChat');
+
 // Sensemaker Services
 // const Mistral = require('../services/mistral');
 // const OpenAIService = require('../services/openai');
@@ -264,7 +271,7 @@ class Agent extends Service {
       }).then(async (response) => {
         return response.json();
       }).then((json) => {
-        console.debug('[AGENT]', `[${this.settings.name}]`, 'Primed:', json);
+        if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name}]`, 'Primed:', json);
         resolve(json);
       }).catch(reject);
     });
@@ -285,6 +292,8 @@ class Agent extends Service {
       if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Prompt:', this.prompt);
       if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Querying:', request);
       if (!request.messages) request.messages = [];
+
+      if (this.settings.debug) console.debug('[AGENT]', 'initial request:', request);
 
       // Create timeout handler
       const timeoutId = setTimeout(() => {
@@ -345,6 +354,8 @@ class Agent extends Service {
           const controller = new AbortController();
           const signal = controller.signal;
 
+          const streamEnabled = !!(request.stream && typeof request.onStreamChunk === 'function' && !requestUsesTools(request));
+
           try {
             response = await fetch(endpoint, {
               method: 'POST',
@@ -359,11 +370,14 @@ class Agent extends Service {
                 format: format,
                 options: {
                   seed: request.seed || this.settings.parameters.seed,
-                  temperature: request.temperature || this.settings.parameters.temperature,
-                  num_ctx: this.settings.parameters.max_tokens
+                  temperature: request.temperature !== undefined && request.temperature !== null
+                    ? request.temperature
+                    : this.settings.parameters.temperature,
+                  num_ctx: this.settings.parameters.max_tokens,
+                  ...(request.max_tokens ? { num_predict: request.max_tokens } : {})
                 },
-                tools: (request.tools) ? this.tools : undefined,
-                stream: false
+                tools: requestUsesTools(request) ? this.tools : undefined,
+                stream: streamEnabled
               }),
               signal
             });
@@ -373,8 +387,35 @@ class Agent extends Service {
               return reject(new Error('No response from agent.'));
             }
 
+            if (!response.ok) {
+              clearTimeout(timeoutId);
+              const errBody = await response.text().catch(() => '');
+              return reject(new Error(errBody || `Agent HTTP ${response.status}`));
+            }
+
+            if (streamEnabled) {
+              let finalContent;
+              try {
+                finalContent = await consumeChatCompletionStream(response, request.onStreamChunk);
+              } catch (streamErr) {
+                clearTimeout(timeoutId);
+                return reject(streamErr);
+              }
+              clearTimeout(timeoutId);
+              this.emit('completion', { choices: [{ message: { content: finalContent } }] });
+              return resolve({
+                type: 'AgentResponse',
+                name: this.settings.name,
+                status: 'success',
+                query: request.query,
+                response: finalContent,
+                content: finalContent,
+                messages: messages
+              });
+            }
+
             text = await response.text();
-            base = JSON.parse(text);
+            base = parseChatCompletionJsonOrSse(text);
 
             if (!base) {
               clearTimeout(timeoutId);
@@ -452,7 +493,7 @@ class Agent extends Service {
               status: 'error',
               query: request.query,
               response: null,
-              content: text,
+              content: (exception && exception.message) ? String(exception.message) : 'Request failed.'
             });
           }
         } else {
@@ -532,6 +573,7 @@ class Agent extends Service {
     }).then((models) => {
       return { models: models.data };
     }).catch((error) => {
+      console.error('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[LIST_MODELS]', 'Error fetching models:', error);
       throw error;
     });
   }
@@ -661,12 +703,6 @@ class Agent extends Service {
       }).catch(reject);
     });
   }
-}
-
-// Utility to strip <think>...</think> tags from model output
-function stripThinkTags (text) {
-  if (!text) return text;
-  return text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 }
 
 module.exports = Agent;

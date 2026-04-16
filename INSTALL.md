@@ -31,6 +31,63 @@ knex migrate:latest # create tables
 knex seed:run # initial data
 ```
 
+### Running next to Fabric Hub
+If **Hub** (or any other managed regtest `bitcoind`) is already running, Sensemaker’s embedded regtest will fail to bind ports. By default **managed regtest is off** locally. To turn it on (e.g. isolated machine or Docker), set **`BITCOIN_REGTEST=1`** or **`SENSEMAKER_REGTEST=1`**. Docker Compose sets this for the `app` service automatically.
+
+### Local email (Mailpit)
+Waitlist confirmations and password-reset messages use **`services/email.js`**. For development, run **[Mailpit](https://github.com/axllent/mailpit)** (SMTP + web UI):
+
+```bash
+# Homebrew
+brew install mailpit && mailpit
+
+# Or: binary / Docker — see Mailpit docs. Defaults: SMTP :1025, UI :8025
+```
+
+`settings/local.js` defaults to **`127.0.0.1:1025`** when **`SENSEMAKER_EMAIL_TRANSPORT`** is not set to `postmark`. Open **http://127.0.0.1:8025** to read captured mail.
+
+Environment overrides:
+
+| Variable | Purpose |
+|----------|---------|
+| `SENSEMAKER_EMAIL_ENABLE=0` | Disable outbound email |
+| `SENSEMAKER_SMTP_HOST` / `SENSEMAKER_SMTP_PORT` | SMTP server (default `127.0.0.1` / `1025`) |
+| `SENSEMAKER_EMAIL_TRANSPORT=postmark` | Use Postmark; set **`POSTMARK_SERVER_TOKEN`** |
+| `SENSEMAKER_BASE_URL` | Origin in emailed links (default `http://127.0.0.1:3040`) |
+
+After joining the waitlist in the browser, you should see a confirmation message in Mailpit.
+
+#### Register an account (waitlist → invitation → signup)
+
+Accounts are created from an **invitation** email. The waitlist only collects email; an **admin** must invite that address, which sends mail through Mailpit.
+
+1. **Mailpit** — SMTP `127.0.0.1:1025`, web UI [http://127.0.0.1:8025](http://127.0.0.1:8025).
+2. **Database** — `npm run migrate:database` and `npm run setup:seed` (creates `Administrator` / `root@localhost` with no password).
+3. **Admin password (dev)** — `npm run bootstrap:dev-admin`  
+   Optional: `SENSEMAKER_DEV_ADMIN_PASSWORD='your-secret' npm run bootstrap:dev-admin`  
+   Default password is `changeme` if the variable is unset.
+4. **Start Sensemaker** — ensure email is enabled (default in `settings/local.js`; set `SENSEMAKER_EMAIL_ENABLE=0` only to disable).
+5. **Waitlist** — In the app, open [http://127.0.0.1:3040/inquiries](http://127.0.0.1:3040/inquiries) and submit the email you will use for the new account. Confirm the **waitlist** message appears in Mailpit.
+6. **Log in as admin** — [http://127.0.0.1:3040/sessions](http://127.0.0.1:3040/sessions) as `Administrator` with the password from step 3.
+7. **Send invitation** — From **Admin → Users** (or equivalent), invite that same email, **or** with a session token from `POST /sessions`:
+
+```bash
+TOKEN="$(curl -s -X POST http://127.0.0.1:3040/sessions \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"Administrator","password":"changeme"}' | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).token")"
+
+curl -s -X POST http://127.0.0.1:3040/invitations \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com"}'
+```
+
+Use the same address you put on the waitlist (`inquiries.status` must become `invited`).
+
+8. **Open the invitation in Mailpit** — Use the **accept** link (`/invitations/<fabric_id>?action=accept&token=...`) to complete **Sign up**.
+
+`SENSEMAKER_BASE_URL` (default `http://127.0.0.1:3040`) must match how you open the app so links in Mailpit are correct.
+
 ### Ollama
 Ollama is a convenient API provider for LLM interactions.
 

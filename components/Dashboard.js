@@ -77,6 +77,7 @@ const GroupHome = require('./GroupHome');
 const GroupView = require('./GroupView');
 const JobHome = require('./JobHome');
 const NetworkHome = require('./NetworkHome');
+const InvitationView = require('./InvitationView');
 const Library = require('./Library');
 const ContractHome = require('./ContractHome');
 const DocumentHome = require('./DocumentHome');
@@ -102,9 +103,8 @@ const GlobalChat = require('./Global');
 const TourGuide = require('./TourGuide');
 const Onboarding = require('./Onboarding');
 
-// Fabric Bridge
-// const Bridge = require('./Bridge');
-const Bridge = require('@fabric/hub/components/Bridge')
+// Fabric Bridge (from local `file:../hub.fabric.pub` or published `@fabric/hub`)
+const Bridge = require('@fabric/hub/components/Bridge');
 
 // Services
 const BitcoinHome = require('./services/bitcoin/BitcoinHome');
@@ -208,6 +208,10 @@ class Dashboard extends React.Component {
     this.removeToastListener = toast.addListener(this.addToast);
 
     this.props.fetchConversations();
+
+    if (ENABLE_BITCOIN && typeof this.props.fetchBitcoinStats === 'function') {
+      this.props.fetchBitcoinStats().catch(() => {});
+    }
 
     // Simulate a loading delay
     setTimeout(() => {
@@ -637,7 +641,6 @@ class Dashboard extends React.Component {
             ) : null}
             {this.state.isLoading ? null : (
               <Routes>
-                <Route path='*' element={<Navigate to='/' replace />} />
                 <Route path='/' element={
                   <Home
                     api={this.props.api}
@@ -668,7 +671,9 @@ class Dashboard extends React.Component {
                 <Route path='/alerts' element={<AlertsHome {...this.props} />} />
                 <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
-                <Route path='/features' element={<FeaturesHome />} />
+                <Route path='/features' element={<FeaturesHome showLoginCta={false} />} />
+                <Route path='/sessions' element={<Navigate to='/' replace />} />
+                <Route path='/inquiries' element={<Navigate to='/' replace />} />
                 <Route path='/people' element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
                 <Route path='/conversations/:id' element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path='/conversations' element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
@@ -680,10 +685,28 @@ class Dashboard extends React.Component {
                 <Route path='/tasks/:id' element={<TaskView {...this.props} task={this.props.task} />} />
                 <Route path='/uploads' element={<UploadHome {...this.props} />} />
                 <Route path='/users/:username' element={<UserView username={this.props.username} biography={this.props.biography} fetchUser={this.props.fetchUser} {...this.props} />} />
-                <Route path='/settings/admin' element={<AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />} />
+                <Route path='/settings/admin' element={(this.props.auth && this.props.auth.isAdmin) ? (
+                  <AdminSettings {...this.props} activeIndex={0} helpConversationUpdate={this.state.helpConversationUpdate} fetchAdminStats={this.props.fetchAdminStats} resetHelpUpdated={() => this.setState({ helpConversationUpdate: 0 })} />
+                ) : (
+                  <Navigate to='/' replace />
+                )} />
                 <Route path='/settings' element={<Settings {...this.props} auth={this.props.auth} login={this.props.login} />} />
                 <Route path='/keys' element={<WalletHome {...this.props} wallet={this.props.keys} auth={this.props.auth} login={this.props.login} />} />
-                <Route path='/peers' element={<NetworkHome {...this.props} network={{ peers: [] }} />} />
+                <Route path='/network' element={<Navigate to='/peers' replace />} />
+                <Route path='/peers' element={
+                  ENABLE_NETWORK && this.props.auth && this.props.auth.isAdmin ? (
+                    <NetworkHome {...this.props} />
+                  ) : (
+                    <Navigate to='/' replace />
+                  )
+                } />
+                <Route path='/peers/:id' element={
+                  ENABLE_NETWORK && this.props.auth && this.props.auth.isAdmin ? (
+                    <PeerRouteView />
+                  ) : (
+                    <Navigate to='/' replace />
+                  )
+                } />
                 <Route path='/services/bitcoin' element={<BitcoinHome {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/bitcoin/blocks' element={<BitcoinBlockList {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
                 <Route path='/services/bitcoin/blocks/:blockhash' element={<BitcoinBlockView {...this.props} bitcoin={this.props.bitcoin} fetchBitcoinStats={this.props.fetchBitcoinStats} />} />
@@ -700,12 +723,15 @@ class Dashboard extends React.Component {
                 <Route path='/services/discord/users/:id' element={<DiscordUser {...this.props} discord={this.props.discord} />} />
                 <Route path='/services/disk/:path' element={<DiskPath {...this.props} disk={this.props.disk} />} />
                 <Route path='/services/disk' element={<DiskHome {...this.props} disk={this.props.disk} />} />
-                <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} />} />
+                <Route path='/services/fabric/documents/:fabricID' element={<DocumentView {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
+                <Route path='/services/fabric' element={<FabricHome {...this.props} fabric={this.props.fabric} createPeer={this.props.createPeer} fetchPeers={this.props.fetchPeers} />} />
                 <Route path='/services/github' element={<GitHubHome {...this.props} />} />
                 <Route path='/services/global' element={<GlobalChat {...this.props} />} />
                 <Route path='/contracts' element={<ContractHome {...this.props} fetchContract={this.props.fetchContract} fetchContracts={this.props.fetchContracts} />} />
                 <Route path='/contracts/terms-of-use' element={<TermsOfUse {...this.props} fetchContract={this.props.fetchContract} />} />
                 <Route path='/jobs' element={<JobHome {...this.props} />} />
+                <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
+                <Route path='*' element={<NotFound />} />
               </Routes>
             )}
           </Container>
@@ -770,6 +796,24 @@ class Dashboard extends React.Component {
       </sensemaker-dashboard>
     );
   }
+}
+
+function PeerRouteView () {
+  const { id } = useParams();
+  return (
+    <Container style={{ marginTop: '1em' }}>
+      <Button as={Link} to='/peers' icon labelPosition='left' style={{ marginBottom: '1em' }}>
+        <Icon name='left chevron' />
+        Back to Network
+      </Button>
+      <Header as='h1'>Peer</Header>
+      <p>Identifier: <code>{id}</code></p>
+      <Message info>
+        <Message.Header>Peer list</Message.Header>
+        <p>Open the Network page for the full Fabric peer table and connection controls.</p>
+      </Message>
+    </Container>
+  );
 }
 
 function dashboard (props) {

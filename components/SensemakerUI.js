@@ -5,7 +5,8 @@ const {
   BRAND_NAME,
   BROWSER_DATABASE_NAME,
   BROWSER_DATABASE_TOKEN_TABLE,
-  IS_CONFIGURED
+  IS_CONFIGURED,
+  DEBUG_SENSEMAKER_UI
 } = require('../constants');
 
 // Dependencies
@@ -73,11 +74,20 @@ class SensemakerUI extends React.Component {
       loggedOut: false,
       isConfigured: IS_CONFIGURED, // Track configuration status dynamically
       configurationLoading: true, // Loading state for configuration check
+      /** False until IndexedDB session read finishes — avoids public /peers → /sessions while reLogin runs */
+      sessionRestored: false,
     };
+    this._sessionRestoreMarked = false;
   }
 
+  markSessionRestored = () => {
+    if (this._sessionRestoreMarked) return;
+    this._sessionRestoreMarked = true;
+    this.setState({ sessionRestored: true });
+  };
+
   handleLoginSuccess = () => {
-    console.log('setting isAuthenticated = true ...');
+    if (DEBUG_SENSEMAKER_UI) console.log('[SENSEMAKER:UI]', 'setting isAuthenticated = true ...');
     this.setState({ isAuthenticated: true });
 
     // Fetch configuration status when user logs in
@@ -88,11 +98,34 @@ class SensemakerUI extends React.Component {
   }
 
   handleMessageSuccess = (action) => {
-    const { id, isAdmin } = this.props.auth;
+    if (!action) return;
+    const t = action.type;
+    if (t === 'MessageStart' && this.props.chatStreamReset) {
+      this.props.chatStreamReset();
+      return;
+    }
+    if (t === 'MessageChunk' && this.props.chatStreamChunk) {
+      const raw = action.data;
+      let str = '';
+      if (typeof raw === 'string') str = raw;
+      else if (raw != null && typeof Buffer !== 'undefined' && Buffer.isBuffer(raw)) str = raw.toString('utf8');
+      else if (raw instanceof Uint8Array) str = Buffer.from(raw).toString('utf8');
+      else if (raw != null && raw.buffer && typeof raw.byteLength === 'number') {
+        str = Buffer.from(raw.buffer, raw.byteOffset || 0, raw.byteLength).toString('utf8');
+      }
+      try {
+        const payload = JSON.parse(str);
+        if (payload && typeof payload.content === 'string' && payload.content.length) {
+          this.props.chatStreamChunk({ id: payload.id, content: payload.content });
+        }
+      } catch (e) {
+        /* ignore malformed Fabric payloads */
+      }
+    }
   }
 
   handleRegisterSuccess = () => {
-    console.log('registered = true ...');
+    if (DEBUG_SENSEMAKER_UI) console.log('[SENSEMAKER:UI]', 'registered = true ...');
     this.setState({ registered: true });
   }
 
@@ -103,7 +136,7 @@ class SensemakerUI extends React.Component {
   }
 
   handleLogoutSuccess = () => {
-    console.log('setting isAuthenticated = false ...');
+    if (DEBUG_SENSEMAKER_UI) console.log('[SENSEMAKER:UI]', 'setting isAuthenticated = false ...');
     this.setState({ loggedOut: true });
     setTimeout(() => {
       this.setState({
@@ -152,7 +185,7 @@ class SensemakerUI extends React.Component {
 
   handleConfigurationComplete = () => {
     // Configuration completed successfully - update state to reflect this
-    console.log('[SENSEMAKER:UI] Configuration completed, updating state...');
+    if (DEBUG_SENSEMAKER_UI) console.log('[SENSEMAKER:UI]', 'Configuration completed, updating state...');
     this.setState({
       isConfigured: true,
       configurationLoading: false
@@ -178,7 +211,7 @@ class SensemakerUI extends React.Component {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('[SENSEMAKER:UI] Fetched configuration status:', data);
+        if (DEBUG_SENSEMAKER_UI) console.log('[SENSEMAKER:UI] Fetched configuration status:', data);
 
         // Update state with the server's configuration status
         this.setState({
@@ -206,7 +239,7 @@ class SensemakerUI extends React.Component {
   componentDidMount () {
     // Start the bridge connection
     if (this.bridge) {
-      console.debug('[SENSEMAKER:UI]', 'Starting bridge connection...');
+      if (DEBUG_SENSEMAKER_UI) console.debug('[SENSEMAKER:UI]', 'Starting bridge connection...');
       this.bridge.start();
     }
 
@@ -238,15 +271,18 @@ class SensemakerUI extends React.Component {
           this.setState({ isAuthenticated: true });
           this.props.reLogin(request.result.value);
         }
+        this.markSessionRestored();
       };
 
       request.onerror = (event) => {
         console.error("IndexedDB error:", event.target.errorCode);
+        this.markSessionRestored();
       };
     };
 
-    dbRequest.onerror = function (event) {
+    dbRequest.onerror = (event) => {
       console.error("IndexedDB error:", event.target.errorCode);
+      this.markSessionRestored();
     };
 
     // Video Background
@@ -255,14 +291,14 @@ class SensemakerUI extends React.Component {
     graph.src = '/scripts/animation.js';
     document.body.appendChild(graph);
 
-    console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
+    if (DEBUG_SENSEMAKER_UI) console.debug('[SENSEMAKER:UI]', 'SensemakerUI mounted.');
 
     // Fetch configuration status if we already have a token
     if (this.props.token) {
       this.fetchConfigurationStatus();
     } else {
       // If we don't have a token, we can't check configuration status, so stop loading
-      console.debug('[SENSEMAKER:UI]', 'No token available, stopping configuration loading...');
+      if (DEBUG_SENSEMAKER_UI) console.debug('[SENSEMAKER:UI]', 'No token available, stopping configuration loading...');
       this.setState({ configurationLoading: false });
     }
   }
@@ -270,14 +306,14 @@ class SensemakerUI extends React.Component {
   componentDidUpdate (prevProps) {
     // Fetch configuration status when token becomes available
     if (!prevProps.token && this.props.token) {
-      console.debug('[SENSEMAKER:UI]', 'Token became available, fetching configuration status...');
+      if (DEBUG_SENSEMAKER_UI) console.debug('[SENSEMAKER:UI]', 'Token became available, fetching configuration status...');
       this.setState({ configurationLoading: true });
       this.fetchConfigurationStatus();
     }
 
     // Stop configuration loading if token is lost
     if (prevProps.token && !this.props.token) {
-      console.debug('[SENSEMAKER:UI]', 'Token lost, stopping configuration loading...');
+      if (DEBUG_SENSEMAKER_UI) console.debug('[SENSEMAKER:UI]', 'Token lost, stopping configuration loading...');
       this.setState({ configurationLoading: false });
     }
   }
@@ -303,7 +339,7 @@ class SensemakerUI extends React.Component {
         <canvas id='video-background' className='ui video background' />
         <fabric-container id='react-application'>{/* TODO: render string here */}</fabric-container>
         <fabric-react-component id='sensemaker-application' style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-          {(!this.props.auth || this.props.auth.loading) ? (
+          {(!this.props.auth || this.props.auth.loading || !this.state.sessionRestored) ? (
             <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Loader active inline="centered" size='huge' />
             </div>
@@ -317,6 +353,9 @@ class SensemakerUI extends React.Component {
                   <Route path='/features' element={<FeaturesHome />} />
                   <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
                   <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
+                  <Route path='/network' element={<Navigate to='/sessions' replace />} />
+                  <Route path='/peers' element={<Navigate to='/sessions' replace />} />
+                  <Route path='/peers/:id' element={<Navigate to='/sessions' replace />} />
                   <Route path='*' element={<NotFound />} />
                 </Routes>
               ) : (this.props.auth && !this.props.auth.isCompliant) ? (

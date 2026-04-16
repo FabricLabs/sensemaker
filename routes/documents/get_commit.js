@@ -4,21 +4,7 @@ module.exports = async function (req, res) {
   try {
     const { fabricID, commitID } = req.params;
 
-    // Check if user is admin - first from token state, then fallback to database
-    let isAdmin = false;
-    if (req.user.state && req.user.state.roles && Array.isArray(req.user.state.roles)) {
-      isAdmin = req.user.state.roles.includes('admin');
-    }
-
-    // Fallback: if token doesn't have roles but user.id exists, check database
-    if (!isAdmin && req.user.id) {
-      try {
-        const user = await this.db('users').where('id', req.user.id).select('is_admin').first();
-        isAdmin = user && user.is_admin === true;
-      } catch (error) {
-        console.error('[SENSEMAKER]', '[HTTP]', 'Error checking admin status:', error);
-      }
-    }
+    const isAdmin = await this._userHasAdminAccess(req);
 
     // First verify the user has access to the document
     let query = this.db('documents')

@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+
 // Dependencies
 // Fabric Core
 const Actor = require('@fabric/core/types/actor');
@@ -9,8 +11,9 @@ const Peer = require('@fabric/core/types/peer');
 // Fabric HTTP
 const Remote = require('@fabric/http/types/remote');
 
-// Fabric Hub
-const FabricHub = require('@fabric/hub/services/fabric');
+// Fabric Hub (`package.json` "exports" omits `./services/*`; load concrete path)
+const hubRoot = path.join(path.dirname(require.resolve('@fabric/hub')), '..');
+const FabricHub = require(path.join(hubRoot, 'services', 'fabric.js'));
 
 /**
  * Defines the Fabric interface for Sensemaker.
@@ -149,6 +152,17 @@ class FabricNetwork extends FabricHub {
     this.emit('debug', '[FABRIC] Stopping service...');
     await this.agent.stop();
     return this;
+  }
+
+  /**
+   * Outbound P2P dial (host:port or pubkey@host:port). Delegates to the Fabric {@link Peer}.
+   * @param {string} target
+   */
+  _connect (target) {
+    if (!this.agent || typeof this.agent._connect !== 'function') {
+      throw new Error('Fabric peer agent is not available.');
+    }
+    return this.agent._connect(target);
   }
 
   commit () {
