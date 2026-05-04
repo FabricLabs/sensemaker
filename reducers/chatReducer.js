@@ -14,7 +14,8 @@ const {
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS,
   CHAT_STREAM_CHUNK,
-  CHAT_STREAM_RESET
+  CHAT_STREAM_RESET,
+  UPDATE_MESSAGE
 } = require('../actions/chatActions');
 
 // State
@@ -102,6 +103,15 @@ function chatReducer (state = initialState, action) {
     case RESET_CHAT_STATE:
     case RESET_CHAT_SUCCESS:
       return initialState;
+    case UPDATE_MESSAGE:
+      return {
+        ...state,
+        messages: state.messages.map(message =>
+          message.id === action.payload.messageId
+            ? { ...message, ...action.payload.updates }
+            : message
+        )
+      };
     default:
       // console.warn('unhandled chat reducer action:', action);
       return state;

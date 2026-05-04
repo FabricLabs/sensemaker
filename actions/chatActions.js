@@ -24,6 +24,7 @@ const RESET_CHAT_SUCCESS = 'RESET_CHAT_SUCCESS';
 
 const CHAT_STREAM_CHUNK = 'CHAT_STREAM_CHUNK';
 const CHAT_STREAM_RESET = 'CHAT_STREAM_RESET';
+const UPDATE_MESSAGE = 'UPDATE_MESSAGE';
 
 // Sync Action Creators
 const messageRequest = () => ({ type: CHAT_REQUEST, isSending: true });
@@ -46,6 +47,7 @@ const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
 
 const chatStreamChunk = (payload) => ({ type: CHAT_STREAM_CHUNK, payload });
 const chatStreamReset = () => ({ type: CHAT_STREAM_RESET });
+const updateMessage = (messageId, updates) => ({ type: UPDATE_MESSAGE, payload: { messageId, updates } });
 
 // Async Action Creator (Thunk)
 const resetChat = (message) => {
@@ -78,6 +80,39 @@ const submitMessage = (message, collection_id = null) => {
       const result = await response.json();
       dispatch(messageSuccess(result));
       return result;
+    } catch (error) {
+      dispatch(messageFailure(error.message));
+      throw error;
+    }
+  };
+};
+
+const submitStreamingMessage = (message, collection_id = null) => {
+  return async (dispatch, getState) => {
+    dispatch(messageRequest());
+    const token = getState().auth.token;
+
+    try {
+      let requestBody = { ...message, streaming: true };
+      const response = await fetch('/messages/stream', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const result = await response.json();
+      dispatch(messageSuccess(result));
+
+      // Return the conversation ID for streaming setup
+      return result.object;
     } catch (error) {
       dispatch(messageFailure(error.message));
       throw error;
@@ -242,10 +277,12 @@ module.exports = {
   chatStreamReset,
   resetChat,
   submitMessage,
+  submitStreamingMessage,
   fetchResponse,
   getMessages,
   regenAnswer,
   getMessageInformation,
+  updateMessage,
   CHAT_SUCCESS,
   CHAT_FAILURE,
   CHAT_REQUEST,
@@ -258,5 +295,6 @@ module.exports = {
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS,
   CHAT_STREAM_CHUNK,
-  CHAT_STREAM_RESET
+  CHAT_STREAM_RESET,
+  UPDATE_MESSAGE
 };

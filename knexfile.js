@@ -11,6 +11,13 @@ module.exports = {
     },
     seeds: {
       directory: './seeds'
+    },
+    pool: {
+      min: 2,
+      max: 20,
+      acquireTimeoutMillis: 120000,
+      createTimeoutMillis: 60000,
+      idleTimeoutMillis: 600000
     }
   },
   production: {
@@ -30,7 +37,10 @@ module.exports = {
     },
     pool: {
       min: 2,
-      max: 10
+      max: 20,
+      acquireTimeoutMillis: 120000,
+      createTimeoutMillis: 60000,
+      idleTimeoutMillis: 600000
     }
   }
 };

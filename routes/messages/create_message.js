@@ -1,7 +1,9 @@
 'use strict';
 
+// Fabric Types
 const Actor = require('@fabric/core/types/actor');
 
+// Functions
 const toRelativeTime = require('../../functions/toRelativeTime');
 
 module.exports = async function (req, res, next) {

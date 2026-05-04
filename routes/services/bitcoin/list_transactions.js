@@ -9,10 +9,7 @@ module.exports = async function (req, res, next) {
     },
     json: async () => {
       try {
-        // Get current height first
         const height = await bitcoin._makeRPCRequest('getblockcount', []);
-        
-        // Get mempool transactions (limited to 20 most recent)
         const mempool = await bitcoin._makeRPCRequest('getrawmempool', [true]); // Get verbose mempool
         const mempoolTxids = Object.keys(mempool)
           .sort((a, b) => mempool[b].time - mempool[a].time) // Sort by time
@@ -24,11 +21,11 @@ module.exports = async function (req, res, next) {
             try {
               const tx = await Promise.race([
                 bitcoin._makeRPCRequest('getrawtransaction', [txid, 1]),
-                new Promise((_, reject) => 
+                new Promise((_, reject) =>
                   setTimeout(() => reject(new Error('Timeout')), 5000)
                 )
               ]);
-              
+
               return {
                 ...tx,
                 confirmations: 0,
@@ -48,19 +45,30 @@ module.exports = async function (req, res, next) {
         const count = 5;
         const blockPromises = [];
 
-        for (let i = 0; i < count; i++) {
-          blockPromises.push(bitcoin._makeRPCRequest('getblockstats', [height - i]));
+        // Only try to get recent blocks if we have blocks
+        if (height > 0) {
+          const availableBlocks = Math.min(count, height + 1);
+          console.log('[BITCOIN] Fetching', availableBlocks, 'blocks from height', height);
+
+          for (let i = 0; i < availableBlocks; i++) {
+            const blockHeight = height - i;
+            if (blockHeight >= 0) {
+              blockPromises.push(bitcoin._makeRPCRequest('getblockstats', [blockHeight]));
+            }
+          }
+        } else {
+          console.log('[BITCOIN] No blocks available, height is 0');
         }
 
         const blockstats = await Promise.all(blockPromises);
-        
+
         // Fetch block details with timeout
         const blocks = await Promise.all(
           blockstats.map(async (x) => {
             try {
               const block = await Promise.race([
                 bitcoin._makeRPCRequest('getblock', [x.blockhash, 1]),
-                new Promise((_, reject) => 
+                new Promise((_, reject) =>
                   setTimeout(() => reject(new Error('Timeout')), 5000)
                 )
               ]);
@@ -70,7 +78,7 @@ module.exports = async function (req, res, next) {
                 try {
                   const tx = await Promise.race([
                     bitcoin._makeRPCRequest('getrawtransaction', [txid, 1]),
-                    new Promise((_, reject) => 
+                    new Promise((_, reject) =>
                       setTimeout(() => reject(new Error('Timeout')), 5000)
                     )
                   ]);
@@ -116,9 +124,9 @@ module.exports = async function (req, res, next) {
         return res.send(transactions);
       } catch (error) {
         console.error('Error fetching transactions:', error);
-        return res.status(500).json({ 
+        return res.status(500).json({
           error: 'Failed to fetch transactions',
-          message: error.message 
+          message: error.message
         });
       }
     }

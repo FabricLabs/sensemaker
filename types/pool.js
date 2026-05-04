@@ -76,6 +76,7 @@ class Pool extends Service {
   }
 
   async _initializeMember (memberId) {
+    let timeoutId = null;
     try {
       const initPromise = (async () => {
         let modelNames = [];
@@ -121,7 +122,7 @@ class Pool extends Service {
       await Promise.race([
         initPromise,
         new Promise((_, reject) => {
-          setTimeout(() => {
+          timeoutId = setTimeout(() => {
             reject(new Error(`Member initialization timed out after ${this.settings.initTimeout}ms`));
           }, this.settings.initTimeout);
         })
@@ -129,6 +130,11 @@ class Pool extends Service {
     } catch (error) {
       this._state.memberStatus[memberId] = 'failed';
       throw error;
+    } finally {
+      // Clean up timeout if it was set
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   }
 
@@ -200,11 +206,12 @@ class Pool extends Service {
       }, this.settings.timeout)
     };
 
+    let queryTimeoutId = null;
     try {
       const result = await Promise.race([
         this._state.members[availableMember].query(request),
         new Promise((_, reject) => {
-          setTimeout(() => {
+          queryTimeoutId = setTimeout(() => {
             reject(new Error(`Request timed out after ${this.settings.timeout}ms`));
           }, this.settings.timeout);
         })
@@ -217,6 +224,11 @@ class Pool extends Service {
       // Clean up request tracking
       this._cleanupRequest(availableMember);
       throw error;
+    } finally {
+      // Clean up query timeout if it was set
+      if (queryTimeoutId) {
+        clearTimeout(queryTimeoutId);
+      }
     }
   }
 
@@ -296,6 +308,22 @@ class Pool extends Service {
         this._state.memberStatus[memberId] = 'stopped';
       }
     });
+
+    // Clean up all outstanding requests
+    Object.keys(this._state.outstanding).forEach(memberId => {
+      this._cleanupRequest(memberId);
+    });
+
+    // Stop all member agents
+    const stopPromises = Object.keys(this._state.members).map(async (memberId) => {
+      try {
+        await this._state.members[memberId].stop();
+      } catch (error) {
+        console.warn(`[SENSEMAKER] [POOL] Failed to stop member ${memberId}:`, error.message);
+      }
+    });
+
+    await Promise.allSettled(stopPromises);
 
     this._state.content.status = 'STOPPED';
     return this;

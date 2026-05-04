@@ -1,12 +1,14 @@
 services:
-  app:
+  core:
     build: .
-    container_name: sensemaker-app
+    container_name: sensemaker-core
     environment:
       NODE_ENV: production
       SQL_DB_HOST: db
       SQL_DB_USER: db_user_sensemaker
       SQL_DB_CRED: ${MYSQL_PASSWORD}
+      SQL_DB_NAME: db_sensemaker
+      SQL_DB_PORT: 3306
       REDIS_HOST: redis
       REDIS_CRED: null
       OLLAMA_HOST: ollama
@@ -18,6 +20,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FABRIC_MNEMONIC: ${FABRIC_MNEMONIC}
       BITCOIN_REGTEST: "1"
+      DEBUG: "true"
     ports:
       - "5050:3040"
     depends_on:
@@ -30,9 +33,9 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:3040/metrics/live >/dev/null || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      timeout: 30s
+      retries: 10
+      start_period: 600s
     restart: unless-stopped
     # Note: We don't mount .:/app here because it would override the container's
     # built node_modules (including native binaries) with the host's version
@@ -85,6 +88,7 @@ services:
       - ollama_data:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=*
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 30s
@@ -99,7 +103,6 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
-
 volumes:
   db_data:
   redis_data:

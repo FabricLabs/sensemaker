@@ -441,6 +441,7 @@ class SensemakerUI extends React.Component {
                   register={this.props.register}
                   resetChat={this.props.resetChat}
                   submitMessage={this.props.submitMessage}
+                  submitStreamingMessage={this.props.submitStreamingMessage}
                   contracts={this.props.contracts}
                   conversations={this.props.conversations}
                   conversation={this.props.conversation}

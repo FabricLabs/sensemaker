@@ -12,6 +12,27 @@ describe('Pool', function () {
 
   this.timeout(120000);
 
+  // Helper method to wait for pool to be ready
+  async function waitForPoolReady (pool) {
+    const maxAttempts = 30;
+    const delay = 2000;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const health = pool.getPoolHealth();
+
+      if (health.isHealthy) {
+        return;
+      }
+
+      if (i < maxAttempts - 1) {
+        console.debug(`Pool not ready yet, waiting ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    throw new Error('Pool failed to become ready within expected time');
+  }
+
   beforeEach(async function () {
     pool = new Pool({
       members: [],
@@ -25,7 +46,6 @@ describe('Pool', function () {
     });
 
     pool.registerMethod('GenerateReply', async (job) => {
-      console.trace('processing job:', job);
       // Simulate job processing
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -34,12 +54,14 @@ describe('Pool', function () {
         }, 100);
       });
     });
-
-    await pool.start();
   });
 
   afterEach(async function () {
-    await pool.stop();
+    if (pool._state.content.status === 'STARTED') {
+      await pool.stop();
+      // Small delay to ensure all timeouts are cleared
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   });
 
   it('should initialize and start cleanly', function () {

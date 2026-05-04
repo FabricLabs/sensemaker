@@ -15,6 +15,10 @@ jobs:
       matrix:
         os:
         - ubuntu-latest
+    env:
+      OLLAMA_HOST: 127.0.0.1
+      OLLAMA_PORT: 11434
+      NODE_ENV: test
     steps:
     - name: Checkout branch
       uses: actions/checkout@v3
@@ -32,6 +36,48 @@ jobs:
         python-version: '3.8'
     - name: Install dependencies
       run: npm ci
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+    - name: Install Ollama
+      run: |
+        echo "Installing Ollama..."
+        curl -fsSL https://ollama.ai/install.sh | sh
+        echo "Starting Ollama service..."
+        sudo systemctl start ollama
+        sudo systemctl enable ollama
+        echo "Ollama service status:"
+        sudo systemctl status ollama --no-pager || true
+    - name: Wait for Ollama to start
+      run: |
+        echo "Waiting for Ollama to start..."
+        for i in {1..30}; do
+          if curl -f http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
+            echo "Ollama is ready!"
+            break
+          fi
+          echo "Attempt $i: Ollama not ready yet, waiting..."
+          sleep 2
+        done
+        echo "Testing Ollama API..."
+        curl -f http://127.0.0.1:11434/api/tags || (echo "Ollama failed to start" && exit 1)
+        echo "Ollama API is responding!"
+        echo "Available endpoints:"
+        curl -s http://127.0.0.1:11434/api/tags | jq '.' || echo "Could not parse tags response"
+        echo "Testing other endpoints:"
+        curl -s http://127.0.0.1:11434/api/v1/models 2>/dev/null | jq '.' || echo "Models endpoint not available"
+        curl -s http://127.0.0.1:11434/api/version 2>/dev/null | jq '.' || echo "Version endpoint not available"
+    - name: Pull Qwen model
+      run: |
+        echo "Pulling Qwen model..."
+        ollama pull qwen3:0.6b
+        echo "Available models:"
+        ollama list
+        echo "Testing model availability..."
+        curl -f http://127.0.0.1:11434/api/tags | jq '.models[] | select(.name | contains("qwen"))' || echo "Warning: Qwen model not found in API response"
+        echo "Testing model loading..."
+        ollama show qwen3:0.6b | head -20 || echo "Warning: Could not show model details"
     - name: Generate coverage report
       run: npm run report:coverage
     - name: Send coverage report
