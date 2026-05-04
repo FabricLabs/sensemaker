@@ -166,14 +166,16 @@ class Agent extends Service {
       }
     }, settings);
 
-    // Fabric Agent
-    this.fabric = new Peer({
+    // Fabric Agent — reuse a parent-supplied peer when available to avoid
+    // extra LevelDB opens, port binding attempts, and interval timers.
+    this.fabric = settings.peer || new Peer({
       name: 'fabric',
       description: 'The Fabric agent, which manages a Fabric node for the AI agent.  Fabric is peer-to-peer network for running applications which store and exchange information paid in Bitcoin.',
       key: this.settings.key,
       type: 'Peer',
       listen: this.settings.fabric.listen
     });
+    this._ownsPeer = !settings.peer;
 
     // Assign prompts
     // this.settings.openai.model = this.settings.model;
@@ -651,7 +653,12 @@ class Agent extends Service {
   start () {
     return new Promise(async (resolve, reject) => {
       this._state.content.status = 'STARTING';
-      if (this.settings.fabric) await this.fabric.start(); // TODO: capture node.id
+      // Only start the embedded Peer when we own it (not shared from parent).
+      // A non-listening Peer with no peersDb provides no value and adds ~Xs of
+      // LevelDB + heartbeat overhead for every Agent instance.
+      if (this._ownsPeer && this.settings.fabric && this.settings.fabric.listen) {
+        await this.fabric.start();
+      }
 
       // Load default prompt.
       if (!this.prompt) this.loadDefaultPrompt();
@@ -697,10 +704,15 @@ class Agent extends Service {
 
   stop () {
     return new Promise((resolve, reject) => {
-      this.fabric.stop().then(() => {
+      if (this._ownsPeer) {
+        this.fabric.stop().then(() => {
+          this.emit('stopped');
+          resolve(this);
+        }).catch(reject);
+      } else {
         this.emit('stopped');
         resolve(this);
-      }).catch(reject);
+      }
     });
   }
 }

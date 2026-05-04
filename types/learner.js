@@ -90,7 +90,10 @@ class Learner extends Actor {
   _writeChunk (address, value) {
     if (!address) throw new Error(`null pointer :: ${address}`);
     const start = HEADER_SIZE+(HEADER_SIZE*address);
-    return value.copy(this._memory, start, CHUNK_SIZE);
+    const source = Buffer.isBuffer(value) ? value : Buffer.from(value);
+    const bytesToCopy = Math.min(source.length, CHUNK_SIZE);
+    source.copy(this._memory, start, 0, bytesToCopy);
+    return bytesToCopy;
   }
 
   async start () {

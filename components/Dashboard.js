@@ -103,9 +103,6 @@ const GlobalChat = require('./Global');
 const TourGuide = require('./TourGuide');
 const Onboarding = require('./Onboarding');
 
-// Fabric Bridge (from local `file:../hub.fabric.pub` or published `@fabric/hub`)
-const Bridge = require('@fabric/hub/components/Bridge');
-
 // Services
 const BitcoinHome = require('./services/bitcoin/BitcoinHome');
 const BitcoinBlockList = require('./services/bitcoin/BitcoinBlockList');

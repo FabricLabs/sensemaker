@@ -2,9 +2,7 @@
 
 // Dependencies
 const assert = require('assert');
-
-// Settings
-const settings = require('../settings/local');
+const Actor = require('@fabric/core/types/actor');
 
 // Fabric Types
 const Pool = require('../types/pool');
@@ -16,7 +14,7 @@ describe('Pool', function () {
 
   beforeEach(async function () {
     pool = new Pool({
-      members: [ settings.ollama ],
+      members: [],
       methods: {},
       models: {},
       state: {
@@ -44,69 +42,42 @@ describe('Pool', function () {
     await pool.stop();
   });
 
-  xit('should initialize with default settings', function () {
-    assert.strictEqual(pool.settings.members.length, 1);
-    assert.strictEqual(pool.settings.state.status, 'STOPPED');
+  it('should initialize and start cleanly', function () {
+    assert.strictEqual(pool.settings.members.length, 0);
+    assert.strictEqual(pool._state.content.status, 'STARTED');
   });
 
-  xit('should respond to a query', async function () {
-    const request = pool.query({
+  it('should respond to a query via a ready member', async function () {
+    const memberId = new Actor({ provider: 'unit-test' }).id;
+    pool._state.members[memberId] = {
+      query: async (request) => ({
+        status: 'completed',
+        query: request.query,
+        content: 'ok'
+      })
+    };
+    pool._state.memberStatus[memberId] = 'ready';
+    pool._state.models['qwen3:0.6b'] = [{ provider: memberId, status: 'ready' }];
+
+    const response = await pool.query({
       model: 'qwen3:0.6b',
       query: 'Who are you?',
-      temperature: 0,
+      temperature: 0
     });
 
-    console.debug('request:', request);
-
-    request.catch((error) => {
-      console.error('Error processing request:', error);
-      assert.fail('Request should not fail');
-    });
-
-    request.then((response) => {
-      assert.strictEqual(response.status, 'completed');
-      assert.strictEqual(response.query, 'Who are you?');
-      assert.ok(response.content);
-    });
+    assert.strictEqual(response.status, 'completed');
+    assert.strictEqual(response.query, 'Who are you?');
+    assert.strictEqual(response.content, 'ok');
   });
 
-  xit('can use foreign providers', async function () {
-    const foreignPool = new Pool({
-      members: [
-        {
-          ...settings.ollama,
-          model: 'deepseek/deepseek-r1-0528:free',
-          host: 'openrouter.ai',
-          port: 443,
-          secure: true,
-          path: '/api/v1',
-          headers: {
-            'Authorization': `Bearer ${settings.openrouter.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      ],
-      methods: {},
-      models: {},
-      state: {
-        jobs: {},
-        members: {},
-        status: 'STOPPED'
-      }
-    });
-
-    await foreignPool.start();
-
-    const response = await foreignPool.query({
-      model: 'deepseek/deepseek-r1-0528:free',
-      query: 'What is the capital of France?',
-      temperature: 0,
-    });
-
-    await foreignPool.stop();
-
-    assert.strictEqual(response.status, 'success');
-    assert.strictEqual(response.query, 'What is the capital of France?');
-    assert.ok(response.content);
+  it('throws when no suitable member exists for the requested model', async function () {
+    await assert.rejects(
+      pool.query({
+        model: 'deepseek/deepseek-r1-0528:free',
+        query: 'What is the capital of France?',
+        temperature: 0
+      }),
+      /No suitable healthy member found/
+    );
   });
 });

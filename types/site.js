@@ -27,7 +27,7 @@ class Site extends FabricSite {
         alias: '@sites/default'
       },
       state: {
-        title: 'Default Site'
+        title: 'sensemaker · digital intelligence'
       },
       spa: null
     }, this.settings, settings);

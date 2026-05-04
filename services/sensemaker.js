@@ -329,40 +329,48 @@ class Sensemaker extends Hub {
      * Permanent playnet facet: a {@link Hub} wired to regtest RPC (defaults to 127.0.0.1:18443).
      * Used for playnet-only flows (e.g. host donations) independent of mainnet / `this.bitcoin.enable`.
      * Does not start Fabric P2P or HTTP; only its Bitcoin client is started in {@link Sensemaker#start}.
+     * Only created when RPC credentials are provided so a development node without a local bitcoind
+     * doesn't wait for the startTimeoutMs on every startup.
      */
     this._playnetDonationAddress = null;
-    try {
-      const playnetP2PPort = (Number(this.settings.port) || 7777) + 11111;
-      this.playnet = new Hub({
-        name: `${this.settings.name}:playnet`,
-        key: {
-          xprv: this._rootKey.xprv,
-          xpub: this._rootKey.xpub,
-          seed: this.settings.seed,
-          mnemonic: this.settings.mnemonic,
-          passphrase: this.settings.passphrase
-        },
-        port: playnetP2PPort,
-        http: { listen: false, port: 0, hostname: '127.0.0.1' },
-        peers: [],
-        peersDb: path.join(process.cwd(), 'stores/sensemaker/playnet-hub-peers'),
-        beacon: { enable: false },
-        services: ['bitcoin'],
-        verbosity: 0,
-        debug: false,
-        bitcoin: {
-          enable: true,
-          managed: false,
-          network: 'regtest',
-          host: process.env.SENSEMAKER_PLAYNET_RPC_HOST || process.env.FABRIC_BITCOIN_HOST || '127.0.0.1',
-          rpcport: Number(process.env.SENSEMAKER_PLAYNET_RPC_PORT || 18443),
-          username: process.env.SENSEMAKER_PLAYNET_RPC_USER || process.env.FABRIC_BITCOIN_USERNAME || process.env.BITCOIN_RPC_USER || '',
-          password: process.env.SENSEMAKER_PLAYNET_RPC_PASSWORD || process.env.FABRIC_BITCOIN_PASSWORD || process.env.BITCOIN_RPC_PASS || '',
-          startTimeoutMs: Number(process.env.SENSEMAKER_PLAYNET_START_TIMEOUT_MS || 12000)
-        }
-      });
-    } catch (playnetErr) {
-      console.warn('[SENSEMAKER:CORE]', '[PLAYNET]', 'Playnet Hub not created:', playnetErr.message || playnetErr);
+    const _playnetUser = process.env.SENSEMAKER_PLAYNET_RPC_USER || process.env.FABRIC_BITCOIN_USERNAME || process.env.BITCOIN_RPC_USER || '';
+    const _playnetPass = process.env.SENSEMAKER_PLAYNET_RPC_PASSWORD || process.env.FABRIC_BITCOIN_PASSWORD || process.env.BITCOIN_RPC_PASS || '';
+    if (_playnetUser && _playnetPass) {
+      try {
+        const playnetP2PPort = (Number(this.settings.port) || 7777) + 11111;
+        this.playnet = new Hub({
+          name: `${this.settings.name}:playnet`,
+          key: {
+            xprv: this._rootKey.xprv,
+            xpub: this._rootKey.xpub,
+            seed: this.settings.seed,
+            mnemonic: this.settings.mnemonic,
+            passphrase: this.settings.passphrase
+          },
+          port: playnetP2PPort,
+          http: { listen: false, port: 0, hostname: '127.0.0.1' },
+          peers: [],
+          peersDb: path.join(process.cwd(), 'stores/sensemaker/playnet-hub-peers'),
+          beacon: { enable: false },
+          services: ['bitcoin'],
+          verbosity: 0,
+          debug: false,
+          bitcoin: {
+            enable: true,
+            managed: false,
+            network: 'regtest',
+            host: process.env.SENSEMAKER_PLAYNET_RPC_HOST || process.env.FABRIC_BITCOIN_HOST || '127.0.0.1',
+            rpcport: Number(process.env.SENSEMAKER_PLAYNET_RPC_PORT || 18443),
+            username: _playnetUser,
+            password: _playnetPass,
+            startTimeoutMs: Number(process.env.SENSEMAKER_PLAYNET_START_TIMEOUT_MS || 12000)
+          }
+        });
+      } catch (playnetErr) {
+        console.warn('[SENSEMAKER:CORE]', '[PLAYNET]', 'Playnet Hub not created:', playnetErr.message || playnetErr);
+        this.playnet = null;
+      }
+    } else {
       this.playnet = null;
     }
 
@@ -528,7 +536,8 @@ class Sensemaker extends Hub {
       path: './stores'
     });
 
-    // Sensemaker
+    // Sensemaker — share the Hub's Peer so Agents don't each spawn their own
+    // LevelDB handle, heartbeat interval, and port-scan loop.
     this.sensemaker = new Agent({
       name: 'SENSEMAKER',
       model: this.settings.ollama.model,
@@ -537,6 +546,7 @@ class Sensemaker extends Hub {
       port: this.settings.ollama.port,
       secure: this.settings.ollama.secure,
       key: this.settings.key,
+      peer: this.agent,
       prompt: this.settings.prompt,
       constraints: this.settings.constraints,
       tools: true
@@ -552,6 +562,7 @@ class Sensemaker extends Hub {
       port: this.settings.ollama.port,
       secure: this.settings.ollama.secure,
       key: this.settings.key,
+      peer: this.agent,
       prompt: 'You are SearcherAI, designed to return only a search term most likely to return the most relevant results to the user\'s query, assuming your response is used elsewhere in collecting information from the Sensemaker database.  Only ever return the search query as your response.  Refrain from using generic terms such as "the", "a", etc., and simplify the search wherever possible to focus on the primary topic.  For example, when the inquiry is: "Where should I visit for vacation?" you should respond with "locations vacation" (excluding the quote marks).  Your responses will be sent directly to the network, so make sure to only ever respond with the best candidate for a search term for finding documents most relevant to the user question.  Leverage abstractions to extract the essence of the user request, using step-by-step reasoning to predict the most relevant search term.  If you are unsure, respond with "HALT" (excluding the quote marks).'
     });
 
@@ -564,6 +575,7 @@ class Sensemaker extends Hub {
       secure: this.settings.ollama.secure,
       port: this.settings.ollama.port,
       key: this.settings.key,
+      peer: this.agent,
       prompt: this.prompt
     });
 
@@ -2352,6 +2364,7 @@ class Sensemaker extends Hub {
       });
     }
 
+
     // Pool
     try {
       await this.pool.start();
@@ -2367,6 +2380,8 @@ class Sensemaker extends Hub {
       console.error('[SENSEMAKER:CORE]', '[REDIS]', 'Error starting queue:', exception);
       process.exit(1);
     }
+
+    if (this.activeWorkerQueue) this.activeWorkerQueue.start();
 
     // Action Model
     try {
@@ -2543,6 +2558,7 @@ class Sensemaker extends Hub {
       this.openai.on('MessageWarning', this._handleOpenAIMessageWarning.bind(this));
     }
 
+
     // Load models
     await this.searcher.start();
     await this.summarizer.start();
@@ -2552,6 +2568,7 @@ class Sensemaker extends Hub {
     } catch (exception) {
       console.error('[SENSEMAKER:CORE]', 'Error priming:', exception);
     }
+
 
     // Start the logging service
     await this.audits.start();
@@ -2739,6 +2756,7 @@ class Sensemaker extends Hub {
 
     // Sandbox
     // await this.sandbox.start();
+
 
     // Worker
     await this.worker.start();

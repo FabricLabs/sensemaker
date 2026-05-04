@@ -121,6 +121,37 @@ class SensemakerUI extends React.Component {
       } catch (e) {
         /* ignore malformed Fabric payloads */
       }
+      return;
+    }
+    if (t === 'ChatMessage') {
+      const raw = action.data;
+      let str = '';
+      if (typeof raw === 'string') str = raw;
+      else if (raw != null && typeof Buffer !== 'undefined' && Buffer.isBuffer(raw)) str = raw.toString('utf8');
+      else if (raw instanceof Uint8Array) str = Buffer.from(raw).toString('utf8');
+      else if (raw != null && raw.buffer && typeof raw.byteLength === 'number') {
+        str = Buffer.from(raw.buffer, raw.byteOffset || 0, raw.byteLength).toString('utf8');
+      }
+      let payload;
+      try {
+        payload = JSON.parse(str);
+      } catch (e) {
+        return;
+      }
+      if (!payload || payload.type === 'P2P_CHAT_MESSAGE') return;
+      if (payload.type === 'MessageStart' && this.props.chatStreamReset) {
+        this.props.chatStreamReset();
+        return;
+      }
+      const chunkText = typeof payload.content === 'string' ? payload.content : '';
+      if (chunkText.length && this.props.chatStreamChunk) {
+        this.props.chatStreamChunk({ id: payload.id, content: chunkText });
+        return;
+      }
+      const hasMeta = payload.id != null && payload.conversation_id != null;
+      if (hasMeta && !chunkText.length && payload.type !== 'MessageChunk' && this.props.chatStreamReset) {
+        this.props.chatStreamReset();
+      }
     }
   }
 

@@ -192,24 +192,41 @@ const getMessages = (params = {}) => {
   };
 };
 
+/**
+ * Sidebar context: vector search over documents for the current chat text.
+ * `SEARCH /documents` expects a JSON object `{ query: string }` (Fabric search payload).
+ * Call sites pass either that object or a plain string (user message) — normalize here.
+ */
 const getMessageInformation = (request) => {
   return async (dispatch, getState) => {
     dispatch(getMessageInformationRequest());
     try {
       const state = getState();
       const token = state.auth.token;
+
+      let query = '';
+      if (typeof request === 'string') {
+        query = request.trim();
+      } else if (request && typeof request === 'object' && typeof request.query === 'string') {
+        query = request.query.trim();
+      }
+      if (!query) {
+        dispatch(getMessageInformationFailure('Missing query for document search'));
+        return;
+      }
+
       const response = await fetch('/documents', {
         method: 'SEARCH',
         headers: {
-          //        'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify({ query })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || error.content || `HTTP ${response.status}`);
       }
       const info = await response.json();
 
@@ -217,8 +234,8 @@ const getMessageInformation = (request) => {
     } catch (error) {
       dispatch(getMessageInformationFailure(error.message));
     }
-  }
-}
+  };
+};
 
 module.exports = {
   chatStreamChunk,

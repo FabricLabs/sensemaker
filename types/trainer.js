@@ -160,11 +160,13 @@ class Trainer extends Agent {
    * @returns {Promise} Resolves with the result of the operation.
    */
   async ingestDirectory (directory) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const store = await this._ensureEmbeddings();
+      if (!store) return resolve({ type: 'IngestedDirectory', content: [], degraded: true });
       const loader = new DirectoryLoader(directory, this.loaders);
 
       loader.load().then((docs) => {
-        this.embeddings.addDocuments(docs).then(() => {
+        store.addDocuments(docs).then(() => {
           resolve({ type: 'IngestedDirectory', content: docs });
         }).catch((exception) => {
           console.error('[TRAINER]', 'Error ingesting directory:', exception);
@@ -203,13 +205,6 @@ class Trainer extends Agent {
       document.metadata.type = type;
       if (this.settings.debug) console.debug('[TRAINER]', 'Ingesting document:', document);
 
-      // Check if trainer is in degraded mode
-      if (!this.embeddings) {
-        console.warn('[TRAINER]', 'Trainer is in degraded mode - embeddings unavailable. Skipping document ingestion.');
-        resolve({ type: 'EmbeddingBatch', content: 0, degraded: true });
-        return;
-      }
-
       try {
         // Split document into chunks
         const doc = new Document({ pageContent: document.content, metadata: document.metadata });
@@ -239,11 +234,11 @@ class Trainer extends Agent {
 
         let embeddings = null;
 
-        // Segment embeddings by user
+        // Segment embeddings by user; fall back to global store (lazy-inited).
         if (document.metadata.owner) {
           embeddings = await this.getStoreForOwner(document.metadata.owner);
         } else {
-          embeddings = this.embeddings;
+          embeddings = await this._ensureEmbeddings();
         }
 
         if (!embeddings) {
@@ -417,10 +412,12 @@ class Trainer extends Agent {
   }
 
   async searchGlobal (request, limit = 100) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER]', 'Searching global:', request);
       if (!request.query) return reject(new Error('No query provided.'));
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter)
+      const store = await this._ensureEmbeddings();
+      if (!store) return resolve({ type: 'TrainerSearchResponse', content: [], degraded: true });
+      store.similaritySearch(request.query, (request.limit || limit), request.filter)
         .then((results) => {
           resolve({
             type: 'TrainerSearchResponse',
@@ -453,10 +450,43 @@ class Trainer extends Agent {
     });
   }
 
+  /**
+   * Lazily initialize the Redis vector store + Ollama embeddings on first use.
+   * Called automatically by search() and ingestDocument(); idempotent.
+   */
+  async _ensureEmbeddings () {
+    if (this.embeddings) return this.embeddings;
+    if (!this.redis) return null;
+
+    const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
+
+    try {
+      const allDocs = await this.ingestReferences();
+      const cappedDocs = allDocs.map((d) => new Document({
+        pageContent: this._truncateForEmbedding(d.pageContent || ''),
+        metadata: d.metadata || {}
+      }));
+      if (this.settings.debug) console.debug('[TRAINER] Creating vector store...');
+      this.embeddings = await RedisVectorStore.fromDocuments(cappedDocs, new OllamaEmbeddings({
+        baseUrl: ollamaUrl,
+        model: EMBEDDING_MODEL
+      }), {
+        redisClient: this.redis,
+        indexName: this.settings.redis.name || 'sensemaker-embeddings'
+      });
+      if (this.settings.debug) console.debug('[TRAINER] Vector store ready.');
+    } catch (error) {
+      const msg = error.message || String(error);
+      console.warn('[TRAINER] Vector store init failed, embeddings unavailable:', msg);
+      this.embeddings = null;
+    }
+
+    return this.embeddings;
+  }
+
   async start () {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER] Starting service...');
-      if (this.settings.debug) console.debug(`[TRAINER] Ollama configuration: host=${this.settings.ollama.host}, port=${this.settings.ollama.port}, model=${EMBEDDING_MODEL}`);
       this._state.content.status = this._state.status = 'STARTING';
 
       this.redis = createClient({
@@ -466,140 +496,49 @@ class Trainer extends Agent {
           host: this.settings.redis.host,
           port: this.settings.redis.port,
           enable_offline_queue: false,
-          timeout: 10000, // Increased timeout to 10 seconds
+          timeout: 10000,
           reconnectStrategy: (retries) => {
             if (retries > 10) {
               console.error('[TRAINER] Redis connection failed after 10 retries');
               return new Error('Redis connection failed after 10 retries');
             }
-            const delay = Math.min(retries * 100, 3000);
-            if (this.settings.debug) console.debug(`[TRAINER] Redis reconnecting in ${delay}ms...`);
-            return delay;
+            return Math.min(retries * 100, 3000);
           }
         }
       });
 
-      // Cluster
-      /* this.redis = createCluster({
-        rootNodes: [
-          {
-            host: this.settings.redis.host,
-            port: this.settings.redis.port
-          }
-        ],
-        defaults: {
-          password: this.settings.redis.password
-        }
-      }); */
-
-      // Add Redis event handlers
-      this.redis.on('error', (err) => {
-        console.error('[TRAINER] Redis Client Error:', err);
-      });
-
-      this.redis.on('connect', () => {
-        if (this.settings.debug) console.debug('[TRAINER] Redis Client Connected');
-      });
-
-      this.redis.on('reconnecting', () => {
-        if (this.settings.debug) console.debug('[TRAINER] Redis Client Reconnecting...');
-      });
-
-      this.redis.on('end', () => {
-        if (this.settings.debug) console.debug('[TRAINER] Redis Client Connection Closed');
-      });
+      this.redis.on('error', (err) => { console.error('[TRAINER] Redis Client Error:', err); });
+      this.redis.on('connect', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connected'); });
+      this.redis.on('end', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connection Closed'); });
 
       // Connect to Redis with timeout
       const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {
-        const timeout = setTimeout(() => {
-          rejectRedis(new Error('Redis connection timeout'));
-        }, 15000); // 15 second timeout
-
-        // Attempt Redis connection
-        this.redis.connect().then(() => {
-          clearTimeout(timeout);
-          resolveRedis();
-        }).catch((error) => {
-          clearTimeout(timeout);
-          rejectRedis(error);
-        });
+        const timeout = setTimeout(() => rejectRedis(new Error('Redis connection timeout')), 15000);
+        this.redis.connect()
+          .then(() => { clearTimeout(timeout); resolveRedis(); })
+          .catch((error) => { clearTimeout(timeout); rejectRedis(error); });
       });
 
       try {
         await connectWithTimeout;
         if (this.settings.debug) console.debug('[TRAINER] Redis connected successfully');
 
+        // Probe Ollama availability only — skip the slow embedding init until first use.
+        const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
         try {
-          // Check Ollama availability before initializing vector store
-          const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
-          if (this.settings.debug) console.debug(`[TRAINER] Checking Ollama availability at ${ollamaUrl}...`);
-
-          try {
-            const healthResponse = await fetch(`${ollamaUrl}/api/tags`, {
-              method: 'GET',
-              signal: AbortSignal.timeout(5000) // 5 second timeout
-            });
-
-            if (!healthResponse.ok) {
-              throw new Error(`Ollama health check failed: ${healthResponse.status} ${healthResponse.statusText}`);
-            }
-            if (this.settings.debug) console.debug('[TRAINER] Ollama is available');
-          } catch (healthError) {
-            const errorMessage = `Ollama is not available at ${ollamaUrl}. Please ensure Ollama is running and accessible. Error: ${healthError.message}`;
-            console.error(`[TRAINER] ${errorMessage}`);
-            throw new Error(errorMessage);
-          }
-
-          // Initialize vector store
-          const allDocs = await this.ingestReferences();
-          const maxChars = this.settings.maxEmbeddingInputChars;
-          const cappedDocs = allDocs.map((d) => new Document({
-            pageContent: this._truncateForEmbedding(d.pageContent || ''),
-            metadata: d.metadata || {}
-          }));
-          if (this.settings.debug) console.debug('[TRAINER] References loaded, creating vector store...');
-
-          this.embeddings = await RedisVectorStore.fromDocuments(cappedDocs, new OllamaEmbeddings({
-            baseUrl: ollamaUrl,
-            model: EMBEDDING_MODEL
-          }), {
-            redisClient: this.redis,
-            indexName: this.settings.redis.name || 'sensemaker-embeddings'
+          const healthResponse = await fetch(`${ollamaUrl}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
           });
-
-          if (this.settings.debug) console.debug('[TRAINER] Vector store initialized successfully');
-          this._state.content.status = this._state.status = 'STARTED';
-          this.commit();
-          resolve(this);
-        } catch (error) {
-          console.error('[TRAINER] Error initializing vector store:', error);
-          const errorMessage = error.message || String(error);
-          if (errorMessage.includes('EOF') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ECONNRESET')) {
-            console.error(`[TRAINER] Connection error: Ollama may not be running at http://${this.settings.ollama.host}:${this.settings.ollama.port}`);
-            console.error(`[TRAINER] Please check:`);
-            console.error(`[TRAINER]   1. Ollama is installed and running`);
-            console.error(`[TRAINER]   2. The embedding model "${EMBEDDING_MODEL}" is available (run: ollama pull ${EMBEDDING_MODEL})`);
-            console.error(`[TRAINER]   3. OLLAMA_HOST and OLLAMA_PORT environment variables are set correctly`);
-            console.error(`[TRAINER]   4. Current configuration: host=${this.settings.ollama.host}, port=${this.settings.ollama.port}`);
-            console.warn(`[TRAINER] Starting in degraded mode - embedding features will be unavailable`);
-            // Set status to degraded but don't throw - allow system to continue
-            this._state.content.status = this._state.status = 'DEGRADED';
-            this.embeddings = null; // Mark embeddings as unavailable
-            this.commit();
-            resolve(this); // Resolve instead of rejecting
-            return;
-          }
-          if (errorMessage.includes('context length') || errorMessage.includes('exceeds the context')) {
-            console.error(`[TRAINER] Ollama embedding input exceeded model context. Lower SENSEMAKER_EMBED_MAX_CHARS or chunk size. Model: ${EMBEDDING_MODEL}`);
-            console.warn('[TRAINER] Starting in degraded mode - embedding features will be unavailable');
-            this._state.content.status = this._state.status = 'DEGRADED';
-            this.embeddings = null;
-            this.commit();
-            resolve(this);
-            return;
-          }
-          throw error;
+          if (!healthResponse.ok) throw new Error(`Ollama health check failed: ${healthResponse.status}`);
+          if (this.settings.debug) console.debug('[TRAINER] Ollama is available; embedding store will initialise on first use.');
+        } catch (healthError) {
+          console.warn('[TRAINER] Ollama not reachable at startup — embeddings degraded:', healthError.message);
         }
+
+        this._state.content.status = this._state.status = 'STARTED';
+        this.commit();
+        resolve(this);
       } catch (error) {
         console.error('[TRAINER] Error during start:', error);
         this._state.content.status = this._state.status = 'ERROR';

@@ -84,6 +84,7 @@ async function patchAPI (path, params, token = null) {
 }
 
 async function postAPI (path, params, token = null) {
+  const body = typeof params === 'string' ? params : JSON.stringify(params != null ? params : {});
   const response = await fetch(path, {
     method: 'POST',
     headers: {
@@ -91,7 +92,7 @@ async function postAPI (path, params, token = null) {
       'Content-Type': 'application/json',
       'Authorization': (token) ? `Bearer ${token}` : undefined
     },
-    body: params
+    body
   });
 
   return parseJsonResponse(response);
