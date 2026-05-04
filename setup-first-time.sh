@@ -174,9 +174,13 @@ if grep -q "OLLAMA_MODELS_PATH=./empty-ollama-models" .env; then
     mkdir -p empty-ollama-models
 fi
 
+# Compose wrapper: bind-mount ~/.ollama when present
+DC="$(cd "$(dirname "$0")" && pwd)/scripts/docker-compose.sh"
+chmod +x "$DC" 2>/dev/null || true
+
 # Stop any existing containers
 echo "🛑 Stopping any existing containers..."
-docker compose down 2>/dev/null || true
+"$DC" down 2>/dev/null || true
 
 # Clean up old containers and images
 echo "🧹 Cleaning up old Docker resources..."
@@ -184,37 +188,37 @@ docker system prune -f
 
 # Build and start services
 echo "🔨 Building containers..."
-docker compose build --no-cache
+"$DC" build --no-cache
 
 echo "🚀 Starting services..."
-docker compose up -d
+"$DC" up -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to start..."
 sleep 10
 
 # Check if app container is running
-if docker compose ps app | grep -q "Up"; then
+if "$DC" ps app | grep -q "Up"; then
     echo "✅ Application container is running"
 
     # Check the logs for any errors
     echo "📋 Checking application logs..."
-    docker compose logs app --tail=20
+    "$DC" logs app --tail=20
 
     echo ""
     echo "🎉 Setup complete!"
     echo ""
     echo "Next steps:"
-    echo "1. Check application status: docker compose ps"
-    echo "2. View logs: docker compose logs -f app"
+    echo "1. Check application status: $DC ps"
+    echo "2. View logs: $DC logs -f app"
     echo "3. Access the application at: http://localhost:5050"
-    echo "4. Stop services: docker compose down"
+    echo "4. Stop services: $DC down"
     echo ""
-    echo "For development with live code changes:"
-    echo "   docker compose -f docker-compose.yml -f docker-compose.dev.yml up"
+    echo "Host Ollama: if ~/.ollama existed, it was bind-mounted into the ollama service."
+    echo "For development with live code changes: make dev"
 
 else
     echo "❌ Application failed to start. Checking logs..."
-    docker compose logs app
+    "$DC" logs app
     exit 1
 fi

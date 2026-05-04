@@ -65,6 +65,8 @@ const {
 
 // ## Chat Actions
 const {
+  chatStreamChunk,
+  chatStreamReset,
   resetChat,
   submitMessage,
   submitStreamingMessage,
@@ -102,7 +104,8 @@ const {
   fetchDiscordGuild,
   fetchDiscordGuilds,
   fetchDiscordUser,
-  fetchDiscordUsers
+  fetchDiscordUsers,
+  fetchDiscordVoice
 } = require('./discordActions');
 
 // ## Document Actions
@@ -266,6 +269,7 @@ module.exports = {
   fetchDiscordGuilds,
   fetchDiscordUser,
   fetchDiscordUsers,
+  fetchDiscordVoice,
   fetchFabricStats,
   fetchGitHubStats,
   fetchKey,
@@ -342,6 +346,8 @@ module.exports = {
   editUsername: editUsername,
   editEmail: editEmail,
   resetChat: resetChat,
+  chatStreamChunk: chatStreamChunk,
+  chatStreamReset: chatStreamReset,
   submitMessage: submitMessage,
   submitStreamingMessage: submitStreamingMessage,
   regenAnswer: regenAnswer,

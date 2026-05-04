@@ -14,8 +14,7 @@
 // Dependencies
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 
-// Fabric Types
-const Token = require('@fabric/core/types/token');
+const { issueNodeSessionToken } = require('../../services/nodeSessionToken');
 
 // Exports an Express.js middleware function
 module.exports = async function (req, res, next) {
@@ -67,24 +66,26 @@ module.exports = async function (req, res, next) {
     identity = await this.db('identities').where('user_id', user.id).where('type', 'DiscordUsername').first();
   }
 
-  // Create Token
-  const access_token = new Token({
-    capability: 'OP_IDENTITY',
-    issuer: null,
-    subject: user.id + '', // String value of integer ID
-    state: {
-      roles: roles
-    }
-  });
+  if (token && user) {
+    if (user.is_admin) roles.unshift('admin');
+    if (user.is_beta) roles.unshift('beta');
+  }
 
-  // TODO: sign token
-  // TODO: validate token after signing
+  if (!this.key || !this.key.private) {
+    return res.status(503).json({ message: 'Server identity key unavailable; cannot issue session.' });
+  }
+
+  const access_token = issueNodeSessionToken(this.key, {
+    subject: user.id,
+    roles,
+    isAdmin: !!user.is_admin
+  });
 
   res.format({
     json: function () {
       res.json({
         message: 'Authentication successful.',
-        token: access_token.toString(),
+        token: access_token,
         username: user.username,
         email: user.email,
         isAdmin: user.is_admin,
@@ -99,7 +100,7 @@ module.exports = async function (req, res, next) {
     },
     html: function () {
       const next = (req.query.next || '/').replace(/[^a-zA-Z0-9\/]/g, '');
-      res.cookie('token', access_token.toString(), { httpOnly: true });
+      res.cookie('token', access_token, { httpOnly: true });
       res.redirect(next);
     }
   });

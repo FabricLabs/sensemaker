@@ -93,7 +93,24 @@ const fetchDocument = (fabricID) => {
     dispatch(fetchDocumentRequest());
     const { token } = getState().auth.token;
     try {
-      const instance = await fetchFromAPI(`/documents/${fabricID}`, null, token);
+      const response = await fetch(`/documents/${fabricID}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': (token) ? `Bearer ${token}` : undefined
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ status: 'error', message: 'Document not found.' }));
+        const error = new Error(errorData.message || 'Document not found.');
+        error.status = response.status;
+        error.statusCode = response.status;
+        throw error;
+      }
+
+      const instance = await response.json();
       dispatch(fetchDocumentSuccess(instance));
     } catch (error) {
       dispatch(fetchDocumentFailure(error));

@@ -5,8 +5,14 @@ module.exports = function (req, res, next) {
     res.format({
       json: async () => {
         if (req.query.conversation_id) {
-          const conversation = await this.db('conversations').select('id').where({ fabric_id: req.query.conversation_id }).first();
+          if (!req.user || req.user.id == null) {
+            return res.status(401).json({ message: 'Authentication required.' });
+          }
+          const conversation = await this.db('conversations').select('id', 'creator_id').where({ fabric_id: req.query.conversation_id }).first();
           if (!conversation) return res.status(404).json({ message: 'Conversation not found.' });
+          if (!(await this._userCanAccessConversation(req, conversation))) {
+            return res.status(403).json({ message: 'Not allowed to list messages for this conversation.' });
+          }
           messages = await this.db('messages').join('users', 'messages.user_id', '=', 'users.id').select(
             'users.username',
             'messages.id as dbid',

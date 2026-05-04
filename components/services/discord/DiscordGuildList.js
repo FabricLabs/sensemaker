@@ -102,7 +102,7 @@ class GuildList extends React.Component {
               </Card.Content>
               <Card.Content extra>
                 <Icon name='user' />
-                {guild.members.length} Members
+                {guild.memberCount ?? (guild.members && guild.members.length) ?? '—'} Members
               </Card.Content>
             </Card>
           ))}

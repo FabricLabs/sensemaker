@@ -13,6 +13,8 @@ const {
   FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS,
+  CHAT_STREAM_CHUNK,
+  CHAT_STREAM_RESET,
   UPDATE_MESSAGE
 } = require('../actions/chatActions');
 
@@ -22,7 +24,9 @@ const initialState = {
   message: '',
   messages: [],
   isMessageSent: false,
-  isSending: false
+  isSending: false,
+  streamBuffer: '',
+  streamMessageId: null
 };
 
 // Reducer
@@ -33,7 +37,9 @@ function chatReducer (state = initialState, action) {
         ...state,
         message: '',
         error: null,
-        isSending: true
+        isSending: true,
+        streamBuffer: '',
+        streamMessageId: null
       };
     case CHAT_SUCCESS:
       return {
@@ -47,15 +53,22 @@ function chatReducer (state = initialState, action) {
         ...state,
         error: action.payload,
         isMessageSent: false,
-        isSending: false
+        isSending: false,
+        streamBuffer: '',
+        streamMessageId: null
       };
-    case GET_MESSAGES_SUCCESS:
+    case GET_MESSAGES_SUCCESS: {
+      const messages = action.payload.messages;
+      const last = messages && messages[messages.length - 1];
+      const assistantSettled = last && last.role === 'assistant' && (last.status === 'ready' || last.status === 'error');
       return {
         ...state,
-        messages: action.payload.messages,
+        messages,
         isSending: false,
-        loading: false
+        loading: false,
+        ...(assistantSettled ? { streamBuffer: '', streamMessageId: null } : {})
       };
+    }
     case FETCH_RESPONSE_REQUEST:
       return {
         ...state,
@@ -72,6 +85,20 @@ function chatReducer (state = initialState, action) {
         ...state,
         error: action.payload,
         isSending: false
+      };
+    case CHAT_STREAM_CHUNK: {
+      const { content = '', id = null } = action.payload || {};
+      return {
+        ...state,
+        streamBuffer: state.streamBuffer + (typeof content === 'string' ? content : ''),
+        streamMessageId: id != null ? id : state.streamMessageId
+      };
+    }
+    case CHAT_STREAM_RESET:
+      return {
+        ...state,
+        streamBuffer: '',
+        streamMessageId: null
       };
     case RESET_CHAT_STATE:
     case RESET_CHAT_SUCCESS:

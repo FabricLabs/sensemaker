@@ -35,12 +35,23 @@ const createPeerSuccess = () => ({ type: CREATE_PEER_SUCCESS });
 const createPeerFailure = (error) => ({ type: CREATE_PEER_FAILURE, payload: error });
 
 // Thunk action creator
+function normalizePeersListResponse (data) {
+  if (!data || typeof data !== 'object') return [];
+  if (data.success === false) {
+    throw new Error(data.error || data.message || 'Failed to list peers');
+  }
+  if (Array.isArray(data.peers)) return data.peers;
+  if (Array.isArray(data)) return data;
+  return [];
+}
+
 const fetchPeers = () => {
   return async (dispatch, getState) => {
     dispatch(fetchPeersRequest());
     const { token } = getState().auth;
     try {
-      const peers = await fetchPeersFromAPI(token);
+      const raw = await fetchPeersFromAPI(token);
+      const peers = normalizePeersListResponse(raw);
       dispatch(fetchPeersSuccess(peers));
     } catch (error) {
       dispatch(fetchPeersFailure(error));
@@ -67,11 +78,15 @@ const createPeer = (peer) => {
     const { token } = getState().auth;
     try {
       // call for the fetch that generates the token for password reset
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const fetchPromise = fetch('/peers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(peer),
       });
 
@@ -83,8 +98,8 @@ const createPeer = (peer) => {
 
       const response = await Promise.race([timeoutPromise, fetchPromise]);
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.error || error.message || 'Could not create peer.');
       }
       dispatch(createPeerSuccess());
     } catch (error) {

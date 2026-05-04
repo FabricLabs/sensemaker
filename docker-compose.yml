@@ -13,9 +13,13 @@ services:
       REDIS_CRED: null
       OLLAMA_HOST: ollama
       OLLAMA_PORT: 11434
+      # Default chat (llama3.2:latest) + qwen for Searcher/pool + small embeddings; override via .env
+      OLLAMA_PULL_MODELS: ${OLLAMA_PULL_MODELS:-llama3.2:latest,qwen3:0.6b,nomic-embed-text}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:latest}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       FABRIC_MNEMONIC: ${FABRIC_MNEMONIC}
+      BITCOIN_REGTEST: "1"
       DEBUG: "true"
     ports:
       - "5050:3040"
@@ -27,12 +31,15 @@ services:
       ollama:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3040/metrics/health", "||", "exit", "1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3040/metrics/live >/dev/null || exit 1"]
       interval: 30s
       timeout: 30s
       retries: 10
       start_period: 600s
     restart: unless-stopped
+    # Note: We don't mount .:/app here because it would override the container's
+    # built node_modules (including native binaries) with the host's version
+    # For development, use a separate docker-compose.dev.yml with volume mounts
 
   db:
     image: mysql:8.0
@@ -75,6 +82,8 @@ services:
     restart: unless-stopped
     ports:
       - "5051:11434"
+    # Default: named volume. When ~/.ollama exists, `scripts/docker-compose.sh` / `make up`
+    # also loads docker-compose.ollama-host.yml and bind-mounts the host directory instead.
     volumes:
       - ollama_data:/root/.ollama
     environment:

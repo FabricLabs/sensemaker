@@ -89,7 +89,10 @@ async function main (input = {}) {
       redis: state.redis,
       keys: state.keys,
       wallet: state.wallet,
-      triggers: state.triggers
+      triggers: state.triggers,
+      bitcoinBalance: state.bitcoin && state.bitcoin.balance != null
+        ? Number(state.bitcoin.balance).toFixed(8)
+        : undefined
     };
   };
 

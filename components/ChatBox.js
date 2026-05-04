@@ -215,12 +215,15 @@ class ChatBox extends React.Component {
     // changed, this happens when the last message from assistant changes from "Agent is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
       //if the previous last message is different than the current last message, we call the groupMessages function again
-      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
+      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content) ||
+      (prevLastMessage && currentLastMessage && prevLastMessage.status !== currentLastMessage.status)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
+        const assistantSettled = lastMessage && lastMessage.role === 'assistant' &&
+          (lastMessage.status === 'ready' || lastMessage.status === 'error');
+        if (assistantSettled) {
           this.setState({ generatingResponse: false });
           this.setState({ reGeneratingResponse: false });
           this.props.getMessageInformation(lastMessage.content);
@@ -236,6 +239,10 @@ class ChatBox extends React.Component {
           // }
         }
       }
+      this.scrollToBottom();
+    }
+
+    if (prevProps.chat.streamBuffer !== this.props.chat.streamBuffer && this.props.chat.streamBuffer) {
       this.scrollToBottom();
     }
   }
@@ -732,7 +739,13 @@ class ChatBox extends React.Component {
 
   handleSubmit = async (event) => {
     event.preventDefault();
-    const { query } = this.state;
+    const controlled = this.props.inputValue;
+    const queryText = (controlled !== undefined && controlled !== null)
+      ? String(controlled)
+      : this.state.query;
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+
     const { message } = this.props.chat;
     const { documentChat, context, agent } = this.props;
 
@@ -740,7 +753,7 @@ class ChatBox extends React.Component {
 
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
-    this.props.getMessageInformation(query);
+    this.props.getMessageInformation(trimmed);
 
     let dataToSubmit;
 
@@ -749,7 +762,7 @@ class ChatBox extends React.Component {
       // New conversation
       dataToSubmit = {
         conversation_id: message?.conversation,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
@@ -758,61 +771,40 @@ class ChatBox extends React.Component {
       // Existing conversation
       dataToSubmit = {
         conversation_id: this.props.conversationID,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
       }
     }
 
-    try {
-      console.debug('[CHATBOX]', 'Submitting streaming message:', {
-        dataToSubmit: dataToSubmit,
-        query: query,
-        queryType: typeof query,
-        queryLength: query ? query.length : 0,
-        contentValue: dataToSubmit.content,
-        contentType: typeof dataToSubmit.content
-      });
-      const result = await this.props.submitStreamingMessage(dataToSubmit);
-      console.debug('[CHATBOX]', 'Streaming message submitted:', result);
-
-      this.setState({
-        streamingMessageId: result.assistant_message_id,
-        isStreaming: true,
-        streamingContent: '',
-        loading: false,
-        generatingResponse: true  // Show "generating response" message until we get streaming content
-      }, () => {
-        // Scroll to bottom when new message is submitted
-        this.scrollToBottom();
-      });
-
-      // Subscribe to the message path for real-time updates
-      this.subscribeToMessage(result.assistant_message_id);
-
-      // Streaming is handled through Bridge's responseCapture mechanism
-
-    } catch (error) {
-      console.error('[CHATBOX]', 'Streaming message submission failed:', error);
-
-      // Show error to user
-      this.setState({
-        loading: false,
-        error: 'Failed to send message. Please try again.'
-      });
-
-      // Clear error after 5 seconds
-      setTimeout(() => {
-        this.setState({ error: null });
-      }, 5000);
-    }
+    // dispatch submitMessage — use API result for conversation id (stale closure used to pass undefined → GET /messages?conversation_id=undefined → 404)
+    this.props.submitMessage(dataToSubmit).then((apiResult) => {
+      const conv =
+        (apiResult && apiResult.object && apiResult.object.conversation) ||
+        this.props.chat.message?.conversation;
+      if (conv) {
+        this.props.getMessages({ conversation_id: conv });
+        if (!this.watcher) {
+          this.watcher = setInterval(() => {
+            this.props.getMessages({ conversation_id: conv });
+          }, 5000);
+        }
+      }
+      this.setState({ loading: false });
+    }).catch(() => {
+      this.setState({ loading: false });
+    });
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+    if (this.props.onInputChange) {
+      this.props.onInputChange({ target: { value: '' } });
+    }
+    if (this.props.conversationID && this.props.fetchData) {
+      this.props.fetchData(this.props.conversationID);
+    }
 
-    // Don't call fetchData here as it resets the streaming state
-    // The Bridge will handle real-time updates via JSON-PATCH messages
   }
 
   regenerateAnswer = (event) => {
@@ -1489,6 +1481,7 @@ class ChatBox extends React.Component {
             {doc.fabric_type && <div><strong>Type:</strong> {doc.fabric_type}</div>}
             {doc.summary && <div style={{ marginTop: '0.5em' }}>{doc.summary.substring(0, 150)}{doc.summary.length > 150 ? '...' : ''}</div>}
           </div>
+          <Button as={Link} to={`/documents/${doc.id}`} icon labelPosition='right'>View Document <Icon name='right chevron' /></Button>
         </Card.Description>
       );
     }
@@ -1850,72 +1843,8 @@ class ChatBox extends React.Component {
                         </ul>
                       </div>
                     )}
-                    {(message.status !== "computing" || this.state.streamingContent || globalState.messages?.[message.id]?.content) && (
-                      (() => {
-                        // Unified content rendering logic
-                        let contentToRender = message.content;
-
-                        // Check if this is the streaming message and we have streaming content
-                        const isStreamingMessage = (
-                          this.state.streamingMessageId === message.id ||
-                          this.state.streamingMessageId === message.fabric_id ||
-                          this.state.streamingMessageId === message.message_id ||
-                          this.state.streamingMessageId === message.local_id
-                        );
-
-                        // Priority: streaming content > global state content > message content
-                        if (isStreamingMessage && this.state.streamingContent) {
-                          contentToRender = this.state.streamingContent;
-                        } else if (globalState.messages?.[message.id]?.content) {
-                          // Use global state content (which should be the most up-to-date)
-                          contentToRender = globalState.messages[message.id].content;
-                        } else {
-                          // Fallback to message content
-                          contentToRender = message.content;
-                        }
-
-                        // Additional safety check: if we're streaming and have content, use it regardless
-                        if (this.state.isStreaming && this.state.streamingContent &&
-                            (this.state.streamingMessageId === message.id ||
-                             this.state.streamingMessageId === message.fabric_id ||
-                             this.state.streamingMessageId === message.message_id ||
-                             this.state.streamingMessageId === message.local_id)) {
-                          contentToRender = this.state.streamingContent;
-                          // Remove excessive debug logging that was causing console spam
-                          // console.debug('[CHATBOX]', 'Using streaming content for message:', {
-                          //   messageId: message.id,
-                          //   contentLength: contentToRender.length
-                          // });
-                        }
-
-                        // If we have content but message status is still computing,
-                        // treat it as if it has content (to avoid flickering)
-                        if (message.status === 'computing' && contentToRender && contentToRender.length > 25) {
-                          // Don't log every render - this was causing console spam
-                          // console.debug('[CHATBOX]', 'Message has content but status is computing, treating as ready:', {
-                          //   messageId: message.id,
-                          //   contentLength: contentToRender.length,
-                          //   status: message.status
-                          // });
-
-                          // Don't force update here - it causes infinite re-renders
-                          // this.forceUpdate();
-                        }
-
-                        // Remove excessive debug logging that was causing console spam
-                        // console.debug('[CHATBOX]', 'Rendering message content:', {
-                        //   messageId: message.id,
-                        //   status: message.status,
-                        //   hasContent: !!contentToRender,
-                        //   contentLength: contentToRender?.length || 0,
-                        //   isStreamingMessage: isStreamingMessage,
-                        //   hasStreamingContent: !!this.state.streamingContent
-                        // });
-
-                        return (
-                          <span dangerouslySetInnerHTML={{ __html: marked.parse(contentToRender?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
-                        );
-                      })()
+                    {!(message.role === 'assistant' && ['computing', 'processing', 'queued'].includes(message.status)) && (
+                      <span dangerouslySetInnerHTML={{ __html: marked.parse(message.content?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
                     )}
                     {/* DO NOT DELETE THIS BLOCK */}
                     {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
@@ -1930,11 +1859,32 @@ class ChatBox extends React.Component {
                   <Feed.Extra text>
                     {generatingResponse &&
                       group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                      !reGeneratingResponse && !this.state.isStreaming && (
-                        <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
-                          <Icon name="spinner" loading />
-                          {BRAND_NAME} is generating a response...
-                        </Header>
+                      !reGeneratingResponse && (
+                        <>
+                          <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                            <Icon name="spinner" loading />
+                            {(() => {
+                              const g = this.state.groupedMessages[this.state.groupedMessages.length - 1];
+                              const a = g && g.messages && g.messages.length ? g.messages[g.messages.length - 1] : null;
+                              if (a && a.role === 'assistant') {
+                                if (a.status === 'queued') return 'Waiting in queue…';
+                                if (a.status === 'processing') return 'Sensemaker is working on your reply…';
+                              }
+                              return `${BRAND_NAME} is generating a response...`;
+                            })()}
+                          </Header>
+                          {this.props.chat.streamBuffer ? (
+                            <div
+                              className="chat-stream-preview fade-in"
+                              style={{ marginTop: '0.75em', fontSize: '0.95em', lineHeight: 1.45 }}
+                              dangerouslySetInnerHTML={{
+                                __html: marked.parse(
+                                  (this.props.chat.streamBuffer || '').replace('https://sensemaker.io', AUTHORITY)
+                                )
+                              }}
+                            />
+                          ) : null}
+                        </>
                       )}
                     {this.state.isStreaming &&
                       group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && (

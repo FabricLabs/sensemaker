@@ -85,9 +85,12 @@ class DiscordGuild extends React.Component {
           </Breadcrumb>
         </div>
         <Segment className='fade-in' loading={discord?.loading} style={{ maxHeight: '100%' }}>
-          <Header as='h1' style={{ marginTop: 0 }}>{discord.guild.name}</Header>
+          <Header as='h1' style={{ marginTop: 0 }}>{discord.guild?.name || '…'}</Header>
         </Segment>
-        <Header as='h2'>{discord && discord.guild && discord.guild.members && discord.guild.members.length} Members</Header>
+        <Header as='h2'>
+          {(discord.guild && discord.guild.members && discord.guild.members.length) || 0}
+          {(discord.guild && discord.guild.membersTruncated) ? '+' : ''} Members
+        </Header>
         <Card.Group loading={discord.loading}>
           {discord && discord.guild && discord.guild.members && discord.guild.members.slice(0, 5).map((id, i) => (
             <DiscordUserCard {...this.props} key={i} id={id} />
@@ -101,14 +104,18 @@ class DiscordGuild extends React.Component {
         </Card.Group>
         <Header as='h2'>{discord && discord.guild && discord.guild.channels && discord.guild.channels.length} Channels</Header>
         <Card.Group loading={discord.loading}>
-          {discord && discord.guild && discord.guild.channels && discord.guild.channels.slice(0, 5).map((id, i) => (
-            <Card key={i} id={id} className='channel' as ={Link} to={`/services/discord/channels/${id}`}>
-              <Card.Content>
-                <Card.Header>{id}</Card.Header>
-                <p>{id}</p>
-              </Card.Content>
-            </Card>
-          ))}
+          {discord && discord.guild && discord.guild.channels && discord.guild.channels.slice(0, 5).map((ch, i) => {
+            const id = typeof ch === 'object' ? ch.id : ch;
+            const label = typeof ch === 'object' ? (ch.name || id) : id;
+            return (
+              <Card key={id || i} id={id} className='channel' as={Link} to={`/services/discord/channels/${id}`}>
+                <Card.Content>
+                  <Card.Header>{label}</Card.Header>
+                  <p><small>type {typeof ch === 'object' ? ch.type : '—'}</small></p>
+                </Card.Content>
+              </Card>
+            );
+          })}
           <Card as={Link} to={`/services/discord/guilds/${discord.guild.id}/channels`}>
             <Card.Content>
               <Card.Header>...</Card.Header>

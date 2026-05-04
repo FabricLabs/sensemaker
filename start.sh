@@ -102,6 +102,10 @@ if ! check_database_initialized; then
     npm run setup:seed || echo "Warning: Seeding failed, continuing..."
 
     echo "Database initialization complete!"
+
+    # Give database time to close migration connections
+    echo "Waiting for database connections to settle..."
+    sleep 10
 else
     echo "Database already initialized, skipping migrations."
 fi
@@ -109,8 +113,15 @@ fi
 # Ensure required Ollama models are available
 echo "Checking for required Ollama models..."
 
-# Required models for Sensemaker
-REQUIRED_MODELS=("mxbai-embed-large" "llama3.2" "qwen3:0.6b")
+# Comma-separated list; smallest sensible defaults to limit disk use (override in .env / Compose)
+if [ -n "$OLLAMA_PULL_MODELS" ]; then
+  IFS=',' read -ra REQUIRED_MODELS <<< "$OLLAMA_PULL_MODELS"
+  for i in "${!REQUIRED_MODELS[@]}"; do
+    REQUIRED_MODELS[$i]=$(echo "${REQUIRED_MODELS[$i]}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  done
+else
+  REQUIRED_MODELS=("llama3.2:latest" "qwen3:0.6b" "nomic-embed-text")
+fi
 
 # Function to check if model exists
 check_model_exists() {

@@ -17,4 +17,7 @@ node_modules
 settings/local.js
 documents/templates
 
+# Cursor agent Fabric identity (synced from hub.fabric.pub)
+local/cursor-agent-fabric-identity.json
+
 .venv/

@@ -128,6 +128,7 @@ class Bridge extends React.Component {
   }
 
   componentDidMount () {
+    this._isMounted = true;
     this.start();
 
     // Subscribe to initial path
@@ -138,8 +139,18 @@ class Bridge extends React.Component {
   }
 
   componentWillUnmount () {
+    this._isMounted = false;
     this.stop();
     window.removeEventListener('popstate', this.handlePathChange);
+  }
+
+  _safeSetState (update) {
+    if (this._isMounted) {
+      this.setState(update);
+      return;
+    }
+    const patch = typeof update === 'function' ? update(this.state) : update;
+    this.state = Object.assign({}, this.state, patch);
   }
 
   handlePathChange = () => {
@@ -148,7 +159,7 @@ class Bridge extends React.Component {
       // Unsubscribe from old path
       this.unsubscribe(this.state.currentPath);
       // Update current path
-      this.setState({ currentPath: newPath });
+      this._safeSetState({ currentPath: newPath });
       // Subscribe to new path
       this.subscribe(newPath);
     }
@@ -179,7 +190,7 @@ class Bridge extends React.Component {
     this.ws.onopen = () => {
       console.debug('[BRIDGE]', 'Connection established');
       this._isConnected = true;  // Set internal state immediately
-      this.setState({ isConnected: true });
+      this._safeSetState({ isConnected: true });
       this.onSocketOpen();
 
       // Process any queued messages
@@ -201,13 +212,18 @@ class Bridge extends React.Component {
     this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'WebSocket error:', error);
       this._isConnected = false;
-      this.setState({ error, isConnected: false });
+      this._safeSetState({ error, isConnected: false });
     };
 
     this.ws.onclose = (event) => {
       console.debug('[BRIDGE]', 'WebSocket closed:', event.code, event.reason);
       this._isConnected = false;
-      this.setState({ isConnected: false });
+      this._safeSetState({ isConnected: false });
+      // Clean up heartbeat interval on close
+      if (this._heartbeat) {
+        clearInterval(this._heartbeat);
+        this._heartbeat = null;
+      }
 
       // Attempt to reconnect after a delay
       if (this.attempts < 5) {
@@ -266,7 +282,7 @@ class Bridge extends React.Component {
 
       this.peer.on('error', (error) => {
         console.error('[BRIDGE]', 'WebRTC peer error:', error);
-        this.setState(prevState => ({
+        this._safeSetState(prevState => ({
           error: prevState.error || error,
           webrtcConnected: false
         }));
@@ -275,7 +291,7 @@ class Bridge extends React.Component {
 
       this.peer.on('close', () => {
         console.debug('[BRIDGE]', 'WebRTC peer closed');
-        this.setState({ webrtcConnected: false });
+        this._safeSetState({ webrtcConnected: false });
         this._webrtcConnected = false;
       });
 
@@ -323,7 +339,7 @@ class Bridge extends React.Component {
     connection.on('open', () => {
       console.debug('[BRIDGE]', 'WebRTC connection opened to:', connection.peer);
       this._webrtcConnected = true;
-      this.setState({ webrtcConnected: true });
+      this._safeSetState({ webrtcConnected: true });
 
       // Process any queued messages
       while (this.webrtcMessageQueue.length > 0) {
@@ -346,13 +362,13 @@ class Bridge extends React.Component {
     connection.on('error', (error) => {
       console.error('[BRIDGE]', 'WebRTC connection error:', error);
       this._webrtcConnected = false;
-      this.setState({ webrtcConnected: false });
+      this._safeSetState({ webrtcConnected: false });
     });
 
     connection.on('close', () => {
       console.debug('[BRIDGE]', 'WebRTC connection closed');
       this._webrtcConnected = false;
-      this.setState({ webrtcConnected: false });
+      this._safeSetState({ webrtcConnected: false });
     });
   }
 
@@ -508,7 +524,7 @@ class Bridge extends React.Component {
     }
 
     this._webrtcConnected = false;
-    this.setState({ webrtcConnected: false });
+    this._safeSetState({ webrtcConnected: false });
   }
 
   tick () {
@@ -558,13 +574,8 @@ class Bridge extends React.Component {
     // Try WebRTC first if preferred and available
     if (preferWebRTC && this._webrtcConnected && this.webrtcConnection) {
       try {
-        // Convert Buffer to appropriate format for WebRTC
-        const data = Buffer.isBuffer(message) ? message.toString('base64') : message;
-        this.webrtcConnection.send({
-          type: 'fabric-message',
-          data: data,
-          timestamp: Date.now()
-        });
+        const data = Buffer.isBuffer(message) ? message : Buffer.from(message);
+        this.webrtcConnection.send(data);
         console.debug('[BRIDGE]', 'Message sent via WebRTC');
         return;
       } catch (error) {
@@ -600,7 +611,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['SUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.add(path);
     console.debug('[BRIDGE]', 'Subscribed to:', path);
@@ -618,7 +629,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['UNSUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.delete(path);
     console.debug('[BRIDGE]', 'Unsubscribed from:', path);
@@ -707,12 +718,16 @@ class Bridge extends React.Component {
         return;
       }
 
+      const wireType = message.type;
+      if (wireType === 'Ping' || wireType === 'Pong' || wireType === 'P2P_PING' || wireType === 'P2P_PONG' ||
+          wireType === 'LIGHTNING_PING' || wireType === 'LIGHTNING_PONG') {
+        return;
+      }
+
       // Handle message based on type
       switch (message.type) {
-        default:
-          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
-          break;
         case 'JSONCall':
+        case 'JSON_CALL':
           console.debug('[BRIDGE]', 'Received JSONCall:', message.body);
 
           // Parse JSONCall and handle JSONCallResult responses
@@ -754,6 +769,7 @@ class Bridge extends React.Component {
             console.error('[BRIDGE]', 'Could not parse JSONPatch message body:', parseError);
           }
           break;
+        case 'CHAT_MESSAGE':
         case 'MessageStart':
         case 'MessageChunk':
         case 'HelpMsgUser':
@@ -764,13 +780,16 @@ class Bridge extends React.Component {
         case 'completedJob':
           this.props.responseCapture(message.toObject());
           break;
+        default:
+          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
+          break;
       }
 
       // Update component state with message data
-      this.setState({ data: message.toObject() });
+      this._safeSetState({ data: message.toObject() });
     } catch (error) {
       console.error('[BRIDGE]', 'Error processing message:', error);
-      this.setState({ error });
+      this._safeSetState({ error });
     }
   }
 
@@ -779,7 +798,7 @@ class Bridge extends React.Component {
     const now = Date.now();
     const message = Message.fromVector(['Ping', now.toString()]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
   }
 }
 

@@ -3,80 +3,123 @@
 // Dependencies
 const fetch = require('cross-fetch');
 const nodemailer = require('nodemailer');
-const {
-  SMTPClient
-} = require('smtp-client');
-
 const Service = require('@fabric/core/types/service');
 
+/**
+ * Outbound email: Postmark HTTP API or SMTP (e.g. Mailpit at 127.0.0.1:1025).
+ */
 class EmailService extends Service {
   constructor (settings = {}) {
     super(settings);
 
     this.settings = Object.assign({
       name: 'EmailService',
-      service: 'gmail',
+      /** `postmark` | `smtp` — default: smtp if host set, else postmark if key set */
+      transport: null,
+      host: null,
+      port: 587,
+      secure: false,
+      requireTLS: false,
+      ignoreTLS: false,
+      auth: null,
+      /** Postmark server token when transport is postmark */
+      key: null,
       state: {
         status: 'INITIALIZED'
       }
     }, settings);
 
-    this.smtp = new SMTPClient({
-      host: this.settings.host,
-      port: this.settings.port,
-      secure: true,
-      auth: {
-        user: this.settings.username,
-        pass: this.settings.password
-      }
-    });
-
+    this._smtpTransport = null;
     return this;
+  }
+
+  _resolveTransport () {
+    const t = this.settings.transport;
+    if (t === 'postmark') return 'postmark';
+    if (t === 'smtp') return 'smtp';
+    if (this.settings.host) return 'smtp';
+    if (this.settings.key) return 'postmark';
+    return null;
+  }
+
+  _getSmtpTransport () {
+    if (this._smtpTransport) return this._smtpTransport;
+    const { host, port, secure, auth, requireTLS, ignoreTLS } = this.settings;
+    if (!host) {
+      throw new Error('EmailService: SMTP host is not configured');
+    }
+    this._smtpTransport = nodemailer.createTransport({
+      host,
+      port: port || 1025,
+      secure: !!secure,
+      requireTLS: !!requireTLS,
+      ignoreTLS: !!ignoreTLS,
+      auth: auth && auth.user ? { user: auth.user, pass: auth.pass || '' } : undefined
+    });
+    return this._smtpTransport;
   }
 
   async deliver (message) {
-    this.emit('debug', `[${this.settings.name}] Delivering message...`);
-
-    try {
-      await this.smtp.connect();
-      await this.smtp.greet({ hostname: this.settings.host }); // hostname of your mail server
-      await this.smtp.authPlain({
-        username: this.settings.username,
-        password: this.settings.password
-      });
-
-      await this.smtp.mail({ from: message.from });
-      await this.smtp.rcpt({ to: message.to });
-      await this.smtp.data(message.text || message.html);
-      await this.smtp.quit();
-    } catch (error) {
-      this.emit('error', `[${this.settings.name}] Error delivering message: ${error.message}`);
-    }
-
-    return this;
+    return this.send(message);
   }
 
   async send (message) {
-    this.emit('debug', `[${this.settings.name}] Sending message...`, message);
+    this.emit('debug', `[${this.settings.name}] Sending message...`, { to: message.to, subject: message.subject });
+
+    const mode = this._resolveTransport();
+    if (!mode) {
+      const err = new Error('EmailService: no transport (set host for SMTP or key for Postmark)');
+      this.emit('error', err.message);
+      throw err;
+    }
+
+    if (mode === 'postmark') {
+      if (!this.settings.key) {
+        const err = new Error('EmailService: Postmark key missing');
+        this.emit('error', err.message);
+        throw err;
+      }
+      try {
+        const result = await fetch('https://api.postmarkapp.com/email', {
+          method: 'POST',
+          headers: {
+            'X-Postmark-Server-Token': `${this.settings.key}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            From: message.from,
+            To: message.to,
+            Subject: message.subject,
+            HtmlBody: message.html,
+            TextBody: message.text,
+            MessageStream: 'outbound'
+          })
+        });
+        const body = await result.text();
+        this.emit('debug', `Email sent (Postmark):`, body);
+        if (!result.ok) {
+          throw new Error(`Postmark error ${result.status}: ${body}`);
+        }
+      } catch (exception) {
+        this.emit('error', `[${this.settings.name}] Postmark send failed: ${exception.message}`);
+        throw exception;
+      }
+      return this;
+    }
+
     try {
-      const result = await fetch(`https://api.postmarkapp.com/email`, {
-        method: 'POST',
-        headers: {
-          'X-Postmark-Server-Token': `${this.settings.key}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          From: message.from,
-          To: message.to,
-          Subject: message.subject,
-          HtmlBody: message.html,
-          TextBody: message.text,
-          MessageStream: 'outbound'
-        })
+      const transporter = this._getSmtpTransport();
+      const info = await transporter.sendMail({
+        from: message.from,
+        to: message.to,
+        subject: message.subject,
+        text: message.text,
+        html: message.html
       });
-      this.emit('debug', `Email sent:`, await result.text());
+      this.emit('debug', `[${this.settings.name}] SMTP sent:`, info && info.messageId);
     } catch (exception) {
-      console.debug('could not send email:', exception);
+      this.emit('error', `[${this.settings.name}] SMTP send failed: ${exception.message}`);
+      throw exception;
     }
 
     return this;
@@ -84,13 +127,15 @@ class EmailService extends Service {
 
   async start () {
     this.emit('debug', `[${this.settings.name}] Starting...`);
-
     return this;
   }
 
   async stop () {
     this.emit('debug', `[${this.settings.name}] Stopping...`);
-
+    if (this._smtpTransport && typeof this._smtpTransport.close === 'function') {
+      this._smtpTransport.close();
+      this._smtpTransport = null;
+    }
     return this;
   }
 }

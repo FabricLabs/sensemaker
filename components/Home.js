@@ -1,7 +1,8 @@
 'use strict';
 
 const {
-  ENABLE_BITCOIN
+  ENABLE_BITCOIN,
+  BRAND_NAME
 } = require('../constants');
 
 // Dependencies
@@ -39,8 +40,40 @@ const TopBar = require('./TopBar');
 const AlertBell = require('./AlertBell');
 const HelpModal = require('./HelpModal');
 const Onboarding = require('./Onboarding');
+const DonateToHostModal = require('./DonateToHostModal');
 
 const formatBitcoin = require('../functions/formatBitcoin');
+
+/** Titles sometimes store agent boilerplate; prefer a readable label for cards. */
+function conversationDisplayTitle (c) {
+  if (!c) return 'Conversation';
+  const title = c.title != null && String(c.title).trim();
+  if (!title) return 'Conversation';
+  if (/^no conversation occurred previously$/i.test(title)) {
+    const summary = c.summary != null && String(c.summary).trim();
+    if (summary && !/^no conversation occurred/i.test(summary)) {
+      return summary.length > 72 ? `${summary.slice(0, 69)}…` : summary;
+    }
+    return 'Recent chat';
+  }
+  return title;
+}
+
+/** Tooltip / preview text when `summary` is empty (avoids blank Semantic UI Popup). */
+function conversationPreviewText (c) {
+  if (!c) return 'No summary yet.';
+  const summary = c.summary != null && String(c.summary).trim();
+  if (summary) {
+    const title = c.title != null && String(c.title).trim();
+    if (/^no conversation occurred previously$/i.test(title) && summary.length > 200) {
+      return `${summary.slice(0, 197)}…`;
+    }
+    return summary;
+  }
+  const title = c.title != null && String(c.title).trim();
+  if (title) return title;
+  return 'No summary yet.';
+}
 
 class Home extends React.Component {
   constructor (props) {
@@ -118,17 +151,22 @@ class Home extends React.Component {
 
   render () {
     const { auth, announcements, bitcoinBalance, conversations } = this.props;
-    const { isPopupOpen, isProfileModalOpen, alerts, triggers, unconfirmedBalance } = this.state;
+    const { isPopupOpen, isProfileModalOpen, donateModalOpen, hostWorker, alerts, triggers, unconfirmedBalance } = this.state;
     const USER_IS_ADMIN = this.props.auth && this.props.auth.isAdmin || false;
     const USER_IS_ALPHA = this.props.auth && this.props.auth.isAlpha || this.props.auth.isAdmin || false;
     const USER_IS_BETA = this.props.auth && this.props.auth.isBeta || this.props.auth.isAdmin || false;
+    const token = this.props.auth && this.props.auth.token;
     const bitcoinPopup = (
-      <div className='fade-in' style={{ padding: '0.5em' }}>
+      <div className='fade-in' style={{ padding: '0.5em', maxWidth: '22rem' }}>
+        <p style={{ marginBottom: '0.65em', fontSize: '0.9em', lineHeight: 1.45 }}>
+          One host node ({BRAND_NAME}) — balance and queue below apply to this instance only.
+        </p>
         <Button
           as={Link}
           to="/services/bitcoin#deposit"
           color="green"
           fluid
+          size="small"
           icon
           labelPosition='right'
           onClick={this.handlePopupClose}
@@ -142,6 +180,7 @@ class Home extends React.Component {
           to="/services/bitcoin#send"
           color="blue"
           fluid
+          size="small"
           icon
           labelPosition='right'
           onClick={this.handlePopupClose}
@@ -156,13 +195,29 @@ class Home extends React.Component {
           to="/services/bitcoin#withdraw"
           color="black"
           fluid
+          size="small"
           icon
           labelPosition='right'
           onClick={this.handlePopupClose}
           disabled={!bitcoinBalance || parseFloat(bitcoinBalance) === 0}
+          style={{ marginBottom: '0.5em' }}
         >
           <Icon name="right chevron" />
           Withdraw
+        </Button>
+        <Button
+          color="orange"
+          fluid
+          size="small"
+          icon
+          labelPosition="right"
+          onClick={() => {
+            this.handlePopupClose();
+            this.setState({ donateModalOpen: true });
+          }}
+        >
+          <Icon name="heart" />
+          Donate (playnet)
         </Button>
       </div>
     );
@@ -193,7 +248,7 @@ class Home extends React.Component {
                     </Button>
                   </div>
                 }
-                trigger={<abbr title="Your public identity">{this.props.auth.username}</abbr>}
+                trigger={<abbr title="Your public identity">{String(this.props.auth.username || '').trim()}</abbr>}
                 position='bottom center'
                 mouseEnterDelay={250}
                 animation='fade'
@@ -211,7 +266,7 @@ class Home extends React.Component {
                     content={bitcoinPopup}
                     hoverable
                     trigger={
-                      <span style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', fontSize: '0.92em', gap: '0.25em' }}>
                         <Icon name='bitcoin' />
                         {bitcoinBalance || '0.00000000'} BTC
                       </span>
@@ -222,8 +277,27 @@ class Home extends React.Component {
               </div>
             </div>
             <p>You have <strong>{this.props.unreadMessageCount || 0}</strong> unread messages.</p>
+            {hostWorker && (
+              <Message size="small" info style={{ marginTop: '0.75em', marginBottom: 0 }}>
+                <Icon name="server" />
+                Host <strong>{hostWorker.nodeName || BRAND_NAME}</strong>
+                {' — '}work queue depth <strong>{hostWorker.queueDepth != null ? hostWorker.queueDepth : '—'}</strong>
+                {hostWorker.busy ? ' (worker busy)' : ''}
+                {hostWorker.playnetBitcoinReady === false ? ' · playnet RPC offline' : ''}
+              </Message>
+            )}
           </Card.Content>
         </Card>
+        <DonateToHostModal
+          open={donateModalOpen}
+          onClose={() => this.setState({ donateModalOpen: false })}
+          token={token}
+          onSuccess={() => {
+            if (typeof this.props.fetchBitcoinStats === 'function') {
+              this.props.fetchBitcoinStats().catch(() => {});
+            }
+          }}
+        />
         <AnnouncementList announcements={announcements?.announcements} />
         <QueryForm
           fetchConversations={this.props.fetchConversations}
@@ -251,19 +325,21 @@ class Home extends React.Component {
         <Grid columns={3} stackable equal style={{ display: 'flex', alignItems: 'stretch', marginTop: '-1em', marginLeft: 0 }}>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
           {(conversations && conversations.length) ? (
-              <Card key={conversations[0].slug} as={Link} to={'/conversations/' + conversations[0].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Card.Content style={{ flex: '1 1 auto' }}>
+              <Card key={conversations[0].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Content style={{ flex: '1 1 auto' }} as={Link} to={'/conversations/' + conversations[0].slug}>
                   <Popup
-                    content={conversations[0].title}
+                    content={conversationDisplayTitle(conversations[0])}
                     trigger={
-                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].title}</Card.Header>
+                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', color: 'inherit' }}>{conversationDisplayTitle(conversations[0])}</Card.Header>
                     }
                     position='top left'
                   />
                   <Popup
-                    content={conversations[0].summary}
+                    content={conversationPreviewText(conversations[0])}
                     trigger={
-                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[0].summary}</Card.Description>
+                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', color: 'inherit' }}>
+                        {conversationPreviewText(conversations[0])}
+                      </Card.Description>
                     }
                     position='bottom left'
                   />
@@ -274,19 +350,21 @@ class Home extends React.Component {
           </Grid.Column>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
             {(conversations && conversations.length > 1) ? (
-              <Card key={conversations[1].slug} as={Link} to={'/conversations/' + conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Card.Content style={{ flex: '1 1 auto' }}>
+              <Card key={conversations[1].slug} fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Card.Content style={{ flex: '1 1 auto' }} as={Link} to={'/conversations/' + conversations[1].slug}>
                   <Popup
-                    content={conversations[1].title}
+                    content={conversationDisplayTitle(conversations[1])}
                     trigger={
-                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].title}</Card.Header>
+                      <Card.Header style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', color: 'inherit' }}>{conversationDisplayTitle(conversations[1])}</Card.Header>
                     }
                     position='top left'
                   />
                   <Popup
-                    content={conversations[1].summary}
+                    content={conversationPreviewText(conversations[1])}
                     trigger={
-                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>{conversations[1].summary}</Card.Description>
+                      <Card.Description style={{ textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', color: 'inherit' }}>
+                        {conversationPreviewText(conversations[1])}
+                      </Card.Description>
                     }
                     position='bottom left'
                   />
@@ -297,7 +375,7 @@ class Home extends React.Component {
           </Grid.Column>
           <Grid.Column style={{ display: 'flex', paddingLeft: 0 }}>
             {(conversations && conversations.length > 2) ? (
-              <Card as={Link} to='/conversations' fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Card fluid style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Card.Content style={{ flex: '1 1 auto' }}>
                   <Card.Header>Recently...</Card.Header>
                   <List>
@@ -306,9 +384,15 @@ class Home extends React.Component {
                         <List.Icon name='chevron right' />
                         <List.Content>
                           <Popup
-                            content={conversation.summary}
+                            content={conversationPreviewText(conversation)}
                             trigger={
-                              <List.Header title={conversation.summary} as={Link} to={`/conversations/${conversation.slug}`}>{conversation.title}</List.Header>
+                              <List.Header
+                                title={conversationPreviewText(conversation)}
+                                as={Link}
+                                to={`/conversations/${conversation.slug}`}
+                              >
+                                {conversationDisplayTitle(conversation)}
+                              </List.Header>
                             }
                             position='right center'
                           />
@@ -317,11 +401,14 @@ class Home extends React.Component {
                     ))}
                   </List>
                 </Card.Content>
-                <Button attached='bottom' color='black'>Explore History &raquo;</Button>
+                <Button attached='bottom' color='black' as={Link} to='/conversations'>Explore History &raquo;</Button>
               </Card>
             ) : null}
           </Grid.Column>
         </Grid>
+        <p style={{ color: '#888', fontSize: '0.9em', marginTop: '0.75em', marginBottom: '0.25em', lineHeight: 1.45 }}>
+          The live feed below lists Fabric / hub events (peers, documents, blocks). Chat threads are in the row above — it can look quiet here even when you have conversations.
+        </p>
         <ActivityStream
           includeHeader={false}
           api={this.props.api}

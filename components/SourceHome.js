@@ -72,10 +72,18 @@ class SourceHome extends React.Component {
   }
 
   handleSourceSubmit = async (e) => {
-    this.setState({ loading: true })
-    const group = await this.props.createSource({ content: this.state.sourceContent });
-    this.setState({ sourceContent: '', loading: false });
-    this.props.fetchSources();
+    this.setState({ loading: true });
+    try {
+      await this.props.createSource({ content: this.state.sourceContent });
+      this.setState({ sourceContent: '' });
+      // Refresh the sources list after successful creation
+      this.props.fetchSources();
+    } catch (error) {
+      console.error('Error creating source:', error);
+      // Error is already handled by the action, but we keep the content in case user wants to retry
+    } finally {
+      this.setState({ loading: false });
+    }
   }
 
   handlePeerInputChange = (e) => {
@@ -125,15 +133,28 @@ class SourceHome extends React.Component {
           </Table.Header>
           <Table.Body>
             {sources?.sources?.map((source, index) => {
+              const hasError = source.last_error;
+              const lastUpdated = source.last_retrieved || source.updated_at;
               return (
                 <Table.Row key={index} id={source.id}>
                   <Table.Cell>{source.name}</Table.Cell>
                   <Table.Cell><a href={source.content} target='_blank'><code>{source.content}</code> <Icon name='external alternate' /></a></Table.Cell>
                   <Table.Cell>{source.recurrence}</Table.Cell>
                   <Table.Cell textAlign='center'>
-                      {source.last_retrieved ? (
-                        <Label><Link to={`/blobs/${source.latest_blob_id}`} target='_blank'><Icon name='file' /> {source.last_retrieved}</Link></Label>
-                      ) : (<p>Initializing...</p>)}
+                      {hasError ? (
+                        <Label color='red' title={source.last_error}>
+                          <Icon name='warning circle' />
+                          Error: {source.last_error.length > 50 ? source.last_error.substring(0, 50) + '...' : source.last_error}
+                        </Label>
+                      ) : lastUpdated ? (
+                        <Label color='green'>
+                          <Link to={`/blobs/${source.latest_blob_id}`} target='_blank'>
+                            <Icon name='file' /> {new Date(lastUpdated).toLocaleString()}
+                          </Link>
+                        </Label>
+                      ) : (
+                        <p>Initializing...</p>
+                      )}
                   </Table.Cell>
                   <Table.Cell textAlign='right'>
                     <Button.Group>

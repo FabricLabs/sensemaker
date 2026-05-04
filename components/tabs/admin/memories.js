@@ -47,16 +47,40 @@ class AdminMemoriesTab extends React.Component {
   };
 
   render () {
-    const { resource } = this.props;
+    const { resource, api } = this.props;
     const { currentPage, windowWidth } = this.state;
+    const loading = api && api.loading === true;
+    const fetchError = api && api.error;
 
-    // Show loading state if resource is not yet loaded
-    if (!resource || !resource.memories) {
+    if (loading) {
       return (
         <adminMemoriesTab>
           <Message info>
             <Message.Header>Loading memories...</Message.Header>
             <p>Please wait while we fetch the data.</p>
+          </Message>
+        </adminMemoriesTab>
+      );
+    }
+
+    if (fetchError) {
+      const msg = fetchError.message || (typeof fetchError === 'string' ? fetchError : 'Request failed.');
+      return (
+        <adminMemoriesTab>
+          <Message negative>
+            <Message.Header>Could not load memories</Message.Header>
+            <p>{msg}</p>
+          </Message>
+        </adminMemoriesTab>
+      );
+    }
+
+    if (!resource || !Array.isArray(resource.memories)) {
+      return (
+        <adminMemoriesTab>
+          <Message warning>
+            <Message.Header>No memory data</Message.Header>
+            <p>The server did not return a memories list.</p>
           </Message>
         </adminMemoriesTab>
       );
@@ -74,9 +98,9 @@ class AdminMemoriesTab extends React.Component {
           {currentMemories && currentMemories.length > 0 ? (
             currentMemories.map(memory => (
               <div key={memory.id}>
-                <Link to={'/memories/' + memory.id}>
+                <Link to={'/memories/' + encodeURIComponent(memory.id)}>
                   <span><Label>{memory.creator_name || 'you'}</Label></span>&nbsp;
-                  <abbr title={memory.created_at}>{new Date(memory.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' })}</abbr>{": "}
+                  <abbr title={memory.created_at || ''}>{memory.created_at ? new Date(memory.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' }) : '—'}</abbr>{': '}
                   <span>{memory.title}</span>
                 </Link>
                 <Divider style={{ marginTop: '0.3em', marginBottom: '0.3em' }} />

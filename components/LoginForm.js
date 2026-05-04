@@ -79,7 +79,9 @@ class LoginForm extends React.Component {
           <Form.Field>
             <label>Password</label>
             <input type="password" autoComplete="current-password" placeholder="Password" name="password" value={password} onChange={this.handlePasswordChange} />
-            <p style={{ marginTop: '2em' }}>Forgot your password?  <a onClick={this.togglePasswordModal}>Reset Password &raquo;</a></p>
+            <p style={{ marginTop: '2em' }}>Forgot your password?{' '}
+              <a href="#password-reset" onClick={(e) => { e.preventDefault(); this.togglePasswordModal(); }}>Reset Password &raquo;</a>
+            </p>
           </Form.Field>
           <div>
             <Button fluid primary color='green' icon labelPosition='right' loading={loading} type="submit" size={this.props.size}>Log In <Icon name='right chevron' /></Button>

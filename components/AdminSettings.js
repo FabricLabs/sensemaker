@@ -14,10 +14,12 @@ const AdminMemoriesTab = require('./tabs/admin/memories');
 const AdminServicesTab = require('./tabs/admin/services');
 const AdminSettingsTab = require('./tabs/admin/settings');
 const AdminAgentsTab = require('./tabs/admin/agents');
+const AdminDiscordTab = require('./tabs/admin/AdminDiscordTab');
 const AnnouncementCreator = require('./AnnouncementCreator');
 const AnnouncementList = require('./AnnouncementList');
 const InvitationCreator = require('./InvitationCreator');
 const InvoiceCreator = require('./InvoiceCreator');
+const BenchmarkManager = require('./BenchmarkManager');
 
 // Semantic UI
 const {
@@ -209,7 +211,7 @@ class AdminSettings extends React.Component {
     return (
       <sensemaker-admin-settings class='fade-in' style={{ height: '100%' }}>
         <Segment fluid style={{ height: '100%', overflowX: 'hidden'}}>
-          <Header as='h2'>Admin</Header>
+          <Header as='h2'>Administration</Header>
           <p><strong>Debug:</strong> <code>{this.settings.debug}</code></p>
           <Menu pointing secondary>
             <Menu.Item
@@ -238,6 +240,12 @@ class AdminSettings extends React.Component {
               onClick={this.handleTabClick}
             />
             <Menu.Item
+              name='discord'
+              content='Discord'
+              active={this.state.activeTab === 'discord'}
+              onClick={this.handleTabClick}
+            />
+            <Menu.Item
               name='settings'
               active={this.state.activeTab === 'settings'}
               onClick={this.handleTabClick}
@@ -247,14 +255,21 @@ class AdminSettings extends React.Component {
               active={this.state.activeTab === 'agents'}
               onClick={this.handleTabClick}
             />
+            <Menu.Item
+              name='benchmark'
+              active={this.state.activeTab === 'benchmark'}
+              onClick={this.handleTabClick}
+            />
           </Menu>
           {this.state.activeTab === 'overview' && this.renderOverviewTab()}
           {this.state.activeTab === 'users' && this.renderUsersTab()}
           {this.state.activeTab === 'conversations' && <AdminConversationsTab {...this.props} />}
           {this.state.activeTab === 'memories' && <AdminMemoriesTab {...this.props} />}
           {this.state.activeTab === 'services' && <AdminServicesTab {...this.props} />}
+          {this.state.activeTab === 'discord' && <AdminDiscordTab {...this.props} />}
           {this.state.activeTab === 'settings' && <AdminSettingsTab {...this.props} />}
           {this.state.activeTab === 'agents' && <AdminAgentsTab {...this.props} />}
+          {this.state.activeTab === 'benchmark' && <BenchmarkManager {...this.props} />}
         </Segment>
       </sensemaker-admin-settings>
     );

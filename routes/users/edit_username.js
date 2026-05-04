@@ -6,11 +6,7 @@ module.exports = function (req, res, next) {
       const { id, newUsername } = req.body;
 
       try {
-        const userAdmin = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-
-        if (!userAdmin || userAdmin.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to edit other Users.' });
-        }
+        if (!(await this._assertSensemakerAdminJson(req, res))) return;
 
         const user = await this.db('users').where('id', id).first();
 

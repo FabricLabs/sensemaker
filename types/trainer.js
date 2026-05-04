@@ -17,7 +17,7 @@ const merge = require('lodash.merge');
 const fetch = require('cross-fetch');
 
 const { createClient, createCluster } = require('redis');
-const { Ollama } = require('@langchain/community/llms/ollama');
+const { Ollama } = require('@langchain/ollama');
 
 // Text Splitter
 const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
@@ -81,8 +81,10 @@ class Trainer extends Agent {
 
     this.settings = merge({
       name: 'TRAINER',
-      debug: true,
+      debug: false,
       model: 'llama2',
+      /** Hard cap on characters sent to Ollama embed (tokens vary by model; avoids 400 context errors). */
+      maxEmbeddingInputChars: parseInt(process.env.SENSEMAKER_EMBED_MAX_CHARS || '6000', 10),
       ollama: {
         host: process.env.OLLAMA_HOST || 'localhost',
         port: parseInt(process.env.OLLAMA_PORT) || 11434,
@@ -121,11 +123,11 @@ class Trainer extends Agent {
     // Redis Client
     this.redis = null;
 
-    // Splitter for large documents
+    // Splitter for large documents (keep chunks under typical Ollama embedding context)
     this.splitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 4096,
-      chunkOverlap: 200,
-      separators: ["\n\n", "\n", " ", ""]
+      chunkSize: 2000,
+      chunkOverlap: 150,
+      separators: ['\n\n', '\n', ' ', '']
     });
 
     // Web Loader
@@ -133,6 +135,12 @@ class Trainer extends Agent {
 
     // Chainable
     return this;
+  }
+
+  _truncateForEmbedding (text) {
+    const max = this.settings.maxEmbeddingInputChars;
+    if (!text || !max || text.length <= max) return text;
+    return text.slice(0, max);
   }
 
   attachDatabase (db) {
@@ -152,11 +160,13 @@ class Trainer extends Agent {
    * @returns {Promise} Resolves with the result of the operation.
    */
   async ingestDirectory (directory) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const store = await this._ensureEmbeddings();
+      if (!store) return resolve({ type: 'IngestedDirectory', content: [], degraded: true });
       const loader = new DirectoryLoader(directory, this.loaders);
 
       loader.load().then((docs) => {
-        this.embeddings.addDocuments(docs).then(() => {
+        store.addDocuments(docs).then(() => {
           resolve({ type: 'IngestedDirectory', content: docs });
         }).catch((exception) => {
           console.error('[TRAINER]', 'Error ingesting directory:', exception);
@@ -193,34 +203,51 @@ class Trainer extends Agent {
     return new Promise(async (resolve, reject) => {
       if (!document.metadata) document.metadata = {};
       document.metadata.type = type;
-      console.debug('[TRAINER]', 'Ingesting document:', document);
+      if (this.settings.debug) console.debug('[TRAINER]', 'Ingesting document:', document);
 
       try {
         // Split document into chunks
         const doc = new Document({ pageContent: document.content, metadata: document.metadata });
         const chunks = await this.splitter.splitDocuments([doc]);
-        console.debug('[TRAINER]', `Split document into ${chunks.length} chunks`);
+        if (this.settings.debug) console.debug('[TRAINER]', `Split document into ${chunks.length} chunks`);
 
         // Ensure all chunks retain the original metadata including file IDs
         chunks.forEach((chunk, index) => {
+          if (chunk.pageContent) {
+            chunk.pageContent = this._truncateForEmbedding(chunk.pageContent);
+          }
           chunk.metadata = {
             ...document.metadata,
             chunk_index: index,
             total_chunks: chunks.length,
-            chunk_id: `${document.metadata.file_id || 'doc'}_chunk_${index}`
+            chunk_id: `${document.metadata.file_id || document.metadata.source_document_id || document.metadata.document_id || 'doc'}_chunk_${index}`,
+            embedding_model: EMBEDDING_MODEL,
+            parent_source_fabric_id: document.metadata.fabric_id || null,
+            source_document_id: document.metadata.document_id || null
           };
         });
 
+        if (this.settings.debug) console.debug('[TRAINER]', 'Chunks with metadata:', chunks.map(c => ({
+          content: c.pageContent.substring(0, 100) + '...',
+          metadata: c.metadata
+        })));
+
         let embeddings = null;
 
-        // Segment embeddings by user
+        // Segment embeddings by user; fall back to global store (lazy-inited).
         if (document.metadata.owner) {
           embeddings = await this.getStoreForOwner(document.metadata.owner);
         } else {
-          embeddings = this.embeddings;
+          embeddings = await this._ensureEmbeddings();
         }
 
-        embeddings.addDocuments(chunks);
+        if (!embeddings) {
+          console.warn('[TRAINER]', 'Embeddings unavailable - skipping document ingestion');
+          resolve({ type: 'EmbeddingBatch', content: 0, degraded: true });
+          return;
+        }
+
+        await embeddings.addDocuments(chunks);
         resolve({ type: 'EmbeddingBatch', content: chunks.length });
       } catch (error) {
         console.error('[TRAINER]', 'Error ingesting document:', error);
@@ -312,6 +339,12 @@ class Trainer extends Agent {
           `Question: {question}\n\n` +
           `Answer:`;
         const prompt = PromptTemplate.fromTemplate(promptTemplate);
+
+        if (this.settings.debug) console.debug('[TRAINER]', 'Running QA chain with enhanced query:', enhancedQuery);
+        if (this.settings.debug) console.debug('[TRAINER]', 'Original query:', request.query);
+        if (this.settings.debug) console.debug('[TRAINER]', 'Context:', request.context);
+        if (this.settings.debug) console.debug('[TRAINER]', 'Messages:', request.messages);
+
         const answer = await RetrievalQAChain.fromLLM(this.ollama, store.asRetriever()).call({
           messages: request.messages,
           query: enhancedQuery
@@ -340,8 +373,18 @@ class Trainer extends Agent {
    * @param {Object} request Search object.
    * @returns {Promise} Resolves with the result of the operation.
    */
+  _mapSimilarityResults (results) {
+    const map = {};
+    (results || []).forEach((x) => {
+      const actor = new Actor({ content: x.pageContent });
+      map[actor.id] = { id: actor.id, content: x.pageContent };
+    });
+    return Object.values(map);
+  }
+
   async search (request, limit = 100) {
     return new Promise((resolve, reject) => {
+      if (this.settings.debug) console.debug('[TRAINER]', 'Searching:', request);
       Promise.all([
         this.searchGlobal(request, limit),
         this.searchByOwner(request, limit)
@@ -361,53 +404,89 @@ class Trainer extends Agent {
           type: 'TrainerSearchResponse',
           content: Object.values(combinedResults)
         });
+      }).catch((error) => {
+        console.error('[TRAINER]', 'Search failed:', error);
+        reject(error);
       });
     });
   }
 
   async searchGlobal (request, limit = 100) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      if (this.settings.debug) console.debug('[TRAINER]', 'Searching global:', request);
       if (!request.query) return reject(new Error('No query provided.'));
-      this.embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
-        console.error('[TRAINER]', 'Error searching:', error);
-        reject(error);
-      }).then((results) => {
-        const map = {};
-        results.forEach((x) => {
-          const actor = new Actor({ content: x.pageContent });
-          map[actor.id] = { id: actor.id, content: x.pageContent };
+      const store = await this._ensureEmbeddings();
+      if (!store) return resolve({ type: 'TrainerSearchResponse', content: [], degraded: true });
+      store.similaritySearch(request.query, (request.limit || limit), request.filter)
+        .then((results) => {
+          resolve({
+            type: 'TrainerSearchResponse',
+            content: this._mapSimilarityResults(results)
+          });
+        })
+        .catch((error) => {
+          console.error('[TRAINER]', 'Error searching:', error);
+          reject(error);
         });
-        resolve({
-          type: 'TrainerSearchResponse',
-          content: Object.values(map)
-        });
-      });
     });
   }
 
   async searchByOwner (request, limit = 100) {
     return new Promise(async (resolve, reject) => {
+      if (this.settings.debug) console.debug('[TRAINER]', 'Searching by owner:', request);
       if (!request.query) return reject(new Error('No query provided.'));
       const embeddings = await this.getStoreForOwner(request.user.id);
-      embeddings.similaritySearch(request.query, (request.limit || limit), request.filter).catch((error) => {
-        reject(error);
-      }).then((results) => {
-        const map = {};
-        results.forEach((x) => {
-          const actor = new Actor({ content: x.pageContent });
-          map[actor.id] = { id: actor.id, content: x.pageContent };
+      embeddings.similaritySearch(request.query, (request.limit || limit), request.filter)
+        .then((results) => {
+          resolve({
+            type: 'TrainerSearchResponse',
+            content: this._mapSimilarityResults(results)
+          });
+        })
+        .catch((error) => {
+          console.error('[TRAINER]', 'Error searching:', error);
+          reject(error);
         });
-        resolve({
-          type: 'TrainerSearchResponse',
-          content: Object.values(map)
-        });
-      });
     });
+  }
+
+  /**
+   * Lazily initialize the Redis vector store + Ollama embeddings on first use.
+   * Called automatically by search() and ingestDocument(); idempotent.
+   */
+  async _ensureEmbeddings () {
+    if (this.embeddings) return this.embeddings;
+    if (!this.redis) return null;
+
+    const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
+
+    try {
+      const allDocs = await this.ingestReferences();
+      const cappedDocs = allDocs.map((d) => new Document({
+        pageContent: this._truncateForEmbedding(d.pageContent || ''),
+        metadata: d.metadata || {}
+      }));
+      if (this.settings.debug) console.debug('[TRAINER] Creating vector store...');
+      this.embeddings = await RedisVectorStore.fromDocuments(cappedDocs, new OllamaEmbeddings({
+        baseUrl: ollamaUrl,
+        model: EMBEDDING_MODEL
+      }), {
+        redisClient: this.redis,
+        indexName: this.settings.redis.name || 'sensemaker-embeddings'
+      });
+      if (this.settings.debug) console.debug('[TRAINER] Vector store ready.');
+    } catch (error) {
+      const msg = error.message || String(error);
+      console.warn('[TRAINER] Vector store init failed, embeddings unavailable:', msg);
+      this.embeddings = null;
+    }
+
+    return this.embeddings;
   }
 
   async start () {
     return new Promise(async (resolve, reject) => {
-      console.debug('[TRAINER] Starting service...');
+      if (this.settings.debug) console.debug('[TRAINER] Starting service...');
       this._state.content.status = this._state.status = 'STARTING';
 
       this.redis = createClient({
@@ -417,83 +496,166 @@ class Trainer extends Agent {
           host: this.settings.redis.host,
           port: this.settings.redis.port,
           enable_offline_queue: false,
-          timeout: 10000, // Increased timeout to 10 seconds
+          timeout: 10000,
           reconnectStrategy: (retries) => {
             if (retries > 10) {
               console.error('[TRAINER] Redis connection failed after 10 retries');
               return new Error('Redis connection failed after 10 retries');
             }
-            const delay = Math.min(retries * 100, 3000);
-            console.debug(`[TRAINER] Redis reconnecting in ${delay}ms...`);
-            return delay;
+            return Math.min(retries * 100, 3000);
           }
         }
       });
 
-      // Add Redis event handlers
-      this.redis.on('error', (err) => {
-        console.error('[TRAINER] Redis Client Error:', err);
-      });
-
-      this.redis.on('connect', () => {
-        console.debug('[TRAINER] Redis Client Connected');
-      });
-
-      this.redis.on('reconnecting', () => {
-        console.debug('[TRAINER] Redis Client Reconnecting...');
-      });
-
-      this.redis.on('end', () => {
-        console.debug('[TRAINER] Redis Client Connection Closed');
-      });
+      this.redis.on('error', (err) => { console.error('[TRAINER] Redis Client Error:', err); });
+      this.redis.on('connect', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connected'); });
+      this.redis.on('end', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connection Closed'); });
 
       // Connect to Redis with timeout
       const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {
-        const timeout = setTimeout(() => {
-          rejectRedis(new Error('Redis connection timeout'));
-        }, 15000); // 15 second timeout
-
-        // Attempt Redis connection
-        this.redis.connect().then(() => {
-          clearTimeout(timeout);
-          resolveRedis();
-        }).catch((error) => {
-          clearTimeout(timeout);
-          rejectRedis(error);
-        });
+        const timeout = setTimeout(() => rejectRedis(new Error('Redis connection timeout')), 15000);
+        this.redis.connect()
+          .then(() => { clearTimeout(timeout); resolveRedis(); })
+          .catch((error) => { clearTimeout(timeout); rejectRedis(error); });
       });
 
       try {
         await connectWithTimeout;
-        console.debug('[TRAINER] Redis connected successfully');
+        if (this.settings.debug) console.debug('[TRAINER] Redis connected successfully');
 
+        // Probe Ollama availability only — skip the slow embedding init until first use.
+        const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
         try {
-          // Initialize vector store
-          const allDocs = await this.ingestReferences();
-          console.debug('[TRAINER] References loaded, creating vector store...');
-
-          this.embeddings = await RedisVectorStore.fromDocuments(allDocs, new OllamaEmbeddings({
-            baseUrl: `http://${this.settings.ollama.host}:${this.settings.ollama.port}`,
-            model: EMBEDDING_MODEL
-          }), {
-            redisClient: this.redis,
-            indexName: this.settings.redis.name || 'sensemaker-embeddings'
+          const healthResponse = await fetch(`${ollamaUrl}/api/tags`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
           });
-
-          console.debug('[TRAINER] Vector store initialized successfully');
-          this._state.content.status = this._state.status = 'STARTED';
-          this.commit();
-          resolve(this);
-        } catch (error) {
-          console.error('[TRAINER] Error initializing vector store:', error);
-          throw error;
+          if (!healthResponse.ok) throw new Error(`Ollama health check failed: ${healthResponse.status}`);
+          if (this.settings.debug) console.debug('[TRAINER] Ollama is available; embedding store will initialise on first use.');
+        } catch (healthError) {
+          console.warn('[TRAINER] Ollama not reachable at startup — embeddings degraded:', healthError.message);
         }
+
+        this._state.content.status = this._state.status = 'STARTED';
+        this.commit();
+        resolve(this);
       } catch (error) {
         console.error('[TRAINER] Error during start:', error);
         this._state.content.status = this._state.status = 'ERROR';
         reject(error);
       }
     });
+  }
+
+  /**
+   * Undo LangChain Redis metadata escaping (see @langchain/redis vectorstores).
+   */
+  _unescapeRedisMetadata (str) {
+    if (!str || typeof str !== 'string') return '{}';
+    return str.replaceAll('\\-', '-').replaceAll('\\:', ':');
+  }
+
+  _memoryKeyPrefix (indexName) {
+    return `doc:${indexName}:`;
+  }
+
+  /**
+   * True for chunked trainer fragments (excludes owner-index seed rows without chunk_index).
+   */
+  _isChunkMemoryMetadata (meta) {
+    if (!meta || typeof meta !== 'object') return false;
+    if (Number.isInteger(meta.chunk_index)) return true;
+    if (meta.chunk_id && String(meta.chunk_id).includes('_chunk_')) return true;
+    return false;
+  }
+
+  /**
+   * Scan Redis vector hashes for one RediSearch index (LangChain key prefix doc:{indexName}:).
+   * @param {string} indexName e.g. sensemaker:owners:42 or sensemaker-embeddings
+   * @param {object} opts
+   * @param {number} [opts.limit]
+   * @param {number|null} [opts.ownerFilterUserId] when set, only rows whose metadata.owner matches
+   */
+  async listMemoryFragmentsFromIndex (indexName, opts = {}) {
+    const limit = Math.min(Math.max(parseInt(opts.limit, 10) || 500, 1), 5000);
+    const ownerFilterUserId = opts.ownerFilterUserId != null ? Number(opts.ownerFilterUserId) : null;
+
+    if (!this.redis) {
+      return { fragments: [], degraded: true, indexName };
+    }
+
+    const prefix = this._memoryKeyPrefix(indexName);
+    const pattern = `${prefix}*`;
+    const fragments = [];
+
+    try {
+      for await (const key of this.redis.scanIterator({ MATCH: pattern, COUNT: 120 })) {
+        if (fragments.length >= limit) break;
+        const hash = await this.redis.hGetAll(key);
+        if (!hash || !hash.content) continue;
+
+        let meta = {};
+        try {
+          meta = JSON.parse(this._unescapeRedisMetadata(hash.metadata || '{}'));
+        } catch (e) {
+          meta = {};
+        }
+
+        if (!this._isChunkMemoryMetadata(meta)) continue;
+
+        if (ownerFilterUserId != null) {
+          const rowOwner = meta.owner != null ? Number(meta.owner) : null;
+          if (rowOwner !== ownerFilterUserId) continue;
+        }
+
+        fragments.push({
+          redis_key: key,
+          content: hash.content,
+          metadata: meta,
+          has_vector: !!(hash.content_vector || hash.vector)
+        });
+      }
+    } catch (err) {
+      console.error('[TRAINER]', 'listMemoryFragmentsFromIndex failed:', err.message);
+      throw err;
+    }
+
+    return { fragments, degraded: false, indexName };
+  }
+
+  async listMemoryFragmentsForOwner (ownerUserId, opts = {}) {
+    const indexName = `sensemaker:owners:${ownerUserId}`;
+    return this.listMemoryFragmentsFromIndex(indexName, opts);
+  }
+
+  /**
+   * Load one Redis memory hash by full key; returns null if missing.
+   */
+  async getMemoryFragmentByRedisKey (redisKey) {
+    if (!this.redis || !redisKey) return null;
+    const hash = await this.redis.hGetAll(redisKey);
+    if (!hash || Object.keys(hash).length === 0) return null;
+    let meta = {};
+    try {
+      meta = JSON.parse(this._unescapeRedisMetadata(hash.metadata || '{}'));
+    } catch (e) {
+      meta = {};
+    }
+    return {
+      redis_key: redisKey,
+      content: hash.content,
+      metadata: meta,
+      has_vector: !!(hash.content_vector || hash.vector)
+    };
+  }
+
+  memoryRedisKeyAllowedForUser (redisKey, userId) {
+    const uid = Number(userId);
+    const ownerPrefix = this._memoryKeyPrefix(`sensemaker:owners:${uid}`);
+    if (redisKey.startsWith(ownerPrefix)) return true;
+    const globalName = this.settings.redis.name || 'sensemaker-embeddings';
+    const globalPrefix = this._memoryKeyPrefix(globalName);
+    return redisKey.startsWith(globalPrefix);
   }
 
   async stop () {
@@ -511,7 +673,7 @@ class Trainer extends Agent {
 
           this.redis.quit().then(() => {
             clearTimeout(timeout);
-            console.debug('[TRAINER]', 'Redis connection closed');
+            if (this.settings.debug) console.debug('[TRAINER]', 'Redis connection closed');
             this.redis = null;
             resolve();
           }).catch((error) => {
