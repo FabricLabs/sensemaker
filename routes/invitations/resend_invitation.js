@@ -9,10 +9,7 @@ module.exports = function (req, res) {
   res.format({
     json: async () => {
       try {
-        const user = await this.db.select('is_admin').from('users').where({ id: req.user.id }).first();
-        if (!user || user.is_admin !== 1) {
-          return res.status(401).json({ message: 'User not allowed to send Invitations.' });
-        }
+        if (!(await this._assertSensemakerAdminJson(req, res))) return;
 
         // Generate a unique token
         let uniqueTokenFound = false;
@@ -27,8 +24,9 @@ module.exports = function (req, res) {
 
         const invitation = await this.db.select(['id', 'target']).from('invitations').where({ id: req.params.id }).first();
         const actor = new Actor({ name: `sensemaker/invitations/${invitation.id}`});
-        const acceptInvitationLink = `${this.authority}/invitations/${actor.id}?token=${invitationToken}`;
-        const declineInvitationLink = `${this.authority}/invitations/${actor.id}?token=${invitationToken}`;
+        const origin = (this.settings.baseUrl || this.authority || '').replace(/\/$/, '');
+        const acceptInvitationLink = `${origin}/invitations/${actor.id}?action=accept&token=${invitationToken}`;
+        const declineInvitationLink = `${origin}/invitations/${actor.id}?action=decline&token=${invitationToken}`;
         const imgSrc = "https://sensemaker.io/images/fabric-labs.png";
         const htmlContent = createInvitationEmailContent(acceptInvitationLink, declineInvitationLink, imgSrc);
         await this.email.send({

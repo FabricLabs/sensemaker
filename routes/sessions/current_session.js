@@ -12,10 +12,12 @@ module.exports = async function (req, res, next) {
       identity = await this.db('identities').where('user_id', req.user.id).where('type', 'DiscordUsername').first();
     }
 
+    const isAdmin = await this._userHasAdminAccess(req);
+
     return res.json({
       username: user.username,
       email: user.email,
-      isAdmin: user.is_admin,
+      isAdmin,
       isBeta: user.is_beta,
       isCompliant: user.is_compliant,
       user_discord: (identity) ? {

@@ -22,6 +22,8 @@ const GET_INFORMATION_FAILURE = 'GET_INFORMATION_FAILURE';
 const RESET_CHAT_STATE = 'RESET_CHAT_STATE';
 const RESET_CHAT_SUCCESS = 'RESET_CHAT_SUCCESS';
 
+const CHAT_STREAM_CHUNK = 'CHAT_STREAM_CHUNK';
+const CHAT_STREAM_RESET = 'CHAT_STREAM_RESET';
 const UPDATE_MESSAGE = 'UPDATE_MESSAGE';
 
 // Sync Action Creators
@@ -43,6 +45,8 @@ const getMessageInformationFailure = (error) => ({ type: GET_INFORMATION_FAILURE
 
 const resetChatSuccess = () => ({ type: RESET_CHAT_SUCCESS });
 
+const chatStreamChunk = (payload) => ({ type: CHAT_STREAM_CHUNK, payload });
+const chatStreamReset = () => ({ type: CHAT_STREAM_RESET });
 const updateMessage = (messageId, updates) => ({ type: UPDATE_MESSAGE, payload: { messageId, updates } });
 
 // Async Action Creator (Thunk)
@@ -75,8 +79,10 @@ const submitMessage = (message, collection_id = null) => {
 
       const result = await response.json();
       dispatch(messageSuccess(result));
+      return result;
     } catch (error) {
       dispatch(messageFailure(error.message));
+      throw error;
     }
   };
 };
@@ -185,11 +191,21 @@ const getMessages = (params = {}) => {
     const state = getState();
     const token = state.auth.token;
 
-    // TODO: re-evaluate this... is this safe?
-    if (!params.conversation_id) params.conversation_id = state.chat.message.conversation;
+    const p = { ...params };
+    const fromState = state.chat.message && typeof state.chat.message === 'object'
+      ? state.chat.message.conversation
+      : undefined;
+    if (!p.conversation_id || p.conversation_id === 'undefined') {
+      p.conversation_id = fromState;
+    }
+
+    const usp = new URLSearchParams();
+    if (p.conversation_id != null && String(p.conversation_id) !== 'undefined') {
+      usp.set('conversation_id', String(p.conversation_id));
+    }
 
     try {
-      const response = await fetch('/messages?' + new URLSearchParams(params), {
+      const response = await fetch('/messages?' + usp.toString(), {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -211,24 +227,41 @@ const getMessages = (params = {}) => {
   };
 };
 
+/**
+ * Sidebar context: vector search over documents for the current chat text.
+ * `SEARCH /documents` expects a JSON object `{ query: string }` (Fabric search payload).
+ * Call sites pass either that object or a plain string (user message) — normalize here.
+ */
 const getMessageInformation = (request) => {
   return async (dispatch, getState) => {
     dispatch(getMessageInformationRequest());
     try {
       const state = getState();
       const token = state.auth.token;
+
+      let query = '';
+      if (typeof request === 'string') {
+        query = request.trim();
+      } else if (request && typeof request === 'object' && typeof request.query === 'string') {
+        query = request.query.trim();
+      }
+      if (!query) {
+        dispatch(getMessageInformationFailure('Missing query for document search'));
+        return;
+      }
+
       const response = await fetch('/documents', {
         method: 'SEARCH',
         headers: {
-          //        'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify({ query })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || error.content || `HTTP ${response.status}`);
       }
       const info = await response.json();
 
@@ -236,10 +269,12 @@ const getMessageInformation = (request) => {
     } catch (error) {
       dispatch(getMessageInformationFailure(error.message));
     }
-  }
-}
+  };
+};
 
 module.exports = {
+  chatStreamChunk,
+  chatStreamReset,
   resetChat,
   submitMessage,
   submitStreamingMessage,
@@ -259,5 +294,7 @@ module.exports = {
   FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS,
+  CHAT_STREAM_CHUNK,
+  CHAT_STREAM_RESET,
   UPDATE_MESSAGE
 };

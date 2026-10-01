@@ -316,13 +316,13 @@ class SignUpForm extends React.Component {
             </Message>
           )}
           {registerSuccess && !this.props.adminPanel ? (
-            <Message positive centered>
+            <Message positive className='center aligned'>
               <Message.Header style={{ marginBottom: '1rem' }}>Registration Successful</Message.Header>
               <p>Your account has been successfully created.</p>
               <p>Logging you in...</p>
             </Message>
           ) : registerSuccess && this.props.adminPanel && (
-            <Message positive centered>
+            <Message positive className='center aligned'>
               <Message.Header style={{ marginBottom: '1rem' }}>User registered successfully</Message.Header>
               <p>Your account has been successfully created. Thank you for registering with Sensemaker.</p>
             </Message>

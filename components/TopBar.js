@@ -1,7 +1,8 @@
 'use strict';
 
 const {
-  ENABLE_BITCOIN
+  ENABLE_BITCOIN,
+  BRAND_NAME
 } = require('../constants');
 
 const React = require('react');
@@ -16,6 +17,7 @@ const {
 
 const ProfileEditModal = require('./ProfileEditModal');
 const AlertBell = require('./AlertBell');
+const DonateToHostModal = require('./DonateToHostModal');
 
 class TopBar extends React.Component {
   constructor (props) {
@@ -23,6 +25,7 @@ class TopBar extends React.Component {
     this.state = {
       isPopupOpen: false,
       isProfileModalOpen: false,
+      donateModalOpen: false,
       quotaMax: 30,
       quotaCurrent: 30
     };
@@ -94,7 +97,7 @@ class TopBar extends React.Component {
                 onOpen={this.handlePopupOpen}
                 onClose={this.handlePopupClose}
                 trigger={
-                  <Label color='black' style={{ cursor: 'pointer', display: 'flex', alignSelf: 'flex-start' }}>
+                  <Label color='black' size='small' style={{ cursor: 'pointer', display: 'flex', alignSelf: 'flex-start' }}>
                     <Icon name='bitcoin' />
                     {bitcoinBalance || '0.00'} BTC
                   </Label>
@@ -103,6 +106,16 @@ class TopBar extends React.Component {
             }
           />
         </div>}
+        <DonateToHostModal
+          open={this.state.donateModalOpen}
+          onClose={() => this.setState({ donateModalOpen: false })}
+          token={token}
+          onSuccess={() => {
+            if (typeof this.props.fetchBitcoinStats === 'function') {
+              this.props.fetchBitcoinStats().catch(() => {});
+            }
+          }}
+        />
         <ProfileEditModal
           open={isProfileModalOpen}
           onClose={this.handleProfileModalClose}

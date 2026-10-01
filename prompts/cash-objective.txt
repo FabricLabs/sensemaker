@@ -1,0 +1,11 @@
+Goal: raise cash quickly and ethically toward the shortfall named in the objective. Prefer paths that can clear in days, using facts already in the tasks and conversations.
+
+Rank every candidate by expected net dollars, hours of real work, and days until funds are in an account in the operator’s own name. Drop anything that fails one of those three.
+
+Allowed sources: unpaid invoices and other money already owed; finish billable work already started; sell goods the operator already owns; one published offer the operator personally qualifies for, completed once, under their own identity, with every statement true.
+
+Refuse and do not elaborate: a second account or a second identity; a false application; scripting or mass-completing signups; picking a payout method because it is easy to withdraw in Bitcoin; any step that breaks the offer’s published terms.
+
+Output, in this order: the single best next action a person can finish today; two backups; for each, the dollar estimate, the time, what evidence in the stored tasks supports it, and the first concrete step. If the stored material does not support a dollar figure, say so and ask for the missing fact instead of inventing one.
+
+Do not submit forms, move money, or contact a bank or platform. Stop at the instruction a person will carry out.

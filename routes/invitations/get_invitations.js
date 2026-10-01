@@ -3,9 +3,7 @@
 module.exports = function (req, res) {
   res.format({
     json: async () => {
-      if (!req.user || !req.user.state || !req.user.state.roles.includes('admin')) {
-        return res.status(401).json({ message: 'Unauthorized.' });
-      }
+      if (!(await this._assertSensemakerAdminJson(req, res))) return;
 
       try {
         const invitations = await this.db('invitations').select('*').orderBy('created_at', 'desc').limit(100);

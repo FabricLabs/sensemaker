@@ -32,12 +32,6 @@ module.exports = {
     update: require('./alerts/update_alert'),
     delete: require('./alerts/delete_alert')
   },
-  triggers: {
-    list: require('./triggers/list_triggers'),
-    create: require('./triggers/create_trigger'),
-    update: require('./triggers/update_trigger'),
-    delete: require('./triggers/delete_trigger')
-  },
   announcements: {
     create: require('./announcements/create_announcement'),
     list: require('./announcements/list_announcements'),
@@ -67,8 +61,6 @@ module.exports = {
     delete: require('./documents/delete_document'),
     list: require('./documents/list_documents'),
     edit: require('./documents/edit_document'),
-    getDocumentByID: require('./documents/get_document_by_id'),
-    // view: require('./documents/view_document'),
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
     newConversation: require('./documents/document_new_chat'),
@@ -94,12 +86,12 @@ module.exports = {
     view: require('./groups/view_group'),
     add_group_member: require('./groups/add_group_member')
   },
-  help: {
-    getConversations: require('./help/get_conversations'),
-    getAdmConversations: require('./help/get_conversations_adm'),
-    getMessages: require('./help/get_messages'),
-    sendMessage: require('./help/send_message'),
-    setMessagesRead: require('./help/set_messages_read')
+  goals: {
+    create: require('./goals/create'),
+    list: require('./goals/list'),
+    view: require('./goals/view'),
+    update: require('./goals/update'),
+    delete: require('./goals/delete')
   },
   inquiries: {
     create: require('./inquiries/create_inquiry'),
@@ -126,6 +118,15 @@ module.exports = {
   memories: {
     list: require('./memories/list_memories'),
     view: require('./memories/view_memory')
+  },
+  ollama: {
+    tags: require('./ollama/api_tags'),
+    version: require('./ollama/api_version'),
+    chat: require('./ollama/api_chat'),
+    generate: require('./ollama/api_generate')
+  },
+  models: {
+    list: require('./models/list_models')
   },
   messages: {
     list: require('./messages/list_messages'),
@@ -175,6 +176,9 @@ module.exports = {
         list: require('./services/discord/list_channels'),
         view: require('./services/discord/view_channel')
       },
+      voice: {
+        snapshot: require('./services/discord/voice_snapshot')
+      },
       users: {
         list: require('./services/discord/list_users'),
         view: require('./services/discord/view_user')
@@ -209,7 +213,8 @@ module.exports = {
   sources: {
     create: require('./sources/create_source'),
     list: require('./sources/list_sources'),
-    view: require('./sources/view_source')
+    view: require('./sources/view_source'),
+    history: require('./sources/source_history')
   },
   statistics: {
     admin: require('./statistics/admin_statistics'),
@@ -223,12 +228,23 @@ module.exports = {
     view: require('./tasks/view_task'),
     edit: require('./tasks/edit_task')
   },
+  triggers: {
+    list: require('./triggers/list_triggers'),
+    create: require('./triggers/create_trigger'),
+    update: require('./triggers/update_trigger'),
+    delete: require('./triggers/delete_trigger')
+  },
   topics: {
     list: require('./topics/list_topics'),
     view: require('./topics/view_topic')
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')
+  },
+  workers: {
+    state: require('./workers/state'),
+    playnetReceiveAddress: require('./workers/playnetReceiveAddress'),
+    donatePlaynet: require('./workers/donatePlaynet')
   },
   users: {
     list: require('./users/list_users'),

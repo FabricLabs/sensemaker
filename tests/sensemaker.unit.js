@@ -5,7 +5,7 @@ const definition = require('../package');
 const Sensemaker = require('../services/sensemaker');
 const Learner = require('../types/learner');
 
-const SAMPLE_DATA = Buffer.from('DEADBEEF', 'hex');
+const SAMPLE_DATA = Buffer.from('DEADBEEF00000000', 'hex');
 
 describe('Sensemaker', function () {
   describe('@sensemaker/core', function () {
@@ -13,13 +13,13 @@ describe('Sensemaker', function () {
       assert.strictEqual(typeof Sensemaker, 'function');
     });
 
-    xit('should have a correct version attribute', function () {
+    it('should have a correct version attribute', function () {
       const sensemaker = new Sensemaker();
       assert.strictEqual(sensemaker.version, definition.version);
     });
 
-    xit('should implement enable', function () {
-      assert.ok(Sensemaker.prototype.enable);
+    it('does not expose a legacy enable method', function () {
+      assert.strictEqual(Sensemaker.prototype.enable, undefined);
     });
 
     it('should implement ingest', function () {
@@ -47,7 +47,7 @@ describe('Sensemaker', function () {
       test();
     });
 
-    xit('can execute more than 200 ticks per second', function (done) {
+    it('can execute more than 200 ticks per second', function (done) {
       async function test () {
         const learner = new Learner();
         await learner.start();
@@ -56,7 +56,7 @@ describe('Sensemaker', function () {
           await learner.stop();
           assert.strictEqual(learner.status, 'STOPPED');
           assert.ok(learner);
-          assert.ok(learner.clock > 200);
+          assert.ok(learner.clock > 200n);
           done();
         }, 1000);
       }
@@ -64,7 +64,7 @@ describe('Sensemaker', function () {
       test();
     });
 
-    xit('can write and read chunks', function (done) {
+    it('can write and read chunks', function (done) {
       async function test () {
         const learner = new Learner();
         await learner.start();
@@ -72,7 +72,7 @@ describe('Sensemaker', function () {
 
         learner._writeChunk(0xff, SAMPLE_DATA);
         const data = learner._readChunk(0xff);
-        assert.strictEqual(data, SAMPLE_DATA);
+        assert.deepStrictEqual(data, SAMPLE_DATA);
 
         setTimeout(async function () {
           await learner.stop();

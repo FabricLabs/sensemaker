@@ -1,6 +1,6 @@
 'use strict';
 
-const { fetchFromAPI } = require('./apiActions');
+const { fetchFromAPI, parseJsonResponse } = require('./apiActions');
 
 async function fetchTasksFromAPI (token) {
   // TODO: pagination
@@ -124,11 +124,7 @@ const updateTask = (taskID, delta) => {
       });
 
       const response = await Promise.race([timeoutPromise, fetchPromise]);
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
-      }
-      //task with reset token sent
+      await parseJsonResponse(response);
       dispatch(updateTaskSuccess());
     } catch (error) {
       dispatch(updateTaskFailure(error));

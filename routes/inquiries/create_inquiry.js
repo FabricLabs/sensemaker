@@ -1,5 +1,17 @@
 'use strict';
 
+function escapeHtml (s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr (s) {
+  return escapeHtml(s).replace(/'/g, '&#39;');
+}
+
 module.exports = async function (req, res, next) {
   const { email } = req.body;
 
@@ -15,9 +27,24 @@ module.exports = async function (req, res, next) {
     }
 
     // Insert the new user into the database
-    const newInquiry = await this.db('inquiries').insert({
+    await this.db('inquiries').insert({
       email: email
     });
+
+    if (this.email) {
+      const origin = (this.settings.baseUrl || this.authority || '').replace(/\/$/, '');
+      try {
+        await this.email.send({
+          from: 'noreply@localhost',
+          to: email,
+          subject: 'Sensemaker waitlist',
+          text: `Thanks — we received your request for ${email}. You are on the waitlist.\n\n${origin}`,
+          html: `<p>Thanks — we received your request for <strong>${escapeHtml(email)}</strong>.</p><p>You are on the waitlist.</p><p><a href="${escapeAttr(origin)}">${escapeAttr(origin)}</a></p>`
+        });
+      } catch (err) {
+        console.error('[INQUIRIES] Waitlist confirmation email failed:', err.message);
+      }
+    }
 
     return res.json({ message: "You've been added to the waitlist!" });
   } catch (error) {

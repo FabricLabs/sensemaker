@@ -4,6 +4,7 @@ const {
   LOGIN_REQUEST,
   LOGIN_SUCCESS,
   LOGIN_FAILURE,
+  SESSION_RESTORE_FAILURE,
   CHECK_USERNAME_AVAILABLE_REQUEST,
   CHECK_USERNAME_AVAILABLE_SUCCESS,
   CHECK_USERNAME_AVAILABLE_FAILURE,
@@ -48,6 +49,8 @@ function authReducer (state = initialState, action) {
       return { ...state, isAuthenticated: true, isAdmin: action.payload.isAdmin || false, isBeta: action.payload.isBeta || false, isCompliant: action.payload.isCompliant || false, username: action.payload.username, email: action.payload.email, user_discord: action.payload.user_discord, token: action.payload.token, id: action.payload.id, loading: false };
     case LOGIN_FAILURE:
       return { ...state, isAuthenticated: false, token: null, error: action.payload, loading: false };
+    case SESSION_RESTORE_FAILURE:
+      return { ...state, isAuthenticated: false, token: null, error: null, loading: false };
     case SIGN_CONTRACT_SUCCESS:
       return { ...state, isCompliant: true };
     case CHECK_USERNAME_AVAILABLE_REQUEST:

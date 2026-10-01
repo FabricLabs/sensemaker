@@ -67,6 +67,7 @@ class Bridge extends React.Component {
     this.ws = null;
     this._heartbeat = null;
     this._isConnected = false;  // Internal connection state
+    this._responseCaptureListeners = new Set();
 
     // WebRTC/PeerJS properties
     this.peer = null;
@@ -82,6 +83,84 @@ class Bridge extends React.Component {
     return this;
   }
 
+  /**
+   * Deliver outbound WS/fabric notifications. Prefer `settings.responseCapture` so callers can
+   * wrap the handler without mutating frozen React props (ChatBox chains JSON-PATCH handling).
+   */
+  _invokeResponseCapture (payload) {
+    const fromSettings = this.settings && typeof this.settings.responseCapture === 'function';
+    const fn = fromSettings
+      ? this.settings.responseCapture
+      : (this.props && typeof this.props.responseCapture === 'function' ? this.props.responseCapture : null);
+    if (fn) fn(payload);
+    this._responseCaptureListeners.forEach((listener) => {
+      try {
+        listener(payload);
+      } catch (error) {
+        console.error('[BRIDGE]', 'Response capture listener error:', error);
+      }
+    });
+  }
+
+  addResponseCaptureListener (listener) {
+    if (typeof listener !== 'function') return;
+    this._responseCaptureListeners.add(listener);
+  }
+
+  removeResponseCaptureListener (listener) {
+    if (typeof listener !== 'function') return;
+    this._responseCaptureListeners.delete(listener);
+  }
+
+  _emitPatchToConsumers (patchData) {
+    if (!patchData || typeof patchData !== 'object') return false;
+    if (!patchData.path || typeof patchData.path !== 'string') return false;
+
+    this.updateGlobalState(patchData);
+    this._invokeResponseCapture({
+      type: 'PATCH',
+      path: patchData.path,
+      value: patchData.value
+    });
+    return true;
+  }
+
+  _parseJsonBody (body) {
+    try {
+      if (typeof body === 'string') return JSON.parse(body);
+      if (Buffer.isBuffer(body)) return JSON.parse(body.toString('utf8'));
+      if (body && typeof body === 'object') return body;
+      return null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  _handlePotentialPatchBody (body) {
+    const parsed = this._parseJsonBody(body);
+    if (!parsed) return false;
+
+    // Direct RFC6902 patch object { op, path, value }.
+    if (parsed.path && parsed.op) {
+      return this._emitPatchToConsumers(parsed);
+    }
+
+    // Wrapped message forms.
+    if (parsed.type === 'JSONPatch' || parsed.type === 'JSON_PATCH' || parsed.type === 'PATCH') {
+      if (parsed.path) {
+        return this._emitPatchToConsumers(parsed);
+      }
+      if (parsed.value && typeof parsed.value === 'object') {
+        return this._emitPatchToConsumers(parsed.value);
+      }
+      if (parsed.content) {
+        return this._handlePotentialPatchBody(parsed.content);
+      }
+    }
+
+    return false;
+  }
+
   get authority () {
     return ((this.settings.secure) ? `wss` : `ws`) + `://${this.settings.host}:${this.settings.port}`;
   }
@@ -93,8 +172,25 @@ class Bridge extends React.Component {
 
   updateGlobalState (patchMessage) {
     try {
-      const jsonPatch = [patchMessage];
-      const result = applyPatch(this.globalState, jsonPatch, true, false);
+      let effectivePatch = patchMessage;
+      let result = null;
+
+      try {
+        result = applyPatch(this.globalState, [effectivePatch], true, false);
+      } catch (firstError) {
+        const path = patchMessage && patchMessage.path ? String(patchMessage.path) : '';
+        const isTopLevelResourcePatch = /^\/(messages|conversations|users|documents|tasks)\/[^/]+$/.test(path);
+        const canUpsertReplace = patchMessage && patchMessage.op === 'replace' && isTopLevelResourcePatch;
+
+        if (!canUpsertReplace) {
+          throw firstError;
+        }
+
+        // Navigation races can miss the initial `add` patch. Treat `replace /resource/:id`
+        // as an idempotent upsert on the client so streaming can resume without refresh.
+        effectivePatch = Object.assign({}, patchMessage, { op: 'add' });
+        result = applyPatch(this.globalState, [effectivePatch], true, false);
+      }
 
       if (result.newDocument) {
         this.globalState = result.newDocument;
@@ -102,7 +198,7 @@ class Bridge extends React.Component {
         // Emit a custom event to notify components of state changes
         const event = new CustomEvent('globalStateUpdate', {
           detail: {
-            operation: patchMessage,
+            operation: effectivePatch,
             globalState: this.globalState
           }
         });
@@ -128,6 +224,7 @@ class Bridge extends React.Component {
   }
 
   componentDidMount () {
+    this._isMounted = true;
     this.start();
 
     // Subscribe to initial path
@@ -138,8 +235,18 @@ class Bridge extends React.Component {
   }
 
   componentWillUnmount () {
+    this._isMounted = false;
     this.stop();
     window.removeEventListener('popstate', this.handlePathChange);
+  }
+
+  _safeSetState (update) {
+    if (this._isMounted) {
+      this.setState(update);
+      return;
+    }
+    const patch = typeof update === 'function' ? update(this.state) : update;
+    this.state = Object.assign({}, this.state, patch);
   }
 
   handlePathChange = () => {
@@ -148,7 +255,7 @@ class Bridge extends React.Component {
       // Unsubscribe from old path
       this.unsubscribe(this.state.currentPath);
       // Update current path
-      this.setState({ currentPath: newPath });
+      this._safeSetState({ currentPath: newPath });
       // Subscribe to new path
       this.subscribe(newPath);
     }
@@ -179,7 +286,7 @@ class Bridge extends React.Component {
     this.ws.onopen = () => {
       console.debug('[BRIDGE]', 'Connection established');
       this._isConnected = true;  // Set internal state immediately
-      this.setState({ isConnected: true });
+      this._safeSetState({ isConnected: true });
       this.onSocketOpen();
 
       // Process any queued messages
@@ -201,13 +308,18 @@ class Bridge extends React.Component {
     this.ws.onerror = (error) => {
       console.error('[BRIDGE]', 'WebSocket error:', error);
       this._isConnected = false;
-      this.setState({ error, isConnected: false });
+      this._safeSetState({ error, isConnected: false });
     };
 
     this.ws.onclose = (event) => {
       console.debug('[BRIDGE]', 'WebSocket closed:', event.code, event.reason);
       this._isConnected = false;
-      this.setState({ isConnected: false });
+      this._safeSetState({ isConnected: false });
+      // Clean up heartbeat interval on close
+      if (this._heartbeat) {
+        clearInterval(this._heartbeat);
+        this._heartbeat = null;
+      }
 
       // Attempt to reconnect after a delay
       if (this.attempts < 5) {
@@ -266,7 +378,7 @@ class Bridge extends React.Component {
 
       this.peer.on('error', (error) => {
         console.error('[BRIDGE]', 'WebRTC peer error:', error);
-        this.setState(prevState => ({
+        this._safeSetState(prevState => ({
           error: prevState.error || error,
           webrtcConnected: false
         }));
@@ -275,7 +387,7 @@ class Bridge extends React.Component {
 
       this.peer.on('close', () => {
         console.debug('[BRIDGE]', 'WebRTC peer closed');
-        this.setState({ webrtcConnected: false });
+        this._safeSetState({ webrtcConnected: false });
         this._webrtcConnected = false;
       });
 
@@ -323,7 +435,7 @@ class Bridge extends React.Component {
     connection.on('open', () => {
       console.debug('[BRIDGE]', 'WebRTC connection opened to:', connection.peer);
       this._webrtcConnected = true;
-      this.setState({ webrtcConnected: true });
+      this._safeSetState({ webrtcConnected: true });
 
       // Process any queued messages
       while (this.webrtcMessageQueue.length > 0) {
@@ -346,13 +458,13 @@ class Bridge extends React.Component {
     connection.on('error', (error) => {
       console.error('[BRIDGE]', 'WebRTC connection error:', error);
       this._webrtcConnected = false;
-      this.setState({ webrtcConnected: false });
+      this._safeSetState({ webrtcConnected: false });
     });
 
     connection.on('close', () => {
       console.debug('[BRIDGE]', 'WebRTC connection closed');
       this._webrtcConnected = false;
-      this.setState({ webrtcConnected: false });
+      this._safeSetState({ webrtcConnected: false });
     });
   }
 
@@ -508,7 +620,7 @@ class Bridge extends React.Component {
     }
 
     this._webrtcConnected = false;
-    this.setState({ webrtcConnected: false });
+    this._safeSetState({ webrtcConnected: false });
   }
 
   tick () {
@@ -558,13 +670,8 @@ class Bridge extends React.Component {
     // Try WebRTC first if preferred and available
     if (preferWebRTC && this._webrtcConnected && this.webrtcConnection) {
       try {
-        // Convert Buffer to appropriate format for WebRTC
-        const data = Buffer.isBuffer(message) ? message.toString('base64') : message;
-        this.webrtcConnection.send({
-          type: 'fabric-message',
-          data: data,
-          timestamp: Date.now()
-        });
+        const data = Buffer.isBuffer(message) ? message : Buffer.from(message);
+        this.webrtcConnection.send(data);
         console.debug('[BRIDGE]', 'Message sent via WebRTC');
         return;
       } catch (error) {
@@ -600,7 +707,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['SUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.add(path);
     console.debug('[BRIDGE]', 'Subscribed to:', path);
@@ -618,7 +725,7 @@ class Bridge extends React.Component {
 
     const message = Message.fromVector(['UNSUBSCRIBE', path]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
 
     this.state.subscriptions.delete(path);
     console.debug('[BRIDGE]', 'Unsubscribed from:', path);
@@ -707,12 +814,16 @@ class Bridge extends React.Component {
         return;
       }
 
+      const wireType = message.type;
+      if (wireType === 'Ping' || wireType === 'Pong' || wireType === 'P2P_PING' || wireType === 'P2P_PONG' ||
+          wireType === 'LIGHTNING_PING' || wireType === 'LIGHTNING_PONG') {
+        return;
+      }
+
       // Handle message based on type
       switch (message.type) {
-        default:
-          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
-          break;
         case 'JSONCall':
+        case 'JSON_CALL':
           console.debug('[BRIDGE]', 'Received JSONCall:', message.body);
 
           // Parse JSONCall and handle JSONCallResult responses
@@ -720,7 +831,7 @@ class Bridge extends React.Component {
             const jsonCall = JSON.parse(message.body);
             if (jsonCall.method === 'JSONCallResult') {
               // Convert JSONCallResult to GenericMessage format for consumption by components
-              this.props.responseCapture({
+              this._invokeResponseCapture({
                 type: 'GenericMessage',
                 content: message.body
               });
@@ -731,29 +842,49 @@ class Bridge extends React.Component {
           break;
         case 'GenericMessage':
           // Pass through GenericMessage as-is
-          this.props.responseCapture({
+          this._invokeResponseCapture({
             type: 'GenericMessage',
             content: message.body
           });
           break;
         case 'JSONPatch':
+        case 'JSON_PATCH':
           // Handle JSONPatch messages (canonical path)
           try {
-            const patchData = JSON.parse(message.body);
-
-            // Update global state
-            this.updateGlobalState(patchData);
-
-            // Emit as PATCH format for components
-            this.props.responseCapture({
-              type: 'PATCH',
-              path: patchData.path,
-              value: patchData.value
-            });
+            if (!this._handlePotentialPatchBody(message.body)) {
+              console.error('[BRIDGE]', 'Could not normalize JSON patch body:', message.body);
+            }
           } catch (parseError) {
             console.error('[BRIDGE]', 'Could not parse JSONPatch message body:', parseError);
           }
           break;
+        case 'P2P_BASE_MESSAGE':
+          if (!this._handlePotentialPatchBody(message.body)) {
+            this._invokeResponseCapture(message.toObject());
+          }
+          break;
+        case 'P2P_CHAT_MESSAGE':
+        case 'CHAT_MESSAGE':
+        case 'ChatMessage': {
+          // Mesh shoutbox (prefer P2P_CHAT_MESSAGE). Deliver to Global via onMessage
+          // and to responseCapture listeners. Distinct from AI MessageStart/Chunk streams.
+          let chatObj = message.toObject();
+          try {
+            const body = typeof message.body === 'string' ? JSON.parse(message.body) : message.body;
+            if (body && typeof body === 'object') {
+              chatObj = Object.assign({}, chatObj, body, {
+                type: body.type || message.type || 'P2P_CHAT_MESSAGE'
+              });
+            }
+          } catch (_) { /* keep toObject() */ }
+          if (typeof this.onMessage === 'function') {
+            try { this.onMessage(chatObj); } catch (e) {
+              console.error('[BRIDGE]', 'onMessage handler error:', e);
+            }
+          }
+          this._invokeResponseCapture(chatObj);
+          break;
+        }
         case 'MessageStart':
         case 'MessageChunk':
         case 'HelpMsgUser':
@@ -762,15 +893,18 @@ class Bridge extends React.Component {
         case 'IngestDocument':
         case 'takenJob':
         case 'completedJob':
-          this.props.responseCapture(message.toObject());
+          this._invokeResponseCapture(message.toObject());
+          break;
+        default:
+          console.debug('[BRIDGE]', 'Unhandled message type:', message.type);
           break;
       }
 
       // Update component state with message data
-      this.setState({ data: message.toObject() });
+      this._safeSetState({ data: message.toObject() });
     } catch (error) {
       console.error('[BRIDGE]', 'Error processing message:', error);
-      this.setState({ error });
+      this._safeSetState({ error });
     }
   }
 
@@ -779,7 +913,7 @@ class Bridge extends React.Component {
     const now = Date.now();
     const message = Message.fromVector(['Ping', now.toString()]);
     const messageBuffer = message.toBuffer();
-    this.sendMessage(messageBuffer);
+    this.sendSignedMessage(messageBuffer);
   }
 }
 

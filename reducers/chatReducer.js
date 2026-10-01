@@ -13,6 +13,8 @@ const {
   FETCH_RESPONSE_FAILURE,
   RESET_CHAT_STATE,
   RESET_CHAT_SUCCESS,
+  CHAT_STREAM_CHUNK,
+  CHAT_STREAM_RESET,
   UPDATE_MESSAGE
 } = require('../actions/chatActions');
 
@@ -22,7 +24,9 @@ const initialState = {
   message: '',
   messages: [],
   isMessageSent: false,
-  isSending: false
+  isSending: false,
+  streamBuffer: '',
+  streamMessageId: null
 };
 
 // Reducer
@@ -31,9 +35,10 @@ function chatReducer (state = initialState, action) {
     case CHAT_REQUEST:
       return {
         ...state,
-        message: '',
         error: null,
-        isSending: true
+        isSending: true,
+        streamBuffer: '',
+        streamMessageId: null
       };
     case CHAT_SUCCESS:
       return {
@@ -47,15 +52,22 @@ function chatReducer (state = initialState, action) {
         ...state,
         error: action.payload,
         isMessageSent: false,
-        isSending: false
+        isSending: false,
+        streamBuffer: '',
+        streamMessageId: null
       };
-    case GET_MESSAGES_SUCCESS:
+    case GET_MESSAGES_SUCCESS: {
+      const messages = action.payload.messages;
+      const last = messages && messages[messages.length - 1];
+      const assistantSettled = last && last.role === 'assistant' && (last.status === 'ready' || last.status === 'error');
       return {
         ...state,
-        messages: action.payload.messages,
+        messages,
         isSending: false,
-        loading: false
+        loading: false,
+        ...(assistantSettled ? { streamBuffer: '', streamMessageId: null } : {})
       };
+    }
     case FETCH_RESPONSE_REQUEST:
       return {
         ...state,
@@ -73,18 +85,53 @@ function chatReducer (state = initialState, action) {
         error: action.payload,
         isSending: false
       };
+    case CHAT_STREAM_CHUNK: {
+      const { content = '', id = null } = action.payload || {};
+      return {
+        ...state,
+        streamBuffer: state.streamBuffer + (typeof content === 'string' ? content : ''),
+        streamMessageId: id != null ? id : state.streamMessageId
+      };
+    }
+    case CHAT_STREAM_RESET:
+      return {
+        ...state,
+        streamBuffer: '',
+        streamMessageId: null
+      };
     case RESET_CHAT_STATE:
     case RESET_CHAT_SUCCESS:
       return initialState;
     case UPDATE_MESSAGE:
-      return {
-        ...state,
-        messages: state.messages.map(message =>
-          message.id === action.payload.messageId
-            ? { ...message, ...action.payload.updates }
-            : message
-        )
-      };
+      {
+        const { messageId, updates = {} } = action.payload || {};
+        if (!messageId) return state;
+        const existingIndex = state.messages.findIndex((m) => m.id === messageId);
+        if (existingIndex === -1) {
+          const seeded = {
+            id: messageId,
+            role: 'assistant',
+            author: 'sensemaker',
+            status: updates.status || 'streaming',
+            content: updates.content || '',
+            created_at: updates.created_at || new Date().toISOString(),
+            updated_at: updates.updated_at || new Date().toISOString(),
+            ...updates
+          };
+          return {
+            ...state,
+            messages: state.messages.concat([seeded])
+          };
+        }
+        return {
+          ...state,
+          messages: state.messages.map(message =>
+            message.id === messageId
+              ? { ...message, ...updates }
+              : message
+          )
+        };
+      }
     default:
       // console.warn('unhandled chat reducer action:', action);
       return state;

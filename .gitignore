@@ -6,6 +6,12 @@ lib-cov
 *.out
 *.pid
 *.gz
+.env
+.DS_Store
+stores/
+dist/
+.node-modules-inspector/
+coverage/
 
 pids
 logs
@@ -16,5 +22,8 @@ node_modules
 
 settings/local.js
 documents/templates
+
+# Cursor agent Fabric identity (synced from hub.fabric.pub)
+local/cursor-agent-fabric-identity.json
 
 .venv/

@@ -66,7 +66,7 @@ class InvitationView extends React.Component {
     };
 
     const status = invitation?.status;
-    const isInvalidInvitation = error || (!loading && (!invitation || status === 'accepted' || status === 'rejected'));
+    const isInvalidInvitation = error || (!loading && (!invitation || status === 'accepted' || status === 'declined' || status === 'rejected'));
 
     return (
       <sensemaker-invitation style={containerStyle} class='fade-in'>
@@ -137,7 +137,7 @@ class InvitationView extends React.Component {
                       {status === 'pending' && invitation && (
                         <div style={{ marginBottom: '20px' }}>
                           <h3>From: {invitation.sender_username || 'Someone'}</h3>
-                          <p>{invitation.message || `You have been invited to create an account on ${name || 'SENSEMAKER'}, an AI node they manage.`}</p>
+                          <p>{invitation.message || `You have been invited to create an account on ${name || 'SENSEMAKER'}, a Fabric node they manage.`}</p>
 
                           {invitation.groupName && (
                             <p>Group: <strong>{invitation.groupName}</strong></p>

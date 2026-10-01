@@ -3,7 +3,11 @@
 module.exports = function (req, res, next) {
   res.format({
     json: async () => {
-      const conversation = await this.db.select('id', 'title', 'created_at', 'log', 'context').from('conversations')
+      if (!req.user || req.user.id == null) {
+        return res.status(401).json({ message: 'Authentication required.' });
+      }
+
+      const conversation = await this.db.select('id', 'creator_id', 'title', 'created_at', 'log', 'context').from('conversations')
         .where(function () {
           // TODO: disable raw ID lookup, only allow Fabric ID lookup
           this.where('id', req.params.id).orWhere('fabric_id', req.params.id);
@@ -19,6 +23,10 @@ module.exports = function (req, res, next) {
             res.status(404).json({ message: 'Conversation not found.' });
           }
         });
+      }
+
+      if (!(await this._userCanAccessConversation(req, conversation))) {
+        return res.status(403).json({ message: 'Not allowed to view this conversation.' });
       }
 
       // Ensure the Message Log exists

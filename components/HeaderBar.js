@@ -46,7 +46,7 @@ class HeaderBar extends React.Component {
   render () {
     const { showBrand, showButtons } = this.props;
     return (
-      <sensemaker-header-bar class='brand'>
+      <sensemaker-header-bar className='brand'>
         <style>
           {`
             sensemaker-header-bar {

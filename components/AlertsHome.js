@@ -57,11 +57,8 @@ class AlertsHome extends React.Component {
   }
 
   componentDidMount () {
-    console.log('AlertsHome componentDidMount');
     this.props.fetchAlerts();
-    console.log('AlertsHome componentDidMount 2');
     this.props.fetchTriggers();
-    console.log('AlertsHome componentDidMount 3');
     window.addEventListener('hashchange', this.handleHashChange);
   }
 
@@ -685,8 +682,8 @@ class AlertsHome extends React.Component {
           </Header.Content>
         </Header>
 
-        <Tab 
-          panes={panes} 
+        <Tab
+          panes={panes}
           activeIndex={activeTab === 'alerts' ? 0 : 1}
           onTabChange={(e, { activeIndex }) => {
             const tabName = activeIndex === 0 ? 'alerts' : 'triggers';

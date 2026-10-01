@@ -33,6 +33,11 @@ module.exports = function (req, res, next) {
   // Handle only JSON format to avoid complexity
   const query = async () => {
     try {
+      if (!(await this._assertSensemakerAdminJson(req, res))) {
+        clearTimeout(timeout);
+        return;
+      }
+
       console.debug('[SENSEMAKER]', '[ROUTES]', '[USERS:LIST]', 'fetching users...');
       const countPromise = this.db('users').count('* as total').timeout(5000, { cancel: true });
       const usersPromise = this.db('users')

@@ -21,9 +21,11 @@
 
 // Dependencies
 const path = require('path');
+const crypto = require('crypto');
 const merge = require('lodash.merge');
 const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const fs = require('fs');
 
 // Polyfills
 const { JSDOM } = require('jsdom');
@@ -43,6 +45,30 @@ const HTTPComponent = require('@fabric/http/types/component');
 const HTTPSite = require('./site');
 
 /**
+ * Public env subset for browser bundles only. Never pass `process.env` wholesale into
+ * {@link webpack.DefinePlugin}: webpack inlines the full JSON, which leaks host secrets
+ * (npm/GitHub tokens, API keys, mnemonics) into `assets/bundles/browser.min.js` and trips
+ * GitHub push protection.
+ * @returns {Record&lt;string, string>}
+ */
+function browserPublicProcessEnv () {
+  const out = {
+    NODE_ENV: process.env.NODE_ENV || 'development'
+  };
+  const optionalKeys = [
+    'SENSEMAKER_LEAN',
+    'OLLAMA_MODEL',
+    'DEBUG_SENSEMAKER_UI',
+    'ANALYZE'
+  ];
+  for (const key of optionalKeys) {
+    const v = process.env[key];
+    if (v !== undefined &amp;&amp; v !== '') out[key] = String(v);
+  }
+  return out;
+}
+
+/**
  * Builder for {@link Fabric}-based applications.
  */
 class Bundler extends HTTPCompiler {
@@ -57,16 +83,16 @@ class Bundler extends HTTPCompiler {
     this.settings = merge({
       document: settings.document || new HTTPComponent(settings),
       site: {
-        name: 'Default Fabric Application'
+        name: 'Sensemaker',
+        state: {
+          title: 'sensemaker · digital intelligence'
+        }
       },
       state: {
-        title: settings.title || 'Fabric HTTP Document'
+        title: 'sensemaker · digital intelligence'
       },
-      // TODO: load from:
-      // 1. webpack.config.js (local)
-      // 2. @fabric/http/webpack.config
       webpack: {
-        mode: 'production',
+        mode: 'development',
         entry: path.resolve('./scripts/browser.js'),
         experiments: {
           asyncWebAssembly: true
@@ -75,15 +101,20 @@ class Bundler extends HTTPCompiler {
           fallback: {
             crypto: require.resolve('crypto-browserify'),
             stream: require.resolve('stream-browserify'),
-            querystring: require.resolve('querystring-es3'),
             path: require.resolve('path-browserify'),
             assert: require.resolve('assert-browserify'),
-            util: require.resolve('node-util'),
-            fs: require.resolve('browserify-fs')
+            'process/browser': require.resolve('process/browser.js'),
+            util: require.resolve('util/'),
+            vm: require.resolve('vm-browserify'),
+            fs: false,
+            http: false,
+            https: false,
+            zlib: false,
+            url: false
           },
           symlinks: false
         },
-        target: 'node',
+        target: 'web',
         output: {
           path: path.resolve('./assets/bundles'),
           filename: 'browser.min.js',
@@ -99,7 +130,19 @@ class Bundler extends HTTPCompiler {
               use: {
                 loader: 'babel-loader',
                 options: {
-                  presets: ['@babel/preset-env', '@babel/preset-react']
+                  presets: [
+                    ['@babel/preset-env', {
+                      modules: false,
+                      targets: {
+                        browsers: ['last 2 versions', 'not dead']
+                      }
+                    }],
+                    '@babel/preset-react'
+                  ],
+                  plugins: [
+                    '@babel/plugin-transform-runtime',
+                    '@babel/plugin-transform-modules-commonjs'
+                  ]
                 }
               }
             },
@@ -111,10 +154,23 @@ class Bundler extends HTTPCompiler {
         },
         plugins: [
           new webpack.DefinePlugin({
-            'process.env': JSON.stringify(process.env)
+            'process.env': JSON.stringify(browserPublicProcessEnv())
           }),
           new webpack.ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
+            process: require.resolve('process/browser.js'),
+            Buffer: ['buffer', 'Buffer']
+          }),
+          new webpack.IgnorePlugin({
+            resourceRegExp: /\.wasm$/,
+            contextRegExp: /@hpcc-js\/wasm/
+          }),
+          new webpack.IgnorePlugin({
+            resourceRegExp: /@hpcc-js\/wasm-graphviz/
+          }),
+          // @fabric/core optionally requires build/Release/fabric.node; webpack still parses it.
+          // Native addons cannot run in the browser — exclude so the bundle uses JS fallbacks.
+          new webpack.IgnorePlugin({
+            resourceRegExp: /\.node$/
           }),
           new BundleAnalyzerPlugin({
             analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
@@ -132,9 +188,207 @@ class Bundler extends HTTPCompiler {
       content: this.settings.state
     };
 
-    this.packer = webpack(this.settings.webpack);
+    this.packer = webpack(this.settings.webpack || {});
 
     return this;
+  }
+
+  /**
+   * Compile the JavaScript bundle using webpack.
+   * @returns {Promise&lt;Object>} Webpack compilation results
+   */
+  async compileJavaScriptBundle () {
+    console.log('[BUNDLER] Compiling JavaScript bundle...');
+    return new Promise((resolve, reject) => {
+      this.packer.run((err, stats) => {
+        if (err) {
+          console.error('[BUNDLER] Webpack compilation error:', err);
+          return reject(err);
+        }
+
+        if (stats.hasErrors()) {
+          const errors = stats.toJson().errors;
+          console.error('[BUNDLER] Webpack compilation errors:', errors);
+          return reject(new Error(`Webpack compilation failed: ${errors.join(', ')}`));
+        }
+
+        if (stats.hasWarnings()) {
+          const warnings = stats.toJson().warnings || [];
+          if (process.env.ANALYZE) {
+            console.warn('[BUNDLER] Webpack compilation warnings:', warnings);
+          } else {
+            const sample = warnings.slice(0, 2).map((w) => (w &amp;&amp; w.message) ? w.message : String(w)).join('\n');
+            console.warn(`[BUNDLER] Webpack: ${warnings.length} warning(s). Set ANALYZE=true for full list.\n${sample}`);
+          }
+        }
+
+        console.log('[BUNDLER] JavaScript bundle compiled successfully');
+        resolve(stats);
+      });
+    });
+  }
+
+  /**
+   * Calculate the sha256 hash of the generated JavaScript bundle.
+   * @param {string} bundlePath Path to the bundle file
+   * @returns {string} SHA256 hash of the bundle
+   */
+  calculateBundleHash (bundlePath) {
+    if (!bundlePath) {
+      const mode = this.settings.webpack?.mode || 'development';
+      const filename = mode === 'production' ? 'browser.min.js' : 'browser.js';
+      bundlePath = path.resolve(`./assets/bundles/${filename}`);
+    }
+
+    try {
+      const bundleContent = fs.readFileSync(bundlePath);
+      const hash = crypto.createHash('sha256').update(bundleContent).digest('hex');
+      console.log(`[BUNDLER] JavaScript bundle hash: ${hash}`);
+      return hash;
+    } catch (error) {
+      console.error('[BUNDLER] Error calculating bundle hash:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get bundle statistics.
+   * @returns {Object} Bundle statistics
+   */
+  getBundleStats () {
+    const mode = this.settings.webpack?.mode || 'production';
+    const isDevelopment = mode === 'development';
+    const bundlePath = path.resolve(`./assets/bundles/${isDevelopment ? 'browser.js' : 'browser.min.js'}`);
+    const getFileStats = (filePath) => {
+      try {
+        const stats = fs.statSync(filePath);
+        const hash = this.calculateBundleHash(filePath);
+        return {
+          path: filePath,
+          size: stats.size,
+          hash: hash,
+          lastModified: stats.mtime,
+          type: isDevelopment ? 'unminified' : 'minified'
+        };
+      } catch (error) {
+        console.warn(`[BUNDLER] Could not get stats for ${path.basename(filePath)}:`, error.message);
+        return null;
+      }
+    };
+
+    const bundleStats = getFileStats(bundlePath);
+    return bundleStats;
+  }
+
+  /**
+   * Compile the HTML file to a specific target.
+   * @param {string} target Path to output HTML file
+   * @returns {Promise&lt;Object>} Compilation results including bundle hash
+   */
+  async compileTo (target = 'assets/index.html') {
+    try {
+      console.log('[BUNDLER] HTML compilation process...');
+      const webpackStats = await this.compileJavaScriptBundle();
+      const bundleStats = this.getBundleStats();
+      const htmlSuccess = await super.compileTo(target);
+      const results = {
+        html: {
+          target: target,
+          success: htmlSuccess
+        },
+        bundle: bundleStats,
+        webpack: {
+          compilation: webpackStats.toJson({
+            assets: true,
+            chunks: false,
+            modules: false,
+            source: false,
+            errorDetails: false,
+            timings: true
+          })
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('[BUNDLER] HTML compilation completed successfully');
+      console.log('[BUNDLER] Bundle size:', bundleStats?.size, 'bytes');
+      console.log('[BUNDLER] Bundle hash:', bundleStats?.hash);
+
+      return results;
+    } catch (error) {
+      console.error('[BUNDLER] HTML compilation failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a cache.manifest file listing all static assets for offline support.
+   * @param {string} outputPath Path to the manifest file (default: 'assets/cache.manifest')
+   */
+  async generateCacheManifest (outputPath = path.resolve('assets/cache.manifest')) {
+    function walk(dir, filelist = [], basedir = dir) {
+      fs.readdirSync(dir).forEach(file => {
+        const filepath = path.join(dir, file);
+        const relpath = path.relative(basedir, filepath).replace(/\\/g, '/');
+        if (fs.statSync(filepath).isDirectory()) {
+          walk(filepath, filelist, basedir);
+        } else {
+          // Exclude the manifest itself
+          if (!relpath.endsWith('cache.manifest')) {
+            filelist.push(relpath);
+          }
+        }
+      });
+      return filelist;
+    }
+    const assetDir = path.resolve('assets');
+    const files = walk(assetDir).map(f => f.startsWith('.') ? f.slice(1) : f);
+    const manifest = [
+      'CACHE MANIFEST',
+      `# Hash: ${Date.now()}`,
+      '',
+      'CACHE:',
+      ...files,
+      '',
+      'NETWORK:',
+      '*',
+      '',
+      'FALLBACK:',
+      ''
+    ].join('\n');
+    fs.writeFileSync(outputPath, manifest, 'utf8');
+    console.log(`[BUNDLER] cache.manifest generated with ${files.length} files.`);
+  }
+
+  /**
+   * Generate a manifest.json file for PWA support.
+   * @param {string} outputPath Path to the manifest file (default: 'assets/manifest.json')
+   */
+  async generateWebManifest (outputPath = path.resolve('assets/manifest.json')) {
+    const manifest = {
+      name: this.site.name,
+      short_name: this.site.name,
+      description: this.site.description || '',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#ffffff',
+      theme_color: '#000000',
+      icons: [
+        {
+          src: '/assets/icons/icon-192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/assets/icons/icon-512x512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        }
+      ]
+    };
+
+    fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2), 'utf8');
+    console.log(`[BUNDLER] manifest.json generated.`);
   }
 }
 
@@ -150,17 +404,53 @@ module.exports = Bundler;
     <h2><a href="index.html">Home</a></h2>
     <h3>Classes</h3>
     <ul>
+      <li><a href="ActiveWorkerQueue.html">ActiveWorkerQueue</a></li>
       <li><a href="Agent.html">Agent</a></li>
       <li><a href="Bundler.html">Bundler</a></li>
       <li><a href="Clock.html">Clock</a></li>
+      <li><a href="EmailService.html">EmailService</a></li>
       <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Pool.html">Pool</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
       <li><a href="Service.html">Service</a></li>
+      <li><a href="ServiceUIRegistry.html">ServiceUIRegistry</a></li>
       <li><a href="Site.html">Site</a></li>
       <li><a href="Trainer.html">Trainer</a></li>
       <li><a href="Worker.html">Worker</a></li>
+    </ul>
+    <h3>Global</h3>
+    <ul>
+      <li><a href="global.html#CAP_IDENTITY">CAP_IDENTITY</a></li>
+      <li><a href="global.html#CAP_SESSION">CAP_SESSION</a></li>
+      <li><a href="global.html#REDIS_KEY">REDIS_KEY</a></li>
+      <li><a href="global.html#SESSION_PAYLOAD_MAX_CHARS">SESSION_PAYLOAD_MAX_CHARS</a></li>
+      <li><a href="global.html#TOKEN_KIND_SESSION">TOKEN_KIND_SESSION</a></li>
+      <li><a href="global.html#additionalPoolModels">additionalPoolModels</a></li>
+      <li><a href="global.html#baseUrl">baseUrl</a></li>
+      <li><a href="global.html#broadcastSignedFabric">broadcastSignedFabric</a></li>
+      <li><a href="global.html#browserPublicProcessEnv">browserPublicProcessEnv</a></li>
+      <li><a href="global.html#buildPipelineFanOut">buildPipelineFanOut</a></li>
+      <li><a href="global.html#canonicalSessionPayload">canonicalSessionPayload</a></li>
+      <li><a href="global.html#capsIncludeAdmin">capsIncludeAdmin</a></li>
+      <li><a href="global.html#consumeChatCompletionStream">consumeChatCompletionStream</a></li>
+      <li><a href="global.html#crypto">crypto</a></li>
+      <li><a href="global.html#getRegistry">getRegistry</a></li>
+      <li><a href="global.html#issueNodeSessionToken">issueNodeSessionToken</a></li>
+      <li><a href="global.html#key">key</a></li>
+      <li><a href="global.html#maxEmbeddingInputChars">maxEmbeddingInputChars</a></li>
+      <li><a href="global.html#mergeVerifiedBearerTokens">mergeVerifiedBearerTokens</a></li>
+      <li><a href="global.html#ollamaBaseUrl">ollamaBaseUrl</a></li>
+      <li><a href="global.html#openAiChatCompletionChunk">openAiChatCompletionChunk</a></li>
+      <li><a href="global.html#parseChatCompletionJsonOrSse">parseChatCompletionJsonOrSse</a></li>
+      <li><a href="global.html#poolUpstreamModel">poolUpstreamModel</a></li>
+      <li><a href="global.html#processSseLine">processSseLine</a></li>
+      <li><a href="global.html#requestUsesTools">requestUsesTools</a></li>
+      <li><a href="global.html#stripThinkTags">stripThinkTags</a></li>
+      <li><a href="global.html#transport">transport</a></li>
+      <li><a href="global.html#verifyNodeSessionToken">verifyNodeSessionToken</a></li>
+      <li><a href="global.html#verifyStreamMessage">verifyStreamMessage</a></li>
     </ul>
   </nav>
   <br class="clear" />

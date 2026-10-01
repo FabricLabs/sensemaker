@@ -21,7 +21,8 @@
 
         <h2><span class="attribs"><span class="type-signature"></span></span>FabricNetwork<span class="signature">(settings<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {FabricService}</span></h2>
 
-        <div class="class-description">Defines the Fabric interface for Sensemaker.</div>
+        <div class="class-description">Defines the Fabric interface for Sensemaker.
+          Extends Hub `services/fabric` via package export (no path.join deep-require).</div>
 
 
       </header>
@@ -151,7 +152,7 @@
             <dd class="tag-source">
               <ul class="dummy">
                 <li>
-                  <a href="services_fabric.js.html">services/fabric.js</a>, <a href="services_fabric.js.html#line16">line 16</a>
+                  <a href="services_fabric.js.html">services/fabric.js</a>, <a href="services_fabric.js.html#line13">line 13</a>
                 </li>
               </ul>
             </dd>
@@ -223,6 +224,151 @@
 
 
 
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+
+        <h4 class="name" id="_connect"><span class="type-signature"></span>_connect<span class="signature">(target)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Outbound P2P dial (host:port or pubkey@host:port). Delegates to the Fabric Peer.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>target</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">string</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last"></td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="services_fabric.js.html">services/fabric.js</a>, <a href="services_fabric.js.html#line146">line 146</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -238,17 +384,53 @@
     <h2><a href="index.html">Home</a></h2>
     <h3>Classes</h3>
     <ul>
+      <li><a href="ActiveWorkerQueue.html">ActiveWorkerQueue</a></li>
       <li><a href="Agent.html">Agent</a></li>
       <li><a href="Bundler.html">Bundler</a></li>
       <li><a href="Clock.html">Clock</a></li>
+      <li><a href="EmailService.html">EmailService</a></li>
       <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Pool.html">Pool</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
       <li><a href="Service.html">Service</a></li>
+      <li><a href="ServiceUIRegistry.html">ServiceUIRegistry</a></li>
       <li><a href="Site.html">Site</a></li>
       <li><a href="Trainer.html">Trainer</a></li>
       <li><a href="Worker.html">Worker</a></li>
+    </ul>
+    <h3>Global</h3>
+    <ul>
+      <li><a href="global.html#CAP_IDENTITY">CAP_IDENTITY</a></li>
+      <li><a href="global.html#CAP_SESSION">CAP_SESSION</a></li>
+      <li><a href="global.html#REDIS_KEY">REDIS_KEY</a></li>
+      <li><a href="global.html#SESSION_PAYLOAD_MAX_CHARS">SESSION_PAYLOAD_MAX_CHARS</a></li>
+      <li><a href="global.html#TOKEN_KIND_SESSION">TOKEN_KIND_SESSION</a></li>
+      <li><a href="global.html#additionalPoolModels">additionalPoolModels</a></li>
+      <li><a href="global.html#baseUrl">baseUrl</a></li>
+      <li><a href="global.html#broadcastSignedFabric">broadcastSignedFabric</a></li>
+      <li><a href="global.html#browserPublicProcessEnv">browserPublicProcessEnv</a></li>
+      <li><a href="global.html#buildPipelineFanOut">buildPipelineFanOut</a></li>
+      <li><a href="global.html#canonicalSessionPayload">canonicalSessionPayload</a></li>
+      <li><a href="global.html#capsIncludeAdmin">capsIncludeAdmin</a></li>
+      <li><a href="global.html#consumeChatCompletionStream">consumeChatCompletionStream</a></li>
+      <li><a href="global.html#crypto">crypto</a></li>
+      <li><a href="global.html#getRegistry">getRegistry</a></li>
+      <li><a href="global.html#issueNodeSessionToken">issueNodeSessionToken</a></li>
+      <li><a href="global.html#key">key</a></li>
+      <li><a href="global.html#maxEmbeddingInputChars">maxEmbeddingInputChars</a></li>
+      <li><a href="global.html#mergeVerifiedBearerTokens">mergeVerifiedBearerTokens</a></li>
+      <li><a href="global.html#ollamaBaseUrl">ollamaBaseUrl</a></li>
+      <li><a href="global.html#openAiChatCompletionChunk">openAiChatCompletionChunk</a></li>
+      <li><a href="global.html#parseChatCompletionJsonOrSse">parseChatCompletionJsonOrSse</a></li>
+      <li><a href="global.html#poolUpstreamModel">poolUpstreamModel</a></li>
+      <li><a href="global.html#processSseLine">processSseLine</a></li>
+      <li><a href="global.html#requestUsesTools">requestUsesTools</a></li>
+      <li><a href="global.html#stripThinkTags">stripThinkTags</a></li>
+      <li><a href="global.html#transport">transport</a></li>
+      <li><a href="global.html#verifyNodeSessionToken">verifyNodeSessionToken</a></li>
+      <li><a href="global.html#verifyStreamMessage">verifyStreamMessage</a></li>
     </ul>
   </nav>
   <br class="clear" />

@@ -73,38 +73,58 @@ class SourceView extends React.Component {
   componentDidMount () {
     this.start();
     this.props.fetchResource();
-    this.fetchHistory();
+  }
+
+  componentDidUpdate (prevProps) {
+    // Fetch history when source ID changes
+    const currentResource = this.props.api?.resource || {};
+    const prevResource = prevProps.api?.resource || {};
+
+    if (prevResource.id !== currentResource.id && currentResource.id) {
+      this.fetchHistory();
+    }
   }
 
   async fetchHistory () {
     try {
-      const response = await fetch(`/sources/${this.props.api.resource.id}/history`);
-      const history = await response.json();
+      const sourceId = this.props.api?.resource?.id;
+      if (!sourceId) {
+        console.warn('[SOURCEVIEW]', 'No source ID available for fetching history');
+        return;
+      }
 
-      // For each history item, fetch associated documents
-      const historyWithDocuments = await Promise.all(
-        history.map(async (retrieval) => {
-          try {
-            // Search for documents with the same fabric_id as the blob
-            const docResponse = await fetch(`/api/documents?fabric_id=${retrieval.blob_id}`);
-            const documents = await docResponse.json();
-            return {
-              ...retrieval,
-              documents: documents || []
-            };
-          } catch (error) {
-            console.error(`Error fetching documents for blob ${retrieval.blob_id}:`, error);
-            return {
-              ...retrieval,
-              documents: []
-            };
-          }
-        })
-      );
+      const response = await fetch(`/sources/${sourceId}/history`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.props.auth?.token
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch history: ${response.statusText}`);
+      }
 
-      this.setState({ history: historyWithDocuments });
+      const retrievalHistory = await response.json();
+
+      // Format it for display in the history table
+      const history = retrievalHistory.map((item) => ({
+        id: item.id || item.fabric_id,
+        blob_id: item.blob_id || item.latest_blob_id,
+        created_at: item.retrieved_at || item.created_at,
+        bytes_changed: item.bytes_changed,
+        blob_size: item.blob_size,
+        documents: item.fabric_id ? [{
+          id: item.fabric_id,
+          title: item.title,
+          summary: item.summary
+        }] : []
+      }));
+
+      console.debug('[SOURCEVIEW]', 'Setting history from /history endpoint:', history);
+      this.setState({ history });
     } catch (error) {
-      console.error('Error fetching source history:', error);
+      console.error('[SOURCEVIEW]', 'Error fetching source history:', error);
+      this.setState({ history: [] });
     }
   }
 
@@ -191,6 +211,7 @@ class SourceView extends React.Component {
           <Table.Row>
             <Table.HeaderCell>Date</Table.HeaderCell>
             <Table.HeaderCell>Content</Table.HeaderCell>
+            <Table.HeaderCell>Bytes Changed</Table.HeaderCell>
             <Table.HeaderCell>Snapshots</Table.HeaderCell>
             <Table.HeaderCell>Actions</Table.HeaderCell>
           </Table.Row>
@@ -199,10 +220,22 @@ class SourceView extends React.Component {
           {history.map((retrieval, index) => (
             <Table.Row key={retrieval.id || index}>
               <Table.Cell>
-                {new Date(retrieval.created_at).toLocaleString()}
+                {retrieval.created_at ? new Date(retrieval.created_at).toLocaleString() : 'Unknown date'}
               </Table.Cell>
               <Table.Cell>
                 <code>{retrieval.blob_id}</code>
+              </Table.Cell>
+              <Table.Cell>
+                {retrieval.bytes_changed !== null && retrieval.bytes_changed !== undefined ? (
+                  <span style={{
+                    color: retrieval.bytes_changed > 0 ? '#d32f2f' : retrieval.bytes_changed < 0 ? '#388e3c' : '#666',
+                    fontWeight: 'bold'
+                  }}>
+                    {retrieval.bytes_changed > 0 ? '+' : ''}{retrieval.bytes_changed.toLocaleString()} bytes
+                  </span>
+                ) : (
+                  <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
+                )}
               </Table.Cell>
               <Table.Cell>
                 {retrieval.documents && retrieval.documents.length > 0 ? (
@@ -259,6 +292,7 @@ class SourceView extends React.Component {
       content,
       recurrence,
       last_retrieved,
+      last_error,
       can_edit
     } = resource;
 
@@ -314,6 +348,19 @@ class SourceView extends React.Component {
               <Table.Cell><strong>Last Retrieved</strong></Table.Cell>
               <Table.Cell>
                 {last_retrieved ? new Date(last_retrieved).toLocaleString() : 'Never'}
+              </Table.Cell>
+            </Table.Row>
+            <Table.Row>
+              <Table.Cell><strong>Last Error</strong></Table.Cell>
+              <Table.Cell>
+                {last_error && (
+                  <Message negative>
+                    <Message.Header>
+                      <Icon name='warning circle' /> Sync Failed
+                    </Message.Header>
+                    <p>{last_error}</p>
+                  </Message>
+                )}
               </Table.Cell>
             </Table.Row>
           </Table.Body>

@@ -9,6 +9,9 @@ module.exports = {
     migrations: {
       directory: './migrations'
     },
+    seeds: {
+      directory: './seeds'
+    },
     pool: {
       min: 2,
       max: 20,
@@ -28,6 +31,9 @@ module.exports = {
     },
     migrations: {
       directory: './migrations'
+    },
+    seeds: {
+      directory: './seeds'
     },
     pool: {
       min: 2,

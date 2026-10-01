@@ -212,7 +212,7 @@
             <dd class="tag-source">
               <ul class="dummy">
                 <li>
-                  <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line29">line 29</a>
+                  <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line55">line 55</a>
                 </li>
               </ul>
             </dd>
@@ -262,6 +262,854 @@
 
 
 
+        <h3 class="subsection-title">Methods</h3>
+
+
+
+
+
+
+
+        <h4 class="name" id="calculateBundleHash"><span class="type-signature"></span>calculateBundleHash<span class="signature">(bundlePath)</span><span class="type-signature"> &rarr; {string}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Calculate the sha256 hash of the generated JavaScript bundle.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>bundlePath</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">string</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Path to the bundle file</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line217">line 217</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          SHA256 hash of the bundle
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">string</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="compileJavaScriptBundle"><span class="type-signature">(async) </span>compileJavaScriptBundle<span class="signature">()</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Compile the JavaScript bundle using webpack.
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line181">line 181</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Webpack compilation results
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">Promise.&lt;Object></span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="compileTo"><span class="type-signature">(async) </span>compileTo<span class="signature">(target)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Compile the HTML file to a specific target.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+              <th>Default</th>
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>target</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">string</span>
+
+
+
+              </td>
+
+
+
+
+              <td class="default">
+
+                assets/index.html
+
+              </td>
+
+
+              <td class="description last">Path to output HTML file</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line269">line 269</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Compilation results including bundle hash
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">Promise.&lt;Object></span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="generateCacheManifest"><span class="type-signature">(async) </span>generateCacheManifest<span class="signature">(outputPath)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Generate a cache.manifest file listing all static assets for offline support.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>outputPath</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">string</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Path to the manifest file (default: 'assets/cache.manifest')</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line309">line 309</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="generateWebManifest"><span class="type-signature">(async) </span>generateWebManifest<span class="signature">(outputPath)</span><span class="type-signature"></span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Generate a manifest.json file for PWA support.
+        </div>
+
+
+
+
+
+
+
+
+
+        <h5>Parameters:</h5>
+
+
+        <table class="params">
+          <thead>
+            <tr>
+
+              <th>Name</th>
+
+
+              <th>Type</th>
+
+
+
+
+
+              <th class="last">Description</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+
+            <tr>
+
+              <td class="name"><code>outputPath</code></td>
+
+
+              <td class="type">
+
+
+                <span class="param-type">string</span>
+
+
+
+              </td>
+
+
+
+
+
+              <td class="description last">Path to the manifest file (default: 'assets/manifest.json')</td>
+            </tr>
+
+
+          </tbody>
+        </table>
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line348">line 348</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h4 class="name" id="getBundleStats"><span class="type-signature"></span>getBundleStats<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+
+
+
+
+
+        <div class="description">
+          Get bundle statistics.
+        </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <dl class="details">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          <dt class="tag-source">Source:</dt>
+          <dd class="tag-source">
+            <ul class="dummy">
+              <li>
+                <a href="types_bundler.js.html">types/bundler.js</a>, <a href="types_bundler.js.html#line239">line 239</a>
+              </li>
+            </ul>
+          </dd>
+
+
+
+
+
+
+
+        </dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        <h5>Returns:</h5>
+
+
+        <div class="param-desc">
+          Bundle statistics
+        </div>
+
+
+
+        <dl>
+          <dt>
+            Type
+          </dt>
+          <dd>
+
+            <span class="param-type">Object</span>
+
+
+          </dd>
+        </dl>
+
+
+
+
+
+
+
+
+
 
 
 
@@ -277,17 +1125,53 @@
     <h2><a href="index.html">Home</a></h2>
     <h3>Classes</h3>
     <ul>
+      <li><a href="ActiveWorkerQueue.html">ActiveWorkerQueue</a></li>
       <li><a href="Agent.html">Agent</a></li>
       <li><a href="Bundler.html">Bundler</a></li>
       <li><a href="Clock.html">Clock</a></li>
+      <li><a href="EmailService.html">EmailService</a></li>
       <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Pool.html">Pool</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
       <li><a href="Service.html">Service</a></li>
+      <li><a href="ServiceUIRegistry.html">ServiceUIRegistry</a></li>
       <li><a href="Site.html">Site</a></li>
       <li><a href="Trainer.html">Trainer</a></li>
       <li><a href="Worker.html">Worker</a></li>
+    </ul>
+    <h3>Global</h3>
+    <ul>
+      <li><a href="global.html#CAP_IDENTITY">CAP_IDENTITY</a></li>
+      <li><a href="global.html#CAP_SESSION">CAP_SESSION</a></li>
+      <li><a href="global.html#REDIS_KEY">REDIS_KEY</a></li>
+      <li><a href="global.html#SESSION_PAYLOAD_MAX_CHARS">SESSION_PAYLOAD_MAX_CHARS</a></li>
+      <li><a href="global.html#TOKEN_KIND_SESSION">TOKEN_KIND_SESSION</a></li>
+      <li><a href="global.html#additionalPoolModels">additionalPoolModels</a></li>
+      <li><a href="global.html#baseUrl">baseUrl</a></li>
+      <li><a href="global.html#broadcastSignedFabric">broadcastSignedFabric</a></li>
+      <li><a href="global.html#browserPublicProcessEnv">browserPublicProcessEnv</a></li>
+      <li><a href="global.html#buildPipelineFanOut">buildPipelineFanOut</a></li>
+      <li><a href="global.html#canonicalSessionPayload">canonicalSessionPayload</a></li>
+      <li><a href="global.html#capsIncludeAdmin">capsIncludeAdmin</a></li>
+      <li><a href="global.html#consumeChatCompletionStream">consumeChatCompletionStream</a></li>
+      <li><a href="global.html#crypto">crypto</a></li>
+      <li><a href="global.html#getRegistry">getRegistry</a></li>
+      <li><a href="global.html#issueNodeSessionToken">issueNodeSessionToken</a></li>
+      <li><a href="global.html#key">key</a></li>
+      <li><a href="global.html#maxEmbeddingInputChars">maxEmbeddingInputChars</a></li>
+      <li><a href="global.html#mergeVerifiedBearerTokens">mergeVerifiedBearerTokens</a></li>
+      <li><a href="global.html#ollamaBaseUrl">ollamaBaseUrl</a></li>
+      <li><a href="global.html#openAiChatCompletionChunk">openAiChatCompletionChunk</a></li>
+      <li><a href="global.html#parseChatCompletionJsonOrSse">parseChatCompletionJsonOrSse</a></li>
+      <li><a href="global.html#poolUpstreamModel">poolUpstreamModel</a></li>
+      <li><a href="global.html#processSseLine">processSseLine</a></li>
+      <li><a href="global.html#requestUsesTools">requestUsesTools</a></li>
+      <li><a href="global.html#stripThinkTags">stripThinkTags</a></li>
+      <li><a href="global.html#transport">transport</a></li>
+      <li><a href="global.html#verifyNodeSessionToken">verifyNodeSessionToken</a></li>
+      <li><a href="global.html#verifyStreamMessage">verifyStreamMessage</a></li>
     </ul>
   </nav>
   <br class="clear" />

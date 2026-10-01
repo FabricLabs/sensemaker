@@ -41,6 +41,7 @@ const VideoContent = require('./VideoContent');
 const ImageContent = require('./ImageContent');
 const CreateDocumentModal = require('./CreateDocumentModal');
 const FileUploadModal = require('./FileUploadModal');
+const NotFound = require('./NotFound');
 
 // Functions
 const formatDate = require('../functions/formatDate');
@@ -455,8 +456,74 @@ class DocumentView extends React.Component {
   }
 
   render () {
-    const { documents } = this.props;
+    const { documents, fabricID } = this.props;
     const { editDocument } = this.state;
+
+    // Check if we have a 404 error (document not found)
+    const is404 = documents.error && (
+      documents.error.status === 404 ||
+      documents.error.statusCode === 404 ||
+      (typeof documents.error === 'string' && documents.error.includes('not found')) ||
+      (documents.error.message && documents.error.message.toLowerCase().includes('not found'))
+    );
+
+    // Show 404 if error is 404 and not loading
+    if (is404 && !documents.loading && !documents.document.id) {
+      return (
+        <div className='fade-in' style={{ height: '97vh' }}>
+          <Segment padded='very' basic style={{ textAlign: 'center', marginTop: '7em' }}>
+            <Header as='h1' icon>
+              <Icon name='file outline' />
+              404: Document Not Found
+              <Header.Subheader>
+                The document you're looking for doesn't exist or you don't have permission to view it.
+              </Header.Subheader>
+            </Header>
+            {fabricID && (
+              <div style={{ margin: '2em 0' }}>
+                <code style={{
+                  background: '#f5f5f5',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '6px',
+                  wordBreak: 'break-all',
+                  display: 'inline-block'
+                }}>
+                  {fabricID}
+                </code>
+              </div>
+            )}
+            <p style={{ fontSize: '1.2em', color: 'rgba(0,0,0,0.6)', margin: '2em 0' }}>
+              We couldn't find the document you were looking for. Let's get you back on track.
+            </p>
+            <Button.Group>
+              <Button
+                as={Link}
+                to='/documents'
+                primary
+                size='large'
+                icon
+                labelPosition='left'
+              >
+                <Icon name='folder open' />
+                Browse Documents
+              </Button>
+              <Button.Or />
+              <Button
+                as={Link}
+                to='/'
+                size='large'
+                icon
+                labelPosition='left'
+              >
+                <Icon name='home' />
+                Return Home
+              </Button>
+            </Button.Group>
+          </Segment>
+        </div>
+      );
+    }
+
     return (
       <div className='fade-in' style={{ height: '97vh' }} loading={documents.loading}>
         <Card fluid>

@@ -19,8 +19,15 @@ const {
 const AGENT_MAX_TOKENS = 8192 * 16; // 128k tokens
 const AGENT_TEMPERATURE = 0;
 const BRAND_NAME = 'Sensemaker';
-const CORE_MODEL = 'llama3.2';
-const EMBEDDING_MODEL = 'mxbai-embed-large';
+/** Set `SENSEMAKER_LEAN=1` for minimal services profile + faster pipeline timeouts (see settings/local.js). */
+const SENSEMAKER_LEAN = process.env.SENSEMAKER_LEAN === '1';
+/**
+ * Default chat model. Lean profile prefers `qwen3:0.6b` (small/fast). Full profile uses `llama3.2:latest`.
+ * Override with `OLLAMA_MODEL`. Pool/searcher may still call other tags explicitly.
+ */
+const CORE_MODEL = process.env.OLLAMA_MODEL || 'qwen3:0.6b';
+/** Default embedding model — much smaller than mxbai-embed-large (`ollama pull nomic-embed-text`). */
+const EMBEDDING_MODEL = 'nomic-embed-text';
 
 // Authentication
 const BCRYPT_PASSWORD_ROUNDS = 10;
@@ -54,6 +61,17 @@ const ALLOWED_UPLOAD_TYPES = [
 
 // Flags
 const IS_CONFIGURED = false; // Set to true after initial admin setup
+/** Browser/UI verbose logging when `DEBUG_SENSEMAKER_UI=1` at build/runtime. */
+const DEBUG_SENSEMAKER_UI = process.env.DEBUG_SENSEMAKER_UI === '1';
+
+const {
+  HOSTED_LLM_PROVIDERS,
+  HOSTED_LLM_POOL_SETTING_NAMES,
+  OPENROUTER_POOL_SETTING_NAME
+} = require('./functions/hostedLlmProviders');
+
+/** Global setting: when true, Searcher + vector document prefetch runs before the text pipeline. */
+const DOCUMENT_RETRIEVAL_SETTING_NAME = 'DOCUMENT_RETRIEVAL_ENABLED';
 
 // Configuration settings that should be saved as GLOBAL (system-wide) settings
 const GLOBAL_SETTINGS = [
@@ -61,7 +79,9 @@ const GLOBAL_SETTINGS = [
   'NODE_PERSONALITY',
   'AI_TEMPERATURE',
   'USER_GOALS',
-  'IS_CONFIGURED'
+  'IS_CONFIGURED',
+  ...HOSTED_LLM_POOL_SETTING_NAMES,
+  DOCUMENT_RETRIEVAL_SETTING_NAME
 ];
 
 const ENABLE_AGENTS = true;
@@ -80,6 +100,7 @@ const ENABLE_FABRIC = true;
 const ENABLE_FEEDBACK_BUTTON = false;
 const ENABLE_FILES = true;
 const ENABLE_GROUPS = false;
+const ENABLE_GOALS = true;
 const ENABLE_JOBS = false;
 const ENABLE_LIBRARY = true;
 const ENABLE_LOGIN = true;
@@ -91,9 +112,25 @@ const ENABLE_SOURCES = false;
 const ENABLE_TASKS = true;
 const ENABLE_UPLOADS = true;
 const ENABLE_WALLET = false;
+const ENABLE_BENCHMARK = true;
 
 // UI
 const USER_QUERY_TIMEOUT_MS = 15000; // 15 seconds
+/**
+ * Budget for one Agent.query / Pool.query / Trainer QA chain (remote Ollama cold-load often exceeds 60s).
+ * Override with SENSEMAKER_LLM_TIMEOUT_MS. Lean profile keeps a tighter 60s default.
+ */
+const DEFAULT_LLM_TIMEOUT_MS = parseInt(process.env.SENSEMAKER_LLM_TIMEOUT_MS, 10) || (SENSEMAKER_LEAN ? 60000 : 120000);
+/**
+ * Max wall time for Promise.allSettled on pool + trainer + primary agent.
+ * Must be >= typical LLM completion time on your Ollama host (see DEFAULT_LLM_TIMEOUT_MS).
+ * Override with SENSEMAKER_PIPELINE_MS.
+ */
+const PIPELINE_PARALLEL_MS = SENSEMAKER_LEAN
+  ? 35000
+  : (parseInt(process.env.SENSEMAKER_PIPELINE_MS, 10) || 150000);
+/** Cap for the post-pipeline summarization call (streaming); avoids indefinite hang if Ollama/stream stalls. */
+const PIPELINE_FINAL_SUMMARY_MS = SENSEMAKER_LEAN ? 55000 : 120000;
 const USER_MENU_HOVER_TIME_MS = 1000;
 const USER_HINT_TIME_MS = 3000;
 const SYNC_EMBEDDINGS_COUNT = 100;
@@ -125,10 +162,12 @@ module.exports = {
   MAX_MEMORY_SIZE,
   INTEGRITY_CHECK,
   IS_CONFIGURED,
+  DEBUG_SENSEMAKER_UI,
   ALLOWED_UPLOAD_TYPES,
   BCRYPT_PASSWORD_ROUNDS,
   CORE_MODEL,
   EMBEDDING_MODEL,
+  SENSEMAKER_LEAN,
   ENABLE_AGENTS,
   ENABLE_ALERTS,
   ENABLE_BITCOIN,
@@ -140,6 +179,7 @@ module.exports = {
   ENABLE_DOCUMENTS,
   ENABLE_FABRIC,
   ENABLE_FEEDBACK_BUTTON,
+  ENABLE_GOALS,
   ENABLE_GROUPS,
   ENABLE_JOBS,
   ENABLE_BILLING,
@@ -156,6 +196,7 @@ module.exports = {
   ENABLE_SOURCES,
   ENABLE_TASKS,
   ENABLE_WALLET,
+  ENABLE_BENCHMARK,
   PER_PAGE_LIMIT,
   PER_PAGE_DEFAULT,
   BROWSER_DATABASE_NAME,
@@ -165,8 +206,15 @@ module.exports = {
   OPENAI_API_KEY,
   AGENT_TEMPERATURE,
   USER_QUERY_TIMEOUT_MS,
+  DEFAULT_LLM_TIMEOUT_MS,
+  PIPELINE_PARALLEL_MS,
+  PIPELINE_FINAL_SUMMARY_MS,
   USER_HINT_TIME_MS,
   USER_MENU_HOVER_TIME_MS,
   SYNC_EMBEDDINGS_COUNT,
-  GLOBAL_SETTINGS
+  GLOBAL_SETTINGS,
+  HOSTED_LLM_PROVIDERS,
+  HOSTED_LLM_POOL_SETTING_NAMES,
+  OPENROUTER_POOL_SETTING_NAME,
+  DOCUMENT_RETRIEVAL_SETTING_NAME
 };

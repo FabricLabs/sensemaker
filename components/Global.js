@@ -40,12 +40,14 @@ class Global extends React.Component {
   }
 
   handleBridgeMessage = (msg) => {
-    // Only handle chat messages for the global chat
-    if (msg && msg.type === 'ChatMessage' && msg.object && msg.target === '/messages') {
-      this.setState(prevState => ({
-        messages: [...prevState.messages, msg]
-      }));
-    }
+    // Mesh shoutbox: P2P_CHAT_MESSAGE (canonical) or legacy ChatMessage.
+    const t = msg && msg.type;
+    const isChat = t === 'P2P_CHAT_MESSAGE' || t === 'ChatMessage' || t === 'CHAT_MESSAGE';
+    if (!isChat || !msg.object) return;
+    if (msg.target && msg.target !== '/messages') return;
+    this.setState(prevState => ({
+      messages: [...prevState.messages, msg]
+    }));
   };
 
   handleMessageSubmit = async (msg) => {
@@ -53,7 +55,7 @@ class Global extends React.Component {
       const body = {
         type: 'P2P_CHAT_MESSAGE',
         actor: {
-          id: this.props.auth.id
+          id: this.props.auth && this.props.auth.id
         },
         object: {
           created: Date.now(),
@@ -62,18 +64,18 @@ class Global extends React.Component {
         target: '/messages'
       };
 
-      const message = Message.fromVector(['ChatMessage', JSON.stringify(body)]);
+      // Canonical mesh outer type — same OUTER.P2P_CHAT_MESSAGE as
+      // contracts/applicationMessageTypes (Hub / Core Peer / Sensemaker).
+      const message = Message.fromVector(['P2P_CHAT_MESSAGE', JSON.stringify(body)]);
       console.debug('[FABRIC:GLOBAL]', 'Message:', message);
 
-      // Send the message through the Bridge component
       if (this.props.bridge) {
         console.debug('[FABRIC:GLOBAL]', 'Sending message to bridge:', message);
         this.props.bridge.sendSignedMessage(message.toBuffer());
       }
 
-      // Add to local state for display
       this.setState(prevState => ({
-        messages: [...prevState.messages, message]
+        messages: [...prevState.messages, body]
       }));
     } catch (error) {
       console.error('[FABRIC:GLOBAL]', 'Failed to submit message:', error);

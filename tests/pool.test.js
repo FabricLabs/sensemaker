@@ -2,9 +2,7 @@
 
 // Dependencies
 const assert = require('assert');
-
-// Settings
-const settings = require('../settings/local');
+const Actor = require('@fabric/core/types/actor');
 
 // Fabric Types
 const Pool = require('../types/pool');
@@ -37,7 +35,7 @@ describe('Pool', function () {
 
   beforeEach(async function () {
     pool = new Pool({
-      members: [ settings.ollama ],
+      members: [],
       methods: {},
       models: {},
       state: {
@@ -66,81 +64,99 @@ describe('Pool', function () {
     }
   });
 
-  it('should initialize with default settings', function () {
-    assert.strictEqual(pool.settings.members.length, 1);
-    assert.strictEqual(pool._state.content.status, 'STOPPED');
-  });
-
-  it('should start with default settings', async function () {
+  it('should initialize and start cleanly', async function () {
+    assert.strictEqual(pool.settings.members.length, 0);
     await pool.start();
-
-    // Wait for pool to be ready
-    await waitForPoolReady(pool);
-
-    assert.strictEqual(pool.settings.members.length, 1);
     assert.strictEqual(pool._state.content.status, 'STARTED');
   });
 
-  it('should respond to a query', async function () {
-    await pool.start();
+  it('should respond to a query via a ready member', async function () {
+    const memberId = new Actor({ provider: 'unit-test' }).id;
+    pool._state.members[memberId] = {
+      query: async (request) => ({
+        status: 'completed',
+        query: request.query,
+        content: 'ok'
+      })
+    };
+    pool._state.memberStatus[memberId] = 'ready';
+    pool._state.models['qwen3:0.6b'] = [{ provider: memberId, status: 'ready' }];
 
-    // Wait for pool to be ready
-    await waitForPoolReady(pool);
+    const response = await pool.query({
+      model: 'qwen3:0.6b',
+      query: 'Who are you?',
+      temperature: 0
+    });
 
-    try {
-      const response = await pool.query({
-        model: 'qwen3:0.6b',
-        query: 'Who are you?',
-        temperature: 0,
-      });
-
-      assert.ok(response);
-      assert.ok(response.content);
-      assert.strictEqual(response.query, 'Who are you?');
-    } catch (error) {
-      console.error('Query failed:', error);
-      console.error('Pool health:', pool.getPoolHealth());
-      throw error;
-    }
+    assert.strictEqual(response.status, 'completed');
+    assert.strictEqual(response.query, 'Who are you?');
+    assert.strictEqual(response.content, 'ok');
   });
 
-  xit('can use foreign providers', async function () {
-    const foreignPool = new Pool({
-      members: [
-        {
-          ...settings.ollama,
-          model: 'deepseek/deepseek-r1-0528:free',
-          host: 'openrouter.ai',
-          port: 443,
-          secure: true,
-          path: '/api/v1',
-          headers: {
-            'Authorization': `Bearer ${settings.openrouter.token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      ],
-      methods: {},
-      models: {},
-      state: {
-        jobs: {},
-        members: {},
-        status: 'STOPPED'
+  it('throws when no suitable member exists for the requested model', async function () {
+    await assert.rejects(
+      pool.query({
+        model: 'deepseek/deepseek-r1-0528:free',
+        query: 'What is the capital of France?',
+        temperature: 0
+      }),
+      /No suitable healthy member found/
+    );
+  });
+
+  it('registers poolUpstreamModel when listing models fails', async function () {
+    const memberId = new Actor({ provider: 'hosted-fallback' }).id;
+    pool._state.content.members[memberId] = { host: 'api.example' };
+    pool._state.members[memberId] = {
+      settings: {
+        poolUpstreamModel: 'llama-3.1-8b-instant',
+        model: 'llama-3.1-8b-instant',
+        additionalPoolModels: ['qwen3:0.6b']
+      },
+      listTags: async () => {
+        throw new Error('not ollama');
+      },
+      listModels: async () => {
+        throw new Error('models endpoint missing');
       }
+    };
+
+    await pool._initializeMember(memberId);
+
+    assert.strictEqual(pool._state.memberStatus[memberId], 'ready');
+    assert.ok(pool._state.models['llama-3.1-8b-instant']);
+    assert.ok(pool._state.models['qwen3:0.6b']);
+  });
+
+  it('falls back to the next member when the first provider fails', async function () {
+    const failId = new Actor({ provider: 'fail' }).id;
+    const okId = new Actor({ provider: 'ok' }).id;
+    pool._state.members[failId] = {
+      query: async () => {
+        throw new Error('primary member failed');
+      }
+    };
+    pool._state.members[okId] = {
+      query: async (request) => ({
+        status: 'completed',
+        query: request.query,
+        content: 'fallback ok'
+      })
+    };
+    pool._state.memberStatus[failId] = 'ready';
+    pool._state.memberStatus[okId] = 'ready';
+    pool._state.models['qwen3:0.6b'] = [
+      { provider: failId, status: 'ready' },
+      { provider: okId, status: 'ready' }
+    ];
+
+    const response = await pool.query({
+      model: 'qwen3:0.6b',
+      query: 'Who are you?',
+      temperature: 0
     });
 
-    await foreignPool.start();
-
-    const response = await foreignPool.query({
-      model: 'deepseek/deepseek-r1-0528:free',
-      query: 'What is the capital of France?',
-      temperature: 0,
-    });
-
-    await foreignPool.stop();
-
-    assert.strictEqual(response.status, 'success');
-    assert.strictEqual(response.query, 'What is the capital of France?');
-    assert.ok(response.content);
+    assert.strictEqual(response.status, 'completed');
+    assert.strictEqual(response.content, 'fallback ok');
   });
 });

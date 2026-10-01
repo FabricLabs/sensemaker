@@ -14,8 +14,19 @@ const ReactDOM = require('react-dom');
 const ReactDOMServer = require('react-dom/server');
 const webpack = require('webpack');
 
-// Settings
-const settings = require('../settings/local');
+// Settings (full local.js loads Fabric Environment + wallet — can fail in minimal CI / broken fabric)
+let settings;
+try {
+  settings = require('../settings/local');
+} catch (err) {
+  console.warn('[BUILD] settings/local.js failed to load:', err && err.message ? err.message : err);
+  console.warn('[BUILD] Using minimal fallback. Fix @fabric/core or use a working settings/local.js for full SSR metadata.');
+  settings = {
+    authority: 'localhost:3040',
+    name: 'Sensemaker',
+    http: { hostname: 'localhost', port: 3040, listen: true, path: '/' }
+  };
+}
 
 // Fabric HTTP Types
 // const Site = require('@fabric/http/types/site');

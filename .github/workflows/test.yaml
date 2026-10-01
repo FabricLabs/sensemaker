@@ -21,9 +21,9 @@ jobs:
       NODE_ENV: test
     steps:
     - name: Checkout branch
-      uses: actions/checkout@v3
+      uses: actions/checkout@v7
     - name: Install Node.js on ${{ matrix.os }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -31,7 +31,7 @@ jobs:
       env:
         PUPPETEER_SKIP_DOWNLOAD: true
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.8'
     - name: Install dependencies

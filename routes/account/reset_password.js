@@ -6,6 +6,10 @@ const createPasswordResetEmailContent = require('../../functions/createPasswordR
 module.exports = async function (req, res, next) {
   const { email } = req.body;
 
+  if (!this.email) {
+    return res.status(503).json({ message: 'Email is not configured on this server.' });
+  }
+
   try {
     // Check if the email exists
     const existingUser = await this.db('users').where('email', email).first();
@@ -28,8 +32,8 @@ module.exports = async function (req, res, next) {
         token: resetToken
       });
 
-      // TODO: refactor this link
-      const resetLink = `${this.authority}/passwordreset/${resetToken}`;
+      const origin = (this.settings.baseUrl || this.authority || '').replace(/\/$/, '');
+      const resetLink = `${origin}/passwordreset/${resetToken}`;
       const imgSrc = 'https://sensemaker.io/images/sensemaker-icon.png';
       const htmlContent = createPasswordResetEmailContent(resetLink, imgSrc);
 

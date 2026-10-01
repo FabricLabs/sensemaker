@@ -13,6 +13,8 @@ const createTimeoutPromise = require('../functions/createTimeoutPromise');
 const LOGIN_REQUEST = 'LOGIN_REQUEST';
 const LOGIN_SUCCESS = 'LOGIN_SUCCESS';
 const LOGIN_FAILURE = 'LOGIN_FAILURE';
+/** Stale or invalid stored session on restore — clear auth without surfacing an error on the login form */
+const SESSION_RESTORE_FAILURE = 'SESSION_RESTORE_FAILURE';
 
 const REGISTER_REQUEST = 'REGISTER_REQUEST';
 const REGISTER_SUCCESS = 'REGISTER_SUCCESS';
@@ -34,6 +36,7 @@ const CHECK_EMAIL_AVAILABLE_FAILURE = 'CHECK_EMAIL_AVAILABLE_FAILURE';
 const loginRequest = () => ({ type: LOGIN_REQUEST });
 const loginSuccess = (session) => ({ type: LOGIN_SUCCESS, payload: session });
 const loginFailure = error => ({ type: LOGIN_FAILURE, payload: error, error: error });
+const sessionRestoreFailure = () => ({ type: SESSION_RESTORE_FAILURE });
 
 const registerRequest = () => ({ type: REGISTER_REQUEST });
 const registerSuccess = token => ({ type: REGISTER_SUCCESS, payload: { token } });
@@ -118,27 +121,40 @@ const reLogin = (token) => {
         },
       });
 
-      const user = await response.json();
-      const session = {
-        token: token,
-        username: user.username,
-        email: user.email,
-        isAuthenticated: true,
-        isAdmin: user.isAdmin,
-        isBeta: user.isBeta,
-        isCompliant: user.isCompliant,
-        user_discord: user.user_discord,
-        id: user.id
-      }
+      const body = await response.json();
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(body.message || 'Session restore failed');
       }
+
+      const session = {
+        token: token,
+        username: body.username,
+        email: body.email,
+        isAuthenticated: true,
+        isAdmin: body.isAdmin,
+        isBeta: body.isBeta,
+        isCompliant: body.isCompliant,
+        user_discord: body.user_discord,
+        id: body.id
+      };
 
       dispatch(loginSuccess(session));
     } catch (error) {
-      dispatch(loginFailure(error.message));
+      document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      try {
+        const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
+        dbRequest.onsuccess = function (event) {
+          const db = event.target.result;
+          if (db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+            const tx = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readwrite');
+            tx.objectStore(BROWSER_DATABASE_TOKEN_TABLE).delete('authToken');
+          }
+        };
+      } catch (e) {
+        /* ignore */
+      }
+      dispatch(sessionRestoreFailure());
     }
   };
 };
@@ -284,6 +300,7 @@ module.exports = {
   register,
   reLogin,
   logout,
+  SESSION_RESTORE_FAILURE,
   checkUsernameAvailable,
   checkEmailAvailable,
   fullRegister,
@@ -302,4 +319,5 @@ module.exports = {
   FULL_REGISTER_REQUEST,
   FULL_REGISTER_SUCCESS,
   FULL_REGISTER_FAILURE,
+  sessionRestoreFailure,
 };

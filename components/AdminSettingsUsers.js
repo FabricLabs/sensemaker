@@ -179,6 +179,12 @@ class AdminUsers extends React.Component {
         </div>
         <div className='users-section-head'>
           <Header as='h4'>Users</Header>
+          {accounts.error != null && (
+            <Message
+              negative
+              content={accounts.error instanceof Error ? accounts.error.message : String(accounts.error)}
+            />
+          )}
           <br style={{ clear: 'both' }} />
           <div>
             <Button primary onClick={this.toggleCreateUserModal}>Create User</Button>

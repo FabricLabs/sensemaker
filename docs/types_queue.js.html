@@ -36,6 +36,7 @@ class Queue extends Actor {
     this.settings = merge({
       clock: 0,
       collection: 'queue:jobs',
+      debug: false,
       frequency: 1, // hz
       redis: null,
       state: {
@@ -43,7 +44,8 @@ class Queue extends Actor {
         jobs: {}
       },
       worker: false,
-      workers: 0
+      workers: 0,
+      verbosity: 0
     }, settings);
 
     this._state = {
@@ -59,6 +61,10 @@ class Queue extends Actor {
     this.redis = null;
 
     return this;
+  }
+
+  _qlog (...args) {
+    if (this.settings.debug) console.debug(...args);
   }
 
   set clock (value) {
@@ -108,63 +114,16 @@ class Queue extends Actor {
     return this._methods[name];
   }
 
-  // async _tick () {
-  //   ++this.clock;
-
-  //   if (this.settings.worker) {
-  //     console.debug('[QUEUE]', 'Jobs in queue:', await this.jobs);
-  //     if (!this._state.current) this._state.current = await this._takeJob();
-  //     console.debug('[QUEUE]', 'Current job:', this._state.current);
-
-  //     // If there's work to do, do it
-  //     if (this._state.current &amp;&amp; !this._state.current.status) {
-  //       this._state.current.status = 'COMPUTING';
-
-  //       // TODO: copy this to a "doWork" method, take new job immediately (or sleep if none available)
-  //       // Race to Complete or Timeout
-  //       Promise.race([
-  //         this._completeJob(this._state.current),
-  //         new Promise((resolve, reject) => {
-  //           setTimeout(() => {
-  //             console.error('[QUEUE]', 'Job timed out:', this._state.current);
-  //             reject(new Error('Job timed out.'));
-  //           }, this.interval);
-  //         })
-  //       ]).catch((exception) => {
-  //         console.error('[QUEUE]', 'Job failed:', exception);
-  //         // TODO: implement retries here (decrement counter, reinsert job into queue)
-  //         if(this._state.current.attempts > 0){
-  //           await this._failJob(this._state.current);
-  //         }
-  //         this._state.current = null;
-  //       }).then((result) => {
-  //         console.debug('[QUEUE]', 'Finished work:', result);
-  //         if(result.status === 'FAILED' &amp;&amp; this._state.current.attempts > 0){
-  //           await this._failJob(this._state.current);
-  //         }
-
-  //         this._state.current = null;
-  //         this._state.output.push(result);
-  //       });
-  //     }
-
-  //     console.debug('[QUEUE]', 'Jobs completed this epoch:', this._state.output.length);
-  //     this._state.output = [];
-  //   }
-
-  //   console.debug('[QUEUE]', 'TICK', this.clock);
-  // }
-
   async _tick () {
     // Increment the clock
     ++this.clock;
 
-    console.debug('[QUEUE]', 'TICK', this.clock);
+    this._qlog('[QUEUE]', 'TICK', this.clock);
 
     if (this.settings.worker) {
-      console.debug('[QUEUE]', (await this.jobs).length, 'jobs in queue,', this._state.output.length, 'completed this epoch,', 'current job is', JSON.stringify(this._state.current).length, 'bytes');
+      this._qlog('[QUEUE]', (await this.jobs).length, 'jobs in queue,', this._state.output.length, 'completed this epoch,', 'current job is', JSON.stringify(this._state.current).length, 'bytes');
       this._state.current = await this._takeJob();
-      if (this._state.current) console.debug('[QUEUE]', 'Starting job:', this._state.current);
+      if (this._state.current) this._qlog('[QUEUE]', 'Starting job:', this._state.current);
 
       // If there's work to do, do it
       if (this._state.current &amp;&amp; !this._state.current.status) {
@@ -185,9 +144,9 @@ class Queue extends Actor {
             })
           ]);
 
-          if (this.settings.debug) console.debug('[QUEUE]', 'Finished work:', result);
+          this._qlog('[QUEUE]', 'Finished work:', result);
           if (result.status === 'FAILED' &amp;&amp; this._state.current.attempts > 0) {
-            console.debug('[QUEUE] Failed job in the trainer:', this._state.current);
+            this._qlog('[QUEUE]', 'Failed job in the trainer:', this._state.current);
             await this._failJob(this._state.current);
           }
 
@@ -205,7 +164,6 @@ class Queue extends Actor {
       this._state.output = [];
     }
   }
-
 
   async start () {
     await this._registerMethod('verify', async function (...params) {
@@ -225,7 +183,7 @@ class Queue extends Actor {
 
       // Event Listeners
       this.redis.on('ready', (err) => {
-        console.debug('[QUEUE]', 'Redis ready:', err);
+        this._qlog('[QUEUE]', 'Redis ready:', err);
       });
 
       await this.redis.connect();
@@ -233,10 +191,10 @@ class Queue extends Actor {
 
       // TODO: enable `notify-keyspace-events` on Redis server
       await this.subscriber.pSubscribe(`__keyspace@0__:queue:*`, async (message, channel) => {
-        console.debug('[QUEUE]', 'Received message:', channel, message);
+        this._qlog('[QUEUE]', 'Received message:', channel, message);
         const affectedKey = channel.substring('__keyspace@0__:'.length);
         if (affectedKey === this.settings.collection) {
-          console.debug('[QUEUE]', 'Affected key:', affectedKey);
+          this._qlog('[QUEUE]', 'Affected key:', affectedKey);
         }
       });
     }
@@ -258,7 +216,7 @@ class Queue extends Actor {
 
     if (this.redis) {
       const result = await this.redis.rPush(this.settings.collection, JSON.stringify(job.toGenericMessage().object));
-      console.debug('[QUEUE]', 'Added job to queue:', result);
+      this._qlog('[QUEUE]', 'Added job to queue:', result);
     }
 
     this.emit('job', this.state.jobs[job.id]);
@@ -266,27 +224,39 @@ class Queue extends Actor {
   }
 
   async _takeJob () {
-    const json = await this.redis.lPop(this.settings.collection);
-    const job = JSON.parse(json);
+    try {
+      // Check if Redis is available
+      if (!this.redis || !this.redis.isOpen) {
+        this._qlog('[QUEUE]', 'Redis not available for _takeJob');
+        return null;
+      }
 
-    // TODO: canonize this API
-    this.emit('QueueJob', {
-      type: 'QueueJob',
-      content: job
-    });
+      const json = await this.redis.lPop(this.settings.collection);
+      if (!json) return null;
 
-    if (this.redis) {
-      await this.redis.publish('job:taken', JSON.stringify({ job }));
+      const job = JSON.parse(json);
+
+      // TODO: canonize this API
+      this.emit('QueueJob', {
+        type: 'QueueJob',
+        content: job
+      });
+
+      if (this.redis &amp;&amp; this.redis.isOpen) {
+        await this.redis.publish('job:taken', JSON.stringify({ job }));
+      }
+      return job;
+    } catch (error) {
+      console.error('[QUEUE]', 'Error in _takeJob:', error);
+      return null;
     }
-    return job;
   }
 
   async _completeJob (job) {
     if (this._methods[job.method]) {
       const result = await this._methods[job.method](...job.params);
-      console.debug('[QUEUE]', 'Completed job:', job);
+      this._qlog('[QUEUE]', 'Completed job:', job);
 
-      // TODO: reverse this logic to reject if !this.redis
       if (this.redis) {
         await this.redis.publish('job:completed', JSON.stringify({ job, result }));
       }
@@ -305,11 +275,9 @@ class Queue extends Actor {
     }
   }
 
-
   async _failJob (job) {
-    //we take the failed job and we add it to the queue again with 1 less retry attempt
     job.attempts--;
-    console.debug('[QUEUE]', 'Retrying job:', job);
+    this._qlog('[QUEUE]', 'Retrying job:', job);
     this._state.current = null;
     await this._addJob(job);
   }
@@ -318,16 +286,104 @@ class Queue extends Actor {
     try {
       if (this.redis) {
         await this.redis.del(this.settings.collection);
-        console.debug('[QUEUE]', 'Queue cleared in Redis');
+        this._qlog('[QUEUE]', 'Queue cleared in Redis');
       }
 
       this._state.content.jobs = {};
-      console.debug('[QUEUE]', 'Queue cleared in local state');
+      this._qlog('[QUEUE]', 'Queue cleared in local state');
     } catch (error) {
       console.error('[QUEUE]', 'Failed to clear queue:', error);
       throw error;
     }
     return this._state.content.jobs;
+  }
+
+  async stop () {
+    this._qlog('[QUEUE]', 'Stopping queue...');
+
+    // Stop the ticker first
+    if (this.ticker) {
+      clearInterval(this.ticker);
+      this.ticker = null;
+    }
+
+    // Clear any pending jobs
+    try {
+      await this._clearQueue();
+    } catch (error) {
+      console.warn('[QUEUE]', 'Error clearing queue during stop:', error);
+    }
+
+    // Close Redis connections with timeouts
+    const redisClosePromises = [];
+
+    if (this.redis) {
+      const mainRedisClose = new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('[QUEUE]', 'Timeout closing main Redis connection, forcing close');
+          this.redis = null;
+          resolve();
+        }, 2000);
+
+        this.redis.quit()
+          .then(() => {
+            clearTimeout(timeout);
+            this._qlog('[QUEUE]', 'Main Redis connection closed');
+            this.redis = null;
+            resolve();
+          })
+          .catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[QUEUE]', 'Error closing main Redis connection:', error);
+            }
+            this.redis = null;
+            resolve();
+          });
+      });
+      redisClosePromises.push(mainRedisClose);
+    }
+
+    if (this.subscriber) {
+      const subscriberClose = new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          console.warn('[QUEUE]', 'Timeout closing Redis subscriber, forcing close');
+          this.subscriber = null;
+          resolve();
+        }, 2000);
+
+        this.subscriber.quit()
+          .then(() => {
+            clearTimeout(timeout);
+            this._qlog('[QUEUE]', 'Redis subscriber closed');
+            this.subscriber = null;
+            resolve();
+          })
+          .catch((error) => {
+            clearTimeout(timeout);
+            if (error.message !== 'The client is closed') {
+              console.warn('[QUEUE]', 'Error closing Redis subscriber:', error);
+            }
+            this.subscriber = null;
+            resolve();
+          });
+      });
+      redisClosePromises.push(subscriberClose);
+    }
+
+    // Wait for all Redis connections to close or timeout
+    await Promise.all(redisClosePromises);
+
+    // Update state
+    this._state.status = 'STOPPED';
+    this._state.current = null;
+    this._state.output = [];
+
+    // Emit stopped event
+    this.emit('stopped');
+
+    this._qlog('[QUEUE]', 'Queue stopped successfully');
+    return true;
   }
 }
 
@@ -343,17 +399,53 @@ module.exports = Queue;
     <h2><a href="index.html">Home</a></h2>
     <h3>Classes</h3>
     <ul>
+      <li><a href="ActiveWorkerQueue.html">ActiveWorkerQueue</a></li>
       <li><a href="Agent.html">Agent</a></li>
       <li><a href="Bundler.html">Bundler</a></li>
       <li><a href="Clock.html">Clock</a></li>
+      <li><a href="EmailService.html">EmailService</a></li>
       <li><a href="FabricNetwork.html">FabricNetwork</a></li>
+      <li><a href="Pool.html">Pool</a></li>
       <li><a href="Queue.html">Queue</a></li>
       <li><a href="SPA.html">SPA</a></li>
       <li><a href="Sensemaker.html">Sensemaker</a></li>
       <li><a href="Service.html">Service</a></li>
+      <li><a href="ServiceUIRegistry.html">ServiceUIRegistry</a></li>
       <li><a href="Site.html">Site</a></li>
       <li><a href="Trainer.html">Trainer</a></li>
       <li><a href="Worker.html">Worker</a></li>
+    </ul>
+    <h3>Global</h3>
+    <ul>
+      <li><a href="global.html#CAP_IDENTITY">CAP_IDENTITY</a></li>
+      <li><a href="global.html#CAP_SESSION">CAP_SESSION</a></li>
+      <li><a href="global.html#REDIS_KEY">REDIS_KEY</a></li>
+      <li><a href="global.html#SESSION_PAYLOAD_MAX_CHARS">SESSION_PAYLOAD_MAX_CHARS</a></li>
+      <li><a href="global.html#TOKEN_KIND_SESSION">TOKEN_KIND_SESSION</a></li>
+      <li><a href="global.html#additionalPoolModels">additionalPoolModels</a></li>
+      <li><a href="global.html#baseUrl">baseUrl</a></li>
+      <li><a href="global.html#broadcastSignedFabric">broadcastSignedFabric</a></li>
+      <li><a href="global.html#browserPublicProcessEnv">browserPublicProcessEnv</a></li>
+      <li><a href="global.html#buildPipelineFanOut">buildPipelineFanOut</a></li>
+      <li><a href="global.html#canonicalSessionPayload">canonicalSessionPayload</a></li>
+      <li><a href="global.html#capsIncludeAdmin">capsIncludeAdmin</a></li>
+      <li><a href="global.html#consumeChatCompletionStream">consumeChatCompletionStream</a></li>
+      <li><a href="global.html#crypto">crypto</a></li>
+      <li><a href="global.html#getRegistry">getRegistry</a></li>
+      <li><a href="global.html#issueNodeSessionToken">issueNodeSessionToken</a></li>
+      <li><a href="global.html#key">key</a></li>
+      <li><a href="global.html#maxEmbeddingInputChars">maxEmbeddingInputChars</a></li>
+      <li><a href="global.html#mergeVerifiedBearerTokens">mergeVerifiedBearerTokens</a></li>
+      <li><a href="global.html#ollamaBaseUrl">ollamaBaseUrl</a></li>
+      <li><a href="global.html#openAiChatCompletionChunk">openAiChatCompletionChunk</a></li>
+      <li><a href="global.html#parseChatCompletionJsonOrSse">parseChatCompletionJsonOrSse</a></li>
+      <li><a href="global.html#poolUpstreamModel">poolUpstreamModel</a></li>
+      <li><a href="global.html#processSseLine">processSseLine</a></li>
+      <li><a href="global.html#requestUsesTools">requestUsesTools</a></li>
+      <li><a href="global.html#stripThinkTags">stripThinkTags</a></li>
+      <li><a href="global.html#transport">transport</a></li>
+      <li><a href="global.html#verifyNodeSessionToken">verifyNodeSessionToken</a></li>
+      <li><a href="global.html#verifyStreamMessage">verifyStreamMessage</a></li>
     </ul>
   </nav>
   <br class="clear" />

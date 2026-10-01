@@ -36,6 +36,7 @@ const TextareaAutosize = require('react-textarea-autosize').default;
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
+const isChatSidebarSearchQuery = require('../functions/isChatSidebarSearchQuery');
 
 // Components
 const { caseDropOptions, draftDropOptions, outlineDropOptions } = require('./SuggestionOptions');
@@ -59,9 +60,7 @@ class ChatBox extends React.Component {
     this.state = {
       query: '',
       generatingResponse: false,
-      reGeneratingResponse: false,
       groupedMessages: (props.chat?.messages.length > 0) ? this.groupMessages(props.chat.messages) : [],
-      currentDisplayedMessage: {}, // state to store the answer that has to be showed (in case of regenerated answers)
       previousFlag: false,
       connectionProblem: false,
       copiedStatus: {},
@@ -155,6 +154,9 @@ class ChatBox extends React.Component {
     this.globalStateUpdateHandler = this.handleGlobalStateUpdate.bind(this);
     window.addEventListener('globalStateUpdate', this.globalStateUpdateHandler);
 
+    this.ensureStreamingSubscriptions();
+    this.restoreStreamingStateFromChat(this.props);
+
     // Disable timer to prevent infinite re-render loops
     // Streaming updates are now handled through global state update events
     // this.streamingCheckInterval = setInterval(() => {
@@ -167,24 +169,25 @@ class ChatBox extends React.Component {
     //here we store the last message from prevProps and current messages
     const prevLastMessage = prevProps.chat.messages[prevProps.chat.messages.length - 1];
     const currentLastMessage = messages[messages.length - 1];
-    if (this.props.conversationID)
-      if (this.props.conversationID !== prevProps.conversationID) {
-        // Unsubscribe from old conversation and subscribe to new one
-        if (prevProps.conversationID && this.props.bridge) {
-          this.unsubscribeFromConversation(prevProps.conversationID);
-        }
-        if (this.props.conversationID && this.props.bridge) {
-          this.subscribeToConversation(this.props.conversationID);
-        }
-
-        // Clear streaming state when conversation changes
-        this.setState({
-          streamingMessageId: null,
-          streamingContent: '',
-          isStreaming: false,
-          generatingResponse: false
-        });
+    // Only reset streaming when switching between two loaded conversations — not when navigating
+    // home → /conversations/:id (prev conversationID was undefined).
+    if (prevProps.conversationID && this.props.conversationID &&
+      prevProps.conversationID !== this.props.conversationID) {
+      if (this.props.bridge) {
+        this.unsubscribeFromConversation(prevProps.conversationID);
+        this.subscribeToConversation(this.props.conversationID);
       }
+
+      this.setState({
+        streamingMessageId: null,
+        streamingContent: '',
+        isStreaming: false,
+        generatingResponse: false
+      });
+    } else if (!prevProps.conversationID && this.props.conversationID && this.props.bridge) {
+      // Landed on a conversation route (e.g. redirect after first message) — subscribe for PATCH streams.
+      this.subscribeToConversation(this.props.conversationID);
+    }
 
     // Subscribe to all messages in the conversation for real-time updates
     if (messages && messages.length > 0 && this.props.bridge) {
@@ -215,15 +218,19 @@ class ChatBox extends React.Component {
     // changed, this happens when the last message from assistant changes from "Agent is researching..." to the actual answer
     if ((prevProps.chat.messages.length !== messages.length) ||
       //if the previous last message is different than the current last message, we call the groupMessages function again
-      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content)) {
+      (prevLastMessage && currentLastMessage && prevLastMessage.content !== currentLastMessage.content) ||
+      (prevLastMessage && currentLastMessage && prevLastMessage.status !== currentLastMessage.status)) {
       const newGroupedMessages = this.groupMessages(this.props.chat.messages);
       this.setState({ groupedMessages: newGroupedMessages });
       if (messages && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status !== 'computing') {
+        const assistantSettled = lastMessage && lastMessage.role === 'assistant' &&
+          (lastMessage.status === 'ready' || lastMessage.status === 'error');
+        if (assistantSettled) {
           this.setState({ generatingResponse: false });
-          this.setState({ reGeneratingResponse: false });
-          this.props.getMessageInformation(lastMessage.content);
+          if (lastMessage.status === 'ready' && isChatSidebarSearchQuery(lastMessage.content)) {
+            this.props.getMessageInformation(lastMessage.content);
+          }
         } else if (lastMessage && lastMessage.role && lastMessage.role === 'assistant' && lastMessage.status === 'computing') {
           // Keep generatingResponse true when message is in computing status (placeholder state)
           console.debug('[CHATBOX]', 'componentDidUpdate: Keeping generatingResponse true for computing message:', lastMessage.id);
@@ -237,6 +244,21 @@ class ChatBox extends React.Component {
         }
       }
       this.scrollToBottom();
+    }
+
+    if (prevProps.chat.streamBuffer !== this.props.chat.streamBuffer && this.props.chat.streamBuffer) {
+      this.scrollToBottom();
+    }
+
+    const prevAid = prevProps.chat.message && prevProps.chat.message.assistant_message_id;
+    const aid = this.props.chat.message && this.props.chat.message.assistant_message_id;
+    const navigatedIntoRoom = !prevProps.conversationID && !!this.props.conversationID;
+    if (prevAid !== aid || navigatedIntoRoom ||
+      prevProps.chat.messages !== this.props.chat.messages) {
+      this.ensureStreamingSubscriptions();
+    }
+    if (prevAid !== aid || navigatedIntoRoom) {
+      this.restoreStreamingStateFromChat(this.props);
     }
   }
 
@@ -261,14 +283,24 @@ class ChatBox extends React.Component {
       messages: [],
     });
 
-    // Unsubscribe from message paths
+    // Keep /messages/* WS subscriptions across route changes so streaming chunks aren't dropped
+    // between home unmount and conversation mount; only drop conversation-level subscriptions.
     if (this.props.bridge && this.subscribedMessagePaths) {
       this.subscribedMessagePaths.forEach(path => {
-        this.props.bridge.unsubscribe(path);
+        if (path.startsWith('/conversations/')) {
+          this.props.bridge.unsubscribe(path);
+        }
       });
     }
 
     window.removeEventListener('resize', this.handleResize);
+
+    if (this.props.bridge && typeof this.props.bridge.removeResponseCaptureListener === 'function' &&
+      this._bridgePatchListener) {
+      this.props.bridge.removeResponseCaptureListener(this._bridgePatchListener);
+      this._bridgePatchListener = null;
+      this.bridgeMessageHandlerSet = false;
+    }
   }
 
   // Set up Bridge message handler for JSON-PATCH updates
@@ -280,21 +312,17 @@ class ChatBox extends React.Component {
       return;
     }
 
-    // Check if bridge has props and responseCapture (for test compatibility)
-    if (!this.props.bridge.props || typeof this.props.bridge.props.responseCapture !== 'function') {
-      console.debug('[CHATBOX]', 'Bridge does not have responseCapture method, skipping message handler setup');
+    const bridge = this.props.bridge;
+    if (typeof bridge.addResponseCaptureListener !== 'function') {
+      console.debug('[CHATBOX]', 'Bridge has no response capture listener API; skipping JSON-PATCH handler setup');
       return;
     }
 
     // Store subscribed message paths
     this.subscribedMessagePaths = new Set();
 
-    // Set up message handler
-    const originalHandler = this.props.bridge.props.responseCapture;
-    this.props.bridge.props.responseCapture = (msg) => {
-      this.handleBridgeMessage(msg);
-      if (originalHandler) originalHandler(msg);
-    };
+    this._bridgePatchListener = this.handleBridgeMessage;
+    bridge.addResponseCaptureListener(this._bridgePatchListener);
 
     this.bridgeMessageHandlerSet = true;
     console.debug('[CHATBOX]', 'Bridge message handler set up successfully');
@@ -595,6 +623,48 @@ class ChatBox extends React.Component {
     }
   };
 
+  /**
+   * Subscribe to WS JSON-PATCH for the assistant row before GET /messages returns (redirect after first send).
+   */
+  ensureStreamingSubscriptions = () => {
+    if (!this.props.bridge) return;
+    const pkg = this.props.chat && this.props.chat.message;
+    if (pkg && pkg.assistant_message_id) {
+      this.subscribeToMessage(pkg.assistant_message_id);
+    }
+    const msgs = this.props.chat && this.props.chat.messages;
+    if (!Array.isArray(msgs)) return;
+    msgs.forEach((row) => {
+      if (!row || row.role !== 'assistant' || !row.id) return;
+      if (row.status === 'streaming' || row.status === 'computing') {
+        this.subscribeToMessage(row.id);
+      }
+    });
+  };
+
+  /** Restore local streaming UI after route change when Redux still has assistant_message_id. */
+  restoreStreamingStateFromChat = (props) => {
+    const pkg = props.chat && props.chat.message;
+    if (!pkg || !pkg.assistant_message_id) return;
+    const msgs = props.chat.messages || [];
+    const assistantRow = msgs.find((m) => m.id === pkg.assistant_message_id);
+    const busy = !assistantRow || assistantRow.status === 'computing' ||
+      assistantRow.status === 'streaming';
+    if (!busy) return;
+    this.setState((prev) => {
+      const nextContent = (assistantRow && assistantRow.content) ? assistantRow.content : '';
+      const mergedContent = (prev.streamingContent && prev.streamingContent.length > nextContent.length)
+        ? prev.streamingContent
+        : nextContent;
+      return {
+        streamingMessageId: pkg.assistant_message_id,
+        isStreaming: !!(assistantRow && assistantRow.status === 'streaming'),
+        generatingResponse: true,
+        streamingContent: mergedContent
+      };
+    });
+  };
+
   // Setup streaming listener for a specific message (for testing compatibility)
   setupStreamingListener = (messageId) => {
     if (!this.props.bridge || !messageId) {
@@ -732,15 +802,21 @@ class ChatBox extends React.Component {
 
   handleSubmit = async (event) => {
     event.preventDefault();
-    const { query } = this.state;
+    const controlled = this.props.inputValue;
+    const queryText = (controlled !== undefined && controlled !== null)
+      ? String(controlled)
+      : this.state.query;
+    const trimmed = queryText.trim();
+    if (!trimmed) return;
+
     const { message } = this.props.chat;
     const { documentChat, context, agent } = this.props;
 
-    if (!query.trim()) return;
-
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
 
-    this.props.getMessageInformation(query);
+    if (isChatSidebarSearchQuery(trimmed)) {
+      this.props.getMessageInformation(trimmed);
+    }
 
     let dataToSubmit;
 
@@ -749,7 +825,7 @@ class ChatBox extends React.Component {
       // New conversation
       dataToSubmit = {
         conversation_id: message?.conversation,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
@@ -758,194 +834,47 @@ class ChatBox extends React.Component {
       // Existing conversation
       dataToSubmit = {
         conversation_id: this.props.conversationID,
-        content: query,
+        content: trimmed,
         context: context,
         agent: agent,
         file_id: this.state.uploadedFileId || null
       }
     }
 
-    try {
-      console.debug('[CHATBOX]', 'Submitting streaming message:', {
-        dataToSubmit: dataToSubmit,
-        query: query,
-        queryType: typeof query,
-        queryLength: query ? query.length : 0,
-        contentValue: dataToSubmit.content,
-        contentType: typeof dataToSubmit.content
-      });
-      const result = await this.props.submitStreamingMessage(dataToSubmit);
-      console.debug('[CHATBOX]', 'Streaming message submitted:', result);
-
-      this.setState({
-        streamingMessageId: result.assistant_message_id,
-        isStreaming: true,
-        streamingContent: '',
-        loading: false,
-        generatingResponse: true  // Show "generating response" message until we get streaming content
-      }, () => {
-        // Scroll to bottom when new message is submitted
-        this.scrollToBottom();
-      });
-
-      // Subscribe to the message path for real-time updates
-      this.subscribeToMessage(result.assistant_message_id);
-
-      // Streaming is handled through Bridge's responseCapture mechanism
-
-    } catch (error) {
-      console.error('[CHATBOX]', 'Streaming message submission failed:', error);
-
-      // Show error to user
-      this.setState({
-        loading: false,
-        error: 'Failed to send message. Please try again.'
-      });
-
-      // Clear error after 5 seconds
-      setTimeout(() => {
-        this.setState({ error: null });
-      }, 5000);
-    }
-
-    // Clear the input after sending the message
-    this.setState({ query: '' });
-
-    // Don't call fetchData here as it resets the streaming state
-    // The Bridge will handle real-time updates via JSON-PATCH messages
-  }
-
-  regenerateAnswer = (event) => {
-    event.preventDefault();
-
-    const { groupedMessages } = this.state;
-    const { message } = this.props.chat;
-    const { documentChat } = this.props;
-
-    let dataToSubmit;
-    this.setState({ reGeneratingResponse: true, loading: true, previousFlag: true, startedChatting: true });
-
-    const messageRegen = groupedMessages[groupedMessages.length - 2].messages[0];
-
-    //scrolls so it shows the regenerating message
-    this.scrollToBottom();
-
-    // Prepare data for regeneration
-    if (!this.props.previousChat) {
-      dataToSubmit = {
-        conversation_id: message?.conversation,
-        content: messageRegen.content,
-        id: messageRegen.id
-      }
-    } else {
-      dataToSubmit = {
-        conversation_id: this.props.conversationID,
-        content: messageRegen.content,
-        id: messageRegen.id
-      }
-    }
-
-    const fileFabricID = documentChat ? (this.props.documentInfo ? this.props.documentInfo.fabric_id : null) : null;
-
-    // Use streaming for regeneration
-    try {
-      console.debug('[CHATBOX]', 'Regenerating answer with streaming:', dataToSubmit);
-
-      this.props.regenAnswer(dataToSubmit, null, fileFabricID).then((result) => {
-        console.debug('[CHATBOX]', 'Regeneration streaming started:', result);
-
+    // Streaming path: real token updates via JSON-PATCH + optional initial GET; avoid 5s polling (full list replace flickers).
+    this.props.submitStreamingMessage(dataToSubmit).then((obj) => {
+      const conv =
+        (obj && obj.conversation) ||
+        (this.props.chat.message && this.props.chat.message.conversation);
+      if (obj && obj.assistant_message_id) {
         this.setState({
-          streamingMessageId: result.assistant_message_id,
+          streamingMessageId: obj.assistant_message_id,
           isStreaming: true,
           streamingContent: '',
-          loading: false
+          generatingResponse: true
         });
-
-        // Subscribe to the message path for real-time updates
-        this.subscribeToMessage(result.assistant_message_id);
-
-        // Streaming is handled through Bridge's responseCapture mechanism
-      }).catch((error) => {
-        console.error('[CHATBOX]', 'Regeneration streaming failed:', error);
-        this.setState({
-          loading: false,
-          error: 'Failed to regenerate answer. Please try again.'
-        });
-
-        // Clear error after 5 seconds
-        setTimeout(() => {
-          this.setState({ error: null });
-        }, 5000);
-      });
-    } catch (error) {
-      console.error('[CHATBOX]', 'Regeneration failed:', error);
-      this.setState({
-        loading: false,
-        error: 'Failed to regenerate answer. Please try again.'
-      });
-
-      // Clear error after 5 seconds
-      setTimeout(() => {
-        this.setState({ error: null });
-      }, 5000);
-    }
+        this.subscribeToMessage(obj.assistant_message_id);
+      }
+      if (conv) {
+        this.props.getMessages({ conversation_id: conv });
+      }
+      this.setState({ loading: false });
+    }).catch(() => {
+      this.setState({ loading: false });
+    });
 
     // Clear the input after sending the message
     this.setState({ query: '' });
+    if (this.props.onInputChange) {
+      this.props.onInputChange({ target: { value: '' } });
+    }
   }
 
-  // Function to group answers to the same question
+  // Keep a linear conversation timeline (no regenerate flow grouping/navigation).
   groupMessages = (messages) => {
-    let groupedMessages = [];
-    let currentGroup = [];
-
-    messages.forEach((message, index) => {
-      if (message.role === 'assistant') {
-        currentGroup.push(message);
-        // If the next message is not from an assistant, push the current group to groupedMessages
-        if (!messages[index + 1] || messages[index + 1].role !== 'assistant') {
-          if (!this.state) {
-            console.debug('undefined state');
-            return;
-          }
-
-          // Find the corresponding group in the previous state
-          const prevGroup = this.state.groupedMessages.find(g => g.messages[0].id === currentGroup[0].id);
-          let activeMessageIndex = currentGroup.length - 1; // last message is active by default
-
-          // If a corresponding group is found and it has the same number of messages, retain the activeMessageIndex
-          if (prevGroup && prevGroup.messages.length === currentGroup.length) {
-            activeMessageIndex = prevGroup.activeMessageIndex;
-          }
-
-          groupedMessages.push({
-            messages: currentGroup,
-            activeMessageIndex: activeMessageIndex
-          });
-          currentGroup = [];
-        }
-      } else {
-        groupedMessages.push({
-          messages: [message],
-          activeMessageIndex: 0 // only one message in this group
-        });
-      }
-    });
-
-    return groupedMessages;
+    if (!Array.isArray(messages)) return [];
+    return messages.map((message) => ({ messages: [message] }));
   };
-
-
-  //function to navigate through responses from same question
-  navigateMessage = (groupIndex, direction) => {
-    this.setState(prevState => {
-      const newGroupedMessages = [...prevState.groupedMessages];
-      const group = newGroupedMessages[groupIndex];
-      const newActiveIndex = Math.max(0, Math.min(group.activeMessageIndex + direction, group.messages.length - 1));
-      group.activeMessageIndex = newActiveIndex;
-      return { groupedMessages: newGroupedMessages };
-    });
-  }
 
   copyToClipboard = (messageID, htmlContent) => {
     // Create a temporary DOM element to parse the HTML content
@@ -1489,6 +1418,7 @@ class ChatBox extends React.Component {
             {doc.fabric_type && <div><strong>Type:</strong> {doc.fabric_type}</div>}
             {doc.summary && <div style={{ marginTop: '0.5em' }}>{doc.summary.substring(0, 150)}{doc.summary.length > 150 ? '...' : ''}</div>}
           </div>
+          <Button as={Link} to={`/documents/${doc.id}`} icon labelPosition='right'>View Document <Icon name='right chevron' /></Button>
         </Card.Description>
       );
     }
@@ -1560,6 +1490,21 @@ class ChatBox extends React.Component {
     );
   };
 
+  /** True when this row is the assistant message receiving WS PATCH stream chunks (local state, not yet in Redux). */
+  isLiveAssistantStream (message) {
+    return message.role === 'assistant' &&
+      message.id === this.state.streamingMessageId &&
+      (this.state.isStreaming || String(this.state.streamingContent || '').length > 0);
+  }
+
+  assistantRenderedMarkdownSource (message) {
+    const AUTHORITY = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+    const raw = this.isLiveAssistantStream(message)
+      ? (this.state.streamingContent || '')
+      : (message.content || '');
+    return raw.replace('https://sensemaker.io', AUTHORITY);
+  }
+
   render () {
     // Use local globalState reference instead of calling getGlobalState() on every render
     const globalState = this.globalState || {};
@@ -1574,7 +1519,7 @@ class ChatBox extends React.Component {
 
     const { isSending, placeholder, homePage, announTitle, announBody, conversationID, actualConversation, context, documentChat } = this.props;
     const { conversations } = this.props;
-    const { loading, editLoading, isUploading, uploadProgress, formatError, errorMsg, unsupportedVideoWarning, attachingFile, editingTitle, showFilePreview, filePreview, generatingResponse, reGeneratingResponse, groupedMessages, query, windowWidth, windowHeight, checkingMessageID } = this.state;
+    const { loading, editLoading, isUploading, uploadProgress, formatError, errorMsg, unsupportedVideoWarning, attachingFile, editingTitle, showFilePreview, filePreview, generatingResponse, groupedMessages, query, windowWidth, windowHeight, checkingMessageID } = this.state;
 
     // Get messages from the correct source
     const messages = this.props.chat?.messages || [];
@@ -1630,14 +1575,6 @@ class ChatBox extends React.Component {
       maxHeight: '14em',
       overflow: 'auto',
       marginTop: 0,
-    };
-
-    const controlsStyle = {
-      border: 'none',
-      backgroundColor: 'transparent',
-      boxShadow: 'none',
-      paddingRight: '0.5em',
-      paddingLeft: '0.5em',
     };
 
     const inputStyle = {
@@ -1700,15 +1637,7 @@ class ChatBox extends React.Component {
 
           {/* The chat messages start rendering here */}
           {(allMessages && allMessages.length > 0) ? this.groupMessages(allMessages).map((group, groupIndex) => {
-            let message;
-
-            //here it checks if the group message rendering is from assistant and if it has more than 1 message (because regenerated answers)
-            if (group.messages[0].role === "assistant" && group.messages.length > 1) {
-              //this is the active answer the user selected to read
-              message = group.messages[group.activeMessageIndex];
-            } else {
-              message = group.messages[0];
-            }
+            const message = group.messages[0];
 
             if (message.attachments && message.attachments.length > 0) {
               message.attachments.forEach((attachment) => {
@@ -1717,8 +1646,11 @@ class ChatBox extends React.Component {
               });
             }
 
-            // Skip rendering messages with status "computing" when we're showing the placeholder
-            if (message.role === "assistant" && message.status === "computing" && this.state.generatingResponse) {
+            const liveAssistantStream = this.isLiveAssistantStream(message);
+
+            // Hide duplicate "computing" bubble while the bottom placeholder shows — unless PATCH chunks are streaming into local state.
+            if (message.role === 'assistant' && message.status === 'computing' && this.state.generatingResponse &&
+              !liveAssistantStream) {
               console.debug('[CHATBOX]', 'Skipping computing message:', message.id);
               return null;
             }
@@ -1760,22 +1692,6 @@ class ChatBox extends React.Component {
                               </Button>
                             }
                           />
-                          {/* the regenerate answer button only shows in the last answer */}
-                          {/* group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                            message.role === "assistant" && !reGeneratingResponse && !generatingResponse && (
-                              <Popup
-                                content="Regenerate this answer"
-                                trigger={
-                                  <Button icon onClick={this.regenerateAnswer}>
-                                    <Icon
-                                      name="redo"
-                                      color="grey"
-                                      style={{ cursor: "pointer", marginLeft: "1rem" }}
-                                    />
-                                  </Button>
-                                }
-                              />
-                            ) */}
                           {message.role === "assistant" && (
                             <Popup
                               content="Copied to clipboard"
@@ -1788,7 +1704,7 @@ class ChatBox extends React.Component {
                                       e.stopPropagation();
                                       this.copyToClipboard(
                                         message.id,
-                                        marked.parse(message.content)
+                                        marked.parse(this.assistantRenderedMarkdownSource(message))
                                       );
                                     }}
                                     icon>
@@ -1850,72 +1766,9 @@ class ChatBox extends React.Component {
                         </ul>
                       </div>
                     )}
-                    {(message.status !== "computing" || this.state.streamingContent || globalState.messages?.[message.id]?.content) && (
-                      (() => {
-                        // Unified content rendering logic
-                        let contentToRender = message.content;
-
-                        // Check if this is the streaming message and we have streaming content
-                        const isStreamingMessage = (
-                          this.state.streamingMessageId === message.id ||
-                          this.state.streamingMessageId === message.fabric_id ||
-                          this.state.streamingMessageId === message.message_id ||
-                          this.state.streamingMessageId === message.local_id
-                        );
-
-                        // Priority: streaming content > global state content > message content
-                        if (isStreamingMessage && this.state.streamingContent) {
-                          contentToRender = this.state.streamingContent;
-                        } else if (globalState.messages?.[message.id]?.content) {
-                          // Use global state content (which should be the most up-to-date)
-                          contentToRender = globalState.messages[message.id].content;
-                        } else {
-                          // Fallback to message content
-                          contentToRender = message.content;
-                        }
-
-                        // Additional safety check: if we're streaming and have content, use it regardless
-                        if (this.state.isStreaming && this.state.streamingContent &&
-                            (this.state.streamingMessageId === message.id ||
-                             this.state.streamingMessageId === message.fabric_id ||
-                             this.state.streamingMessageId === message.message_id ||
-                             this.state.streamingMessageId === message.local_id)) {
-                          contentToRender = this.state.streamingContent;
-                          // Remove excessive debug logging that was causing console spam
-                          // console.debug('[CHATBOX]', 'Using streaming content for message:', {
-                          //   messageId: message.id,
-                          //   contentLength: contentToRender.length
-                          // });
-                        }
-
-                        // If we have content but message status is still computing,
-                        // treat it as if it has content (to avoid flickering)
-                        if (message.status === 'computing' && contentToRender && contentToRender.length > 25) {
-                          // Don't log every render - this was causing console spam
-                          // console.debug('[CHATBOX]', 'Message has content but status is computing, treating as ready:', {
-                          //   messageId: message.id,
-                          //   contentLength: contentToRender.length,
-                          //   status: message.status
-                          // });
-
-                          // Don't force update here - it causes infinite re-renders
-                          // this.forceUpdate();
-                        }
-
-                        // Remove excessive debug logging that was causing console spam
-                        // console.debug('[CHATBOX]', 'Rendering message content:', {
-                        //   messageId: message.id,
-                        //   status: message.status,
-                        //   hasContent: !!contentToRender,
-                        //   contentLength: contentToRender?.length || 0,
-                        //   isStreamingMessage: isStreamingMessage,
-                        //   hasStreamingContent: !!this.state.streamingContent
-                        // });
-
-                        return (
-                          <span dangerouslySetInnerHTML={{ __html: marked.parse(contentToRender?.replace('https://sensemaker.io', AUTHORITY) || ""), }} />
-                        );
-                      })()
+                    {!(message.role === 'assistant' && ['computing', 'processing', 'queued'].includes(message.status) &&
+                      !liveAssistantStream) && (
+                      <span dangerouslySetInnerHTML={{ __html: marked.parse(this.assistantRenderedMarkdownSource(message) || ''), }} />
                     )}
                     {/* DO NOT DELETE THIS BLOCK */}
                     {/* {message.status !== "computing" && message.role === "assistant" && this.state.startedChatting && (
@@ -1929,63 +1782,44 @@ class ChatBox extends React.Component {
                   </Feed.Extra>
                   <Feed.Extra text>
                     {generatingResponse &&
-                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
-                      !reGeneratingResponse && !this.state.isStreaming && (
-                        <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
-                          <Icon name="spinner" loading />
-                          {BRAND_NAME} is generating a response...
-                        </Header>
+                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
+                        <>
+                          <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
+                            <Icon name="spinner" loading />
+                            {(() => {
+                              const g = this.state.groupedMessages[this.state.groupedMessages.length - 1];
+                              const a = g && g.messages && g.messages.length ? g.messages[g.messages.length - 1] : null;
+                              if (a && a.role === 'assistant') {
+                                if (a.status === 'queued') return 'Waiting in queue…';
+                                if (a.status === 'processing') return 'Sensemaker is working on your reply…';
+                              }
+                              return `${BRAND_NAME} is generating a response...`;
+                            })()}
+                          </Header>
+                          {this.props.chat.streamBuffer ? (
+                            <div
+                              className="chat-stream-preview fade-in"
+                              style={{ marginTop: '0.75em', fontSize: '0.95em', lineHeight: 1.45 }}
+                              dangerouslySetInnerHTML={{
+                                __html: marked.parse(
+                                  (this.props.chat.streamBuffer || '').replace('https://sensemaker.io', AUTHORITY)
+                                )
+                              }}
+                            />
+                          ) : null}
+                        </>
                       )}
                     {this.state.isStreaming &&
-                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
+                      group === this.state.groupedMessages[this.state.groupedMessages.length - 1] &&
+                      !(liveAssistantStream &&
+                        String(this.state.streamingContent || '').trim().length > 0) && (
                         <Header size="small" style={{ fontSize: "1em", marginTop: "1.5em" }}>
                           <Icon name="spinner" loading />
                           {BRAND_NAME} is thinking...
                         </Header>
                       )}
-                    {reGeneratingResponse &&
-                      group ===
-                      this.state.groupedMessages[this.state.groupedMessages.length - 1] && (
-                        <Header
-                          size="small"
-                          style={{ fontSize: "1em", marginTop: "1.5em" }}
-                        >
-                          <Icon name="spinner" loading /> Sensemaker is trying again...
-                        </Header>
-                      )}
                     <div className="answer-controls" text>
-                      {/* Answers Navigation Controls */}
-                      {group.messages.length > 1 && (
-                        <div className="answer-navigation">
-                          <Button
-                            icon="angle left"
-                            size="tiny"
-                            style={controlsStyle}
-                            basic
-                            onClick={() =>
-                              this.navigateMessage(groupIndex, -1)
-                            }
-                            disabled={group.activeMessageIndex === 0}
-                          />
-                          <span
-                            style={{ fontWeight: "bold", color: "grey" }}
-                          >{`${group.activeMessageIndex + 1} / ${group.messages.length
-                            }`}</span>
-                          <Button
-                            icon="angle right"
-                            size="tiny"
-                            style={controlsStyle}
-                            basic
-                            onClick={() =>
-                              this.navigateMessage(groupIndex, 1)
-                            }
-                            disabled={
-                              group.activeMessageIndex ===
-                              group.messages.length - 1
-                            }
-                          />
-                        </div>
-                      )}
+                      {/* Regenerate flow removed: no answer navigation controls. */}
                     </div>
                   </Feed.Extra>
                 </Feed.Content>
@@ -1993,10 +1827,77 @@ class ChatBox extends React.Component {
             );
           }) : null}
 
+          {/* Fallback stream bubble when PATCH chunks arrive before assistant row appears in Redux messages. */}
+          {(() => {
+            const hasLiveContent = !!(this.state.streamingMessageId && String(this.state.streamingContent || '').trim().length);
+            if (!hasLiveContent) return null;
+            const hasAssistantRow = allMessages.some((m) => m && m.role === 'assistant' &&
+              m.id === this.state.streamingMessageId);
+            if (hasAssistantRow) return null;
+            return (
+              <Feed.Event key={`stream-fallback-${this.state.streamingMessageId}`}>
+                <Feed.Content>
+                  <Feed.Summary className='info-assistant-header'>
+                    <Feed.User>
+                      <Link to={'/users/sensemaker'}>sensemaker</Link>{" "}
+                    </Feed.User>
+                    <Feed.Date as='abbr' title={new Date().toISOString()} className='relative'>now</Feed.Date>
+                  </Feed.Summary>
+                  <Feed.Extra text>
+                    <span dangerouslySetInnerHTML={{
+                      __html: marked.parse(this.state.streamingContent.replace('https://sensemaker.io', AUTHORITY))
+                    }} />
+                  </Feed.Extra>
+                </Feed.Content>
+              </Feed.Event>
+            );
+          })()}
+
+          {/* Fallback for Fabric ChatMessage/MessageChunk path when Redux streamBuffer has text
+              but JSON-PATCH state has not hydrated a message row yet. */}
+          {(() => {
+            const chunkText = String((this.props.chat && this.props.chat.streamBuffer) || '').trim();
+            if (!chunkText) return null;
+            const hasLivePatchBubble = !!(this.state.streamingMessageId && String(this.state.streamingContent || '').trim().length);
+            if (hasLivePatchBubble) return null;
+            const lastUserIndex = (() => {
+              for (let i = allMessages.length - 1; i >= 0; i--) {
+                if (allMessages[i] && allMessages[i].role === 'user') return i;
+              }
+              return -1;
+            })();
+            const tail = allMessages.slice(lastUserIndex + 1);
+            const assistantTail = tail.filter((m) => m && m.role === 'assistant');
+            const hasAssistantTailWithContent = assistantTail.some((m) => String(m.content || '').trim().length > 0);
+            // If an assistant row already exists for the current turn, avoid a second fallback bubble.
+            if (assistantTail.length > 0 || hasAssistantTailWithContent) return null;
+            return (
+              <Feed.Event key='stream-buffer-fallback'>
+                <Feed.Content>
+                  <Feed.Summary className='info-assistant-header'>
+                    <Feed.User>
+                      <Link to={'/users/sensemaker'}>sensemaker</Link>{" "}
+                    </Feed.User>
+                    <Feed.Date as='abbr' title={new Date().toISOString()} className='relative'>now</Feed.Date>
+                  </Feed.Summary>
+                  <Feed.Extra text>
+                    <span dangerouslySetInnerHTML={{
+                      __html: marked.parse(chunkText.replace('https://sensemaker.io', AUTHORITY))
+                    }} />
+                  </Feed.Extra>
+                </Feed.Content>
+              </Feed.Event>
+            );
+          })()}
+
           {/* Placeholder for computing messages or empty conversations */}
           {(() => {
             const lastMessage = allMessages.length > 0 ? allMessages[allMessages.length - 1] : null;
-            const shouldShow = this.state.generatingResponse && (
+            const hasVisibleStreamingText = !!(
+              String(this.state.streamingContent || '').trim() ||
+              String((this.props.chat && this.props.chat.streamBuffer) || '').trim()
+            );
+            const shouldShow = this.state.generatingResponse && !hasVisibleStreamingText && (
               !allMessages ||
               allMessages.length === 0 ||
               (lastMessage && lastMessage.role === 'assistant' && lastMessage.status === 'computing')

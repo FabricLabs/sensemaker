@@ -26,6 +26,30 @@ const HTTPComponent = require('@fabric/http/types/component');
 const HTTPSite = require('./site');
 
 /**
+ * Public env subset for browser bundles only. Never pass `process.env` wholesale into
+ * {@link webpack.DefinePlugin}: webpack inlines the full JSON, which leaks host secrets
+ * (npm/GitHub tokens, API keys, mnemonics) into `assets/bundles/browser.min.js` and trips
+ * GitHub push protection.
+ * @returns {Record<string, string>}
+ */
+function browserPublicProcessEnv () {
+  const out = {
+    NODE_ENV: process.env.NODE_ENV || 'development'
+  };
+  const optionalKeys = [
+    'SENSEMAKER_LEAN',
+    'OLLAMA_MODEL',
+    'DEBUG_SENSEMAKER_UI',
+    'ANALYZE'
+  ];
+  for (const key of optionalKeys) {
+    const v = process.env[key];
+    if (v !== undefined && v !== '') out[key] = String(v);
+  }
+  return out;
+}
+
+/**
  * Builder for {@link Fabric}-based applications.
  */
 class Bundler extends HTTPCompiler {
@@ -40,25 +64,29 @@ class Bundler extends HTTPCompiler {
     this.settings = merge({
       document: settings.document || new HTTPComponent(settings),
       site: {
-        name: 'Default Fabric Application'
+        name: 'Sensemaker',
+        state: {
+          title: 'sensemaker · digital intelligence'
+        }
       },
       state: {
-        title: settings.title || 'Fabric HTTP Document'
+        title: 'sensemaker · digital intelligence'
       },
       webpack: {
-        mode: 'production',
+        mode: 'development',
         entry: path.resolve('./scripts/browser.js'),
         experiments: {
           asyncWebAssembly: true
         },
         resolve: {
           fallback: {
-            crypto: path.resolve(__dirname, '../scripts/crypto-shim'),
-            ecc: path.resolve(__dirname, '../scripts/ecc-shim'),
+            crypto: require.resolve('crypto-browserify'),
             stream: require.resolve('stream-browserify'),
             path: require.resolve('path-browserify'),
             assert: require.resolve('assert-browserify'),
+            'process/browser': require.resolve('process/browser.js'),
             util: require.resolve('util/'),
+            vm: require.resolve('vm-browserify'),
             fs: false,
             http: false,
             https: false,
@@ -107,9 +135,10 @@ class Bundler extends HTTPCompiler {
         },
         plugins: [
           new webpack.DefinePlugin({
-            'process.env': JSON.stringify(process.env)
+            'process.env': JSON.stringify(browserPublicProcessEnv())
           }),
           new webpack.ProvidePlugin({
+            process: require.resolve('process/browser.js'),
             Buffer: ['buffer', 'Buffer']
           }),
           new webpack.IgnorePlugin({
@@ -118,6 +147,11 @@ class Bundler extends HTTPCompiler {
           }),
           new webpack.IgnorePlugin({
             resourceRegExp: /@hpcc-js\/wasm-graphviz/
+          }),
+          // @fabric/core optionally requires build/Release/fabric.node; webpack still parses it.
+          // Native addons cannot run in the browser — exclude so the bundle uses JS fallbacks.
+          new webpack.IgnorePlugin({
+            resourceRegExp: /\.node$/
           }),
           new BundleAnalyzerPlugin({
             analyzerMode: process.env.ANALYZE ? 'server' : 'disabled',
@@ -160,8 +194,13 @@ class Bundler extends HTTPCompiler {
         }
 
         if (stats.hasWarnings()) {
-          const warnings = stats.toJson().warnings;
-          console.warn('[BUNDLER] Webpack compilation warnings:', warnings);
+          const warnings = stats.toJson().warnings || [];
+          if (process.env.ANALYZE) {
+            console.warn('[BUNDLER] Webpack compilation warnings:', warnings);
+          } else {
+            const sample = warnings.slice(0, 2).map((w) => (w && w.message) ? w.message : String(w)).join('\n');
+            console.warn(`[BUNDLER] Webpack: ${warnings.length} warning(s). Set ANALYZE=true for full list.\n${sample}`);
+          }
         }
 
         console.log('[BUNDLER] JavaScript bundle compiled successfully');
@@ -302,6 +341,10 @@ class Bundler extends HTTPCompiler {
     console.log(`[BUNDLER] cache.manifest generated with ${files.length} files.`);
   }
 
+  /**
+   * Generate a manifest.json file for PWA support.
+   * @param {string} outputPath Path to the manifest file (default: 'assets/manifest.json')
+   */
   async generateWebManifest (outputPath = path.resolve('assets/manifest.json')) {
     const manifest = {
       name: this.site.name,

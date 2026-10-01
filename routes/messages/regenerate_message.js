@@ -1,6 +1,10 @@
 'use strict';
 
 module.exports = async function (req, res, next) {
+  if (!req.user || req.user.id == null) {
+    return res.status(401).json({ message: 'Authentication required.' });
+  }
+
   let subject = null;
   let {
     case_id,
@@ -24,6 +28,14 @@ module.exports = async function (req, res, next) {
   try {
     const conversation = await this.db('conversations').where({ fabric_id: conversation_id }).first();
     if (!conversation) throw new Error(`No such Conversation: ${conversation_id}`);
+
+    if (!(await this._userCanAccessConversation(req, conversation))) {
+      return res.status(403).json({ message: 'Not allowed to modify this conversation.' });
+    }
+
+    if (Number(old_message.conversation_id) !== Number(conversation.id)) {
+      return res.status(400).json({ message: 'Message does not belong to this conversation.' });
+    }
 
     const newRequest = await this.db('requests').insert({
       message_id: messageID
