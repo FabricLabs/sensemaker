@@ -1,5 +1,10 @@
 'use strict';
 
+const EventEmitter = require('events');
+// Peer/noise streams attach many listeners per connection; default (10) triggers false-positive leak warnings.
+EventEmitter.defaultMaxListeners = Math.max(EventEmitter.defaultMaxListeners || 10, 50);
+process.setMaxListeners(EventEmitter.defaultMaxListeners);
+
 // Settings
 const settings = require('../settings/local');
 
@@ -26,11 +31,18 @@ async function main (input = {}) {
     ...input,
     ...keySettings
   };
+  const fabricPort = Number(process.env.FABRIC_PORT);
+  if (Number.isFinite(fabricPort) && fabricPort > 0) {
+    config.port = fabricPort;
+    if (config.fabric && typeof config.fabric === 'object') {
+      config.fabric = Object.assign({}, config.fabric, { port: fabricPort });
+    }
+  }
 
+  console.log('[SENSEMAKER]', `Ollama host: ${config.ollama?.host || 'undefined'}`);
+  console.log('[SENSEMAKER]', `Ollama port: ${config.ollama?.port || 'undefined'}`);
   if (config.debug) {
     console.log('[SENSEMAKER]', `Debug setting: ${config.debug} (type: ${typeof config.debug})`);
-    console.log('[SENSEMAKER]', `Ollama host: ${config.ollama?.host || 'undefined'}`);
-    console.log('[SENSEMAKER]', `Ollama port: ${config.ollama?.port || 'undefined'}`);
   }
 
   // Create Node
@@ -51,9 +63,19 @@ async function main (input = {}) {
     process.exit(1);
   }
 
-  // Bind signal handlers with proper context
-  process.on('SIGINT', () => sensemaker.stop());
-  process.on('SIGTERM', () => sensemaker.stop());
+  let stopping = false;
+  const shutdown = (signal) => {
+    if (stopping) return;
+    stopping = true;
+    console.log(`\n[SENSEMAKER] ${signal} received, shutting down...`);
+    const hard = setTimeout(() => { process.exit(0); }, 3000).unref();
+    sensemaker.stop().then(() => {
+      clearTimeout(hard);
+      process.exit(0);
+    }).catch(() => process.exit(1));
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   // Return Node
   return sensemaker;

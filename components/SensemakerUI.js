@@ -100,6 +100,17 @@ class SensemakerUI extends React.Component {
   handleMessageSuccess = (action) => {
     if (!action) return;
     const t = action.type;
+    if (t === 'PATCH' && action.path && action.path.startsWith('/messages/')) {
+      const messageId = action.path.split('/')[2];
+      const value = action.value && typeof action.value === 'object' ? action.value : {};
+      if (messageId && this.props.updateMessage) {
+        this.props.updateMessage(messageId, value);
+      }
+      if ((value.status === 'ready' || value.status === 'error') && this.props.chatStreamReset) {
+        this.props.chatStreamReset();
+      }
+      return;
+    }
     if (t === 'MessageStart' && this.props.chatStreamReset) {
       this.props.chatStreamReset();
       return;

@@ -1,14 +1,14 @@
 CACHE MANIFEST
-# Hash: 1777923387894
+# Hash: 1787211789667
 
 CACHE:
-000047.ldb
-000050.log
+000123.ldb
+000128.log
 CURRENT
 LOCK
 LOG
 LOG.old
-MANIFEST-000049
+MANIFEST-000127
 bitcoin.pdf
 bundles/0e086c2e452911d5a634.module.wasm
 bundles/30132f7f8e20a6adddcb.module.wasm

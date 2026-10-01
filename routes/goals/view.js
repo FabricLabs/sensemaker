@@ -32,6 +32,9 @@ module.exports = async function viewGoal (req, res, next) {
     }
 
     goal.scope = scope;
+    if (typeof this.attachGoalPlan === 'function') {
+      await this.attachGoalPlan(goal);
+    }
 
     console.debug('[GOALS]', `Retrieved ${scope} goal:`, goal.id);
 

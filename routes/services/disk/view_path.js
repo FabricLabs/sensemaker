@@ -1,21 +1,27 @@
 'use strict';
 
 const fs = require('fs');
+const {
+  resolveContainedDiskPath,
+  assertRealpathContained
+} = require('../../../functions/diskPath');
 
 module.exports = async function (req, res, next) {
   res.format({
-    'json': () => {
-      // TODO: secure this endpoint
-      const base = process.env.PWD;
+    json: async () => {
+      if (!(await this._assertSensemakerAdminJson(req, res))) return;
+
       const name = req.params.path;
-      const path = base + '/' + name;
-
-      console.debug('name:', name);
-      console.debug('path:', path);
-
       if (!name) {
         return res.status(400).send({
           message: 'No path provided'
+        });
+      }
+
+      const resolved = resolveContainedDiskPath(name);
+      if (!resolved.ok) {
+        return res.status(400).send({
+          message: 'Invalid path'
         });
       }
 
@@ -26,24 +32,42 @@ module.exports = async function (req, res, next) {
       let content = null;
 
       try {
-        isDirectory = fs.lstatSync(path).isDirectory();
-        isFile = fs.lstatSync(path).isFile();
-        stats = fs.statSync(path);
+        stats = fs.lstatSync(resolved.abs);
+        let targetAbs = resolved.abs;
+        if (stats.isSymbolicLink()) {
+          const real = assertRealpathContained(resolved.abs, resolved.root);
+          if (!real.ok) {
+            return res.status(404).send({
+              message: 'Path not found'
+            });
+          }
+          targetAbs = real.realAbs;
+          stats = fs.lstatSync(targetAbs);
+          if (stats.isSymbolicLink()) {
+            return res.status(404).send({
+              message: 'Path not found'
+            });
+          }
+        }
+
+        isDirectory = stats.isDirectory();
+        isFile = stats.isFile();
 
         if (isDirectory) {
-          ls = fs.readdirSync(path).map((file) => {
-            const ours = `${name}/${file}`;
-            const info = fs.statSync(base + '/' + ours);
+          ls = fs.readdirSync(targetAbs).map((file) => {
+            const childName = `${name}/${file}`;
+            const child = resolveContainedDiskPath(childName);
+            const info = child.ok ? fs.lstatSync(child.abs) : null;
             return {
               name: file,
-              path: ours,
+              path: childName,
               stats: info
             };
           });
         }
 
         if (isFile) {
-          content = fs.readFileSync(path, 'utf8');
+          content = fs.readFileSync(targetAbs, 'utf8');
         }
       } catch (error) {
         console.error('[FILE]', 'Error:', error);
@@ -67,7 +91,7 @@ module.exports = async function (req, res, next) {
         }
       });
     },
-    'html': () => {
+    html: () => {
       res.send(this.applicationString);
     }
   });

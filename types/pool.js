@@ -2,7 +2,8 @@
 
 // Constants
 const {
-  CORE_MODEL
+  CORE_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS
 } = require('../constants');
 
 // Fabric Types
@@ -25,8 +26,8 @@ class Pool extends Service {
       methods: {},
       model: CORE_MODEL,
       models: {},
-      timeout: 60000, // 60 second default timeout
-      initTimeout: 30000, // 30 second timeout for member initialization
+      timeout: DEFAULT_LLM_TIMEOUT_MS,
+      initTimeout: Math.min(DEFAULT_LLM_TIMEOUT_MS, 45000),
       state: {
         jobs: {},
         members: {},
@@ -88,7 +89,18 @@ class Pool extends Service {
             const alt = await this._state.members[memberId].listModels();
             modelNames = alt.models.map((x) => x.id);
           } catch (altError) {
-            throw new Error(`Failed to list models: ${altError.message}`);
+            const agent = this._state.members[memberId];
+            const fallback = [];
+            if (agent && agent.settings && agent.settings.poolUpstreamModel) {
+              fallback.push(agent.settings.poolUpstreamModel);
+            }
+            if (agent && agent.settings && agent.settings.model) {
+              fallback.push(agent.settings.model);
+            }
+            if (!fallback.length) {
+              throw new Error(`Failed to list models: ${altError.message}`);
+            }
+            modelNames = [...new Set(fallback)];
           }
         }
 
@@ -116,6 +128,22 @@ class Pool extends Service {
         }
 
         if (this.settings.debug) console.debug(`[SENSEMAKER] [POOL] Member ${memberId} initialized with models:`, modelNames);
+
+        const memberAgent = this._state.members[memberId];
+        const extras = memberAgent.settings && memberAgent.settings.additionalPoolModels;
+        if (Array.isArray(extras) && extras.length) {
+          for (const modelName of extras) {
+            if (!modelName || modelNames.includes(modelName)) continue;
+            if (!this._state.models[modelName]) this._state.models[modelName] = [];
+            const existingProvider = this._state.models[modelName].find((p) => p.provider === memberId);
+            if (!existingProvider) {
+              this._state.models[modelName].push({
+                provider: memberId,
+                status: memberStatus
+              });
+            }
+          }
+        }
       })();
 
       // Race against timeout
@@ -190,46 +218,101 @@ class Pool extends Service {
       throw new Error('No suitable healthy member found for the request');
     }
 
-    // Find available member (already filtered above, but take first available)
-    const availableMember = candidateMembers[0];
-    if (!availableMember) {
-      throw new Error('All suitable members are currently busy');
-    }
+    let lastError = null;
+    for (const memberID of candidateMembers) {
+      const agent = this._state.members[memberID];
+      const effectiveModel = (agent.settings && agent.settings.poolUpstreamModel) || request.model;
+      const subRequest = { ...request, model: effectiveModel };
 
-    // Create request tracking object
-    const requestID = new Actor({ type: 'request' }).id;
-    this._state.outstanding[availableMember] = {
-      id: requestID,
-      startTime: Date.now(),
-      timeout: setTimeout(() => {
-        this._handleRequestTimeout(availableMember, requestID);
-      }, this.settings.timeout)
-    };
+      const requestID = new Actor({ type: 'request' }).id;
+      this._state.outstanding[memberID] = {
+        id: requestID,
+        startTime: Date.now(),
+        timeout: setTimeout(() => {
+          this._handleRequestTimeout(memberID, requestID);
+        }, this.settings.timeout)
+      };
 
-    let queryTimeoutId = null;
-    try {
-      const result = await Promise.race([
-        this._state.members[availableMember].query(request),
-        new Promise((_, reject) => {
-          queryTimeoutId = setTimeout(() => {
-            reject(new Error(`Request timed out after ${this.settings.timeout}ms`));
-          }, this.settings.timeout);
-        })
-      ]);
-
-      // Clean up request tracking
-      this._cleanupRequest(availableMember);
-      return result;
-    } catch (error) {
-      // Clean up request tracking
-      this._cleanupRequest(availableMember);
-      throw error;
-    } finally {
-      // Clean up query timeout if it was set
-      if (queryTimeoutId) {
-        clearTimeout(queryTimeoutId);
+      let queryTimeoutId = null;
+      try {
+        const result = await Promise.race([
+          agent.query(subRequest),
+          new Promise((_, reject) => {
+            queryTimeoutId = setTimeout(() => {
+              reject(new Error(`Request timed out after ${this.settings.timeout}ms`));
+            }, this.settings.timeout);
+          })
+        ]);
+        this._cleanupRequest(memberID);
+        if (queryTimeoutId) clearTimeout(queryTimeoutId);
+        return result;
+      } catch (error) {
+        this._cleanupRequest(memberID);
+        if (queryTimeoutId) clearTimeout(queryTimeoutId);
+        lastError = error;
+        console.warn(`[SENSEMAKER] [POOL] Member ${memberID} failed; trying next fallback if any:`, error.message);
       }
     }
+
+    throw lastError || new Error('All pool members failed for this model');
+  }
+
+  async queryStream (request = {}) {
+    if (!request.model) request.model = this.settings.model;
+    if (!request.query) throw new Error('Query is required for the request');
+
+    const modelProviders = this._state.models[request.model] || [];
+    const candidateMembers = modelProviders
+      .filter((provider) => provider.status === 'ready')
+      .map((provider) => provider.provider)
+      .filter((memberID) => {
+        const isHealthy = this._state.memberStatus[memberID] === 'ready';
+        return isHealthy && !this._state.outstanding[memberID];
+      });
+
+    if (candidateMembers.length === 0) {
+      throw new Error('No suitable healthy member found for the request');
+    }
+
+    let lastError = null;
+    for (const memberID of candidateMembers) {
+      const agent = this._state.members[memberID];
+      const effectiveModel = (agent.settings && agent.settings.poolUpstreamModel) || request.model;
+      const subRequest = { ...request, model: effectiveModel, stream: true };
+
+      const requestID = new Actor({ type: 'request' }).id;
+      this._state.outstanding[memberID] = {
+        id: requestID,
+        startTime: Date.now(),
+        timeout: setTimeout(() => {
+          this._handleRequestTimeout(memberID, requestID);
+        }, this.settings.timeout)
+      };
+
+      let queryTimeoutId = null;
+      try {
+        const result = await Promise.race([
+          (typeof agent.queryStream === 'function')
+            ? agent.queryStream(subRequest)
+            : agent.query(subRequest),
+          new Promise((_, reject) => {
+            queryTimeoutId = setTimeout(() => {
+              reject(new Error(`Request timed out after ${this.settings.timeout}ms`));
+            }, this.settings.timeout);
+          })
+        ]);
+        this._cleanupRequest(memberID);
+        if (queryTimeoutId) clearTimeout(queryTimeoutId);
+        return result;
+      } catch (error) {
+        this._cleanupRequest(memberID);
+        if (queryTimeoutId) clearTimeout(queryTimeoutId);
+        lastError = error;
+        console.warn(`[SENSEMAKER] [POOL] Member ${memberID} streaming failed; trying next fallback if any:`, error.message);
+      }
+    }
+
+    throw lastError || new Error('All pool members failed for this model');
   }
 
   _handleRequestTimeout (memberID, requestID) {
@@ -326,6 +409,19 @@ class Pool extends Service {
     await Promise.allSettled(stopPromises);
 
     this._state.content.status = 'STOPPED';
+    return this;
+  }
+
+  /**
+   * Clear members so the pool can be reconfigured (e.g. hosted LLM toggle). Call before start().
+   */
+  async resetMembers () {
+    await this.stop();
+    this._state.members = {};
+    this._state.content.members = {};
+    this._state.memberModels = {};
+    this._state.models = {};
+    this._state.memberStatus = {};
     return this;
   }
 

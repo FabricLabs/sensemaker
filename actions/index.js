@@ -67,6 +67,7 @@ const {
 const {
   chatStreamChunk,
   chatStreamReset,
+  updateMessage,
   resetChat,
   submitMessage,
   submitStreamingMessage,
@@ -348,6 +349,7 @@ module.exports = {
   resetChat: resetChat,
   chatStreamChunk: chatStreamChunk,
   chatStreamReset: chatStreamReset,
+  updateMessage: updateMessage,
   submitMessage: submitMessage,
   submitStreamingMessage: submitStreamingMessage,
   regenAnswer: regenAnswer,

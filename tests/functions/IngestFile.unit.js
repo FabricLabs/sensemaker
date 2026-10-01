@@ -12,8 +12,18 @@ describe('IngestFile', function () {
       assert.strictEqual(typeof IngestFile, 'function');
     });
 
-    it('exports an async function', function () {
-      assert.strictEqual(IngestFile.constructor.name, 'AsyncFunction');
+    it('is awaitable (returns a Promise)', async function () {
+      const ctx = {
+        db: () => ({
+          where: () => ({
+            first: async () => null,
+            update: async () => 1
+          })
+        })
+      };
+      const result = IngestFile.call(ctx, 'missing-id');
+      assert.ok(result && typeof result.then === 'function', 'expected a thenable');
+      await assert.rejects(result, /File with ID missing-id not found/);
     });
 
     it('rejects when no file id is found in the database', async function () {

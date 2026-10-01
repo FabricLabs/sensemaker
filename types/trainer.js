@@ -6,7 +6,8 @@ const QUERY_FIXTURE = `You are SENSEMAKER, the AI agent behind sensemaker.io.  P
 
 // Constants
 const {
-  EMBEDDING_MODEL
+  EMBEDDING_MODEL,
+  DEFAULT_LLM_TIMEOUT_MS
 } = require('../constants');
 
 // Dependencies
@@ -44,6 +45,7 @@ const Actor = require('@fabric/core/types/actor');
 
 // Sensemaker Types
 const Agent = require('./agent');
+const localSettings = require('../settings/local');
 
 // Simple in-memory vector store for testing purposes
 class InMemoryVectorStore {
@@ -86,9 +88,9 @@ class Trainer extends Agent {
       /** Hard cap on characters sent to Ollama embed (tokens vary by model; avoids 400 context errors). */
       maxEmbeddingInputChars: parseInt(process.env.SENSEMAKER_EMBED_MAX_CHARS || '6000', 10),
       ollama: {
-        host: process.env.OLLAMA_HOST || 'localhost',
-        port: parseInt(process.env.OLLAMA_PORT) || 11434,
-        secure: false
+        host: process.env.OLLAMA_HOST || localSettings.ollama.host,
+        port: parseInt(process.env.OLLAMA_PORT, 10) || localSettings.ollama.port,
+        secure: localSettings.ollama.secure
       },
       redis: {
         host: 'localhost',
@@ -271,7 +273,7 @@ class Trainer extends Agent {
     });
   }
 
-  async query (request, timeoutMs = 60000) {
+  async query (request, timeoutMs = DEFAULT_LLM_TIMEOUT_MS) {
     return new Promise(async (resolve, reject) => {
       if (this.settings.debug) console.debug('[TRAINER]', 'Handling request:', request);
 
@@ -366,6 +368,43 @@ class Trainer extends Agent {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Streaming-compatible surface for Trainer.
+   * Trainer retrieval is non-token-streaming today, so this emits start/chunk/end
+   * around the resolved query payload to align API shape with Agent/Pool.
+   */
+  async queryStream (request, timeoutMs = DEFAULT_LLM_TIMEOUT_MS) {
+    const streamId = request.messageId || `trainer:${Date.now()}`;
+    if (typeof request.onStart === 'function') {
+      await request.onStart({
+        type: 'MessageStart',
+        path: `/messages/${streamId}`,
+        value: { status: 'streaming', content: '' }
+      });
+    }
+
+    const response = await this.query(request, timeoutMs);
+    const content = (response && response.content) ? String(response.content) : '';
+
+    if (typeof request.onChunk === 'function') {
+      await request.onChunk({
+        type: 'MessageChunk',
+        path: `/messages/${streamId}`,
+        value: { status: 'streaming', content }
+      });
+    }
+
+    if (typeof request.onEnd === 'function') {
+      await request.onEnd({
+        type: 'MessageEnd',
+        message_id: streamId,
+        content
+      });
+    }
+
+    return response;
   }
 
   /**

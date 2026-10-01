@@ -5,7 +5,8 @@ const {
   AGENT_MAX_TOKENS,
   AGENT_TEMPERATURE,
   CHATGPT_MAX_TOKENS,
-  MAX_MEMORY_SIZE
+  MAX_MEMORY_SIZE,
+  DEFAULT_LLM_TIMEOUT_MS
 } = require('../constants');
 
 // Local Constants
@@ -100,8 +101,12 @@ class Agent extends Service {
         'do not provide hypotheticals or rely on hypothetical information (hallucinations)'
       ],
       timeout: {
-        tolerance: 60 * 1000 // tolerance in seconds
+        tolerance: DEFAULT_LLM_TIMEOUT_MS
       },
+      /** When set, pool queries use this upstream model id (e.g. OpenRouter tag). */
+      poolUpstreamModel: undefined,
+      /** Extra model names this member accepts in {@link Pool} (aliases for fallback routing). */
+      additionalPoolModels: [],
       constraints: {
         max_tokens: AGENT_MAX_TOKENS,
         tokens: {
@@ -298,8 +303,10 @@ class Agent extends Service {
 
       if (this.settings.debug) console.debug('[AGENT]', 'initial request:', request);
 
-      // Create timeout handler
+      // Create timeout handler. Abort the HTTP call so a late reply cannot keep the model busy.
+      let abortQuery = () => {};
       const timeoutId = setTimeout(() => {
+        abortQuery();
         reject(new Error(`Query timed out after ${this.settings.timeout.tolerance}ms`));
       }, this.settings.timeout.tolerance);
 
@@ -355,9 +362,11 @@ class Agent extends Service {
 
           // Core Request with AbortController for timeout
           const controller = new AbortController();
+          abortQuery = () => controller.abort();
           const signal = controller.signal;
 
-          const streamEnabled = !!(request.stream && typeof request.onStreamChunk === 'function' && !requestUsesTools(request));
+          const streamChunkHandler = request.onStreamChunk || request.onChunk;
+          const streamEnabled = !!(request.stream && typeof streamChunkHandler === 'function' && !requestUsesTools(request));
 
           try {
             response = await fetch(endpoint, {
@@ -371,12 +380,13 @@ class Agent extends Service {
                 keep_alive: (this.settings.keepalive) ? -1 : undefined,
                 messages: sample,
                 format: format,
+                ...(request.think === false ? { think: false } : {}),
                 options: {
                   seed: request.seed || this.settings.parameters.seed,
                   temperature: request.temperature !== undefined && request.temperature !== null
                     ? request.temperature
                     : this.settings.parameters.temperature,
-                  num_ctx: this.settings.parameters.max_tokens,
+                  num_ctx: request.num_ctx || this.settings.parameters.max_tokens,
                   ...(request.max_tokens ? { num_predict: request.max_tokens } : {})
                 },
                 tools: requestUsesTools(request) ? this.tools : undefined,
@@ -400,7 +410,7 @@ class Agent extends Service {
             if (streamEnabled) {
               let finalContent;
               try {
-                finalContent = await consumeChatCompletionStream(response, request.onStreamChunk);
+                finalContent = await consumeChatCompletionStream(response, streamChunkHandler);
               } catch (streamErr) {
                 clearTimeout(timeoutId);
                 return reject(streamErr);
@@ -952,7 +962,8 @@ class Agent extends Service {
   }
 
   async listModels () {
-    return fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}/api/v1/models`, {
+    const pathPrefix = this.settings.path || '/v1';
+    return fetch(`http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}${pathPrefix}/models`, {
       method: 'GET',
       headers: merge({
         'Accept': 'application/json',

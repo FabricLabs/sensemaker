@@ -1,12 +1,8 @@
 'use strict';
 
-module.exports = async function (req, res, next) {
-  /* if (!req.user || !req.user.id) {
-    res.status(403);
-    res.send({ status: 'error', message: 'Unauthorized!' });
-    return;
-  } */
+const { publicUserView, privilegedUserView } = require('../../functions/userPublicView');
 
+module.exports = async function (req, res, next) {
   const user = await this.db('users').where({ username: req.params.username }).first();
 
   if (!user) {
@@ -19,8 +15,10 @@ module.exports = async function (req, res, next) {
     html: () => {
       res.send(this.applicationString);
     },
-    json: () => {
-      res.send(user);
-    },
+    json: async () => {
+      const isSelf = req.user && req.user.id != null && Number(req.user.id) === Number(user.id);
+      const isAdmin = await this._userHasAdminAccess(req);
+      res.send(isSelf || isAdmin ? privilegedUserView(user) : publicUserView(user));
+    }
   });
 };

@@ -8,7 +8,10 @@ const assert = require('assert');
 const Sensemaker = require('../services/sensemaker');
 const Learner = require('../types/learner');
 
-const settings = require('../settings/local');
+const os = require('os');
+const settings = Object.assign({}, require('../settings/local'), {
+  files: { path: os.tmpdir() }
+});
 
 describe('Sensemaker', function () {
   this.timeout(60000);

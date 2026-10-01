@@ -60,8 +60,7 @@ class Conversation extends React.Component {
     await this.props.fetchConversations();
     const actual = this.props.conversations.find(conversation => conversation.slug == id);
     this.setState({ actualConversation: actual });
-    await this.props.resetChat();
-    // Fetch new conversation details and messages
+    // Do not resetChat() here — it clears messages before GET /messages returns and causes a visible empty flash.
     await this.props.getMessages({ conversation_id: id });
 
     // Subscribe to conversation updates via Bridge

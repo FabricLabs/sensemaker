@@ -10,7 +10,9 @@ module.exports = {
       min_uptime: 10000, // Minimum uptime before restarting (in milliseconds)
       autorestart: true, // Enable automatic restarts
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        // Fabric P2P: apps on 7778+; hub.fabric.pub + relay.goon.vc use 7777.
+        FABRIC_PORT: 7778
       }
     }
   ]

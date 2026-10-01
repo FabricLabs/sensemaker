@@ -13,8 +13,9 @@ module.exports = {
     name: 'LOCAL',
     prompt: baseline.toString('utf8'),
     model: 'llama3.2',
-    host: '127.0.0.1',
-    port: 11434,
+    // Do not set host/port here: settings/local.js merges this file *after* the base
+    // `agents.local` block, and lodash.merge would overwrite Ollama host (e.g.
+    // 192.168.50.5 or OLLAMA_HOST) with a fixed localhost — see worker Agent "LOCAL".
     secure: false,
     temperature: 0
   }

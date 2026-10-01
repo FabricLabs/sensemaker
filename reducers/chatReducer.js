@@ -35,7 +35,6 @@ function chatReducer (state = initialState, action) {
     case CHAT_REQUEST:
       return {
         ...state,
-        message: '',
         error: null,
         isSending: true,
         streamBuffer: '',
@@ -104,14 +103,35 @@ function chatReducer (state = initialState, action) {
     case RESET_CHAT_SUCCESS:
       return initialState;
     case UPDATE_MESSAGE:
-      return {
-        ...state,
-        messages: state.messages.map(message =>
-          message.id === action.payload.messageId
-            ? { ...message, ...action.payload.updates }
-            : message
-        )
-      };
+      {
+        const { messageId, updates = {} } = action.payload || {};
+        if (!messageId) return state;
+        const existingIndex = state.messages.findIndex((m) => m.id === messageId);
+        if (existingIndex === -1) {
+          const seeded = {
+            id: messageId,
+            role: 'assistant',
+            author: 'sensemaker',
+            status: updates.status || 'streaming',
+            content: updates.content || '',
+            created_at: updates.created_at || new Date().toISOString(),
+            updated_at: updates.updated_at || new Date().toISOString(),
+            ...updates
+          };
+          return {
+            ...state,
+            messages: state.messages.concat([seeded])
+          };
+        }
+        return {
+          ...state,
+          messages: state.messages.map(message =>
+            message.id === messageId
+              ? { ...message, ...updates }
+              : message
+          )
+        };
+      }
     default:
       // console.warn('unhandled chat reducer action:', action);
       return state;

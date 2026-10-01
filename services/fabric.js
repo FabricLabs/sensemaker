@@ -1,22 +1,14 @@
 'use strict';
 
-const path = require('path');
-
 // Dependencies
-// Fabric Core
 const Actor = require('@fabric/core/types/actor');
-const Message = require('@fabric/core/types/message');
 const Peer = require('@fabric/core/types/peer');
-
-// Fabric HTTP
 const Remote = require('@fabric/http/types/remote');
-
-// Fabric Hub (`package.json` "exports" omits `./services/*`; load concrete path)
-const hubRoot = path.join(path.dirname(require.resolve('@fabric/hub')), '..');
-const FabricHub = require(path.join(hubRoot, 'services', 'fabric.js'));
+const FabricHub = require('@fabric/hub/services/fabric');
 
 /**
  * Defines the Fabric interface for Sensemaker.
+ * Extends Hub `services/fabric` via package export (no path.join deep-require).
  */
 class FabricNetwork extends FabricHub {
   /**
@@ -73,7 +65,7 @@ class FabricNetwork extends FabricHub {
 
     // Begin Search
     this.emit('debug', 'Searching...', request);
-    let results = [];
+    const results = [];
 
     for (let i = 0; i < this.remotes.length; i++) {
       try {
@@ -92,7 +84,6 @@ class FabricNetwork extends FabricHub {
               break;
           }
         }
-        // results = results.concat(index.results);
       } catch (exception) {
         console.error('[FABRIC] Could not search index:', exception);
       }
@@ -105,11 +96,8 @@ class FabricNetwork extends FabricHub {
     if (!this.settings.sync) return this;
     this.emit('debug', 'Syncing...');
 
-    // For each Remote, synchronize documents
     for (let i = 0; i < this.remotes.length; i++) {
       const remote = this.remotes[i];
-
-      // Documents
       await Promise.allSettled([
         this.syncRemoteDocuments(remote)
       ]);
@@ -126,8 +114,6 @@ class FabricNetwork extends FabricHub {
       console.debug('[FABRIC] Remote Documents found:', documents);
       for (let j = 0; j < documents.length; j++) {
         const document = documents[j];
-        // TODO: validate documents
-        // TODO: decide inner Fabric state vs. standard document content
         this._state.content.collections.documents[document.id] = document;
         this.emit('document', document);
       }
@@ -141,7 +127,6 @@ class FabricNetwork extends FabricHub {
   async start () {
     this.emit('debug', '[FABRIC] Starting service...');
 
-    // Sync
     await this.sync();
     await this.agent.start();
 
@@ -168,7 +153,6 @@ class FabricNetwork extends FabricHub {
   commit () {
     super.commit();
 
-    // Commit to state
     const commit = new Actor({
       content: {
         state: this.state
@@ -181,7 +165,7 @@ class FabricNetwork extends FabricHub {
       content: {
         state: this.state
       }
-    })
+    });
   }
 }
 

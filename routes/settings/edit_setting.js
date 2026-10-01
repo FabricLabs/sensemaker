@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { GLOBAL_SETTINGS } = require('../../constants');
+const { GLOBAL_SETTINGS, HOSTED_LLM_POOL_SETTING_NAMES, DOCUMENT_RETRIEVAL_SETTING_NAME } = require('../../constants');
 
 module.exports = async function (req, res) {
   try {
@@ -18,6 +18,16 @@ module.exports = async function (req, res) {
 
     if (value === undefined || value === null) {
       return res.status(400).json({ error: 'Setting value is required' });
+    }
+
+    if (HOSTED_LLM_POOL_SETTING_NAMES.includes(setting)) {
+      const allowed = await this._userHasAdminAccess(req);
+      if (!allowed) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Admin session required to change a hosted LLM pool setting.'
+        });
+      }
     }
 
     // Determine if this is a global/system setting or user setting
@@ -55,6 +65,22 @@ module.exports = async function (req, res) {
         updated_at: this.db.fn.now()
       });
       console.debug('[SETTINGS]', `Created new ${settingType} setting ${setting}`);
+    }
+
+    if (HOSTED_LLM_POOL_SETTING_NAMES.includes(setting) && typeof this.refreshPoolMembersAfterGlobalSettings === 'function') {
+      try {
+        await this.refreshPoolMembersAfterGlobalSettings();
+      } catch (poolErr) {
+        console.error('[SETTINGS]', 'Pool refresh after hosted LLM toggle failed:', poolErr);
+      }
+    }
+
+    if (setting === DOCUMENT_RETRIEVAL_SETTING_NAME && typeof this._syncDocumentRetrievalFlagFromDb === 'function') {
+      try {
+        await this._syncDocumentRetrievalFlagFromDb();
+      } catch (pipelineErr) {
+        console.error('[SETTINGS]', 'Document retrieval sync failed:', pipelineErr);
+      }
     }
 
     const result = {

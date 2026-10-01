@@ -80,12 +80,20 @@ class Worker extends Service {
 
     if (!method) {
       this.emit('warning', 'Unhandled job type:', job.type);
+      this._state.working = false;
       return;
     }
 
-    const work = method.apply(this.state, job.params);
+    let work;
+    try {
+      work = method.apply(this.state, job.params);
+    } catch (error) {
+      this._state.working = false;
+      this.emit('error', { job, error, timestamp: Date.now() });
+      return;
+    }
 
-    work.then((output) => {
+    Promise.resolve(work).then((output) => {
       this.emit('work', {
         job,
         output,

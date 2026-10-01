@@ -115,4 +115,39 @@ describe('Sensemaker Security', function () {
       assert.strictEqual(ok, false);
     });
   });
+
+  describe('_verifyInboundFabricMessage', function () {
+    it('allows system messages without a verification key', function () {
+      const ok = Sensemaker.prototype._verifyInboundFabricMessage.call({}, {
+        type: 'Ping',
+        raw: { signature: Buffer.alloc(64) }
+      });
+      assert.strictEqual(ok, true);
+    });
+
+    it('rejects unsigned non-system messages when a key is configured', function () {
+      const ctx = {
+        key: { verify: () => true },
+        settings: {}
+      };
+      const ok = Sensemaker.prototype._verifyInboundFabricMessage.call(ctx, {
+        type: 'ChatMessage',
+        raw: { signature: Buffer.alloc(64) }
+      });
+      assert.strictEqual(ok, false);
+    });
+
+    it('accepts signed messages that verify with the node key', function () {
+      const ctx = {
+        key: { verify: () => true },
+        settings: {}
+      };
+      const ok = Sensemaker.prototype._verifyInboundFabricMessage.call(ctx, {
+        type: 'ChatMessage',
+        raw: { signature: Buffer.from('aa', 'hex') },
+        verifyWithKey: () => true
+      });
+      assert.strictEqual(ok, true);
+    });
+  });
 });

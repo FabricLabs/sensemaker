@@ -15,6 +15,7 @@
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 
 const { issueNodeSessionToken } = require('../../services/nodeSessionToken');
+const { sessionCookieOptions } = require('../../functions/sessionCookie');
 
 // Exports an Express.js middleware function
 module.exports = async function (req, res, next) {
@@ -100,7 +101,7 @@ module.exports = async function (req, res, next) {
     },
     html: function () {
       const next = (req.query.next || '/').replace(/[^a-zA-Z0-9\/]/g, '');
-      res.cookie('token', access_token, { httpOnly: true });
+      res.cookie('token', access_token, sessionCookieOptions(req));
       res.redirect(next);
     }
   });

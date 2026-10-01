@@ -6,17 +6,18 @@
  * - **Redis** (when `hub.redis` is connected): list key `sensemaker:active_worker_queue:v1` — RPUSH enqueue, LPOP dequeue.
  * - **Fallback**: in-memory array when Redis is unavailable.
  *
- * When the worker has been **idle** for {@link IDLE_MS}, the hub may run one **background task**
- * (oldest incomplete row in `tasks`) via {@link Sensemaker#_processBackgroundTaskJob}.
+ * When the worker has been **idle** for {@link IDLE_MS}, the hub runs one unit of
+ * background progress (a due source, an objective plan, a plan step, or a task)
+ * via {@link Sensemaker#_runBackgroundWork}. Conversation turns always dequeue first.
  */
 
 const REDIS_KEY = 'sensemaker:active_worker_queue:v1';
-const IDLE_MS = 60 * 1000;
+const IDLE_MS = 2 * 1000;
 const TICK_MS = 350;
 
 class ActiveWorkerQueue {
   /**
-   * @param {import('./sensemaker')} hub
+   * @param {Sensemaker} hub
    */
   constructor (hub) {
     this.hub = hub;
@@ -24,7 +25,7 @@ class ActiveWorkerQueue {
     this._memory = [];
     this.busy = false;
     this.lastFinishedAt = Date.now();
-    /** @type {ReturnType<typeof setInterval>|null} */
+    /** @type {*|null} */
     this._timer = null;
   }
 
@@ -110,20 +111,9 @@ class ActiveWorkerQueue {
     const job = await this._dequeue();
     if (!job) {
       const depth = await this.queueDepth();
-      if (depth === 0 && Date.now() - this.lastFinishedAt >= IDLE_MS) {
-        const bg = await this.hub._pickOldestBackgroundTask();
-        if (bg) {
-          this.busy = true;
-          try {
-            await this.hub._processBackgroundTaskJob(bg);
-          } catch (e) {
-            console.error('[SENSEMAKER:CORE]', '[WORKER]', 'Background task failed:', e);
-          } finally {
-            this.busy = false;
-            this.lastFinishedAt = Date.now();
-          }
-        }
-      }
+      if (depth !== 0) return;
+      if (Date.now() - this.lastFinishedAt < IDLE_MS) return;
+      await this._runBackground();
       return;
     }
 
@@ -131,16 +121,21 @@ class ActiveWorkerQueue {
     try {
       if (job.type === 'conversation_turn') {
         await this.hub._processConversationTurnJob(job);
+      } else if (job.type === 'gather_due_sources') {
+        if (typeof this.hub._gatherNextDueSource === 'function') {
+          await this.hub._gatherNextDueSource();
+        }
       } else {
         console.warn('[SENSEMAKER:CORE]', '[WORKER]', 'Unknown job type:', job.type);
       }
     } catch (e) {
       console.error('[SENSEMAKER:CORE]', '[WORKER]', 'Job failed:', e);
-      if (job.response_message_id != null) {
+      if (job.response_message_id != null && this.hub.db) {
+        const stamp = (this.hub.db.fn && this.hub.db.fn.now) ? this.hub.db.fn.now() : new Date();
         await this.hub.db('messages').where({ id: job.response_message_id }).update({
           status: 'error',
           content: `Error: ${e.message || String(e)}`,
-          updated_at: this.hub.db.fn.now()
+          updated_at: stamp
         }).catch(() => {});
       }
     } finally {
@@ -148,6 +143,30 @@ class ActiveWorkerQueue {
       this.lastFinishedAt = Date.now();
     }
   }
+
+  async _runBackground () {
+    this.busy = true;
+    try {
+      if (typeof this.hub._pickNextBackgroundWork === 'function') {
+        const work = await this.hub._pickNextBackgroundWork();
+        if (work && typeof this.hub._runBackgroundWork === 'function') {
+          await this.hub._runBackgroundWork(work);
+        }
+        return;
+      }
+      if (typeof this.hub._pickOldestBackgroundTask === 'function') {
+        const task = await this.hub._pickOldestBackgroundTask();
+        if (task) await this.hub._processBackgroundTaskJob(task);
+      }
+    } catch (e) {
+      console.error('[SENSEMAKER:CORE]', '[WORKER]', 'Background task failed:', e);
+    } finally {
+      this.busy = false;
+      this.lastFinishedAt = Date.now();
+    }
+  }
 }
+
+ActiveWorkerQueue.IDLE_MS = IDLE_MS;
 
 module.exports = ActiveWorkerQueue;
