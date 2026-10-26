@@ -3487,9 +3487,10 @@ class Sensemaker extends Hub {
       return res.send(this.http.app.render());
     });
 
-    // D-011 / D-013: Hub-compatible Fabric login + device-link (password login preserved).
-    mountFabricProtocolHttp(this, ROUTES.sessions.create.bind(this));
-    this.http._addRoute('GET', '/sessions/current', ROUTES.sessions.current.bind(this));
+    // Passport v2 sign-in + device-link (password login preserved).
+    mountFabricProtocolHttp(this, ROUTES.sessions.create.bind(this), {
+      current: ROUTES.sessions.current.bind(this)
+    });
 
     // TODO: fix these routes
     this.http._addRoute('POST', '/passwordChange', ROUTES.account.changePassword.bind(this));

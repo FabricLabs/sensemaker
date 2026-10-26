@@ -1,36 +1,66 @@
 'use strict';
 
 /**
- * Mount Hub-compatible Fabric protocol HTTP surfaces on Sensemaker without
- * replacing password `/sessions` login.
+ * Mount Fabric protocol HTTP surfaces on Sensemaker without replacing
+ * password `/sessions` login.
  *
- * - D-011 client-signed login: POST /sessions { origin } → GET poll → POST …/signatures
- * - D-013 device-link: POST|GET /device-links (+ …/signatures)
+ * - Passport v2 sign-in (`@fabric/http` `passportHttp`), pinned to
+ *   Sensemaker's own origins: `POST /sessions/challenges`, then
+ *   `POST /sessions { assertion }`. `GET|DELETE /sessions/current` answer for a
+ *   Passport session when the request carries one, else for the password
+ *   session.
+ * - Device-link: `POST|GET /device-links` (+ `…/signatures`).
  *
- * Password / credential token login remains POST /sessions { username, password } | { token }.
+ * Password / credential token login stays `POST /sessions { username, password } | { token }`.
  */
 
-const desktopAuth = require('@fabric/hub/functions/fabricDesktopAuth');
+const { createPassportRelyingParty } = require('@fabric/http/functions/passportRelyingParty');
+const { createPassportHttp } = require('@fabric/http/functions/passportHttp');
 const { mountFabricDeviceLinkHttp } = require('@fabric/hub/functions/fabricDeviceLink');
-const { mountFabricDelegationHttp } = require('@fabric/hub/functions/fabricDelegation');
 
 /**
- * True when the body is a Hub-style desktop/player login session create
- * (not Sensemaker password / credential login).
+ * True when the body is a Passport sign-in (a signed assertion), not
+ * Sensemaker password / credential login.
  * @param {object|null|undefined} body
  * @returns {boolean}
  */
-function isFabricDesktopSessionCreate (body) {
+function isPassportSessionCreate (body) {
   if (!body || typeof body !== 'object') return false;
   if (body.username != null || body.password != null || body.token != null) return false;
-  return typeof body.origin === 'string' && String(body.origin).trim().length > 0;
+  return typeof body.assertion === 'string' && /^fabric:/i.test(body.assertion.trim());
 }
 
 /**
- * @param {object} sensemaker Sensemaker / Hub-like instance with http + _rootKey
- * @param {Function} passwordCreateHandler Bound create_session middleware
+ * Origins Passport may sign in to: `baseUrl`, `https://<domain>`, and
+ * loopback on the HTTP port. The `Host` header never adds one.
+ * @param {object} [settings] Sensemaker settings
+ * @returns {string[]}
  */
-function mountFabricProtocolHttp (sensemaker, passwordCreateHandler) {
+function sensemakerPinnedOrigins (settings = {}) {
+  const out = new Set();
+  const add = (raw) => {
+    try {
+      if (raw) out.add(new URL(String(raw)).origin);
+    } catch (_) {}
+  };
+  add(settings.baseUrl);
+  if (settings.domain && /^[a-z0-9.-]+(:\d+)?$/i.test(String(settings.domain))) add(`https://${settings.domain}`);
+  const port = Number((settings.http && settings.http.port) || settings.port || 3040);
+  if (Number.isInteger(port) && port > 0) {
+    for (const host of ['127.0.0.1', 'localhost', '[::1]']) out.add(`http://${host}:${port}`);
+  }
+  return [...out];
+}
+
+/**
+ * @param {object} sensemaker Sensemaker / Hub-like instance with `http` and `settings`
+ * @param {Function} passwordCreateHandler Bound create_session middleware
+ * @param {Object} [handlers]
+ * @param {Function} [handlers.current] Bound current_session middleware
+ * @param {Function} [handlers.destroy] Bound destroy_session middleware
+ * @returns {{ passport: boolean, deviceLink: boolean }}
+ */
+function mountFabricProtocolHttp (sensemaker, passwordCreateHandler, handlers = {}) {
   if (!sensemaker || !sensemaker.http || typeof sensemaker.http._addRoute !== 'function') {
     throw new Error('mountFabricProtocolHttp: sensemaker.http._addRoute required');
   }
@@ -38,49 +68,55 @@ function mountFabricProtocolHttp (sensemaker, passwordCreateHandler) {
     throw new Error('mountFabricProtocolHttp: passwordCreateHandler required');
   }
 
-  if (!sensemaker._desktopAuthSessions) sensemaker._desktopAuthSessions = new Map();
   if (!sensemaker._deviceLinkSessions) sensemaker._deviceLinkSessions = new Map();
-  if (!sensemaker._delegationRegistry) sensemaker._delegationRegistry = new Map();
-  if (!sensemaker._delegationSignatureMessages) sensemaker._delegationSignatureMessages = new Map();
-
-  // Desktop auth + device-link hub self-sign use `_rootKey`.
+  // Device-link self-sign uses `_rootKey`.
   if (!sensemaker._rootKey && sensemaker.key) sensemaker._rootKey = sensemaker.key;
   if (!sensemaker.key && sensemaker._rootKey) sensemaker.key = sensemaker._rootKey;
 
-  sensemaker.http._addRoute('POST', '/sessions/:sessionId/signatures', (req, res) => {
-    desktopAuth.handleDesktopSign(sensemaker, req, res);
+  const settings = sensemaker.settings || {};
+  const relyingParty = createPassportRelyingParty({
+    pinnedOrigins: sensemakerPinnedOrigins(settings),
+    network: null,
+    purpose: `Sign in to ${settings.name || 'Sensemaker'}`
   });
-  sensemaker.http._addRoute('GET', '/sessions/:sessionId', (req, res) => {
-    desktopAuth.handleSessionGet(sensemaker, req, res);
-  });
+  const passportHttp = createPassportHttp({ relyingParty });
+  const route = (method, path) => passportHttp.routes.find((r) => r.method === method && r.path === path).handler;
+  const createChallenge = route('POST', '/sessions/challenges');
+  const createSession = route('POST', '/sessions');
+  const currentSession = route('GET', '/sessions/current');
+  const endSession = route('DELETE', '/sessions/current');
 
-  // Dual-mode create: Fabric origin challenge vs password/token (first Express match wins —
+  sensemaker.http._addRoute('POST', '/sessions/challenges', createChallenge);
+
+  // Dual-mode create: Passport assertion vs password/token (first Express match wins —
   // register only this handler for POST /sessions).
   sensemaker.http._addRoute('POST', '/sessions', (req, res, next) => {
     const body = (req && req.body && typeof req.body === 'object') ? req.body : {};
-    if (isFabricDesktopSessionCreate(body)) {
-      return desktopAuth.handleSessionCreate(sensemaker, req, res);
-    }
+    if (isPassportSessionCreate(body)) return createSession(req, res);
     return passwordCreateHandler(req, res, next);
   });
 
+  if (typeof handlers.current === 'function') {
+    sensemaker.http._addRoute('GET', '/sessions/current', async (req, res, next) => {
+      if (await passportHttp.readRequestSession(req)) return currentSession(req, res);
+      return handlers.current(req, res, next);
+    });
+  }
+  if (typeof handlers.destroy === 'function') {
+    sensemaker.http._addRoute('DELETE', '/sessions/current', async (req, res, next) => {
+      if (passportHttp.sessionToken(req) && await passportHttp.readRequestSession(req)) return endSession(req, res);
+      return handlers.destroy(req, res, next);
+    });
+  }
+
   mountFabricDeviceLinkHttp(sensemaker);
 
-  // Do not mount Hub GET /sessions (delegation token list) — Sensemaker owns password session list.
-  mountFabricDelegationHttp(sensemaker, {
-    mountSessionsList: false,
-    mountSessionDestroy: true,
-    mountAudit: true
-  });
-
-  return {
-    desktopAuth: true,
-    deviceLink: true,
-    delegation: true
-  };
+  sensemaker._passport = { relyingParty, http: passportHttp };
+  return { passport: true, deviceLink: true };
 }
 
 module.exports = {
-  isFabricDesktopSessionCreate,
+  isPassportSessionCreate,
+  sensemakerPinnedOrigins,
   mountFabricProtocolHttp
 };

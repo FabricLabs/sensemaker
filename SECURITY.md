@@ -5,7 +5,7 @@ AI-assisted intelligence gathering service with Fabric network integration.
 Fabric networks are intended for deployment where **peers, relays, hubs, and operators may be hostile**. Design and review against:
 
 - Untrusted TCP / WebSocket / WebRTC neighbors (forgery, replay, amplification, pin hijack)
-- Phishing of identity flows (`fabric://login`, device-link) toward attacker-controlled hubs
+- Phishing of identity flows (Passport sign-in, device-link) toward attacker-controlled hubs. Passport v2 challenges are issued only for Sensemaker's pinned origins (`baseUrl`, `https://<domain>`, loopback on the HTTP port; `functions/fabricProtocolMount.js`), bound to the browser by an HttpOnly binding secret, and redeemed once; there is no `fabric://login` or delegation token.
 - Public observability of unsigned or plaintext application traffic unless an explicit seal is used
 - No reliance on an “honest majority” of random internet peers for key custody
 

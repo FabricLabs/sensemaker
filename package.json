@@ -68,9 +68,9 @@
   "homepage": "https://sensemaker.io",
   "dependencies": {
     "@bitcoinerlab/secp256k1": "=1.2.0",
-    "@fabric/core": "file:../fabric-clean",
+    "@fabric/core": "FabricLabs/fabric#16947f222a6b0b4c408c9457c3a4d80afac67b9b",
     "@fabric/discord": "file:../fabric-discord",
-    "@fabric/http": "file:../fabric-http",
+    "@fabric/http": "FabricLabs/fabric-http#54cabec9c4d13a8399d9677834c33f91a5ef9818",
     "@fabric/hub": "file:../hub.fabric.pub",
     "@google/generative-ai": "=0.21.0",
     "@hpcc-js/wasm": "=2.23.0",
