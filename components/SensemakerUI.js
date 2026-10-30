@@ -3,8 +3,6 @@
 // Constants
 const {
   BRAND_NAME,
-  BROWSER_DATABASE_NAME,
-  BROWSER_DATABASE_TOKEN_TABLE,
   IS_CONFIGURED,
   DEBUG_SENSEMAKER_UI
 } = require('../constants');
@@ -74,7 +72,7 @@ class SensemakerUI extends React.Component {
       loggedOut: false,
       isConfigured: IS_CONFIGURED, // Track configuration status dynamically
       configurationLoading: true, // Loading state for configuration check
-      /** False until IndexedDB session read finishes — avoids public /peers → /sessions while reLogin runs */
+      /** False until the Redis session cookie (or IndexedDB copy) has been checked. */
       sessionRestored: false,
     };
     this._sessionRestoreMarked = false;
@@ -288,44 +286,8 @@ class SensemakerUI extends React.Component {
     // Set the application instance
     window.application = this;
 
-    // TODO: re-work authentication, use `seed` and `xprv` upstream (@fabric/hub)
-    // old IndexedDB code
-    //if the user was already logged in previously, we reload the session
-    const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
-
-    dbRequest.onupgradeneeded = function (event) {
-      const db = event.target.result;
-
-      if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
-        const objectStore = db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE, { keyPath: 'id' });
-        objectStore.createIndex("authToken", "authToken", { unique: false });
-      }
-    };
-
-    dbRequest.onsuccess = (event) => {
-      const db = event.target.result;
-      const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
-      const objectStore = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE);
-      const request = objectStore.get('authToken');
-
-      request.onsuccess = (event) => {
-        if (request.result) {
-          this.setState({ isAuthenticated: true });
-          this.props.reLogin(request.result.value);
-        }
-        this.markSessionRestored();
-      };
-
-      request.onerror = (event) => {
-        console.error("IndexedDB error:", event.target.errorCode);
-        this.markSessionRestored();
-      };
-    };
-
-    dbRequest.onerror = (event) => {
-      console.error("IndexedDB error:", event.target.errorCode);
-      this.markSessionRestored();
-    };
+    const restore = this.props.restoreSession ? this.props.restoreSession() : null;
+    Promise.resolve(restore).finally(() => this.markSessionRestored());
 
     // Video Background
     // document.querySelector('.ui.video').video();
@@ -394,6 +356,7 @@ class SensemakerUI extends React.Component {
                   <Route path='/invitations/:id' element={<InvitationView {...this.props} />} />
                   <Route path='/features' element={<FeaturesHome />} />
                   <Route path='/sessions' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
+                  <Route path='/oauth/authorize' element={<LoginPage login={login} error={error} onLoginSuccess={onLoginSuccess} />} />
                   <Route path='/contracts/terms-of-use' element={<TermsOfUse onAgreeSuccess={onLoginSuccess} fetchContract={this.props.fetchContract} />} />
                   <Route path='/network' element={<Navigate to='/sessions' replace />} />
                   <Route path='/peers' element={<Navigate to='/sessions' replace />} />

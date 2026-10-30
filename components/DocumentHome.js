@@ -405,7 +405,8 @@ class DocumentHome extends React.Component {
                           instance.fabric_type === 'Image' ? 'image' :
                             instance.fabric_type === 'Video' ? 'video' :
                               instance.fabric_type === 'Audio' ? 'music' :
-                                'file'
+                                instance.fabric_type === 'Canvas' ? 'desktop' :
+                                  'file'
                         } /> {instance.fabric_type}
                       </Button>
                       <Button as={Link} to={'/documents/' + instance.fabric_id} style={{ maxWidth: '50%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

@@ -420,6 +420,16 @@ class TaskHomePage extends React.Component {
   }
 
   handleWorkClick = (task) => {
+    const token = this.props.auth && this.props.auth.token;
+    fetch(`/tasks/${encodeURIComponent(task.id)}/work`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : undefined
+      },
+      body: JSON.stringify({ action: 'play' })
+    }).catch(() => {});
     this.props.navigate(`/tasks/${task.id}?action=work`);
   }
 
@@ -695,9 +705,15 @@ class TaskHomePage extends React.Component {
                                 <div style={{ marginBottom: '0.5em' }}>
                                   <strong>Status:</strong> {x.completed_at ? 'Completed' : 'In Progress'}
                                 </div>
+                                <div>
+                                  <strong>Background worker:</strong> {(x.worker && x.worker.label) || 'Idle'}
+                                </div>
                               </div>
                             </Popup.Content>
                           </Popup>
+                          {x.worker && x.worker.label && x.worker.state !== 'idle' ? (
+                            <span style={{ color: '#666', fontSize: '0.85em' }}>{x.worker.label}</span>
+                          ) : null}
                           {x.can_edit && <Icon name='pencil' color='grey' style={{ opacity: 0 }} className="edit-icon" />}
                         </div>
                       )}

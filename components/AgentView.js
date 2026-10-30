@@ -19,6 +19,7 @@ const {
 
 // Local Components
 const ChatBox = require('./ChatBox');
+const ThoughtProcess = require('./ThoughtProcess');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
@@ -115,6 +116,13 @@ class AgentPage extends React.Component {
           <div>
             <div>{agentPrompt}</div>
           </div>
+          <ThoughtProcess
+            subject='agent'
+            id={this.props.id}
+            token={this.props.auth && this.props.auth.token}
+            startOpen={false}
+            title='Thought process'
+          />
         </Segment>
         <ChatBox
           {...this.props}

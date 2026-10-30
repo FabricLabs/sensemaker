@@ -28,6 +28,8 @@ describe('Sensemaker applicationMessageTypes', function () {
     assert.ok(CONTRACT_BODY_TYPES.MessageReceipt);
     assert.strictEqual(isKnownContractBodyType('GroupChat'), true);
     assert.strictEqual(isKnownContractBodyType('MessageReceipt'), true);
+    assert.strictEqual(isKnownContractBodyType('DocumentList'), true);
+    assert.strictEqual(CONTRACT_BODY_TYPES.DocumentList, 'DocumentList');
   });
 
   it('does not pull product gameplay / mission types into Sensemaker catalog', function () {

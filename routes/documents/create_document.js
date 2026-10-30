@@ -1,8 +1,16 @@
 'use strict';
 
-const crypto = require('crypto');
 const merge = require('lodash.merge');
 const Actor = require('@fabric/core/types/actor');
+const {
+  FILE_DOCUMENT_TYPES,
+  CANVAS_STARTER,
+  detectDocumentType,
+  isFileDocumentType,
+  isTextDocumentType,
+  looksLikeText,
+  mimeForDocumentType
+} = require('../../functions/detectDocumentType');
 
 module.exports = async function (req, res, next) {
   // TODO: make error messages nicer, use both HTML and JSON depending on header
@@ -39,33 +47,27 @@ module.exports = async function (req, res, next) {
     });
 
     const actor = new Actor({ content: blob.content });
+    const bytes = Buffer.isBuffer(blob.content) ? blob.content : Buffer.from(blob.content || '', 'binary');
+    const detected = detectDocumentType({ name: file.name, mime: file.type, bytes });
 
-    // Determine fabric_type based on file mime type and extension
-    let fabricType = 'File'; // default
-    const fileName = file.name.toLowerCase();
-    const mimeType = file.type;
+    const requested = req.body.type;
+    if (requested && !isFileDocumentType(requested)) {
+      return res.status(400).json({ status: 'error', message: `Unsupported document type for a file: ${requested}` });
+    }
 
-    if (mimeType && mimeType.startsWith('image/')) {
-      fabricType = 'Image';
-    } else if (mimeType && mimeType.startsWith('audio/') ||
-      fileName.endsWith('.mp3') || fileName.endsWith('.wav') ||
-      fileName.endsWith('.ogg') || fileName.endsWith('.m4a') ||
-      fileName.endsWith('.flac') || fileName.endsWith('.aac') ||
-      fileName.endsWith('.wma') || fileName.endsWith('.opus')) {
-      fabricType = 'Audio';
-    } else if (mimeType && mimeType.startsWith('video/') ||
-      fileName.endsWith('.mp4') || fileName.endsWith('.avi') ||
-      fileName.endsWith('.mov') || fileName.endsWith('.mkv') ||
-      fileName.endsWith('.webm') || fileName.endsWith('.flv') ||
-      fileName.endsWith('.wmv') || fileName.endsWith('.m4v') ||
-      fileName.endsWith('.3gp') || fileName.endsWith('.ogv')) {
-      fabricType = 'Video';
-    } else if (mimeType === 'text/markdown' || fileName.endsWith('.md') || fileName.endsWith('.markdown')) {
-      fabricType = 'Markdown';
-    } else if (mimeType === 'text/html' || fileName.endsWith('.html') || fileName.endsWith('.htm')) {
-      fabricType = 'HTML';
-    } else if (mimeType === 'text/plain' || fileName.endsWith('.txt')) {
-      fabricType = 'Text';
+    let fabricType = detected.type;
+    let mimeType = detected.mime || file.type || 'application/octet-stream';
+    if (requested && requested !== detected.type) {
+      fabricType = requested;
+      mimeType = FILE_DOCUMENT_TYPES.find((t) => t.name === requested).mime;
+    }
+
+    let content = null;
+    if (isTextDocumentType(fabricType)) {
+      if (!looksLikeText(bytes)) {
+        return res.status(400).json({ status: 'error', message: `${file.name} is not UTF-8 text, so it cannot be stored as ${fabricType}.` });
+      }
+      content = bytes.toString('utf8');
     }
 
     try {
@@ -80,8 +82,9 @@ module.exports = async function (req, res, next) {
         ingestion_status: 'processing',
         latest_blob_id: blob.fabric_id,
         history: JSON.stringify([blob.fabric_id]),
-        mime_type: file.type || 'application/octet-stream',
+        mime_type: mimeType,
         fabric_type: fabricType,
+        content,
         file_id: file.id
       });
 
@@ -99,36 +102,9 @@ module.exports = async function (req, res, next) {
     created: (new Date()).toISOString()
   });
 
-  let mimeType = 'text/plain';
-
-  switch (obj.type) {
-    case 'Markdown':
-      mimeType = 'text/markdown';
-      break;
-    case 'HTML':
-      mimeType = 'text/html';
-      break;
-    case 'List':
-      mimeType = 'application/json';
-      break;
-    case 'Folder':
-      mimeType = 'application/json';
-      break;
-    case 'Image':
-      // For images, use the provided mime type or default to image/png
-      mimeType = obj.mime_type || req.body.mime_type || 'image/png';
-      break;
-    case 'Audio':
-      // For audio, use the provided mime type or default to audio/mpeg
-      mimeType = obj.mime_type || req.body.mime_type || 'audio/mpeg';
-      break;
-    case 'Video':
-      // For video, use the provided mime type or default to video/mp4
-      mimeType = obj.mime_type || req.body.mime_type || 'video/mp4';
-      break;
-    default:
-      mimeType = 'text/plain';
-      break;
+  let mimeType = mimeForDocumentType(obj.type);
+  if ((obj.type === 'Image' || obj.type === 'Audio' || obj.type === 'Video') && (obj.mime_type || req.body.mime_type)) {
+    mimeType = obj.mime_type || req.body.mime_type;
   }
 
   // Set default content for certain document types
@@ -143,6 +119,9 @@ module.exports = async function (req, res, next) {
       case 'Folder':
         obj.content = JSON.stringify([]);
         break;
+      case 'Canvas':
+        obj.content = CANVAS_STARTER;
+        break;
       default:
         obj.content = '';
         break;
@@ -152,16 +131,15 @@ module.exports = async function (req, res, next) {
   console.debug('Creating text-based document:', obj);
 
   // TODO: parse JSON, return to object before creating Actor
+  const stored = obj.content || content || '';
   const actor = new Actor(obj);
-  const blob = new Actor({ content: content || '' });
-  const preimage = crypto.createHash('sha256').update(content).digest('hex');
-  const hash = crypto.createHash('sha256').update(preimage).digest('hex');
+  const blob = new Actor({ content: stored });
   const existing = await this.db('blobs').where({ fabric_id: blob.id }).first();
   if (!existing) {
     await this.db('blobs').insert({
-      content: content,
+      content: stored,
       fabric_id: blob.id,
-      mime_type: 'text/plain'
+      mime_type: mimeType
     });
   }
 
@@ -172,7 +150,7 @@ module.exports = async function (req, res, next) {
     fabric_id: actor.id,
     title: obj.title,
     summary: obj.summary || '',
-    content: obj.content || '',
+    content: stored,
     status: 'draft',
     // ingestion_status: 'ingested',
     latest_blob_id: blob.id,

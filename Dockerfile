@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.15.0-slim AS builder
+FROM node:26.12.1-slim AS builder
 
 # Create app directory
 WORKDIR /app
@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 
 # Production stage
-FROM node:24.15.0-slim
+FROM node:26.12.1-slim
 
 WORKDIR /app
 

@@ -91,7 +91,7 @@ const fetchDocuments = () => {
 const fetchDocument = (fabricID) => {
   return async (dispatch, getState) => {
     dispatch(fetchDocumentRequest());
-    const { token } = getState().auth.token;
+    const { token } = getState().auth;
     try {
       const response = await fetch(`/documents/${fabricID}`, {
         method: 'GET',

@@ -9,14 +9,12 @@
  *   `POST /sessions { assertion }`. `GET|DELETE /sessions/current` answer for a
  *   Passport session when the request carries one, else for the password
  *   session.
- * - Device-link: `POST|GET /device-links` (+ `…/signatures`).
  *
  * Password / credential token login stays `POST /sessions { username, password } | { token }`.
  */
 
 const { createPassportRelyingParty } = require('@fabric/http/functions/passportRelyingParty');
 const { createPassportHttp } = require('@fabric/http/functions/passportHttp');
-const { mountFabricDeviceLinkHttp } = require('@fabric/hub/functions/fabricDeviceLink');
 
 /**
  * True when the body is a Passport sign-in (a signed assertion), not
@@ -58,7 +56,7 @@ function sensemakerPinnedOrigins (settings = {}) {
  * @param {Object} [handlers]
  * @param {Function} [handlers.current] Bound current_session middleware
  * @param {Function} [handlers.destroy] Bound destroy_session middleware
- * @returns {{ passport: boolean, deviceLink: boolean }}
+ * @returns {{ passport: boolean }}
  */
 function mountFabricProtocolHttp (sensemaker, passwordCreateHandler, handlers = {}) {
   if (!sensemaker || !sensemaker.http || typeof sensemaker.http._addRoute !== 'function') {
@@ -67,11 +65,6 @@ function mountFabricProtocolHttp (sensemaker, passwordCreateHandler, handlers = 
   if (typeof passwordCreateHandler !== 'function') {
     throw new Error('mountFabricProtocolHttp: passwordCreateHandler required');
   }
-
-  if (!sensemaker._deviceLinkSessions) sensemaker._deviceLinkSessions = new Map();
-  // Device-link self-sign uses `_rootKey`.
-  if (!sensemaker._rootKey && sensemaker.key) sensemaker._rootKey = sensemaker.key;
-  if (!sensemaker.key && sensemaker._rootKey) sensemaker.key = sensemaker._rootKey;
 
   const settings = sensemaker.settings || {};
   const relyingParty = createPassportRelyingParty({
@@ -109,10 +102,8 @@ function mountFabricProtocolHttp (sensemaker, passwordCreateHandler, handlers = 
     });
   }
 
-  mountFabricDeviceLinkHttp(sensemaker);
-
   sensemaker._passport = { relyingParty, http: passportHttp };
-  return { passport: true, deviceLink: true };
+  return { passport: true };
 }
 
 module.exports = {

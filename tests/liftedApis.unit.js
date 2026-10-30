@@ -7,18 +7,17 @@ const assert = require('assert');
 const path = require('path');
 
 describe('Sensemaker lifted Hub APIs', function () {
-  it('imports Hub device-link / allowlist and the Passport relying party via package exports', function () {
-    const deviceLink = require('@fabric/hub/functions/fabricDeviceLink');
+  it('imports the Hub allowlist and the Passport relying party via package exports', function () {
     const allowlist = require('@fabric/hub/functions/fabricHubAllowlist');
     const shared = require('@fabric/hub/functions/httpSharedMode');
     const rp = require('@fabric/http/functions/passportRelyingParty');
     const passportHttp = require('@fabric/http/functions/passportHttp');
 
-    assert.strictEqual(typeof deviceLink.mountFabricDeviceLinkHttp, 'function');
     assert.strictEqual(typeof rp.createPassportRelyingParty, 'function');
     assert.strictEqual(typeof passportHttp.createPassportHttp, 'function');
     assert.throws(() => require('@fabric/hub/functions/fabricDesktopAuth'), 'v1 desktop login is gone');
     assert.throws(() => require('@fabric/hub/functions/fabricDelegation'), 'delegation is gone');
+    assert.throws(() => require('@fabric/hub/functions/fabricDeviceLink'), 'device-link is gone');
     assert.strictEqual(allowlist.isAllowedFabricHub('https://hub.fabric.pub'), true);
     assert.strictEqual(allowlist.isAllowedFabricHub('https://phish.example'), false);
     assert.strictEqual(shared.resolveHttpListenHost({ mode: 'relay', env: {} }), '127.0.0.1');

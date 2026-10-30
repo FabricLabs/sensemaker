@@ -38,6 +38,16 @@ module.exports = {
     latest: require('./announcements/latest_announcement'),
     edit: require('./announcements/edit_announcement')
   },
+  applications: {
+    list: require('./applications/list_applications'),
+    create: require('./applications/create_application'),
+    view: require('./applications/view_application'),
+    update: require('./applications/update_application'),
+    delete: require('./applications/delete_application'),
+    options: require('./applications/application_options'),
+    authorized: require('./applications/authorized_applications'),
+    revokeAuthorization: require('./applications/revoke_authorization')
+  },
   blobs: {
     view: require('./blobs/view_blob'),
     meta: require('./blobs/meta_blob')
@@ -64,7 +74,8 @@ module.exports = {
     search: require('./documents/search_documents'),
     view: require('./documents/view_document'),
     newConversation: require('./documents/document_new_chat'),
-    getCommit: require('./documents/get_commit')
+    getCommit: require('./documents/get_commit'),
+    shareLibrary: require('./documents/share_library')
   },
   errors: {
     notFound: require('./errors/not_found')
@@ -136,6 +147,16 @@ module.exports = {
     regenerate: require('./messages/regenerate_message'),
     stream: require('./messages/create_streaming_message')
   },
+  oauth: {
+    authorize: require('./oauth/authorize'),
+    decide: require('./oauth/decide'),
+    token: require('./oauth/token'),
+    revoke: require('./oauth/revoke'),
+    introspect: require('./oauth/introspect'),
+    userinfo: require('./oauth/userinfo'),
+    jwks: require('./oauth/jwks'),
+    discovery: require('./oauth/discovery')
+  },
   peers: {
     list: require('./peers/list_peers'),
     create: require('./peers/create_peer'),
@@ -188,6 +209,9 @@ module.exports = {
       list: require('./services/disk/list_files'),
       view: require('./services/disk/view_path')
     },
+    canvas: {
+      compile: require('./services/canvas/compile_canvas')
+    },
     matrix: {
       rooms: {
         view: require('./services/matrix/view_room')
@@ -202,7 +226,8 @@ module.exports = {
   sessions: {
     create: require('./sessions/create_session'),
     get: require('./sessions/get_session'),
-    current: require('./sessions/current_session')
+    current: require('./sessions/current_session'),
+    destroy: require('./sessions/destroy_session')
   },
   settings: {
     updateCompliance: require('./settings/update_compliance'),
@@ -226,7 +251,10 @@ module.exports = {
     create: require('./tasks/create_task'),
     list: require('./tasks/list_tasks'),
     view: require('./tasks/view_task'),
-    edit: require('./tasks/edit_task')
+    edit: require('./tasks/edit_task'),
+    work: require('./tasks/work'),
+    approveEdit: require('./tasks/decide_task_edit')('approve'),
+    rejectEdit: require('./tasks/decide_task_edit')('reject')
   },
   triggers: {
     list: require('./triggers/list_triggers'),
@@ -240,6 +268,9 @@ module.exports = {
   },
   uploads: {
     listUploads: require('./uploads/get_uploads')
+  },
+  thoughts: {
+    list: require('./thoughts/list_thoughts')
   },
   workers: {
     state: require('./workers/state'),

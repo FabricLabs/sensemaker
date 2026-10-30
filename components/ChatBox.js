@@ -56,6 +56,7 @@ class ChatBox extends React.Component {
 
     // Track if bridge message handler is set up
     this.bridgeMessageHandlerSet = false;
+    this._followNewConversation = false;
 
     this.state = {
       query: '',
@@ -813,6 +814,9 @@ class ChatBox extends React.Component {
     const { documentChat, context, agent } = this.props;
 
     this.setState({ loading: true, previousFlag: true, startedChatting: true });
+    if (!this.props.conversationID && !documentChat) {
+      this._followNewConversation = true;
+    }
 
     if (isChatSidebarSearchQuery(trimmed)) {
       this.props.getMessageInformation(trimmed);
@@ -1589,7 +1593,10 @@ class ChatBox extends React.Component {
       inputStyle.marginLeft = '0';
     }
 
-    if (this.props.chat?.message?.conversation && !conversationID && !documentChat) {
+    // Only the composer that just sent a message should open the new conversation.
+    // Other pages also mount ChatBox, and a leftover chat.message.conversation would
+    // send the left-hand menu straight back here.
+    if (this._followNewConversation && this.props.chat?.message?.conversation && !conversationID && !documentChat) {
       return <Navigate to={`/conversations/${this.props.chat.message.conversation}`} replace />;
     }
 

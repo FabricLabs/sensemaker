@@ -10,6 +10,7 @@ describe('sessionCookieOptions', function () {
     assert.strictEqual(opts.sameSite, 'strict');
     assert.strictEqual(opts.path, '/');
     assert.strictEqual(opts.secure, false);
+    assert.strictEqual(opts.maxAge, 7 * 24 * 60 * 60 * 1000);
   });
 
   it('sets Secure when the request is HTTPS or forwarded as https', function () {

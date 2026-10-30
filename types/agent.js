@@ -11,6 +11,9 @@ const {
 
 // Local Constants
 const FAILURE_PROBABILTY = 0;
+// Context window sent to Ollama. AGENT_MAX_TOKENS is a generation budget (128k);
+// using it as num_ctx makes the runner allocate that window and die on /load.
+const OLLAMA_NUM_CTX = 8192;
 
 // Defaults
 const defaults = require('../settings/local');
@@ -19,6 +22,7 @@ const defaults = require('../settings/local');
 const fs = require('fs');
 const merge = require('lodash.merge');
 const fetch = require('cross-fetch');
+const { isRunnerLoadEof, acquireOllamaTurn, prepareSpecificModel, unloadExcept } = require('../functions/ollamaNativeChat');
 const crypto = require('crypto');
 
 // Fabric Types
@@ -36,6 +40,7 @@ const {
   parseChatCompletionJsonOrSse,
   stripThinkTags
 } = require('./ollamaChat');
+const { dispatchToolCall, MAX_SELF_TOOL_ROUNDS } = require('../functions/sensemakerTools');
 
 // Sensemaker Services
 // const Mistral = require('../services/mistral');
@@ -214,6 +219,7 @@ class Agent extends Service {
       content: this.settings.state,
       prompt: this.settings.prompt
     };
+    this._toolHandlers = {};
 
     // Ensure chainability
     return this;
@@ -237,9 +243,60 @@ class Agent extends Service {
 
   get tools () {
     if (!this.settings.tools) return [];
+    if (Array.isArray(this.settings.toolCatalog)) {
+      const catalog = this.settings.toolCatalog.slice();
+      const httpGet = this.settings.documentation && this.settings.documentation.methods && this.settings.documentation.methods.http_get;
+      if (this.settings.includeHttpGet && httpGet) catalog.push(httpGet);
+      return catalog;
+    }
     return Object.values(this.settings.documentation.methods).filter((x) => {
       return (x.type == 'function');
     });
+  }
+
+  /**
+   * Register a handler for one tool name. The catalog the model sees is
+   * `settings.toolCatalog`; this map is what runs when the model calls it.
+   * @param {string} name
+   * @param {function} method
+   * @returns {Agent}
+   */
+  registerTool (name, method) {
+    if (!this._toolHandlers) this._toolHandlers = {};
+    this._toolHandlers[name] = method;
+    return this;
+  }
+
+  /**
+   * @param {object} tool
+   * @param {object} request
+   * @returns {Promise<string>}
+   */
+  async _executeToolCall (tool, request) {
+    const name = tool && tool.function && tool.function.name;
+    if (name === 'http_get') {
+      if (!this.settings.includeHttpGet) return JSON.stringify({ error: 'unknown_tool', name: 'http_get' });
+      let args = {};
+      const raw = tool.function && tool.function.arguments;
+      try {
+        args = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {});
+      } catch (error) {
+        return JSON.stringify({ error: 'invalid_arguments' });
+      }
+      try {
+        const toolResponse = await fetch(args.url);
+        const content = await toolResponse.text();
+        const actor = new Actor({ content: content });
+        this.emit('document', { id: actor.id, content: content });
+        return content;
+      } catch (error) {
+        return JSON.stringify({
+          error: 'http_get_failed',
+          message: error && error.message ? error.message : 'request failed'
+        });
+      }
+    }
+    return dispatchToolCall(this._toolHandlers, tool, request && request.toolContext);
   }
 
   set prompt (value) {
@@ -321,7 +378,7 @@ class Agent extends Service {
           messages = [].concat(request.messages);
         }
 
-        if (request.context) {
+        if (request.context && !request._continueTools) {
           messages[0].content += `\n\nThe following context is relevant to the query:\n\n${JSON.stringify(request.context, null, '  ')}`;
         }
 
@@ -354,9 +411,11 @@ class Agent extends Service {
             }
           }
 
-          const sample = messages.concat([
-            { role: 'user', username: request.username, content: request.query }
-          ]);
+          const sample = request._continueTools
+            ? messages
+            : messages.concat([
+              { role: 'user', username: request.username, content: request.query }
+            ]);
 
           if (this.settings.debug) console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'Trying with messages:', sample);
 
@@ -368,42 +427,59 @@ class Agent extends Service {
           const streamChunkHandler = request.onStreamChunk || request.onChunk;
           const streamEnabled = !!(request.stream && typeof streamChunkHandler === 'function' && !requestUsesTools(request));
 
+          let releaseTurn = () => {};
           try {
-            response = await fetch(endpoint, {
-              method: 'POST',
-              headers: merge({
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              }, this.settings.headers),
-              body: JSON.stringify({
-                model: request.model || this.settings.model,
-                keep_alive: (this.settings.keepalive) ? -1 : undefined,
-                messages: sample,
-                format: format,
-                ...(request.think === false ? { think: false } : {}),
-                options: {
-                  seed: request.seed || this.settings.parameters.seed,
-                  temperature: request.temperature !== undefined && request.temperature !== null
-                    ? request.temperature
-                    : this.settings.parameters.temperature,
-                  num_ctx: request.num_ctx || this.settings.parameters.max_tokens,
-                  ...(request.max_tokens ? { num_predict: request.max_tokens } : {})
-                },
-                tools: requestUsesTools(request) ? this.tools : undefined,
-                stream: streamEnabled
-              }),
-              signal
+            const model = request.model || this.settings.model;
+            const origin = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}`;
+            releaseTurn = await acquireOllamaTurn();
+            await prepareSpecificModel(origin, model);
+            const chatBody = JSON.stringify({
+              model: model,
+              keep_alive: (this.settings.keepalive) ? -1 : undefined,
+              messages: sample,
+              format: format,
+              ...(request.think === false ? { think: false } : {}),
+              options: {
+                seed: request.seed || this.settings.parameters.seed,
+                temperature: request.temperature !== undefined && request.temperature !== null
+                  ? request.temperature
+                  : this.settings.parameters.temperature,
+                num_ctx: request.num_ctx || OLLAMA_NUM_CTX,
+                ...(request.max_tokens ? { num_predict: request.max_tokens } : {})
+              },
+              tools: requestUsesTools(request) ? this.tools : undefined,
+              stream: streamEnabled
             });
 
-            if (!response) {
-              clearTimeout(timeoutId);
-              controller.abort();
-              return reject(new Error('No response from agent.'));
-            }
+            for (let loadAttempt = 0; loadAttempt < 3; loadAttempt++) {
+              if (loadAttempt) {
+                console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, 'Ollama runner died during model load, retrying.');
+                await new Promise((resolveDelay) => setTimeout(resolveDelay, loadAttempt === 1 ? 2000 : 5000));
+              }
+              response = await fetch(endpoint, {
+                method: 'POST',
+                headers: merge({
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                }, this.settings.headers),
+                body: chatBody,
+                signal
+              });
 
-            if (!response.ok) {
-              clearTimeout(timeoutId);
+              if (!response) {
+                clearTimeout(timeoutId);
+                controller.abort();
+                return reject(new Error('No response from agent.'));
+              }
+
+              if (response.ok) break;
+
               const errBody = await response.text().catch(() => '');
+              if (isRunnerLoadEof(errBody) && loadAttempt < 2) {
+                await unloadExcept(origin, model);
+                continue;
+              }
+              clearTimeout(timeoutId);
               return reject(new Error(errBody || `Agent HTTP ${response.status}`));
             }
 
@@ -449,47 +525,49 @@ class Agent extends Service {
               return reject(new Error(`Ollama returned status ${response.status}: ${text.substring(0, 200)}`));
             }
 
-            const choice = base.choices[0];
-
-            // TODO: refactor this to use `this.tools` and implement `registerTool(name, method)
-            if (choice.finish_reason && choice.finish_reason === 'tool_calls') {
-              const tool = choice.message.tool_calls[0];
-              const args = JSON.parse(tool.function.arguments);
-              switch (tool.function.name) {
-                // Simple HTTP GET
-                case 'http_get':
-                  try {
-                    const tool_response = await fetch(args.url);
-                    const obj = {
-                      role: 'tool',
-                      content: await tool_response.text(),
-                      tool_call_id: tool.tool_call_id
-                    };
-
-                    const actor = new Actor({ content: obj.content });
-                    this.emit('document', {
-                      id: actor.id,
-                      content: obj.content
-                    });
-
-                    messages.push(choice.message);
-                    messages.push({ role: 'tool', content: obj.content, tool_call_id: tool.id });
-                  } catch (exception) {
-                    clearTimeout(timeoutId);
-                    controller.abort();
-                    reject(exception);
-                  }
-
-                  clearTimeout(timeoutId);
-                  controller.abort();
-                  return this.query({ query: request.query, messages: messages }).then(resolve).catch(reject);
-                }
-              }
-
-            if (!base.choices) {
+            if (!base.choices || !base.choices[0]) {
               clearTimeout(timeoutId);
               controller.abort();
               return reject(new Error('No choices in response.'));
+            }
+
+            const choice = base.choices[0];
+            const toolCalls = choice && choice.message && choice.message.tool_calls;
+
+            if (requestUsesTools(request) && toolCalls && toolCalls.length) {
+              const followupMessages = sample.concat([choice.message]);
+              for (let i = 0; i < toolCalls.length; i++) {
+                const tool = toolCalls[i];
+                let content;
+                try {
+                  content = await this._executeToolCall(tool, request);
+                } catch (exception) {
+                  content = JSON.stringify({
+                    error: 'tool_failed',
+                    message: exception && exception.message ? exception.message : 'tool failed'
+                  });
+                }
+                followupMessages.push({
+                  role: 'tool',
+                  content: content,
+                  tool_call_id: tool.id || tool.tool_call_id || ('call-' + i)
+                });
+              }
+              const rounds = (request.toolRounds || 0) + 1;
+              const capped = rounds >= MAX_SELF_TOOL_ROUNDS;
+              clearTimeout(timeoutId);
+              controller.abort();
+              return this.query({
+                ...request,
+                messages: followupMessages,
+                query: request.query,
+                toolRounds: rounds,
+                _continueTools: true,
+                tools: capped ? false : request.tools,
+                stream: false,
+                onStreamChunk: undefined,
+                onChunk: undefined
+              }).then(resolve).catch(reject);
             }
 
             // Emit completion event
@@ -522,6 +600,8 @@ class Agent extends Service {
               response: null,
               content: (exception && exception.message) ? String(exception.message) : 'Request failed.'
             });
+          } finally {
+            releaseTurn();
           }
         } else {
           console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[QUERY]', 'No host specified, using fallback.');
@@ -658,40 +738,49 @@ class Agent extends Service {
           const controller = new AbortController();
           const signal = controller.signal;
 
+          let releaseTurn = () => {};
           try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: merge({
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              }, this.settings.headers),
-              body: JSON.stringify({
-                model: request.model || this.settings.model,
-                keep_alive: (this.settings.keepalive) ? -1 : undefined,
-                messages: sample,
-                format: format,
-                options: {
-                  seed: request.seed || this.settings.parameters.seed,
-                  temperature: request.temperature || this.settings.parameters.temperature,
-                  num_ctx: this.settings.parameters.max_tokens
-                },
-                tools: (request.tools) ? this.tools : undefined,
-                stream: true
-              }),
-              signal
+            const model = request.model || this.settings.model;
+            const origin = `http${(this.settings.secure) ? 's' : ''}://${this.settings.host}:${this.settings.port}`;
+            releaseTurn = await acquireOllamaTurn();
+            await prepareSpecificModel(origin, model);
+            const streamBody = JSON.stringify({
+              model: model,
+              keep_alive: (this.settings.keepalive) ? -1 : undefined,
+              messages: sample,
+              format: format,
+              options: {
+                seed: request.seed || this.settings.parameters.seed,
+                temperature: request.temperature || this.settings.parameters.temperature,
+                num_ctx: request.num_ctx || OLLAMA_NUM_CTX
+              },
+              tools: (request.tools) ? this.tools : undefined,
+              stream: true
             });
-
-            if (!response) {
+            let response = null;
+            for (let loadAttempt = 0; loadAttempt < 3; loadAttempt++) {
+              if (loadAttempt) {
+                console.warn('[AGENT]', `[${this.settings.name.toUpperCase()}]`, `Runner died loading ${model}, retrying that model.`);
+                await new Promise((resolveDelay) => setTimeout(resolveDelay, loadAttempt === 1 ? 2000 : 5000));
+                await unloadExcept(origin, model);
+              }
+              response = await fetch(endpoint, {
+                method: 'POST',
+                headers: merge({
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+                }, this.settings.headers),
+                body: streamBody,
+                signal
+              });
+              if (response && response.ok) break;
+              const errorText = response ? await response.text() : '';
+              if (response && isRunnerLoadEof(errorText) && loadAttempt < 2) continue;
               clearTimeout(timeoutId);
               controller.abort();
-              return reject(new Error('No response from agent.'));
-            }
-
-            if (response.status !== 200) {
-              const errorText = await response.text();
-              clearTimeout(timeoutId);
-              controller.abort();
-              return reject(new Error(`Ollama returned status ${response.status}: ${errorText.substring(0, 200)}`));
+              return reject(new Error(errorText
+                ? `Ollama returned status ${response.status}: ${errorText.substring(0, 200)}`
+                : 'No response from agent.'));
             }
 
             // Generate a unique message ID for this stream
@@ -879,6 +968,8 @@ class Agent extends Service {
               response: null,
               content: 'Streaming failed',
             });
+          } finally {
+            releaseTurn();
           }
         } else {
           console.debug('[AGENT]', `[${this.settings.name.toUpperCase()}]`, '[STREAM]', 'No host specified, using fallback.');

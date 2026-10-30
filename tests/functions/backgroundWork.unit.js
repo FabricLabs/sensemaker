@@ -120,7 +120,7 @@ describe('background work', function () {
     }, now), true);
   });
 
-  it('prefers a due source, then an unplanned objective, then a step, then a task', function () {
+  it('works a goal, then a step, then a task, and gathers a source only when those are idle', function () {
     const base = {
       now: now,
       cooldownMs: 1000,
@@ -133,13 +133,14 @@ describe('background work', function () {
       sources: [{ id: 'src', status: 'active', recurrence: 'daily' }]
     };
 
-    assert.deepStrictEqual(selectNextBackgroundWork(base), { kind: 'gather_source', sourceId: 'src' });
+    assert.deepStrictEqual(selectNextBackgroundWork(base), { kind: 'draft_plan', objectiveId: 1 });
 
-    const afterGather = selectNextBackgroundWork({
+    const sourceOnly = selectNextBackgroundWork({
       ...base,
-      gather: false
+      objectives: [],
+      tasks: []
     });
-    assert.deepStrictEqual(afterGather, { kind: 'draft_plan', objectiveId: 1 });
+    assert.deepStrictEqual(sourceOnly, { kind: 'gather_source', sourceId: 'src' });
 
     const planned = selectNextBackgroundWork({
       ...base,
@@ -147,7 +148,7 @@ describe('background work', function () {
       plans: [{ id: 4, objective_id: 1, status: 'active' }],
       steps: [{ id: 8, plan_id: 4, position: 1, status: 'pending' }]
     });
-    assert.deepStrictEqual(planned, { kind: 'advance_step', planId: 4, stepId: 8 });
+    assert.deepStrictEqual(planned, { kind: 'advance_step', planId: 4, stepId: 8, taskId: null });
 
     const tasked = selectNextBackgroundWork({
       ...base,
@@ -208,6 +209,33 @@ describe('background work', function () {
       tasks: []
     });
     assert.deepStrictEqual(choice, { kind: 'draft_plan', objectiveId: 2 });
+  });
+
+  it('skips a paused task and a task already covered by an open step', function () {
+    const paused = selectNextBackgroundWork({
+      now: now,
+      cooldownMs: 1000,
+      lastProgressAt: {},
+      gather: true,
+      objectives: [],
+      plans: [],
+      steps: [],
+      tasks: [{ id: 9, background_paused: true }],
+      sources: [{ id: 'src', status: 'active', recurrence: 'daily' }]
+    });
+    assert.deepStrictEqual(paused, { kind: 'gather_source', sourceId: 'src' });
+
+    const covered = selectNextBackgroundWork({
+      now: now,
+      cooldownMs: 1000,
+      lastProgressAt: {},
+      gather: false,
+      objectives: [{ id: 1, status: 'active' }],
+      plans: [{ id: 4, objective_id: 1, status: 'active' }],
+      steps: [{ id: 8, plan_id: 4, position: 1, status: 'in_progress', task_id: 9 }],
+      tasks: [{ id: 9, plan_step_id: 8 }]
+    });
+    assert.deepStrictEqual(covered, { kind: 'advance_step', planId: 4, stepId: 8, taskId: 9 });
   });
 
   it('moves a step from pending to in progress, then to done', function () {

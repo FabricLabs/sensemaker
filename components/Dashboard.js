@@ -79,6 +79,9 @@ const JobHome = require('./JobHome');
 const NetworkHome = require('./NetworkHome');
 const InvitationView = require('./InvitationView');
 const Library = require('./Library');
+const ApplicationHome = require('./ApplicationHome');
+const ApplicationView = require('./ApplicationView');
+const OAuthConsent = require('./OAuthConsent');
 const ContractHome = require('./ContractHome');
 const DocumentHome = require('./DocumentHome');
 const DocumentView = require('./DocumentView');
@@ -666,6 +669,10 @@ class Dashboard extends React.Component {
                 <Route path='/updates' element={<Changelog {...this.props} />} />
                 <Route path='/agents' element={<AgentHome {...this.props} />} />
                 <Route path='/agents/:id' element={<AgentView {...this.props} />} />
+                <Route path='/applications' element={<ApplicationHome {...this.props} />} />
+                <Route path='/applications/authorized' element={<ApplicationHome {...this.props} />} />
+                <Route path='/applications/:id' element={<ApplicationView {...this.props} />} />
+                <Route path='/oauth/authorize' element={<OAuthConsent auth={this.props.auth} token={this.props.token} />} />
                 <Route path='/alerts' element={<AlertsHome {...this.props} />} />
                 <Route path='/documents' element={<DocumentHome {...this.props} documents={this.props.documents} uploadDocument={this.props.uploadDocument} fetchDocuments={this.props.fetchDocuments} searchDocument={this.props.searchDocument} chat={this.props.chat} resetChat={this.props.resetChat} files={this.props.files} uploadFile={this.props.uploadFile} />} uploadDocument={this.props.uploadDocument} navigate={this.props.navigate} />
                 <Route path='/documents/:fabricID' element={<DocumentView  {...this.props} documents={this.props.documents} fetchDocument={this.props.fetchDocument} resetChat={this.props.resetChat} />} />
@@ -673,7 +680,7 @@ class Dashboard extends React.Component {
                 <Route path='/sessions' element={<Navigate to='/' replace />} />
                 <Route path='/inquiries' element={<Navigate to='/' replace />} />
                 <Route path='/people' element={<PeopleHome people={this.props.people} fetchPeople={this.props.fetchPeople} chat={this.props.chat} />} />
-                <Route path='/conversations/:id' element={<Room conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} submitStreamingMessage={this.props.submitStreamingMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
+                <Route path='/conversations/:id' element={<Room auth={this.props.auth} conversation={this.props.conversation} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} fetchConversation={this.props.fetchConversation} chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} submitStreamingMessage={this.props.submitStreamingMessage} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} getMessageInformation={this.props.getMessageInformation} conversationTitleEdit={this.props.conversationTitleEdit} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} documentInfoSidebar={this.documentInfoSidebar} documents={this.props.documents} fetchDocument={this.props.fetchDocument} fetchDocumentSections={this.props.fetchDocumentSections} />} />
                 <Route path='/conversations' element={<Conversations users={this.props.users} conversations={this.props.conversations} fetchConversations={this.props.fetchConversations} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} submitStreamingMessage={this.props.submitStreamingMessage} onMessageSuccess={this.props.onMessageSuccess} chat={this.props.chat} resetChat={this.props.resetChat} regenAnswer={this.props.regenAnswer} auth={this.props.auth} getMessageInformation={this.props.getMessageInformation} resetInformationSidebar={this.resetInformationSidebar} messageInfo={this.messageInfo} thumbsUp={this.thumbsUp} thumbsDown={this.thumbsDown} />} />
                 <Route path='/groups' element={<GroupHome chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} submitStreamingMessage={this.props.submitStreamingMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />
                 <Route path='/groups/:id' element={<GroupView chat={this.props.chat} getMessages={this.props.getMessages} submitMessage={this.props.submitMessage} submitStreamingMessage={this.props.submitStreamingMessage} fetchGroups={this.props.fetchGroups} createGroup={this.props.createGroup} {...this.props} />} />

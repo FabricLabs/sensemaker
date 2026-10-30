@@ -13,11 +13,15 @@ module.exports = async function (req, res) {
 
     // If not admin, restrict to documents where user is creator/owner or document is source-created
     if (!isAdmin) {
+      const userId = req.user && req.user.id;
       query = query.andWhere(function () {
-        // Allow access if user is creator/owner (if authenticated), OR if document is source-created (creator and owner are null)
-        if (req.user.id) {
-          this.where('creator', '=', req.user.id)
-            .orWhere('owner', '=', req.user.id);
+        // Source-created documents (no creator, no owner) are visible to all.
+        this.where(function () {
+          this.whereNull('creator').whereNull('owner');
+        });
+        if (userId) {
+          this.orWhere('creator', '=', userId)
+            .orWhere('owner', '=', userId);
         }
       });
     }
@@ -28,6 +32,19 @@ module.exports = async function (req, res) {
       return res.status(404).send({
         status: 'error',
         message: 'Document not found or access denied.'
+      });
+    }
+
+    let history = [];
+    try {
+      history = typeof document.history === 'string' ? JSON.parse(document.history) : (document.history || []);
+    } catch (parseError) {
+      history = [];
+    }
+    if (!Array.isArray(history) || !history.map(String).includes(String(commitID))) {
+      return res.status(404).send({
+        status: 'error',
+        message: 'Commit not found.'
       });
     }
 

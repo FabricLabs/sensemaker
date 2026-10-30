@@ -11,6 +11,7 @@ const adminReducer = require('../reducers/adminReducer');
 const agentReducer = require('../reducers/agentReducer');
 const alertReducer = require('../reducers/alertReducer');
 const announcementReducer = require('../reducers/announcementReducer');
+const applicationReducer = require('../reducers/applicationReducer');
 const authReducer = require('../reducers/authReducer');
 const bitcoinReducer = require('../reducers/bitcoinReducer');
 const bridgeReducer = require('../reducers/bridgeReducer');
@@ -45,6 +46,7 @@ const rootReducer = combineReducers({
   agents: agentReducer,
   alerts: alertReducer,
   announcements: announcementReducer,
+  applications: applicationReducer,
   auth: authReducer,
   bitcoin: bitcoinReducer,
   bridge: bridgeReducer,

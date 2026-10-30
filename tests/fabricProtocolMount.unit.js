@@ -93,22 +93,21 @@ describe('fabricProtocolMount', function () {
   });
 
   describe('mountFabricProtocolHttp', function () {
-    it('registers Passport challenge + dual-mode sessions + device-link routes, and no delegation', function () {
+    it('registers Passport challenge + dual-mode sessions, and no device-link or delegation', function () {
       const hub = makeHub();
       const mounted = mountFabricProtocolHttp(hub, () => {}, { current: () => {}, destroy: () => {} });
-      assert.deepStrictEqual(mounted, { passport: true, deviceLink: true });
+      assert.deepStrictEqual(mounted, { passport: true });
 
       const paths = hub.routes.map((r) => `${r.method} ${r.path}`);
-      for (const p of ['POST /sessions/challenges', 'POST /sessions', 'GET /sessions/current', 'DELETE /sessions/current',
-        'POST /device-links', 'GET /device-links/:sessionId', 'POST /device-links/:sessionId/signatures']) {
+      for (const p of ['POST /sessions/challenges', 'POST /sessions', 'GET /sessions/current', 'DELETE /sessions/current']) {
         assert.ok(paths.includes(p), p);
       }
+      assert.ok(!paths.some((p) => p.includes('device-links')));
       assert.strictEqual(paths.filter((p) => p === 'POST /sessions').length, 1, 'one POST /sessions handler');
       for (const p of ['GET /sessions', 'GET /sessions/:sessionId', 'POST /sessions/:sessionId/signatures', 'DELETE /sessions/:sessionId', 'POST /sessions/self']) {
         assert.ok(!paths.includes(p), `no ${p}`);
       }
       assert.ok(!paths.some((p) => p.includes('delegation')));
-      assert.ok(hub._deviceLinkSessions instanceof Map);
       assert.deepStrictEqual(hub._passport.relyingParty.pinnedOrigins, sensemakerPinnedOrigins(hub.settings));
     });
 

@@ -47,6 +47,7 @@ class DiskTable extends React.Component {
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell>Name</Table.HeaderCell>
+            <Table.HeaderCell>Type</Table.HeaderCell>
             <Table.HeaderCell>Size</Table.HeaderCell>
             <Table.HeaderCell>Created</Table.HeaderCell>
             <Table.HeaderCell>Modified</Table.HeaderCell>
@@ -60,6 +61,7 @@ class DiskTable extends React.Component {
                   ? 'folder'
                   : 'file'
               )} /> <Link to={`/services/disk/${file.path}`}>{file.name}</Link></Table.Cell>
+              <Table.Cell>{file.documentType || ''}</Table.Cell>
               <Table.Cell>{file.stats.size.toLocaleString() } bytes</Table.Cell>
               <Table.Cell>{toRelativeTime(file.stats.birthtime)}</Table.Cell>
               <Table.Cell>{toRelativeTime(file.stats.mtime)}</Table.Cell>

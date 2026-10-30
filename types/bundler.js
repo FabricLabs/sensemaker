@@ -74,20 +74,27 @@ class Bundler extends HTTPCompiler {
       },
       webpack: {
         mode: 'development',
-        entry: path.resolve('./scripts/browser.js'),
+        entry: {
+          'browser.min': path.resolve('./scripts/browser.js'),
+          'canvas-host': path.resolve('./scripts/canvas-host.js')
+        },
         experiments: {
           asyncWebAssembly: true
         },
         resolve: {
           fallback: {
-            crypto: require.resolve('crypto-browserify'),
+            crypto: path.resolve('./node_modules/@fabric/http/functions/browserCrypto.js'),
             stream: require.resolve('stream-browserify'),
             path: require.resolve('path-browserify'),
             assert: require.resolve('assert-browserify'),
             'process/browser': require.resolve('process/browser.js'),
             util: require.resolve('util/'),
-            vm: require.resolve('vm-browserify'),
             fs: false,
+            net: false,
+            tls: false,
+            dns: false,
+            dgram: false,
+            child_process: false,
             http: false,
             https: false,
             zlib: false,
@@ -98,7 +105,7 @@ class Bundler extends HTTPCompiler {
         target: 'web',
         output: {
           path: path.resolve('./assets/bundles'),
-          filename: 'browser.min.js',
+          filename: '[name].js',
           clean: {
             dry: true
           }

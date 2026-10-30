@@ -5,13 +5,33 @@ const {
   resolveContainedDiskPath,
   assertRealpathContained
 } = require('../../../functions/diskPath');
+const {
+  detectDocumentType,
+  canvasStateSidecar
+} = require('../../../functions/detectDocumentType');
+
+function readCanvasState (relName) {
+  const sideRel = canvasStateSidecar(relName);
+  if (!sideRel) return null;
+  const side = resolveContainedDiskPath(sideRel);
+  if (!side.ok) return null;
+  try {
+    const stats = fs.lstatSync(side.abs);
+    if (!stats.isFile() || stats.isSymbolicLink()) return null;
+    const parsed = JSON.parse(fs.readFileSync(side.abs, 'utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+    return parsed;
+  } catch (err) {
+    return null;
+  }
+}
 
 module.exports = async function (req, res, next) {
   res.format({
     json: async () => {
       if (!(await this._assertSensemakerAdminJson(req, res))) return;
 
-      const name = req.params.path;
+      const name = req.params.path || req.params[0];
       if (!name) {
         return res.status(400).send({
           message: 'No path provided'
@@ -30,6 +50,8 @@ module.exports = async function (req, res, next) {
       let stats = null;
       let ls = null;
       let content = null;
+      let documentType = null;
+      let canvasState = null;
 
       try {
         stats = fs.lstatSync(resolved.abs);
@@ -58,16 +80,24 @@ module.exports = async function (req, res, next) {
             const childName = `${name}/${file}`;
             const child = resolveContainedDiskPath(childName);
             const info = child.ok ? fs.lstatSync(child.abs) : null;
+            let documentType = null;
+            if (info && info.isDirectory()) documentType = 'Directory';
+            else if (info && info.isFile()) documentType = detectDocumentType({ name: file }).type;
             return {
               name: file,
               path: childName,
-              stats: info
+              stats: info,
+              documentType: documentType
             };
           });
         }
 
         if (isFile) {
-          content = fs.readFileSync(targetAbs, 'utf8');
+          const raw = fs.readFileSync(targetAbs);
+          content = raw.toString('utf8');
+          const detected = detectDocumentType({ name: name, bytes: raw });
+          documentType = detected.type;
+          if (detected.type === 'Canvas') canvasState = readCanvasState(name);
         }
       } catch (error) {
         console.error('[FILE]', 'Error:', error);
@@ -87,7 +117,9 @@ module.exports = async function (req, res, next) {
           list: ls,
           name,
           stats,
-          content
+          content,
+          documentType,
+          canvasState
         }
       });
     },

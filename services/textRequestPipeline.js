@@ -20,10 +20,10 @@ function buildPipelineFanOut (hub, template, pipelineSettings = {}) {
 
   const tasks = [];
   for (let i = 0; i < models.length; i++) {
-    tasks.push(hub.pool.query({ ...template, model: models[i] }));
+    tasks.push(hub.pool.query({ ...template, model: models[i], tools: false, toolContext: null }));
   }
   if (includeTrainer) {
-    tasks.push(hub.trainer.query(template));
+    tasks.push(hub.trainer.query({ ...template, tools: false, toolContext: null }));
   }
   tasks.push(hub.sensemaker.query(template));
   return tasks;

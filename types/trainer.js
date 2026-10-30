@@ -12,7 +12,7 @@ const {
 
 // Dependencies
 const fs = require('fs');
-// const path = require('path');
+const path = require('path');
 // const crypto = require('crypto');
 const merge = require('lodash.merge');
 const fetch = require('cross-fetch');
@@ -27,6 +27,7 @@ const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
 const { DirectoryLoader } = require('langchain/document_loaders/fs/directory');
 // const { JSONLoader, JSONLinesLoader } = require('langchain/document_loaders/fs/json');
 const { TextLoader } = require('langchain/document_loaders/fs/text');
+const { tagIngestedCanvases } = require('../functions/detectDocumentType');
 // const { CSVLoader } = require('langchain/document_loaders/fs/csv');
 // const { MarkdownLoader } = require('langchain/document_loaders/fs/markdown');
 // const { PDFLoader } = require('langchain/document_loaders/fs/pdf');
@@ -168,6 +169,7 @@ class Trainer extends Agent {
       const loader = new DirectoryLoader(directory, this.loaders);
 
       loader.load().then((docs) => {
+        tagIngestedCanvases(docs);
         store.addDocuments(docs).then(() => {
           resolve({ type: 'IngestedDirectory', content: docs });
         }).catch((exception) => {
@@ -181,18 +183,230 @@ class Trainer extends Agent {
     });
   }
 
-  async getStoreForOwner (id) {
-    const name = new Actor({ name: `sensemaker/owners/${id}` });
-    const reference = new Document({ pageContent: JSON.stringify(name.toGenericMessage()) });
-    const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings({
-      baseUrl: `http://${this.settings.ollama.host}:${this.settings.ollama.port}`,
-      model: EMBEDDING_MODEL
-    }), {
-      redisClient: this.redis,
-      indexName: `sensemaker:owners:${id}`
-    });
+  _resetSearchCapability () {
+    this._redisSearchSupported = undefined;
+    this._moduleLoadAttempted = false;
+    this.embeddings = null;
+  }
 
-    return embeddings;
+  /**
+   * Directories that ship RediSearch with the Redis Open Source formula.
+   * @returns {string[]}
+   */
+  _redisModulePaths () {
+    const candidates = [
+      process.env.REDIS_MODULE_DIR,
+      '/opt/homebrew/opt/redis/lib/redis/modules',
+      '/usr/local/opt/redis/lib/redis/modules'
+    ].filter(Boolean);
+    const names = ['redisbloom.so', 'rejson.so', 'redisearch.so', 'redistimeseries.so'];
+    const paths = [];
+    for (let i = 0; i < candidates.length; i++) {
+      const dir = candidates[i];
+      if (!fs.existsSync(dir)) continue;
+      for (let n = 0; n < names.length; n++) {
+        const modulePath = path.join(dir, names[n]);
+        if (fs.existsSync(modulePath)) paths.push(modulePath);
+      }
+      if (paths.length) break;
+    }
+    return paths;
+  }
+
+  async _probeRedisSearch () {
+    if (!this.redis || !this.redis.ft || typeof this.redis.ft.info !== 'function') return false;
+    try {
+      await this.redis.ft.info('sensemaker:redisearch:probe');
+      return true;
+    } catch (error) {
+      const msg = (error && error.message) ? error.message : String(error);
+      return !/unknown command/i.test(msg);
+    }
+  }
+
+  /**
+   * Redis 8.10+ ships Search as a module. A server started without redis.conf
+   * answers PING and still rejects FT.INFO until MODULE LOAD.
+   * @returns {Promise<boolean>}
+   */
+  async _loadRedisSearchModules () {
+    if (this._moduleLoadAttempted) return false;
+    this._moduleLoadAttempted = true;
+    if (!this.redis || typeof this.redis.sendCommand !== 'function') return false;
+
+    const paths = this._redisModulePaths();
+    if (!paths.length) return false;
+
+    for (let i = 0; i < paths.length; i++) {
+      const modulePath = paths[i];
+      try {
+        await this.redis.sendCommand(['MODULE', 'LOAD', modulePath]);
+        console.warn('[TRAINER] Loaded Redis module', modulePath);
+      } catch (error) {
+        const msg = (error && error.message) ? error.message : String(error);
+        if (!/already loaded/i.test(msg)) {
+          console.warn('[TRAINER] Could not load Redis module', modulePath, msg);
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * True when this Redis accepts FT.INFO. A missing index still counts.
+   * On "unknown command", load the local Search modules once and probe again.
+   * @returns {Promise<boolean>}
+   */
+  async _redisSearchAvailable () {
+    if (this._redisSearchSupported === true || this._redisSearchSupported === false) {
+      return this._redisSearchSupported;
+    }
+
+    let supported = await this._probeRedisSearch();
+    if (!supported) {
+      await this._loadRedisSearchModules();
+      supported = await this._probeRedisSearch();
+    }
+
+    this._redisSearchSupported = supported;
+    if (!supported && !this._redisSearchWarned) {
+      this._redisSearchWarned = true;
+      console.warn('[TRAINER] Redis has no RediSearch module; embeddings disabled.');
+    }
+    return supported;
+  }
+
+  _isMissingIndexError (error) {
+    const msg = (error && error.message) ? error.message : String(error || '');
+    return /unknown index|no such index/i.test(msg);
+  }
+
+  _libraryDocumentText (row) {
+    if (!row) return '';
+    if (typeof row.plain_text === 'string' && row.plain_text.trim()) return row.plain_text.trim();
+    if (typeof row.content === 'string' && row.content.trim()) return row.content.trim();
+    if (row.title) return String(row.title);
+    return '';
+  }
+
+  /**
+   * SQL documents are the library. Redis only holds their vectors.
+   * @param {string} indexName
+   * @returns {Promise<object[]>}
+   */
+  async _libraryDocumentsForIndex (indexName) {
+    if (!this.db || typeof this.db !== 'function') return [];
+    const ownerMatch = /^sensemaker:owners:(\d+)$/.exec(String(indexName || ''));
+    let query = this.db('documents')
+      .select('id', 'fabric_id', 'owner', 'creator', 'title', 'filename', 'plain_text', 'content')
+      .where(function () {
+        this.where('deleted', false).orWhereNull('deleted');
+      })
+      .where(function () {
+        this.whereNull('status').orWhereNot('status', 'deleted');
+      });
+    if (ownerMatch) {
+      const ownerId = Number(ownerMatch[1]);
+      query = query.where(function () {
+        this.where('owner', ownerId).orWhere('creator', ownerId);
+      });
+    }
+    const rows = await query.orderBy('id', 'asc').limit(40);
+    return rows || [];
+  }
+
+  /**
+   * Recreate a dropped or empty vector index from library documents.
+   * @param {string} indexName
+   * @returns {Promise<number>} documents submitted for embedding
+   */
+  async _rebuildVectorIndex (indexName) {
+    this._rebuildingIndex = this._rebuildingIndex || {};
+    if (this._rebuildingIndex[indexName]) return 0;
+    this._rebuildingIndex[indexName] = true;
+    this._indexRepairAttempted = this._indexRepairAttempted || {};
+    this._indexRepairAttempted[indexName] = true;
+
+    let indexed = 0;
+    try {
+      const rows = await this._libraryDocumentsForIndex(indexName);
+      const ownerMatch = /^sensemaker:owners:(\d+)$/.exec(String(indexName || ''));
+      console.warn('[TRAINER] Vector index', indexName, 'is missing; rebuilding from', rows.length, 'library documents.');
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const text = this._libraryDocumentText(row);
+        if (!text) continue;
+        const metadata = {
+          id: row.id,
+          document_id: row.id,
+          source_document_id: row.id,
+          fabric_id: row.fabric_id || null,
+          creator: row.creator,
+          type: 'document',
+          title: row.title || null,
+          filename: row.filename || null
+        };
+        if (ownerMatch) metadata.owner = Number(ownerMatch[1]);
+        await this.ingestDocument({ content: text, metadata: metadata }, 'document');
+        indexed += 1;
+      }
+    } catch (error) {
+      console.warn('[TRAINER] Vector index rebuild failed:', (error && error.message) ? error.message : error);
+    } finally {
+      delete this._rebuildingIndex[indexName];
+    }
+    return indexed;
+  }
+
+  /**
+   * Search needs an index. If Redis no longer has it, rebuild from SQL.
+   * @param {string} indexName
+   * @returns {Promise<boolean>}
+   */
+  async _ensureVectorIndex (indexName) {
+    if (!(await this._redisSearchAvailable())) return false;
+    if (this._rebuildingIndex && this._rebuildingIndex[indexName]) return true;
+
+    let missing = false;
+    let empty = false;
+    try {
+      const info = await this.redis.ft.info(indexName);
+      const docs = Number(info && (info.numDocs != null ? info.numDocs : info.num_docs));
+      empty = !docs;
+    } catch (error) {
+      if (this._isMissingIndexError(error)) missing = true;
+      else return true;
+    }
+
+    if (!missing && !empty) {
+      if (this._indexRepairAttempted) delete this._indexRepairAttempted[indexName];
+      return true;
+    }
+    if (this._indexRepairAttempted && this._indexRepairAttempted[indexName]) return true;
+
+    await this._rebuildVectorIndex(indexName);
+    this.embeddings = null;
+    return true;
+  }
+
+  async getStoreForOwner (id) {
+    if (!(await this._redisSearchAvailable())) return null;
+
+    try {
+      const name = new Actor({ name: `sensemaker/owners/${id}` });
+      const reference = new Document({ pageContent: JSON.stringify(name.toGenericMessage()) });
+      const embeddings = await RedisVectorStore.fromDocuments([reference], new OllamaEmbeddings({
+        baseUrl: `http://${this.settings.ollama.host}:${this.settings.ollama.port}`,
+        model: EMBEDDING_MODEL
+      }), {
+        redisClient: this.redis,
+        indexName: `sensemaker:owners:${id}`
+      });
+      return embeddings;
+    } catch (error) {
+      console.warn('[TRAINER] Owner vector store unavailable:', (error && error.message) ? error.message : error);
+      return null;
+    }
   }
 
   /**
@@ -290,10 +504,27 @@ class Trainer extends Agent {
           }) : [];
 
           // TODO: change to ingestDocument call
+          await this._ensureVectorIndex(`sensemaker:owners:${request.user.id}`);
           store = await this.getStoreForOwner(request.user.id);
-          store.addDocuments(messages);
+          if (store && messages.length) {
+            await store.addDocuments(messages);
+          }
         } else {
-          store = this.embeddings;
+          const indexName = this.settings.redis.name || 'sensemaker-embeddings';
+          await this._ensureVectorIndex(indexName);
+          store = await this._ensureEmbeddings();
+        }
+
+        if (!store || typeof store.asRetriever !== 'function') {
+          clearTimeout(timeoutId);
+          resolve({
+            type: 'TrainerQueryResponse',
+            content: '',
+            degraded: true,
+            messages: request.messages,
+            query: request.query
+          });
+          return;
         }
 
         // Enhanced context handling for file-based conversations
@@ -451,42 +682,71 @@ class Trainer extends Agent {
   }
 
   async searchGlobal (request, limit = 100) {
-    return new Promise(async (resolve, reject) => {
-      if (this.settings.debug) console.debug('[TRAINER]', 'Searching global:', request);
-      if (!request.query) return reject(new Error('No query provided.'));
-      const store = await this._ensureEmbeddings();
-      if (!store) return resolve({ type: 'TrainerSearchResponse', content: [], degraded: true });
-      store.similaritySearch(request.query, (request.limit || limit), request.filter)
-        .then((results) => {
-          resolve({
+    if (this.settings.debug) console.debug('[TRAINER]', 'Searching global:', request);
+    if (!request || !request.query) throw new Error('No query provided.');
+    const indexName = this.settings.redis.name || 'sensemaker-embeddings';
+    await this._ensureVectorIndex(indexName);
+    const store = await this._ensureEmbeddings();
+    if (!store) return { type: 'TrainerSearchResponse', content: [], degraded: true };
+
+    try {
+      const results = await store.similaritySearch(request.query, (request.limit || limit), request.filter);
+      return {
+        type: 'TrainerSearchResponse',
+        content: this._mapSimilarityResults(results)
+      };
+    } catch (error) {
+      if (this._isMissingIndexError(error)) {
+        this.embeddings = null;
+        if (this._indexRepairAttempted) delete this._indexRepairAttempted[indexName];
+        await this._ensureVectorIndex(indexName);
+        const repaired = await this._ensureEmbeddings();
+        if (repaired) {
+          const results = await repaired.similaritySearch(request.query, (request.limit || limit), request.filter);
+          return {
             type: 'TrainerSearchResponse',
             content: this._mapSimilarityResults(results)
-          });
-        })
-        .catch((error) => {
-          console.error('[TRAINER]', 'Error searching:', error);
-          reject(error);
-        });
-    });
+          };
+        }
+      }
+      console.error('[TRAINER]', 'Error searching:', error);
+      throw error;
+    }
   }
 
   async searchByOwner (request, limit = 100) {
-    return new Promise(async (resolve, reject) => {
-      if (this.settings.debug) console.debug('[TRAINER]', 'Searching by owner:', request);
-      if (!request.query) return reject(new Error('No query provided.'));
-      const embeddings = await this.getStoreForOwner(request.user.id);
-      embeddings.similaritySearch(request.query, (request.limit || limit), request.filter)
-        .then((results) => {
-          resolve({
+    if (this.settings.debug) console.debug('[TRAINER]', 'Searching by owner:', request);
+    if (!request || !request.query) throw new Error('No query provided.');
+
+    const indexName = (request.user) ? `sensemaker:owners:${request.user.id}` : null;
+    if (indexName) await this._ensureVectorIndex(indexName);
+    const embeddings = (request.user) ? await this.getStoreForOwner(request.user.id) : null;
+    if (!embeddings) {
+      return { type: 'TrainerSearchResponse', content: [], degraded: true };
+    }
+
+    try {
+      const results = await embeddings.similaritySearch(request.query, (request.limit || limit), request.filter);
+      return {
+        type: 'TrainerSearchResponse',
+        content: this._mapSimilarityResults(results)
+      };
+    } catch (error) {
+      if (indexName && this._isMissingIndexError(error)) {
+        if (this._indexRepairAttempted) delete this._indexRepairAttempted[indexName];
+        await this._ensureVectorIndex(indexName);
+        const repaired = await this.getStoreForOwner(request.user.id);
+        if (repaired) {
+          const results = await repaired.similaritySearch(request.query, (request.limit || limit), request.filter);
+          return {
             type: 'TrainerSearchResponse',
             content: this._mapSimilarityResults(results)
-          });
-        })
-        .catch((error) => {
-          console.error('[TRAINER]', 'Error searching:', error);
-          reject(error);
-        });
-    });
+          };
+        }
+      }
+      console.error('[TRAINER]', 'Error searching:', error);
+      throw error;
+    }
   }
 
   /**
@@ -496,6 +756,8 @@ class Trainer extends Agent {
   async _ensureEmbeddings () {
     if (this.embeddings) return this.embeddings;
     if (!this.redis) return null;
+    const indexName = this.settings.redis.name || 'sensemaker-embeddings';
+    if (!(await this._ensureVectorIndex(indexName))) return null;
 
     const ollamaUrl = `http://${this.settings.ollama.host}:${this.settings.ollama.port}`;
 
@@ -548,7 +810,11 @@ class Trainer extends Agent {
 
       this.redis.on('error', (err) => { console.error('[TRAINER] Redis Client Error:', err); });
       this.redis.on('connect', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connected'); });
-      this.redis.on('end', () => { if (this.settings.debug) console.debug('[TRAINER] Redis Client Connection Closed'); });
+      this.redis.on('ready', () => { this._resetSearchCapability(); });
+      this.redis.on('end', () => {
+        this._resetSearchCapability();
+        if (this.settings.debug) console.debug('[TRAINER] Redis Client Connection Closed');
+      });
 
       // Connect to Redis with timeout
       const connectWithTimeout = new Promise((resolveRedis, rejectRedis) => {

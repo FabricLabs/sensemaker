@@ -24,7 +24,8 @@ class FabricNetwork extends FabricHub {
       name: 'Fabric',
       remotes: [
         { host: 'sensemaker.io', port: 443, secure: true },
-        { host: 'hub.fabric.pub', port: 443, secure: true }
+        { host: 'hub.fabric.pub', port: 443, secure: true },
+        { host: 'relay.goon.vc', port: 443, secure: true }
       ],
       state: {
         status: 'INITIALIZED',

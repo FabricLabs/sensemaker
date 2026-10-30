@@ -30,12 +30,12 @@ npm warn deprecated uuid@10.0.0: uuid@10 and below is no longer supported.  For 
 npm warn deprecated popper.js@1.16.1: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
 npm warn deprecated @langchain/community@0.3.27: This package has been deprecated. See https://github.com/langchain-ai/langchainjs-community/issues/61 for more info
 
-added 1731 packages, and audited 1736 packages in 1m
+added 1733 packages, and audited 1738 packages in 1m
 
 172 packages are looking for funding
   run `npm fund` for details
 
-61 vulnerabilities (7 low, 24 moderate, 28 high, 2 critical)
+76 vulnerabilities (8 low, 24 moderate, 42 high, 2 critical)
 
 To address issues that do not require attention, run:
   npm audit fix

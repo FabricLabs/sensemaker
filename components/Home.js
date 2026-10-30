@@ -406,9 +406,6 @@ class Home extends React.Component {
             ) : null}
           </Grid.Column>
         </Grid>
-        <p style={{ color: '#888', fontSize: '0.9em', marginTop: '0.75em', marginBottom: '0.25em', lineHeight: 1.45 }}>
-          The live feed below lists Fabric / hub events (peers, documents, blocks). Chat threads are in the row above — it can look quiet here even when you have conversations.
-        </p>
         <ActivityStream
           includeHeader={false}
           api={this.props.api}

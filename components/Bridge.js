@@ -866,17 +866,28 @@ class Bridge extends React.Component {
         case 'P2P_CHAT_MESSAGE':
         case 'CHAT_MESSAGE':
         case 'ChatMessage': {
-          // Mesh shoutbox (prefer P2P_CHAT_MESSAGE). Deliver to Global via onMessage
-          // and to responseCapture listeners. Distinct from AI MessageStart/Chunk streams.
+          // Mesh shoutbox body is raw UTF-8. Legacy Hub cache JSON still parses
+          // so object.content can be shown. AI streams stay on MessageStart/Chunk.
           let chatObj = message.toObject();
-          try {
-            const body = typeof message.body === 'string' ? JSON.parse(message.body) : message.body;
-            if (body && typeof body === 'object') {
-              chatObj = Object.assign({}, chatObj, body, {
-                type: body.type || message.type || 'P2P_CHAT_MESSAGE'
-              });
-            }
-          } catch (_) { /* keep toObject() */ }
+          const raw = typeof message.body === 'string' ? message.body : '';
+          let parsed = null;
+          if (raw) {
+            try {
+              const body = JSON.parse(raw);
+              if (body && typeof body === 'object' && !Array.isArray(body)) parsed = body;
+            } catch (_) { /* cleartext shoutbox */ }
+          }
+          if (parsed) {
+            chatObj = Object.assign({}, chatObj, parsed, {
+              type: parsed.type || message.type || 'P2P_CHAT_MESSAGE'
+            });
+          } else if (raw.trim()) {
+            chatObj = Object.assign({}, chatObj, {
+              type: message.type || 'P2P_CHAT_MESSAGE',
+              text: raw,
+              content: raw
+            });
+          }
           if (typeof this.onMessage === 'function') {
             try { this.onMessage(chatObj); } catch (e) {
               console.error('[BRIDGE]', 'onMessage handler error:', e);

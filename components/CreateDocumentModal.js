@@ -69,7 +69,8 @@ class CreateDocumentModal extends React.Component {
         return {
           key: x.name,
           text: x.name,
-          value: x.name
+          value: x.name,
+          description: x.description
         }
       }) });
     } catch (error) {

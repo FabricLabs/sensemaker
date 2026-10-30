@@ -11,6 +11,7 @@ const {
   Label, Header, Table, Button, Icon, Modal, Checkbox, Message
 } = require('semantic-ui-react');
 
+const ThoughtProcess = require('../../ThoughtProcess');
 
 class AdminServicesTab extends React.Component {
   constructor(props) {
@@ -274,6 +275,13 @@ class AdminServicesTab extends React.Component {
     return (
       <adminServicesTab>
         <Header as='h3'>Services</Header>
+        <ThoughtProcess
+          subject='health'
+          id='node'
+          token={this.props.auth && this.props.auth.token}
+          startOpen={false}
+          title='Thought process'
+        />
         <Table celled striped>
           <Table.Header>
             <Table.Row>

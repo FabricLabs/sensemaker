@@ -14,8 +14,9 @@
 // Dependencies
 const { hashSync, compareSync, genSaltSync } = require('bcrypt'); // user authentication
 
-const { issueNodeSessionToken } = require('../../services/nodeSessionToken');
+const { issueNodeSessionToken, verifyNodeSessionToken } = require('../../services/nodeSessionToken');
 const { sessionCookieOptions } = require('../../functions/sessionCookie');
+const { SESSION_TTL_SECONDS } = require('../../functions/redisSessions');
 
 // Exports an Express.js middleware function
 module.exports = async function (req, res, next) {
@@ -76,11 +77,33 @@ module.exports = async function (req, res, next) {
     return res.status(503).json({ message: 'Server identity key unavailable; cannot issue session.' });
   }
 
+  if (!this.httpSessions) {
+    return res.status(503).json({ message: 'Session store is unavailable.' });
+  }
+
   const access_token = issueNodeSessionToken(this.key, {
     subject: user.id,
     roles,
-    isAdmin: !!user.is_admin
+    isAdmin: !!user.is_admin,
+    expiresInSeconds: SESSION_TTL_SECONDS
   });
+  const verified = verifyNodeSessionToken(access_token, this.key);
+  if (!verified) {
+    return res.status(500).json({ message: 'Could not issue session.' });
+  }
+
+  try {
+    await this.httpSessions.save(access_token, {
+      userId: user.id,
+      exp: verified.exp,
+      iat: verified.iat
+    }, SESSION_TTL_SECONDS);
+  } catch (err) {
+    console.error('[SENSEMAKER]', 'Failed to store session in Redis:', err.message || err);
+    return res.status(503).json({ message: 'Session store is unavailable.' });
+  }
+
+  res.cookie('token', access_token, sessionCookieOptions(req));
 
   res.format({
     json: function () {
@@ -101,7 +124,6 @@ module.exports = async function (req, res, next) {
     },
     html: function () {
       const next = (req.query.next || '/').replace(/[^a-zA-Z0-9\/]/g, '');
-      res.cookie('token', access_token, sessionCookieOptions(req));
       res.redirect(next);
     }
   });

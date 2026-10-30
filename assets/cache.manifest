@@ -1,14 +1,14 @@
 CACHE MANIFEST
-# Hash: 1787211789667
+# Hash: 1793403872324
 
 CACHE:
-000123.ldb
-000128.log
+000189.ldb
+000190.log
 CURRENT
 LOCK
 LOG
 LOG.old
-MANIFEST-000127
+MANIFEST-000188
 bitcoin.pdf
 bundles/0e086c2e452911d5a634.module.wasm
 bundles/30132f7f8e20a6adddcb.module.wasm
@@ -20,8 +20,10 @@ bundles/953.browser.min.js
 bundles/b37c6e7cdd13ba4edf0d.module.wasm
 bundles/browser.min.js
 bundles/browser.min.js.LICENSE.txt
+bundles/canvas-host.js
 bundles/d849a86d82539e78ea29.module.wasm
 bundles/dc114bf63af9b5455a7c.module.wasm
+canvas-host.html
 client-index.html
 docs.tmpl
 et-book/et-book-bold-line-figures/et-book-bold-line-figures.eot
