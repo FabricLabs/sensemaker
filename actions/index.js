@@ -31,6 +31,7 @@ const {
 // ## Authentication (and Authorization) Actions
 const {
   login,
+  restoreSession,
   reLogin,
   register,
   logout,
@@ -53,6 +54,17 @@ const {
   fetchAgent,
   fetchAgentStats
 } = require('./agentActions');
+
+// ## Application Actions
+const {
+  fetchApplications,
+  fetchApplication,
+  createApplication,
+  updateApplication,
+  disableApplication,
+  fetchAuthorizedApplications,
+  revokeApplicationAuthorization
+} = require('./applicationActions');
 
 // # Bitcoin Actions
 const {
@@ -256,6 +268,13 @@ const {
 module.exports = {
   fetchAgent,
   fetchAgentStats,
+  fetchApplications,
+  fetchApplication,
+  createApplication,
+  updateApplication,
+  disableApplication,
+  fetchAuthorizedApplications,
+  revokeApplicationAuthorization,
   fetchAlerts,
   fetchAnnouncements,
   fetchBitcoinStats,
@@ -338,6 +357,7 @@ module.exports = {
   fetchAllConversationsFromAPI: fetchAllConversationsFromAPI,
   login: login,
   logout: logout,
+  restoreSession: restoreSession,
   reLogin: reLogin,
   register: register,
   fullRegister: fullRegister,

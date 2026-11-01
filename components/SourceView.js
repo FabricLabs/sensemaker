@@ -23,6 +23,7 @@ const Actor = require('@fabric/core/types/actor');
 
 // Local Components
 const ChatBox = require('./ChatBox');
+const ThoughtProcess = require('./ThoughtProcess');
 
 // TODO: reduce to a web component (no react)
 class SourceView extends React.Component {
@@ -319,6 +320,13 @@ class SourceView extends React.Component {
             />
           )}
         </Header>
+        <ThoughtProcess
+          subject='source'
+          id={id}
+          token={this.props.auth && this.props.auth.token}
+          startOpen={false}
+          title='Thought process'
+        />
 
         <Table basic='very' celled>
           <Table.Body>

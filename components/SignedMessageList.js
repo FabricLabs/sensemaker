@@ -20,8 +20,9 @@ class SignedMessageList extends React.Component {
   render () {
     return (
       <div>
-        {this.props.messages.map((message, index) => (
+        {(this.props.messages || []).map((message, index) => (
           <div key={index}>
+            {message.actor ? <small>{String(message.actor).slice(0, 16)}</small> : null}
             <div>{message.content}</div>
           </div>
         ))}

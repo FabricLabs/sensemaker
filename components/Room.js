@@ -13,6 +13,7 @@ const {
 
 const ChatBox = require('./ChatBox');
 const Feed = require('./Feed');
+const ThoughtProcess = require('./ThoughtProcess');
 
 class Conversation extends React.Component {
   constructor (props) {
@@ -91,6 +92,13 @@ class Conversation extends React.Component {
 
     return (
       <fabric-component ref={this.messagesEndRef} class='ui fluid segment' style={componentStyle}>
+        <ThoughtProcess
+          subject='conversation'
+          id={id}
+          token={this.props.auth && this.props.auth.token}
+          startOpen={false}
+          title='Thought process'
+        />
         <ChatBox
           {...this.props}
           resetInformationSidebar={this.props.resetInformationSidebar}

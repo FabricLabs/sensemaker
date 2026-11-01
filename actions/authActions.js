@@ -60,7 +60,9 @@ const login = (username, password) => {
     try {
       const response = await fetch('/sessions', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username, password }),
@@ -73,12 +75,8 @@ const login = (username, password) => {
 
       const session = await response.json();
 
-      // Assign Cookie
-      // TODO: make HTTPOnly, Secure, and SameSite=Strict
-      // HTTPOnly is first.
-      document.cookie = `token=${session.token}; path=/;`;
-
-      // Old IndexedDB Store
+      // The server sets the session cookie (HttpOnly, Max-Age) and stores it in Redis.
+      // IndexedDB keeps a copy so a reload can present the token if the cookie is missing.
       // TODO: repurpose into local cache for offline use (i.e., /documents, etc.)
       // Here we create the database and store the session
       const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
@@ -109,15 +107,93 @@ const login = (username, password) => {
   };
 };
 
+function readIndexedDbToken () {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      resolve(value || null);
+    };
+    try {
+      const dbRequest = indexedDB.open(BROWSER_DATABASE_NAME, 1);
+      dbRequest.onerror = function () { finish(null); };
+      dbRequest.onupgradeneeded = function (event) {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+          db.createObjectStore(BROWSER_DATABASE_TOKEN_TABLE, { keyPath: 'id' });
+        }
+      };
+      dbRequest.onsuccess = function (event) {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(BROWSER_DATABASE_TOKEN_TABLE)) {
+          finish(null);
+          return;
+        }
+        const transaction = db.transaction([BROWSER_DATABASE_TOKEN_TABLE], 'readonly');
+        const request = transaction.objectStore(BROWSER_DATABASE_TOKEN_TABLE).get('authToken');
+        request.onsuccess = function () {
+          finish(request.result && request.result.value);
+        };
+        request.onerror = function () { finish(null); };
+      };
+    } catch (err) {
+      finish(null);
+    }
+  });
+}
+
+const restoreSession = () => {
+  return async dispatch => {
+    dispatch(loginRequest());
+    try {
+      const response = await fetch('/sessions/current', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const body = await response.json();
+        if (body && body.token && body.id != null) {
+          dispatch(loginSuccess({
+            token: body.token,
+            username: body.username,
+            email: body.email,
+            isAuthenticated: true,
+            isAdmin: body.isAdmin,
+            isBeta: body.isBeta,
+            isCompliant: body.isCompliant,
+            user_discord: body.user_discord,
+            id: body.id
+          }));
+          return;
+        }
+      }
+    } catch (err) {
+      /* fall through to the IndexedDB copy */
+    }
+
+    const token = await readIndexedDbToken();
+    if (!token) {
+      dispatch(sessionRestoreFailure());
+      return;
+    }
+    await dispatch(reLogin(token));
+  };
+};
+
 const reLogin = (token) => {
   return async dispatch => {
     dispatch(loginRequest());
     try {
       const response = await fetch('/sessions/current', {
-        method: "GET",
+        method: 'GET',
+        credentials: 'same-origin',
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
         },
       });
 
@@ -220,7 +296,16 @@ const fullRegister = (username, password, email, firstName, lastName, firmName, 
 
 const logout = () => {
   return async dispatch => {
-    document.cookie = undefined;
+    try {
+      await fetch('/sessions/current', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      });
+    } catch (err) {
+      /* still clear the local copy */
+    }
+    document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 
     // old indexedDB code
     const request = indexedDB.open(BROWSER_DATABASE_NAME, 1);
@@ -298,6 +383,7 @@ const checkEmailAvailable = (email) => {
 module.exports = {
   login,
   register,
+  restoreSession,
   reLogin,
   logout,
   SESSION_RESTORE_FAILURE,

@@ -245,6 +245,16 @@ class SensemakerUserSettings extends React.Component {
                     <Button onClick={this.destroySession} color='red' icon='cancel'>Log Out</Button>
                   </Table.Cell>
                 </Table.Row>
+                <Table.Row className='settings-row'>
+                  <Table.Cell>
+                    <Header as='h4'>Connected Applications</Header>
+                    <p>Bots and apps you've allowed to use your account.</p>
+                    <Button.Group>
+                      <Button as={Link} to='/applications/authorized'><Icon name='plug' /> Manage access</Button>
+                      <Button as={Link} to='/applications'><Icon name='code' /> Your applications</Button>
+                    </Button.Group>
+                  </Table.Cell>
+                </Table.Row>
               </Table.Body>
             </Table>
           </div>

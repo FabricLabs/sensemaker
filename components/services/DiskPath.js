@@ -18,6 +18,7 @@ const {
 } = require('semantic-ui-react');
 
 const DiskTable = require('./disk/DiskTable');
+const CanvasContent = require('../CanvasContent');
 
 // Functions
 const toRelativeTime = require('../../functions/toRelativeTime');
@@ -85,11 +86,19 @@ class DiskPath extends React.Component {
         {disk.object?.isFile ? (
           <Segment className='fade-in' loading={disk?.loading} style={{ maxHeight: '100%' }}>
             <Header as='h2'>{disk.object?.name || 'Loading...'}</Header>
-            <div>
-              <code>
-                <pre>{disk.object?.content || 'Loading...'}</pre>
-              </code>
-            </div>
+            {disk.object?.documentType === 'Canvas' ? (
+              <CanvasContent
+                source={disk.object?.content || ''}
+                canvasState={disk.object?.canvasState}
+                token={this.props.auth?.token}
+              />
+            ) : (
+              <div>
+                <code>
+                  <pre>{disk.object?.content || 'Loading...'}</pre>
+                </code>
+              </div>
+            )}
           </Segment>
         ) : null}
         {disk.object?.isDirectory ? (

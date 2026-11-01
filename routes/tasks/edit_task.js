@@ -1,6 +1,6 @@
 'use strict';
 
-const toMySQLDatetime = require('../../functions/toMySQLDatetime');
+const { taskEditDelta } = require('../../functions/sensemakerTools');
 
 module.exports = async function (req, res, next) {
   const { id } = req.params;
@@ -12,20 +12,7 @@ module.exports = async function (req, res, next) {
     if (prior.owner != req.user.id) return res.status(403).json({ error: 'You do not have permission to edit this task.' });
     if (body.completed_at && prior.completed_at) return res.status(400).json({ error: 'Task already completed.' });
 
-    const delta = {};
-
-    if (body.title) delta.title = body.title;
-    if (body.description) delta.description = body.description;
-    if (body.due_date) delta.due_date = body.due_date;
-    if (body.status) delta.status = body.status;
-    if (body.priority) delta.priority = body.priority;
-    if (body.assigned_to) delta.assigned_to = body.assigned_to;
-    if (body.assigned_by) delta.assigned_by = body.assigned_by;
-    if (body.tags) delta.tags = body.tags;
-    if (body.notes) delta.notes = body.notes;
-    if (body.completed_at) { delta.completed_at = toMySQLDatetime(new Date(body.completed_at)) };
-    if (body.completed_by) delta.completed_by = body.completed_by;
-    if (body.recommendation) delta.recommendation = body.recommendation;
+    const delta = taskEditDelta(body);
 
     // TODO: handle errors
     await this.db('tasks').where({ fabric_id: id }).update(delta);

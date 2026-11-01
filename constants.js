@@ -22,10 +22,19 @@ const BRAND_NAME = 'Sensemaker';
 /** Set `SENSEMAKER_LEAN=1` for minimal services profile + faster pipeline timeouts (see settings/local.js). */
 const SENSEMAKER_LEAN = process.env.SENSEMAKER_LEAN === '1';
 /**
- * Default chat model. Lean profile prefers `qwen3:0.6b` (small/fast). Full profile uses `llama3.2:latest`.
- * Override with `OLLAMA_MODEL`. Pool/searcher may still call other tags explicitly.
+ * Small, fast tag. Search, summaries, and the idle worker call this by name.
+ * Override with `OLLAMA_SMALL_MODEL`.
  */
-const CORE_MODEL = process.env.OLLAMA_MODEL || 'qwen3:0.6b';
+const SMALL_MODEL = process.env.OLLAMA_SMALL_MODEL || 'qwen3:0.6b';
+/**
+ * Larger tag for user-facing chat. Override with `OLLAMA_CAPABLE_MODEL`.
+ */
+const CAPABLE_MODEL = process.env.OLLAMA_CAPABLE_MODEL || 'llama3.2:latest';
+/**
+ * Default when a caller does not name a role. Prefer {@link SMALL_MODEL} or
+ * {@link CAPABLE_MODEL} at the call site. Override with `OLLAMA_MODEL`.
+ */
+const CORE_MODEL = process.env.OLLAMA_MODEL || SMALL_MODEL;
 /** Default embedding model — much smaller than mxbai-embed-large (`ollama pull nomic-embed-text`). */
 const EMBEDDING_MODEL = 'nomic-embed-text';
 
@@ -166,6 +175,8 @@ module.exports = {
   ALLOWED_UPLOAD_TYPES,
   BCRYPT_PASSWORD_ROUNDS,
   CORE_MODEL,
+  SMALL_MODEL,
+  CAPABLE_MODEL,
   EMBEDDING_MODEL,
   SENSEMAKER_LEAN,
   ENABLE_AGENTS,

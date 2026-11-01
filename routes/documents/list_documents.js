@@ -20,7 +20,11 @@ module.exports = function (req, res, next) {
         'pinned',
         'folders'
       ]).whereNotNull('fabric_id').andWhere('status', '!=', 'deleted').andWhere(function () {
-        return this.where('creator', '=', req.user.id).orWhere('owner', '=', req.user.id);
+        this.where('creator', '=', req.user.id)
+          .orWhere('owner', '=', req.user.id)
+          .orWhere(function () {
+            this.where('fabric_type', 'LibraryReceipt').whereNull('owner');
+          });
       });
 
       // Apply filter if provided

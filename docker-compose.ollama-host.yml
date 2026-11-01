@@ -1,0 +1,11 @@
+# Bind-mount host Ollama data (~/.ollama) into the container so existing pulls are reused.
+# Used automatically by `scripts/docker-compose.sh` / `make up` when that directory exists.
+# Set USE_HOST_OLLAMA=0 to keep using the named Docker volume instead.
+#
+# Do not run a second Ollama daemon on the host against the same directory while this
+# container is using it (single writer to the blobs store).
+
+services:
+  ollama:
+    volumes:
+      - ${OLLAMA_HOST_DATA}:/root/.ollama

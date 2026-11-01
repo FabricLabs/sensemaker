@@ -7,8 +7,9 @@
  * - **Fallback**: in-memory array when Redis is unavailable.
  *
  * When the worker has been **idle** for {@link IDLE_MS}, the hub runs one unit of
- * background progress (a due source, an objective plan, a plan step, or a task)
- * via {@link Sensemaker#_runBackgroundWork}. Conversation turns always dequeue first.
+ * background progress (an objective plan, a plan step, or a user task; a due
+ * source only when those are idle) via {@link Sensemaker#_runBackgroundWork}.
+ * Conversation turns always dequeue first. Play on a task enqueues `background_work`.
  */
 
 const REDIS_KEY = 'sensemaker:active_worker_queue:v1';
@@ -121,6 +122,10 @@ class ActiveWorkerQueue {
     try {
       if (job.type === 'conversation_turn') {
         await this.hub._processConversationTurnJob(job);
+      } else if (job.type === 'background_work') {
+        if (typeof this.hub._runBackgroundWork === 'function') {
+          await this.hub._runBackgroundWork(job.work);
+        }
       } else if (job.type === 'gather_due_sources') {
         if (typeof this.hub._gatherNextDueSource === 'function') {
           await this.hub._gatherNextDueSource();

@@ -1,7 +1,6 @@
 'use strict';
 
 const Service = require('@fabric/core/types/service');
-const Message = require('@fabric/core/types/message');
 
 const Sensemaker = require('../services/sensemaker');
 
@@ -27,21 +26,22 @@ class Bot extends Service {
   }
 
   _send (message) {
+    const text = String(message || '').trim();
+    if (!text) return;
     setTimeout(() => {
-      const response = {
-        type: 'P2P_CHAT_MESSAGE',
-        actor: {
-          id: this.id
-        },
-        object: {
-          created: Date.now(),
-          content: message
-        },
-        target: '/messages'
-      };
-
-      const msg = Message.fromVector(['ChatMessage', JSON.stringify(response)]);
-      this.emit('message', msg);
+      const sensemaker = this.sensemaker;
+      if (sensemaker && typeof sensemaker._publishShoutbox === 'function') {
+        Promise.resolve(sensemaker._publishShoutbox(text)).catch((err) => {
+          this.emit('error', err);
+        });
+        return;
+      }
+      // Core Service turns `@type: ChatMessage` into a UTF-8 P2P_CHAT_MESSAGE.
+      // Do not emit a JSON chat envelope on ChatMessage (0x67).
+      this.emit('message', {
+        '@type': 'ChatMessage',
+        text
+      });
     }, this.settings.delay);
   }
 

@@ -18,11 +18,14 @@ const {
 } = require('semantic-ui-react');
 
 // Local Components
+const BackgroundWorkerStatus = require('./BackgroundWorkerStatus');
+const ThoughtProcess = require('./ThoughtProcess');
 const GeneratedResponse = require('./GeneratedResponse');
 const MarkdownContent = require('./MarkdownContent');
 
 // Functions
 const toRelativeTime = require('../functions/toRelativeTime');
+const { postAPI } = require('../actions/apiActions');
 
 class TaskPage extends React.Component {
   constructor (settings = {}) {
@@ -50,6 +53,7 @@ class TaskPage extends React.Component {
     this.handleMarkdownEditToggle = this.handleMarkdownEditToggle.bind(this);
     this.handleChatResponse = this.handleChatResponse.bind(this);
     this.handleCompleteTask = this.handleCompleteTask.bind(this);
+    this.decideEdit = this.decideEdit.bind(this);
 
     return this;
   }
@@ -202,6 +206,62 @@ class TaskPage extends React.Component {
     }
   }
 
+  async decideEdit (editId, decision) {
+    const resource = this.props.api && this.props.api.resource;
+    const taskId = resource && resource.id;
+    if (!taskId || editId == null) return;
+    const token = this.props.auth && this.props.auth.token;
+    this.setState({ loading: true });
+    try {
+      await postAPI(`/tasks/${taskId}/edits/${editId}/${decision}`, {}, token);
+      if (this.props.fetchResource) await this.props.fetchResource();
+    } catch (error) {
+      console.error('Error deciding task edit:', error);
+    } finally {
+      this.setState({ loading: false });
+    }
+  }
+
+  renderPendingEdits () {
+    const resource = this.props.api && this.props.api.resource;
+    const edits = (resource && resource.pending_edits) || [];
+    if (!edits.length) return null;
+    return (
+      <Segment>
+        <Header as='h3'>Proposed edits</Header>
+        <p>These changes are waiting for you. Nothing is saved until you apply one.</p>
+        {edits.map((edit) => {
+          const changes = edit.changes || {};
+          const fields = Object.keys(changes);
+          return (
+            <div key={edit.id} style={{ marginBottom: '1em' }}>
+              {fields.map((key) => (
+                <p key={key}><strong>{key}</strong>: {String(changes[key]).slice(0, 240)}</p>
+              ))}
+              <Button
+                positive
+                size='small'
+                loading={this.state.loading}
+                disabled={this.state.loading}
+                onClick={() => this.decideEdit(edit.id, 'approve')}
+              >
+                Apply
+              </Button>
+              <Button
+                size='small'
+                disabled={this.state.loading}
+                onClick={() => this.decideEdit(edit.id, 'reject')}
+                style={{ marginLeft: '0.5em' }}
+              >
+                Discard
+              </Button>
+            </div>
+          );
+        })}
+      </Segment>
+    );
+  }
+
   formatDate (dateStr) {
     if (!dateStr) return '';
 
@@ -244,6 +304,18 @@ class TaskPage extends React.Component {
           </div>
           <Segment loading={api?.resource?.loading} style={{ maxHeight: '100%' }}>
             <Header as='h1'>{api?.resource?.title}</Header>
+            <BackgroundWorkerStatus
+              taskId={api?.resource?.id}
+              token={this.props.auth && this.props.auth.token}
+              worker={api?.resource?.worker}
+              completed={!!api?.resource?.completed_at}
+            />
+            <ThoughtProcess
+              subject='task'
+              id={api?.resource?.id}
+              token={this.props.auth && this.props.auth.token}
+            />
+            {this.renderPendingEdits()}
             <p>{api?.resource?.description}</p>
             <Divider />
             <GeneratedResponse
@@ -324,6 +396,18 @@ class TaskPage extends React.Component {
               </Button>
             )}
           </div>
+          <BackgroundWorkerStatus
+            taskId={api?.resource?.id}
+            token={this.props.auth && this.props.auth.token}
+            worker={api?.resource?.worker}
+            completed={!!api?.resource?.completed_at}
+          />
+          <ThoughtProcess
+            subject='task'
+            id={api?.resource?.id}
+            token={this.props.auth && this.props.auth.token}
+          />
+          {this.renderPendingEdits()}
           {(api?.resource?.created_at) ? <p>Created <abbr title={api?.resource?.created_at}>{toRelativeTime(api?.resource?.created_at)}</abbr></p> : null}
           {!api?.resource?.completed_at && (
             <Button

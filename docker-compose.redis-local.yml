@@ -1,0 +1,30 @@
+# Redis Stack only — run Sensemaker on the host (`npm start`) while Redis stays in Docker.
+#
+# Prerequisites: Docker Desktop (or compatible engine) running.
+#
+#   docker compose -f docker-compose.redis-local.yml up -d
+#   make redis-local
+#
+# Publishes 127.0.0.1:6379 so defaults in settings/local.js (127.0.0.1:6379) work without env vars.
+#
+# Full production compose (`make up`) maps Redis to host port 5052 instead. If you run only
+# MySQL/Ollama from that stack but Node on the host, use: REDIS_HOST=127.0.0.1 REDIS_PORT=5052
+
+services:
+  redis:
+    image: redis/redis-stack-server:latest
+    container_name: sensemaker-redis-stack-local
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis_stack_local_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  redis_stack_local_data:

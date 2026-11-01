@@ -13,7 +13,7 @@
 
 ## Developer Setup
 ### Requirements
-- Node 18.19.1 (use `scripts/nvm/install.sh`)
+- Node 26.12.1 (use `scripts/nvm/install.sh`)
 - MySQL 8.3
 - Redis Stack 7.2
 

@@ -137,12 +137,26 @@ function progressKey (work) {
 }
 
 /**
+ * An open plan step is the background unit for its linked task.
+ * @param {object} step
+ * @param {object} task
+ * @returns {boolean}
+ */
+function stepOwnsTask (step, task) {
+  if (!step || !task) return false;
+  if (step.task_id != null && step.task_id === task.id) return true;
+  if (task.plan_step_id != null && task.plan_step_id === step.id) return true;
+  return false;
+}
+
+/**
  * Choose one unit of background progress.
  * Conversation jobs are not selected here; the active worker drains those first.
  *
- * Order: a due intelligence source (when gathering is on), an unplanned
+ * Background work stays on the user's goals and tasks. Order: an unplanned
  * objective (high, then medium, then any other priority, then oldest), the
- * oldest open plan step, then the oldest open task.
+ * oldest open plan step, then the oldest open task that is not already covered
+ * by an open step. A due source is gathered only when no goal or task is waiting.
  * @param {object} state
  * @returns {object|null}
  */
@@ -150,16 +164,6 @@ function selectNextBackgroundWork (state) {
   const now = state && state.now ? state.now : Date.now();
   const cooldownMs = state && state.cooldownMs != null ? state.cooldownMs : COOLDOWN_MS;
   const cooled = (state && state.lastProgressAt) || {};
-
-  if (state && state.gather) {
-    const sources = state.sources || [];
-    for (let i = 0; i < sources.length; i++) {
-      const source = sources[i];
-      if (!sourceIsDue(source, now)) continue;
-      if (isCooling(cooled, `source:${source.id}`, now, cooldownMs)) continue;
-      return { kind: 'gather_source', sourceId: source.id };
-    }
-  }
 
   const objectives = ((state && state.objectives) || []).slice().sort(compareObjectives);
   const plans = (state && state.plans) || [];
@@ -182,15 +186,27 @@ function selectNextBackgroundWork (state) {
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     if (isCooling(cooled, `step:${step.id}`, now, cooldownMs)) continue;
-    return { kind: 'advance_step', planId: step.plan_id, stepId: step.id };
+    return { kind: 'advance_step', planId: step.plan_id, stepId: step.id, taskId: step.task_id || null };
   }
 
   const tasks = (state && state.tasks) || [];
   for (let i = 0; i < tasks.length; i++) {
     const task = tasks[i];
     if (task.completed_at) continue;
+    if (task.background_paused) continue;
+    if (steps.some((step) => stepOwnsTask(step, task))) continue;
     if (isCooling(cooled, `task:${task.id}`, now, cooldownMs)) continue;
     return { kind: 'progress_task', taskId: task.id };
+  }
+
+  if (state && state.gather) {
+    const sources = state.sources || [];
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i];
+      if (!sourceIsDue(source, now)) continue;
+      if (isCooling(cooled, `source:${source.id}`, now, cooldownMs)) continue;
+      return { kind: 'gather_source', sourceId: source.id };
+    }
   }
 
   return null;

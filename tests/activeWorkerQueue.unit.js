@@ -82,6 +82,14 @@ describe('ActiveWorkerQueue', function () {
     assert.strictEqual(queue.busy, false);
   });
 
+  it('runs a played task before idle background work', async function () {
+    const { order, queue } = harness();
+    await queue.enqueue({ type: 'background_work', work: { kind: 'progress_task', taskId: 9 } });
+    await queue._tick();
+    assert.deepStrictEqual(order, ['progress_task']);
+    assert.strictEqual(queue.busy, false);
+  });
+
   it('does not start background work while a conversation is still queued', async function () {
     const { order, queue } = harness();
     queue.lastFinishedAt = 0;

@@ -1,0 +1,5 @@
+Work toward the objective named below. Use facts already in the tasks and conversations. Prefer the next action a person can finish soon.
+
+Output, in this order: the single best next action; two backups; for each, how long it takes, which stored task or conversation supports it, and the first concrete step. If the stored material does not support a claim, say so and ask for the missing fact instead of inventing one.
+
+Do not submit forms, send messages, move money, or contact anyone. Stop at the instruction a person will carry out.

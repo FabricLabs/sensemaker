@@ -34,11 +34,13 @@ const MarkdownContent = require('./MarkdownContent');
 const HTMLContent = require('./HTMLContent');
 const ListContent = require('./ListContent');
 const FolderContent = require('./FolderContent');
+const LibraryShare = require('./LibraryShare');
 const TextContent = require('./TextContent');
 const BinaryContent = require('./BinaryContent');
 const AudioContent = require('./AudioContent');
 const VideoContent = require('./VideoContent');
 const ImageContent = require('./ImageContent');
+const CanvasContent = require('./CanvasContent');
 const CreateDocumentModal = require('./CreateDocumentModal');
 const FileUploadModal = require('./FileUploadModal');
 const NotFound = require('./NotFound');
@@ -762,8 +764,17 @@ class DocumentView extends React.Component {
                     token={this.props.auth?.token}
                   />
                 </div>
+              ) : (documents.document.fabric_type === 'LibraryReceipt') ? (
+                <Message info>
+                  <Message.Header>Shared catalog entry</Message.Header>
+                  <p>This document is listed in a data library shared with this node. The file itself has not arrived.</p>
+                </Message>
               ) : (documents.document.fabric_type === 'Folder') ? (
                 <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
+                  <LibraryShare
+                    folderId={documents.document.id}
+                    token={this.props.auth?.token}
+                  />
                   <FolderContent
                     key={`document-${documents.document.id}`}
                     content={documents.document.content}
@@ -774,6 +785,14 @@ class DocumentView extends React.Component {
                     onEditModeChange={this.handleEditModeToggle}
                     token={this.props.auth?.token}
                     folderId={documents.document.id}
+                  />
+                </div>
+              ) : (documents.document.fabric_type === 'Canvas' || documents.document.mime_type === 'text/x-cursor-canvas') ? (
+                <div className='document-content-transition' style={{ width: '100%', marginTop: '1em' }}>
+                  <CanvasContent
+                    key={`document-${documents.document.id}`}
+                    source={documents.document.content}
+                    token={this.props.auth?.token}
                   />
                 </div>
               ) : (documents.document.fabric_type === 'Graph') ? (

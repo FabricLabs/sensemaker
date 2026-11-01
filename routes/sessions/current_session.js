@@ -3,6 +3,9 @@
 module.exports = async function (req, res, next) {
   let identity = null;
   try {
+    if (!req.user || req.user.id == null || !req.sessionToken) {
+      return res.status(401).json({ message: 'Invalid session.' });
+    }
     const user = await this.db('users').where('id', req.user.id).first();
     if (!user) {
       return res.status(401).json({ message: 'Invalid session.' });
@@ -15,6 +18,7 @@ module.exports = async function (req, res, next) {
     const isAdmin = await this._userHasAdminAccess(req);
 
     return res.json({
+      token: req.sessionToken || null,
       username: user.username,
       email: user.email,
       isAdmin,

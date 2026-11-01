@@ -27,11 +27,11 @@ async function http_create_file (req, res, next) {
 
     // TODO: standardize the file upload logic into core (folder to look for, folder to move to, etc.)
     const safeFilename = path.basename(req.file.originalname);
-    const userDir = path.join(this.settings.files.userstore, req.user.id);
+    const userDir = path.join(this.settings.files.userstore, String(req.user.id));
     const destination = path.join(userDir, safeFilename);
 
     // TODO: restrict file types
-    const mimeType = mimeTypes.lookup(destination);
+    const mimeType = mimeTypes.lookup(destination) || req.file.mimetype || 'application/octet-stream';
     const savedFile = await this.db('files').insert({
       creator: req.user.id,
       name: req.file.originalname,

@@ -3,6 +3,7 @@
 const React = require('react');
 const {
   Button,
+  Dropdown,
   Form,
   Header,
   Modal,
@@ -10,11 +11,26 @@ const {
   Icon
 } = require('semantic-ui-react');
 
+const {
+  FILE_DOCUMENT_TYPES,
+  SNIFF_BYTES,
+  detectDocumentType
+} = require('../functions/detectDocumentType');
+
+const SOURCE_LABELS = {
+  content: 'file contents',
+  extension: 'file extension',
+  mime: 'browser-reported type',
+  default: 'no recognizable hints'
+};
+
 class FileUploadModal extends React.Component {
   constructor (props) {
     super(props);
     this.state = {
       file: null,
+      detected: null,
+      selectedType: null,
       formatError: false,
       uploading: false,
       error: null
@@ -23,15 +39,29 @@ class FileUploadModal extends React.Component {
 
   handleFileChange = async (e) => {
     const files = e.target.files;
-    this.setState({ formatError: false, error: null });
-    if (files.length > 0) {
-      const file = files[0];
-      this.setState({ file: file, formatError: false });
+    this.setState({ formatError: false, error: null, detected: null, selectedType: null });
+    if (!files.length) {
+      this.setState({ file: null });
+      return;
     }
+
+    const file = files[0];
+    this.setState({ file });
+
+    let bytes = null;
+    try {
+      bytes = new Uint8Array(await file.slice(0, SNIFF_BYTES).arrayBuffer());
+    } catch (err) {
+      console.warn('[FileUploadModal] Could not read file header:', err);
+    }
+
+    const detected = detectDocumentType({ name: file.name, mime: file.type, bytes });
+    if (this.state.file !== file) return;
+    this.setState({ detected, selectedType: detected.type });
   };
 
   handleUpload = async () => {
-    const { file } = this.state;
+    const { file, selectedType } = this.state;
     const { token, onClose, navigate } = this.props;
     if (!file) {
       this.setState({ error: 'Please select a file to upload' });
@@ -62,7 +92,7 @@ class FileUploadModal extends React.Component {
         },
         body: JSON.stringify({
           title: file.name,
-          type: 'File',
+          type: selectedType || undefined,
           file_id: fabric_id
         })
       });
@@ -86,7 +116,14 @@ class FileUploadModal extends React.Component {
 
   render () {
     const { open, onClose } = this.props;
-    const { file, uploading, error } = this.state;
+    const { file, detected, selectedType, uploading, error } = this.state;
+
+    const typeOptions = FILE_DOCUMENT_TYPES.map((t) => ({
+      key: t.name,
+      value: t.name,
+      text: (detected && detected.type === t.name) ? `${t.name} (detected)` : t.name,
+      description: t.description
+    }));
 
     return (
       <Modal open={open} onClose={onClose}>
@@ -99,13 +136,30 @@ class FileUploadModal extends React.Component {
                 type="file"
                 onChange={this.handleFileChange}
               />
-              <p className="help"></p>
             </Form.Field>
             {file && (
               <Message info>
                 <Icon name="file" />
                 Selected file: {file.name}
               </Message>
+            )}
+            {file && (
+              <Form.Field>
+                <label>Document Type</label>
+                <Dropdown
+                  selection
+                  fluid
+                  loading={!detected}
+                  options={typeOptions}
+                  value={selectedType}
+                  onChange={(e, { value }) => this.setState({ selectedType: value })}
+                />
+                {detected && (
+                  <p className="help">
+                    Detected <strong>{detected.type}</strong> ({detected.mime}) from {SOURCE_LABELS[detected.source] || detected.source}.
+                  </p>
+                )}
+              </Form.Field>
             )}
             {error && (
               <Message error content={error} />
@@ -118,7 +172,7 @@ class FileUploadModal extends React.Component {
             positive
             onClick={this.handleUpload}
             loading={uploading}
-            disabled={uploading || !file}
+            disabled={uploading || !file || !selectedType}
           >
             Upload
           </Button>

@@ -167,6 +167,14 @@ module.exports = async function (req, res) {
     const document = await trx('documents').where('fabric_id', req.params.fabricID).orderBy('created_at', 'desc').first();
     await trx.commit();
 
+    if (typeof this.noteLibraryChange === 'function' && (content || folders !== undefined)) {
+      try {
+        await this.noteLibraryChange(prior, req.params.fabricID, content, folders);
+      } catch (err) {
+        console.warn('[DOCUMENTS:SHARE]', err && err.message ? err.message : err);
+      }
+    }
+
     return res.send({
       id: document.fabric_id,
       title: document.title,
