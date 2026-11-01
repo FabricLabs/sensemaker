@@ -4628,7 +4628,7 @@ class Sensemaker extends Hub {
     if (this.settings.verify) await this._runFixtures();
 
     // Add 404 handler as the last route
-    this.http.express.use('*', ROUTES.errors.notFound.bind(this));
+    this.http.express.use(ROUTES.errors.notFound.bind(this));
 
     // Fabric Network
     if (this.settings.fabric && this.settings.fabric.enable) await this.fabric.start();
